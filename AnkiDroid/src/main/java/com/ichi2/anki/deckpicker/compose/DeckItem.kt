@@ -83,14 +83,14 @@ private val GhostishShape = RoundedPolygonShape(MaterialShapes.Ghostish)
 fun DeckItem(
     deck: DisplayDeckNode,
     modifier: Modifier = Modifier,
-    onDeckClick: () -> Unit,
-    onExpandClick: () -> Unit,
-    onDeckOptions: () -> Unit,
-    onRename: () -> Unit,
-    onExport: () -> Unit,
-    onDelete: () -> Unit,
-    onRebuild: () -> Unit,
-    onEmpty: () -> Unit,
+    onDeckClick: (DisplayDeckNode) -> Unit,
+    onExpandClick: (DisplayDeckNode) -> Unit,
+    onDeckOptions: (DisplayDeckNode) -> Unit,
+    onRename: (DisplayDeckNode) -> Unit,
+    onExport: (DisplayDeckNode) -> Unit,
+    onDelete: (DisplayDeckNode) -> Unit,
+    onRebuild: (DisplayDeckNode) -> Unit,
+    onEmpty: (DisplayDeckNode) -> Unit,
 ) {
     var isContextMenuOpen by remember { mutableStateOf(false) }
 
@@ -111,7 +111,7 @@ fun DeckItem(
                     }
                 )
                 .combinedClickable(
-                    onClick = { onDeckClick() },
+                    onClick = { onDeckClick(deck) },
                     onLongClick = { isContextMenuOpen = true })
                 .padding(horizontal = 8.dp, vertical = if (deck.depth > 0) 4.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -154,7 +154,7 @@ fun DeckItem(
 
             if (deck.canCollapse) {
                 IconButton(
-                    onClick = { onExpandClick() },
+                    onClick = { onExpandClick(deck) },
                     modifier = Modifier
                         .padding(start = 6.dp)
                         .size(36.dp)
@@ -181,7 +181,7 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.rebuild_cram_label)) },
                         onClick = {
-                            onRebuild()
+                            onRebuild(deck)
                             isContextMenuOpen = false
                         },
                         leadingIcon = {
@@ -190,7 +190,7 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.empty_cram_label)) },
                         onClick = {
-                            onEmpty()
+                            onEmpty(deck)
                             isContextMenuOpen = false
                         },
                         leadingIcon = {
@@ -200,7 +200,7 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.rename_deck)) },
                         onClick = {
-                            onRename()
+                            onRename(deck)
                             isContextMenuOpen = false
                         },
                         leadingIcon = {
@@ -212,7 +212,7 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.export_deck)) },
                         onClick = {
-                            onExport()
+                            onExport(deck)
                             isContextMenuOpen = false
                         },
                         leadingIcon = {
@@ -223,13 +223,13 @@ fun DeckItem(
                         })
                 }
                 DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
-                    onDeckOptions()
+                    onDeckOptions(deck)
                     isContextMenuOpen = false
                 }, leadingIcon = {
                     Icon(painter = painterResource(R.drawable.tune_24px), contentDescription = null)
                 })
                 DropdownMenuItem(text = { Text(stringResource(R.string.contextmenu_deckpicker_delete_deck)) }, onClick = {
-                    onDelete()
+                    onDelete(deck)
                     isContextMenuOpen = false
                 }, leadingIcon = {
                     Icon(

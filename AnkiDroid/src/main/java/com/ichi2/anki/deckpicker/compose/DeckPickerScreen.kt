@@ -128,14 +128,14 @@ private fun RenderDeck(
     val content = @Composable {
         DeckItem(
             deck = deck,
-            onDeckClick = { onDeckClick(deck) },
-            onExpandClick = { onExpandClick(deck) },
-            onDeckOptions = { onDeckOptions(deck) },
-            onRename = { onRename(deck) },
-            onExport = { onExport(deck) },
-            onDelete = { onDelete(deck) },
-            onRebuild = { onRebuild(deck) },
-            onEmpty = { onEmpty(deck) },
+            onDeckClick = onDeckClick,
+            onExpandClick = onExpandClick,
+            onDeckOptions = onDeckOptions,
+            onRename = onRename,
+            onExport = onExport,
+            onDelete = onDelete,
+            onRebuild = onRebuild,
+            onEmpty = onEmpty,
         )
         AnimatedVisibility(
             visible = !deck.collapsed,
