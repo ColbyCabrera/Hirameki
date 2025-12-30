@@ -12,12 +12,12 @@ Hirameki is a fork of **AnkiDroid**, focused on bringing a modern, **Material 3 
 ### Why This Fork?
 The goal of this project is to experiment with and implement the latest Material 3 Expressive design principles, creating a visually unique and fun UI design.
 
-### 📖 Documentation Note
+### Documentation Note
 Because this fork introduces significant UI and UX changes, the official [AnkiDroid Wiki](https://github.com/ankidroid/Anki-Android/wiki) and [User Manual](https://ankidroid.org/docs/manual.html) may not map 1-1 with the features or layout found here. Please refer to this repository's issues and documentation for fork-specific guidance.
 
 ---
 
-### 🚀 Status & Availability
+### Status & Availability
 This project is currently in **active development** and is not yet available for public download or on any app stores.
 
 <div style="display:flex;">
