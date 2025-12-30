@@ -1,16 +1,16 @@
 <p align="center">
-<img alt="AnkiDroid M3 Expressive" src="docs/graphics/logos/banner_readme.png"/>
+<img alt="AnkiDroid M3 Expressive" src="docs/graphics/logos/readme_banner.webp"/>
 </p>
 
-# AnkiDroid: Material 3 Expressive Fork
+# Hirameki: Material 3 Expressive Fork of AnkiDroid
 
-This is a community-driven fork of **AnkiDroid**, focused on bringing a modern, **Material 3 Expressive** design to the premier spaced-repetition flashcard system for Android.
+Hirameki is a fork of **AnkiDroid**, focused on bringing a modern, **Material 3 Expressive** design to the premier spaced-repetition flashcard system for Android.
 
 > [!IMPORTANT]
 > **Unofficial Fork**: This project is not affiliated with, endorsed by, or officially associated with the main AnkiDroid maintainers.
 
-### 🎨 Why This Fork?
-The goal of this project is to experiment with and implement the latest Material 3 "Expressive" design principles, creating a more dynamic and visually engaging experience for Anki users.
+### Why This Fork?
+The goal of this project is to experiment with and implement the latest Material 3 Expressive design principles, creating a visually unique and fun UI design.
 
 ### 📖 Documentation Note
 Because this fork introduces significant UI and UX changes, the official [AnkiDroid Wiki](https://github.com/ankidroid/Anki-Android/wiki) and [User Manual](https://ankidroid.org/docs/manual.html) may not map 1-1 with the features or layout found here. Please refer to this repository's issues and documentation for fork-specific guidance.
@@ -33,13 +33,13 @@ This project is currently in **active development** and is not yet available for
 ### Key Features (M3 Expressive)
 - **Material You**: Dynamic color support and revamped UI components.
 - **Expressive Motion**: Smooth, intentional animations for a more fluid experience.
-- **Modernized Layouts**: Focused on accessibility and the latest Android design standards.
-- **Full Anki Compatibility**: Built on the robust core of AnkiDroid, maintaining sync compatibility with AnkiWeb and the [FSRS algorithm](https://github.com/open-spaced-repetition).
+- **Modernized Layouts**: Focused on the latest Android design standards.
+- **Full AnkiWeb Compatibility**: Built on the robust core of AnkiDroid, maintaining sync compatibility with AnkiWeb and the [FSRS algorithm](https://github.com/open-spaced-repetition).
 
 ---
 
 ### Credits & Acknowledgments
-This work would not be possible without the incredible foundation laid by the [AnkiDroid](https://github.com/ankidroid/Anki-Android) team and its contributors.
+This work would not be possible without the incredible foundation laid by the [AnkiDroid](https://github.com/ankidroid/Anki-Android) team and its contributors. Please consider donating to support their work.
 
 ### License
 This project inherits the licenses of the original AnkiDroid project:
