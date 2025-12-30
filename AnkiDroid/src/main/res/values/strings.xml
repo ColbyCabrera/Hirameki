@@ -68,7 +68,7 @@
     <string name="help_issue_tracker_title">Report a Bug</string>
     <string name="help_issue_tracker_subtitle">Submit issues on our tracker</string>
     <string name="help_donate_title">Donate</string>
-    <string name="help_donate_subtitle">Support the project</string>
+    <string name="help_donate_subtitle">Support AnkiDroid, which this app is based off of</string>
     <string name="help_hero_subtitle">Here are some helpful resources.</string>
     <string name="login_error_email_password_required">Email and password are required</string>
     <string name="login_error_authentication_failed">The email or password you entered is incorrect. Please check your credentials and try again, or reset your password.</string>
