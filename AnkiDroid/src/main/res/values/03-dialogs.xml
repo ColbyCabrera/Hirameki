@@ -149,7 +149,7 @@
 
     <!-- Help Dialog -->
     <string name="help_title_using_ankidroid">Using Hirameki</string>
-    <string name="help_item_ankidroid_manual">Hirameki manual</string>
+    <string name="help_item_ankidroid_manual">AnkiDroid manual</string>
     <string name="help_item_anki_manual">Anki manual</string>
     <string name="help_item_ankidroid_faq">Hirameki FAQ</string>
 
