@@ -17,7 +17,7 @@
 package com.ichi2.anki.analytics
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
+import androidx.appcompat.app.AlertDialog
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
@@ -44,6 +44,7 @@ class AnkiDroidCrashReportDialog :
     private var alwaysReportCheckBox: CheckBox? = null
     private var userComment: EditText? = null
     private var helper: CrashReportDialogHelper? = null
+    private var alertDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,10 +55,10 @@ class AnkiDroidCrashReportDialog :
         dialogBuilder.setNegativeButton(R.string.dialog_cancel, this@AnkiDroidCrashReportDialog)
         helper = CrashReportDialogHelper(this, intent)
         dialogBuilder.setView(buildCustomView(savedInstanceState))
-        val dialog = dialogBuilder.create()
-        dialog.setCanceledOnTouchOutside(false)
-        dialog.setOnDismissListener(this)
-        dialog.show()
+        alertDialog = dialogBuilder.create()
+        alertDialog?.setCanceledOnTouchOutside(false)
+        alertDialog?.setOnDismissListener(this)
+        alertDialog?.show()
     }
 
     /**
@@ -114,6 +115,12 @@ class AnkiDroidCrashReportDialog :
 
     override fun onDismiss(dialog: DialogInterface) {
         finish()
+    }
+
+    override fun onDestroy() {
+        alertDialog?.dismiss()
+        alertDialog = null
+        super.onDestroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
