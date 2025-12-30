@@ -21,8 +21,10 @@
 package com.ichi2.anki.ui.compose.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +34,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -40,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,6 +56,31 @@ fun SyncIcon(
 ) {
     val rotation = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(isSyncing) {
+        if (isSyncing) {
+            while (isActive) {
+                rotation.animateTo(
+                    targetValue = rotation.value + 360f,
+                    animationSpec = tween(1000, easing = LinearEasing)
+                )
+            }
+        } else {
+            // Finish the current rotation smoothly to the next 360 degree mark
+            val current = rotation.value
+            val target = (kotlin.math.ceil(current / 360f) * 360f)
+            if (target > current) {
+                rotation.animateTo(
+                    targetValue = target,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    )
+                )
+            }
+            rotation.snapTo(0f)
+        }
+    }
 
     BadgedBox(
         modifier = modifier,
