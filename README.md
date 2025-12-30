@@ -1,5 +1,5 @@
 <p align="center">
-<img alt="AnkiDroid M3 Expressive" src="docs/graphics/logos/banner_readme.png"/>
+<img alt="AnkiDroid M3 Expressive" src="docs/graphics/logos/readme_banner.png"/>
 </p>
 
 # Hirameki: Material 3 Expressive Fork of AnkiDroid
