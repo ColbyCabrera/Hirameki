@@ -99,7 +99,7 @@ private val helpLinks = listOf(
         R.string.help_issue_tracker_title,
         R.string.help_issue_tracker_subtitle,
         R.drawable.bug_report_24px,
-        "https://github.com/ankidroid/Anki-Android/issues"
+        "https://github.com/ColbyCabrera/Hirameki/issues"
     ), HelpLink(
         R.string.help_donate_title,
         R.string.help_donate_subtitle,
