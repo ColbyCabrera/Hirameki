@@ -1,5 +1,5 @@
 <p align="center">
-<img alt="Hirameki app select images" src="docs/graphics/logos/readme_banner.webp"/>
+<img alt="Hirameki app select images" src="docs/graphics/logos/readme-banner.webp"/>
 </p>
 
 # Hirameki: Material 3 Expressive Fork of AnkiDroid
