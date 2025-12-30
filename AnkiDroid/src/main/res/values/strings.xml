@@ -62,7 +62,7 @@
     <string name="changes_will_not_be_saved">Changes will not be saved.</string>
     <string name="help_screen_title">Help</string>
     <string name="help_manual_title">Online Manual</string>
-    <string name="help_manual_subtitle">Doesn't map 1 to 1 but probably still helpful </string>
+    <string name="help_manual_subtitle">Doesn\'t map 1 to 1 but probably still helpful</string>
     <string name="help_forum_title">Community Forum</string>
     <string name="help_forum_subtitle">Ask questions and find answers</string>
     <string name="help_issue_tracker_title">Report a Bug</string>
