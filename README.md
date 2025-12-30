@@ -42,7 +42,7 @@ This project is currently in **active development** and is not yet available for
 This work would not be possible without the incredible foundation laid by the [AnkiDroid](https://github.com/ankidroid/Anki-Android) team and its contributors.
 
 ### License
-This project inherits the licenses of the upstream AnkiDroid project:
+This project inherits the licenses of the original AnkiDroid project:
 * [GPL-3.0 License](https://github.com/ankidroid/Anki-Android/blob/main/COPYING)
 * [AGPL-3.0 License](https://github.com/ankitects/anki/blob/main/LICENSE) for core back-end components.
 * [LGPL-3.0 License](https://github.com/ankidroid/Anki-Android/blob/main/api/COPYING.LESSER) for the AnkiDroid API.
