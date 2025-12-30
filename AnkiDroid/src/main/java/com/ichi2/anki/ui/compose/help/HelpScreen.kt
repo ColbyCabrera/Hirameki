@@ -86,7 +86,7 @@ private data class HelpLink(
 
 private val helpLinks = listOf(
     HelpLink(
-        R.string.help_manual_title,
+        R.string.help_item_anki_manual,
         R.string.help_manual_subtitle,
         R.drawable.help_24px,
         "https://docs.ankidroid.org"
