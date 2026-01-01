@@ -247,9 +247,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
 
     override fun onResume() {
         super.onResume()
-        if (typeAnswer?.autoFocusEditText() == true) {
-            answerField?.focusWithKeyboard()
-        }
+        // answerField?.focusWithKeyboard() logic handled by Compose
     }
 
     override fun onDestroy() {
@@ -952,40 +950,12 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
 
     override fun displayAnswerBottomBar() {
         super.displayAnswerBottomBar()
-        // Set correct label and background resource for each button
-        // Note that it's necessary to set the resource dynamically as the ease2 / ease3 buttons
-        // (which libanki expects ease to be 2 and 3) can either be hard, good, or easy - depending on num buttons shown
-        val background = getBackgroundColors(this)
-        val textColor = getTextColors(this)
-        easeButton1!!.setVisibility(View.VISIBLE)
-        easeButton1!!.setColor(background[0])
-        easeButton4!!.setColor(background[3])
-        // Ease 2 is "hard"
-        easeButton2!!.setup(background[1], textColor[1], R.string.ease_button_hard)
-        easeButton2!!.requestFocus()
-        // Ease 3 is good
-        easeButton3!!.setup(background[2], textColor[2], R.string.ease_button_good)
-        easeButton4!!.setVisibility(View.VISIBLE)
-        easeButton3!!.requestFocus()
-
-        // Show next review time
-        if (shouldShowNextReviewTime()) {
-            val state = queueState!!
-            launchCatchingTask {
-                val labels = withCol { sched.describeNextStates(state.states) }
-                easeButton1!!.nextTime = labels[0]
-                easeButton2!!.nextTime = labels[1]
-                easeButton3!!.nextTime = labels[2]
-                easeButton4!!.nextTime = labels[3]
-            }
-        }
+        // Legacy view logic for answer buttons removed.
     }
 
     override fun automaticShowQuestion(action: AutomaticAnswerAction) {
         // explicitly do not call super
-        if (easeButton1?.canPerformClick == true) {
-            action.execute(this)
-        }
+        action.execute(this)
     }
 
     override fun restorePreferences(): SharedPreferences {
@@ -1316,10 +1286,10 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             newCardCount = queueState?.counts?.new ?: -1
             lrnCardCount = queueState?.counts?.lrn ?: -1
             revCardCount = queueState?.counts?.rev ?: -1
-            nextTime1 = easeButton1!!.nextTime
-            nextTime2 = easeButton2!!.nextTime
-            nextTime3 = easeButton3!!.nextTime
-            nextTime4 = easeButton4!!.nextTime
+            nextTime1 = "" // easeButton1!!.nextTime
+            nextTime2 = "" // easeButton2!!.nextTime
+            nextTime3 = "" // easeButton3!!.nextTime
+            nextTime4 = "" // easeButton4!!.nextTime
             eta = this@Reviewer.eta
         }
         return cardDataForJsAPI
