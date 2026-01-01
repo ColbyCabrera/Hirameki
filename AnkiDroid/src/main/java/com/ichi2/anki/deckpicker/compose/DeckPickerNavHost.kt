@@ -87,6 +87,7 @@ import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import com.ichi2.anki.ui.compose.AnkiDroidApp as AnkiDroidAppComposable
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -164,7 +165,10 @@ fun DeckPickerNavHost(
                     }
                 }
 
-                else -> NavEntry(Unit) { Text("Unknown Route") }
+                else -> NavEntry(key) {
+                    Timber.w("Unknown navigation route: %s", key)
+                    Text("Unknown Route")
+                }
             }
         })
 }
