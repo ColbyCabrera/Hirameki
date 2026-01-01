@@ -414,12 +414,6 @@
             android:label="@string/pref_cat_about_title"
             android:exported="false"
             />
-        <activity
-            android:name="com.ichi2.anki.HelpActivity"
-            android:label="@string/help"
-            android:exported="false"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            />
 
         <activity-alias
             android:name="com.ichi2.anki.AnkiCardContextMenuAction"
