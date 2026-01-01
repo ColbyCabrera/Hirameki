@@ -172,7 +172,6 @@ fun DeckPickerNavHost(
                         CongratsComposable(
                             onNavigateUp = { navigator.goBack() },
                             onDeckOptions = { /* TODO: Navigate to deck options */ },
-                            onBack = { navigator.goBack() },
                             timeUntilNextDay = 0L // TODO: Get from ViewModel
                         )
                     }
