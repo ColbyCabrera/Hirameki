@@ -689,25 +689,23 @@ private fun SetupFlows(
 
     LaunchedEffect(Unit) {
         viewModel.deckDeletedNotification.flowWithLifecycle(lifecycle).collect {
-            val snackbarResult = snackbarHostState.showSnackbar(
-                message = it.toHumanReadableString(),
-                actionLabel = context.getString(R.string.undo),
+            showUndoSnackbar(
+                snackbarHostState,
+                it.toHumanReadableString(),
+                context.getString(R.string.undo),
+                onUndo
             )
-            if (snackbarResult == SnackbarResult.ActionPerformed) {
-                onUndo()
-            }
         }
     }
 
     LaunchedEffect(Unit) {
         viewModel.emptyCardsNotification.flowWithLifecycle(lifecycle).collect {
-            val snackbarResult = snackbarHostState.showSnackbar(
-                message = it.toHumanReadableString(),
-                actionLabel = context.getString(R.string.undo),
+            showUndoSnackbar(
+                snackbarHostState,
+                it.toHumanReadableString(),
+                context.getString(R.string.undo),
+                onUndo
             )
-            if (snackbarResult == SnackbarResult.ActionPerformed) {
-                onUndo()
-            }
         }
     }
 
@@ -753,3 +751,14 @@ private fun SetupFlows(
     }
 }
 
+private suspend fun showUndoSnackbar(
+    snackbarHostState: SnackbarHostState, message: String, undoLabel: String, onUndo: () -> Unit
+) {
+    val result = snackbarHostState.showSnackbar(
+        message = message,
+        actionLabel = undoLabel,
+    )
+    if (result == SnackbarResult.ActionPerformed) {
+        onUndo()
+    }
+}
