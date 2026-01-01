@@ -22,7 +22,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Looper
 import android.widget.Spinner
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
