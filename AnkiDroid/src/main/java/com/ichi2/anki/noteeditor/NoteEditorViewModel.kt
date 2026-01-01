@@ -1129,8 +1129,18 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Check if there are unsaved changes
-     * Checks field content, tags, deck selection, and note type changes
+     * Check if there are unsaved changes.
+     *
+     * Checks field content, tags, deck selection, and note type changes.
+     *
+     * **Design Decision**: Deck and note type changes are intentionally counted as "unsaved changes"
+     * for BOTH new notes and existing notes. While some may argue that selecting a deck/note type
+     * for a new note is "initial setup" rather than a change, I prefer to show the discard dialog
+     * to prevent accidental loss of user selections. This is a deliberate UX choice.
+     *
+     * Note: The tracking variables (initialDeckId, initialNoteTypeId) are set once during
+     * initialization and not updated after intentional changes. This is intentional - any deviation
+     * from the initial state should trigger the warning, regardless of intermediate changes.
      */
     fun hasUnsavedChanges(): Boolean {
         // If we have specific field edit flag
@@ -1143,10 +1153,10 @@ class NoteEditorViewModel(
         // Check tags
         if (_noteEditorState.value.tags != initialTags) return true
 
-        // Check deck change (for existing cards)
+        // Check deck change (applies to both new and existing notes - see docstring)
         if (initialDeckId != 0L && _deckId.value != initialDeckId) return true
 
-        // Check note type change
+        // Check note type change (applies to both new and existing notes - see docstring)
         val currentNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
         return initialNoteTypeId != 0L && currentNoteTypeId != initialNoteTypeId
     }
