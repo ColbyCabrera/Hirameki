@@ -10,30 +10,63 @@
 |--------------------------------|----------------------|
 | **Activities**                 | 20 (0% Compose-only) |
 | **Fragments**                  | 57+ (few migrated)   |
-| **Compose Screen Files**       | 11                   |
-| **Files with @Composable**     | 51+                  |
+| **Compose Screen Files**       | 12                   |
+| **Files with @Composable**     | 55+                  |
 | **XML Layouts**                | 150+                 |
-| **Estimated Compose Adoption** | ~35-40% of UI        |
+| **Estimated Compose Adoption** | ~40-45% of UI        |
+| **Nav3 Integration**           | ✅ Started (DeckPicker) |
+
+---
+
+## 🆕 Recent Progress
+
+### DeckPickerNavHost Extraction (Completed)
+**Location**: `deckpicker/compose/DeckPickerNavHost.kt`
+
+The navigation logic has been extracted from `DeckPicker.kt` into a dedicated `DeckPickerNavHost` composable:
+
+| Change | Description |
+|--------|-------------|
+| `DeckPickerNavHost.kt` | New file (~770 lines) with all Nav3 navigation logic |
+| Nav3 `NavDisplay` | Integrated with `DeckPickerScreen` and `HelpScreen` destinations |
+| `DeckPickerWithDrawer` | Private composable handling drawer + main content |
+| `SetupFlows` | Centralized Flow collectors for ViewModels |
+| `LocalContext` | Replaced `AnkiDroidApp.instance` with Compose-provided context |
+
+### Nav3 Destinations Active
+```kotlin
+@Serializable object DeckPickerScreen
+@Serializable object HelpScreen
+```
+
+### Layout Fixes
+- `statistics.xml`: Removed duplicate `fitsSystemWindows` causing edge-to-edge issues
 
 ---
 
 ## ✅ Compose Adoption by Feature
 
-### 1. Deck Picker (DeckPicker.kt) — 🟢 90% Compose
+### 1. Deck Picker (DeckPicker.kt) — 🟢 95% Compose
 **Location**: `deckpicker/compose/`
 
-| File                     | Size | Status     |
-|--------------------------|------|------------|
-| `DeckPickerScreen.kt`    | 26KB | ✅ Complete |
-| `DeckItem.kt`            | 13KB | ✅ Complete |
-| `StudyOptionsScreen.kt`  | 18KB | ✅ Complete |
-| `NoDecks.kt`             | 11KB | ✅ Complete |
-| `SyncProgressDialog.kt`  | 3KB  | ✅ Complete |
-| `DeckPickerViewModel.kt` | 20KB | ✅ Complete |
+| File                     | Size  | Status      |
+|--------------------------|-------|-------------|
+| `DeckPickerNavHost.kt`   | 33KB  | ✅ NEW      |
+| `DeckPickerScreen.kt`    | 26KB  | ✅ Complete |
+| `DeckItem.kt`            | 13KB  | ✅ Complete |
+| `StudyOptionsScreen.kt`  | 18KB  | ✅ Complete |
+| `NoDecks.kt`             | 11KB  | ✅ Complete |
+| `SyncProgressDialog.kt`  | 3KB   | ✅ Complete |
+| `DeckPickerViewModel.kt` | 20KB  | ✅ Complete |
+
+**Navigation Integration**:
+- ✅ Nav3 `NavDisplay` with `DeckPickerScreen` and `HelpScreen`
+- ✅ Navigator class with type-safe backstack
+- ✅ Drawer + NavigationRail for tablet layout
+- ✅ CardBrowser embedded on tablets (fragmented mode)
 
 **Still View-Based**:
-- `DeckPicker.kt` Activity container (hybrid - hosts Compose)
-- Navigation drawer (`NavigationDrawerActivity.kt`)
+- `DeckPicker.kt` Activity container (hybrid - hosts Compose via `setContent`)
 
 ---
 
@@ -98,10 +131,21 @@
 
 ---
 
-### 5. Compose Dialogs — 🟡 15% Migrated
-**Location**: `dialogs/compose/`
+### 5. Help Screen — 🟢 100% Compose + Nav3
+**Location**: `ui/compose/help/HelpScreen.kt`
 
-| Compose Dialog                | Status     |
+| Status | Description |
+|--------|-------------|
+| ✅ Compose | Full UI in Compose |
+| ✅ Nav3 | Integrated as destination in `DeckPickerNavHost` |
+| ✅ Works | Accessible from drawer navigation |
+
+---
+
+### 6. Dialogs — 🟡 15% Migrated
+
+**Compose Dialogs**:
+| Dialog                        | Status     |
 |-------------------------------|------------|
 | `TagsDialog.kt`               | ✅ Complete |
 | `ExportDialog.kt`             | ✅ Complete |
@@ -110,278 +154,90 @@
 | `DiscardChangesDialog.kt`     | ✅ Complete |
 | `BrowserOptionsComposable.kt` | ✅ Complete |
 
-**Still View-Based** (40+ dialogs):
-- `DatabaseErrorDialog.kt` (35KB - complex)
-- `SyncErrorDialog.kt` (16KB)
-- `DeckSelectionDialog.kt` (18KB)
-- `CreateDeckDialog.kt` (13KB)
-- All CustomStudy dialogs
-- All Tag dialogs (except TagsDialog)
-- Import/Export dialogs
-- TTS dialogs
+**Still View-Based** (40+ dialogs)
 
 ---
 
-### 6. Preferences/Settings — 🔴 5% Compose
-**Location**: `preferences/`
-
-| Component                    | Status    |
-|------------------------------|-----------|
-| `AboutScreen.kt`             | ✅ Compose |
-| `SliderPreferenceContent.kt` | ✅ Compose |
-
-**Still Fragment/XML** (21 fragments):
-- `HeaderFragment.kt` - Main settings screen
-- `GeneralSettingsFragment.kt`
-- `ReviewingSettingsFragment.kt`
-- `AppearanceSettingsFragment.kt`
-- `ControlsSettingsFragment.kt`
-- `AccessibilitySettingsFragment.kt`
-- `AdvancedSettingsFragment.kt`
-- `SyncSettingsFragment.kt`
-- `NotificationsSettingsFragment.kt`
-- All other settings fragments
-
-> **Important**: Preferences uses AndroidX Preference library with XML. Full migration requires custom Compose preference components.
+### 7. Preferences/Settings — 🔴 5% Compose
+> **Important**: Settings uses AndroidX Preference with XML. Full migration requires custom Compose preference components.
 
 ---
 
-### 7. Pages (WebView Screens) — 🔴 0% Compose
-**Location**: `pages/`
-
-All use `PageFragment` with WebView wrapper:
-- `Statistics.kt` / `StatisticsDestination.kt`
-- `DeckOptions.kt` 
-- `CongratsPage.kt`
-- `ImageOcclusion.kt`
-- `CardInfoDestination.kt`
-- `CsvImporter.kt`
-
-> **Note**: These render Anki desktop's HTML/JS content. Migration would require rewriting in Compose or using Compose WebView wrapper.
+### 8. Pages (WebView Screens) — 🔴 0% Compose
+All use `PageFragment` with WebView wrapper. These render Anki desktop's HTML/JS content.
 
 ---
 
-### 8. Multimedia — 🔴 0% Compose
-**Location**: `multimedia/`
+## 📋 Nav3 Migration Status
 
-All View-based:
-- `MultimediaActivity.kt`
-- `MultimediaFragment.kt`
-- `MultimediaImageFragment.kt` (31KB - largest)
-- `AudioVideoFragment.kt`
-- `AudioRecordingFragment.kt`
+### Current State
+| Component | Status |
+|-----------|--------|
+| Nav3 Dependencies | ✅ Added |
+| `Navigator` class | ✅ Created (`navigation/AppNavigation.kt`) |
+| `NavDisplay` | ✅ Integrated in `DeckPickerNavHost` |
+| `DeckPickerScreen` destination | ✅ Working |
+| `HelpScreen` destination | ✅ Working |
 
----
-
-### 9. Other Compose Components
-
-**Shared Components** (`ui/compose/components/`):
-| Component | Purpose |
-|-----------|---------|
-| `ExpandableFab.kt` | Floating action button with expansion |
-| `SyncIcon.kt` | Animated sync icon |
-| `MorphingCardCount.kt` | Animated deck counts |
-| `LoadingIndicator.kt` | Loading spinner |
-| `LoginErrorCard.kt` | Error state card |
-| `Scrim.kt` | Overlay background |
-| `CheckboxPrompt.kt` | Checkbox with label |
-| `RoundedPolygonShape.kt` | Custom shapes |
-
-**Other Compose Screens**:
-| Screen | Location |
-|--------|----------|
-| `CongratsScreen.kt` | Study completion |
-| `MyAccountScreen.kt` | Account management |
-| `HelpScreen.kt` | Help/support |
-| `Introduction.kt` | App intro |
+### Next Nav3 Destinations to Add
+| Priority | Screen | Current | Effort |
+|----------|--------|---------|--------|
+| 1 | StudyOptions | Separate Activity | Low |
+| 2 | Congrats | Separate Activity | Low |
+| 3 | Statistics | PageFragment | Medium |
+| 4 | DeckOptions | PageFragment | Medium |
+| 5 | CardBrowser | Separate Activity | High |
+| 6 | Reviewer | Separate Activity | High |
 
 ---
 
-## 🔴 Components NOT Yet Migrated
+## ⚡ Recommended Next Steps (Priority Order)
 
-### Activities (20 total)
-| Activity                         | Complexity | Dependencies                             |
-|----------------------------------|------------|------------------------------------------|
-| `DeckPicker.kt`                  | High       | Hosts Compose, nav drawer, many dialogs  |
-| `CardBrowser.kt`                 | High       | Hosts Compose, many dialogs              |
-| `Reviewer.kt`                    | High       | Hosts Compose, WhiteboardFragment, audio |
-| `NoteEditorActivity.kt`          | Medium     | Hosts NoteEditorFragment                 |
-| `MultimediaActivity.kt`          | Medium     | Fragment-based, camera/file intents      |
-| `PreferencesActivity.kt`         | Medium     | Hosts 21 preference fragments            |
-| `CardViewerActivity.kt`          | Low        | Single fragment host                     |
-| `LoginActivity.kt`               | Low        | OAuth flow                               |
-| `IntroductionActivity.kt`        | Low        | Compose intro screens                    |
-| `SharedDecksActivity.kt`         | Medium     | WebView-based                            |
-| `DrawingActivity.kt`             | Medium     | Canvas drawing                           |
-| `InstantNoteEditorActivity.kt`   | Medium     | Quick add widget                         |
-| `HelpActivity.kt`                | Low        | Simple                                   |
-| `PermissionsActivity.kt`         | Low        | Permissions flow                         |
-| `StudyOptionsComposeActivity.kt` | Low        | Compose host                             |
-| `CongratsActivity.kt`            | Low        | Compose host                             |
-| `ManageSpaceActivity.kt`         | Low        | Single fragment                          |
+### 1. Expand Nav3 to StudyOptions/Congrats (Quick Win)
+**Effort**: Low | **Impact**: High
 
-### Fragments (57+ total)
-Key fragments requiring migration:
-- All 21 Settings Fragments
-- `PreviewerFragment.kt` / `TemplatePreviewerFragment.kt`
-- `MediaCheckFragment.kt`
-- All Multimedia fragments (5)
-- `EmptyCardsDialogFragment.kt`
-- `PageFragment.kt` and derivatives
-
----
-
-## 📋 Nav3 Migration Plan
-
-### Phase 1: Consolidate to Single Activity (Pre-Nav3)
-**Goal**: Reduce 20 activities to ~3-5 activity entry points
-
-#### Step 1.1: Define Activity Boundaries
-Keep separate Activities for:
-1. **MainActivity** - Main app (DeckPicker, Browser, Reviewer, Editor)
-2. **PreferencesActivity** - Settings (until Compose preferences ready)
-3. **AuthActivity** - Login/OAuth flows
-4. **ExternalEntryActivity** - Intent handling (imports, shortcuts)
-
-#### Step 1.2: Convert Activities to Compose Destinations
-Priority order:
-
-| Priority | Screen        | Current                       | Target              | Effort |
-|----------|---------------|-------------------------------|---------------------|--------|
-| 1        | StudyOptions  | `StudyOptionsComposeActivity` | Compose destination | Low    |
-| 2        | Congrats      | `CongratsActivity`            | Compose destination | Low    |
-| 3        | Help          | `HelpActivity`                | Compose destination | Low    |
-| 4        | NoteEditor    | `NoteEditorActivity`          | Compose destination | Medium |
-| 5        | Multimedia    | `MultimediaActivity`          | Compose destination | High   |
-| 6        | SharedDecks   | `SharedDecksActivity`         | Compose destination | Medium |
-| 7        | CardPreviewer | `CardViewerActivity`          | Compose destination | Medium |
-| 8        | Drawing       | `DrawingActivity`             | Compose destination | Medium |
-
-#### Step 1.3: Implement Navigation (Nav2 Stepping Stone)
-Use Nav2 with type-safe routes as temporary solution:
+Both are already Compose screens. Add:
 ```kotlin
-// Define sealed class routes
-sealed class AppRoute {
-    object DeckPicker : AppRoute()
-    object CardBrowser : AppRoute()
-    data class Reviewer(val deckId: Long) : AppRoute()
-    data class NoteEditor(val noteId: Long?) : AppRoute()
-    // ...
-}
+@Serializable object StudyOptionsScreen
+@Serializable object CongratsScreen
 ```
 
----
+### 2. Migrate Statistics to Nav3 Destination
+**Effort**: Medium | **Impact**: Medium
 
-### Phase 2: Complete Compose Migration
-**Goal**: Reach 90%+ Compose UI coverage
+The `Statistics` PageFragment can be wrapped as a Nav3 destination. Consider creating a `PageWebView` composable wrapper.
 
-#### Step 2.1: Migrate Remaining Dialogs
-| Dialog                      | Effort | Priority |
-|-----------------------------|--------|----------|
-| Simple confirmation dialogs | Low    | High     |
-| `CreateDeckDialog`          | Medium | High     |
-| `DeckSelectionDialog`       | Medium | High     |
-| `SyncErrorDialog`           | Medium | Medium   |
-| `DatabaseErrorDialog`       | High   | Low      |
-| CustomStudy dialogs         | Medium | Medium   |
+### 3. Complete NoteEditor Fragment Cleanup
+**Effort**: High | **Impact**: High
 
-#### Step 2.2: Migrate Multimedia
-| Component           | Effort | Notes              |
-|---------------------|--------|--------------------|
-| Image picker/camera | High   | Platform APIs      |
-| Audio recording     | High   | MediaRecorder      |
-| Video playback      | Medium | ExoPlayer          |
-| Drawing canvas      | Medium | Compose Canvas API |
+Remove legacy code from `NoteEditorFragment.kt` now that ViewModel handles state.
 
-#### Step 2.3: Migrate Preferences
-| Approach                   | Effort | Notes                          |
-|----------------------------|--------|--------------------------------|
-| Compose preference library | Medium | Use accompanist-pref or custom |
-| Custom Compose screens     | High   | Full control, more work        |
+### 4. Migrate Simple Dialogs to Compose
+**Effort**: Low per dialog | **Impact**: Medium
 
----
+Quick wins:
+- `CreateDeckDialog`
+- Simple confirmation dialogs
+- `IntegerDialog`
 
-### Phase 3: Adopt Navigation 3
-**Goal**: Replace Nav2/startActivity with Nav3
+### 5. Create Compose WebView Wrapper
+**Effort**: Medium | **Impact**: High
 
-#### Step 3.1: Add Dependencies
-```kotlin
-implementation("androidx.navigation3:navigation3-runtime:1.0.0")
-implementation("androidx.navigation3:navigation3-ui:1.0.0")
-```
+A reusable `PageWebView` composable would enable Nav3 for all `PageFragment` screens (Statistics, DeckOptions, CardInfo, etc.).
 
-#### Step 3.2: Create NavKey Definitions
-```kotlin
-@Serializable
-sealed class Screen {
-    @Serializable object DeckPicker : Screen()
-    @Serializable object CardBrowser : Screen()
-    @Serializable data class Reviewer(val deckId: Long) : Screen()
-    @Serializable data class NoteEditor(val noteId: Long?) : Screen()
-    @Serializable data class DeckOptions(val deckId: Long) : Screen()
-    @Serializable data class Statistics(val deckId: Long?) : Screen()
-}
-```
+### 6. Consolidate CardBrowser Navigation
+**Effort**: High | **Impact**: High
 
-#### Step 3.3: Create NavDisplay in MainActivity
-```kotlin
-@Composable
-fun MainNavHost() {
-    val backStack = remember { mutableStateListOf<Screen>(Screen.DeckPicker) }
-    
-    NavDisplay(
-        backStack = backStack,
-        entryProvider = { key ->
-            when (key) {
-                is Screen.DeckPicker -> entry(key) { DeckPickerScreen(...) }
-                is Screen.CardBrowser -> entry(key) { CardBrowserScreen(...) }
-                is Screen.Reviewer -> entry(key) { ReviewerScreen(key.deckId, ...) }
-                // ...
-            }
-        }
-    )
-}
-```
-
-#### Step 3.4: Implement Adaptive Layouts (Scenes API)
-For tablet/foldable support:
-```kotlin
-NavDisplay(
-    backStack = backStack,
-    scenes = listOf(
-        ListDetailScene { /* list-detail layout */ }
-    )
-)
-```
+CardBrowser already renders in DeckPicker on tablets. Add it as a proper Nav3 destination for consistent navigation.
 
 ---
 
-## 📊 Effort Estimates
+## 📊 Effort Estimates (Updated)
 
-| Phase                      | Effort         | Timeline       |
-|----------------------------|----------------|----------------|
-| Phase 1 (Consolidate)      | Large          | 2-3 months     |
-| Phase 2 (Complete Compose) | Large          | 3-4 months     |
-| Phase 3 (Nav3)             | Medium         | 1-2 months     |
-| **Total**                  | **Very Large** | **6-9 months** |
-
----
-
-## ⚡ Quick Wins (Low Effort, High Value)
-
-1. **Merge StudyOptionsComposeActivity into DeckPicker** - Already Compose
-2. **Merge CongratsActivity into DeckPicker flow** - Already Compose
-3. **Finish NoteEditor cleanup** - Most work done
-4. **Migrate simple dialogs** - ConfirmationDialog, IntegerDialog, etc.
-
----
-
-## 📝 Next Steps (Recommended Order)
-
-1. [ ] Complete NoteEditor testing and cleanup
-2. [ ] Merge StudyOptions/Congrats into DeckPicker navigation
-3. [ ] Migrate remaining simple dialogs to Compose
-4. [ ] Create Compose multimedia components
-5. [ ] Evaluate Compose preferences library
-6. [ ] Consolidate to single MainActivity with Nav2
-7. [ ] Once >80% Compose, adopt Nav3
+| Phase                       | Effort | Status      |
+|-----------------------------|--------|-------------|
+| Phase 1.1: DeckPicker Nav3  | Done   | ✅ Complete |
+| Phase 1.2: StudyOptions/Congrats | Low | ⬜ Next |
+| Phase 1.3: Statistics Nav3  | Medium | ⬜ Planned |
+| Phase 2: Complete Compose   | Large  | 🟡 Ongoing |
+| Phase 3: Full Nav3          | Medium | ⬜ Future |
