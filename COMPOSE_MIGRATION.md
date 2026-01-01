@@ -18,6 +18,33 @@
 
 ---
 
+## 🎯 Architectural Goal: Single Activity, No Fragments
+
+Modern Android best practices recommend **single-activity architecture** with Compose navigation.
+
+### Current State
+```
+Activity → Fragment → ComposeView → Screen Composable
+```
+
+### Target State (Nav3 + Compose)
+```
+Single Activity → NavDisplay → Screen Composables
+```
+
+### Benefits
+- **Simpler navigation** - Nav3 handles backstack, deep links, animations
+- **Less boilerplate** - No Fragment lifecycle, no FragmentManager
+- **Better testability** - Pure composables are easier to test
+- **Type-safe navigation** - Serializable destination objects
+
+### Migration Path
+1. **Current**: Fragments host ComposeViews (hybrid)
+2. **Next**: Make screens Nav3 destinations, keep Fragment as thin wrapper
+3. **Final**: Eliminate Fragments, screens are pure composables in NavDisplay
+
+---
+
 ## 🆕 Recent Progress
 
 ### PageWebView Compose Wrapper (Completed)
