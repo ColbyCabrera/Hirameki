@@ -1,6 +1,6 @@
 # AnkiDroid Compose & Nav3 Migration Status
 
-**Last Updated**: December 31, 2025
+**Last Updated**: January 1, 2026
 
 ---
 
@@ -25,13 +25,13 @@
 
 Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 
-| File | Description |
-|------|-------------|
-| `PageWebViewViewModel.kt` | Manages AnkiServer lifecycle |
-| `PageWebView.kt` | Composable with AndroidView wrapper |
-| `StatisticsScreen.kt` | Graphs page wrapper |
-| `DeckOptionsScreen.kt` | Deck options wrapper |
-| `CardInfoScreen.kt` | Card info wrapper |
+| File                      | Description                         |
+|---------------------------|-------------------------------------|
+| `PageWebViewViewModel.kt` | Manages AnkiServer lifecycle        |
+| `PageWebView.kt`          | Composable with AndroidView wrapper |
+| `StatisticsScreen.kt`     | Graphs page wrapper                 |
+| `DeckOptionsScreen.kt`    | Deck options wrapper                |
+| `CardInfoScreen.kt`       | Card info wrapper                   |
 
 ### Nav3 Destinations Active
 ```kotlin
@@ -48,6 +48,7 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 - `statistics.xml`: Removed duplicate `fitsSystemWindows` causing edge-to-edge issues
 - `CongratsActivity.kt`: Added missing `onNavigateUp` parameter
 - `DeckPickerNavHost.kt`: Fixed CongratsScreen NavEntry parameters
+- `NoteEditorFragment.kt`: Refactored `setupComposeEditor` (375→20 lines)
 
 ---
 
@@ -131,10 +132,12 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 > **Note**: See `noteeditor/COMPOSE_MIGRATION_STATUS.md` for detailed tracking.
 
 **Remaining Work**:
-- [ ] Clean up `NoteEditorFragment.kt` legacy code (~1950 lines)
+- [x] Refactor `NoteEditorFragment.kt` - extracted helper methods
 - [ ] Test core functionality (add/edit notes)
 - [ ] Tab order/accessibility
 - [ ] CardBrowser split-view integration
+
+> **Note**: Unit tests are @Ignored due to lifecycle scope threading issue with Robolectric.
 
 ---
 
@@ -170,8 +173,11 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 
 ---
 
-### 8. Pages (WebView Screens) — 🔴 0% Compose
-All use `PageFragment` with WebView wrapper. These render Anki desktop's HTML/JS content.
+### 8. Pages (WebView Screens) — 🟢 100% Compose Wrapper
+Created `PageWebView` composable wrapper for all Anki HTML/JS content:
+- `StatisticsScreen.kt` - Nav3 destination
+- `DeckOptionsScreen.kt` - Nav3 destination
+- `CardInfoScreen.kt` - Nav3 destination
 
 ---
 
@@ -189,10 +195,10 @@ All use `PageFragment` with WebView wrapper. These render Anki desktop's HTML/JS
 ### Next Nav3 Destinations to Add
 | Priority | Screen       | Current           | Effort |
 |----------|--------------|-------------------|--------|
-| 1        | StudyOptions | Separate Activity | Low    |
-| 2        | Congrats     | Separate Activity | Low    |
-| 3        | Statistics   | PageFragment      | Medium |
-| 4        | DeckOptions  | PageFragment      | Medium |
+| 1        | StudyOptions | ✅ NavEntry        | Done   |
+| 2        | Congrats     | ✅ NavEntry        | Done   |
+| 3        | Statistics   | ✅ NavEntry        | Done   |
+| 4        | DeckOptions  | ✅ NavEntry        | Done   |
 | 5        | CardBrowser  | Separate Activity | High   |
 | 6        | Reviewer     | Separate Activity | High   |
 
@@ -237,6 +243,11 @@ A reusable `PageWebView` composable would enable Nav3 for all `PageFragment` scr
 
 CardBrowser already renders in DeckPicker on tablets. Add it as a proper Nav3 destination for consistent navigation.
 
+### 7. Fix NoteEditor Test Infrastructure
+**Effort**: Medium | **Impact**: Low
+
+The lifecycle scope threading issue in Robolectric tests needs a production code fix in `CoroutineHelpers.kt` to use `Dispatchers.Main.immediate` for lifecycle scope access.
+
 ---
 
 ## 📊 Effort Estimates (Updated)
@@ -244,7 +255,8 @@ CardBrowser already renders in DeckPicker on tablets. Add it as a proper Nav3 de
 | Phase                            | Effort | Status     |
 |----------------------------------|--------|------------|
 | Phase 1.1: DeckPicker Nav3       | Done   | ✅ Complete |
-| Phase 1.2: StudyOptions/Congrats | Low    | ⬜ Next     |
-| Phase 1.3: Statistics Nav3       | Medium | ⬜ Planned  |
+| Phase 1.2: StudyOptions/Congrats | Done   | ✅ Complete |
+| Phase 1.3: Statistics Nav3       | Done   | ✅ Complete |
+| Phase 1.4: DeckOptions Nav3      | Done   | ✅ Complete |
 | Phase 2: Complete Compose        | Large  | 🟡 Ongoing |
 | Phase 3: Full Nav3               | Medium | ⬜ Future   |
