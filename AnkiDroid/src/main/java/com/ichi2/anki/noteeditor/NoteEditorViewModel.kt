@@ -177,6 +177,15 @@ class NoteEditorViewModel(
     /** Controls visibility of the discard changes confirmation dialog */
     val showDiscardChangesDialog: StateFlow<Boolean> = _showDiscardChangesDialog.asStateFlow()
 
+    private val _noClozeDialogState = MutableStateFlow<String?>(null)
+
+    /**
+     * Controls visibility of the no-cloze confirmation dialog.
+     * When non-null, shows dialog with the error message.
+     * Set to null to dismiss the dialog.
+     */
+    val noClozeDialogState: StateFlow<String?> = _noClozeDialogState.asStateFlow()
+
     private val _currentNote = MutableStateFlow<Note?>(null)
 
     /** The underlying Note being edited (null when creating a new, not yet initialized). */
@@ -1276,6 +1285,20 @@ class NoteEditorViewModel(
         _noteEditorState.update { currentState ->
             currentState.copy(isCardsButtonEnabled = enabled)
         }
+    }
+
+    /**
+     * Show the no-cloze confirmation dialog with the given error message
+     */
+    fun showNoClozeDialog(errorMessage: String) {
+        _noClozeDialogState.value = errorMessage
+    }
+
+    /**
+     * Dismiss the no-cloze confirmation dialog
+     */
+    fun dismissNoClozeDialog() {
+        _noClozeDialogState.value = null
     }
 
     /**

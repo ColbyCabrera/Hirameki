@@ -330,15 +330,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     }
 
     private fun noClozeDialog(errorMessage: String) {
-        AlertDialog.Builder(requireContext()).show {
-            message(text = errorMessage)
-            positiveButton(text = TR.actionsSave()) {
-                lifecycleScope.launch {
-                    saveNoteWithProgress()
-                }
-            }
-            negativeButton(R.string.dialog_cancel)
-        }
+        noteEditorViewModel.showNoClozeDialog(errorMessage)
     }
 
     @VisibleForTesting
@@ -570,6 +562,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 val allTags by noteEditorViewModel.tagsState.collectAsState()
                 val deckTags by noteEditorViewModel.deckTags.collectAsState()
                 val showDiscardChangesDialog by noteEditorViewModel.showDiscardChangesDialog.collectAsState()
+                val noClozeDialogMessage by noteEditorViewModel.noClozeDialogState.collectAsState()
                 val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
                 var capitalizeChecked by remember {
                     mutableStateOf(
@@ -806,6 +799,16 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     },
                     onKeepEditing = {
                         noteEditorViewModel.setShowDiscardChangesDialog(false)
+                    },
+                    noClozeDialogMessage = noClozeDialogMessage,
+                    onSaveAnywayClick = {
+                        noteEditorViewModel.dismissNoClozeDialog()
+                        lifecycleScope.launch {
+                            saveNoteWithProgress()
+                        }
+                    },
+                    onDismissNoClozeDialog = {
+                        noteEditorViewModel.dismissNoClozeDialog()
                     },
                 )
             }
