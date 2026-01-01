@@ -6,14 +6,14 @@
 
 ## Executive Summary
 
-| Metric                         | Status               |
-|--------------------------------|----------------------|
-| **Activities**                 | 20 (0% Compose-only) |
-| **Fragments**                  | 57+ (few migrated)   |
-| **Compose Screen Files**       | 12                   |
-| **Files with @Composable**     | 55+                  |
-| **XML Layouts**                | 150+                 |
-| **Estimated Compose Adoption** | ~40-45% of UI        |
+| Metric                         | Status                 |
+|--------------------------------|------------------------|
+| **Activities**                 | 20 (0% Compose-only)   |
+| **Fragments**                  | 57+ (few migrated)     |
+| **Compose Screen Files**       | 12                     |
+| **Files with @Composable**     | 55+                    |
+| **XML Layouts**                | 150+                   |
+| **Estimated Compose Adoption** | ~40-45% of UI          |
 | **Nav3 Integration**           | ✅ Started (DeckPicker) |
 
 ---
@@ -25,13 +25,13 @@
 
 The navigation logic has been extracted from `DeckPicker.kt` into a dedicated `DeckPickerNavHost` composable:
 
-| Change | Description |
-|--------|-------------|
-| `DeckPickerNavHost.kt` | New file (~770 lines) with all Nav3 navigation logic |
-| Nav3 `NavDisplay` | Integrated with `DeckPickerScreen` and `HelpScreen` destinations |
-| `DeckPickerWithDrawer` | Private composable handling drawer + main content |
-| `SetupFlows` | Centralized Flow collectors for ViewModels |
-| `LocalContext` | Replaced `AnkiDroidApp.instance` with Compose-provided context |
+| Change                 | Description                                                      |
+|------------------------|------------------------------------------------------------------|
+| `DeckPickerNavHost.kt` | New file (~770 lines) with all Nav3 navigation logic             |
+| Nav3 `NavDisplay`      | Integrated with `DeckPickerScreen` and `HelpScreen` destinations |
+| `DeckPickerWithDrawer` | Private composable handling drawer + main content                |
+| `SetupFlows`           | Centralized Flow collectors for ViewModels                       |
+| `LocalContext`         | Replaced `AnkiDroidApp.instance` with Compose-provided context   |
 
 ### Nav3 Destinations Active
 ```kotlin
@@ -49,15 +49,15 @@ The navigation logic has been extracted from `DeckPicker.kt` into a dedicated `D
 ### 1. Deck Picker (DeckPicker.kt) — 🟢 95% Compose
 **Location**: `deckpicker/compose/`
 
-| File                     | Size  | Status      |
-|--------------------------|-------|-------------|
-| `DeckPickerNavHost.kt`   | 33KB  | ✅ NEW      |
-| `DeckPickerScreen.kt`    | 26KB  | ✅ Complete |
-| `DeckItem.kt`            | 13KB  | ✅ Complete |
-| `StudyOptionsScreen.kt`  | 18KB  | ✅ Complete |
-| `NoDecks.kt`             | 11KB  | ✅ Complete |
-| `SyncProgressDialog.kt`  | 3KB   | ✅ Complete |
-| `DeckPickerViewModel.kt` | 20KB  | ✅ Complete |
+| File                     | Size | Status     |
+|--------------------------|------|------------|
+| `DeckPickerNavHost.kt`   | 33KB | ✅ NEW      |
+| `DeckPickerScreen.kt`    | 26KB | ✅ Complete |
+| `DeckItem.kt`            | 13KB | ✅ Complete |
+| `StudyOptionsScreen.kt`  | 18KB | ✅ Complete |
+| `NoDecks.kt`             | 11KB | ✅ Complete |
+| `SyncProgressDialog.kt`  | 3KB  | ✅ Complete |
+| `DeckPickerViewModel.kt` | 20KB | ✅ Complete |
 
 **Navigation Integration**:
 - ✅ Nav3 `NavDisplay` with `DeckPickerScreen` and `HelpScreen`
@@ -134,11 +134,11 @@ The navigation logic has been extracted from `DeckPicker.kt` into a dedicated `D
 ### 5. Help Screen — 🟢 100% Compose + Nav3
 **Location**: `ui/compose/help/HelpScreen.kt`
 
-| Status | Description |
-|--------|-------------|
-| ✅ Compose | Full UI in Compose |
-| ✅ Nav3 | Integrated as destination in `DeckPickerNavHost` |
-| ✅ Works | Accessible from drawer navigation |
+| Status    | Description                                      |
+|-----------|--------------------------------------------------|
+| ✅ Compose | Full UI in Compose                               |
+| ✅ Nav3    | Integrated as destination in `DeckPickerNavHost` |
+| ✅ Works   | Accessible from drawer navigation                |
 
 ---
 
@@ -171,23 +171,23 @@ All use `PageFragment` with WebView wrapper. These render Anki desktop's HTML/JS
 ## 📋 Nav3 Migration Status
 
 ### Current State
-| Component | Status |
-|-----------|--------|
-| Nav3 Dependencies | ✅ Added |
-| `Navigator` class | ✅ Created (`navigation/AppNavigation.kt`) |
-| `NavDisplay` | ✅ Integrated in `DeckPickerNavHost` |
-| `DeckPickerScreen` destination | ✅ Working |
-| `HelpScreen` destination | ✅ Working |
+| Component                      | Status                                    |
+|--------------------------------|-------------------------------------------|
+| Nav3 Dependencies              | ✅ Added                                   |
+| `Navigator` class              | ✅ Created (`navigation/AppNavigation.kt`) |
+| `NavDisplay`                   | ✅ Integrated in `DeckPickerNavHost`       |
+| `DeckPickerScreen` destination | ✅ Working                                 |
+| `HelpScreen` destination       | ✅ Working                                 |
 
 ### Next Nav3 Destinations to Add
-| Priority | Screen | Current | Effort |
-|----------|--------|---------|--------|
-| 1 | StudyOptions | Separate Activity | Low |
-| 2 | Congrats | Separate Activity | Low |
-| 3 | Statistics | PageFragment | Medium |
-| 4 | DeckOptions | PageFragment | Medium |
-| 5 | CardBrowser | Separate Activity | High |
-| 6 | Reviewer | Separate Activity | High |
+| Priority | Screen       | Current           | Effort |
+|----------|--------------|-------------------|--------|
+| 1        | StudyOptions | Separate Activity | Low    |
+| 2        | Congrats     | Separate Activity | Low    |
+| 3        | Statistics   | PageFragment      | Medium |
+| 4        | DeckOptions  | PageFragment      | Medium |
+| 5        | CardBrowser  | Separate Activity | High   |
+| 6        | Reviewer     | Separate Activity | High   |
 
 ---
 
@@ -234,10 +234,10 @@ CardBrowser already renders in DeckPicker on tablets. Add it as a proper Nav3 de
 
 ## 📊 Effort Estimates (Updated)
 
-| Phase                       | Effort | Status      |
-|-----------------------------|--------|-------------|
-| Phase 1.1: DeckPicker Nav3  | Done   | ✅ Complete |
-| Phase 1.2: StudyOptions/Congrats | Low | ⬜ Next |
-| Phase 1.3: Statistics Nav3  | Medium | ⬜ Planned |
-| Phase 2: Complete Compose   | Large  | 🟡 Ongoing |
-| Phase 3: Full Nav3          | Medium | ⬜ Future |
+| Phase                            | Effort | Status     |
+|----------------------------------|--------|------------|
+| Phase 1.1: DeckPicker Nav3       | Done   | ✅ Complete |
+| Phase 1.2: StudyOptions/Congrats | Low    | ⬜ Next     |
+| Phase 1.3: Statistics Nav3       | Medium | ⬜ Planned  |
+| Phase 2: Complete Compose        | Large  | 🟡 Ongoing |
+| Phase 3: Full Nav3               | Medium | ⬜ Future   |
