@@ -190,8 +190,7 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(helpLink.url))
                                 context.startActivity(intent)
                             } catch (_: ActivityNotFoundException) {
-                                Timber.tag("HelpScreen")
-                                    .w("No application found to open link: ${helpLink.url}")
+                                Timber.w("No application found to open link: %s", helpLink.url)
                                 Toast.makeText(
                                     context,
                                     R.string.no_application_to_open_link,
