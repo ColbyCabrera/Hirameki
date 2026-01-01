@@ -84,15 +84,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ichi2.anki.HelpActivity
+import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.browser.BrowserRowWithId
 import com.ichi2.anki.browser.CardBrowserViewModel
+import com.ichi2.anki.dialogs.help.HelpDialog
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.pages.Statistics
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
+import com.ichi2.anki.utils.ext.showDialogFragment
 import kotlinx.coroutines.launch
 
 private val transparentTextFieldColors: @Composable () -> TextFieldColors = {
@@ -210,11 +212,8 @@ fun CardBrowserLayout(
                             )
                         )
 
-                        AppNavigationItem.Help -> activity?.startActivity(
-                            Intent(
-                                activity,
-                                HelpActivity::class.java
-                            )
+                        AppNavigationItem.Help -> (activity as? AnkiActivity)?.showDialogFragment(
+                            HelpDialog.newHelpInstance()
                         )
 
                         AppNavigationItem.Support -> {
@@ -257,9 +256,7 @@ fun CardBrowserLayout(
                             Surface(
                                 modifier = Modifier.padding(
                                     vertical = 8.dp, horizontal = 12.dp
-                                ),
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = CircleShape
+                                ), color = MaterialTheme.colorScheme.surface, shape = CircleShape
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     TextField(
@@ -411,35 +408,35 @@ fun CardBrowserLayout(
                     }
                 })
             }) { paddingValues ->
-                // Don't apply paddingValues here to allow content to draw behind system bars
-                // Instead pass them to CardBrowserScreen
-                CardBrowserScreen(
-                    viewModel = viewModel,
-                    onCardClicked = onCardClicked,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = paddingValues,
-                    onAddNote = onAddNote,
-                    onPreview = onPreview,
-                    onFilter = onFilter,
-                    onSelectAll = onSelectAll,
-                    onOptions = onOptions,
-                    onCreateFilteredDeck = onCreateFilteredDeck,
-                    onEditNote = onEditNote,
-                    onCardInfo = onCardInfo,
-                    onChangeDeck = onChangeDeck,
-                    onReposition = onReposition,
-                    onSetDueDate = onSetDueDate,
-                    onGradeNow = onGradeNow,
-                    onResetProgress = onResetProgress,
-                    onExportCard = onExportCard,
-                    onFilterByTag = onFilterByTag
-                )
-                if (isTablet) {
-                    // TODO: Re-enable NoteEditor split view after migration is complete
-                    // NoteEditor(
-                    //     modifier = Modifier.weight(1f)
-                    // )
-                }
+            // Don't apply paddingValues here to allow content to draw behind system bars
+            // Instead pass them to CardBrowserScreen
+            CardBrowserScreen(
+                viewModel = viewModel,
+                onCardClicked = onCardClicked,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = paddingValues,
+                onAddNote = onAddNote,
+                onPreview = onPreview,
+                onFilter = onFilter,
+                onSelectAll = onSelectAll,
+                onOptions = onOptions,
+                onCreateFilteredDeck = onCreateFilteredDeck,
+                onEditNote = onEditNote,
+                onCardInfo = onCardInfo,
+                onChangeDeck = onChangeDeck,
+                onReposition = onReposition,
+                onSetDueDate = onSetDueDate,
+                onGradeNow = onGradeNow,
+                onResetProgress = onResetProgress,
+                onExportCard = onExportCard,
+                onFilterByTag = onFilterByTag
+            )
+            if (isTablet) {
+                // TODO: Re-enable NoteEditor split view after migration is complete
+                // NoteEditor(
+                //     modifier = Modifier.weight(1f)
+                // )
+            }
         }
     }
 }
@@ -514,11 +511,7 @@ private fun DeckHierarchyMenu(
         if (isExpanded && hasChildren) {
             Column(modifier = Modifier.padding(start = 16.dp)) {
                 DeckHierarchyMenu(
-                    deckHierarchy,
-                    expandedDecks,
-                    onDeckSelected,
-                    searchQuery,
-                    deck.name
+                    deckHierarchy, expandedDecks, onDeckSelected, searchQuery, deck.name
                 )
             }
         }
