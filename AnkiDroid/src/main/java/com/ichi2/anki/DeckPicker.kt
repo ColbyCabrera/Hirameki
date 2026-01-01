@@ -539,11 +539,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             }
         }
 
-        fun onResizingDividerVisibilityChanged(isVisible: Boolean) {
-            val resizingDivider = findViewById<View>(R.id.homescreen_resizing_divider)
-            resizingDivider?.visibility = if (isVisible) View.VISIBLE else View.GONE
-        }
-
         fun onCardsDueChanged(dueCount: Int?) {
             // TODO: The subtitle that shows the number of due cards needs to be migrated to the Compose TopAppBar.
         }
@@ -585,7 +580,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         viewModel.flowOfUndoUpdated.launchCollectionInLifecycleScope(::onUndoUpdated)
         viewModel.flowOfCardsDue.launchCollectionInLifecycleScope(::onCardsDueChanged)
         viewModel.flowOfDeckList.launchCollectionInLifecycleScope(::onDeckListChanged)
-        viewModel.flowOfResizingDividerVisible.launchCollectionInLifecycleScope(::onResizingDividerVisibilityChanged)
         viewModel.flowOfDecksReloaded.launchCollectionInLifecycleScope(::onDecksReloaded)
         viewModel.flowOfStartupResponse.filterNotNull()
             .launchCollectionInLifecycleScope(::onStartupResponse)
