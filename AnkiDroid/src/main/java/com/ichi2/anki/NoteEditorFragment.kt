@@ -420,8 +420,29 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
      * Setup the Compose-based note editor
      */
     private fun setupComposeEditor(col: Collection) {
-        val intent = requireActivity().intent
         Timber.d("NoteEditor() setupComposeEditor: caller: %s", caller)
+
+        // Initialize editor logic (clipboard, caller determination, ViewModel setup)
+        if (!initializeEditorLogic(col)) return
+
+        // Set toolbar title
+        if (addNote) {
+            requireAnkiActivity().setTitle(R.string.cardeditor_title_add_note)
+        } else {
+            requireAnkiActivity().setTitle(R.string.cardeditor_title_edit_card)
+        }
+
+        updateToolbar()
+
+        setupComposeContent()
+    }
+
+    /**
+     * Initialize editor logic: clipboard, caller determination, and ViewModel setup.
+     * @return true if initialization succeeded, false if the editor should close
+     */
+    private fun initializeEditorLogic(col: Collection): Boolean {
+        val intent = requireActivity().intent
 
         requireAnkiActivity().registerReceiver()
 
@@ -440,7 +461,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             NoteEditorCaller.NO_CALLER -> {
                 Timber.e("no caller could be identified, closing")
                 requireActivity().finish()
-                return
+                return false
             }
 
             NoteEditorCaller.EDIT, NoteEditorCaller.PREVIEWER_EDIT -> {
@@ -457,11 +478,11 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 fetchIntentInformation(intent)
                 if (sourceText == null) {
                     requireActivity().finish()
-                    return
+                    return false
                 }
                 if ("Aedict Notepad" == sourceText!![0] && addFromAedict(sourceText!![1])) {
                     requireActivity().finish()
-                    return
+                    return false
                 }
                 addNote = true
             }
@@ -530,17 +551,13 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 }
             }
         }
+        return true
+    }
 
-        // Set toolbar title
-        if (addNote) {
-            requireAnkiActivity().setTitle(R.string.cardeditor_title_add_note)
-        } else {
-            requireAnkiActivity().setTitle(R.string.cardeditor_title_edit_card)
-        }
-
-        updateToolbar()
-
-        // Replace the view with ComposeView
+    /**
+     * Setup the Compose content for the note editor.
+     */
+    private fun setupComposeContent() {
         val composeView = view?.findViewById<ComposeView>(R.id.note_editor_compose)
 
         composeView?.setContent {
