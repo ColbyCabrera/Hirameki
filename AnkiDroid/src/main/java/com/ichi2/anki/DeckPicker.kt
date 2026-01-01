@@ -598,7 +598,8 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         try {
             // Intent is nullable because `clip.getItemAt(0).intent` always returns null
             ImportUtils.FileImporter().handleContentProviderFile(this, uri, Intent().setData(uri))
-            onResume()
+            // Refresh the deck list after import to reflect any newly imported decks
+            viewModel.updateDeckList()
         } catch (e: Exception) {
             Timber.w(e)
             CrashReportService.sendExceptionReport(e, "DeckPicker::onReceiveContent")
