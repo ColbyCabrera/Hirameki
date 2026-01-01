@@ -52,6 +52,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -205,6 +206,7 @@ private fun DeckPickerMainContent(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val applicationContext = LocalContext.current.applicationContext
     val deckList by viewModel.flowOfDeckList.collectAsState(
         initial = DeckPickerViewModel.FlattenedDeckList(emptyList(), false),
     )
@@ -246,18 +248,18 @@ private fun DeckPickerMainContent(
                 if (!fragmented) {
                     onLaunchIntent(
                         Intent().setClassName(
-                            AnkiDroidApp.instance, "com.ichi2.anki.CardBrowser"
+                            applicationContext, "com.ichi2.anki.CardBrowser"
                         )
                     )
                 }
             }
 
             AppNavigationItem.Statistics -> {
-                onLaunchIntent(Statistics.getIntent(AnkiDroidApp.instance))
+                onLaunchIntent(Statistics.getIntent(applicationContext))
             }
 
             AppNavigationItem.Settings -> {
-                onLaunchIntent(PreferencesActivity.getIntent(AnkiDroidApp.instance))
+                onLaunchIntent(PreferencesActivity.getIntent(applicationContext))
             }
 
             AppNavigationItem.Help -> {
