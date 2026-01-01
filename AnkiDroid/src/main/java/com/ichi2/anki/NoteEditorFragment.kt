@@ -101,6 +101,7 @@ import com.ichi2.anki.noteeditor.compose.NoteEditorScreen
 import com.ichi2.anki.noteeditor.compose.NoteEditorSimpleOverflowItem
 import com.ichi2.anki.noteeditor.compose.NoteEditorToggleOverflowItem
 import com.ichi2.anki.noteeditor.compose.NoteEditorTopAppBar
+import com.ichi2.anki.noteeditor.compose.AddToolbarItemDialog
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.ImageOcclusion
 import com.ichi2.anki.preferences.sharedPrefs
@@ -563,6 +564,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 val deckTags by noteEditorViewModel.deckTags.collectAsState()
                 val showDiscardChangesDialog by noteEditorViewModel.showDiscardChangesDialog.collectAsState()
                 val noClozeDialogMessage by noteEditorViewModel.noClozeDialogState.collectAsState()
+                val toolbarDialogState by noteEditorViewModel.toolbarDialogState.collectAsState()
                 val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
                 var capitalizeChecked by remember {
                     mutableStateOf(
@@ -803,12 +805,42 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     noClozeDialogMessage = noClozeDialogMessage,
                     onSaveAnywayClick = {
                         noteEditorViewModel.dismissNoClozeDialog()
-                        lifecycleScope.launch {
-                            saveNoteWithProgress()
-                        }
+                        launchCatchingTask { saveNote() }
                     },
                     onDismissNoClozeDialog = {
                         noteEditorViewModel.dismissNoClozeDialog()
+                    },
+                )
+
+                // Toolbar Item Dialog (Add/Edit)
+                AddToolbarItemDialog(
+                    state = com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState(
+                        isVisible = toolbarDialogState.isVisible,
+                        isEditMode = toolbarDialogState.isEditMode,
+                        icon = toolbarDialogState.icon,
+                        prefix = toolbarDialogState.prefix,
+                        suffix = toolbarDialogState.suffix,
+                        buttonIndex = toolbarDialogState.buttonIndex,
+                    ),
+                    onDismissRequest = {
+                        noteEditorViewModel.dismissToolbarDialog()
+                    },
+                    onConfirm = { icon, prefix, suffix ->
+                        noteEditorViewModel.dismissToolbarDialog()
+                        if (toolbarDialogState.isEditMode) {
+                            editToolbarButton(icon, prefix, suffix, toolbarDialogState.buttonIndex)
+                        } else {
+                            addToolbarButton(icon, prefix, suffix)
+                        }
+                    },
+                    onDelete = if (toolbarDialogState.isEditMode) {
+                        {
+                            noteEditorViewModel.dismissToolbarDialog()
+                            removeToolbarButton(toolbarDialogState.buttonIndex)
+                        }
+                    } else null,
+                    onHelpClick = {
+                        requireContext().openUrl(R.string.link_manual_note_format_toolbar)
                     },
                 )
             }
@@ -1647,49 +1679,31 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         updateToolbar()
     }
 
-    private val toolbarDialog: AlertDialog.Builder
-        get() = AlertDialog.Builder(requireContext()).neutralButton(R.string.help) {
-            requireContext().openUrl(R.string.link_manual_note_format_toolbar)
-        }.negativeButton(R.string.dialog_cancel)
-
     private fun displayAddToolbarDialog() {
-        val v = layoutInflater.inflate(R.layout.note_editor_toolbar_add_custom_item, null)
-        toolbarDialog.show {
-            title(R.string.add_toolbar_item)
-            setView(v)
-            positiveButton(R.string.dialog_positive_create) {
-                val etIcon = v.findViewById<EditText>(R.id.note_editor_toolbar_item_icon)
-                val et = v.findViewById<EditText>(R.id.note_editor_toolbar_before)
-                val et2 = v.findViewById<EditText>(R.id.note_editor_toolbar_after)
-                addToolbarButton(etIcon.text.toString(), et.text.toString(), et2.text.toString())
-            }
-        }
+        noteEditorViewModel.showAddToolbarDialog()
     }
 
     private fun displayEditToolbarDialog(currentButton: CustomToolbarButton) {
-        val view = layoutInflater.inflate(R.layout.note_editor_toolbar_edit_custom_item, null)
-        val etIcon = view.findViewById<EditText>(R.id.note_editor_toolbar_item_icon)
-        val et = view.findViewById<EditText>(R.id.note_editor_toolbar_before)
-        val et2 = view.findViewById<EditText>(R.id.note_editor_toolbar_after)
-        val btnDelete = view.findViewById<ImageButton>(R.id.note_editor_toolbar_btn_delete)
-        etIcon.setText(currentButton.buttonText)
-        et.setText(currentButton.prefix)
-        et2.setText(currentButton.suffix)
-        val editToolbarDialog = toolbarDialog.setView(view).positiveButton(R.string.save) {
-            editToolbarButton(
-                etIcon.text.toString(),
-                et.text.toString(),
-                et2.text.toString(),
-                currentButton,
-            )
-        }.create()
-        btnDelete.setOnClickListener {
-            suggestRemoveButton(
-                currentButton,
-                editToolbarDialog,
-            )
-        }
-        editToolbarDialog.show()
+        noteEditorViewModel.showEditToolbarDialog(
+            icon = currentButton.buttonText,
+            prefix = currentButton.prefix,
+            suffix = currentButton.suffix,
+            buttonIndex = currentButton.index,
+        )
+    }
+
+    private fun editToolbarButton(icon: String, prefix: String, suffix: String, buttonIndex: Int) {
+        val toolbarButtons = toolbarButtons
+        toolbarButtons[buttonIndex] = CustomToolbarButton(buttonIndex, icon, prefix, suffix)
+        saveToolbarButtons(toolbarButtons)
+        updateToolbar()
+    }
+
+    private fun removeToolbarButton(buttonIndex: Int) {
+        val toolbarButtons = toolbarButtons
+        toolbarButtons.removeAt(buttonIndex)
+        saveToolbarButtons(toolbarButtons)
+        updateToolbar()
     }
 
     override val shortcuts

@@ -84,6 +84,18 @@ sealed class SaveResult {
 }
 
 /**
+ * State for the Add/Edit Toolbar Item dialog
+ */
+data class ToolbarDialogState(
+    val isVisible: Boolean = false,
+    val isEditMode: Boolean = false,
+    val icon: String = "",
+    val prefix: String = "",
+    val suffix: String = "",
+    val buttonIndex: Int = -1,
+)
+
+/**
  * ViewModel for the Note Editor screen
  * Manages note editing state and business logic
  *
@@ -185,6 +197,13 @@ class NoteEditorViewModel(
      * Set to null to dismiss the dialog.
      */
     val noClozeDialogState: StateFlow<String?> = _noClozeDialogState.asStateFlow()
+
+    private val _toolbarDialogState = MutableStateFlow(ToolbarDialogState())
+
+    /**
+     * Controls visibility and state of the add/edit toolbar item dialog.
+     */
+    val toolbarDialogState: StateFlow<ToolbarDialogState> = _toolbarDialogState.asStateFlow()
 
     private val _currentNote = MutableStateFlow<Note?>(null)
 
@@ -1299,6 +1318,34 @@ class NoteEditorViewModel(
      */
     fun dismissNoClozeDialog() {
         _noClozeDialogState.value = null
+    }
+
+    /**
+     * Show the add toolbar item dialog
+     */
+    fun showAddToolbarDialog() {
+        _toolbarDialogState.value = ToolbarDialogState(isVisible = true, isEditMode = false)
+    }
+
+    /**
+     * Show the edit toolbar item dialog with existing values
+     */
+    fun showEditToolbarDialog(icon: String, prefix: String, suffix: String, buttonIndex: Int) {
+        _toolbarDialogState.value = ToolbarDialogState(
+            isVisible = true,
+            isEditMode = true,
+            icon = icon,
+            prefix = prefix,
+            suffix = suffix,
+            buttonIndex = buttonIndex,
+        )
+    }
+
+    /**
+     * Dismiss the toolbar item dialog
+     */
+    fun dismissToolbarDialog() {
+        _toolbarDialogState.value = ToolbarDialogState()
     }
 
     /**
