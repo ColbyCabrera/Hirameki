@@ -393,8 +393,11 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         DeckPickerActivityResultCallback {
             if (it.resultCode == RESULT_OK) {
                 lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        onSelectedPackageToImport(it.data!!)
+                    val data = it.data
+                    if (data != null) {
+                        withContext(Dispatchers.IO) {
+                            onSelectedPackageToImport(data)
+                        }
                     }
                 }
             }
@@ -405,7 +408,9 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         ActivityResultContracts.StartActivityForResult(),
         DeckPickerActivityResultCallback {
             if (it.resultCode == RESULT_OK) {
-                onSelectedCsvForImport(it.data!!)
+                it.data?.let { data ->
+                    onSelectedCsvForImport(data)
+                }
             }
         },
     )
