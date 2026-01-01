@@ -52,6 +52,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.ichi2.anki.navigation.CongratsScreen
+import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -162,6 +164,17 @@ fun DeckPickerNavHost(
                 is HelpScreen -> {
                     NavEntry(key) {
                         HelpScreen(onNavigateUp = { navigator.goBack() })
+                    }
+                }
+
+                is CongratsScreen -> {
+                    NavEntry(key) {
+                        CongratsComposable(
+                            onNavigateUp = { navigator.goBack() },
+                            onDeckOptions = { /* TODO: Navigate to deck options */ },
+                            onBack = { navigator.goBack() },
+                            timeUntilNextDay = 0L // TODO: Get from ViewModel
+                        )
                     }
                 }
 

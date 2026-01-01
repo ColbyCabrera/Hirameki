@@ -27,6 +27,18 @@ object DeckPickerScreen
 @Serializable
 object HelpScreen
 
+@Serializable
+object CongratsScreen
+
+@Serializable
+object StatisticsDestination
+
+@Serializable
+data class DeckOptionsDestination(val deckId: Long)
+
+@Serializable
+data class CardInfoDestination(val cardId: Long)
+
 class Navigator(initialKey: Any) {
     val backStack = mutableStateListOf(initialKey)
 
