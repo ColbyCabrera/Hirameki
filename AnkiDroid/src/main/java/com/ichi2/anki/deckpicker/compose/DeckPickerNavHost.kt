@@ -61,7 +61,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
-import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
@@ -691,14 +690,14 @@ private fun SetupFlows(
     onOpenStudyOptions: () -> Unit,
     lifecycle: Lifecycle
 ) {
-    val context = AnkiDroidApp.instance
+    val applicationContext = LocalContext.current.applicationContext
 
     LaunchedEffect(Unit) {
         viewModel.deckDeletedNotification.flowWithLifecycle(lifecycle).collect {
             showUndoSnackbar(
                 snackbarHostState,
                 it.toHumanReadableString(),
-                context.getString(R.string.undo),
+                applicationContext.getString(R.string.undo),
                 onUndo
             )
         }
@@ -709,7 +708,7 @@ private fun SetupFlows(
             showUndoSnackbar(
                 snackbarHostState,
                 it.toHumanReadableString(),
-                context.getString(R.string.undo),
+                applicationContext.getString(R.string.undo),
                 onUndo
             )
         }
@@ -728,8 +727,8 @@ private fun SetupFlows(
 
                 is DeckSelectionResult.Empty -> {
                     val snackbarResult = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.empty_deck),
-                        actionLabel = context.getString(R.string.menu_add),
+                        message = applicationContext.getString(R.string.empty_deck),
+                        actionLabel = applicationContext.getString(R.string.menu_add),
                     )
                     if (snackbarResult == SnackbarResult.ActionPerformed) {
                         viewModel.addNote(result.deckId, true)
@@ -737,7 +736,7 @@ private fun SetupFlows(
                 }
 
                 is DeckSelectionResult.NoCardsToStudy -> {
-                    onLaunchIntent(Intent(context, CongratsActivity::class.java))
+                    onLaunchIntent(Intent(applicationContext, CongratsActivity::class.java))
                 }
             }
         }
@@ -752,7 +751,7 @@ private fun SetupFlows(
     LaunchedEffect(Unit) {
         cardBrowserViewModel.flowOfSnackbarMessage.flowWithLifecycle(lifecycle)
             .collect { messageRes ->
-                snackbarHostState.showSnackbar(context.getString(messageRes))
+                snackbarHostState.showSnackbar(applicationContext.getString(messageRes))
             }
     }
 }
