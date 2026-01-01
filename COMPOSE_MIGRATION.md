@@ -20,27 +20,34 @@
 
 ## 🆕 Recent Progress
 
-### DeckPickerNavHost Extraction (Completed)
-**Location**: `deckpicker/compose/DeckPickerNavHost.kt`
+### PageWebView Compose Wrapper (Completed)
+**Location**: `pages/`
 
-The navigation logic has been extracted from `DeckPicker.kt` into a dedicated `DeckPickerNavHost` composable:
+Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 
-| Change                 | Description                                                      |
-|------------------------|------------------------------------------------------------------|
-| `DeckPickerNavHost.kt` | New file (~770 lines) with all Nav3 navigation logic             |
-| Nav3 `NavDisplay`      | Integrated with `DeckPickerScreen` and `HelpScreen` destinations |
-| `DeckPickerWithDrawer` | Private composable handling drawer + main content                |
-| `SetupFlows`           | Centralized Flow collectors for ViewModels                       |
-| `LocalContext`         | Replaced `AnkiDroidApp.instance` with Compose-provided context   |
+| File | Description |
+|------|-------------|
+| `PageWebViewViewModel.kt` | Manages AnkiServer lifecycle |
+| `PageWebView.kt` | Composable with AndroidView wrapper |
+| `StatisticsScreen.kt` | Graphs page wrapper |
+| `DeckOptionsScreen.kt` | Deck options wrapper |
+| `CardInfoScreen.kt` | Card info wrapper |
 
 ### Nav3 Destinations Active
 ```kotlin
 @Serializable object DeckPickerScreen
 @Serializable object HelpScreen
+@Serializable object StudyOptionsScreen
+@Serializable object CongratsScreen
+@Serializable object StatisticsDestination
+@Serializable data class DeckOptionsDestination(val deckId: Long)
+@Serializable data class CardInfoDestination(val cardId: Long)
 ```
 
-### Layout Fixes
+### Bug Fixes
 - `statistics.xml`: Removed duplicate `fitsSystemWindows` causing edge-to-edge issues
+- `CongratsActivity.kt`: Added missing `onNavigateUp` parameter
+- `DeckPickerNavHost.kt`: Fixed CongratsScreen NavEntry parameters
 
 ---
 
