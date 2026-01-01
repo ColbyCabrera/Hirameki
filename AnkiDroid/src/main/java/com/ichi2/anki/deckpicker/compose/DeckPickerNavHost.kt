@@ -614,7 +614,7 @@ private fun DeckPickerWithDrawer(
 ) {
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = !fragmented && drawerState.isOpen,
+        gesturesEnabled = !fragmented || drawerState.targetValue != DrawerValue.Closed,
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.width(310.dp),
