@@ -17,6 +17,7 @@ package com.ichi2.anki.pages
 
 import android.graphics.Bitmap
 import android.webkit.ValueCallback
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -35,6 +36,7 @@ import java.io.IOException
  */
 open class PageWebViewClient : WebViewClient() {
     val onPageFinishedCallbacks: MutableList<OnPageFinishedCallback> = mutableListOf()
+    val onErrorCallbacks: MutableList<OnErrorCallback> = mutableListOf()
 
     override fun shouldInterceptRequest(
         view: WebView,
@@ -105,6 +107,13 @@ open class PageWebViewClient : WebViewClient() {
         /** [PageFragment.webView] is invisible by default to avoid flashes while
          * the page is loaded, and can be made visible again after it finishes loading */
         onShowWebView(view)
+    }
+
+    override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+        super.onReceivedError(view, request, error)
+        if (request.isForMainFrame) {
+            onErrorCallbacks.map { it.onError() }
+        }
     }
 }
 

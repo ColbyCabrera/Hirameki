@@ -18,9 +18,13 @@ package com.ichi2.anki.pages
 import android.annotation.SuppressLint
 import android.view.View
 import android.webkit.WebView
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -41,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
@@ -70,6 +75,7 @@ fun PageWebView(
     viewModel: PageWebViewViewModel = viewModel(),
 ) {
     var isLoading by remember { mutableStateOf(true) }
+    var hasError by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -96,6 +102,10 @@ fun PageWebView(
                             isLoading = false
                             webView.visibility = View.VISIBLE
                         }
+                        onErrorCallbacks.add {
+                            hasError = true
+                            isLoading = false
+                        }
                     }
                     webChromeClient = PageChromeClient()
                     visibility = View.INVISIBLE
@@ -119,6 +129,20 @@ fun PageWebView(
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
+            }
+
+            if (hasError) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(imageVector = Icons.Default.Warning, contentDescription = null)
+                    Text(
+                        text = stringResource(R.string.page_web_view_error),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
     }
