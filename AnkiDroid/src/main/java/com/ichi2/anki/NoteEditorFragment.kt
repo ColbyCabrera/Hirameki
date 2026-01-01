@@ -176,7 +176,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
     // Null if adding a new card. Presently NonNull if editing an existing note - but this is subject to change
     private var currentEditedCard: Card? = null
-    private var selectedTags: MutableList<String>? = null
 
     @get:VisibleForTesting
     var deckId: DeckId = 0
@@ -366,7 +365,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             caller = fromValue(savedInstanceState.getInt(CALLER_KEY))
             addNote = savedInstanceState.getBoolean("addNote")
             deckId = savedInstanceState.getLong("did")
-            selectedTags = savedInstanceState.getStringArrayList("tags")
+            // Tags are restored via ViewModel's SavedStateHandle, not instance state
             reloadRequired = savedInstanceState.getBoolean(RELOAD_REQUIRED_EXTRA_KEY)
             changed = savedInstanceState.getBoolean(NOTE_CHANGED_EXTRA_KEY)
         } else {
@@ -526,7 +525,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         Timber.d(
                             "setupComposeEditor: Applying copied tags: %s", tags.joinToString()
                         )
-                        selectedTags = ArrayList(tags.toList())
                         noteEditorViewModel.updateTags(tags.toSet())
                     }
                 }
@@ -809,10 +807,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         savedInstanceState.putLong("did", deckId)
         savedInstanceState.putBoolean(NOTE_CHANGED_EXTRA_KEY, changed)
         savedInstanceState.putBoolean(RELOAD_REQUIRED_EXTRA_KEY, reloadRequired)
-        if (selectedTags == null) {
-            selectedTags = ArrayList(0)
-        }
-        savedInstanceState.putStringArrayList("tags", selectedTags?.let { ArrayList(it) })
+        // Tags are persisted via ViewModel's SavedStateHandle, not instance state
     }
 
     private fun applyFormatter(
@@ -1153,7 +1148,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             noteEditorViewModel.noteEditorState.value.fields.map { fieldState -> fieldState.value.text.toFieldText() }
                 .toMutableList()
 
-        val tags = selectedTags ?: mutableListOf()
+        val tags = noteEditorViewModel.noteEditorState.value.tags.toMutableList()
 
         val notetype = if (editorNote != null) {
             editorNote!!.notetype
@@ -1271,11 +1266,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
      */
     private fun showTagsDialog() {
         val currentTags = noteEditorViewModel.noteEditorState.value.tags
-        val selTags = if (currentTags.isNotEmpty()) {
-            ArrayList(currentTags)
-        } else {
-            selectedTags?.let { ArrayList(it) } ?: arrayListOf()
-        }
+        val selTags = ArrayList(currentTags)
 
         val dialog = with(requireContext()) {
             tagsDialogFactory!!.newTagsDialog().withArguments(
@@ -1292,7 +1283,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         indeterminateTags: List<String>,
         stateFilter: CardStateFilter,
     ) {
-        this.selectedTags = selectedTags as ArrayList<String>?
         noteEditorViewModel.updateTags(selectedTags.toSet())
     }
 
