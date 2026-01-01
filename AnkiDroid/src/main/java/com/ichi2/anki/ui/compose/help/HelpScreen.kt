@@ -75,6 +75,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.delay
 import timber.log.Timber
 
@@ -322,5 +323,7 @@ private fun HelpItem(
 @Preview
 @Composable
 fun HelpScreenPreview() {
-    HelpScreen(onNavigateUp = {})
+    AnkiDroidTheme {
+        HelpScreen(onNavigateUp = {})
+    }
 }
