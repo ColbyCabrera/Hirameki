@@ -35,7 +35,7 @@ class HelpActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         wasNightMode = Themes.currentTheme.isNightMode
         setContent {
-            HelpScreen()
+            HelpScreen(onNavigateUp = { finish() })
         }
     }
 
