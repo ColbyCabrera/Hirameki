@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources,DuplicateCrowdInStrings">
 
-    <style name="Theme_Dark.Launcher">
-        <item name="android:windowBackground">@drawable/launch_screen</item>
-    </style>
+    <style name="Theme_Dark.Launcher" />
 
     <style name="Animation.Translucent" parent="@android:style/Animation.Translucent">
         <item name="android:windowEnterAnimation">@null</item>
