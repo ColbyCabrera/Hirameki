@@ -156,7 +156,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     ShortcutGroupProvider {
     /** Whether any change are saved. E.g. multimedia, new card added, field changed and saved. */
     private var changed = false
-    private var isTagsEdited = false
 
     private var multimediaActionJob: Job? = null
 
@@ -669,11 +668,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     deckTags = deckTags,
                     onUpdateTags = { tags ->
                         noteEditorViewModel.updateTags(tags)
-                        isTagsEdited = true
                     },
                     onAddTag = { tag ->
                         noteEditorViewModel.addTag(tag)
-                        isTagsEdited = true
                     },
                     topBar = {
                         val title = stringResource(
@@ -1020,33 +1017,13 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     /**
      * Checks if there are unsaved changes in the note editor.
      *
-     * Compares current field values and tags against the original note state
-     * to determine if the user has made any modifications.
+     * Delegates to ViewModel which tracks field values, tags, deck, and note type changes.
      *
      * @return true if there are unsaved changes, false otherwise
      */
     @VisibleForTesting
     fun hasUnsavedChanges(): Boolean {
-        if (!collectionHasLoaded()) {
-            return false
-        }
-
-        if (!addNote && currentEditedCard != null) {
-            val newNoteType = noteEditorViewModel.currentNote.value?.notetype
-            val oldNoteType = currentEditedCard!!.noteType(getColUnsafe)
-            if (newNoteType != null && newNoteType != oldNoteType) {
-                return true
-            }
-        }
-        if (!addNote && currentEditedCard != null && currentEditedCard!!.currentDeckId() != deckId) {
-            return true
-        }
-        val isFieldEdited = noteEditorViewModel.isFieldEdited.value
-        return isFieldEdited || isTagsEdited
-    }
-
-    private fun collectionHasLoaded(): Boolean {
-        return noteEditorViewModel.currentNote.value != null
+        return noteEditorViewModel.hasUnsavedChanges()
     }
 
     // ----------------------------------------------------------------------------
@@ -1108,7 +1085,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         closeNoteEditor(closeIntent ?: Intent())
                     } else {
                         noteEditorViewModel.resetFieldEditedFlag()
-                        isTagsEdited = false
                     }
                 } else {
                     closeNoteEditor()
@@ -1316,9 +1292,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         indeterminateTags: List<String>,
         stateFilter: CardStateFilter,
     ) {
-        if (this.selectedTags != selectedTags) {
-            isTagsEdited = true
-        }
         this.selectedTags = selectedTags as ArrayList<String>?
         noteEditorViewModel.updateTags(selectedTags.toSet())
     }

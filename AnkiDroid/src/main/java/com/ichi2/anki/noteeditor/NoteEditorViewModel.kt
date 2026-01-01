@@ -197,6 +197,12 @@ class NoteEditorViewModel(
     // Store initial tags to detect changes
     private var initialTags: List<String> = emptyList()
 
+    // Store initial deck ID to detect deck changes (for editing existing cards)
+    private var initialDeckId: DeckId = 0L
+
+    // Store initial note type ID to detect note type changes
+    private var initialNoteTypeId: Long = 0L
+
     /**
      * Initialize the editor with a new or existing note
      */
@@ -296,6 +302,10 @@ class NoteEditorViewModel(
                 // Capture initial field values for change detection
                 initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
                 initialTags = _noteEditorState.value.tags
+
+                // Capture initial deck and note type for change detection
+                initialDeckId = _deckId.value
+                initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
 
                 // Reset the field edited flag after initialization to prevent false positives
                 _isFieldEdited.value = false
@@ -1120,6 +1130,7 @@ class NoteEditorViewModel(
 
     /**
      * Check if there are unsaved changes
+     * Checks field content, tags, deck selection, and note type changes
      */
     fun hasUnsavedChanges(): Boolean {
         // If we have specific field edit flag
@@ -1132,7 +1143,12 @@ class NoteEditorViewModel(
         // Check tags
         if (_noteEditorState.value.tags != initialTags) return true
 
-        return false
+        // Check deck change (for existing cards)
+        if (initialDeckId != 0L && _deckId.value != initialDeckId) return true
+
+        // Check note type change
+        val currentNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
+        return initialNoteTypeId != 0L && currentNoteTypeId != initialNoteTypeId
     }
 
     private fun determineFocusIndex(): Int? {
