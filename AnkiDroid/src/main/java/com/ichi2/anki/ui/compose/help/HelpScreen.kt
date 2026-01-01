@@ -18,7 +18,6 @@ package com.ichi2.anki.ui.compose.help
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -48,7 +47,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -74,8 +75,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
-import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.delay
+import timber.log.Timber
 
 private data class HelpLink(
     @StringRes val titleRes: Int,
@@ -121,81 +122,89 @@ private val iconShapes = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun HelpScreen() {
+fun HelpScreen(onNavigateUp: () -> Unit) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val context = LocalContext.current
 
-    AnkiDroidTheme {
-        Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
-                LargeTopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(id = R.string.help_screen_title),
-                            style = MaterialTheme.typography.displayMediumEmphasized,
-                        )
-                    }, scrollBehavior = scrollBehavior
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
+            LargeTopAppBar(
+                navigationIcon = {
+                FilledIconButton(
+                    onClick = onNavigateUp,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.arrow_back_24px),
+                        contentDescription = stringResource(R.string.back),
+                    )
+                }
+            }, title = {
+                Text(
+                    text = stringResource(id = R.string.help_screen_title),
+                    style = MaterialTheme.typography.displayMediumEmphasized,
                 )
-            }) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                // Hero Section
-                item {
-                    HelpHeroSection()
+            }, scrollBehavior = scrollBehavior
+            )
+        }) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Hero Section
+            item {
+                HelpHeroSection()
+            }
+
+            // Help Cards with staggered animation
+            itemsIndexed(helpLinks) { index, helpLink ->
+                val iconShape = iconShapes[index % iconShapes.size]
+
+                var visible by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(index * 100L)
+                    visible = true
                 }
 
-                // Help Cards with staggered animation
-                itemsIndexed(helpLinks) { index, helpLink ->
-                    val iconShape = iconShapes[index % iconShapes.size]
-
-                    var visible by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) {
-                        delay(index * 100L)
-                        visible = true
-                    }
-
-                    AnimatedVisibility(
-                        visible = visible,
-                        enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
-                            animationSpec = spring(dampingRatio = 0.8f),
-                            initialOffsetY = { it / 2 })
-                    ) {
-                        HelpItem(
-                            titleRes = helpLink.titleRes,
-                            subtitleRes = helpLink.subtitleRes,
-                            icon = helpLink.icon,
-                            iconShape = iconShape,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = {
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(helpLink.url))
-                                    context.startActivity(intent)
-                                } catch (_: ActivityNotFoundException) {
-                                    Log.w(
-                                        "HelpScreen",
-                                        "No application found to open link: ${helpLink.url}"
-                                    )
-                                    Toast.makeText(
-                                        context,
-                                        R.string.no_application_to_open_link,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            })
-                    }
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
+                        animationSpec = spring(dampingRatio = 0.8f), initialOffsetY = { it / 2 })
+                ) {
+                    HelpItem(
+                        titleRes = helpLink.titleRes,
+                        subtitleRes = helpLink.subtitleRes,
+                        icon = helpLink.icon,
+                        iconShape = iconShape,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(helpLink.url))
+                                context.startActivity(intent)
+                            } catch (_: ActivityNotFoundException) {
+                                Timber.tag("HelpScreen")
+                                    .w("No application found to open link: ${helpLink.url}")
+                                Toast.makeText(
+                                    context,
+                                    R.string.no_application_to_open_link,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        })
                 }
+            }
 
-                // Bottom spacing
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
+            // Bottom spacing
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -314,5 +323,5 @@ private fun HelpItem(
 @Preview
 @Composable
 fun HelpScreenPreview() {
-    HelpScreen()
+    HelpScreen(onNavigateUp = {})
 }
