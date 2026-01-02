@@ -21,6 +21,7 @@ import android.webkit.WebView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -36,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.themes.Themes
+import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 
 /**
@@ -75,13 +78,15 @@ fun PageWebView(
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PageWebViewViewModel = viewModel(),
+    jsCommands: Flow<String>? = null, // NEW
+    topBarActions: @Composable (RowScope.() -> Unit)? = null, // NEW
 ) {
     val serverState by viewModel.serverState.collectAsState()
 
     Scaffold(
         topBar = {
             PageWebViewTopBar(
-                title = title, onNavigateUp = onNavigateUp
+                title = title, onNavigateUp = onNavigateUp, actions = topBarActions
             )
         },
     ) { padding ->
@@ -93,7 +98,7 @@ fun PageWebView(
         ) {
             when (serverState) {
                 is ServerState.Running -> {
-                    PageWebViewInternal(path = path, viewModel = viewModel)
+                    PageWebViewInternal(path = path, viewModel = viewModel, jsCommands = jsCommands)
                 }
 
                 is ServerState.Error -> {
@@ -125,9 +130,20 @@ private fun PageWebViewError() {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun PageWebViewInternal(path: String, viewModel: PageWebViewViewModel) {
+private fun PageWebViewInternal(
+    path: String,
+    viewModel: PageWebViewViewModel,
+    jsCommands: Flow<String>? = null,
+) {
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+
+    LaunchedEffect(jsCommands, webViewRef) {
+        jsCommands?.collect { script ->
+            webViewRef?.evaluateJavascript(script, null)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AndroidView(
@@ -152,6 +168,7 @@ private fun PageWebViewInternal(path: String, viewModel: PageWebViewViewModel) {
                 }
                 webChromeClient = PageChromeClient()
                 visibility = View.INVISIBLE
+                webViewRef = this
             }
         }, update = { webView ->
             val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
@@ -168,6 +185,7 @@ private fun PageWebViewInternal(path: String, viewModel: PageWebViewViewModel) {
             webView.stopLoading()
             webView.webViewClient = android.webkit.WebViewClient()
             webView.destroy()
+            webViewRef = null
         }, modifier = Modifier.fillMaxSize()
         )
 
@@ -186,12 +204,14 @@ private fun PageWebViewInternal(path: String, viewModel: PageWebViewViewModel) {
 private fun PageWebViewTopBar(
     title: String?,
     onNavigateUp: () -> Unit,
+    actions: @Composable (RowScope.() -> Unit)? = null,
 ) {
     TopAppBar(title = {
         title?.let {
             Text(
                 it,
                 style = MaterialTheme.typography.displayMediumEmphasized,
+                maxLines = 1
             )
         }
     }, navigationIcon = {
@@ -208,6 +228,8 @@ private fun PageWebViewTopBar(
                 contentDescription = stringResource(R.string.back),
             )
         }
+    }, actions = {
+        actions?.invoke(this)
     })
 }
 

@@ -1,6 +1,6 @@
 # AnkiDroid Compose & Nav3 Migration Status
 
-**Last Updated**: January 1, 2026
+**Last Updated**: January 2, 2026
 
 ---
 
@@ -71,11 +71,19 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 @Serializable data class CardInfoDestination(val cardId: Long)
 ```
 
-### Bug Fixes
+### Bug Fixes & Code Quality
 - `statistics.xml`: Removed duplicate `fitsSystemWindows` causing edge-to-edge issues
 - `CongratsActivity.kt`: Added missing `onNavigateUp` parameter
-- `DeckPickerNavHost.kt`: Fixed CongratsScreen NavEntry parameters
-- `NoteEditorFragment.kt`: Refactored `setupComposeEditor` (375→20 lines)
+- `DeckPickerNavHost.kt`: Fixed CongratsScreen NavEntry parameters, added error handling for `withCol` operations
+- `NoteEditorFragment.kt`: Refactored `setupComposeEditor` (375→20 lines), simplified card info extraction
+- `NoteEditorViewModel.kt`: Fixed threading issues, consolidated duplicate `ToolbarDialogState` class
+- `NoteEditorTest.kt`: Resolved all test failures, added proper dispatcher restoration in tearDown
+- `PageWebView.kt`: Fixed stale error UI bug when loading new URLs
+- `PageWebViewClient.kt`: Added defensive try-catch to callback loops
+- `DeckPickerViewModel.kt`: Extracted `calculateTimeUntilNextDay` helper function
+- `NoteEditorDialogs.kt`: Added input validation and trimming for toolbar customization
+- `PageWebViewViewModel.kt`: Converted `ServerState` to sealed interface
+- `DeckPicker.kt`: Added user-visible error feedback for failed drag-and-drop imports
 
 ---
 
@@ -146,7 +154,7 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 
 ---
 
-### 4. Note Editor — 🟡 70% Compose (In Progress)
+### 4. Note Editor — 🟢 75% Compose
 **Location**: `noteeditor/compose/`
 
 | File                     | Size | Status     |
@@ -154,17 +162,20 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 | `NoteEditor.kt`          | 28KB | ✅ Complete |
 | `NoteEditorToolbar.kt`   | 15KB | ✅ Complete |
 | `NoteEditorTopBar.kt`    | 10KB | ✅ Complete |
-| `NoteEditorViewModel.kt` | 53KB | ✅ Complete |
+| `NoteEditorDialogs.kt`   | 7KB  | ✅ Complete |
+| `NoteEditorViewModel.kt` | 57KB | ✅ Complete |
 
 > **Note**: See `noteeditor/COMPOSE_MIGRATION_STATUS.md` for detailed tracking.
 
-**Remaining Work**:
+**Recent Work**:
 - [x] Refactor `NoteEditorFragment.kt` - extracted helper methods
-- [ ] Test core functionality (add/edit notes)
+- [x] Fix unit test threading issues (injectable `ioDispatcher`)
+- [x] Consolidate duplicate state classes
+- [x] Add input validation to toolbar customization dialog
 - [ ] Tab order/accessibility
 - [ ] CardBrowser split-view integration
 
-> **Note**: Unit tests are @Ignored due to lifecycle scope threading issue with Robolectric.
+> **Note**: Unit tests are now passing after resolving lifecycle scope threading issues.
 
 ---
 
@@ -179,7 +190,7 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 
 ---
 
-### 6. Dialogs — 🟡 15% Migrated
+### 6. Dialogs — 🟡 20% Migrated
 
 **Compose Dialogs**:
 | Dialog                        | Status     |
@@ -190,8 +201,10 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 | `DeleteConfirmationDialog.kt` | ✅ Complete |
 | `DiscardChangesDialog.kt`     | ✅ Complete |
 | `BrowserOptionsComposable.kt` | ✅ Complete |
+| `NoteEditorDialogs.kt`        | ✅ Complete |
+| `OnErrorCallback.kt`          | ✅ Complete |
 
-**Still View-Based** (40+ dialogs)
+**Still View-Based** (35+ dialogs)
 
 ---
 
@@ -243,15 +256,10 @@ Remove legacy code from `NoteEditorFragment.kt` now that the ViewModel handles s
 
 The CardBrowser already renders inside the DeckPicker on tablets. To create a consistent user experience, it should be migrated to a proper Nav3 destination, removing its dependency on a separate Activity.
 
-### 3. Fix NoteEditor Test Infrastructure
-**Effort**: Medium | **Impact**: Low
-
-The lifecycle scope threading issue in Robolectric tests needs a production code fix in `CoroutineHelpers.kt` to use `Dispatchers.Main.immediate` for lifecycle scope access. This will allow enabling the currently `@Ignored` unit tests.
-
-### 4. Migrate Simple Dialogs to Compose
+### 3. Migrate Simple Dialogs to Compose
 **Effort**: Low per dialog | **Impact**: Medium
 
-Migrating the remaining 40+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
+Migrating the remaining 35+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
 - `CreateDeckDialog`
 - Simple confirmation dialogs
 - `IntegerDialog`

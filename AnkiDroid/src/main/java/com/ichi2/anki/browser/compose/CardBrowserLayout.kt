@@ -21,20 +21,15 @@ package com.ichi2.anki.browser.compose
 import android.content.Intent
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -47,9 +42,7 @@ import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
@@ -58,16 +51,13 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -80,7 +70,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -92,6 +81,7 @@ import com.ichi2.anki.dialogs.help.HelpDialog
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.pages.Statistics
 import com.ichi2.anki.preferences.PreferencesActivity
+import com.ichi2.anki.ui.compose.components.DeckSelector
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -144,7 +134,6 @@ fun CardBrowserLayout(
     }
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isSearchOpen by viewModel.flowOfSearchQueryExpanded.collectAsStateWithLifecycle()
-    var showDeckMenu by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var availableDecks by remember { mutableStateOf<List<SelectableDeck.Deck>>(emptyList()) }
     val searchAnim by animateFloatAsState(
@@ -171,24 +160,6 @@ fun CardBrowserLayout(
 
     LaunchedEffect(Unit) {
         availableDecks = viewModel.getAvailableDecks()
-    }
-
-    var deckSearchQuery by remember { mutableStateOf("") }
-
-    val deckHierarchy = remember(availableDecks, deckSearchQuery) {
-        buildDeckHierarchy(availableDecks, deckSearchQuery)
-    }
-
-    val expandedDecks = remember { mutableStateMapOf<String, Boolean>() }
-
-    // Clean up state when deck menu is dismissed to prevent memory leaks
-    DisposableEffect(showDeckMenu) {
-        onDispose {
-            if (!showDeckMenu) {
-                deckSearchQuery = ""
-                expandedDecks.clear()
-            }
-        }
     }
 
     Row(modifier = Modifier.fillMaxSize()) {
@@ -230,86 +201,14 @@ fun CardBrowserLayout(
                     Row(modifier = Modifier.graphicsLayer {
                         alpha = 1f - searchAnim
                     }) {
-                        TextButton(onClick = { showDeckMenu = true }) {
-                            val selectedDeck by viewModel.flowOfDeckSelection.collectAsStateWithLifecycle(
+                        DeckSelector(
+                            selectedDeck = viewModel.flowOfDeckSelection.collectAsStateWithLifecycle(
                                 null
-                            )
-                            val deckName = when (val deck = selectedDeck) {
-                                is SelectableDeck.Deck -> deck.name
-                                else -> stringResource(R.string.card_browser_all_decks)
-                            }
-                            Text(
-                                text = deckName, maxLines = 1, overflow = TextOverflow.Ellipsis
-                            )
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                contentDescription = stringResource(R.string.select_deck)
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showDeckMenu, onDismissRequest = {
-                                showDeckMenu = false
-                                deckSearchQuery = ""
-                                expandedDecks.clear()
-                            }, shape = MaterialTheme.shapes.large
-                        ) {
-                            Surface(
-                                modifier = Modifier.padding(
-                                    vertical = 8.dp, horizontal = 12.dp
-                                ), color = MaterialTheme.colorScheme.surface, shape = CircleShape
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    TextField(
-                                        value = deckSearchQuery,
-                                        onValueChange = { deckSearchQuery = it },
-                                        placeholder = { Text(stringResource(R.string.card_browser_search_hint)) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textStyle = MaterialTheme.typography.bodyLarge,
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Default.Search,
-                                                contentDescription = stringResource(R.string.card_browser_search_hint)
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            if (deckSearchQuery.isNotEmpty()) {
-                                                IconButton(onClick = { deckSearchQuery = "" }) {
-                                                    Icon(
-                                                        Icons.Default.Close,
-                                                        contentDescription = stringResource(R.string.close)
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        colors = transparentTextFieldColors(),
-                                    )
+                            ).value, availableDecks = availableDecks, onDeckSelected = { deck ->
+                                coroutineScope.launch {
+                                    viewModel.setSelectedDeck(deck)
                                 }
-                            }
-
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.card_browser_all_decks)) },
-                                onClick = {
-                                    coroutineScope.launch {
-                                        viewModel.setSelectedDeck(SelectableDeck.AllDecks)
-                                    }
-                                    showDeckMenu = false
-                                    deckSearchQuery = ""
-                                    expandedDecks.clear()
-                                })
-                            DeckHierarchyMenu(
-                                deckHierarchy = deckHierarchy,
-                                expandedDecks = expandedDecks,
-                                onDeckSelected = { deck ->
-                                    coroutineScope.launch {
-                                        viewModel.setSelectedDeck(deck)
-                                    }
-                                    showDeckMenu = false
-                                    deckSearchQuery = ""
-                                    expandedDecks.clear()
-                                },
-                                searchQuery = deckSearchQuery
-                            )
-                        }
+                            })
                     }
                 }, navigationIcon = {
                     if (!isSearchOpen) {
@@ -441,79 +340,4 @@ fun CardBrowserLayout(
     }
 }
 
-private fun buildDeckHierarchy(
-    decks: List<SelectableDeck.Deck>, searchQuery: String
-): Map<String, List<SelectableDeck.Deck>> {
-    val hierarchy = mutableMapOf<String, MutableList<SelectableDeck.Deck>>()
-    val topLevelDecks = mutableListOf<SelectableDeck.Deck>()
-
-    val decksToShow = if (searchQuery.isEmpty()) {
-        decks
-    } else {
-        val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
-        val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
-        val allDecksByName = decks.associateBy { it.name }
-
-        for (deck in matchingDecks) {
-            requiredDecks.add(deck)
-            var currentName = deck.name
-            while (currentName.contains("::")) {
-                currentName = currentName.substringBeforeLast("::")
-                allDecksByName[currentName]?.let { requiredDecks.add(it) }
-            }
-        }
-        requiredDecks.toList()
-    }
-
-    for (deck in decksToShow) {
-        val parts = deck.name.split("::")
-        if (parts.size > 1) {
-            val parentName = parts.dropLast(1).joinToString("::")
-            hierarchy.getOrPut(parentName) { mutableListOf() }.add(deck)
-        } else {
-            topLevelDecks.add(deck)
-        }
-    }
-
-    hierarchy[""] = topLevelDecks
-    return hierarchy
-}
-
-@Composable
-private fun DeckHierarchyMenu(
-    deckHierarchy: Map<String, List<SelectableDeck.Deck>>,
-    expandedDecks: MutableMap<String, Boolean>,
-    onDeckSelected: (SelectableDeck.Deck) -> Unit,
-    searchQuery: String,
-    parentName: String = ""
-) {
-    val children = deckHierarchy[parentName] ?: return
-
-    for (deck in children) {
-        val isExpanded = expandedDecks[deck.name] ?: false
-        val hasChildren = deckHierarchy.containsKey(deck.name)
-
-        DropdownMenuItem(
-            text = { Text(deck.name.substringAfterLast("::")) },
-            onClick = { onDeckSelected(deck) },
-            trailingIcon = {
-                if (hasChildren) {
-                    IconButton(onClick = { expandedDecks[deck.name] = !isExpanded }) {
-                        Icon(
-                            painter = if (isExpanded) painterResource(R.drawable.keyboard_arrow_right_24px)
-                            else painterResource(
-                                R.drawable.keyboard_arrow_down_24px
-                            ), contentDescription = "Expand"
-                        )
-                    }
-                }
-            })
-        if (isExpanded && hasChildren) {
-            Column(modifier = Modifier.padding(start = 16.dp)) {
-                DeckHierarchyMenu(
-                    deckHierarchy, expandedDecks, onDeckSelected, searchQuery, deck.name
-                )
-            }
-        }
-    }
-}
+// buildDeckHierarchy and DeckHierarchyMenu removed in favor of shared DeckSelector.kt

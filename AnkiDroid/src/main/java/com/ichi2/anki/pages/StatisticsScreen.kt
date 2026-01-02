@@ -15,9 +15,15 @@
  */
 package com.ichi2.anki.pages
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import com.ichi2.anki.R
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ichi2.anki.ui.compose.components.DeckSelector
 
 /**
  * Compose wrapper for the Statistics (graphs) page.
@@ -27,10 +33,24 @@ import com.ichi2.anki.R
 @Composable
 fun StatisticsScreen(
     onNavigateUp: () -> Unit,
+    viewModel: StatisticsViewModel = viewModel(),
 ) {
+    val selectedDeck by viewModel.selectedDeck.collectAsState()
+    val availableDecks by viewModel.availableDecks.collectAsState()
+
     PageWebView(
         path = "graphs",
-        title = stringResource(R.string.statistics),
+        title = null,
         onNavigateUp = onNavigateUp,
-    )
+        jsCommands = viewModel.jsInjectionEvent,
+        topBarActions = {
+            Row(modifier = Modifier.widthIn(max = 300.dp)) {
+                DeckSelector(
+                    selectedDeck = selectedDeck,
+                    availableDecks = availableDecks,
+                    onDeckSelected = { viewModel.selectDeck(it) },
+                    showAllDecksOption = false
+                )
+            }
+        })
 }

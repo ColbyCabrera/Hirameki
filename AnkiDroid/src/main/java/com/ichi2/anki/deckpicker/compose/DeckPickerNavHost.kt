@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
@@ -83,7 +84,8 @@ import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
 import com.ichi2.anki.navigation.Navigator
-import com.ichi2.anki.pages.Statistics
+import com.ichi2.anki.navigation.StatisticsDestination
+import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
@@ -163,7 +165,7 @@ fun DeckPickerNavHost(
     onEmptyFiltered: (Long) -> Unit,
     onCustomStudy: (Long) -> Unit,
     onOpenCardInfo: (Long) -> Unit,
-    onShowDialogFragment: (androidx.fragment.app.DialogFragment) -> Unit,
+    onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onSync: () -> Unit,
 ) {
@@ -231,6 +233,12 @@ fun DeckPickerNavHost(
                     }
                 }
 
+                is StatisticsDestination -> {
+                    NavEntry(key) {
+                        StatisticsScreen(onNavigateUp = { navigator.goBack() })
+                    }
+                }
+
                 else -> NavEntry(key) {
                     Timber.w("Unknown navigation route: %s", key)
                     Text("Unknown Route")
@@ -264,7 +272,7 @@ private fun DeckPickerMainContent(
     onEmptyFiltered: (Long) -> Unit,
     onCustomStudy: (Long) -> Unit,
     onOpenCardInfo: (Long) -> Unit,
-    onShowDialogFragment: (androidx.fragment.app.DialogFragment) -> Unit,
+    onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onSync: () -> Unit,
     lifecycle: Lifecycle
@@ -320,7 +328,7 @@ private fun DeckPickerMainContent(
             }
 
             AppNavigationItem.Statistics -> {
-                onLaunchIntent(Statistics.getIntent(applicationContext))
+                navigator.goTo(StatisticsDestination)
             }
 
             AppNavigationItem.Settings -> {
