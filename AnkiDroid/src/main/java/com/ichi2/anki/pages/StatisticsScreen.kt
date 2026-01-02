@@ -15,12 +15,16 @@
  */
 package com.ichi2.anki.pages
 
+import android.widget.Toast
+
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.ui.compose.components.DeckSelector
@@ -37,6 +41,13 @@ fun StatisticsScreen(
 ) {
     val selectedDeck by viewModel.selectedDeck.collectAsState()
     val availableDecks by viewModel.availableDecks.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(viewModel) {
+        viewModel.snackbarMessage.collect {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     PageWebView(
         path = "graphs",
