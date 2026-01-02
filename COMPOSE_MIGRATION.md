@@ -279,6 +279,12 @@ Migrating the remaining 35+ view-based dialogs to Compose is a good source of sm
 - Simple confirmation dialogs
 - `IntegerDialog`
 
+### 4. Code Quality TODOs
+
+| File | Issue | Suggested Fix |
+|------|-------|---------------|
+| `DeckPickerNavHost.kt` | 24 parameters on `DeckPickerNavHost()` function | Group related callbacks into configuration objects (e.g., `DeckActions`, `NavigationCallbacks`) |
+
 ---
 
 ## 📊 Effort Estimates (Updated)
