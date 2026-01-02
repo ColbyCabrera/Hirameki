@@ -80,4 +80,6 @@
     <string name="brush_options">Brush options</string>
     <string name="page_web_view_error">Could not load page. Please try again later.</string>
     <string name="statistics_failed_to_load_decks">Failed to load decks</string>
+    <string name="note_type_type">Type</string>
+    <string name="note_type_name">Name</string>
 </resources>
