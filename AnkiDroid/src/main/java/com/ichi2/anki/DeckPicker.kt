@@ -848,8 +848,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     @VisibleForTesting
     suspend fun updateMenuState() {
         optionsMenuState = withOpenColOrNull {
-            // the correct sync status is fetched in the next call so "Normal" is used as a placeholder
-            // the sync status is calculated in the next call so "Normal" is used as a placeholder
             OptionsMenuState(
                 undoLabel = undoLabel(),
                 syncIcon = viewModel.syncState.value,
