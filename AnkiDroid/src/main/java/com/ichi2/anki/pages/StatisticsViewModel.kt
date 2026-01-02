@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject.quote
 import timber.log.Timber
 
 /**
@@ -40,6 +41,9 @@ class StatisticsViewModel : ViewModel() {
 
     private val _jsInjectionEvent = MutableSharedFlow<String>()
     val jsInjectionEvent = _jsInjectionEvent.asSharedFlow()
+
+    private val _snackbarMessage = MutableSharedFlow<String>()
+    val snackbarMessage = _snackbarMessage.asSharedFlow()
 
     init {
         loadDecks()
@@ -64,30 +68,38 @@ class StatisticsViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load decks for statistics")
+                _snackbarMessage.emit("Failed to load decks")
             }
         }
     }
 
     fun selectDeck(deck: SelectableDeck) {
         if (_selectedDeck.value == deck) return
-        
+
         _selectedDeck.update { deck }
-        
+
         if (deck is SelectableDeck.Deck) {
             injectDeckChangeScript(deck.name)
         }
     }
 
     private fun injectDeckChangeScript(deckName: String) {
+        val escapedDeckName = quote(deckName)
+
         val javascriptCode = """
-            var textBox = document.getElementById("statisticsSearchText");
-            if (textBox) {
-                textBox.value = "deck:\"$deckName\"";
-                textBox.dispatchEvent(new Event("input", { bubbles: true }));
-                textBox.dispatchEvent(new Event("change"));
+            function setDeck(retries) {
+                var textBox = document.getElementById("statisticsSearchText");
+                if (textBox) {
+                    textBox.value = "deck:" + $escapedDeckName;
+                    textBox.dispatchEvent(new Event("input", { bubbles: true }));
+                    textBox.dispatchEvent(new Event("change"));
+                } else if (retries > 0) {
+                    setTimeout(function() { setDeck(retries - 1); }, 200);
+                }
             }
+            setDeck(5);
         """.trimIndent()
-        
+
         viewModelScope.launch {
             _jsInjectionEvent.emit(javascriptCode)
         }
