@@ -848,16 +848,14 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     @VisibleForTesting
     suspend fun updateMenuState() {
         optionsMenuState = withOpenColOrNull {
-            val undoLabel = undoLabel()
-            val undoAvailable = undoAvailable()
-            // besides checking for cards being available also consider if we have empty decks
-            val isColEmpty = isEmpty && decks.count() == 1
             // the correct sync status is fetched in the next call so "Normal" is used as a placeholder
             // the sync status is calculated in the next call so "Normal" is used as a placeholder
-            OptionsMenuState(undoLabel, SyncIconState.Normal, undoAvailable, isColEmpty)
-        }?.let { (undoLabel, _, undoAvailable, isColEmpty) ->
-            val syncIcon = viewModel.syncState.value
-            OptionsMenuState(undoLabel, syncIcon, undoAvailable, isColEmpty)
+            OptionsMenuState(
+                undoLabel = undoLabel(),
+                syncIcon = viewModel.syncState.value,
+                undoAvailable = undoAvailable(),
+                isColEmpty = isEmpty && decks.count() == 1,  // besides checking for cards being available also consider if we have empty decks
+            )
         }
     }
 
