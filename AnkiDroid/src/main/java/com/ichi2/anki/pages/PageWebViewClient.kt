@@ -112,7 +112,7 @@ open class PageWebViewClient : WebViewClient() {
     override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
         super.onReceivedError(view, request, error)
         if (request.isForMainFrame) {
-            onErrorCallbacks.map { it.onError() }
+            onErrorCallbacks.map { it.onError(error) }
         }
     }
 }

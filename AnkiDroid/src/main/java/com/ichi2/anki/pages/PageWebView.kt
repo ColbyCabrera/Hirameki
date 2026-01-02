@@ -102,7 +102,8 @@ fun PageWebView(
                             isLoading = false
                             webView.visibility = View.VISIBLE
                         }
-                        onErrorCallbacks.add {
+                        onErrorCallbacks.add { error ->
+                            Timber.e("PageWebView error: %s", error.description)
                             hasError = true
                             isLoading = false
                         }

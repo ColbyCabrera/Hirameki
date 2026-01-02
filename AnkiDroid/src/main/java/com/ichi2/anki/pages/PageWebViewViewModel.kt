@@ -17,6 +17,8 @@ package com.ichi2.anki.pages
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 
 /**
@@ -31,6 +33,9 @@ class PageWebViewViewModel(
 
     private val server = AnkiServer(this)
 
+    private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
+    val serverState = _serverState.asStateFlow()
+
     /**
      * The base URL for the local server, used to load Anki pages.
      */
@@ -38,12 +43,19 @@ class PageWebViewViewModel(
         get() = server.baseUrl()
 
     init {
-        server.start()
-        Timber.d("PageWebViewViewModel: AnkiServer started at %s", serverBaseUrl)
+        try {
+            server.start()
+            _serverState.value = ServerState.Running
+            Timber.d("PageWebViewViewModel: AnkiServer started at %s", serverBaseUrl)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to start AnkiServer at %s", serverBaseUrl)
+            _serverState.value = ServerState.Error(e)
+        }
     }
 
     override fun onCleared() {
         server.stop()
+        _serverState.value = ServerState.Stopped
         Timber.d("PageWebViewViewModel: AnkiServer stopped")
         super.onCleared()
     }
@@ -60,4 +72,10 @@ class PageWebViewViewModel(
         return handleCollectionPostRequest(methodName, bytes)
             ?: throw IllegalArgumentException("unhandled method: $methodName")
     }
+}
+
+sealed class ServerState {
+    object Running : ServerState()
+    object Stopped : ServerState()
+    data class Error(val exception: Exception) : ServerState()
 }
