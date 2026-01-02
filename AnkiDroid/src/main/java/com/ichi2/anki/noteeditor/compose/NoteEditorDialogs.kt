@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -153,6 +154,24 @@ fun AddToolbarItemDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    if (state.isEditMode && onDelete != null) {
+                        TextButton(
+                            onClick = onDelete,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text(text = TR.actionsDelete())
+                        }
+                    }
+                    TextButton(onClick = onHelpClick) {
+                        Text(text = stringResource(R.string.help))
+                    }
+                }
             }
         },
         confirmButton = {
@@ -169,18 +188,8 @@ fun AddToolbarItemDialog(
             }
         },
         dismissButton = {
-            Row {
-                if (state.isEditMode && onDelete != null) {
-                    TextButton(onClick = onDelete) {
-                        Text(text = TR.actionsDelete())
-                    }
-                }
-                TextButton(onClick = onHelpClick) {
-                    Text(text = stringResource(R.string.help))
-                }
-                TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(R.string.dialog_cancel))
-                }
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
             }
         },
     )
@@ -194,6 +203,26 @@ private fun AddToolbarItemDialogPreview() {
             state = ToolbarItemDialogState(isVisible = true),
             onDismissRequest = {},
             onConfirm = { _, _, _ -> },
+            onHelpClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditToolbarItemDialogPreview() {
+    AnkiDroidTheme {
+        AddToolbarItemDialog(
+            state = ToolbarItemDialogState(
+                isVisible = true,
+                isEditMode = true,
+                icon = "function",
+                prefix = "<b>",
+                suffix = "</b>"
+            ),
+            onDismissRequest = {},
+            onConfirm = { _, _, _ -> },
+            onDelete = {},
             onHelpClick = {},
         )
     }
