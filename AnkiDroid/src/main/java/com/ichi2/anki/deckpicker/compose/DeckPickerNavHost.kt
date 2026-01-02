@@ -17,6 +17,9 @@ package com.ichi2.anki.deckpicker.compose
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -169,6 +172,13 @@ fun DeckPickerNavHost(
     NavDisplay(
         backStack = navigator.backStack,
         onBack = { navigator.goBack() },
+        transitionSpec = {
+            fadeIn() togetherWith fadeOut()
+        },
+        popTransitionSpec = {
+            fadeIn() togetherWith fadeOut()
+        },
+        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
         entryProvider = { key ->
             when (key) {
                 is DeckPickerScreen -> {
@@ -554,8 +564,7 @@ private fun DeckPickerMainContent(
                     })
             } else {
                 DeckPickerWithDrawer(
-                    state = deckPickerDrawerState,
-                    actions = deckPickerDrawerActions
+                    state = deckPickerDrawerState, actions = deckPickerDrawerActions
                 )
             }
         }
