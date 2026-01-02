@@ -103,7 +103,7 @@ open class PageWebViewClient : WebViewClient() {
     ) {
         super.onPageFinished(view, url)
         if (view == null) return
-        onPageFinishedCallbacks.map { callback -> callback.onPageFinished(view) }
+        onPageFinishedCallbacks.forEach { callback -> callback.onPageFinished(view) }
         /** [PageFragment.webView] is invisible by default to avoid flashes while
          * the page is loaded, and can be made visible again after it finishes loading */
         onShowWebView(view)
@@ -112,7 +112,7 @@ open class PageWebViewClient : WebViewClient() {
     override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
         super.onReceivedError(view, request, error)
         if (request.isForMainFrame) {
-            onErrorCallbacks.map { it.onError(error) }
+            onErrorCallbacks.forEach { it.onError(error) }
         }
     }
 }
