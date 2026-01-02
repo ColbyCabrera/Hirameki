@@ -1414,10 +1414,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     }
 
     override val baseSnackbarBuilder: SnackbarBuilder = {
-        // Configure the snackbar to avoid the bottom answer buttons
-        // if (answerButtonsPosition == "bottom") {
-        //    anchorView = findViewById(R.id.answer_options_layout)
-        // }
     }
 
     private fun onPageUp() {
@@ -2048,7 +2044,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             if (url.startsWith("typeentertext:")) {
                 // Store the text the javascript has send us…
                 typeAnswer!!.input = decodeUrl(url.replaceFirst("typeentertext:".toRegex(), ""))
-                // … and show the answer.
                 // … and show the answer.
                 displayCardAnswer()
                 return true
