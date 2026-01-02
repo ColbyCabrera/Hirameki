@@ -52,8 +52,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import com.ichi2.anki.navigation.CongratsScreen
-import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -77,12 +75,12 @@ import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.dialogs.BrowserOptionsDialog
 import com.ichi2.anki.dialogs.compose.FlagRenameDialog
+import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.pages.Statistics
 import com.ichi2.anki.preferences.PreferencesActivity
-import com.ichi2.anki.ui.compose.CongratsActivity
 import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
@@ -91,6 +89,49 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import com.ichi2.anki.ui.compose.AnkiDroidApp as AnkiDroidAppComposable
+import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
+
+@OptIn(ExperimentalMaterial3Api::class)
+private data class DeckPickerDrawerState(
+    val fragmented: Boolean,
+    val deckList: DeckPickerViewModel.FlattenedDeckList,
+    val isRefreshing: Boolean,
+    val searchQuery: String,
+    val studyOptionsData: StudyOptionsData?,
+    val requestSearchFocus: Boolean,
+    val snackbarHostState: SnackbarHostState,
+    val syncState: SyncIconState,
+    val isInInitialState: Boolean?,
+    val drawerState: DrawerState,
+    val selectedNavigationItem: AppNavigationItem,
+)
+
+private data class DeckPickerDrawerActions(
+    val onSync: () -> Unit,
+    val onSearchQueryChanged: (String) -> Unit,
+    val onDeckClick: (DisplayDeckNode) -> Unit,
+    val onExpandClick: (DisplayDeckNode) -> Unit,
+    val onAddNote: () -> Unit,
+    val onAddDeck: () -> Unit,
+    val onAddSharedDeck: () -> Unit,
+    val onAddFilteredDeck: () -> Unit,
+    val onCheckDatabase: () -> Unit,
+    val onDeckOptions: (Long) -> Unit,
+    val onDeckOptionsItemSelected: (Long) -> Unit,
+    val onRename: (Long) -> Unit,
+    val onExport: (Long) -> Unit,
+    val onDelete: (Long) -> Unit,
+    val onRebuild: (Long) -> Unit,
+    val onEmpty: (Long) -> Unit,
+    val onStartStudy: () -> Unit,
+    val onRebuildDeck: (Long) -> Unit,
+    val onEmptyDeck: (Long) -> Unit,
+    val onCustomStudy: (Long) -> Unit,
+    val onUnbury: (Long) -> Unit,
+    val onSearchFocusRequested: () -> Unit,
+    val onNavigationItemClick: (AppNavigationItem) -> Unit,
+    val onNavigationIconClick: () -> Unit
+)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -326,6 +367,60 @@ private fun DeckPickerMainContent(
         }
     }
 
+    val deckPickerDrawerActions = DeckPickerDrawerActions(
+        onSync = onSync,
+        onSearchQueryChanged = {
+            searchQuery = it
+            viewModel.updateDeckFilter(it)
+        },
+        onDeckClick = { deck ->
+            viewModel.onDeckSelected(deck.did, DeckSelectionType.DEFAULT)
+        },
+        onExpandClick = { deck -> viewModel.toggleDeckExpand(deck.did) },
+        onAddNote = onAddNote,
+        onAddDeck = onAddDeck,
+        onAddSharedDeck = onAddSharedDeck,
+        onAddFilteredDeck = onAddFilteredDeck,
+        onCheckDatabase = onCheckDatabase,
+        onDeckOptions = { viewModel.openDeckOptions(it) },
+        onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
+        onRename = onRenameDeck,
+        onExport = onExportDeck,
+        onDelete = onDeleteDeck,
+        onRebuild = onRebuildFiltered,
+        onEmpty = onEmptyFiltered,
+        onStartStudy = onOpenReviewer,
+        onRebuildDeck = onRebuildFiltered,
+        onEmptyDeck = onEmptyFiltered,
+        onCustomStudy = onCustomStudy,
+        onUnbury = { viewModel.unburyDeck(it) },
+        onSearchFocusRequested = { requestSearchFocus = false },
+        onNavigationItemClick = { item ->
+            selectedNavigationItem = item
+            coroutineScope.launch {
+                drawerState.close()
+                handleNavigation(item)
+                selectedNavigationItem = AppNavigationItem.Decks
+            }
+        },
+        onNavigationIconClick = {
+            coroutineScope.launch { drawerState.open() }
+        })
+
+    val deckPickerDrawerState = DeckPickerDrawerState(
+        fragmented = fragmented,
+        deckList = deckList,
+        isRefreshing = isRefreshing,
+        searchQuery = searchQuery,
+        studyOptionsData = studyOptionsData,
+        requestSearchFocus = requestSearchFocus,
+        snackbarHostState = snackbarHostState,
+        syncState = syncState,
+        isInInitialState = isInInitialState,
+        drawerState = drawerState,
+        selectedNavigationItem = selectedNavigationItem,
+    )
+
     if (fragmented) {
         Row {
             AnkiNavigationRail(
@@ -458,108 +553,13 @@ private fun DeckPickerMainContent(
                     })
             } else {
                 DeckPickerWithDrawer(
-                    fragmented = true,
-                    deckList = deckList,
-                    isRefreshing = isRefreshing,
-                    onSync = onSync,
-                    searchQuery = searchQuery,
-                    onSearchQueryChanged = {
-                        searchQuery = it
-                        viewModel.updateDeckFilter(it)
-                    },
-                    onDeckClick = { deck ->
-                        viewModel.onDeckSelected(deck.did, DeckSelectionType.DEFAULT)
-                    },
-                    onExpandClick = { deck -> viewModel.toggleDeckExpand(deck.did) },
-                    onAddNote = onAddNote,
-                    onAddDeck = onAddDeck,
-                    onAddSharedDeck = onAddSharedDeck,
-                    onAddFilteredDeck = onAddFilteredDeck,
-                    onCheckDatabase = onCheckDatabase,
-                    onDeckOptions = { viewModel.openDeckOptions(it) },
-                    onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
-                    onRename = onRenameDeck,
-                    onExport = onExportDeck,
-                    onDelete = onDeleteDeck,
-                    onRebuild = onRebuildFiltered,
-                    onEmpty = onEmptyFiltered,
-                    studyOptionsData = studyOptionsData,
-                    onStartStudy = onOpenReviewer,
-                    onRebuildDeck = onRebuildFiltered,
-                    onEmptyDeck = onEmptyFiltered,
-                    onCustomStudy = onCustomStudy,
-                    onUnbury = { viewModel.unburyDeck(it) },
-                    requestSearchFocus = requestSearchFocus,
-                    onSearchFocusRequested = { requestSearchFocus = false },
-                    snackbarHostState = snackbarHostState,
-                    syncState = syncState,
-                    isInInitialState = isInInitialState,
-                    drawerState = drawerState,
-                    selectedNavigationItem = selectedNavigationItem,
-                    onNavigationItemClick = { item ->
-                        selectedNavigationItem = item
-                        coroutineScope.launch {
-                            drawerState.close()
-                            handleNavigation(item)
-                            selectedNavigationItem = AppNavigationItem.Decks
-                        }
-                    },
-                    onNavigationIconClick = {
-                        coroutineScope.launch { drawerState.open() }
-                    })
+                    state = deckPickerDrawerState,
+                    actions = deckPickerDrawerActions
+                )
             }
         }
     } else {
-        DeckPickerWithDrawer(
-            fragmented = false,
-            deckList = deckList,
-            isRefreshing = isRefreshing,
-            onSync = onSync,
-            searchQuery = searchQuery,
-            onSearchQueryChanged = {
-                searchQuery = it
-                viewModel.updateDeckFilter(it)
-            },
-            onDeckClick = { deck ->
-                viewModel.onDeckSelected(deck.did, DeckSelectionType.DEFAULT)
-            },
-            onExpandClick = { deck -> viewModel.toggleDeckExpand(deck.did) },
-            onAddNote = onAddNote,
-            onAddDeck = onAddDeck,
-            onAddSharedDeck = onAddSharedDeck,
-            onAddFilteredDeck = onAddFilteredDeck,
-            onCheckDatabase = onCheckDatabase,
-            onDeckOptions = { viewModel.openDeckOptions(it) },
-            onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
-            onRename = onRenameDeck,
-            onExport = onExportDeck,
-            onDelete = onDeleteDeck,
-            onRebuild = onRebuildFiltered,
-            onEmpty = onEmptyFiltered,
-            studyOptionsData = studyOptionsData,
-            onStartStudy = onOpenReviewer,
-            onRebuildDeck = onRebuildFiltered,
-            onEmptyDeck = onEmptyFiltered,
-            onCustomStudy = onCustomStudy,
-            onUnbury = { viewModel.unburyDeck(it) },
-            requestSearchFocus = requestSearchFocus,
-            onSearchFocusRequested = { requestSearchFocus = false },
-            snackbarHostState = snackbarHostState,
-            syncState = syncState,
-            isInInitialState = isInInitialState,
-            drawerState = drawerState,
-            selectedNavigationItem = selectedNavigationItem,
-            onNavigationItemClick = { item ->
-                selectedNavigationItem = item
-                coroutineScope.launch {
-                    drawerState.close()
-                    handleNavigation(item)
-                    selectedNavigationItem = AppNavigationItem.Decks
-                }
-            },
-            onNavigationIconClick = {
-                coroutineScope.launch { drawerState.open() }
-            })
+        DeckPickerWithDrawer(state = deckPickerDrawerState, actions = deckPickerDrawerActions)
     }
 
     SetupFlows(
@@ -575,48 +575,14 @@ private fun DeckPickerMainContent(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckPickerWithDrawer(
-    fragmented: Boolean,
-    deckList: DeckPickerViewModel.FlattenedDeckList,
-    isRefreshing: Boolean,
-    onSync: () -> Unit,
-    searchQuery: String,
-    onSearchQueryChanged: (String) -> Unit,
-    onDeckClick: (DisplayDeckNode) -> Unit,
-    onExpandClick: (DisplayDeckNode) -> Unit,
-    onAddNote: () -> Unit,
-    onAddDeck: () -> Unit,
-    onAddSharedDeck: () -> Unit,
-    onAddFilteredDeck: () -> Unit,
-    onCheckDatabase: () -> Unit,
-    onDeckOptions: (Long) -> Unit,
-    onDeckOptionsItemSelected: (Long) -> Unit,
-    onRename: (Long) -> Unit,
-    onExport: (Long) -> Unit,
-    onDelete: (Long) -> Unit,
-    onRebuild: (Long) -> Unit,
-    onEmpty: (Long) -> Unit,
-    studyOptionsData: StudyOptionsData?,
-    onStartStudy: () -> Unit,
-    onRebuildDeck: (Long) -> Unit,
-    onEmptyDeck: (Long) -> Unit,
-    onCustomStudy: (Long) -> Unit,
-    onUnbury: (Long) -> Unit,
-    requestSearchFocus: Boolean,
-    onSearchFocusRequested: () -> Unit,
-    snackbarHostState: SnackbarHostState,
-    syncState: SyncIconState,
-    isInInitialState: Boolean?,
-    drawerState: DrawerState,
-    selectedNavigationItem: AppNavigationItem,
-    onNavigationItemClick: (AppNavigationItem) -> Unit,
-    onNavigationIconClick: () -> Unit
+    state: DeckPickerDrawerState, actions: DeckPickerDrawerActions
 ) {
     ModalNavigationDrawer(
-        drawerState = drawerState,
-        gesturesEnabled = !fragmented || drawerState.targetValue != DrawerValue.Closed,
+        drawerState = state.drawerState,
+        gesturesEnabled = !state.fragmented || state.drawerState.targetValue != DrawerValue.Closed,
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.width(310.dp),
@@ -648,8 +614,8 @@ private fun DeckPickerWithDrawer(
                         NavigationDrawerItem(
                             icon = { Icon(painterResource(item.icon), contentDescription = null) },
                             label = { Text(stringResource(item.labelResId)) },
-                            selected = selectedNavigationItem == item,
-                            onClick = { onNavigationItemClick(item) },
+                            selected = state.selectedNavigationItem == item,
+                            onClick = { actions.onNavigationItemClick(item) },
                         )
                     }
                 }
@@ -657,38 +623,38 @@ private fun DeckPickerWithDrawer(
         },
     ) {
         AnkiDroidAppComposable(
-            fragmented = fragmented,
-            decks = deckList.data,
-            isRefreshing = isRefreshing,
-            onRefresh = onSync,
-            searchQuery = searchQuery,
-            onSearchQueryChanged = onSearchQueryChanged,
-            onDeckClick = onDeckClick,
-            onExpandClick = onExpandClick,
-            onAddNote = onAddNote,
-            onAddDeck = onAddDeck,
-            onAddSharedDeck = onAddSharedDeck,
-            onAddFilteredDeck = onAddFilteredDeck,
-            onCheckDatabase = onCheckDatabase,
-            onDeckOptions = { deck -> onDeckOptions(deck.did) },
-            onRename = { deck -> onRename(deck.did) },
-            onExport = { deck -> onExport(deck.did) },
-            onDelete = { deck -> onDelete(deck.did) },
-            onRebuild = { deck -> onRebuild(deck.did) },
-            onEmpty = { deck -> onEmpty(deck.did) },
-            onNavigationIconClick = onNavigationIconClick,
-            studyOptionsData = studyOptionsData,
-            onStartStudy = onStartStudy,
-            onRebuildDeck = onRebuildDeck,
-            onEmptyDeck = onEmptyDeck,
-            onCustomStudy = onCustomStudy,
-            onDeckOptionsItemSelected = onDeckOptionsItemSelected,
-            onUnbury = onUnbury,
-            requestSearchFocus = requestSearchFocus,
-            onSearchFocusRequested = onSearchFocusRequested,
-            snackbarHostState = snackbarHostState,
-            syncState = syncState,
-            isInInitialState = isInInitialState,
+            fragmented = state.fragmented,
+            decks = state.deckList.data,
+            isRefreshing = state.isRefreshing,
+            onRefresh = actions.onSync,
+            searchQuery = state.searchQuery,
+            onSearchQueryChanged = actions.onSearchQueryChanged,
+            onDeckClick = actions.onDeckClick,
+            onExpandClick = actions.onExpandClick,
+            onAddNote = actions.onAddNote,
+            onAddDeck = actions.onAddDeck,
+            onAddSharedDeck = actions.onAddSharedDeck,
+            onAddFilteredDeck = actions.onAddFilteredDeck,
+            onCheckDatabase = actions.onCheckDatabase,
+            onDeckOptions = { deck -> actions.onDeckOptions(deck.did) },
+            onRename = { deck -> actions.onRename(deck.did) },
+            onExport = { deck -> actions.onExport(deck.did) },
+            onDelete = { deck -> actions.onDelete(deck.did) },
+            onRebuild = { deck -> actions.onRebuild(deck.did) },
+            onEmpty = { deck -> actions.onEmpty(deck.did) },
+            onNavigationIconClick = actions.onNavigationIconClick,
+            studyOptionsData = state.studyOptionsData,
+            onStartStudy = actions.onStartStudy,
+            onRebuildDeck = actions.onRebuildDeck,
+            onEmptyDeck = actions.onEmptyDeck,
+            onCustomStudy = actions.onCustomStudy,
+            onDeckOptionsItemSelected = actions.onDeckOptionsItemSelected,
+            onUnbury = actions.onUnbury,
+            requestSearchFocus = state.requestSearchFocus,
+            onSearchFocusRequested = actions.onSearchFocusRequested,
+            snackbarHostState = state.snackbarHostState,
+            syncState = state.syncState,
+            isInInitialState = state.isInInitialState,
         )
     }
 }
