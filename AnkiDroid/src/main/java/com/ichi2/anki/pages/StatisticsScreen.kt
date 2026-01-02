@@ -16,6 +16,8 @@
 package com.ichi2.anki.pages
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.ichi2.anki.R
 
 /**
  * Compose wrapper for the Statistics (graphs) page.
@@ -28,7 +30,7 @@ fun StatisticsScreen(
 ) {
     PageWebView(
         path = "graphs",
-        title = null, // Statistics has deck spinner in toolbar
+        title = stringResource(R.string.statistics),
         onNavigateUp = onNavigateUp,
     )
 }
