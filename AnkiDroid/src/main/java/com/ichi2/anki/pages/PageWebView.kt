@@ -158,6 +158,9 @@ private fun PageWebViewInternal(path: String, viewModel: PageWebViewViewModel) {
             val url = "${viewModel.serverBaseUrl}$path$nightMode"
             if (webView.tag != url) {
                 webView.tag = url
+                isLoading = true
+                hasError = false
+                webView.visibility = View.INVISIBLE
                 Timber.i("PageWebView: Loading %s", url)
                 webView.loadUrl(url)
             }
