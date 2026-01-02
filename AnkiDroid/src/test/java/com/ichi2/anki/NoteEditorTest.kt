@@ -43,7 +43,9 @@ import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.testutils.getString
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.equalTo
@@ -69,10 +71,13 @@ import kotlin.test.assertNotNull
 @RunWith(AndroidJUnit4::class)
 class NoteEditorTest : RobolectricTest() {
 
+    private lateinit var originalIoDispatcher: CoroutineDispatcher
+
     @Before
     override fun setUp() {
         super.setUp()
-        ioDispatcher = kotlinx.coroutines.test.UnconfinedTestDispatcher()
+        originalIoDispatcher = ioDispatcher
+        ioDispatcher = UnconfinedTestDispatcher()
         // Ensure main looper is idled before each test
         idleMainLooper()
     }
@@ -81,6 +86,7 @@ class NoteEditorTest : RobolectricTest() {
     override fun tearDown() {
         // Drain any pending main thread tasks before teardown
         idleMainLooper()
+        ioDispatcher = originalIoDispatcher
         super.tearDown()
     }
 
