@@ -92,6 +92,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import kotlin.coroutines.cancellation.CancellationException
 import com.ichi2.anki.ui.compose.AnkiDroidApp as AnkiDroidAppComposable
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
@@ -339,39 +340,46 @@ private fun DeckPickerMainContent(
     LaunchedEffect(focusedDeckId) {
         val currentFocusedDeck = focusedDeckId
         if (currentFocusedDeck != null) {
-            studyOptionsData = withContext(Dispatchers.IO) {
-                CollectionManager.withCol {
-                    decks.select(currentFocusedDeck)
-                    val deck = decks.current()
-                    val counts = sched.counts()
-                    var buriedNew = 0
-                    var buriedLearning = 0
-                    var buriedReview = 0
-                    val tree = sched.deckDueTree(currentFocusedDeck)
-                    if (tree != null) {
-                        buriedNew = tree.newCount - counts.new
-                        buriedLearning = tree.learnCount - counts.lrn
-                        buriedReview = tree.reviewCount - counts.rev
+            try {
+                studyOptionsData = withContext(Dispatchers.IO) {
+                    CollectionManager.withCol {
+                        decks.select(currentFocusedDeck)
+                        val deck = decks.current()
+                        val counts = sched.counts()
+                        var buriedNew = 0
+                        var buriedLearning = 0
+                        var buriedReview = 0
+                        val tree = sched.deckDueTree(currentFocusedDeck)
+                        if (tree != null) {
+                            buriedNew = tree.newCount - counts.new
+                            buriedLearning = tree.learnCount - counts.lrn
+                            buriedReview = tree.reviewCount - counts.rev
+                        }
+                        StudyOptionsData(
+                            deckId = currentFocusedDeck,
+                            deckName = deck.getString("name"),
+                            deckDescription = deck.description,
+                            newCount = counts.new,
+                            lrnCount = counts.lrn,
+                            revCount = counts.rev,
+                            buriedNew = buriedNew,
+                            buriedLrn = buriedLearning,
+                            buriedRev = buriedReview,
+                            totalNewCards = sched.totalNewForCurrentDeck(),
+                            totalCards = decks.cardCount(
+                                currentFocusedDeck,
+                                includeSubdecks = true,
+                            ),
+                            isFiltered = deck.isFiltered,
+                            haveBuried = sched.haveBuried(),
+                        )
                     }
-                    StudyOptionsData(
-                        deckId = currentFocusedDeck,
-                        deckName = deck.getString("name"),
-                        deckDescription = deck.description,
-                        newCount = counts.new,
-                        lrnCount = counts.lrn,
-                        revCount = counts.rev,
-                        buriedNew = buriedNew,
-                        buriedLrn = buriedLearning,
-                        buriedRev = buriedReview,
-                        totalNewCards = sched.totalNewForCurrentDeck(),
-                        totalCards = decks.cardCount(
-                            currentFocusedDeck,
-                            includeSubdecks = true,
-                        ),
-                        isFiltered = deck.isFiltered,
-                        haveBuried = sched.haveBuried(),
-                    )
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load study options for deck %d", currentFocusedDeck)
+                studyOptionsData = null
             }
         } else {
             studyOptionsData = null
