@@ -233,47 +233,28 @@ Created `PageWebView` composable wrapper for all Anki HTML/JS content:
 
 ## ⚡ Recommended Next Steps (Priority Order)
 
-### 1. Expand Nav3 to StudyOptions/Congrats (Quick Win)
-**Effort**: Low | **Impact**: High
-
-Both are already Compose screens. Add:
-```kotlin
-@Serializable object StudyOptionsScreen
-@Serializable object CongratsScreen
-```
-
-### 2. Migrate Statistics to Nav3 Destination
-**Effort**: Medium | **Impact**: Medium
-
-The `Statistics` PageFragment can be wrapped as a Nav3 destination. Consider creating a `PageWebView` composable wrapper.
-
-### 3. Complete NoteEditor Fragment Cleanup
+### 1. Complete NoteEditor Fragment Cleanup
 **Effort**: High | **Impact**: High
 
-Remove legacy code from `NoteEditorFragment.kt` now that ViewModel handles state.
+Remove legacy code from `NoteEditorFragment.kt` now that the ViewModel handles state. This is a crucial step to fully modernize the Note Editor.
+
+### 2. Consolidate CardBrowser Navigation
+**Effort**: High | **Impact**: High
+
+The CardBrowser already renders inside the DeckPicker on tablets. To create a consistent user experience, it should be migrated to a proper Nav3 destination, removing its dependency on a separate Activity.
+
+### 3. Fix NoteEditor Test Infrastructure
+**Effort**: Medium | **Impact**: Low
+
+The lifecycle scope threading issue in Robolectric tests needs a production code fix in `CoroutineHelpers.kt` to use `Dispatchers.Main.immediate` for lifecycle scope access. This will allow enabling the currently `@Ignored` unit tests.
 
 ### 4. Migrate Simple Dialogs to Compose
 **Effort**: Low per dialog | **Impact**: Medium
 
-Quick wins:
+Migrating the remaining 40+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
 - `CreateDeckDialog`
 - Simple confirmation dialogs
 - `IntegerDialog`
-
-### 5. Create Compose WebView Wrapper
-**Effort**: Medium | **Impact**: High
-
-A reusable `PageWebView` composable would enable Nav3 for all `PageFragment` screens (Statistics, DeckOptions, CardInfo, etc.).
-
-### 6. Consolidate CardBrowser Navigation
-**Effort**: High | **Impact**: High
-
-CardBrowser already renders in DeckPicker on tablets. Add it as a proper Nav3 destination for consistent navigation.
-
-### 7. Fix NoteEditor Test Infrastructure
-**Effort**: Medium | **Impact**: Low
-
-The lifecycle scope threading issue in Robolectric tests needs a production code fix in `CoroutineHelpers.kt` to use `Dispatchers.Main.immediate` for lifecycle scope access.
 
 ---
 
