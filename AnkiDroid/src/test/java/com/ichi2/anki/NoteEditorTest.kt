@@ -607,9 +607,7 @@ class NoteEditorTest : RobolectricTest() {
         private var secondField: String? = null
 
         fun build(): NoteEditorFragment {
-            val editor = buildInternal()
-            idleMainLooper()
-            return editor
+            return buildInternal()
         }
 
         fun buildInternal(): NoteEditorFragment {
