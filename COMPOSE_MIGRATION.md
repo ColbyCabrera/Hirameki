@@ -175,11 +175,26 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 - [ ] Tab order/accessibility
 - [ ] CardBrowser split-view integration
 
+
 > **Note**: Unit tests are now passing after resolving lifecycle scope threading issues.
+
+### 5. Note Editor Test Migration
+**Location**: `src/test/java/com/ichi2/anki/NoteEditorTest.kt`
+
+The following tests are `@Ignore`d and require rewriting for Compose APIs:
+
+| Scope | Test Name | Issue & Goal |
+|-------|-----------|--------------|
+| **Selection** | `insertIntoFocusedFieldStartsAtSelection` (L365) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Selection** | `insertIntoFocusedFieldReplacesSelection` (L370) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Selection** | `insertIntoFocusedFieldReplacesSelectionIfBackwards` (L376) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Keyboard** | `defaultsToCapitalized` (L382) | **Issue**: Tests XML properties.<br>**Goal**: Rewrite using Compose `KeyboardOptions`. |
+| **Clipboard** | `pasteHtmlAsPlainTextTest` (L389) | **Issue**: Tests XML `FieldEditText` behavior.<br>**Goal**: Verify Compose clipboard semantics. |
+| **Note Types** | `can switch two image occlusion note types` (L394) | **Issue**: Tests XML `Spinner`.<br>**Goal**: Rewrite using `NoteEditorViewModel` note type selection. |
 
 ---
 
-### 5. Help Screen — 🟢 100% Compose + Nav3
+### 6. Help Screen — 🟢 100% Compose + Nav3
 **Location**: `ui/compose/help/HelpScreen.kt`
 
 | Status    | Description                                      |
@@ -190,7 +205,7 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 
 ---
 
-### 6. Dialogs — 🟡 20% Migrated
+### 7. Dialogs — 🟡 20% Migrated
 
 **Compose Dialogs**:
 | Dialog                        | Status     |
@@ -208,12 +223,12 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 
 ---
 
-### 7. Preferences/Settings — 🔴 5% Compose
+### 8. Preferences/Settings — 🔴 5% Compose
 > **Important**: Settings uses AndroidX Preference with XML. Full migration requires custom Compose preference components.
 
 ---
 
-### 8. Pages (WebView Screens) — 🟢 100% Compose Wrapper
+### 9. Pages (WebView Screens) — 🟢 100% Compose Wrapper
 Created `PageWebView` composable wrapper for all Anki HTML/JS content:
 - `StatisticsScreen.kt` - Nav3 destination
 - `DeckOptionsScreen.kt` - Nav3 destination
