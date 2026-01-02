@@ -38,17 +38,19 @@ class PageWebViewViewModel(
 
     /**
      * The base URL for the local server, used to load Anki pages.
+     * Cached after successful server start to avoid calling server.baseUrl() after a failed start.
      */
-    val serverBaseUrl: String
-        get() = server.baseUrl()
+    var serverBaseUrl: String = ""
+        private set
 
     init {
         try {
             server.start()
+            serverBaseUrl = server.baseUrl()
             _serverState.value = ServerState.Running
             Timber.d("PageWebViewViewModel: AnkiServer started at %s", serverBaseUrl)
         } catch (e: Exception) {
-            Timber.e(e, "Failed to start AnkiServer at %s", serverBaseUrl)
+            Timber.e(e, "Failed to start AnkiServer")
             _serverState.value = ServerState.Error(e)
         }
     }
