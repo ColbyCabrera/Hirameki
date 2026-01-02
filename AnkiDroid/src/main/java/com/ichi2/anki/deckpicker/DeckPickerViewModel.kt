@@ -41,6 +41,7 @@ import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.sched.DeckNode
+import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.anki.libanki.utils.extend
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.notetype.ManageNoteTypesDestination
@@ -224,7 +225,7 @@ class DeckPickerViewModel :
                 if (isEmpty) {
                     DeckSelectionResult.Empty(deckId)
                 } else {
-                    flowOfTimeUntilNextDay.value = (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
+                    flowOfTimeUntilNextDay.value = calculateTimeUntilNextDay(sched)
                     DeckSelectionResult.NoCardsToStudy(deckId)
                 }
             }
@@ -388,7 +389,7 @@ class DeckPickerViewModel :
                 flowOfStudiedTodayStats.value = withCol { sched.studiedToday().replace("\n", " ") }
 
                 flowOfTimeUntilNextDay.value = withCol {
-                    (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
+                    calculateTimeUntilNextDay(sched)
                 }
 
                 /**
@@ -507,6 +508,15 @@ class DeckPickerViewModel :
         configureRenderingMode()
 
         flowOfStartupResponse.value = StartupResponse.Success
+    }
+
+    /**
+     * Calculates the time in milliseconds until the next Anki day rollover.
+     * @param sched The scheduler to get the day cutoff from
+     * @return Time in milliseconds until next day, or 0 if already past cutoff
+     */
+    private fun calculateTimeUntilNextDay(sched: Scheduler): Long {
+        return (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
     }
 
     interface AnkiDroidEnvironment {
