@@ -2,6 +2,8 @@
 activityCompose = "1.12.0"
 compileSdk = "36"
 composeBomVersion = "2025.12.01"
+nav3Core = "1.0.0"
+lifecycleViewmodelNav3 = "2.10.0"
 
 # Changing minSdk means newer AnkiDroid versions will not support older devices.
 minSdk = "31"  # also in testlib/build.gradle.kts
@@ -197,7 +199,9 @@ jakewharton-timber = { module = "com.jakewharton.timber:timber", version.ref = "
 androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "androidxWork" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycleViewmodelCompose" }
 androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "androidxConstraintlayoutCompose" }
-
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
 
 #testing libs
 androidx-espresso-contrib = { module = "androidx.test.espresso:espresso-contrib", version.ref = "espresso" }

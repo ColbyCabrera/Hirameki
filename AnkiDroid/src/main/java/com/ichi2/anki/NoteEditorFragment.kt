@@ -30,8 +30,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
-import android.widget.EditText
-import android.widget.ImageButton
 import androidx.activity.addCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
@@ -97,6 +95,7 @@ import com.ichi2.anki.noteeditor.CustomToolbarButton
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.noteeditor.NoteEditorViewModel
 import com.ichi2.anki.noteeditor.ToolbarButtonModel
+import com.ichi2.anki.noteeditor.compose.AddToolbarItemDialog
 import com.ichi2.anki.noteeditor.compose.NoteEditorScreen
 import com.ichi2.anki.noteeditor.compose.NoteEditorSimpleOverflowItem
 import com.ichi2.anki.noteeditor.compose.NoteEditorToggleOverflowItem
@@ -119,9 +118,7 @@ import com.ichi2.utils.ClipboardUtil
 import com.ichi2.utils.HashUtil
 import com.ichi2.utils.ImportUtils
 import com.ichi2.utils.IntentUtil.resolveMimeType
-import com.ichi2.utils.message
 import com.ichi2.utils.negativeButton
-import com.ichi2.utils.neutralButton
 import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.title
@@ -156,7 +153,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     ShortcutGroupProvider {
     /** Whether any change are saved. E.g. multimedia, new card added, field changed and saved. */
     private var changed = false
-    private var isTagsEdited = false
 
     private var multimediaActionJob: Job? = null
 
@@ -177,7 +173,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
     // Null if adding a new card. Presently NonNull if editing an existing note - but this is subject to change
     private var currentEditedCard: Card? = null
-    private var selectedTags: MutableList<String>? = null
 
     @get:VisibleForTesting
     var deckId: DeckId = 0
@@ -332,15 +327,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     }
 
     private fun noClozeDialog(errorMessage: String) {
-        AlertDialog.Builder(requireContext()).show {
-            message(text = errorMessage)
-            positiveButton(text = TR.actionsSave()) {
-                lifecycleScope.launch {
-                    saveNoteWithProgress()
-                }
-            }
-            negativeButton(R.string.dialog_cancel)
-        }
+        noteEditorViewModel.showNoClozeDialog(errorMessage)
     }
 
     @VisibleForTesting
@@ -367,7 +354,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             caller = fromValue(savedInstanceState.getInt(CALLER_KEY))
             addNote = savedInstanceState.getBoolean("addNote")
             deckId = savedInstanceState.getLong("did")
-            selectedTags = savedInstanceState.getStringArrayList("tags")
+            // Tags are restored via ViewModel's SavedStateHandle, not instance state
             reloadRequired = savedInstanceState.getBoolean(RELOAD_REQUIRED_EXTRA_KEY)
             changed = savedInstanceState.getBoolean(NOTE_CHANGED_EXTRA_KEY)
         } else {
@@ -422,8 +409,29 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
      * Setup the Compose-based note editor
      */
     private fun setupComposeEditor(col: Collection) {
-        val intent = requireActivity().intent
         Timber.d("NoteEditor() setupComposeEditor: caller: %s", caller)
+
+        // Initialize editor logic (clipboard, caller determination, ViewModel setup)
+        if (!initializeEditorLogic(col)) return
+
+        // Set toolbar title
+        if (addNote) {
+            requireAnkiActivity().setTitle(R.string.cardeditor_title_add_note)
+        } else {
+            requireAnkiActivity().setTitle(R.string.cardeditor_title_edit_card)
+        }
+
+        updateToolbar()
+
+        setupComposeContent()
+    }
+
+    /**
+     * Initialize editor logic: clipboard, caller determination, and ViewModel setup.
+     * @return true if initialization succeeded, false if the editor should close
+     */
+    private fun initializeEditorLogic(col: Collection): Boolean {
+        val intent = requireActivity().intent
 
         requireAnkiActivity().registerReceiver()
 
@@ -442,7 +450,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             NoteEditorCaller.NO_CALLER -> {
                 Timber.e("no caller could be identified, closing")
                 requireActivity().finish()
-                return
+                return false
             }
 
             NoteEditorCaller.EDIT, NoteEditorCaller.PREVIEWER_EDIT -> {
@@ -459,11 +467,11 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 fetchIntentInformation(intent)
                 if (sourceText == null) {
                     requireActivity().finish()
-                    return
+                    return false
                 }
                 if ("Aedict Notepad" == sourceText!![0] && addFromAedict(sourceText!![1])) {
                     requireActivity().finish()
-                    return
+                    return false
                 }
                 addNote = true
             }
@@ -527,23 +535,18 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         Timber.d(
                             "setupComposeEditor: Applying copied tags: %s", tags.joinToString()
                         )
-                        selectedTags = ArrayList(tags.toList())
                         noteEditorViewModel.updateTags(tags.toSet())
                     }
                 }
             }
         }
+        return true
+    }
 
-        // Set toolbar title
-        if (addNote) {
-            requireAnkiActivity().setTitle(R.string.cardeditor_title_add_note)
-        } else {
-            requireAnkiActivity().setTitle(R.string.cardeditor_title_edit_card)
-        }
-
-        updateToolbar()
-
-        // Replace the view with ComposeView
+    /**
+     * Setup the Compose content for the note editor.
+     */
+    private fun setupComposeContent() {
         val composeView = view?.findViewById<ComposeView>(R.id.note_editor_compose)
 
         composeView?.setContent {
@@ -556,6 +559,8 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 val allTags by noteEditorViewModel.tagsState.collectAsState()
                 val deckTags by noteEditorViewModel.deckTags.collectAsState()
                 val showDiscardChangesDialog by noteEditorViewModel.showDiscardChangesDialog.collectAsState()
+                val noClozeDialogMessage by noteEditorViewModel.noClozeDialogState.collectAsState()
+                val toolbarDialogState by noteEditorViewModel.toolbarDialogState.collectAsState()
                 val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
                 var capitalizeChecked by remember {
                     mutableStateOf(
@@ -669,11 +674,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     deckTags = deckTags,
                     onUpdateTags = { tags ->
                         noteEditorViewModel.updateTags(tags)
-                        isTagsEdited = true
                     },
                     onAddTag = { tag ->
                         noteEditorViewModel.addTag(tag)
-                        isTagsEdited = true
                     },
                     topBar = {
                         val title = stringResource(
@@ -795,6 +798,42 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     onKeepEditing = {
                         noteEditorViewModel.setShowDiscardChangesDialog(false)
                     },
+                    noClozeDialogMessage = noClozeDialogMessage,
+                    onSaveAnywayClick = {
+                        noteEditorViewModel.dismissNoClozeDialog()
+                        launchCatchingTask { saveNote() }
+                    },
+                    onDismissNoClozeDialog = {
+                        noteEditorViewModel.dismissNoClozeDialog()
+                    },
+                )
+
+                // Toolbar Item Dialog (Add/Edit)
+                AddToolbarItemDialog(
+                    state = toolbarDialogState,
+                    onDismissRequest = {
+                        noteEditorViewModel.dismissToolbarDialog()
+                    },
+                    onConfirm = { icon, prefix, suffix ->
+                        val isEdit = toolbarDialogState.isEditMode
+                        val index = toolbarDialogState.buttonIndex
+                        noteEditorViewModel.dismissToolbarDialog()
+                        if (isEdit) {
+                            editToolbarButton(icon, prefix, suffix, index)
+                        } else {
+                            addToolbarButton(icon, prefix, suffix)
+                        }
+                    },
+                    onDelete = if (toolbarDialogState.isEditMode) {
+                        {
+                            val index = toolbarDialogState.buttonIndex
+                            noteEditorViewModel.dismissToolbarDialog()
+                            removeToolbarButton(index)
+                        }
+                    } else null,
+                    onHelpClick = {
+                        requireContext().openUrl(R.string.link_manual_note_format_toolbar)
+                    },
                 )
             }
         }
@@ -812,10 +851,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         savedInstanceState.putLong("did", deckId)
         savedInstanceState.putBoolean(NOTE_CHANGED_EXTRA_KEY, changed)
         savedInstanceState.putBoolean(RELOAD_REQUIRED_EXTRA_KEY, reloadRequired)
-        if (selectedTags == null) {
-            selectedTags = ArrayList(0)
-        }
-        savedInstanceState.putStringArrayList("tags", selectedTags?.let { ArrayList(it) })
+        // Tags are persisted via ViewModel's SavedStateHandle, not instance state
     }
 
     private fun applyFormatter(
@@ -1020,33 +1056,13 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     /**
      * Checks if there are unsaved changes in the note editor.
      *
-     * Compares current field values and tags against the original note state
-     * to determine if the user has made any modifications.
+     * Delegates to ViewModel which tracks field values, tags, deck, and note type changes.
      *
      * @return true if there are unsaved changes, false otherwise
      */
     @VisibleForTesting
     fun hasUnsavedChanges(): Boolean {
-        if (!collectionHasLoaded()) {
-            return false
-        }
-
-        if (!addNote && currentEditedCard != null) {
-            val newNoteType = noteEditorViewModel.currentNote.value?.notetype
-            val oldNoteType = currentEditedCard!!.noteType(getColUnsafe)
-            if (newNoteType != null && newNoteType != oldNoteType) {
-                return true
-            }
-        }
-        if (!addNote && currentEditedCard != null && currentEditedCard!!.currentDeckId() != deckId) {
-            return true
-        }
-        val isFieldEdited = noteEditorViewModel.isFieldEdited.value
-        return isFieldEdited || isTagsEdited
-    }
-
-    private fun collectionHasLoaded(): Boolean {
-        return noteEditorViewModel.currentNote.value != null
+        return noteEditorViewModel.hasUnsavedChanges()
     }
 
     // ----------------------------------------------------------------------------
@@ -1073,6 +1089,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     @VisibleForTesting
     @NeedsTest("14664: 'first field must not be empty' no longer applies after saving the note")
     suspend fun saveNote() {
+        addNoteErrorMessage = null
         when (val result = noteEditorViewModel.saveNote()) {
             is NoteFieldsCheckResult.Success -> {
                 changed = true
@@ -1108,7 +1125,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         closeNoteEditor(closeIntent ?: Intent())
                     } else {
                         noteEditorViewModel.resetFieldEditedFlag()
-                        isTagsEdited = false
                     }
                 } else {
                     closeNoteEditor()
@@ -1177,7 +1193,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             noteEditorViewModel.noteEditorState.value.fields.map { fieldState -> fieldState.value.text.toFieldText() }
                 .toMutableList()
 
-        val tags = selectedTags ?: mutableListOf()
+        val tags = noteEditorViewModel.noteEditorState.value.tags.toMutableList()
 
         val notetype = if (editorNote != null) {
             editorNote!!.notetype
@@ -1295,11 +1311,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
      */
     private fun showTagsDialog() {
         val currentTags = noteEditorViewModel.noteEditorState.value.tags
-        val selTags = if (currentTags.isNotEmpty()) {
-            ArrayList(currentTags)
-        } else {
-            selectedTags?.let { ArrayList(it) } ?: arrayListOf()
-        }
+        val selTags = ArrayList(currentTags)
 
         val dialog = with(requireContext()) {
             tagsDialogFactory!!.newTagsDialog().withArguments(
@@ -1316,10 +1328,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         indeterminateTags: List<String>,
         stateFilter: CardStateFilter,
     ) {
-        if (this.selectedTags != selectedTags) {
-            isTagsEdited = true
-        }
-        this.selectedTags = selectedTags as ArrayList<String>?
         noteEditorViewModel.updateTags(selectedTags.toSet())
     }
 
@@ -1346,15 +1354,8 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
         intent.putExtra("noteTypeId", noteTypeId)
         if (!addNote) {
-            val cardInfo =
-                Triple(currentEditedCard?.id, currentEditedCard?.ord, currentEditedCard?.nid)
-
-            if (cardInfo.third != null) {
-                intent.putExtra("noteId", cardInfo.third)
-            }
-            if (cardInfo.second != null) {
-                intent.putExtra("ordId", cardInfo.second)
-            }
+            currentEditedCard?.nid?.let { intent.putExtra("noteId", it) }
+            currentEditedCard?.ord?.let { intent.putExtra("ordId", it) }
         }
         requestTemplateEditLauncher.launch(intent)
     }
@@ -1607,7 +1608,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
     private fun saveToolbarButtons(buttons: ArrayList<CustomToolbarButton>) {
         this.sharedPrefs().edit {
-            putStringSet(PREF_NOTE_EDITOR_CUSTOM_BUTTONS, CustomToolbarButton.toStringSet(buttons))
+            putStringSet(
+                PREF_NOTE_EDITOR_CUSTOM_BUTTONS, CustomToolbarButton.toStringSet(buttons)
+            )
         }
     }
 
@@ -1618,27 +1621,11 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     ) {
         if (prefix.isEmpty() && suffix.isEmpty()) return
         val toolbarButtons = toolbarButtons
-        toolbarButtons.add(CustomToolbarButton(toolbarButtons.size, buttonText, prefix, suffix))
-        saveToolbarButtons(toolbarButtons)
-        updateToolbar()
-    }
-
-    private fun editToolbarButton(
-        buttonText: String,
-        prefix: String,
-        suffix: String,
-        currentButton: CustomToolbarButton,
-    ) {
-        val toolbarButtons = toolbarButtons
-        val currentButtonIndex = currentButton.index
-
-        toolbarButtons[currentButtonIndex] = CustomToolbarButton(
-            index = currentButtonIndex,
-            buttonText = buttonText.ifEmpty { currentButton.buttonText },
-            prefix = prefix.ifEmpty { currentButton.prefix },
-            suffix = suffix.ifEmpty { currentButton.suffix },
+        toolbarButtons.add(
+            CustomToolbarButton(
+                toolbarButtons.size, buttonText, prefix, suffix
+            )
         )
-
         saveToolbarButtons(toolbarButtons)
         updateToolbar()
     }
@@ -1664,49 +1651,33 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         updateToolbar()
     }
 
-    private val toolbarDialog: AlertDialog.Builder
-        get() = AlertDialog.Builder(requireContext()).neutralButton(R.string.help) {
-            requireContext().openUrl(R.string.link_manual_note_format_toolbar)
-        }.negativeButton(R.string.dialog_cancel)
-
     private fun displayAddToolbarDialog() {
-        val v = layoutInflater.inflate(R.layout.note_editor_toolbar_add_custom_item, null)
-        toolbarDialog.show {
-            title(R.string.add_toolbar_item)
-            setView(v)
-            positiveButton(R.string.dialog_positive_create) {
-                val etIcon = v.findViewById<EditText>(R.id.note_editor_toolbar_item_icon)
-                val et = v.findViewById<EditText>(R.id.note_editor_toolbar_before)
-                val et2 = v.findViewById<EditText>(R.id.note_editor_toolbar_after)
-                addToolbarButton(etIcon.text.toString(), et.text.toString(), et2.text.toString())
-            }
-        }
+        noteEditorViewModel.showAddToolbarDialog()
     }
 
     private fun displayEditToolbarDialog(currentButton: CustomToolbarButton) {
-        val view = layoutInflater.inflate(R.layout.note_editor_toolbar_edit_custom_item, null)
-        val etIcon = view.findViewById<EditText>(R.id.note_editor_toolbar_item_icon)
-        val et = view.findViewById<EditText>(R.id.note_editor_toolbar_before)
-        val et2 = view.findViewById<EditText>(R.id.note_editor_toolbar_after)
-        val btnDelete = view.findViewById<ImageButton>(R.id.note_editor_toolbar_btn_delete)
-        etIcon.setText(currentButton.buttonText)
-        et.setText(currentButton.prefix)
-        et2.setText(currentButton.suffix)
-        val editToolbarDialog = toolbarDialog.setView(view).positiveButton(R.string.save) {
-            editToolbarButton(
-                etIcon.text.toString(),
-                et.text.toString(),
-                et2.text.toString(),
-                currentButton,
-            )
-        }.create()
-        btnDelete.setOnClickListener {
-            suggestRemoveButton(
-                currentButton,
-                editToolbarDialog,
-            )
-        }
-        editToolbarDialog.show()
+        noteEditorViewModel.showEditToolbarDialog(
+            icon = currentButton.buttonText,
+            prefix = currentButton.prefix,
+            suffix = currentButton.suffix,
+            buttonIndex = currentButton.index,
+        )
+    }
+
+    private fun editToolbarButton(
+        icon: String, prefix: String, suffix: String, buttonIndex: Int
+    ) {
+        val toolbarButtons = toolbarButtons
+        toolbarButtons[buttonIndex] = CustomToolbarButton(buttonIndex, icon, prefix, suffix)
+        saveToolbarButtons(toolbarButtons)
+        updateToolbar()
+    }
+
+    private fun removeToolbarButton(buttonIndex: Int) {
+        val toolbarButtons = toolbarButtons
+        toolbarButtons.removeAt(buttonIndex)
+        saveToolbarButtons(toolbarButtons)
+        updateToolbar()
     }
 
     override val shortcuts

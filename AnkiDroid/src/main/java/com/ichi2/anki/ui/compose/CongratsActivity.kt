@@ -40,11 +40,10 @@ class CongratsActivity : AnkiActivity() {
 
             setContent {
                 CongratsScreen(
+                    onNavigateUp = { finish() },
                     onDeckOptions = {
                     val intent = DeckOptions.getIntent(this, col.decks.current().id)
                     startActivity(intent)
-                }, onBack = {
-                    finish()
                 }, timeUntilNextDay = timeUntilNextDay
                 )
             }

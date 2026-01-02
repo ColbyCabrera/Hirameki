@@ -161,6 +161,9 @@ fun NoteEditorScreen(
     showDiscardChangesDialog: Boolean,
     onDiscardChanges: () -> Unit,
     onKeepEditing: () -> Unit,
+    noClozeDialogMessage: String?,
+    onSaveAnywayClick: () -> Unit,
+    onDismissNoClozeDialog: () -> Unit,
 ) {
     // Observe keyboard state for auto-scrolling
     val imeState = rememberImeState()
@@ -193,6 +196,15 @@ fun NoteEditorScreen(
             onDismissRequest = onKeepEditing, // Tapping outside is same as keeping
             onConfirm = onDiscardChanges,
             onKeepEditing = onKeepEditing,
+        )
+    }
+
+    // Show no-cloze confirmation dialog when message is non-null
+    noClozeDialogMessage?.let { message ->
+        NoClozeConfirmationDialog(
+            message = message,
+            onDismissRequest = onDismissNoClozeDialog,
+            onSaveAnyway = onSaveAnywayClick,
         )
     }
 
@@ -739,6 +751,9 @@ fun NoteEditorScreenPreview() {
             showDiscardChangesDialog = false,
             onDiscardChanges = {},
             onKeepEditing = {},
+            noClozeDialogMessage = null,
+            onSaveAnywayClick = {},
+            onDismissNoClozeDialog = {},
         )
     }
 }

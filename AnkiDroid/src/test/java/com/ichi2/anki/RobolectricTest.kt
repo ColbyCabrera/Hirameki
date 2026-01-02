@@ -434,8 +434,10 @@ open class RobolectricTest : AnkiTest, AndroidTest {
     }
 
     override fun setupTestDispatcher(dispatcher: TestDispatcher) {
+        Timber.d("RobolectricTest: setupTestDispatcher called with %s", dispatcher)
         super.setupTestDispatcher(dispatcher)
         ioDispatcher = dispatcher
+        Timber.d("RobolectricTest: ioDispatcher set to %s (AnkiTest.ioDispatcher)", ioDispatcher)
     }
 
     override suspend fun TestScope.runTestInner(testBody: suspend TestScope.() -> Unit) {

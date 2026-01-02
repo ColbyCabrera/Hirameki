@@ -354,6 +354,7 @@ dependencies {
     implementation libs.androidx.compose.animation
     implementation libs.androidx.compose.ui.unit
     implementation libs.androidx.compose.material3.window.size.class1
+    implementation libs.androidx.navigation3.ui
     testImplementation libs.androidx.compose.ui.test.junit4
     implementation libs.androidx.glance.appwidget
     implementation libs.androidx.glance.material3

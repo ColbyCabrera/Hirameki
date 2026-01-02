@@ -15,6 +15,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.noteeditor
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
@@ -23,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.NoteFieldsCheckResult
 import com.ichi2.anki.checkNoteFieldsResponse
+import anki.config.ConfigKey
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Collection
@@ -32,8 +34,9 @@ import com.ichi2.anki.libanki.Note.ClozeUtils
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.noteeditor.compose.NoteEditorState
 import com.ichi2.anki.noteeditor.compose.NoteFieldState
+import com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState
 import com.ichi2.anki.servicelayer.NoteService
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -97,6 +100,9 @@ class NoteEditorViewModel(
     private val savedStateHandle: SavedStateHandle? = null,
     private val collectionProvider: suspend () -> Collection = { CollectionManager.getColUnsafe() },
 ) : ViewModel() {
+    @VisibleForTesting
+    var ioDispatcher: CoroutineDispatcher = com.ichi2.anki.ioDispatcher
+
     companion object {
         // Keys for SavedStateHandle persistence
         private const val KEY_FIELD_VALUES = "note_editor_field_values"
@@ -177,6 +183,22 @@ class NoteEditorViewModel(
     /** Controls visibility of the discard changes confirmation dialog */
     val showDiscardChangesDialog: StateFlow<Boolean> = _showDiscardChangesDialog.asStateFlow()
 
+    private val _noClozeDialogState = MutableStateFlow<String?>(null)
+
+    /**
+     * Controls visibility of the no-cloze confirmation dialog.
+     * When non-null, shows dialog with the error message.
+     * Set to null to dismiss the dialog.
+     */
+    val noClozeDialogState: StateFlow<String?> = _noClozeDialogState.asStateFlow()
+
+    private val _toolbarDialogState = MutableStateFlow(ToolbarItemDialogState())
+
+    /**
+     * Controls visibility and state of the add/edit toolbar item dialog.
+     */
+    val toolbarDialogState: StateFlow<ToolbarItemDialogState> = _toolbarDialogState.asStateFlow()
+
     private val _currentNote = MutableStateFlow<Note?>(null)
 
     /** The underlying Note being edited (null when creating a new, not yet initialized). */
@@ -196,6 +218,12 @@ class NoteEditorViewModel(
 
     // Store initial tags to detect changes
     private var initialTags: List<String> = emptyList()
+
+    // Store initial deck ID to detect deck changes (for editing existing cards)
+    private var initialDeckId: DeckId = 0L
+
+    // Store initial note type ID to detect note type changes
+    private var initialNoteTypeId: Long = 0L
 
     /**
      * Initialize the editor with a new or existing note
@@ -220,7 +248,7 @@ class NoteEditorViewModel(
                 ensureActive()
 
                 // Perform all DB operations on IO dispatcher
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     // Load note and determine deck
                     if (cardId != null && !isAddingNote) {
                         // Editing an existing card - use the card's deck
@@ -297,6 +325,10 @@ class NoteEditorViewModel(
                 initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
                 initialTags = _noteEditorState.value.tags
 
+                // Capture initial deck and note type for change detection
+                initialDeckId = _deckId.value
+                initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
+
                 // Reset the field edited flag after initialization to prevent false positives
                 _isFieldEdited.value = false
 
@@ -329,7 +361,7 @@ class NoteEditorViewModel(
 
             // Perform all DB operations on IO dispatcher
             val (allTags, deckSpecificTags) =
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     val all = col.tags.all().sorted()
 
                     val deckSpecific =
@@ -466,7 +498,7 @@ class NoteEditorViewModel(
 
     fun addTag(tag: String) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val col = collectionProvider()
                 // Register the tag by setting its collapse state (registers if missing)
                 col.tags.setCollapsed(tag, collapsed = false)
@@ -498,7 +530,7 @@ class NoteEditorViewModel(
 
                 // Perform DB operations on IO dispatcher
                 val deckId =
-                    withContext(Dispatchers.IO) {
+                    withContext(ioDispatcher) {
                         val deck = col.decks.allNamesAndIds().find { it.name == deckName }
                         deck?.id
                     }
@@ -526,10 +558,10 @@ class NoteEditorViewModel(
             try {
                 val col = collectionProvider()
                 ensureActive() // Check cancellation after getting collection
-
+                
                 // Perform all DB operations on IO dispatcher
                 val result =
-                    withContext(Dispatchers.IO) {
+                    withContext(ioDispatcher) {
                         val notetype = col.notetypes.all().find { it.name == noteTypeName }
                         if (notetype == null) {
                             Timber.w("Note type '%s' not found", noteTypeName)
@@ -715,7 +747,7 @@ class NoteEditorViewModel(
 
             // Perform all DB operations on IO dispatcher
             val saveResult: SaveResult =
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     // Update note fields from state
                     val fields = _noteEditorState.value.fields
                     fields.forEach { fieldState ->
@@ -741,6 +773,17 @@ class NoteEditorViewModel(
                             return@withContext SaveResult.ValidationFailure(validationResult)
                         }
                         col.addNote(note, _deckId.value)
+
+                        // Update Note Type's default deck if configured not to use current deck
+                        // This mirrors legacy behavior where selecting a deck for a note type updates its preference
+                        if (!col.config.getBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK)) {
+                            val notetype = note.notetype
+                            if (notetype.did != _deckId.value) {
+                                Timber.d("Updating note type '%s' default deck to %d", notetype.name, _deckId.value)
+                                notetype.did = _deckId.value
+                                col.notetypes.save(notetype)
+                            }
+                        }
 
                         // Reset to a fresh blank note for the next add, preserving sticky field values and state
                         val currentState = _noteEditorState.value
@@ -1119,7 +1162,18 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Check if there are unsaved changes
+     * Check if there are unsaved changes.
+     *
+     * Checks field content, tags, deck selection, and note type changes.
+     *
+     * **Design Decision**: Deck and note type changes are intentionally counted as "unsaved changes"
+     * for BOTH new notes and existing notes. While some may argue that selecting a deck/note type
+     * for a new note is "initial setup" rather than a change, I prefer to show the discard dialog
+     * to prevent accidental loss of user selections. This is a deliberate UX choice.
+     *
+     * Note: The tracking variables (initialDeckId, initialNoteTypeId) are set once during
+     * initialization and not updated after intentional changes. This is intentional - any deviation
+     * from the initial state should trigger the warning, regardless of intermediate changes.
      */
     fun hasUnsavedChanges(): Boolean {
         // If we have specific field edit flag
@@ -1132,7 +1186,12 @@ class NoteEditorViewModel(
         // Check tags
         if (_noteEditorState.value.tags != initialTags) return true
 
-        return false
+        // Check deck change (applies to both new and existing notes - see docstring)
+        if (initialDeckId != 0L && _deckId.value != initialDeckId) return true
+
+        // Check note type change (applies to both new and existing notes - see docstring)
+        val currentNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
+        return initialNoteTypeId != 0L && currentNoteTypeId != initialNoteTypeId
     }
 
     private fun determineFocusIndex(): Int? {
@@ -1250,6 +1309,48 @@ class NoteEditorViewModel(
         _noteEditorState.update { currentState ->
             currentState.copy(isCardsButtonEnabled = enabled)
         }
+    }
+
+    /**
+     * Show the no-cloze confirmation dialog with the given error message
+     */
+    fun showNoClozeDialog(errorMessage: String) {
+        _noClozeDialogState.value = errorMessage
+    }
+
+    /**
+     * Dismiss the no-cloze confirmation dialog
+     */
+    fun dismissNoClozeDialog() {
+        _noClozeDialogState.value = null
+    }
+
+    /**
+     * Show the add toolbar item dialog
+     */
+    fun showAddToolbarDialog() {
+        _toolbarDialogState.value = ToolbarItemDialogState(isVisible = true, isEditMode = false)
+    }
+
+    /**
+     * Show the edit toolbar item dialog with existing values
+     */
+    fun showEditToolbarDialog(icon: String, prefix: String, suffix: String, buttonIndex: Int) {
+        _toolbarDialogState.value = ToolbarItemDialogState(
+            isVisible = true,
+            isEditMode = true,
+            icon = icon,
+            prefix = prefix,
+            suffix = suffix,
+            buttonIndex = buttonIndex,
+        )
+    }
+
+    /**
+     * Dismiss the toolbar item dialog
+     */
+    fun dismissToolbarDialog() {
+        _toolbarDialogState.value = ToolbarItemDialogState()
     }
 
     /**

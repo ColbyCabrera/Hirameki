@@ -79,8 +79,6 @@ import com.ichi2.anki.pages.AnkiServer.Companion.ANKI_PREFIX
 import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.ActionButtons
-import com.ichi2.anki.reviewer.AnswerButtons.Companion.getBackgroundColors
-import com.ichi2.anki.reviewer.AnswerButtons.Companion.getTextColors
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
 import com.ichi2.anki.reviewer.FullScreenMode.Companion.isFullScreenReview
 import com.ichi2.anki.reviewer.ReviewerConstants
@@ -122,7 +120,9 @@ import timber.log.Timber
 import kotlin.coroutines.resume
 
 @NeedsTest("#14709: Timebox shouldn't appear instantly when the Reviewer is opened")
-open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
+open class Reviewer :
+    AbstractFlashcardViewer(),
+    ReviewerUi {
     private var queueState: CurrentQueueState? = null
     private val customSchedulingKey = TimeManager.time.intTimeMS().toString()
     private var hasDrawerSwipeConflicts = false
@@ -165,7 +165,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     private var stopTimerOnAnswer = false
     private val actionButtons = ActionButtons()
 
-
     private lateinit var addNoteLauncher: ActivityResultLauncher<Intent>
 
     private val flagItemIds = mutableSetOf<Int>()
@@ -177,10 +176,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         if (showedActivityFailedScreen(savedInstanceState)) {
             return
         }
-        addNoteLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-            FlashCardViewerResultCallback(),
-        )
+        addNoteLauncher =
+            registerForActivityResult(
+                ActivityResultContracts.StartActivityForResult(),
+                FlashCardViewerResultCallback(),
+            )
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -193,7 +193,8 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
 
         composeView.setContent {
             AnkiDroidTheme {
-                com.ichi2.anki.reviewer.compose.ReviewerContent(viewModel, whiteboardViewModel)
+                com.ichi2.anki.reviewer.compose
+                    .ReviewerContent(viewModel, whiteboardViewModel)
             }
         }
 
@@ -229,9 +230,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
 
                     is ReviewerEffect.ToggleVoicePlayback -> openOrToggleMicToolbar()
                     is ReviewerEffect.NavigateToDeckOptions -> {
-                        val i = com.ichi2.anki.pages.DeckOptions.getIntent(
-                            this@Reviewer, getColUnsafe.decks.current().id
-                        )
+                        val i =
+                            com.ichi2.anki.pages.DeckOptions.getIntent(
+                                this@Reviewer,
+                                getColUnsafe.decks.current().id,
+                            )
                         deckOptionsLauncher.launch(i)
                     }
 
@@ -457,7 +460,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                 if (::whiteboardController.isInitialized) {
                     Timber.i(
                         "Reviewer:: Whiteboard visibility set to %b",
-                        !whiteboardController.isVisible
+                        !whiteboardController.isVisible,
                     )
                     whiteboardController.setVisibility(!whiteboardController.isVisible)
                     refreshActionBar()
@@ -481,9 +484,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
 
             R.id.action_open_deck_options -> {
                 Timber.i("Reviewer:: Opening deck options")
-                val i = com.ichi2.anki.pages.DeckOptions.getIntent(
-                    this, getColUnsafe.decks.current().id
-                )
+                val i =
+                    com.ichi2.anki.pages.DeckOptions.getIntent(
+                        this,
+                        getColUnsafe.decks.current().id,
+                    )
                 deckOptionsLauncher.launch(i)
             }
 
@@ -517,7 +522,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     public override fun toggleWhiteboard() {
         Timber.d(
             "toggleWhiteboard() called, isInitialized: %s",
-            ::whiteboardController.isInitialized
+            ::whiteboardController.isInitialized,
         )
         if (::whiteboardController.isInitialized) {
             whiteboardController.toggle()
@@ -640,7 +645,8 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                     CrashReportService.sendExceptionReport(e, "Unable to create recorder tool bar")
                     showThemedToast(
                         this,
-                        this.getText(R.string.multimedia_editor_audio_view_create_failed)
+                        this
+                            .getText(R.string.multimedia_editor_audio_view_create_failed)
                             .toString(),
                         true,
                     )
@@ -665,18 +671,22 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == ReviewerConstants.REQUEST_AUDIO_PERMISSION && permissions.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == ReviewerConstants.REQUEST_AUDIO_PERMISSION &&
+            permissions.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        ) {
             // Get get audio record permission, so we can create the record tool bar
             toggleMicToolBar()
         }
     }
 
-    private fun showDueDateDialog() = launchCatchingTask {
-        Timber.i("showing due date dialog")
-        val cardId = currentCardId ?: return@launchCatchingTask
-        val dialog = SetDueDateDialog.newInstance(listOf(cardId))
-        showDialogFragment(dialog)
-    }
+    private fun showDueDateDialog() =
+        launchCatchingTask {
+            Timber.i("showing due date dialog")
+            val cardId = currentCardId ?: return@launchCatchingTask
+            val dialog = SetDueDateDialog.newInstance(listOf(cardId))
+            showDialogFragment(dialog)
+        }
 
     private fun showResetCardDialog() {
         Timber.i("showResetCardDialog() Reset progress button pressed")
@@ -695,14 +705,17 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     protected fun openCardInfo(fromGesture: Gesture? = null) {
         if (currentCard == null) {
             showSnackbar(
-                getString(R.string.multimedia_editor_something_wrong), Snackbar.LENGTH_SHORT
+                getString(R.string.multimedia_editor_something_wrong),
+                Snackbar.LENGTH_SHORT,
             )
             return
         }
         Timber.i("opening card info")
-        val intent = CardInfoDestination(
-            currentCard!!.id, TR.cardStatsCurrentCard(TR.decksStudy())
-        ).toIntent(this)
+        val intent =
+            CardInfoDestination(
+                currentCard!!.id,
+                TR.cardStatsCurrentCard(TR.decksStudy()),
+            ).toIntent(this)
         val animation = getAnimationTransitionFromGesture(fromGesture)
         intent.putExtra(FINISH_ANIMATION_EXTRA, getInverseTransition(animation) as Parcelable)
         startActivityWithAnimation(intent, animation)
@@ -836,12 +849,14 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                 changePenColorIcon.isVisible = true
             }
             val whiteboardIcon =
-                ContextCompat.getDrawable(applicationContext, R.drawable.ic_gesture_white)!!
+                ContextCompat
+                    .getDrawable(applicationContext, R.drawable.ic_gesture_white)!!
                     .mutate()
             val stylusIcon =
                 ContextCompat.getDrawable(this, R.drawable.ic_gesture_stylus)!!.mutate()
             val whiteboardColorPaletteIcon =
-                ContextCompat.getDrawable(applicationContext, R.drawable.ic_color_lens_white_24dp)!!
+                ContextCompat
+                    .getDrawable(applicationContext, R.drawable.ic_color_lens_white_24dp)!!
                     .mutate()
             val eraserIcon =
                 ContextCompat.getDrawable(applicationContext, R.drawable.ic_eraser)!!.mutate()
@@ -926,9 +941,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         try {
             if (menu is MenuBuilder) {
                 // Use reflection to bypass package-private visibility
-                val method = menu.javaClass.getDeclaredMethod(
-                    "setOptionalIconsVisible", Boolean::class.javaPrimitiveType
-                )
+                val method =
+                    menu.javaClass.getDeclaredMethod(
+                        "setOptionalIconsVisible",
+                        Boolean::class.javaPrimitiveType,
+                    )
                 method.isAccessible = true
                 method.invoke(menu, true)
             }
@@ -941,14 +958,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
 
     private fun isFlagItem(menuItem: MenuItem): Boolean = flagItemIds.contains(menuItem.itemId)
 
-
     override fun canAccessScheduler(): Boolean = true
 
     override fun performReload() {
         launchCatchingTask { updateCardAndRedraw() }
     }
-
-
 
     override fun automaticShowQuestion(action: AutomaticAnswerAction) {
         // explicitly do not call super
@@ -978,11 +992,12 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     }
 
     override suspend fun updateCurrentCard() {
-        val state = withCol {
-            sched.currentQueueState()?.apply {
-                topCard.renderOutput(this@withCol, reload = true)
+        val state =
+            withCol {
+                sched.currentQueueState()?.apply {
+                    topCard.renderOutput(this@withCol, reload = true)
+                }
             }
-        }
         state?.timeboxReached?.let { dealWithTimeBox(it) }
         currentCard = state?.topCard
         queueState = state
@@ -1135,7 +1150,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                 return true
             }
 
-
             else -> return super.executeCommand(which, fromGesture)
         }
     }
@@ -1168,9 +1182,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         stopTimerOnAnswer = col.decks.configDictForDeckId(col.decks.current().id).stopTimerOnAnswer
     }
 
-    override fun onSingleTap(): Boolean {
-        return false
-    }
+    override fun onSingleTap(): Boolean = false
 
     override fun onCardEdited(card: Card) {
         super.onCardEdited(card)
@@ -1187,30 +1199,40 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     override suspend fun handlePostRequest(
         uri: String,
         bytes: ByteArray,
-    ): ByteArray = if (uri.startsWith(ANKI_PREFIX)) {
-        when (val methodName = uri.substring(ANKI_PREFIX.length)) {
-            "getSchedulingStatesWithContext" -> getSchedulingStatesWithContext()
-            "setSchedulingStates" -> setSchedulingStates(bytes)
-            "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
-            else -> throw IllegalArgumentException("unhandled request: $methodName")
+    ): ByteArray =
+        if (uri.startsWith(ANKI_PREFIX)) {
+            when (val methodName = uri.substring(ANKI_PREFIX.length)) {
+                "getSchedulingStatesWithContext" -> getSchedulingStatesWithContext()
+                "setSchedulingStates" -> setSchedulingStates(bytes)
+                "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
+                else -> throw IllegalArgumentException("unhandled request: $methodName")
+            }
+        } else if (uri.startsWith(ANKIDROID_JS_PREFIX)) {
+            jsApi.handleJsApiRequest(
+                uri.substring(ANKIDROID_JS_PREFIX.length),
+                bytes,
+                returnDefaultValues = false,
+            )
+        } else {
+            throw IllegalArgumentException("unhandled request: $uri")
         }
-    } else if (uri.startsWith(ANKIDROID_JS_PREFIX)) {
-        jsApi.handleJsApiRequest(
-            uri.substring(ANKIDROID_JS_PREFIX.length),
-            bytes,
-            returnDefaultValues = false,
-        )
-    } else {
-        throw IllegalArgumentException("unhandled request: $uri")
-    }
 
     private fun getSchedulingStatesWithContext(): ByteArray {
         val state = queueState ?: return ByteArray(0)
-        return state.schedulingStatesWithContext().toBuilder().mergeStates(
-            state.states.toBuilder().mergeCurrent(
-                state.states.current.toBuilder().setCustomData(state.topCard.customData).build(),
-            ).build(),
-        ).build().toByteArray()
+        return state
+            .schedulingStatesWithContext()
+            .toBuilder()
+            .mergeStates(
+                state.states
+                    .toBuilder()
+                    .mergeCurrent(
+                        state.states.current
+                            .toBuilder()
+                            .setCustomData(state.topCard.customData)
+                            .build(),
+                    ).build(),
+            ).build()
+            .toByteArray()
     }
 
     private fun setSchedulingStates(bytes: ByteArray): ByteArray {
@@ -1226,7 +1248,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         statesMutated = true
         return ByteArray(0)
     }
-
 
     private fun disableDrawerSwipeOnConflicts() {
         if (gestureProcessor.isBound(Gesture.SWIPE_UP, Gesture.SWIPE_DOWN, Gesture.SWIPE_RIGHT)) {
@@ -1249,7 +1270,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
 
     override val currentCardId: CardId?
         get() = currentCard?.id
-
 
     /**
      * Whether or not dismiss note is available for current card and specified DismissType
@@ -1279,24 +1299,25 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     fun hasDrawerSwipeConflicts(): Boolean = hasDrawerSwipeConflicts
 
     override fun getCardDataForJsApi(): AnkiDroidJsAPI.CardDataForJsApi {
-        val cardDataForJsAPI = AnkiDroidJsAPI.CardDataForJsApi().apply {
-            newCardCount = queueState?.counts?.new ?: -1
-            lrnCardCount = queueState?.counts?.lrn ?: -1
-            revCardCount = queueState?.counts?.rev ?: -1
-            if (currentCard != null) {
-                val s = getColUnsafe.sched
-                nextTime1 = s.nextIvlStr(currentCard!!, Rating.AGAIN)
-                nextTime2 = s.nextIvlStr(currentCard!!, Rating.HARD)
-                nextTime3 = s.nextIvlStr(currentCard!!, Rating.GOOD)
-                nextTime4 = s.nextIvlStr(currentCard!!, Rating.EASY)
-            } else {
-                nextTime1 = ""
-                nextTime2 = ""
-                nextTime3 = ""
-                nextTime4 = ""
+        val cardDataForJsAPI =
+            AnkiDroidJsAPI.CardDataForJsApi().apply {
+                newCardCount = queueState?.counts?.new ?: -1
+                lrnCardCount = queueState?.counts?.lrn ?: -1
+                revCardCount = queueState?.counts?.rev ?: -1
+                if (currentCard != null) {
+                    val s = getColUnsafe.sched
+                    nextTime1 = s.nextIvlStr(currentCard!!, Rating.AGAIN)
+                    nextTime2 = s.nextIvlStr(currentCard!!, Rating.HARD)
+                    nextTime3 = s.nextIvlStr(currentCard!!, Rating.GOOD)
+                    nextTime4 = s.nextIvlStr(currentCard!!, Rating.EASY)
+                } else {
+                    nextTime1 = ""
+                    nextTime2 = ""
+                    nextTime3 = ""
+                    nextTime4 = ""
+                }
+                eta = this@Reviewer.eta
             }
-            eta = this@Reviewer.eta
-        }
         return cardDataForJsAPI
     }
 
@@ -1307,41 +1328,44 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         const val EXTRA_DECK_ID = "deckId"
 
         /** Maps ViewerCommand to corresponding Flag for toggle operations */
-        private val VIEWER_COMMAND_TO_FLAG = mapOf(
-            ViewerCommand.TOGGLE_FLAG_RED to Flag.RED,
-            ViewerCommand.TOGGLE_FLAG_ORANGE to Flag.ORANGE,
-            ViewerCommand.TOGGLE_FLAG_GREEN to Flag.GREEN,
-            ViewerCommand.TOGGLE_FLAG_BLUE to Flag.BLUE,
-            ViewerCommand.TOGGLE_FLAG_PINK to Flag.PINK,
-            ViewerCommand.TOGGLE_FLAG_TURQUOISE to Flag.TURQUOISE,
-            ViewerCommand.TOGGLE_FLAG_PURPLE to Flag.PURPLE,
-        )
+        private val VIEWER_COMMAND_TO_FLAG =
+            mapOf(
+                ViewerCommand.TOGGLE_FLAG_RED to Flag.RED,
+                ViewerCommand.TOGGLE_FLAG_ORANGE to Flag.ORANGE,
+                ViewerCommand.TOGGLE_FLAG_GREEN to Flag.GREEN,
+                ViewerCommand.TOGGLE_FLAG_BLUE to Flag.BLUE,
+                ViewerCommand.TOGGLE_FLAG_PINK to Flag.PINK,
+                ViewerCommand.TOGGLE_FLAG_TURQUOISE to Flag.TURQUOISE,
+                ViewerCommand.TOGGLE_FLAG_PURPLE to Flag.PURPLE,
+            )
 
         /** Maps ViewerCommand to corresponding user action number */
-        private val VIEWER_COMMAND_TO_USER_ACTION = mapOf(
-            ViewerCommand.USER_ACTION_1 to 1,
-            ViewerCommand.USER_ACTION_2 to 2,
-            ViewerCommand.USER_ACTION_3 to 3,
-            ViewerCommand.USER_ACTION_4 to 4,
-            ViewerCommand.USER_ACTION_5 to 5,
-            ViewerCommand.USER_ACTION_6 to 6,
-            ViewerCommand.USER_ACTION_7 to 7,
-            ViewerCommand.USER_ACTION_8 to 8,
-            ViewerCommand.USER_ACTION_9 to 9,
-        )
+        private val VIEWER_COMMAND_TO_USER_ACTION =
+            mapOf(
+                ViewerCommand.USER_ACTION_1 to 1,
+                ViewerCommand.USER_ACTION_2 to 2,
+                ViewerCommand.USER_ACTION_3 to 3,
+                ViewerCommand.USER_ACTION_4 to 4,
+                ViewerCommand.USER_ACTION_5 to 5,
+                ViewerCommand.USER_ACTION_6 to 6,
+                ViewerCommand.USER_ACTION_7 to 7,
+                ViewerCommand.USER_ACTION_8 to 8,
+                ViewerCommand.USER_ACTION_9 to 9,
+            )
 
         /** Menu item IDs for user actions, ordered 1-9 */
-        private val USER_ACTION_MENU_IDS = listOf(
-            R.id.user_action_1,
-            R.id.user_action_2,
-            R.id.user_action_3,
-            R.id.user_action_4,
-            R.id.user_action_5,
-            R.id.user_action_6,
-            R.id.user_action_7,
-            R.id.user_action_8,
-            R.id.user_action_9
-        )
+        private val USER_ACTION_MENU_IDS =
+            listOf(
+                R.id.user_action_1,
+                R.id.user_action_2,
+                R.id.user_action_3,
+                R.id.user_action_4,
+                R.id.user_action_5,
+                R.id.user_action_6,
+                R.id.user_action_7,
+                R.id.user_action_8,
+                R.id.user_action_9,
+            )
 
         fun getIntent(context: Context): Intent = Intent(context, Reviewer::class.java)
     }

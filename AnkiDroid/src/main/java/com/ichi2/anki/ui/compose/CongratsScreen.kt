@@ -20,6 +20,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.ui.compose
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -49,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
@@ -60,7 +62,8 @@ import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun CongratsScreen(onDeckOptions: () -> Unit, onBack: () -> Unit, timeUntilNextDay: Long) {
+fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUntilNextDay: Long) {
+    BackHandler { onNavigateUp() }
     AnkiDroidTheme {
         Scaffold(topBar = {
             TopAppBar(
@@ -75,7 +78,7 @@ fun CongratsScreen(onDeckOptions: () -> Unit, onBack: () -> Unit, timeUntilNextD
                 navigationIcon = {
                     FilledIconButton(
                         modifier = Modifier.padding(end = 8.dp),
-                        onClick = onBack,
+                        onClick = onNavigateUp,
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -86,7 +89,8 @@ fun CongratsScreen(onDeckOptions: () -> Unit, onBack: () -> Unit, timeUntilNextD
                             contentDescription = stringResource(R.string.back)
                         )
                     }
-                }, actions = {
+                },
+                actions = {
                     FilledIconButton(
                         onClick = onDeckOptions,
                         colors = IconButtonDefaults.filledIconButtonColors(
@@ -113,7 +117,6 @@ fun CongratsScreen(onDeckOptions: () -> Unit, onBack: () -> Unit, timeUntilNextD
                 Text(
                     text = stringResource(id = R.string.studyoptions_congrats_finished),
                     style = MaterialTheme.typography.headlineMedium,
-
                 )
                 Text(
                     text = stringResource(R.string.daily_limit_reached),
@@ -179,4 +182,14 @@ fun CongratsScreen(onDeckOptions: () -> Unit, onBack: () -> Unit, timeUntilNextD
             }
         })
     }
+}
+
+@Preview
+@Composable
+fun CongratsScreenPreview() {
+    CongratsScreen(
+        onNavigateUp = {},
+        onDeckOptions = {},
+        timeUntilNextDay = 1000 * 60 * 60 * 4
+    )
 }

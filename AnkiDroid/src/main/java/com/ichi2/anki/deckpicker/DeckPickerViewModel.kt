@@ -25,6 +25,7 @@ import anki.i18n.GeneratedTranslations
 import anki.sync.SyncStatusResponse
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CollectionManager
+import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckPicker
@@ -40,6 +41,7 @@ import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.sched.DeckNode
+import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.anki.libanki.utils.extend
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.notetype.ManageNoteTypesDestination
@@ -171,6 +173,8 @@ class DeckPickerViewModel :
 
     val flowOfPromptUserToUpdateScheduler = MutableSharedFlow<Unit>()
 
+
+
     val flowOfUndoUpdated = MutableSharedFlow<Unit>()
 
     val flowOfCollectionHasNoCards = MutableStateFlow(true)
@@ -190,6 +194,9 @@ class DeckPickerViewModel :
 
     /** "Studied N cards in 0 seconds today */
     val flowOfStudiedTodayStats = MutableStateFlow("")
+
+    private val _flowOfTimeUntilNextDay = MutableStateFlow(0L)
+    val flowOfTimeUntilNextDay: StateFlow<Long> = _flowOfTimeUntilNextDay.asStateFlow()
 
     /** Flow that determines when the resizing divider should be visible */
     val flowOfResizingDividerVisible =
@@ -221,7 +228,8 @@ class DeckPickerViewModel :
                 if (isEmpty) {
                     DeckSelectionResult.Empty(deckId)
                 } else {
-                    DeckSelectionResult.NoCardsToStudy
+                    _flowOfTimeUntilNextDay.value = calculateTimeUntilNextDay(sched)
+                    DeckSelectionResult.NoCardsToStudy(deckId)
                 }
             }
         }
@@ -380,9 +388,12 @@ class DeckPickerViewModel :
 
                 flowOfCollectionHasNoCards.value = collectionHasNoCards
 
-                // TODO: This is in the wrong place
                 // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
                 flowOfStudiedTodayStats.value = withCol { sched.studiedToday().replace("\n", " ") }
+
+                _flowOfTimeUntilNextDay.value = withCol {
+                    calculateTimeUntilNextDay(sched)
+                }
 
                 /**
                  * Checks the current scheduler version and prompts the upgrade dialog if using the legacy version.
@@ -500,6 +511,15 @@ class DeckPickerViewModel :
         configureRenderingMode()
 
         flowOfStartupResponse.value = StartupResponse.Success
+    }
+
+    /**
+     * Calculates the time in milliseconds until the next Anki day rollover.
+     * @param sched The scheduler to get the day cutoff from
+     * @return Time in milliseconds until next day, or 0 if already past cutoff
+     */
+    private fun calculateTimeUntilNextDay(sched: Scheduler): Long {
+        return (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
     }
 
     interface AnkiDroidEnvironment {

@@ -47,7 +47,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -184,7 +183,7 @@ fun MyAccountScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RemoveAccountContent(onBack: () -> Unit) {
     val removeAccountUrl = stringResource(R.string.remove_account_url)
@@ -198,8 +197,20 @@ fun RemoveAccountContent(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.remove_account)) }, navigationIcon = {
-                IconButton(onClick = onBack) {
+            TopAppBar(title = {
+                Text(
+                    text = stringResource(R.string.remove_account),
+                    style = MaterialTheme.typography.displayMediumEmphasized,
+                )
+            }, navigationIcon = {
+                FilledIconButton(
+                    modifier = Modifier.padding(end = 8.dp),
+                    onClick = onBack,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
                     Icon(
                         painter = painterResource(R.drawable.arrow_back_24px),
                         contentDescription = stringResource(R.string.back),
