@@ -1630,26 +1630,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         updateToolbar()
     }
 
-    private fun editToolbarButton(
-        buttonText: String,
-        prefix: String,
-        suffix: String,
-        currentButton: CustomToolbarButton,
-    ) {
-        val toolbarButtons = toolbarButtons
-        val currentButtonIndex = currentButton.index
-
-        toolbarButtons[currentButtonIndex] = CustomToolbarButton(
-            index = currentButtonIndex,
-            buttonText = buttonText.ifEmpty { currentButton.buttonText },
-            prefix = prefix.ifEmpty { currentButton.prefix },
-            suffix = suffix.ifEmpty { currentButton.suffix },
-        )
-
-        saveToolbarButtons(toolbarButtons)
-        updateToolbar()
-    }
-
     private fun suggestRemoveButton(
         button: CustomToolbarButton,
         editToolbarItemDialog: AlertDialog,
