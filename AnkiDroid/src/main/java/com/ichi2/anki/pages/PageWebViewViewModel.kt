@@ -76,8 +76,8 @@ class PageWebViewViewModel(
     }
 }
 
-sealed class ServerState {
-    object Running : ServerState()
-    object Stopped : ServerState()
-    data class Error(val exception: Exception) : ServerState()
+sealed interface ServerState {
+    data object Running : ServerState
+    data object Stopped : ServerState
+    data class Error(val exception: Exception) : ServerState
 }
