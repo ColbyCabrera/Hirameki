@@ -132,7 +132,6 @@ private fun PageWebViewError() {
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
 private fun PageWebViewInternal(
     path: String,
