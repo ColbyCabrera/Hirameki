@@ -106,11 +106,7 @@ fun DeckSelector(
 
         DropdownMenu(
             expanded = showDeckMenu,
-            onDismissRequest = {
-                showDeckMenu = false
-                deckSearchQuery = ""
-                expandedDecks.clear()
-            },
+            onDismissRequest = { showDeckMenu = false },
             shape = MaterialTheme.shapes.large
         ) {
             Surface(
