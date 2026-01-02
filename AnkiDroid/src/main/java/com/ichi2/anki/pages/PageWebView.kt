@@ -196,6 +196,7 @@ private fun PageWebViewTopBar(
         }
     }, navigationIcon = {
         FilledIconButton(
+            modifier = Modifier.padding(end = 8.dp),
             onClick = onNavigateUp,
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
