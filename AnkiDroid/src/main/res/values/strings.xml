@@ -79,4 +79,5 @@
     <string name="login_error_title">Sign in failed</string>
     <string name="brush_options">Brush options</string>
     <string name="page_web_view_error">Could not load page. Please check your internet connection and try again.</string>
+    <string name="statistics_failed_to_load_decks">Failed to load decks</string>
 </resources>

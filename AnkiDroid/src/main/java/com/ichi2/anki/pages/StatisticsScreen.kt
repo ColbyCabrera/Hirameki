@@ -44,8 +44,8 @@ fun StatisticsScreen(
     val context = LocalContext.current
 
     LaunchedEffect(viewModel) {
-        viewModel.snackbarMessage.collect {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        viewModel.snackbarMessage.collect { messageResId ->
+            Toast.makeText(context, context.getString(messageResId), Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject.quote
 import timber.log.Timber
+import com.ichi2.anki.R
 
 /**
  * ViewModel for [StatisticsScreen] to manage deck selection and JavaScript injection.
@@ -42,7 +43,7 @@ class StatisticsViewModel : ViewModel() {
     private val _jsInjectionEvent = MutableSharedFlow<String>()
     val jsInjectionEvent = _jsInjectionEvent.asSharedFlow()
 
-    private val _snackbarMessage = MutableSharedFlow<String>()
+    private val _snackbarMessage = MutableSharedFlow<Int>()
     val snackbarMessage = _snackbarMessage.asSharedFlow()
 
     init {
@@ -68,7 +69,7 @@ class StatisticsViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load decks for statistics")
-                _snackbarMessage.emit("Failed to load decks")
+                _snackbarMessage.emit(R.string.statistics_failed_to_load_decks)
             }
         }
     }
@@ -83,6 +84,20 @@ class StatisticsViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Injects JavaScript to change the displayed deck in the statistics WebView.
+     *
+     * This is a workaround to change the deck in the webview since there's no direct API.
+     * The script manipulates the "statisticsSearchText" input element defined in AnkiWeb's
+     * statistics page HTML, setting its value to a deck filter and dispatching input events
+     * to trigger the page to update.
+     *
+     * The retry mechanism (5 attempts × 200ms) handles timing issues where the DOM element
+     * may not be available immediately when the page is still loading.
+     *
+     * @param deckName The name of the deck to display statistics for
+     * @see [Statistics.kt] for the original Fragment implementation
+     */
     private fun injectDeckChangeScript(deckName: String) {
         val escapedDeckName = quote(deckName)
 
