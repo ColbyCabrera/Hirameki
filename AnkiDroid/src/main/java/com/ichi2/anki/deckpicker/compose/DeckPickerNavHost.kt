@@ -106,6 +106,25 @@ private data class DeckPickerDrawerState(
     val selectedNavigationItem: AppNavigationItem,
 )
 
+/**
+ * Actions available from the deck picker drawer and its child components.
+ *
+ * Some actions appear as duplicate pairs (e.g., `onDeckOptions`/`onDeckOptionsItemSelected`,
+ * `onRebuild`/`onRebuildDeck`). This is intentional for different UI contexts:
+ * - The first variant (e.g., `onRebuild`) is used in the **deck row context menu**, where
+ *   the action receives a `DisplayDeckNode` and the caller extracts the deck ID.
+ * - The second variant (e.g., `onRebuildDeck`) is used in the **StudyOptions panel**, where
+ *   the deck ID is passed directly as a `Long`.
+ *
+ * Both variants ultimately invoke the same underlying operation.
+ *
+ * @property onDeckOptions Opens deck options from deck row context menu
+ * @property onDeckOptionsItemSelected Opens deck options from StudyOptions panel
+ * @property onRebuild Rebuilds filtered deck from deck row context menu
+ * @property onEmpty Empties filtered deck from deck row context menu
+ * @property onRebuildDeck Rebuilds filtered deck from StudyOptions panel
+ * @property onEmptyDeck Empties filtered deck from StudyOptions panel
+ */
 private data class DeckPickerDrawerActions(
     val onSync: () -> Unit,
     val onSearchQueryChanged: (String) -> Unit,
