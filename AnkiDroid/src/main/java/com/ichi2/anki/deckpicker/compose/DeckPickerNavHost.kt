@@ -121,6 +121,7 @@ fun DeckPickerNavHost(
     onInvalidateOptionsMenu: () -> Unit,
     onSync: () -> Unit,
 ) {
+    val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsState()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     NavDisplay(
@@ -171,8 +172,8 @@ fun DeckPickerNavHost(
                     NavEntry(key) {
                         CongratsComposable(
                             onNavigateUp = { navigator.goBack() },
-                            onDeckOptions = { /* TODO: Navigate to deck options */ },
-                            timeUntilNextDay = 0L // TODO: Get from ViewModel
+                            onDeckOptions = { viewModel.openDeckOptions(key.deckId) },
+                            timeUntilNextDay = timeUntilNextDay
                         )
                     }
                 }
@@ -562,6 +563,7 @@ private fun DeckPickerMainContent(
     }
 
     SetupFlows(
+        navigator = navigator,
         viewModel = viewModel,
         cardBrowserViewModel = cardBrowserViewModel,
         snackbarHostState = snackbarHostState,
@@ -693,6 +695,7 @@ private fun DeckPickerWithDrawer(
 
 @Composable
 private fun SetupFlows(
+    navigator: Navigator,
     viewModel: DeckPickerViewModel,
     cardBrowserViewModel: CardBrowserViewModel,
     snackbarHostState: SnackbarHostState,
@@ -748,7 +751,7 @@ private fun SetupFlows(
                 }
 
                 is DeckSelectionResult.NoCardsToStudy -> {
-                    onLaunchIntent(Intent(applicationContext, CongratsActivity::class.java))
+                    navigator.goTo(CongratsScreen(result.deckId))
                 }
             }
         }

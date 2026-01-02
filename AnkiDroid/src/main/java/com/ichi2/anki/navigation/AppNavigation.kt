@@ -28,7 +28,7 @@ object DeckPickerScreen
 object HelpScreen
 
 @Serializable
-object CongratsScreen
+data class CongratsScreen(val deckId: Long)
 
 @Serializable
 object StatisticsDestination
@@ -40,15 +40,16 @@ data class DeckOptionsDestination(val deckId: Long)
 data class CardInfoDestination(val cardId: Long)
 
 class Navigator(initialKey: Any) {
-    val backStack = mutableStateListOf(initialKey)
+    private val _backStack = mutableStateListOf(initialKey)
+    val backStack: List<Any> get() = _backStack
 
     fun goTo(key: Any) {
-        backStack.add(key)
+        _backStack.add(key)
     }
 
     fun goBack() {
-        if (backStack.size > 1) {
-            backStack.removeAt(backStack.size - 1)
+        if (_backStack.size > 1) {
+            _backStack.removeAt(_backStack.size - 1)
         }
     }
 }

@@ -44,7 +44,7 @@ sealed class DeckSelectionResult {
         val deckId: DeckId,
     ) : DeckSelectionResult()
 
-    object NoCardsToStudy : DeckSelectionResult()
+    data class NoCardsToStudy(val deckId: DeckId) : DeckSelectionResult()
 }
 
 fun DeckNode.onlyHasDefaultDeck() = children.singleOrNull()?.did == Consts.DEFAULT_DECK_ID

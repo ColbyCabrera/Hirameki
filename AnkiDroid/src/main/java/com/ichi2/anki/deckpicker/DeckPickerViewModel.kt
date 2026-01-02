@@ -25,6 +25,7 @@ import anki.i18n.GeneratedTranslations
 import anki.sync.SyncStatusResponse
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CollectionManager
+import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckPicker
@@ -191,6 +192,8 @@ class DeckPickerViewModel :
     /** "Studied N cards in 0 seconds today */
     val flowOfStudiedTodayStats = MutableStateFlow("")
 
+    val flowOfTimeUntilNextDay = MutableStateFlow(0L)
+
     /** Flow that determines when the resizing divider should be visible */
     val flowOfResizingDividerVisible =
         combine(
@@ -221,7 +224,8 @@ class DeckPickerViewModel :
                 if (isEmpty) {
                     DeckSelectionResult.Empty(deckId)
                 } else {
-                    DeckSelectionResult.NoCardsToStudy
+                    flowOfTimeUntilNextDay.value = (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
+                    DeckSelectionResult.NoCardsToStudy(deckId)
                 }
             }
         }
@@ -380,9 +384,12 @@ class DeckPickerViewModel :
 
                 flowOfCollectionHasNoCards.value = collectionHasNoCards
 
-                // TODO: This is in the wrong place
                 // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
                 flowOfStudiedTodayStats.value = withCol { sched.studiedToday().replace("\n", " ") }
+
+                flowOfTimeUntilNextDay.value = withCol {
+                    (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
+                }
 
                 /**
                  * Checks the current scheduler version and prompts the upgrade dialog if using the legacy version.
