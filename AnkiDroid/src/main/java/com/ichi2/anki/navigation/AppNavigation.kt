@@ -39,14 +39,32 @@ data class DeckOptionsDestination(val deckId: Long)
 @Serializable
 data class CardInfoDestination(val cardId: Long)
 
+/**
+ * A simple navigator that manages a back stack of destination keys.
+ *
+ * The back stack is initialized with a single [initialKey].
+ *
+ * @param initialKey The initial destination key to start the back stack with.
+ */
 class Navigator(initialKey: Any) {
     private val _backStack = mutableStateListOf(initialKey)
     val backStack: List<Any> get() = _backStack
 
+    /**
+     * Pushes a new destination key onto the back stack.
+     *
+     * @param key The key representing the destination to navigate to.
+     */
     fun goTo(key: Any) {
         _backStack.add(key)
     }
 
+    /**
+     * Pops the top destination key off the back stack.
+     *
+     * If the back stack contains only one item, this operation is a no-op.
+     * This prevents the back stack from becoming empty.
+     */
     fun goBack() {
         if (_backStack.size > 1) {
             _backStack.removeAt(_backStack.size - 1)
@@ -54,6 +72,21 @@ class Navigator(initialKey: Any) {
     }
 }
 
+/**
+ * Creates and remembers a [Navigator] instance.
+ *
+ * The [Navigator] is created once and retained across recompositions.
+ * If the [initialKey] changes, the [Navigator] will be recreated.
+ *
+ * Typical Usage:
+ * ```
+ * val navigator = rememberNavigator(initialKey = DeckPickerScreen)
+ * NavDisplay(backStack = navigator.backStack)
+ * ```
+ *
+ * @param initialKey The start destination for the navigation back stack.
+ * @return A remembered [Navigator] instance ready for use.
+ */
 @Composable
 fun rememberNavigator(initialKey: Any): Navigator {
     return remember(initialKey) { Navigator(initialKey) }
