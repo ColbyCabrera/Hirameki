@@ -948,10 +948,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         launchCatchingTask { updateCardAndRedraw() }
     }
 
-    override fun displayAnswerBottomBar() {
-        super.displayAnswerBottomBar()
-        // Legacy view logic for answer buttons removed.
-    }
+
 
     override fun automaticShowQuestion(action: AutomaticAnswerAction) {
         // explicitly do not call super
@@ -1286,10 +1283,18 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             newCardCount = queueState?.counts?.new ?: -1
             lrnCardCount = queueState?.counts?.lrn ?: -1
             revCardCount = queueState?.counts?.rev ?: -1
-            nextTime1 = "" // easeButton1!!.nextTime
-            nextTime2 = "" // easeButton2!!.nextTime
-            nextTime3 = "" // easeButton3!!.nextTime
-            nextTime4 = "" // easeButton4!!.nextTime
+            if (currentCard != null) {
+                val s = getColUnsafe.sched
+                nextTime1 = s.nextIvlStr(currentCard!!, Rating.AGAIN)
+                nextTime2 = s.nextIvlStr(currentCard!!, Rating.HARD)
+                nextTime3 = s.nextIvlStr(currentCard!!, Rating.GOOD)
+                nextTime4 = s.nextIvlStr(currentCard!!, Rating.EASY)
+            } else {
+                nextTime1 = ""
+                nextTime2 = ""
+                nextTime3 = ""
+                nextTime4 = ""
+            }
             eta = this@Reviewer.eta
         }
         return cardDataForJsAPI

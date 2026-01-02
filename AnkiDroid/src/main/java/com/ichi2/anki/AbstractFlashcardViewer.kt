@@ -17,8 +17,6 @@
  * You should have received a copy of the GNU General Public License along with         *
  * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
  ****************************************************************************************/
-
-// TODO: implement own menu? http://www.codeproject.com/Articles/173121/Android-Menus-My-Way
 package com.ichi2.anki
 
 import android.annotation.SuppressLint
@@ -33,8 +31,6 @@ import android.hardware.SensorManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -46,8 +42,6 @@ import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.view.ViewParent
 import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
 import android.webkit.JsResult
 import android.webkit.PermissionRequest
@@ -60,7 +54,6 @@ import android.webkit.WebView
 import android.webkit.WebView.HitTestResult
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
@@ -74,8 +67,6 @@ import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.children
-import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import anki.collection.OpChanges
 import anki.scheduler.CardAnswer.Rating
@@ -138,12 +129,10 @@ import com.ichi2.anki.reviewer.AutomaticAnswer.AutomaticallyAnswered
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
 import com.ichi2.anki.reviewer.ReviewerConstants
 import com.ichi2.anki.reviewer.CardSide
-import com.ichi2.anki.reviewer.EaseButton
 import com.ichi2.anki.reviewer.FullScreenMode
 import com.ichi2.anki.reviewer.FullScreenMode.Companion.DEFAULT
 import com.ichi2.anki.reviewer.FullScreenMode.Companion.fromPreference
 import com.ichi2.anki.reviewer.PreviousAnswerIndicator
-import com.ichi2.anki.servicelayer.LanguageHintService.applyLanguageHint
 import com.ichi2.anki.servicelayer.NoteService.isMarked
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
@@ -152,13 +141,10 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.windows.reviewer.StudyScreenRepository
 import com.ichi2.anki.utils.OnlyOnce.Method.ANSWER_CARD
 import com.ichi2.anki.utils.OnlyOnce.preventSimultaneousExecutions
-import com.ichi2.anki.utils.ext.isTouchWithinBounds
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.compat.CompatHelper.Companion.resolveActivityCompat
 import com.ichi2.compat.ResolveInfoFlagsCompat
 import com.ichi2.themes.Themes
-import com.ichi2.themes.Themes.getResFromAttr
-import com.ichi2.ui.FixedEditText
 import com.ichi2.utils.HandlerUtils.newHandler
 import com.ichi2.utils.HashUtil.hashSetInit
 import com.ichi2.utils.Stopwatch
@@ -756,7 +742,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     // Set the content view to the one provided and initialize accessors.
     protected open fun initLayout() {
-        topBarLayout = findViewById(R.id.top_bar)
         cardFrame = findViewById(R.id.flashcard)
         if (cardFrame != null) {
             cardFrameParent = cardFrame!!.parent as ViewGroup
@@ -812,7 +797,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             displayCardAnswer()
             return
         }
-        // performClickWithVisualFeedback(cardOrdinal)
+        answerCard(cardOrdinal)
     }
 
     /** Used to set the "javascript:" URIs for IPC  */
@@ -846,29 +831,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     protected fun shouldShowNextReviewTime(): Boolean = showNextReviewTime
 
-    protected open fun displayAnswerBottomBar() {
-        // legacy view logic removed
-    }
 
-    protected open fun hideEaseButtons() {
-        // legacy view logic removed
-        focusAnswerCompletionField()
-    }
-
-    private fun actualHideEaseButtons() {
-        // legacy view logic removed
-    }
-
-    /**
-     * Focuses the appropriate field for an answer
-     * And allows keyboard shortcuts to go to the default handlers.
-     */
-    private fun focusAnswerCompletionField() = runOnUiThread {
-        // This does not handle mUseInputTag (the WebView contains an input field with a typable answer).
-        // In this case, the user can use touch to focus the field if necessary.
-        // answerField?.focusWithKeyboard()
-        // flipCardLayout?.requestFocus()
-    }
 
     protected open fun initControls() {
         cardFrame?.visibility = View.VISIBLE
@@ -936,11 +899,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     /** A new card has been loaded into the Viewer, or the question has been re-shown  */
     protected open fun updateForNewCard() {
         updateActionBar()
-
-        // Clean answer field
-        if (typeAnswer!!.validForEditText()) {
-            answerField!!.setText("")
-        }
     }
 
     protected open fun updateActionBar() {
@@ -952,20 +910,20 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         if (sharedPrefs().getBoolean("showDeckTitle", false)) {
             supportActionBar?.title = Decks.basename(getColUnsafe.decks.name(currentCard!!.did))
         }
-        if (!prefShowTopbar) {
-            topBarLayout!!.visibility = View.GONE
-        }
     }
 
     override fun automaticShowQuestion(action: AutomaticAnswerAction) {
         // Assume hitting the "Again" button when auto next question
-        easeButton1!!.performSafeClick()
+        // easeButton1!!.performSafeClick()
+        // TODO: Implement automatic answer for Compose
+        answerCard(Rating.AGAIN)
     }
 
     override fun automaticShowAnswer() {
-        if (flipCardLayout!!.isEnabled && flipCardLayout!!.isVisible) {
-            flipCardLayout!!.performClick()
-        }
+        // if (flipCardLayout!!.isEnabled && flipCardLayout!!.isVisible) {
+        //    flipCardLayout!!.performClick()
+        // }
+         displayCardAnswer()
     }
 
     private suspend fun automaticAnswerShouldWaitForMedia(): Boolean = withCol {
@@ -986,13 +944,13 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         setInterface()
         typeAnswer?.input = ""
         typeAnswer?.updateInfo(getColUnsafe, currentCard!!, resources)
-        if (typeAnswer?.validForEditText() == true) {
-            // Show text entry based on if the user wants to write the answer
-            answerField?.visibility = View.VISIBLE
-            answerField?.applyLanguageHint(typeAnswer?.languageHint)
-        } else {
-            answerField?.visibility = View.GONE
-        }
+        // if (typeAnswer?.validForEditText() == true) {
+        //     // Show text entry based on if the user wants to write the answer
+        //     answerField?.visibility = View.VISIBLE
+        //     answerField?.applyLanguageHint(typeAnswer?.languageHint)
+        // } else {
+        //     answerField?.visibility = View.GONE
+        // }
         if (cardRenderContext != null) {
             val content =
                 cardRenderContext!!.renderCard(getColUnsafe, currentCard!!, SingleCardSide.FRONT)
@@ -1003,7 +961,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 }
             }
             updateCard(content)
-            hideEaseButtons()
             // If Card-based TTS is enabled, we "automatic display" after the TTS has finished as we don't know the duration
             Timber.i(
                 "AbstractFlashcardViewer:: Question successfully shown for card id %d",
@@ -1015,7 +972,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     open fun displayCardAnswer() {
         // #7294 Required in case the animation end action does not fire:
-        actualHideEaseButtons()
         Timber.d("displayCardAnswer()")
         mediaErrorHandler.onCardSideChange()
         backButtonPressedToReturn = false
@@ -1031,15 +987,20 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
         // Explicitly hide the soft keyboard. It *should* be hiding itself automatically,
         // but sometimes failed to do so (e.g. if an OnKeyListener is attached).
-        if (typeAnswer!!.validForEditText()) {
-            val inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.hideSoftInputFromWindow(answerField!!.windowToken, 0)
-        }
+        // Explicitly hide the soft keyboard. It *should* be hiding itself automatically,
+        // but sometimes failed to do so (e.g. if an OnKeyListener is attached).
+        // if (typeAnswer!!.validForEditText()) {
+        //     val inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        //     inputMethodManager.hideSoftInputFromWindow(answerField!!.windowToken, 0)
+        // }
+        
         displayAnswer = true
-        answerField!!.visibility = View.GONE
+        // answerField!!.visibility = View.GONE
+        
         // Clean up the user answer and the correct answer
         if (!typeAnswer!!.useInputTag) {
-            typeAnswer!!.input = answerField!!.text.toString()
+            // typeAnswer!!.input = answerField!!.text.toString()
+            // TODO: Retrieve typed answer from Compose/ViewModel if needed
         }
         isSelecting = false
         val answerContent =
@@ -1051,7 +1012,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             }
         }
         updateCard(answerContent)
-        displayAnswerBottomBar()
     }
 
     override fun scrollCurrentCardBy(dy: Int) {
@@ -1631,7 +1591,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 )
                 automaticAnswer.onDisplayQuestion()
                 updateCard(content)
-                hideEaseButtons()
                 Timber.i(
                     "AbstractFlashcardViewer:: Question successfully shown for card id %d",
                     currentCard!!.id,
@@ -2118,7 +2077,8 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 // Store the text the javascript has send us…
                 typeAnswer!!.input = decodeUrl(url.replaceFirst("typeentertext:".toRegex(), ""))
                 // … and show the answer.
-                flipCardLayout!!.performClick()
+                // … and show the answer.
+                displayCardAnswer()
                 return true
             }
 
@@ -2135,7 +2095,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
                 Signal.RELINQUISH_FOCUS -> {
                     // #5811 - The WebView could be focused via mouse. Allow components to return focus to Android.
-                    focusAnswerCompletionField()
+                    // Legacy focus handling removed (Compose migration)
                     return true
                 }
 
