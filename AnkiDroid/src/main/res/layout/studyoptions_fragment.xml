@@ -30,7 +30,6 @@
 
         <ScrollView
             android:id="@+id/studyoptions_scrollview"
-            android:layout_above="@id/bottom_area_layout"
             android:layout_width="0dp"
             android:layout_height="0dp"
             app:layout_constraintTop_toTopOf="parent"

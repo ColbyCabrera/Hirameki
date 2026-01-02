@@ -17,8 +17,6 @@
  * You should have received a copy of the GNU General Public License along with         *
  * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
  ****************************************************************************************/
-
-// TODO: implement own menu? http://www.codeproject.com/Articles/173121/Android-Menus-My-Way
 package com.ichi2.anki
 
 import android.annotation.SuppressLint
@@ -33,8 +31,6 @@ import android.hardware.SensorManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -46,8 +42,6 @@ import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.view.ViewParent
 import android.view.WindowManager
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
 import android.webkit.JsResult
 import android.webkit.PermissionRequest
@@ -60,7 +54,6 @@ import android.webkit.WebView
 import android.webkit.WebView.HitTestResult
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
@@ -74,8 +67,6 @@ import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.children
-import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import anki.collection.OpChanges
 import anki.scheduler.CardAnswer.Rating
@@ -138,12 +129,10 @@ import com.ichi2.anki.reviewer.AutomaticAnswer.AutomaticallyAnswered
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
 import com.ichi2.anki.reviewer.ReviewerConstants
 import com.ichi2.anki.reviewer.CardSide
-import com.ichi2.anki.reviewer.EaseButton
 import com.ichi2.anki.reviewer.FullScreenMode
 import com.ichi2.anki.reviewer.FullScreenMode.Companion.DEFAULT
 import com.ichi2.anki.reviewer.FullScreenMode.Companion.fromPreference
 import com.ichi2.anki.reviewer.PreviousAnswerIndicator
-import com.ichi2.anki.servicelayer.LanguageHintService.applyLanguageHint
 import com.ichi2.anki.servicelayer.NoteService.isMarked
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
@@ -152,13 +141,10 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.windows.reviewer.StudyScreenRepository
 import com.ichi2.anki.utils.OnlyOnce.Method.ANSWER_CARD
 import com.ichi2.anki.utils.OnlyOnce.preventSimultaneousExecutions
-import com.ichi2.anki.utils.ext.isTouchWithinBounds
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.compat.CompatHelper.Companion.resolveActivityCompat
 import com.ichi2.compat.ResolveInfoFlagsCompat
 import com.ichi2.themes.Themes
-import com.ichi2.themes.Themes.getResFromAttr
-import com.ichi2.ui.FixedEditText
 import com.ichi2.utils.HandlerUtils.newHandler
 import com.ichi2.utils.HashUtil.hashSetInit
 import com.ichi2.utils.Stopwatch
@@ -236,20 +222,10 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     private var cardFrame: FrameLayout? = null
     private var touchLayer: FrameLayout? = null
-    protected var answerField: FixedEditText? = null
-    protected var flipCardLayout: FrameLayout? = null
-    private var easeButtonsLayout: LinearLayout? = null
-
-    internal var easeButton1: EaseButton? = null
-    internal var easeButton2: EaseButton? = null
-    internal var easeButton3: EaseButton? = null
-    internal var easeButton4: EaseButton? = null
     protected var topBarLayout: RelativeLayout? = null
     private var previousAnswerIndicator: PreviousAnswerIndicator? = null
 
     private var currentEase: Rating? = null
-    private var initialFlipCardHeight = 0
-    private var buttonHeightSet = false
 
     /**
      * A record of the last time the "show answer" or ease buttons were pressed. We keep track
@@ -296,18 +272,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     // ----------------------------------------------------------------------------
     // LISTENERS
     // ----------------------------------------------------------------------------
-    // Handler for the "show answer" button
-    private val flipCardListener = View.OnClickListener {
-        Timber.i("AbstractFlashcardViewer:: Show answer button pressed")
-        // Ignore what is most likely an accidental double-tap.
-        if (elapsedRealTime - lastClickTime < doubleTapTimeInterval) {
-            return@OnClickListener
-        }
-        lastClickTime = elapsedRealTime
-        automaticAnswer.onShowAnswer()
-        displayCardAnswer()
-    }
-
     /**
      * Changes which were received when the viewer was in the background
      * which should be executed once the viewer is visible again
@@ -366,86 +330,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     init {
         ChangeManager.subscribe(this)
     }
-
-    // Event handler for eases (answer buttons)
-    inner class SelectEaseHandler : View.OnClickListener, OnTouchListener {
-        private var prevCard: Card? = null
-        private var hasBeenTouched = false
-        private var touchX = 0f
-        private var touchY = 0f
-
-        override fun onTouch(
-            view: View,
-            event: MotionEvent,
-        ): Boolean {
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                // Save states when button pressed
-                prevCard = currentCard
-                hasBeenTouched = true
-                // We will need to check if a touch is followed by a click
-                // Since onTouch always come before onClick, we should check if
-                // the touch is going to be a click by storing the start coordinates
-                // and comparing with the end coordinates of the touch
-                touchX = event.rawX
-                touchY = event.rawY
-            } else if (event.action == MotionEvent.ACTION_UP) {
-                val diffX = abs(event.rawX - touchX)
-                val diffY = abs(event.rawY - touchY)
-                // If a click is not coming then we reset the touch
-                if (diffX > CLICK_ACTION_THRESHOLD || diffY > CLICK_ACTION_THRESHOLD) {
-                    hasBeenTouched = false
-                }
-            }
-            return false
-        }
-
-        override fun onClick(view: View) {
-            // Try to perform intended action only if the button has been pressed for current card,
-            // or if the button was not touched,
-            if (prevCard === currentCard || !hasBeenTouched) {
-                // Only perform if the click was not an accidental double-tap
-                if (elapsedRealTime - lastClickTime >= doubleTapTimeInterval) {
-                    // For whatever reason, performClick does not return a visual feedback anymore
-                    if (!hasBeenTouched) {
-                        view.isPressed = true
-                    }
-                    lastClickTime = elapsedRealTime
-                    automaticAnswer.onSelectEase()
-                    when (view.id) {
-                        R.id.flashcard_layout_ease1 -> {
-                            Timber.i("AbstractFlashcardViewer:: Ease_1 pressed")
-                            answerCard(Rating.AGAIN)
-                        }
-
-                        R.id.flashcard_layout_ease2 -> {
-                            Timber.i("AbstractFlashcardViewer:: Ease_2 pressed")
-                            answerCard(Rating.HARD)
-                        }
-
-                        R.id.flashcard_layout_ease3 -> {
-                            Timber.i("AbstractFlashcardViewer:: Ease_3 pressed")
-                            answerCard(Rating.GOOD)
-                        }
-
-                        R.id.flashcard_layout_ease4 -> {
-                            Timber.i("AbstractFlashcardViewer:: Ease_4 pressed")
-                            answerCard(Rating.EASY)
-                        }
-
-                        else -> currentEase = null
-                    }
-                    if (!hasBeenTouched) {
-                        view.isPressed = false
-                    }
-                }
-            }
-            // We will have to reset the touch after every onClick event
-            // Do not return early without considering this
-            hasBeenTouched = false
-        }
-    }
-
-    private val easeHandler = SelectEaseHandler()
 
     @get:VisibleForTesting
     protected open val elapsedRealTime: Long
@@ -678,7 +562,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         // Subclasses other than 'Reviewer' have not been setup with Gestures/KeyPresses
         // so hardcode this functionality for now.
         // This is in onKeyDown to match the gesture processor in the Reviewer
-        if (!displayAnswer && !answerFieldIsFocused()) {
+        if (!displayAnswer) {
             if (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
                 displayCardAnswer()
                 return true
@@ -723,9 +607,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         }
         return false
     }
-
-    protected open fun answerFieldIsFocused(): Boolean =
-        answerField != null && answerField!!.isFocused
 
     val deckOptionsLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
@@ -861,7 +742,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     // Set the content view to the one provided and initialize accessors.
     protected open fun initLayout() {
-        topBarLayout = findViewById(R.id.top_bar)
         cardFrame = findViewById(R.id.flashcard)
         if (cardFrame != null) {
             cardFrameParent = cardFrame!!.parent as ViewGroup
@@ -872,141 +752,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
         // Initialize swipe
         gestureDetector = GestureDetector(this, gestureDetectorImpl)
-        easeButtonsLayout = findViewById(R.id.ease_buttons)
-        easeButton1 = EaseButton(
-            Rating.AGAIN,
-            findViewById(R.id.flashcard_layout_ease1),
-            findViewById(R.id.ease1),
-            findViewById(R.id.nextTime1),
-        ).apply { setListeners(easeHandler) }
-        easeButton2 = EaseButton(
-            Rating.HARD,
-            findViewById(R.id.flashcard_layout_ease2),
-            findViewById(R.id.ease2),
-            findViewById(R.id.nextTime2),
-        ).apply { setListeners(easeHandler) }
-        easeButton3 = EaseButton(
-            Rating.GOOD,
-            findViewById(R.id.flashcard_layout_ease3),
-            findViewById(R.id.ease3),
-            findViewById(R.id.nextTime3),
-        ).apply { setListeners(easeHandler) }
-        easeButton4 = EaseButton(
-            Rating.EASY,
-            findViewById(R.id.flashcard_layout_ease4),
-            findViewById(R.id.ease4),
-            findViewById(R.id.nextTime4),
-        ).apply { setListeners(easeHandler) }
-        if (!showNextReviewTime) {
-            easeButton1!!.hideNextReviewTime()
-            easeButton2!!.hideNextReviewTime()
-            easeButton3!!.hideNextReviewTime()
-            easeButton4!!.hideNextReviewTime()
-        }
-        flipCardLayout = findViewById(R.id.flashcard_layout_flip)
-        flipCardLayout?.let { layout ->
-            if (minimalClickSpeed == 0) {
-                layout.setOnClickListener(flipCardListener)
-            } else {
-                val handler = Handler(Looper.getMainLooper())
-                layout.setOnTouchListener { view, event ->
-                    when (event.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            handler.postDelayed({
-                                flipCardListener.onClick(layout)
-                            }, minimalClickSpeed.toLong())
-
-                            showMinimalClickHint()
-                            false
-                        }
-
-                        MotionEvent.ACTION_MOVE -> {
-                            if (!view.isTouchWithinBounds(event)) {
-                                handler.removeCallbacksAndMessages(null)
-                            }
-                            false
-                        }
-
-                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_HOVER_ENTER -> {
-                            handler.removeCallbacksAndMessages(null)
-                            false
-                        }
-
-                        else -> false
-                    }
-                }
-            }
-        }
-        if (animationEnabled()) {
-            flipCardLayout?.setBackgroundResource(getResFromAttr(this, R.attr.hardButtonRippleRef))
-        }
-        if (!buttonHeightSet && relativeButtonSize != 100) {
-            val params = flipCardLayout!!.layoutParams
-            params.height = params.height * relativeButtonSize / 100
-            easeButton1!!.setButtonScale(relativeButtonSize)
-            easeButton2!!.setButtonScale(relativeButtonSize)
-            easeButton3!!.setButtonScale(relativeButtonSize)
-            easeButton4!!.setButtonScale(relativeButtonSize)
-            buttonHeightSet = true
-        }
-        initialFlipCardHeight = flipCardLayout!!.layoutParams.height
-        if (largeAnswerButtons) {
-            val params = flipCardLayout!!.layoutParams
-            params.height = initialFlipCardHeight * 2
-        }
-        answerField = findViewById(R.id.answer_field)
         initControls()
-
-        // Position answer buttons
-        val answerButtonsPosition = this.sharedPrefs().getString(
-            getString(R.string.answer_buttons_position_preference),
-            "bottom",
-        )
-        this.answerButtonsPosition = answerButtonsPosition
-        val answerArea = findViewById<LinearLayout>(R.id.bottom_area_layout)
-        val answerAreaParams = answerArea.layoutParams as RelativeLayout.LayoutParams
-        val whiteboardContainer = findViewById<FrameLayout>(R.id.whiteboard)
-        val whiteboardContainerParams =
-            whiteboardContainer.layoutParams as RelativeLayout.LayoutParams
-        val flashcardContainerParams = cardFrame?.layoutParams as RelativeLayout.LayoutParams
-        val touchLayerContainerParams = touchLayer!!.layoutParams as RelativeLayout.LayoutParams
-        when (answerButtonsPosition) {
-            "top" -> {
-                whiteboardContainerParams.addRule(RelativeLayout.BELOW, R.id.bottom_area_layout)
-                flashcardContainerParams.addRule(RelativeLayout.BELOW, R.id.bottom_area_layout)
-                touchLayerContainerParams.addRule(RelativeLayout.BELOW, R.id.bottom_area_layout)
-                answerAreaParams.addRule(RelativeLayout.BELOW, R.id.mic_tool_bar_layer)
-                answerArea.removeView(answerField)
-                answerArea.addView(answerField, 1)
-            }
-
-            "bottom",
-            "none",
-                -> {
-                whiteboardContainerParams.addRule(RelativeLayout.ABOVE, R.id.bottom_area_layout)
-                whiteboardContainerParams.addRule(RelativeLayout.BELOW, R.id.mic_tool_bar_layer)
-                flashcardContainerParams.addRule(RelativeLayout.ABOVE, R.id.bottom_area_layout)
-                flashcardContainerParams.addRule(RelativeLayout.BELOW, R.id.mic_tool_bar_layer)
-                touchLayerContainerParams.addRule(RelativeLayout.ABOVE, R.id.bottom_area_layout)
-                touchLayerContainerParams.addRule(RelativeLayout.BELOW, R.id.mic_tool_bar_layer)
-                answerAreaParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
-            }
-
-            else -> Timber.w("Unknown answerButtonsPosition: %s", answerButtonsPosition)
-        }
-        answerArea.visibility = if (answerButtonsPosition == "none") View.GONE else View.VISIBLE
-        // workaround for #14419, iterate over the bottom area children and manually enable the
-        // answer field while still hiding the other children
-        if (answerButtonsPosition == "none") {
-            answerArea.visibility = View.VISIBLE
-            answerArea.children.forEach {
-                it.visibility = if (it.id == R.id.answer_field) View.VISIBLE else View.GONE
-            }
-        }
-        answerArea.layoutParams = answerAreaParams
-        whiteboardContainer.layoutParams = whiteboardContainerParams
-        cardFrame?.layoutParams = flashcardContainerParams
-        touchLayer!!.layoutParams = touchLayerContainerParams
     }
 
     protected open fun createWebView(): WebView {
@@ -1051,7 +797,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             displayCardAnswer()
             return
         }
-        performClickWithVisualFeedback(cardOrdinal)
+        answerCard(cardOrdinal)
     }
 
     /** Used to set the "javascript:" URIs for IPC  */
@@ -1085,95 +831,11 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     protected fun shouldShowNextReviewTime(): Boolean = showNextReviewTime
 
-    protected open fun displayAnswerBottomBar() {
-        flipCardLayout!!.isClickable = false
-        easeButtonsLayout!!.visibility = View.VISIBLE
-        if (largeAnswerButtons) {
-            easeButtonsLayout!!.orientation = LinearLayout.VERTICAL
-            easeButtonsLayout!!.removeAllViewsInLayout()
-            easeButton1!!.detachFromParent()
-            easeButton2!!.detachFromParent()
-            easeButton3!!.detachFromParent()
-            easeButton4!!.detachFromParent()
-            val row1 = LinearLayout(baseContext)
-            row1.orientation = LinearLayout.HORIZONTAL
-            val row2 = LinearLayout(baseContext)
-            row2.orientation = LinearLayout.HORIZONTAL
-            easeButton2!!.addTo(row1)
-            easeButton4!!.addTo(row1)
-            easeButton1!!.addTo(row2)
-            easeButton3!!.addTo(row2)
-            easeButtonsLayout!!.addView(row1)
-            easeButtonsLayout!!.addView(row2)
-        }
-        val after = Runnable { flipCardLayout!!.visibility = View.GONE }
 
-        // hide "Show Answer" button
-        if (animationDisabled()) {
-            after.run()
-        } else {
-            flipCardLayout!!.alpha = 1f
-            flipCardLayout!!.animate().alpha(0f).setDuration(shortAnimDuration.toLong())
-                .withEndAction(after)
-        }
-    }
-
-    protected open fun hideEaseButtons() {
-        val after = Runnable { actualHideEaseButtons() }
-        val easeButtonsVisible = easeButtonsLayout?.visibility == View.VISIBLE
-        flipCardLayout?.isClickable = true
-        flipCardLayout?.visibility = View.VISIBLE
-        if (animationDisabled() || !easeButtonsVisible) {
-            after.run()
-        } else {
-            flipCardLayout?.alpha = 0f
-            flipCardLayout?.animate()?.alpha(1f)?.setDuration(shortAnimDuration.toLong())
-                ?.withEndAction(after)
-        }
-        focusAnswerCompletionField()
-    }
-
-    private fun actualHideEaseButtons() {
-        easeButtonsLayout?.visibility = View.GONE
-        easeButton1?.hide()
-        easeButton2?.hide()
-        easeButton3?.hide()
-        easeButton4?.hide()
-    }
-
-    /**
-     * Focuses the appropriate field for an answer
-     * And allows keyboard shortcuts to go to the default handlers.
-     */
-    private fun focusAnswerCompletionField() = runOnUiThread {
-        // This does not handle mUseInputTag (the WebView contains an input field with a typable answer).
-        // In this case, the user can use touch to focus the field if necessary.
-        if (typeAnswer?.autoFocusEditText() == true) {
-            answerField?.focusWithKeyboard()
-        } else {
-            flipCardLayout?.requestFocus()
-        }
-    }
 
     protected open fun initControls() {
         cardFrame?.visibility = View.VISIBLE
         previousAnswerIndicator!!.setVisibility(View.VISIBLE)
-        flipCardLayout!!.visibility = View.VISIBLE
-        answerField!!.visibility = if (typeAnswer!!.validForEditText()) View.VISIBLE else View.GONE
-        answerField!!.setOnEditorActionListener { _, actionId: Int, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                displayCardAnswer()
-                return@setOnEditorActionListener true
-            }
-            false
-        }
-        answerField!!.setOnKeyListener { _, keyCode: Int, event: KeyEvent ->
-            if (event.action == KeyEvent.ACTION_UP && (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)) {
-                displayCardAnswer()
-                return@setOnKeyListener true
-            }
-            false
-        }
     }
 
     protected open fun restorePreferences(): SharedPreferences {
@@ -1237,11 +899,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     /** A new card has been loaded into the Viewer, or the question has been re-shown  */
     protected open fun updateForNewCard() {
         updateActionBar()
-
-        // Clean answer field
-        if (typeAnswer!!.validForEditText()) {
-            answerField!!.setText("")
-        }
     }
 
     protected open fun updateActionBar() {
@@ -1253,20 +910,15 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         if (sharedPrefs().getBoolean("showDeckTitle", false)) {
             supportActionBar?.title = Decks.basename(getColUnsafe.decks.name(currentCard!!.did))
         }
-        if (!prefShowTopbar) {
-            topBarLayout!!.visibility = View.GONE
-        }
     }
 
     override fun automaticShowQuestion(action: AutomaticAnswerAction) {
         // Assume hitting the "Again" button when auto next question
-        easeButton1!!.performSafeClick()
+        answerCard(Rating.AGAIN)
     }
 
     override fun automaticShowAnswer() {
-        if (flipCardLayout!!.isEnabled && flipCardLayout!!.isVisible) {
-            flipCardLayout!!.performClick()
-        }
+        displayCardAnswer()
     }
 
     private suspend fun automaticAnswerShouldWaitForMedia(): Boolean = withCol {
@@ -1287,13 +939,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         setInterface()
         typeAnswer?.input = ""
         typeAnswer?.updateInfo(getColUnsafe, currentCard!!, resources)
-        if (typeAnswer?.validForEditText() == true) {
-            // Show text entry based on if the user wants to write the answer
-            answerField?.visibility = View.VISIBLE
-            answerField?.applyLanguageHint(typeAnswer?.languageHint)
-        } else {
-            answerField?.visibility = View.GONE
-        }
         if (cardRenderContext != null) {
             val content =
                 cardRenderContext!!.renderCard(getColUnsafe, currentCard!!, SingleCardSide.FRONT)
@@ -1304,7 +949,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 }
             }
             updateCard(content)
-            hideEaseButtons()
             // If Card-based TTS is enabled, we "automatic display" after the TTS has finished as we don't know the duration
             Timber.i(
                 "AbstractFlashcardViewer:: Question successfully shown for card id %d",
@@ -1316,7 +960,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     open fun displayCardAnswer() {
         // #7294 Required in case the animation end action does not fire:
-        actualHideEaseButtons()
         Timber.d("displayCardAnswer()")
         mediaErrorHandler.onCardSideChange()
         backButtonPressedToReturn = false
@@ -1330,18 +973,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         //  (such as editing a card, then editing the card template)
         typeAnswer!!.updateInfo(getColUnsafe, currentCard!!, resources)
 
-        // Explicitly hide the soft keyboard. It *should* be hiding itself automatically,
-        // but sometimes failed to do so (e.g. if an OnKeyListener is attached).
-        if (typeAnswer!!.validForEditText()) {
-            val inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.hideSoftInputFromWindow(answerField!!.windowToken, 0)
-        }
         displayAnswer = true
-        answerField!!.visibility = View.GONE
-        // Clean up the user answer and the correct answer
-        if (!typeAnswer!!.useInputTag) {
-            typeAnswer!!.input = answerField!!.text.toString()
-        }
         isSelecting = false
         val answerContent =
             cardRenderContext!!.renderCard(getColUnsafe, currentCard!!, SingleCardSide.BACK)
@@ -1352,7 +984,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             }
         }
         updateCard(answerContent)
-        displayAnswerBottomBar()
     }
 
     override fun scrollCurrentCardBy(dy: Int) {
@@ -1533,14 +1164,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     protected open fun unblockControls() {
         cardFrame?.isEnabled = true
-        flipCardLayout?.isEnabled = true
-        easeButton1?.unblockBasedOnEase(currentEase)
-        easeButton2?.unblockBasedOnEase(currentEase)
-        easeButton3?.unblockBasedOnEase(currentEase)
-        easeButton4?.unblockBasedOnEase(currentEase)
-        if (typeAnswer?.validForEditText() == true) {
-            answerField?.isEnabled = true
-        }
         touchLayer?.visibility = View.VISIBLE
         inAnswer = false
         invalidateOptionsMenu()
@@ -1791,10 +1414,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     }
 
     override val baseSnackbarBuilder: SnackbarBuilder = {
-        // Configure the snackbar to avoid the bottom answer buttons
-        if (answerButtonsPosition == "bottom") {
-            anchorView = findViewById(R.id.answer_options_layout)
-        }
     }
 
     private fun onPageUp() {
@@ -1814,13 +1433,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     protected open fun performClickWithVisualFeedback(rating: Rating) {
         // Delay could potentially be lower - testing with 20 left a visible "click"
-        when (rating) {
-            Rating.AGAIN -> easeButton1!!.performClickWithVisualFeedback()
-            Rating.HARD -> easeButton2!!.performClickWithVisualFeedback()
-            Rating.GOOD -> easeButton3!!.performClickWithVisualFeedback()
-            Rating.EASY -> easeButton4!!.performClickWithVisualFeedback()
-            Rating.UNRECOGNIZED -> {}
-        }
     }
 
     private fun showMinimalClickHint() {
@@ -1939,13 +1551,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             setInterface()
             typeAnswer?.input = ""
             typeAnswer?.updateInfo(getColUnsafe, currentCard!!, resources)
-            if (typeAnswer?.validForEditText() == true) {
-                // Show text entry based on if the user wants to write the answer
-                answerField?.visibility = View.VISIBLE
-                answerField?.applyLanguageHint(typeAnswer?.languageHint)
-            } else {
-                answerField?.visibility = View.GONE
-            }
             if (cardRenderContext != null) {
                 val content = cardRenderContext!!.renderCard(
                     getColUnsafe,
@@ -1954,7 +1559,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 )
                 automaticAnswer.onDisplayQuestion()
                 updateCard(content)
-                hideEaseButtons()
                 Timber.i(
                     "AbstractFlashcardViewer:: Question successfully shown for card id %d",
                     currentCard!!.id,
@@ -2441,7 +2045,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 // Store the text the javascript has send us…
                 typeAnswer!!.input = decodeUrl(url.replaceFirst("typeentertext:".toRegex(), ""))
                 // … and show the answer.
-                flipCardLayout!!.performClick()
+                displayCardAnswer()
                 return true
             }
 
@@ -2458,7 +2062,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
                 Signal.RELINQUISH_FOCUS -> {
                     // #5811 - The WebView could be focused via mouse. Allow components to return focus to Android.
-                    focusAnswerCompletionField()
+                    // Legacy focus handling removed (Compose migration)
                     return true
                 }
 
