@@ -43,6 +43,7 @@ import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.testutils.getString
+import com.ichi2.anki.ioDispatcher
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
@@ -52,6 +53,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -72,6 +74,7 @@ class NoteEditorTest : RobolectricTest() {
     @Before
     override fun setUp() {
         super.setUp()
+        ioDispatcher = kotlinx.coroutines.test.UnconfinedTestDispatcher()
         // Ensure main looper is idled before each test
         idleMainLooper()
     }
@@ -116,7 +119,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun `can open with corrupt current deck - Issue 14096`() {
         col.config.set(CURRENT_DECK, '"' + "1688546411954" + '"')
         val editor = getNoteEditorAddingNote(DECK_LIST)
@@ -128,17 +130,12 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun previewWorksWithNoError() {
         val editor = getNoteEditorAddingNote(DECK_LIST)
         assertDoesNotThrow { runBlocking { editor.performPreview() } }
     }
 
-    // ---- Tests below require further investigation to fix lifecycle scope issue ----
-    // The lifecycle.coroutineScope launches need Dispatchers.Main.immediate to work in tests
-
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun errorSavingNoteWithNoFirstFieldDisplaysNoFirstField() = runTest {
         val noteEditor = getNoteEditorAdding(NoteType.BASIC).withNoFirstField().build()
         idleMainLooper()
@@ -151,7 +148,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun testErrorMessageNull() = runTest {
         val noteEditor = getNoteEditorAdding(NoteType.BASIC).withNoFirstField().build()
         idleMainLooper()
@@ -172,7 +168,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun errorSavingClozeNoteWithNoFirstFieldDisplaysClozeError() = runTest {
         val noteEditor = getNoteEditorAdding(NoteType.CLOZE).withNoFirstField().build()
         idleMainLooper()
@@ -185,7 +180,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun errorSavingClozeNoteWithNoClozeDeletionsDisplaysClozeError() = runTest {
         val noteEditor = getNoteEditorAdding(NoteType.CLOZE).withFirstField("NoCloze").build()
         idleMainLooper()
@@ -201,7 +195,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun errorSavingNoteWithNoTemplatesShowsNoCardsCreated() = runTest {
         val noteEditor =
             getNoteEditorAdding(NoteType.BACK_TO_FRONT).withFirstField("front is not enough")
@@ -216,7 +209,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun clozeNoteWithNoClozeDeletionsDoesNotSave() = runTest {
         val initialCards = cardCount
         val editor =
@@ -230,7 +222,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun clozeNoteWithClozeDeletionsDoesSave() = runTest {
         val initialCards = cardCount
         val editor =
@@ -260,7 +251,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun testHandleMultimediaActionsDisplaysBottomSheet() {
         val intent = NoteEditorLauncher.AddNote().toIntent(targetContext)
         ActivityScenario.launchActivityForResult<NoteEditorActivity>(intent).use { scenario ->
@@ -286,7 +276,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun copyNoteCopiesDeckId() {
         idleMainLooper()
         val currentDid = addDeck("Basic::Test")
@@ -319,7 +308,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun stickyFieldsAreUnchangedAfterAdd() = runTest {
         val basic = makeNoteForType(NoteType.BASIC)
         basic!!.fields[0].sticky = true
@@ -349,7 +337,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun processTextIntentShouldCopyFirstField() {
         ensureCollectionLoadIsSynchronous()
         val i = Intent(Intent.ACTION_PROCESS_TEXT)
@@ -362,7 +349,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun clearFieldWorks() {
         val editor = getNoteEditorAddingNote(DECK_LIST)
         idleMainLooper()
@@ -395,7 +381,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Tests XML EditText inputType. In Compose mode, capitalization is handled via KeyboardOptions.")
     fun defaultsToCapitalized() {
         // TODO: Rewrite test for Compose capitalization via KeyboardOptions
     }
@@ -413,7 +398,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun `edit note in filtered deck from reviewer - 15919`() {
         idleMainLooper()
         addDeck("A")
@@ -432,7 +416,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun `decide by note type preference - 13931`() = runTest {
         col.config.setBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK, false)
         addDeck("Basic")
@@ -465,7 +448,6 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    @Ignore("Lifecycle scope threading issue - requires production code change to fix")
     fun `editing card in filtered deck retains deck`() = runTest {
         val homeDeckId = addDeck("A")
         val note = addBasicNote().updateCards { did = homeDeckId }

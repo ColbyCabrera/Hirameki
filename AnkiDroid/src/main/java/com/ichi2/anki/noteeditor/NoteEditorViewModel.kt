@@ -15,6 +15,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.noteeditor
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
@@ -23,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.NoteFieldsCheckResult
 import com.ichi2.anki.checkNoteFieldsResponse
+import anki.config.ConfigKey
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Collection
@@ -33,7 +35,7 @@ import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.noteeditor.compose.NoteEditorState
 import com.ichi2.anki.noteeditor.compose.NoteFieldState
 import com.ichi2.anki.servicelayer.NoteService
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -109,6 +111,9 @@ class NoteEditorViewModel(
     private val savedStateHandle: SavedStateHandle? = null,
     private val collectionProvider: suspend () -> Collection = { CollectionManager.getColUnsafe() },
 ) : ViewModel() {
+    @VisibleForTesting
+    var ioDispatcher: CoroutineDispatcher = com.ichi2.anki.ioDispatcher
+
     companion object {
         // Keys for SavedStateHandle persistence
         private const val KEY_FIELD_VALUES = "note_editor_field_values"
@@ -254,7 +259,7 @@ class NoteEditorViewModel(
                 ensureActive()
 
                 // Perform all DB operations on IO dispatcher
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     // Load note and determine deck
                     if (cardId != null && !isAddingNote) {
                         // Editing an existing card - use the card's deck
@@ -367,7 +372,7 @@ class NoteEditorViewModel(
 
             // Perform all DB operations on IO dispatcher
             val (allTags, deckSpecificTags) =
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     val all = col.tags.all().sorted()
 
                     val deckSpecific =
@@ -504,7 +509,7 @@ class NoteEditorViewModel(
 
     fun addTag(tag: String) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val col = collectionProvider()
                 // Register the tag by setting its collapse state (registers if missing)
                 col.tags.setCollapsed(tag, collapsed = false)
@@ -536,7 +541,7 @@ class NoteEditorViewModel(
 
                 // Perform DB operations on IO dispatcher
                 val deckId =
-                    withContext(Dispatchers.IO) {
+                    withContext(ioDispatcher) {
                         val deck = col.decks.allNamesAndIds().find { it.name == deckName }
                         deck?.id
                     }
@@ -564,10 +569,10 @@ class NoteEditorViewModel(
             try {
                 val col = collectionProvider()
                 ensureActive() // Check cancellation after getting collection
-
+                
                 // Perform all DB operations on IO dispatcher
                 val result =
-                    withContext(Dispatchers.IO) {
+                    withContext(ioDispatcher) {
                         val notetype = col.notetypes.all().find { it.name == noteTypeName }
                         if (notetype == null) {
                             Timber.w("Note type '%s' not found", noteTypeName)
@@ -753,7 +758,7 @@ class NoteEditorViewModel(
 
             // Perform all DB operations on IO dispatcher
             val saveResult: SaveResult =
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     // Update note fields from state
                     val fields = _noteEditorState.value.fields
                     fields.forEach { fieldState ->
@@ -779,6 +784,17 @@ class NoteEditorViewModel(
                             return@withContext SaveResult.ValidationFailure(validationResult)
                         }
                         col.addNote(note, _deckId.value)
+
+                        // Update Note Type's default deck if configured not to use current deck
+                        // This mirrors legacy behavior where selecting a deck for a note type updates its preference
+                        if (!col.config.getBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK)) {
+                            val notetype = note.notetype
+                            if (notetype.did != _deckId.value) {
+                                Timber.d("Updating note type '%s' default deck to %d", notetype.name, _deckId.value)
+                                notetype.did = _deckId.value
+                                col.notetypes.save(notetype)
+                            }
+                        }
 
                         // Reset to a fresh blank note for the next add, preserving sticky field values and state
                         val currentState = _noteEditorState.value

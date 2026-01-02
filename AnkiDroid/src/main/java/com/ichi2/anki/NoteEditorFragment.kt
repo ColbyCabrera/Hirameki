@@ -95,11 +95,11 @@ import com.ichi2.anki.noteeditor.CustomToolbarButton
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.noteeditor.NoteEditorViewModel
 import com.ichi2.anki.noteeditor.ToolbarButtonModel
+import com.ichi2.anki.noteeditor.compose.AddToolbarItemDialog
 import com.ichi2.anki.noteeditor.compose.NoteEditorScreen
 import com.ichi2.anki.noteeditor.compose.NoteEditorSimpleOverflowItem
 import com.ichi2.anki.noteeditor.compose.NoteEditorToggleOverflowItem
 import com.ichi2.anki.noteeditor.compose.NoteEditorTopAppBar
-import com.ichi2.anki.noteeditor.compose.AddToolbarItemDialog
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.ImageOcclusion
 import com.ichi2.anki.preferences.sharedPrefs
@@ -1093,6 +1093,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     @VisibleForTesting
     @NeedsTest("14664: 'first field must not be empty' no longer applies after saving the note")
     suspend fun saveNote() {
+        addNoteErrorMessage = null
         when (val result = noteEditorViewModel.saveNote()) {
             is NoteFieldsCheckResult.Success -> {
                 changed = true
@@ -1357,8 +1358,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
         intent.putExtra("noteTypeId", noteTypeId)
         if (!addNote) {
-            val cardInfo =
-                Triple(currentEditedCard?.id, currentEditedCard?.ord, currentEditedCard?.nid)
+            val cardInfo = Triple(
+                currentEditedCard?.id, currentEditedCard?.ord, currentEditedCard?.nid
+            )
 
             if (cardInfo.third != null) {
                 intent.putExtra("noteId", cardInfo.third)
@@ -1618,7 +1620,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
     private fun saveToolbarButtons(buttons: ArrayList<CustomToolbarButton>) {
         this.sharedPrefs().edit {
-            putStringSet(PREF_NOTE_EDITOR_CUSTOM_BUTTONS, CustomToolbarButton.toStringSet(buttons))
+            putStringSet(
+                PREF_NOTE_EDITOR_CUSTOM_BUTTONS, CustomToolbarButton.toStringSet(buttons)
+            )
         }
     }
 
@@ -1629,7 +1633,11 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     ) {
         if (prefix.isEmpty() && suffix.isEmpty()) return
         val toolbarButtons = toolbarButtons
-        toolbarButtons.add(CustomToolbarButton(toolbarButtons.size, buttonText, prefix, suffix))
+        toolbarButtons.add(
+            CustomToolbarButton(
+                toolbarButtons.size, buttonText, prefix, suffix
+            )
+        )
         saveToolbarButtons(toolbarButtons)
         updateToolbar()
     }
@@ -1688,7 +1696,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         )
     }
 
-    private fun editToolbarButton(icon: String, prefix: String, suffix: String, buttonIndex: Int) {
+    private fun editToolbarButton(
+        icon: String, prefix: String, suffix: String, buttonIndex: Int
+    ) {
         val toolbarButtons = toolbarButtons
         toolbarButtons[buttonIndex] = CustomToolbarButton(buttonIndex, icon, prefix, suffix)
         saveToolbarButtons(toolbarButtons)
