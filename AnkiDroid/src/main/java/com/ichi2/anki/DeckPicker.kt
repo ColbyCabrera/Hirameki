@@ -602,6 +602,12 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         } catch (e: Exception) {
             Timber.w(e)
             CrashReportService.sendExceptionReport(e, "DeckPicker::onReceiveContent")
+            showSnackbar(
+                getString(
+                    R.string.import_error_handle_exception,
+                    e.localizedMessage ?: ""
+                )
+            )
             return@OnReceiveContentListener remaining
         }
 
