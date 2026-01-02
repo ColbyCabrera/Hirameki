@@ -43,7 +43,6 @@ import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.testutils.getString
-import com.ichi2.anki.ioDispatcher
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
@@ -53,7 +52,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -123,9 +121,7 @@ class NoteEditorTest : RobolectricTest() {
         col.config.set(CURRENT_DECK, '"' + "1688546411954" + '"')
         val editor = getNoteEditorAddingNote(DECK_LIST)
         assertThat(
-            "current deck is default after corruption",
-            editor.deckId,
-            equalTo(DEFAULT_DECK_ID)
+            "current deck is default after corruption", editor.deckId, equalTo(DEFAULT_DECK_ID)
         )
     }
 
@@ -189,8 +185,7 @@ class NoteEditorTest : RobolectricTest() {
 
         val actualResourceId = noteEditor.snackbarErrorText
         assertThat(
-            actualResourceId,
-            equalTo(CollectionManager.TR.addingYouHaveAClozeDeletionNote())
+            actualResourceId, equalTo(CollectionManager.TR.addingYouHaveAClozeDeletionNote())
         )
     }
 
@@ -291,9 +286,7 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
 
         assertThat(
-            "Selected deck ID should be the current deck id",
-            editor.deckId,
-            equalTo(currentDid)
+            "Selected deck ID should be the current deck id", editor.deckId, equalTo(currentDid)
         )
         assertThat(
             "Deck ID in the intent should be the selected deck id",
@@ -516,10 +509,7 @@ class NoteEditorTest : RobolectricTest() {
         NoteType.CLOZE -> col.notetypes.byName("Cloze")
         NoteType.BACK_TO_FRONT -> {
             val name = super.addStandardNoteType(
-                "Reversed",
-                arrayOf("Front", "Back"),
-                "{{Back}}",
-                "{{Front}}"
+                "Reversed", arrayOf("Front", "Back"), "{{Back}}", "{{Front}}"
             )
             col.notetypes.byName(name)
         }
