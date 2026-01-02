@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
@@ -57,7 +56,7 @@ fun NoClozeConfirmationDialog(
         text = { Text(text = message) },
         confirmButton = {
             TextButton(onClick = onSaveAnyway) {
-                Text(text = TR.actionsSave())
+                Text(text = stringResource(R.string.save))
             }
         },
         dismissButton = {
@@ -160,12 +159,11 @@ fun AddToolbarItemDialog(
                 ) {
                     if (state.isEditMode && onDelete != null) {
                         TextButton(
-                            onClick = onDelete,
-                            colors = ButtonDefaults.textButtonColors(
+                            onClick = onDelete, colors = ButtonDefaults.textButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
-                            Text(text = TR.actionsDelete())
+                            Text(text = stringResource(R.string.dialog_positive_delete))
                         }
                     }
                     TextButton(onClick = onHelpClick) {
