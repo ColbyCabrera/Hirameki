@@ -36,19 +36,13 @@ class PageWebViewViewModel(
     private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
     val serverState = _serverState.asStateFlow()
 
-    /**
-     * The base URL for the local server, used to load Anki pages.
-     * Cached after successful server start to avoid calling server.baseUrl() after a failed start.
-     */
-    var serverBaseUrl: String = ""
-        private set
 
     init {
         try {
             server.start()
-            serverBaseUrl = server.baseUrl()
-            _serverState.value = ServerState.Running
-            Timber.d("PageWebViewViewModel: AnkiServer started at %s", serverBaseUrl)
+            val url = server.baseUrl()
+            _serverState.value = ServerState.Running(url)
+            Timber.d("PageWebViewViewModel: AnkiServer started at %s", url)
         } catch (e: Exception) {
             Timber.e(e, "Failed to start AnkiServer")
             _serverState.value = ServerState.Error(e)
@@ -77,7 +71,7 @@ class PageWebViewViewModel(
 }
 
 sealed interface ServerState {
-    data object Running : ServerState
+    data class Running(val serverBaseUrl: String) : ServerState
     data object Stopped : ServerState
     data class Error(val exception: Exception) : ServerState
 }

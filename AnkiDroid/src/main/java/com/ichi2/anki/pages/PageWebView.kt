@@ -96,9 +96,13 @@ fun PageWebView(
                 .fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            when (serverState) {
+            when (val currentState = serverState) {
                 is ServerState.Running -> {
-                    PageWebViewInternal(path = path, viewModel = viewModel, jsCommands = jsCommands)
+                    PageWebViewInternal(
+                        path = path,
+                        serverBaseUrl = currentState.serverBaseUrl,
+                        jsCommands = jsCommands
+                    )
                 }
 
                 is ServerState.Error -> {
@@ -132,7 +136,7 @@ private fun PageWebViewError() {
 @Composable
 private fun PageWebViewInternal(
     path: String,
-    viewModel: PageWebViewViewModel,
+    serverBaseUrl: String,
     jsCommands: Flow<String>? = null,
 ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -172,7 +176,7 @@ private fun PageWebViewInternal(
             }
         }, update = { webView ->
             val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
-            val url = "${viewModel.serverBaseUrl}$path$nightMode"
+            val url = "$serverBaseUrl$path$nightMode"
             if (webView.tag != url) {
                 webView.tag = url
                 isLoading = true
