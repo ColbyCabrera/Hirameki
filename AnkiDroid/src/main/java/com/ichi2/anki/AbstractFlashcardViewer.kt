@@ -914,16 +914,11 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     override fun automaticShowQuestion(action: AutomaticAnswerAction) {
         // Assume hitting the "Again" button when auto next question
-        // easeButton1!!.performSafeClick()
-        // TODO: Implement automatic answer for Compose
         answerCard(Rating.AGAIN)
     }
 
     override fun automaticShowAnswer() {
-        // if (flipCardLayout!!.isEnabled && flipCardLayout!!.isVisible) {
-        //    flipCardLayout!!.performClick()
-        // }
-         displayCardAnswer()
+        displayCardAnswer()
     }
 
     private suspend fun automaticAnswerShouldWaitForMedia(): Boolean = withCol {
@@ -944,13 +939,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         setInterface()
         typeAnswer?.input = ""
         typeAnswer?.updateInfo(getColUnsafe, currentCard!!, resources)
-        // if (typeAnswer?.validForEditText() == true) {
-        //     // Show text entry based on if the user wants to write the answer
-        //     answerField?.visibility = View.VISIBLE
-        //     answerField?.applyLanguageHint(typeAnswer?.languageHint)
-        // } else {
-        //     answerField?.visibility = View.GONE
-        // }
         if (cardRenderContext != null) {
             val content =
                 cardRenderContext!!.renderCard(getColUnsafe, currentCard!!, SingleCardSide.FRONT)
@@ -985,23 +973,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         //  (such as editing a card, then editing the card template)
         typeAnswer!!.updateInfo(getColUnsafe, currentCard!!, resources)
 
-        // Explicitly hide the soft keyboard. It *should* be hiding itself automatically,
-        // but sometimes failed to do so (e.g. if an OnKeyListener is attached).
-        // Explicitly hide the soft keyboard. It *should* be hiding itself automatically,
-        // but sometimes failed to do so (e.g. if an OnKeyListener is attached).
-        // if (typeAnswer!!.validForEditText()) {
-        //     val inputMethodManager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        //     inputMethodManager.hideSoftInputFromWindow(answerField!!.windowToken, 0)
-        // }
-        
         displayAnswer = true
-        // answerField!!.visibility = View.GONE
-        
-        // Clean up the user answer and the correct answer
-        if (!typeAnswer!!.useInputTag) {
-            // typeAnswer!!.input = answerField!!.text.toString()
-            // TODO: Retrieve typed answer from Compose/ViewModel if needed
-        }
         isSelecting = false
         val answerContent =
             cardRenderContext!!.renderCard(getColUnsafe, currentCard!!, SingleCardSide.BACK)
