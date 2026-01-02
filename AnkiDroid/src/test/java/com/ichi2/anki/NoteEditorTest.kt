@@ -20,7 +20,6 @@ package com.ichi2.anki
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.os.Looper
 import android.widget.Spinner
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
@@ -95,9 +94,7 @@ class NoteEditorTest : RobolectricTest() {
      * Must be called after any operation that may queue async work.
      */
     private fun idleMainLooper() {
-        shadowOf(Looper.getMainLooper()).idle()
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-        advanceRobolectricLooper()
     }
 
     @Test
