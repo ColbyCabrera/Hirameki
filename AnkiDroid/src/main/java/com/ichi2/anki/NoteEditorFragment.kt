@@ -1354,16 +1354,8 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
         intent.putExtra("noteTypeId", noteTypeId)
         if (!addNote) {
-            val cardInfo = Triple(
-                currentEditedCard?.id, currentEditedCard?.ord, currentEditedCard?.nid
-            )
-
-            if (cardInfo.third != null) {
-                intent.putExtra("noteId", cardInfo.third)
-            }
-            if (cardInfo.second != null) {
-                intent.putExtra("ordId", cardInfo.second)
-            }
+            currentEditedCard?.nid?.let { intent.putExtra("noteId", it) }
+            currentEditedCard?.ord?.let { intent.putExtra("ordId", it) }
         }
         requestTemplateEditLauncher.launch(intent)
     }
