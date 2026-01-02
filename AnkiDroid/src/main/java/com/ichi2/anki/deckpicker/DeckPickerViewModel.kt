@@ -173,6 +173,8 @@ class DeckPickerViewModel :
 
     val flowOfPromptUserToUpdateScheduler = MutableSharedFlow<Unit>()
 
+
+
     val flowOfUndoUpdated = MutableSharedFlow<Unit>()
 
     val flowOfCollectionHasNoCards = MutableStateFlow(true)
@@ -193,7 +195,8 @@ class DeckPickerViewModel :
     /** "Studied N cards in 0 seconds today */
     val flowOfStudiedTodayStats = MutableStateFlow("")
 
-    val flowOfTimeUntilNextDay = MutableStateFlow(0L)
+    private val _flowOfTimeUntilNextDay = MutableStateFlow(0L)
+    val flowOfTimeUntilNextDay: StateFlow<Long> = _flowOfTimeUntilNextDay.asStateFlow()
 
     /** Flow that determines when the resizing divider should be visible */
     val flowOfResizingDividerVisible =
@@ -225,7 +228,7 @@ class DeckPickerViewModel :
                 if (isEmpty) {
                     DeckSelectionResult.Empty(deckId)
                 } else {
-                    flowOfTimeUntilNextDay.value = calculateTimeUntilNextDay(sched)
+                    _flowOfTimeUntilNextDay.value = calculateTimeUntilNextDay(sched)
                     DeckSelectionResult.NoCardsToStudy(deckId)
                 }
             }
@@ -388,7 +391,7 @@ class DeckPickerViewModel :
                 // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
                 flowOfStudiedTodayStats.value = withCol { sched.studiedToday().replace("\n", " ") }
 
-                flowOfTimeUntilNextDay.value = withCol {
+                _flowOfTimeUntilNextDay.value = withCol {
                     calculateTimeUntilNextDay(sched)
                 }
 
