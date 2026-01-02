@@ -137,6 +137,7 @@ fun AddToolbarItemDialog(
                     label = { Text(stringResource(R.string.note_editor_toolbar_icon)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    isError = iconText.isBlank(),
                 )
                 OutlinedTextField(
                     value = prefixText,
@@ -155,7 +156,11 @@ fun AddToolbarItemDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(iconText, prefixText, suffixText) }) {
+            TextButton(
+                onClick = {
+                    onConfirm(iconText.trim(), prefixText.trim(), suffixText.trim())
+                }, enabled = iconText.isNotBlank()
+            ) {
                 Text(
                     text = stringResource(
                         if (state.isEditMode) R.string.save else R.string.dialog_positive_create
