@@ -25,7 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -36,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +66,7 @@ import timber.log.Timber
  * @param modifier Optional modifier for the composable
  * @param viewModel The ViewModel managing the AnkiServer lifecycle
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun PageWebView(
@@ -74,77 +76,104 @@ fun PageWebView(
     modifier: Modifier = Modifier,
     viewModel: PageWebViewViewModel = viewModel(),
 ) {
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError by remember { mutableStateOf(false) }
+    val serverState by viewModel.serverState.collectAsState()
 
     Scaffold(
         topBar = {
             PageWebViewTopBar(
                 title = title, onNavigateUp = onNavigateUp
             )
-        }) { padding ->
+        },
+    ) { padding ->
         Box(
             modifier = modifier
                 .padding(padding)
-                .fillMaxSize()
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center,
         ) {
-            AndroidView(
-                factory = { ctx ->
-                WebView(ctx).apply {
-                    with(settings) {
-                        javaScriptEnabled = true
-                        displayZoomControls = false
-                        builtInZoomControls = true
-                        setSupportZoom(true)
-                    }
-                    webViewClient = PageWebViewClient().apply {
-                        onPageFinishedCallbacks.add { webView ->
-                            isLoading = false
-                            webView.visibility = View.VISIBLE
-                        }
-                        onErrorCallbacks.add { error ->
-                            Timber.e("PageWebView error: %s", error.description)
-                            hasError = true
-                            isLoading = false
-                        }
-                    }
-                    webChromeClient = PageChromeClient()
-                    visibility = View.INVISIBLE
+            when (serverState) {
+                is ServerState.Running -> {
+                    PageWebViewInternal(path = path, viewModel = viewModel)
                 }
-            }, update = { webView ->
-                val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
-                val url = "${viewModel.serverBaseUrl}$path$nightMode"
-                if (webView.tag != url) {
-                    webView.tag = url
-                    Timber.i("PageWebView: Loading %s", url)
-                    webView.loadUrl(url)
+
+                is ServerState.Error -> {
+                    PageWebViewError()
                 }
-            }, onRelease = { webView ->
-                webView.stopLoading()
-                webView.webViewClient = android.webkit.WebViewClient()
-                webView.destroy()
-            }, modifier = Modifier.fillMaxSize()
-            )
 
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            if (hasError) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(imageVector = Icons.Default.Warning, contentDescription = null)
-                    Text(
-                        text = stringResource(R.string.page_web_view_error),
-                        modifier = Modifier.padding(16.dp)
-                    )
+                ServerState.Stopped -> {
+                    CircularWavyProgressIndicator()
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PageWebViewError() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(imageVector = Icons.Default.Warning, contentDescription = null)
+        Text(
+            text = stringResource(R.string.page_web_view_error), modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun PageWebViewInternal(path: String, viewModel: PageWebViewViewModel) {
+    var isLoading by remember { mutableStateOf(true) }
+    var hasError by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        AndroidView(
+            factory = { ctx ->
+            WebView(ctx).apply {
+                with(settings) {
+                    javaScriptEnabled = true
+                    displayZoomControls = false
+                    builtInZoomControls = true
+                    setSupportZoom(true)
+                }
+                webViewClient = PageWebViewClient().apply {
+                    onPageFinishedCallbacks.add { webView ->
+                        isLoading = false
+                        webView.visibility = View.VISIBLE
+                    }
+                    onErrorCallbacks.add { error ->
+                        Timber.e("PageWebView error: %s", error.description)
+                        hasError = true
+                        isLoading = false
+                    }
+                }
+                webChromeClient = PageChromeClient()
+                visibility = View.INVISIBLE
+            }
+        }, update = { webView ->
+            val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
+            val url = "${viewModel.serverBaseUrl}$path$nightMode"
+            if (webView.tag != url) {
+                webView.tag = url
+                Timber.i("PageWebView: Loading %s", url)
+                webView.loadUrl(url)
+            }
+        }, onRelease = { webView ->
+            webView.stopLoading()
+            webView.webViewClient = android.webkit.WebViewClient()
+            webView.destroy()
+        }, modifier = Modifier.fillMaxSize()
+        )
+
+        if (isLoading) {
+            CircularWavyProgressIndicator()
+        }
+
+        if (hasError) {
+            PageWebViewError()
         }
     }
 }
