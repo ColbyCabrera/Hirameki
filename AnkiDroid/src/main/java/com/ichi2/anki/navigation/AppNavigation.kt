@@ -56,5 +56,5 @@ class Navigator(initialKey: Any) {
 
 @Composable
 fun rememberNavigator(initialKey: Any): Navigator {
-    return remember { Navigator(initialKey) }
+    return remember(initialKey) { Navigator(initialKey) }
 }
