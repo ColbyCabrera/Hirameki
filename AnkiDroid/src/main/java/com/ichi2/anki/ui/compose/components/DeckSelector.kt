@@ -242,11 +242,11 @@ private fun DeckHierarchyMenu(
                 if (hasChildren) {
                     IconButton(onClick = { expandedDecks[deck.name] = !isExpanded }) {
                         Icon(
-                            painter = if (isExpanded) painterResource(R.drawable.keyboard_arrow_right_24px)
-                            else painterResource(
-                                R.drawable.keyboard_arrow_down_24px
-                            ),
-                            contentDescription = "Expand"
+                            painter = if (isExpanded) painterResource(R.drawable.keyboard_arrow_down_24px)
+                            else painterResource(R.drawable.keyboard_arrow_right_24px),
+                            contentDescription = stringResource(
+                                if (isExpanded) R.string.collapse else R.string.expand
+                            )
                         )
                     }
                 }

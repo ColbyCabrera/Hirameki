@@ -20,6 +20,8 @@
     <string name="fab_menu_expanded">Expanded</string>
     <string name="fab_menu_collapsed">Collapsed</string>
     <string name="fab_menu_toggle">Toggle menu</string>
+    <string name="expand" comment="Generic expand action for collapsible elements">Expand</string>
+    <string name="collapse" comment="Generic collapse action for expanded elements">Collapse</string>
     <string name="back" comment="Generic back text. Duplicated in previewer_back and back_field_name for specific contexts">back</string>
     <string name="preview" comment="Generic preview label. Duplicated in card_editor_preview_card for card editor context">Preview</string>
     <string name="note_type_not_found_for_template_editor">Unable to open card template editor: note type not found</string>
