@@ -117,10 +117,12 @@ fun DeckPickerTabletCardBrowser(
         onOptions = { showBrowserOptionsDialog = true },
         onCreateFilteredDeck = { onAddFilteredDeck() },
         onEditNote = {
-            onOpenNoteEditor(cardBrowserViewModel.currentCardId)
+            val cardId = cardBrowserViewModel.currentCardId
+            if (cardId > 0) onOpenNoteEditor(cardId)
         },
         onCardInfo = {
-            onOpenCardInfo(cardBrowserViewModel.currentCardId)
+            val cardId = cardBrowserViewModel.currentCardId
+            if (cardId > 0) onOpenCardInfo(cardId)
         },
         onChangeDeck = { /* ActionHandler handled by Activity */ },
         onReposition = { /* ActionHandler handled by Activity */ },
