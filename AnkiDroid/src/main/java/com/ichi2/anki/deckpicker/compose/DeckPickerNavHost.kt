@@ -457,21 +457,9 @@ private fun DeckPickerMainContent(
                 val selectedTags by cardBrowserViewModel.selectedTags.collectAsState()
                 val deckTags by cardBrowserViewModel.deckTags.collectAsState()
                 val filterTagsByDeck by cardBrowserViewModel.filterTagsByDeck.collectAsState()
-                var showBrowserOptionsDialog by remember {
-                    mutableStateOf(
-                        false
-                    )
-                }
-                var showFilterByTagsDialog by remember {
-                    mutableStateOf(
-                        false
-                    )
-                }
-                var showFlagRenameDialog by remember {
-                    mutableStateOf(
-                        false
-                    )
-                }
+                var showBrowserOptionsDialog by remember { mutableStateOf(false) }
+                var showFilterByTagsDialog by remember { mutableStateOf(false) }
+                var showFlagRenameDialog by remember { mutableStateOf(false) }
 
                 if (showBrowserOptionsDialog) {
                     BrowserOptionsDialog(
