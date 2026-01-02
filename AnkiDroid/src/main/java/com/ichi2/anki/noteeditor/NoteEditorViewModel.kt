@@ -34,6 +34,7 @@ import com.ichi2.anki.libanki.Note.ClozeUtils
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.noteeditor.compose.NoteEditorState
 import com.ichi2.anki.noteeditor.compose.NoteFieldState
+import com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState
 import com.ichi2.anki.servicelayer.NoteService
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
@@ -84,18 +85,6 @@ sealed class SaveResult {
         val validationResult: NoteFieldsCheckResult.Failure,
     ) : SaveResult()
 }
-
-/**
- * State for the Add/Edit Toolbar Item dialog
- */
-data class ToolbarDialogState(
-    val isVisible: Boolean = false,
-    val isEditMode: Boolean = false,
-    val icon: String = "",
-    val prefix: String = "",
-    val suffix: String = "",
-    val buttonIndex: Int = -1,
-)
 
 /**
  * ViewModel for the Note Editor screen
@@ -203,12 +192,12 @@ class NoteEditorViewModel(
      */
     val noClozeDialogState: StateFlow<String?> = _noClozeDialogState.asStateFlow()
 
-    private val _toolbarDialogState = MutableStateFlow(ToolbarDialogState())
+    private val _toolbarDialogState = MutableStateFlow(ToolbarItemDialogState())
 
     /**
      * Controls visibility and state of the add/edit toolbar item dialog.
      */
-    val toolbarDialogState: StateFlow<ToolbarDialogState> = _toolbarDialogState.asStateFlow()
+    val toolbarDialogState: StateFlow<ToolbarItemDialogState> = _toolbarDialogState.asStateFlow()
 
     private val _currentNote = MutableStateFlow<Note?>(null)
 
@@ -1340,14 +1329,14 @@ class NoteEditorViewModel(
      * Show the add toolbar item dialog
      */
     fun showAddToolbarDialog() {
-        _toolbarDialogState.value = ToolbarDialogState(isVisible = true, isEditMode = false)
+        _toolbarDialogState.value = ToolbarItemDialogState(isVisible = true, isEditMode = false)
     }
 
     /**
      * Show the edit toolbar item dialog with existing values
      */
     fun showEditToolbarDialog(icon: String, prefix: String, suffix: String, buttonIndex: Int) {
-        _toolbarDialogState.value = ToolbarDialogState(
+        _toolbarDialogState.value = ToolbarItemDialogState(
             isVisible = true,
             isEditMode = true,
             icon = icon,
@@ -1361,7 +1350,7 @@ class NoteEditorViewModel(
      * Dismiss the toolbar item dialog
      */
     fun dismissToolbarDialog() {
-        _toolbarDialogState.value = ToolbarDialogState()
+        _toolbarDialogState.value = ToolbarItemDialogState()
     }
 
     /**

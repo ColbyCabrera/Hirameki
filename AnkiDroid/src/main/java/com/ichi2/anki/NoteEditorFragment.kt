@@ -810,29 +810,25 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
                 // Toolbar Item Dialog (Add/Edit)
                 AddToolbarItemDialog(
-                    state = com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState(
-                        isVisible = toolbarDialogState.isVisible,
-                        isEditMode = toolbarDialogState.isEditMode,
-                        icon = toolbarDialogState.icon,
-                        prefix = toolbarDialogState.prefix,
-                        suffix = toolbarDialogState.suffix,
-                        buttonIndex = toolbarDialogState.buttonIndex,
-                    ),
+                    state = toolbarDialogState,
                     onDismissRequest = {
                         noteEditorViewModel.dismissToolbarDialog()
                     },
                     onConfirm = { icon, prefix, suffix ->
+                        val isEdit = toolbarDialogState.isEditMode
+                        val index = toolbarDialogState.buttonIndex
                         noteEditorViewModel.dismissToolbarDialog()
-                        if (toolbarDialogState.isEditMode) {
-                            editToolbarButton(icon, prefix, suffix, toolbarDialogState.buttonIndex)
+                        if (isEdit) {
+                            editToolbarButton(icon, prefix, suffix, index)
                         } else {
                             addToolbarButton(icon, prefix, suffix)
                         }
                     },
                     onDelete = if (toolbarDialogState.isEditMode) {
                         {
+                            val index = toolbarDialogState.buttonIndex
                             noteEditorViewModel.dismissToolbarDialog()
-                            removeToolbarButton(toolbarDialogState.buttonIndex)
+                            removeToolbarButton(index)
                         }
                     } else null,
                     onHelpClick = {
