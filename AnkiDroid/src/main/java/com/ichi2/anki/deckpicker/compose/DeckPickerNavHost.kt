@@ -61,6 +61,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
+import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
@@ -300,8 +301,8 @@ private fun DeckPickerMainContent(
             AppNavigationItem.CardBrowser -> {
                 if (!fragmented) {
                     onLaunchIntent(
-                        Intent().setClassName(
-                            applicationContext, "com.ichi2.anki.CardBrowser"
+                        Intent(
+                            applicationContext, CardBrowser::class.java
                         )
                     )
                 }
