@@ -9,43 +9,51 @@
     <Button
         android:id="@+id/pen_color_white"
         android:backgroundTint="@color/white"
+        android:contentDescription="@string/whiteboard_color_white"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
     <Button
         android:id="@+id/pen_color_black"
         android:backgroundTint="@color/black"
+        android:contentDescription="@string/whiteboard_color_black"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
     <Button
         android:id="@+id/pen_color_red"
         android:backgroundTint="@color/material_red_500"
+        android:contentDescription="@string/whiteboard_color_red"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
     <Button
         android:id="@+id/pen_color_green"
         android:backgroundTint="@color/material_green_500"
+        android:contentDescription="@string/whiteboard_color_green"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
     <Button
         android:id="@+id/pen_color_blue"
         android:backgroundTint="@color/material_blue_500"
+        android:contentDescription="@string/whiteboard_color_blue"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
     <Button
         android:id="@+id/pen_color_yellow"
         android:backgroundTint="@color/material_yellow_500"
+        android:contentDescription="@string/whiteboard_color_yellow"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
     <Button
         android:id="@+id/pen_color_custom"
         android:background="@drawable/ic_palette"
         android:foreground="?selectableItemBackground"
+        android:contentDescription="@string/whiteboard_color_custom"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
     <Button
         android:id="@+id/stroke_width"
         android:background="@drawable/ic_mode_edit_white"
         android:foreground="?selectableItemBackground"
+        android:contentDescription="@string/whiteboard_stroke_width"
         style="@style/reviewer_whiteboard_editor_button_style"/>
 
 </LinearLayout>
