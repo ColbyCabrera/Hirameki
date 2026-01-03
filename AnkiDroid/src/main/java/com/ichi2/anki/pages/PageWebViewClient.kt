@@ -108,7 +108,7 @@ open class PageWebViewClient : WebViewClient() {
                             --m3-outline: $outlineColor;
                             --m3-secondary: $secondaryColor;
                             --m3-tertiary-container: $tertiaryContainerColor;
-                            --m3-tertiary-container: $onTertiaryContainerColor;
+                            --m3-on-tertiary-container: $onTertiaryContainerColor;
                             /* Override Anki's CSS variables */
                             --fg: $textColor;
                             --canvas: $bgColor;
