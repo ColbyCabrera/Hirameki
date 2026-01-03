@@ -48,14 +48,13 @@ open class PageWebViewClient : WebViewClient() {
             return WebResourceResponse("image/x-icon", null, ByteArrayInputStream(byteArrayOf()))
         }
 
-        val assetPath =
-            if (path.startsWith("/_app/")) {
-                "backend/sveltekit/app/${path.substring(6)}"
-            } else if (isSvelteKitPage(path.substring(1))) {
-                "backend/sveltekit/index.html"
-            } else {
-                return null
-            }
+        val assetPath = if (path.startsWith("/_app/")) {
+            "backend/sveltekit/app/${path.substring(6)}"
+        } else if (isSvelteKitPage(path.substring(1))) {
+            "backend/sveltekit/index.html"
+        } else {
+            return null
+        }
 
         try {
             val mimeType = guessMimeType(assetPath)
@@ -79,17 +78,42 @@ open class PageWebViewClient : WebViewClient() {
         super.onPageStarted(view, url, favicon)
         view?.let { webView ->
             // Extract Material 3 colors for theming
-            val bgColor = MaterialColors.getColor(webView, android.R.attr.colorBackground).toRGBHex()
-            val textColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnBackground).toRGBHex()
-            val primaryColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorPrimary).toRGBHex()
-            val onPrimaryColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnPrimary).toRGBHex()
-            val surfaceColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSurface).toRGBHex()
-            val onSurfaceColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnSurface).toRGBHex()
-            val surfaceVariantColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSurfaceVariant).toRGBHex()
-            val outlineColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOutline).toRGBHex()
-            val secondaryColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSecondary).toRGBHex()
-            val tertiaryContainerColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorTertiaryContainer).toRGBHex()
-            val onTertiaryContainerColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnTertiaryContainer).toRGBHex()
+            val bgColor =
+                MaterialColors.getColor(webView, android.R.attr.colorBackground).toRGBHex()
+            val textColor = MaterialColors.getColor(
+                webView,
+                com.google.android.material.R.attr.colorOnBackground
+            ).toRGBHex()
+            val primaryColor =
+                MaterialColors.getColor(webView, com.google.android.material.R.attr.colorPrimary)
+                    .toRGBHex()
+            val onPrimaryColor =
+                MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnPrimary)
+                    .toRGBHex()
+            val surfaceColor =
+                MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSurface)
+                    .toRGBHex()
+            val onSurfaceColor =
+                MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnSurface)
+                    .toRGBHex()
+            val surfaceVariantColor = MaterialColors.getColor(
+                webView,
+                com.google.android.material.R.attr.colorSurfaceVariant
+            ).toRGBHex()
+            val outlineColor =
+                MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOutline)
+                    .toRGBHex()
+            val secondaryColor =
+                MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSecondary)
+                    .toRGBHex()
+            val tertiaryContainerColor = MaterialColors.getColor(
+                webView,
+                com.google.android.material.R.attr.colorTertiaryContainer
+            ).toRGBHex()
+            val onTertiaryContainerColor = MaterialColors.getColor(
+                webView,
+                com.google.android.material.R.attr.colorOnTertiaryContainer
+            ).toRGBHex()
 
             // Inject comprehensive Material 3 theming CSS
             webView.evaluateAfterDOMContentLoaded(
@@ -251,10 +275,15 @@ open class PageWebViewClient : WebViewClient() {
                             stroke: $outlineColor !important;
                         }
                     `;
-                    var style = document.createElement('style');
-                    style.id = 'material3-theme';
-                    style.appendChild(document.createTextNode(css));
-                    document.head.appendChild(style);
+                    var existingStyle = document.getElementById('material3-theme');
+                    if (existingStyle) {
+                        existingStyle.textContent = css;
+                    } else {
+                        var style = document.createElement('style');
+                        style.id = 'material3-theme';
+                        style.textContent = css;
+                        document.head.appendChild(style);
+                    }
                     console.log('Material 3 theming applied');
                 })();
                 """.trimIndent(),
@@ -291,7 +320,11 @@ open class PageWebViewClient : WebViewClient() {
         onShowWebView(view)
     }
 
-    override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+    override fun onReceivedError(
+        view: WebView,
+        request: WebResourceRequest,
+        error: WebResourceError
+    ) {
         super.onReceivedError(view, request, error)
         if (request.isForMainFrame) {
             onErrorCallbacks.forEach {
@@ -317,7 +350,8 @@ fun isSvelteKitPage(path: String): Boolean {
         "import-csv",
         "import-page",
         "image-occlusion",
-        -> true
+            -> true
+
         else -> false
     }
 }
