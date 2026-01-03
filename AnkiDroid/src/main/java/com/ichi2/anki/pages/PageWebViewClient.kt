@@ -89,7 +89,8 @@ open class PageWebViewClient : WebViewClient() {
             val outlineColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOutline).toRGBHex()
             val secondaryColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSecondary).toRGBHex()
             val tertiaryContainerColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorTertiaryContainer).toRGBHex()
-            
+            val onTertiaryContainerColor = MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnTertiaryContainer).toRGBHex()
+
             // Inject comprehensive Material 3 theming CSS
             webView.evaluateAfterDOMContentLoaded(
                 """
@@ -107,6 +108,7 @@ open class PageWebViewClient : WebViewClient() {
                             --m3-outline: $outlineColor;
                             --m3-secondary: $secondaryColor;
                             --m3-tertiary-container: $tertiaryContainerColor;
+                            --m3-tertiary-container: $onTertiaryContainerColor;
                             /* Override Anki's CSS variables */
                             --fg: $textColor;
                             --canvas: $bgColor;
@@ -124,10 +126,77 @@ open class PageWebViewClient : WebViewClient() {
                             color: $primaryColor !important;
                         }
                         
-                        /* Range box header - colors only */
+                        /* Range box header - improved layout */
                         .range-box {
                             background: $surfaceColor !important;
                             border-color: $outlineColor !important;
+                            display: flex !important;
+                            flex-wrap: wrap !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            gap: 4px !important;
+                            padding: 0px 16px 4px !important;
+                        }
+                        
+                        /* InputBox containers inside range-box */
+                        .range-box > div {
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            gap: 4px !important;
+                            background-color: $surfaceVariantColor !important;
+                            border-radius: 24px !important;
+                            padding: 4px 4px !important;
+                            max-width: 100% !important;
+                        }
+                        
+                        /* First InputBox - make search field go to new line */
+                        .range-box > div:first-of-type {
+                            flex-wrap: wrap !important;
+                        }
+                        
+                        /* Search field should take full width when wrapped */
+                        .range-box > div:first-of-type input[type="text"] {
+                            flex: 1 1 100% !important;
+                            margin-top: 8px !important;
+                        }
+                        
+                        /* Labels inside range-box - chip style */
+                        .range-box label {
+                            display: inline-flex !important;
+                            align-items: center !important;
+                            gap: 6px !important;
+                            padding: 8px 12px !important;
+                            border-radius: 20px !important;
+                            cursor: pointer !important;
+                            transition: background-color 0.2s !important;
+                        }
+                        
+                        .range-box label:hover {
+                            background-color: $outlineColor !important;
+                        }
+                        
+                        /* Selected radio label highlight */
+                        .range-box input[type="radio"]:checked + label,
+                        .range-box label:has(input[type="radio"]:checked) {
+                            background-color: $tertiaryContainerColor !important;
+                            color: $onTertiaryContainerColor !important;
+                        }
+                        
+                        /* Search input styling */
+                        .range-box input[type="text"],
+                        #statisticsSearchText {
+                            background-color: $surfaceVariantColor !important;
+                            color: $onSurfaceColor !important;
+                            border: 1px solid $outlineColor !important;
+                            border-radius: 20px !important;
+                            padding: 8px 16px !important;
+                            min-width: 150px !important;
+                        }
+                        
+                        /* Hide loading spinner styling */
+                        .range-box .spin {
+                            color: $primaryColor !important;
                         }
                         
                         /* Radio buttons - accent color only */
@@ -163,6 +232,7 @@ open class PageWebViewClient : WebViewClient() {
                             border: 1px solid $surfaceVariantColor !important;
                             border-radius: 16px !important;
                             padding: 16px !important;
+                            box-shadow: none !important;
                         }
                         
                         /* Card headings */
