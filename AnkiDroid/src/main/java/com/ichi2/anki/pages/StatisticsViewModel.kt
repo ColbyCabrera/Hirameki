@@ -99,13 +99,15 @@ class StatisticsViewModel : ViewModel() {
      * @see [Statistics.kt] for the original Fragment implementation
      */
     private fun injectDeckChangeScript(deckName: String) {
+        // Escape the deck name for JavaScript string, and wrap in quotes for Anki search syntax
+        // Anki search requires deck:"name with spaces" for deck names containing spaces
         val escapedDeckName = quote(deckName)
 
         val javascriptCode = """
             function setDeck(retries) {
                 var textBox = document.getElementById("statisticsSearchText");
                 if (textBox) {
-                    textBox.value = "deck:" + $escapedDeckName;
+                    textBox.value = "deck:\"" + $escapedDeckName + "\"";
                     textBox.dispatchEvent(new Event("input", { bubbles: true }));
                     textBox.dispatchEvent(new Event("change"));
                 } else if (retries > 0) {
