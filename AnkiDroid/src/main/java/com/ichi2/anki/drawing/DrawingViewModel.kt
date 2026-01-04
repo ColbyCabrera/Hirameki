@@ -22,8 +22,11 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.net.Uri
+import android.os.Build
 import androidx.annotation.CheckResult
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModel
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
@@ -113,7 +116,7 @@ class DrawingViewModel : ViewModel() {
             strokeWidth = _strokeWidth.value,
             isEraser = isEraserActive.value
         )
-        _paths.value = _paths.value + drawingPath
+        _paths.value += drawingPath
         undoStack.add(drawingPath)
 
         // Clear redo stack
@@ -142,11 +145,12 @@ class DrawingViewModel : ViewModel() {
     /**
      * Redoes the last undone stroke.
      */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     fun redo() {
         if (redoStack.isNotEmpty()) {
             val path = redoStack.removeLast()
             undoStack.add(path)
-            _paths.value = _paths.value + path
+            _paths.value += path
             canRedo.value = redoStack.isNotEmpty()
         }
     }
@@ -263,7 +267,7 @@ class DrawingViewModel : ViewModel() {
                 }
 
                 // Create bitmap with white background (like original DrawingActivity)
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val bitmap = createBitmap(width, height)
                 val canvas = Canvas(bitmap)
 
                 // Use white background for light brush colors, black for dark
