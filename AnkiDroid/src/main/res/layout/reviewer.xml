@@ -1,44 +1,51 @@
-<!-- First child of DrawerLayout assumed to be main content, others are drawers.
- We use a Coordinator layout as root View for main content as it allows snackbars
- to be swiped off screen. Other behaviors can also be added in the future if necessary -->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    Legacy reviewer layout - kept as stub for AbstractFlashcardViewer compatibility.
+    The actual Reviewer UI is now rendered via Compose (ReviewerContent).
+    TODO: Remove this once AbstractFlashcardViewer is fully refactored.
+-->
 <androidx.coordinatorlayout.widget.CoordinatorLayout android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:focusableInTouchMode="true"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-    <!-- Bring in each component from separate files as we have fullscreen versions of reviewer -->
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    
     <RelativeLayout
         android:id="@+id/front_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+        
+        <!-- Minimal stub views for AbstractFlashcardViewer compatibility -->
         <include layout="@layout/toolbar"/>
-
-        <include
-            layout="@layout/reviewer_topbar"
+        
+        <RelativeLayout
+            android:id="@+id/top_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/toolbar" />
-
-        <include
-            layout="@layout/reviewer_mic_tool_bar"
+            android:layout_below="@id/toolbar">
+            <View
+                android:id="@+id/chosen_answer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </RelativeLayout>
+        
+        <LinearLayout
+            android:id="@+id/mic_tool_bar_layer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/top_bar" />
-
-        <include
-            layout="@layout/reviewer_flashcard"
+            android:layout_below="@id/top_bar"
+            android:orientation="horizontal"
+            android:visibility="gone"/>
+            
+        <FrameLayout
+            android:id="@+id/flashcard"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/mic_tool_bar_layer" />
-
-        <include
-            layout="@layout/reviewer_whiteboard_editor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_alignParentBottom="true"/>
-
+            android:layout_below="@id/mic_tool_bar_layer">
+            <FrameLayout
+                android:id="@+id/touch_layer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+        </FrameLayout>
     </RelativeLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-<!-- Left navigation drawer -->
