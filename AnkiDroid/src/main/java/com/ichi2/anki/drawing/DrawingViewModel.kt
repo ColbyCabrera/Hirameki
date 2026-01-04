@@ -23,6 +23,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.net.Uri
 import androidx.annotation.CheckResult
+import androidx.compose.material.MaterialTheme
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +60,7 @@ class DrawingViewModel : ViewModel() {
     private val undoStack = mutableListOf<DrawingPath>()
 
     // Brush settings
-    private val _brushColor = MutableStateFlow(Color.BLACK)
+    private val _brushColor = MutableStateFlow(Color.TRANSPARENT)
     val brushColor: StateFlow<Int> = _brushColor
 
     private val _strokeWidth = MutableStateFlow(8f)

@@ -44,6 +44,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import android.graphics.Color.TRANSPARENT
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -95,6 +97,14 @@ fun DrawingScreen(
     val paths by viewModel.paths.collectAsState()
     val brushColor by viewModel.brushColor.collectAsState()
     val strokeWidth by viewModel.strokeWidth.collectAsState()
+
+    // Set default color to primary if not set (ViewModel defaults to Transparent)
+    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    LaunchedEffect(Unit) {
+        if (brushColor == TRANSPARENT) {
+            viewModel.setBrushColor(primaryColor)
+        }
+    }
 
     var showColorPicker by remember { mutableStateOf(false) }
     var canvasWidth by remember { mutableIntStateOf(0) }
