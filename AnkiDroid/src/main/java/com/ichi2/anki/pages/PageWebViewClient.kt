@@ -124,7 +124,7 @@ open class PageWebViewClient : WebViewClient() {
                             --m3-on-primary: $onPrimaryColor;
                             --m3-surface: $surfaceColor;
                             --m3-on-surface: $onSurfaceColor;
-                            --m3-surface-container: ${surfaceContainerColor}Color;
+                            --m3-surface-container: $surfaceContainerColor;
                             --m3-outline: $outlineColor;
                             --m3-secondary: $secondaryColor;
                             --m3-tertiary-container: $tertiaryContainerColor;
