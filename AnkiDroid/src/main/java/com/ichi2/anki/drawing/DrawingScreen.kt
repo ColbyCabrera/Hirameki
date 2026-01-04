@@ -15,14 +15,13 @@
  */
 package com.ichi2.anki.drawing
 
-import android.graphics.Canvas
 import android.graphics.Path
 import android.net.Uri
-import android.view.MotionEvent
-import android.view.View
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,41 +33,42 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Palette
-import android.graphics.Color.WHITE
-import android.graphics.Color.BLACK
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import android.graphics.Paint
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asComposePath
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -114,6 +114,19 @@ fun DrawingScreen(
                         Icon(
                             painter = painterResource(R.drawable.close_24px),
                             contentDescription = stringResource(R.string.dialog_cancel),
+                        )
+                    }
+                    FilledIconButton(
+                        modifier = Modifier.padding(end = 8.dp),
+                        onClick = onCancel,
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.close_24px),
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -277,114 +290,59 @@ fun DrawingCanvas(
     onSizeChanged: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    AndroidView(
-        factory = { context ->
-            DrawingView(context).apply {
-                this.onPathDrawn = onPathDrawn
-                this.onSizeChanged = onSizeChanged
-            }
-        },
-        update = { view ->
-            view.setPaths(paths)
-            view.setCurrentBrush(brushColor, strokeWidth)
-            view.setBackgroundColor(backgroundColor)
-        },
-        modifier = modifier,
-    )
-}
+    // Current path state for live drawing
+    var currentPath by remember { mutableStateOf<Path?>(null, policy = neverEqualPolicy()) }
+    var currentOffset by remember { mutableStateOf<Offset?>(null) }
 
-/**
- * Custom View for handling touch drawing.
- */
-private class DrawingView(context: android.content.Context) : View(context) {
-    private val paint = Paint().apply {
-        isAntiAlias = true
-        isDither = true
-        style = Paint.Style.STROKE
-        strokeJoin = Paint.Join.ROUND
-        strokeCap = Paint.Cap.ROUND
-    }
-
-    private var currentPath = Path()
-    private var isDrawing = false
-    private var currentColor = BLACK
-    private var currentStrokeWidth = 8f
-    private var backgroundColor = WHITE
-
-    private var paths: List<DrawingPath> = emptyList()
-
-    var onPathDrawn: ((Path) -> Unit)? = null
-    var onSizeChanged: ((Int, Int) -> Unit)? = null
-
-    fun setPaths(newPaths: List<DrawingPath>) {
-        paths = newPaths
-        invalidate()
-    }
-
-    fun setCurrentBrush(color: Int, strokeWidth: Float) {
-        currentColor = color
-        currentStrokeWidth = strokeWidth
-    }
-
-    override fun setBackgroundColor(color: Int) {
-        this.backgroundColor = color
-        invalidate()
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        onSizeChanged?.invoke(w, h)
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-
-        // Draw background
-        canvas.drawColor(backgroundColor)
-
+    Canvas(modifier = modifier
+        .background(Color(backgroundColor))
+        .onSizeChanged {
+            onSizeChanged(it.width, it.height)
+        }
+        .pointerInput(Unit) {
+            detectDragGestures(onDragStart = { offset ->
+                currentOffset = offset
+                val newPath = Path().apply {
+                    moveTo(offset.x, offset.y)
+                }
+                currentPath = newPath
+            }, onDrag = { change, _ ->
+                val path = currentPath ?: return@detectDragGestures
+                val offset = change.position
+                path.lineTo(offset.x, offset.y)
+                currentOffset = offset
+                // We need to recompose to show the new line
+                currentPath = path // Force state update if needed, though mutation happens in place
+            }, onDragEnd = {
+                currentPath?.let { path ->
+                    onPathDrawn(path)
+                }
+                currentPath = null
+                currentOffset = null
+            }, onDragCancel = {
+                currentPath = null
+                currentOffset = null
+            })
+        }) {
         // Draw all completed paths
-        for (drawingPath in paths) {
-            paint.color = drawingPath.color
-            paint.strokeWidth = drawingPath.strokeWidth
+        paths.forEach { drawingPath ->
+            drawPath(
+                path = drawingPath.path.asComposePath(),
+                color = Color(drawingPath.color),
+                style = Stroke(
+                    width = drawingPath.strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round
+                )
+            )
         }
 
         // Draw current path being drawn
-        if (isDrawing) {
-            paint.color = currentColor
-            paint.strokeWidth = currentStrokeWidth
-            canvas.drawPath(currentPath, paint)
+        currentPath?.let { path ->
+            drawPath(
+                path = path.asComposePath(), color = Color(brushColor), style = Stroke(
+                    width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round
+                )
+            )
         }
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        val x = event.x
-        val y = event.y
-
-        when (event.action) {
-            MotionEvent.ACTION_DOWN -> {
-                currentPath = Path()
-                currentPath.moveTo(x, y)
-                isDrawing = true
-                invalidate()
-                return true
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                currentPath.lineTo(x, y)
-                invalidate()
-                return true
-            }
-
-            MotionEvent.ACTION_UP -> {
-                currentPath.lineTo(x, y)
-                isDrawing = false
-                onPathDrawn?.invoke(currentPath)
-                currentPath = Path()
-                invalidate()
-                return true
-            }
-        }
-        return false
     }
 }
 
