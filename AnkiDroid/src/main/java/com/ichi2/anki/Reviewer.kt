@@ -324,12 +324,7 @@ open class Reviewer :
         getColUnsafe.decks.select(did)
     }
 
-    override fun getContentViewAttr(fullscreenMode: com.ichi2.anki.reviewer.FullScreenMode): Int =
-        when (fullscreenMode) {
-            com.ichi2.anki.reviewer.FullScreenMode.BUTTONS_ONLY -> R.layout.reviewer_fullscreen
-            com.ichi2.anki.reviewer.FullScreenMode.FULLSCREEN_ALL_GONE -> R.layout.reviewer_fullscreen_noanswers
-            com.ichi2.anki.reviewer.FullScreenMode.BUTTONS_AND_MENU -> R.layout.reviewer
-        }
+
 
     public override fun fitsSystemWindows(): Boolean = !fullscreenMode.isFullScreenReview()
 

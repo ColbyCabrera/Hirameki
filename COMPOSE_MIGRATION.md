@@ -1,6 +1,6 @@
 # AnkiDroid Compose & Nav3 Migration Status
 
-**Last Updated**: January 2, 2026
+**Last Updated**: January 3, 2026
 
 ---
 
@@ -84,6 +84,70 @@ Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
 - `NoteEditorDialogs.kt`: Added input validation and trimming for toolbar customization
 - `PageWebViewViewModel.kt`: Converted `ServerState` to sealed interface
 - `DeckPicker.kt`: Added user-visible error feedback for failed drag-and-drop imports
+
+### Legacy Reviewer XML Cleanup (January 3, 2026)
+Deleted legacy reviewer XML layouts that are now dead code since `Reviewer.kt` uses `ComposeView`:
+
+**Deleted Files:**
+- `reviewer2.xml`
+- `reviewer_fullscreen.xml`
+- `reviewer_fullscreen_noanswers.xml`
+- `reviewer_topbar.xml`
+- `reviewer_flashcard.xml`
+- `reviewer_flashcard_fullscreen.xml`
+- `reviewer_flashcard_fullscreen_noanswers.xml`
+- `reviewer_mic_tool_bar.xml`
+
+**Code Changes:**
+- `Reviewer.kt`: Removed dead `getContentViewAttr()` override
+- `LayoutValidationTest.kt`: Removed `reviewer2` from ignored layouts
+- `02-strings.xml`: Removed duplicate `whiteboard_stroke_width` string
+
+**Files Kept (still in use):**
+- `reviewer_whiteboard_editor.xml` - Used by `DrawingActivity.kt`
+- `reviewer_menu_*.xml` - Used by Reviewer Menu Settings preferences
+- `reviewer.xml` - Minimal stub (see Technical Debt below)
+
+### Compose Popup Leak Fix Pattern
+Fixed memory leaks in `DropdownMenu` components by ensuring menus are dismissed **before** executing action callbacks:
+
+```kotlin
+// ❌ WRONG - causes PopupLayout memory leak
+DropdownMenuItem(onClick = {
+    onAction()                    // Action first
+    expanded = false              // Dismiss after
+})
+
+// ✅ CORRECT - prevents leak
+DropdownMenuItem(onClick = {
+    expanded = false              // Dismiss first
+    onAction()                    // Action after
+})
+```
+
+**Files Fixed:**
+- `AnkiDroidApp.kt` (StudyOptionsScreen menu items)
+- `ReviewerTopBar.kt` (flag selection)
+- `WhiteboardToolbar.kt` (overflow menu)
+- `ManageNoteTypesComposable.kt` (note type menu)
+- `NoteEditor.kt` (type and deck selectors)
+- `DeckSelector.kt` (deck selection)
+
+---
+
+## 🔧 Technical Debt
+
+### AbstractFlashcardViewer Layout Dependency
+**Issue**: `AbstractFlashcardViewer.onCreate()` calls `setContentView(getContentViewAttr())` which requires a valid XML layout. While `Reviewer.kt` immediately overrides this with `ComposeView`, the base class still needs the layout to exist.
+
+**Current Workaround**: `reviewer.xml` is maintained as a minimal stub containing only the essential view IDs (`root_layout`, `flashcard`, `touch_layer`, `chosen_answer`, `mic_tool_bar_layer`, `top_bar`) needed by `AbstractFlashcardViewer`.
+
+**Future Fix**: Refactor `AbstractFlashcardViewer` to not require XML layouts, or split it so only subclasses that need XML extend a different base class.
+
+### DrawingActivity Not Yet Migrated
+**Issue**: `DrawingActivity.kt` still uses `activity_drawing.xml` which includes `reviewer_whiteboard_editor.xml`. This is a standalone activity for creating drawings to add to notes.
+
+**Future Fix**: Migrate `DrawingActivity` to Compose, which would allow deleting `reviewer_whiteboard_editor.xml` and the associated style `reviewer_whiteboard_editor_button_style`.
 
 ---
 
