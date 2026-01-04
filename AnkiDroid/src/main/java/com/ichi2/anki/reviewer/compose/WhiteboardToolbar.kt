@@ -147,8 +147,8 @@ fun WhiteboardToolbar(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.stylus_mode)) },
                         onClick = {
-                            viewModel.toggleStylusOnlyMode()
                             showOverflowMenu = false
+                            viewModel.toggleStylusOnlyMode()
                         },
                         leadingIcon = {
                             Icon(
@@ -162,24 +162,24 @@ fun WhiteboardToolbar(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.whiteboard_align_left)) },
                         onClick = {
-                            viewModel.setToolbarAlignment(ToolbarAlignment.LEFT)
                             showOverflowMenu = false
+                            viewModel.setToolbarAlignment(ToolbarAlignment.LEFT)
                         },
                         enabled = alignment != ToolbarAlignment.LEFT
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.whiteboard_align_bottom)) },
                         onClick = {
-                            viewModel.setToolbarAlignment(ToolbarAlignment.BOTTOM)
                             showOverflowMenu = false
+                            viewModel.setToolbarAlignment(ToolbarAlignment.BOTTOM)
                         },
                         enabled = alignment != ToolbarAlignment.BOTTOM
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.whiteboard_align_right)) },
                         onClick = {
-                            viewModel.setToolbarAlignment(ToolbarAlignment.RIGHT)
                             showOverflowMenu = false
+                            viewModel.setToolbarAlignment(ToolbarAlignment.RIGHT)
                         },
                         enabled = alignment != ToolbarAlignment.RIGHT
                     )

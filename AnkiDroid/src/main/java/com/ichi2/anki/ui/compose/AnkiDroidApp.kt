@@ -283,8 +283,8 @@ fun AnkiDroidApp(
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.rebuild)) },
                                             onClick = {
-                                                onRebuildDeck(studyOptionsData.deckId)
                                                 isStudyOptionsMenuOpen = false
+                                                onRebuildDeck(studyOptionsData.deckId)
                                             },
                                             leadingIcon = {
                                                 Icon(
@@ -296,8 +296,8 @@ fun AnkiDroidApp(
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.empty_cards_action)) },
                                             onClick = {
-                                                onEmptyDeck(studyOptionsData.deckId)
                                                 isStudyOptionsMenuOpen = false
+                                                onEmptyDeck(studyOptionsData.deckId)
                                             },
                                             leadingIcon = {
                                                 Icon(
@@ -310,8 +310,8 @@ fun AnkiDroidApp(
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.custom_study)) },
                                             onClick = {
-                                                onCustomStudy(studyOptionsData.deckId)
                                                 isStudyOptionsMenuOpen = false
+                                                onCustomStudy(studyOptionsData.deckId)
                                             },
                                             leadingIcon = {
                                                 Icon(
@@ -324,8 +324,8 @@ fun AnkiDroidApp(
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.deck_options)) },
                                         onClick = {
-                                            onDeckOptionsItemSelected(studyOptionsData.deckId)
                                             isStudyOptionsMenuOpen = false
+                                            onDeckOptionsItemSelected(studyOptionsData.deckId)
                                         },
                                         leadingIcon = {
                                             Icon(
@@ -338,8 +338,8 @@ fun AnkiDroidApp(
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.unbury)) },
                                             onClick = {
-                                                onUnbury(studyOptionsData.deckId)
                                                 isStudyOptionsMenuOpen = false
+                                                onUnbury(studyOptionsData.deckId)
                                             },
                                             leadingIcon = {
                                                 Icon(

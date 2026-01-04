@@ -94,9 +94,7 @@ fun DeckSelector(
     Column(modifier = modifier) {
         TextButton(onClick = { showDeckMenu = true }) {
             Text(
-                text = deckName,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                text = deckName, maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Icon(
                 Icons.Default.ArrowDropDown,
@@ -112,9 +110,7 @@ fun DeckSelector(
             Surface(
                 modifier = Modifier.padding(
                     vertical = 8.dp, horizontal = 12.dp
-                ),
-                color = MaterialTheme.colorScheme.surface,
-                shape = CircleShape
+                ), color = MaterialTheme.colorScheme.surface, shape = CircleShape
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TextField(
@@ -148,39 +144,33 @@ fun DeckSelector(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.card_browser_all_decks)) },
                     onClick = {
-                        onDeckSelected(SelectableDeck.AllDecks)
                         showDeckMenu = false
-                    }
-                )
+                        onDeckSelected(SelectableDeck.AllDecks)
+                    })
             }
 
             DeckHierarchyMenu(
-                deckHierarchy = deckHierarchy,
-                expandedDecks = expandedDecks,
-                onDeckSelected = {
-                    onDeckSelected(it)
+                deckHierarchy = deckHierarchy, expandedDecks = expandedDecks, onDeckSelected = {
                     showDeckMenu = false
-                },
-                searchQuery = deckSearchQuery
+                    onDeckSelected(it)
+                }, searchQuery = deckSearchQuery
             )
         }
     }
 }
 
 @Composable
-private fun transparentTextFieldColors(): TextFieldColors =
-    TextFieldDefaults.colors(
-        focusedIndicatorColor = Color.Transparent,
-        unfocusedIndicatorColor = Color.Transparent,
-        disabledIndicatorColor = Color.Transparent,
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
-        disabledContainerColor = Color.Transparent
-    )
+private fun transparentTextFieldColors(): TextFieldColors = TextFieldDefaults.colors(
+    focusedIndicatorColor = Color.Transparent,
+    unfocusedIndicatorColor = Color.Transparent,
+    disabledIndicatorColor = Color.Transparent,
+    focusedContainerColor = Color.Transparent,
+    unfocusedContainerColor = Color.Transparent,
+    disabledContainerColor = Color.Transparent
+)
 
 private fun buildDeckHierarchy(
-    decks: List<SelectableDeck.Deck>,
-    searchQuery: String
+    decks: List<SelectableDeck.Deck>, searchQuery: String
 ): Map<String, List<SelectableDeck.Deck>> {
     val hierarchy = mutableMapOf<String, MutableList<SelectableDeck.Deck>>()
     val topLevelDecks = mutableListOf<SelectableDeck.Deck>()
@@ -246,8 +236,7 @@ private fun DeckHierarchyMenu(
                         )
                     }
                 }
-            }
-        )
+            })
         if (isExpanded && hasChildren) {
             Column(modifier = Modifier.padding(start = 16.dp)) {
                 DeckHierarchyMenu(
@@ -274,7 +263,6 @@ private fun DeckSelectorPreview() {
         DeckSelector(
             selectedDeck = selectedDeck,
             availableDecks = availableDecks,
-            onDeckSelected = { selectedDeck = it }
-        )
+            onDeckSelected = { selectedDeck = it })
     }
 }

@@ -424,8 +424,8 @@ fun NoteTypeSelector(
         ) {
             availableNoteTypes.forEach { noteType ->
                 DropdownMenuItem(text = { Text(noteType) }, onClick = {
-                    onNoteTypeSelected(noteType)
                     expanded = false
+                    onNoteTypeSelected(noteType)
                 })
             }
         }
@@ -495,8 +495,8 @@ fun DeckSelector(
                 deckHierarchy = deckHierarchy,
                 expandedDecks = expandedDecks,
                 onDeckSelected = { deckName ->
-                    onDeckSelected(deckName)
                     expanded = false
+                    onDeckSelected(deckName)
                 },
             )
         }

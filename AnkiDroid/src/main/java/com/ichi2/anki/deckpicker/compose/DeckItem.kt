@@ -181,8 +181,8 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.rebuild_cram_label)) },
                         onClick = {
-                            onRebuild()
                             isContextMenuOpen = false
+                            onRebuild()
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Refresh, contentDescription = null)
@@ -190,8 +190,8 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.empty_cram_label)) },
                         onClick = {
-                            onEmpty()
                             isContextMenuOpen = false
+                            onEmpty()
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Close, contentDescription = null)
@@ -200,8 +200,8 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.rename_deck)) },
                         onClick = {
-                            onRename()
                             isContextMenuOpen = false
+                            onRename()
                         },
                         leadingIcon = {
                             Icon(
@@ -212,8 +212,8 @@ fun DeckItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.export_deck)) },
                         onClick = {
-                            onExport()
                             isContextMenuOpen = false
+                            onExport()
                         },
                         leadingIcon = {
                             Icon(
@@ -223,19 +223,23 @@ fun DeckItem(
                         })
                 }
                 DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
-                    onDeckOptions()
                     isContextMenuOpen = false
+                    onDeckOptions()
                 }, leadingIcon = {
                     Icon(painter = painterResource(R.drawable.tune_24px), contentDescription = null)
                 })
-                DropdownMenuItem(text = { Text(stringResource(R.string.contextmenu_deckpicker_delete_deck)) }, onClick = {
-                    onDelete()
-                    isContextMenuOpen = false
-                }, leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.delete_24px), contentDescription = null
-                    )
-                })
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.contextmenu_deckpicker_delete_deck)) },
+                    onClick = {
+                        isContextMenuOpen = false
+                        onDelete()
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.delete_24px),
+                            contentDescription = null
+                        )
+                    })
             }
         }
     }

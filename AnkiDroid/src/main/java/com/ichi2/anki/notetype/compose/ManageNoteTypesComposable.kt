@@ -27,8 +27,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -81,7 +93,15 @@ fun NoteTypeItem(
 
     ListItem(
         headlineContent = { Text(noteType.name) },
-        supportingContent = { Text(stringResource(R.plurals.manage_notetypes_note_count, noteType.useCount, noteType.useCount)) },
+        supportingContent = {
+            Text(
+                stringResource(
+                    R.plurals.manage_notetypes_note_count,
+                    noteType.useCount,
+                    noteType.useCount
+                )
+            )
+        },
         trailingContent = {
             Box {
                 IconButton(onClick = { showMenu = true }) {
@@ -97,29 +117,29 @@ fun NoteTypeItem(
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.fields)) },
                         onClick = {
-                            onShowFields()
                             showMenu = false
+                            onShowFields()
                         },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.cards)) },
                         onClick = {
-                            onEditCards()
                             showMenu = false
+                            onEditCards()
                         },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.rename)) },
                         onClick = {
-                            onRename()
                             showMenu = false
+                            onRename()
                         },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(id = R.string.dialog_positive_delete)) },
                         onClick = {
-                            onDelete()
                             showMenu = false
+                            onDelete()
                         },
                     )
                 }
@@ -131,12 +151,11 @@ fun NoteTypeItem(
 @Preview
 @Composable
 fun PreviewManageNoteTypesScreen() {
-    val noteTypes =
-        listOf(
-            ManageNoteTypeUiModel(0, "Basic", 1),
-            ManageNoteTypeUiModel(1, "Basic (and reversed card)", 2),
-            ManageNoteTypeUiModel(2, "Cloze", 3),
-        )
+    val noteTypes = listOf(
+        ManageNoteTypeUiModel(0, "Basic", 1),
+        ManageNoteTypeUiModel(1, "Basic (and reversed card)", 2),
+        ManageNoteTypeUiModel(2, "Cloze", 3),
+    )
     ManageNoteTypesScreen(
         noteTypes = noteTypes,
         onAddNoteType = {},

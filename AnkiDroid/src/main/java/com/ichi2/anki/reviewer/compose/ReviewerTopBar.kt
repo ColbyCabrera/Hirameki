@@ -66,33 +66,33 @@ fun ReviewerTopBar(
 ) {
     CenterAlignedTopAppBar(
         modifier = modifier, title = { Text(chosenAnswer) }, navigationIcon = {
-        Counts(
-            modifier = Modifier.padding(horizontal = 8.dp),
-            newCount = newCount,
-            learnCount = learnCount,
-            reviewCount = reviewCount
-        )
-    }, actions = {
-        MarkIcon(
-            isMarked = isMarked, onToggleMark = onToggleMark
-        )
-        FlagIcon(currentFlag = flag, onSetFlag = onSetFlag)
-        AnimatedVisibility(visible = isAnswerShown) {
-            FilledIconButton(
-                onClick = onUnanswerCard, shapes = IconButtonDefaults.shapes()
-            ) {
-                Icon(
-                    painterResource(R.drawable.undo_24px),
-                    contentDescription = stringResource(id = R.string.unanswer_card),
-                )
+            Counts(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                newCount = newCount,
+                learnCount = learnCount,
+                reviewCount = reviewCount
+            )
+        }, actions = {
+            MarkIcon(
+                isMarked = isMarked, onToggleMark = onToggleMark
+            )
+            FlagIcon(currentFlag = flag, onSetFlag = onSetFlag)
+            AnimatedVisibility(visible = isAnswerShown) {
+                FilledIconButton(
+                    onClick = onUnanswerCard, shapes = IconButtonDefaults.shapes()
+                ) {
+                    Icon(
+                        painterResource(R.drawable.undo_24px),
+                        contentDescription = stringResource(id = R.string.unanswer_card),
+                    )
+                }
             }
-        }
-    }, colors = TopAppBarDefaults.topAppBarColors(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        titleContentColor = MaterialTheme.colorScheme.onSurface,
-        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+        }, colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     )
 }
 
@@ -162,7 +162,8 @@ fun FlagIcon(currentFlag: Int, onSetFlag: (Int) -> Unit) {
         }
         DropdownMenu(
             expanded = expanded, onDismissRequest = { expanded = false },
-        shape = MaterialTheme.shapes.large,) {
+            shape = MaterialTheme.shapes.large,
+        ) {
             (0..7).forEach { flag ->
                 DropdownMenuItem(
                     text = {
@@ -179,8 +180,8 @@ fun FlagIcon(currentFlag: Int, onSetFlag: (Int) -> Unit) {
                         }
                     },
                     onClick = {
-                        onSetFlag(flag)
                         expanded = false
+                        onSetFlag(flag)
                     }
                 )
             }
