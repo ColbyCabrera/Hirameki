@@ -23,8 +23,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.net.Uri
 import androidx.annotation.CheckResult
-import androidx.compose.material.MaterialTheme
 import androidx.core.content.FileProvider
+import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModel
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.EraserMode
@@ -64,7 +64,7 @@ class DrawingViewModel : ViewModel() {
     // Undo/Redo stack
     private val undoStack = mutableListOf<DrawingPath>()
     private val redoStack = mutableListOf<DrawingPath>()
-    
+
     val canUndo = _paths.map { it.isNotEmpty() }
     val canRedo = MutableStateFlow(false)
 
@@ -82,24 +82,24 @@ class DrawingViewModel : ViewModel() {
     val eraserMode = MutableStateFlow(EraserMode.INK)
     val isStylusOnlyMode = MutableStateFlow(false)
     val toolbarAlignment = MutableStateFlow(ToolbarAlignment.BOTTOM)
-    
+
     init {
         // Initialize brushes with presets
-        val initialBrushes = PRESET_COLORS.map { 
+        val initialBrushes = PRESET_COLORS.map {
             BrushInfo(it, 8f) // Default stroke width
         }
         brushes.value = initialBrushes
     }
-    
+
     fun initializeWithDefaultColor(color: Int) {
         if (_brushColor.value == Color.TRANSPARENT) {
-             // Add primary color as a new brush and select it
-             val newBrush = BrushInfo(color, 8f)
-             // Insert at index 1 (after White) or just add
-             val currentBrushes = brushes.value.toMutableList()
-             currentBrushes.add(1, newBrush)
-             brushes.value = currentBrushes
-             setActiveBrush(1)
+            // Add primary color as a new brush and select it
+            val newBrush = BrushInfo(color, 8f)
+            // Insert at index 1 (after White) or just add
+            val currentBrushes = brushes.value.toMutableList()
+            currentBrushes.add(1, newBrush)
+            brushes.value = currentBrushes
+            setActiveBrush(1)
         }
     }
 
@@ -115,7 +115,7 @@ class DrawingViewModel : ViewModel() {
         )
         _paths.value = _paths.value + drawingPath
         undoStack.add(drawingPath)
-        
+
         // Clear redo stack
         redoStack.clear()
         canRedo.value = false
@@ -128,11 +128,11 @@ class DrawingViewModel : ViewModel() {
         val currentPaths = _paths.value
         if (currentPaths.isNotEmpty()) {
             val lastPath = currentPaths.last()
-            
+
             // Allow redoing this path
             redoStack.add(lastPath)
             canRedo.value = true
-            
+
             // Remove from paths and undo stack
             undoStack.removeLastOrNull()
             _paths.value = currentPaths.dropLast(1)
@@ -151,8 +151,17 @@ class DrawingViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Clears all paths from the canvas.
+     */
+    fun clearCanvas() {
+        _paths.value = emptyList()
+        undoStack.clear()
+        redoStack.clear()
+        canRedo.value = false
+    }
+
     // Brush Management
-    
     fun setBrushColor(color: Int) {
         _brushColor.value = color
         // Update active brush in list if needed, relying on UI to call setActiveBrush
@@ -160,7 +169,7 @@ class DrawingViewModel : ViewModel() {
 
     fun setActiveBrush(index: Int) {
         val brush = brushes.value.getOrNull(index) ?: return
-        
+
         isEraserActive.value = false
         activeBrushIndex.value = index
         _brushColor.value = brush.color
@@ -169,15 +178,15 @@ class DrawingViewModel : ViewModel() {
 
     fun toggleEraser() {
         if (isEraserActive.value) {
-           // Switch back to brush
-           isEraserActive.value = false
+            // Switch back to brush
+            isEraserActive.value = false
         } else {
             isEraserActive.value = true
             // Eraser width
-             _strokeWidth.value = WhiteboardRepository.DEFAULT_ERASER_WIDTH
+            _strokeWidth.value = WhiteboardRepository.DEFAULT_ERASER_WIDTH
         }
     }
-    
+
     fun toggleStylusOnlyMode() {
         isStylusOnlyMode.value = !isStylusOnlyMode.value
     }
@@ -185,12 +194,25 @@ class DrawingViewModel : ViewModel() {
     fun setToolbarAlignment(alignment: ToolbarAlignment) {
         toolbarAlignment.value = alignment
     }
-    
+
     fun addBrush(color: Int = Color.BLACK) {
         // Add current or default brush
         val newBrush = BrushInfo(color, 8f)
-        brushes.value = brushes.value + newBrush
+        brushes.value += newBrush
         setActiveBrush(brushes.value.lastIndex)
+    }
+
+    /**
+     * Updates the color of the currently active brush.
+     */
+    fun updateBrushColor(newColor: Int) {
+        val activeIndex = activeBrushIndex.value
+        val list = brushes.value.toMutableList()
+        if (activeIndex in list.indices) {
+            list[activeIndex] = list[activeIndex].copy(color = newColor)
+            brushes.value = list
+            _brushColor.value = newColor
+        }
     }
 
     /**
@@ -200,12 +222,12 @@ class DrawingViewModel : ViewModel() {
         _strokeWidth.value = width
         if (!isEraserActive.value) {
             // Update active brush width
-             val index = activeBrushIndex.value
-             val list = brushes.value.toMutableList()
-             if (index in list.indices) {
-                 list[index] = list[index].copy(width = width)
-                 brushes.value = list
-             }
+            val index = activeBrushIndex.value
+            val list = brushes.value.toMutableList()
+            if (index in list.indices) {
+                list[index] = list[index].copy(width = width)
+                brushes.value = list
+            }
         }
     }
 
@@ -243,15 +265,15 @@ class DrawingViewModel : ViewModel() {
                 // Create bitmap with white background (like original DrawingActivity)
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(bitmap)
-                
+
                 // Use white background for light brush colors, black for dark
-                val avgBrightness = currentPaths.map { 
+                val avgBrightness = currentPaths.map {
                     val r = Color.red(it.color)
                     val g = Color.green(it.color)
                     val b = Color.blue(it.color)
                     (r + g + b) / 3
                 }.average()
-                
+
                 if (avgBrightness > 128) {
                     canvas.drawColor(Color.BLACK)
                 } else {
@@ -270,10 +292,11 @@ class DrawingViewModel : ViewModel() {
                 for (drawingPath in currentPaths) {
                     paint.strokeWidth = drawingPath.strokeWidth
                     if (drawingPath.isEraser) {
-                         paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                        paint.xfermode =
+                            android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
                     } else {
-                         paint.xfermode = null
-                         paint.color = drawingPath.color
+                        paint.xfermode = null
+                        paint.color = drawingPath.color
                     }
                     canvas.drawPath(drawingPath.path, paint)
                 }
@@ -296,7 +319,7 @@ class DrawingViewModel : ViewModel() {
                 bitmap.recycle()
 
                 Timber.d("Drawing saved to: %s", file.absolutePath)
-                
+
                 // Return content URI via FileProvider
                 FileProvider.getUriForFile(
                     context,
@@ -315,10 +338,10 @@ class DrawingViewModel : ViewModel() {
         val PRESET_COLORS = listOf(
             Color.WHITE,
             Color.BLACK,
-            Color.parseColor("#F44336"), // Red
-            Color.parseColor("#4CAF50"), // Green
-            Color.parseColor("#2196F3"), // Blue
-            Color.parseColor("#FFEB3B"), // Yellow
+            "#F44336".toColorInt(), // Red
+            "#4CAF50".toColorInt(), // Green
+            "#2196F3".toColorInt(), // Blue
+            "#FFEB3B".toColorInt(), // Yellow
         )
     }
 }
