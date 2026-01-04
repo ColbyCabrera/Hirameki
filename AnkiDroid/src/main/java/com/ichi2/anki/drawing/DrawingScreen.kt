@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki.drawing
 
+import android.graphics.Canvas
 import android.graphics.Path
 import android.net.Uri
 import android.view.MotionEvent
@@ -37,6 +38,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Palette
+import android.graphics.Color.WHITE
+import android.graphics.Color.BLACK
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -57,7 +60,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import android.graphics.Paint
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -187,6 +192,7 @@ fun DrawingScreen(
                     paths = paths,
                     brushColor = brushColor,
                     strokeWidth = strokeWidth,
+                    backgroundColor = MaterialTheme.colorScheme.surface.toArgb(),
                     onPathDrawn = { path -> viewModel.addPath(path) },
                     onSizeChanged = { width, height ->
                         canvasWidth = width
@@ -266,6 +272,7 @@ fun DrawingCanvas(
     paths: List<DrawingPath>,
     brushColor: Int,
     strokeWidth: Float,
+    backgroundColor: Int,
     onPathDrawn: (Path) -> Unit,
     onSizeChanged: (Int, Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -280,6 +287,7 @@ fun DrawingCanvas(
         update = { view ->
             view.setPaths(paths)
             view.setCurrentBrush(brushColor, strokeWidth)
+            view.setBackgroundColor(backgroundColor)
         },
         modifier = modifier,
     )
@@ -289,18 +297,19 @@ fun DrawingCanvas(
  * Custom View for handling touch drawing.
  */
 private class DrawingView(context: android.content.Context) : View(context) {
-    private val paint = android.graphics.Paint().apply {
+    private val paint = Paint().apply {
         isAntiAlias = true
         isDither = true
-        style = android.graphics.Paint.Style.STROKE
-        strokeJoin = android.graphics.Paint.Join.ROUND
-        strokeCap = android.graphics.Paint.Cap.ROUND
+        style = Paint.Style.STROKE
+        strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
     }
 
     private var currentPath = Path()
     private var isDrawing = false
-    private var currentColor = android.graphics.Color.BLACK
+    private var currentColor = BLACK
     private var currentStrokeWidth = 8f
+    private var backgroundColor = WHITE
 
     private var paths: List<DrawingPath> = emptyList()
 
@@ -317,22 +326,26 @@ private class DrawingView(context: android.content.Context) : View(context) {
         currentStrokeWidth = strokeWidth
     }
 
+    override fun setBackgroundColor(color: Int) {
+        this.backgroundColor = color
+        invalidate()
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         onSizeChanged?.invoke(w, h)
     }
 
-    override fun onDraw(canvas: android.graphics.Canvas) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // Draw white background
-        canvas.drawColor(android.graphics.Color)
+        // Draw background
+        canvas.drawColor(backgroundColor)
 
         // Draw all completed paths
         for (drawingPath in paths) {
             paint.color = drawingPath.color
             paint.strokeWidth = drawingPath.strokeWidth
-            canvas.drawPath(drawingPath.path, paint)
         }
 
         // Draw current path being drawn
