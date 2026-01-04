@@ -81,8 +81,7 @@ open class PageWebViewClient : WebViewClient() {
             val bgColor =
                 MaterialColors.getColor(webView, android.R.attr.colorBackground).toRGBHex()
             val textColor = MaterialColors.getColor(
-                webView,
-                com.google.android.material.R.attr.colorOnBackground
+                webView, com.google.android.material.R.attr.colorOnBackground
             ).toRGBHex()
             val primaryColor =
                 MaterialColors.getColor(webView, com.google.android.material.R.attr.colorPrimary)
@@ -96,9 +95,8 @@ open class PageWebViewClient : WebViewClient() {
             val onSurfaceColor =
                 MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnSurface)
                     .toRGBHex()
-            val surfaceVariantColor = MaterialColors.getColor(
-                webView,
-                com.google.android.material.R.attr.colorSurfaceVariant
+            val surfaceContainerColor = MaterialColors.getColor(
+                webView, com.google.android.material.R.attr.colorSurfaceContainer
             ).toRGBHex()
             val outlineColor =
                 MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOutline)
@@ -107,12 +105,10 @@ open class PageWebViewClient : WebViewClient() {
                 MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSecondary)
                     .toRGBHex()
             val tertiaryContainerColor = MaterialColors.getColor(
-                webView,
-                com.google.android.material.R.attr.colorTertiaryContainer
+                webView, com.google.android.material.R.attr.colorTertiaryContainer
             ).toRGBHex()
             val onTertiaryContainerColor = MaterialColors.getColor(
-                webView,
-                com.google.android.material.R.attr.colorOnTertiaryContainer
+                webView, com.google.android.material.R.attr.colorOnTertiaryContainer
             ).toRGBHex()
 
             // Inject comprehensive Material 3 theming CSS
@@ -128,7 +124,7 @@ open class PageWebViewClient : WebViewClient() {
                             --m3-on-primary: $onPrimaryColor;
                             --m3-surface: $surfaceColor;
                             --m3-on-surface: $onSurfaceColor;
-                            --m3-surface-variant: $surfaceVariantColor;
+                            --m3-surface-container: ${surfaceContainerColor}Color;
                             --m3-outline: $outlineColor;
                             --m3-secondary: $secondaryColor;
                             --m3-tertiary-container: $tertiaryContainerColor;
@@ -168,7 +164,7 @@ open class PageWebViewClient : WebViewClient() {
                             align-items: center !important;
                             justify-content: center !important;
                             gap: 4px !important;
-                            background-color: $surfaceVariantColor !important;
+                            background-color: $surfaceContainerColor !important;
                             border-radius: 24px !important;
                             padding: 4px 4px !important;
                             max-width: 100% !important;
@@ -210,7 +206,7 @@ open class PageWebViewClient : WebViewClient() {
                         /* Search input styling */
                         .range-box input[type="text"],
                         #statisticsSearchText {
-                            background-color: $surfaceVariantColor !important;
+                            background-color: $surfaceContainerColor !important;
                             color: $onSurfaceColor !important;
                             border: 1px solid $outlineColor !important;
                             border-radius: 20px !important;
@@ -235,7 +231,7 @@ open class PageWebViewClient : WebViewClient() {
                         
                         /* Text inputs - colors only */
                         input[type="text"], input[type="search"], select, textarea {
-                            background-color: $surfaceVariantColor !important;
+                            background-color: $surfaceContainerColor !important;
                             color: $onSurfaceColor !important;
                             border-color: $outlineColor !important;
                         }
@@ -253,7 +249,7 @@ open class PageWebViewClient : WebViewClient() {
                         .graphs-container > * {
                             background-color: $surfaceColor !important;
                             color: $onSurfaceColor !important;
-                            border: 1px solid $surfaceVariantColor !important;
+                            border: 1px solid $surfaceContainerColor !important;
                             border-radius: 16px !important;
                             padding: 16px !important;
                             box-shadow: none !important;
@@ -321,9 +317,7 @@ open class PageWebViewClient : WebViewClient() {
     }
 
     override fun onReceivedError(
-        view: WebView,
-        request: WebResourceRequest,
-        error: WebResourceError
+        view: WebView, request: WebResourceRequest, error: WebResourceError
     ) {
         super.onReceivedError(view, request, error)
         if (request.isForMainFrame) {
