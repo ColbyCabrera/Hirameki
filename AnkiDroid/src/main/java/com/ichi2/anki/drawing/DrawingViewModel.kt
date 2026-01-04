@@ -22,9 +22,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.net.Uri
-import android.os.Build
 import androidx.annotation.CheckResult
-import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
@@ -145,10 +143,9 @@ class DrawingViewModel : ViewModel() {
     /**
      * Redoes the last undone stroke.
      */
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     fun redo() {
         if (redoStack.isNotEmpty()) {
-            val path = redoStack.removeLast()
+            val path = redoStack.removeAt(redoStack.lastIndex)
             undoStack.add(path)
             _paths.value += path
             canRedo.value = redoStack.isNotEmpty()
