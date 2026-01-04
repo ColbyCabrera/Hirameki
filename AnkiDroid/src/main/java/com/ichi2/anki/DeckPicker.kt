@@ -47,6 +47,7 @@ import androidx.activity.viewModels
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.edit
@@ -124,7 +125,8 @@ import com.ichi2.anki.mediacheck.MediaCheckFragment
 import com.ichi2.anki.model.CardStateFilter
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.navigation.DeckPickerScreen
-import com.ichi2.anki.navigation.rememberNavigator
+import com.ichi2.anki.navigation.Navigator
+import com.ichi2.anki.navigation.rememberNavigationState
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.pages.AnkiPackageImporterFragment
 import com.ichi2.anki.pages.CardInfoDestination
@@ -461,7 +463,11 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
         setContent {
             AnkiDroidTheme {
-                val navigator = rememberNavigator(initialKey = DeckPickerScreen)
+                val navigationState = rememberNavigationState(
+                    startRoute = DeckPickerScreen,
+                    topLevelRoutes = setOf(DeckPickerScreen)
+                )
+                val navigator = remember { Navigator(navigationState) }
 
                 DeckPickerNavHost(
                     navigator = navigator,
