@@ -26,6 +26,10 @@ import androidx.annotation.CheckResult
 import androidx.compose.material.MaterialTheme
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
+import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
+import com.ichi2.anki.ui.windows.reviewer.whiteboard.EraserMode
+import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
+import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +49,7 @@ data class DrawingPath(
     val path: Path,
     val color: Int,
     val strokeWidth: Float,
+    val isEraser: Boolean = false,
 )
 
 /**
@@ -56,18 +61,47 @@ class DrawingViewModel : ViewModel() {
     private val _paths = MutableStateFlow<List<DrawingPath>>(emptyList())
     val paths: StateFlow<List<DrawingPath>> = _paths
 
-    // Undo stack
+    // Undo/Redo stack
     private val undoStack = mutableListOf<DrawingPath>()
+    private val redoStack = mutableListOf<DrawingPath>()
+    
+    val canUndo = _paths.map { it.isNotEmpty() }
+    val canRedo = MutableStateFlow(false)
 
-    // Brush settings
+    // Brush settings (Active State)
     private val _brushColor = MutableStateFlow(Color.TRANSPARENT)
     val brushColor: StateFlow<Int> = _brushColor
 
     private val _strokeWidth = MutableStateFlow(8f)
     val strokeWidth: StateFlow<Float> = _strokeWidth
 
-    // UI state
-    val canUndo = _paths.map { it.isNotEmpty() }
+    // Toolbar State
+    val brushes = MutableStateFlow<List<BrushInfo>>(emptyList())
+    val activeBrushIndex = MutableStateFlow(0)
+    val isEraserActive = MutableStateFlow(false)
+    val eraserMode = MutableStateFlow(EraserMode.INK)
+    val isStylusOnlyMode = MutableStateFlow(false)
+    val toolbarAlignment = MutableStateFlow(ToolbarAlignment.BOTTOM)
+    
+    init {
+        // Initialize brushes with presets
+        val initialBrushes = PRESET_COLORS.map { 
+            BrushInfo(it, 8f) // Default stroke width
+        }
+        brushes.value = initialBrushes
+    }
+    
+    fun initializeWithDefaultColor(color: Int) {
+        if (_brushColor.value == Color.TRANSPARENT) {
+             // Add primary color as a new brush and select it
+             val newBrush = BrushInfo(color, 8f)
+             // Insert at index 1 (after White) or just add
+             val currentBrushes = brushes.value.toMutableList()
+             currentBrushes.add(1, newBrush)
+             brushes.value = currentBrushes
+             setActiveBrush(1)
+        }
+    }
 
     /**
      * Adds a completed path to the drawing history.
@@ -77,10 +111,14 @@ class DrawingViewModel : ViewModel() {
             path = path,
             color = _brushColor.value,
             strokeWidth = _strokeWidth.value,
+            isEraser = isEraserActive.value
         )
         _paths.value = _paths.value + drawingPath
-        // Clear redo stack when new path is added
-        undoStack.clear()
+        undoStack.add(drawingPath)
+        
+        // Clear redo stack
+        redoStack.clear()
+        canRedo.value = false
     }
 
     /**
@@ -90,16 +128,69 @@ class DrawingViewModel : ViewModel() {
         val currentPaths = _paths.value
         if (currentPaths.isNotEmpty()) {
             val lastPath = currentPaths.last()
-            undoStack.add(lastPath)
+            
+            // Allow redoing this path
+            redoStack.add(lastPath)
+            canRedo.value = true
+            
+            // Remove from paths and undo stack
+            undoStack.removeLastOrNull()
             _paths.value = currentPaths.dropLast(1)
         }
     }
 
     /**
-     * Sets the brush color.
+     * Redoes the last undone stroke.
      */
+    fun redo() {
+        if (redoStack.isNotEmpty()) {
+            val path = redoStack.removeLast()
+            undoStack.add(path)
+            _paths.value = _paths.value + path
+            canRedo.value = redoStack.isNotEmpty()
+        }
+    }
+
+    // Brush Management
+    
     fun setBrushColor(color: Int) {
         _brushColor.value = color
+        // Update active brush in list if needed, relying on UI to call setActiveBrush
+    }
+
+    fun setActiveBrush(index: Int) {
+        val brush = brushes.value.getOrNull(index) ?: return
+        
+        isEraserActive.value = false
+        activeBrushIndex.value = index
+        _brushColor.value = brush.color
+        _strokeWidth.value = brush.width
+    }
+
+    fun toggleEraser() {
+        if (isEraserActive.value) {
+           // Switch back to brush
+           isEraserActive.value = false
+        } else {
+            isEraserActive.value = true
+            // Eraser width
+             _strokeWidth.value = WhiteboardRepository.DEFAULT_ERASER_WIDTH
+        }
+    }
+    
+    fun toggleStylusOnlyMode() {
+        isStylusOnlyMode.value = !isStylusOnlyMode.value
+    }
+
+    fun setToolbarAlignment(alignment: ToolbarAlignment) {
+        toolbarAlignment.value = alignment
+    }
+    
+    fun addBrush(color: Int = Color.BLACK) {
+        // Add current or default brush
+        val newBrush = BrushInfo(color, 8f)
+        brushes.value = brushes.value + newBrush
+        setActiveBrush(brushes.value.lastIndex)
     }
 
     /**
@@ -107,6 +198,15 @@ class DrawingViewModel : ViewModel() {
      */
     fun setStrokeWidth(width: Float) {
         _strokeWidth.value = width
+        if (!isEraserActive.value) {
+            // Update active brush width
+             val index = activeBrushIndex.value
+             val list = brushes.value.toMutableList()
+             if (index in list.indices) {
+                 list[index] = list[index].copy(width = width)
+                 brushes.value = list
+             }
+        }
     }
 
     /**
@@ -168,8 +268,13 @@ class DrawingViewModel : ViewModel() {
                 }
 
                 for (drawingPath in currentPaths) {
-                    paint.color = drawingPath.color
                     paint.strokeWidth = drawingPath.strokeWidth
+                    if (drawingPath.isEraser) {
+                         paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                    } else {
+                         paint.xfermode = null
+                         paint.color = drawingPath.color
+                    }
                     canvas.drawPath(drawingPath.path, paint)
                 }
 

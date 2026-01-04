@@ -44,7 +44,7 @@ class DrawingActivity : AnkiActivity() {
             AnkiDroidTheme {
                 DrawingScreen(
                     onSave = { uri -> finishWithSuccess(uri) },
-                    onCancel = { finish() },
+                    onFinish = { finish() },
                 )
             }
         }

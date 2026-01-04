@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.compose.AddBrushButton
@@ -82,6 +83,49 @@ fun WhiteboardToolbar(
     val alignment by viewModel.toolbarAlignment.collectAsState()
     val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsState()
 
+    WhiteboardToolbarContent(
+        canUndo = canUndo,
+        canRedo = canRedo,
+        brushes = brushes,
+        activeBrushIndex = activeBrushIndex,
+        isEraserActive = isEraserActive,
+        alignment = alignment,
+        isStylusOnlyMode = isStylusOnlyMode,
+        onUndo = viewModel::undo,
+        onRedo = viewModel::redo,
+        onToggleEraser = onEraserClick,
+        onToggleStylusMode = viewModel::toggleStylusOnlyMode,
+        onSetAlignment = viewModel::setToolbarAlignment,
+        onBrushClick = onBrushClick,
+        onBrushLongClick = onBrushLongClick,
+        onAddBrush = onAddBrush,
+        modifier = modifier
+    )
+}
+
+/**
+ * Stateless Compose-based whiteboard toolbar.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun WhiteboardToolbarContent(
+    canUndo: Boolean,
+    canRedo: Boolean,
+    brushes: List<BrushInfo>,
+    activeBrushIndex: Int,
+    isEraserActive: Boolean,
+    alignment: ToolbarAlignment,
+    isStylusOnlyMode: Boolean,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    onToggleEraser: () -> Unit,
+    onToggleStylusMode: () -> Unit,
+    onSetAlignment: (ToolbarAlignment) -> Unit,
+    onBrushClick: (View, Int) -> Unit,
+    onBrushLongClick: (Int) -> Unit,
+    onAddBrush: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var showOverflowMenu by remember { mutableStateOf(false) }
 
     val isVertical = alignment == ToolbarAlignment.LEFT || alignment == ToolbarAlignment.RIGHT
@@ -97,7 +141,7 @@ fun WhiteboardToolbar(
         val content = @Composable {
             // Undo button
             IconButton(
-                onClick = { viewModel.undo() }, enabled = canUndo
+                onClick = onUndo, enabled = canUndo
             ) {
                 Icon(
                     painter = painterResource(R.drawable.undo_24px),
@@ -108,7 +152,7 @@ fun WhiteboardToolbar(
 
             // Redo button
             IconButton(
-                onClick = { viewModel.redo() }, enabled = canRedo
+                onClick = onRedo, enabled = canRedo
             ) {
                 Icon(
                     painter = painterResource(R.drawable.redo_24px),
@@ -119,7 +163,7 @@ fun WhiteboardToolbar(
 
             // Eraser button
             FilledIconToggleButton(
-                onCheckedChange = { onEraserClick() },
+                onCheckedChange = { onToggleEraser() },
                 checked = isEraserActive,
             ) {
                 Icon(
@@ -148,7 +192,7 @@ fun WhiteboardToolbar(
                         text = { Text(stringResource(R.string.stylus_mode)) },
                         onClick = {
                             showOverflowMenu = false
-                            viewModel.toggleStylusOnlyMode()
+                            onToggleStylusMode()
                         },
                         leadingIcon = {
                             Icon(
@@ -163,7 +207,7 @@ fun WhiteboardToolbar(
                         text = { Text(stringResource(R.string.whiteboard_align_left)) },
                         onClick = {
                             showOverflowMenu = false
-                            viewModel.setToolbarAlignment(ToolbarAlignment.LEFT)
+                            onSetAlignment(ToolbarAlignment.LEFT)
                         },
                         enabled = alignment != ToolbarAlignment.LEFT
                     )
@@ -171,7 +215,7 @@ fun WhiteboardToolbar(
                         text = { Text(stringResource(R.string.whiteboard_align_bottom)) },
                         onClick = {
                             showOverflowMenu = false
-                            viewModel.setToolbarAlignment(ToolbarAlignment.BOTTOM)
+                            onSetAlignment(ToolbarAlignment.BOTTOM)
                         },
                         enabled = alignment != ToolbarAlignment.BOTTOM
                     )
@@ -179,7 +223,7 @@ fun WhiteboardToolbar(
                         text = { Text(stringResource(R.string.whiteboard_align_right)) },
                         onClick = {
                             showOverflowMenu = false
-                            viewModel.setToolbarAlignment(ToolbarAlignment.RIGHT)
+                            onSetAlignment(ToolbarAlignment.RIGHT)
                         },
                         enabled = alignment != ToolbarAlignment.RIGHT
                     )
