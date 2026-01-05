@@ -111,7 +111,10 @@ fun DeckItem(
                     }
                 )
                 .combinedClickable(
-                    onClick = { onDeckClick() },
+                    onClick = {
+                        isContextMenuOpen = false
+                        onDeckClick()
+                    },
                     onLongClick = { isContextMenuOpen = true })
                 .padding(horizontal = 8.dp, vertical = if (deck.depth > 0) 4.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
