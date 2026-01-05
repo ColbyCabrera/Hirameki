@@ -47,6 +47,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -64,7 +66,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -132,8 +133,10 @@ fun DrawingScreen(
     var showBrushOptions by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showEraserOptions by remember { mutableStateOf(false) }
-    
+
     val backgroundColor = MaterialTheme.colorScheme.surface.toArgb()
+    val hasContent = paths.isNotEmpty()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(topBar = {
         TopAppBar(title = {
@@ -156,15 +159,19 @@ fun DrawingScreen(
                 )
             }
         }, actions = {
+            val nothingToSaveMessage = stringResource(R.string.nothing_to_save)
             Button(
                 modifier = Modifier
                     .height(48.dp)
                     .padding(end = 8.dp),
+                enabled = hasContent,
                 onClick = {
                     scope.launch {
                         val uri = viewModel.saveDrawing(context, canvasWidth, canvasHeight)
                         if (uri != null) {
                             onSave(uri)
+                        } else {
+                            snackbarHostState.showSnackbar(nothingToSaveMessage)
                         }
                     }
                 },
@@ -174,7 +181,7 @@ fun DrawingScreen(
                 Text(stringResource(R.string.save))
             }
         })
-    }) { paddingValues ->
+    }, snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -263,15 +270,14 @@ fun DrawingScreen(
             },
             onDismiss = { showColorPicker = false })
     }
-    
+
     // Eraser Options Dialog
     if (showEraserOptions) {
         DrawingEraserOptionsDialog(
             eraserWidth = strokeWidth,
             onWidthChange = { viewModel.setStrokeWidth(it) },
             onClearCanvas = { viewModel.clearCanvas() },
-            onDismissRequest = { showEraserOptions = false }
-        )
+            onDismissRequest = { showEraserOptions = false })
     }
 }
 
@@ -414,6 +420,7 @@ fun DrawingEraserOptionsDialog(
  */
 @Composable
 fun DrawingCanvas(
+    modifier: Modifier = Modifier,
     paths: List<DrawingPath>,
     brushColor: Int,
     strokeWidth: Float,
@@ -422,7 +429,6 @@ fun DrawingCanvas(
     onPathDrawn: (Path) -> Unit,
     onSizeChanged: (Int, Int) -> Unit,
     isStylusOnlyMode: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
     // Current path state for live drawing
     var currentPath by remember { mutableStateOf<Path?>(null, policy = neverEqualPolicy()) }
@@ -491,9 +497,7 @@ fun DrawingCanvas(
 fun DrawingScreenPreview() {
     AnkiDroidTheme {
         DrawingScreen(
-            onFinish = {},
-            onSave = {},
-            viewModel = viewModel()
+            onFinish = {}, onSave = {}, viewModel = viewModel()
         )
     }
 }
