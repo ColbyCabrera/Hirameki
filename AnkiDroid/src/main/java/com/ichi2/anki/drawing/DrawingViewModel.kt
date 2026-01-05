@@ -290,11 +290,15 @@ class DrawingViewModel : ViewModel() {
                     strokeCap = Paint.Cap.ROUND
                 }
 
+                // Determine background color based on average brightness
+                val backgroundColor = if (avgBrightness > 128) Color.BLACK else Color.WHITE
+
                 for (drawingPath in currentPaths) {
                     paint.strokeWidth = drawingPath.strokeWidth
                     if (drawingPath.isEraser) {
-                        paint.xfermode =
-                            android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                        // Draw with background color for JPEG compatibility (no transparency)
+                        paint.xfermode = null
+                        paint.color = backgroundColor
                     } else {
                         paint.xfermode = null
                         paint.color = drawingPath.color
