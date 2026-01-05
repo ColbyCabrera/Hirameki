@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -191,6 +192,7 @@ fun DrawingScreen(
                     canvasWidth = width
                     canvasHeight = height
                 },
+                isStylusOnlyMode = isStylusOnlyMode,
                 modifier = Modifier.fillMaxSize(),
             )
             Box(
@@ -419,6 +421,7 @@ fun DrawingCanvas(
     backgroundColor: Int,
     onPathDrawn: (Path) -> Unit,
     onSizeChanged: (Int, Int) -> Unit,
+    isStylusOnlyMode: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     // Current path state for live drawing
@@ -430,7 +433,7 @@ fun DrawingCanvas(
         .onSizeChanged {
             onSizeChanged(it.width, it.height)
         }
-        .pointerInput(Unit) {
+        .pointerInput(isStylusOnlyMode) {
             detectDragGestures(onDragStart = { offset ->
                 currentOffset = offset
                 val newPath = Path().apply {
@@ -438,6 +441,10 @@ fun DrawingCanvas(
                 }
                 currentPath = newPath
             }, onDrag = { change, _ ->
+                // Filter non-stylus input when stylus-only mode is enabled
+                if (isStylusOnlyMode && change.type != PointerType.Stylus) {
+                    return@detectDragGestures
+                }
                 val path = currentPath ?: return@detectDragGestures
                 val offset = change.position
                 path.lineTo(offset.x, offset.y)
