@@ -49,6 +49,7 @@
     <string name="donate" comment="Generic donate button. Duplicated in help_item_support_opencollective_donate for help menu context">Donate</string>
     <string name="ankiweb_is_not_affiliated_with_this_app">AnkiWeb is not affiliated with this app</string>
     <string name="undo_empty">Nothing to undo</string>
+    <string name="nothing_to_save">Nothing to save</string>
     <string name="browser">Browser</string>
     <string name="total_new">Total New</string>
     <string name="brush_content_description">Brush, width %1$d</string>

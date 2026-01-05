@@ -62,7 +62,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
-import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CollectionManager
@@ -78,6 +78,7 @@ import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
+import com.ichi2.anki.navigation.toEntries
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.ui.compose.help.HelpScreen
@@ -184,8 +185,57 @@ fun DeckPickerNavHost(
     val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsState()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
+    val entryProvider = entryProvider {
+        entry<DeckPickerScreen> {
+            DeckPickerMainContent(
+                navigator = navigator,
+                viewModel = viewModel,
+                cardBrowserViewModel = cardBrowserViewModel,
+                fragmented = fragmented,
+                onLaunchIntent = onLaunchIntent,
+                onLaunchUrl = onLaunchUrl,
+                onUndo = onUndo,
+                onOpenReviewer = onOpenReviewer,
+                onOpenStudyOptions = onOpenStudyOptions,
+                onOpenNoteEditor = onOpenNoteEditor,
+                onAddNote = onAddNote,
+                onAddDeck = onAddDeck,
+                onAddSharedDeck = onAddSharedDeck,
+                onAddFilteredDeck = onAddFilteredDeck,
+                onCheckDatabase = onCheckDatabase,
+                onRenameDeck = onRenameDeck,
+                onExportDeck = onExportDeck,
+                onDeleteDeck = onDeleteDeck,
+                onRebuildFiltered = onRebuildFiltered,
+                onEmptyFiltered = onEmptyFiltered,
+                onCustomStudy = onCustomStudy,
+                onOpenCardInfo = onOpenCardInfo,
+                onShowDialogFragment = onShowDialogFragment,
+                onInvalidateOptionsMenu = onInvalidateOptionsMenu,
+                onSync = onSync,
+                lifecycle = lifecycle
+            )
+        }
+
+        entry<HelpScreen> {
+            HelpScreen(onNavigateUp = { navigator.goBack() })
+        }
+
+        entry<CongratsScreen> { key ->
+            CongratsComposable(
+                onNavigateUp = { navigator.goBack() },
+                onDeckOptions = { viewModel.openDeckOptions(key.deckId) },
+                timeUntilNextDay = timeUntilNextDay
+            )
+        }
+
+        entry<StatisticsDestination> {
+            StatisticsScreen(onNavigateUp = { navigator.goBack() })
+        }
+    }
+
     NavDisplay(
-        backStack = navigator.backStack,
+        entries = navigator.state.toEntries(entryProvider),
         onBack = { navigator.goBack() },
         transitionSpec = {
             fadeIn() togetherWith fadeOut()
@@ -193,70 +243,8 @@ fun DeckPickerNavHost(
         popTransitionSpec = {
             fadeIn() togetherWith fadeOut()
         },
-        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
-        entryProvider = { key ->
-            when (key) {
-                is DeckPickerScreen -> {
-                    NavEntry(key) {
-                        DeckPickerMainContent(
-                            navigator = navigator,
-                            viewModel = viewModel,
-                            cardBrowserViewModel = cardBrowserViewModel,
-                            fragmented = fragmented,
-                            onLaunchIntent = onLaunchIntent,
-                            onLaunchUrl = onLaunchUrl,
-                            onUndo = onUndo,
-                            onOpenReviewer = onOpenReviewer,
-                            onOpenStudyOptions = onOpenStudyOptions,
-                            onOpenNoteEditor = onOpenNoteEditor,
-                            onAddNote = onAddNote,
-                            onAddDeck = onAddDeck,
-                            onAddSharedDeck = onAddSharedDeck,
-                            onAddFilteredDeck = onAddFilteredDeck,
-                            onCheckDatabase = onCheckDatabase,
-                            onRenameDeck = onRenameDeck,
-                            onExportDeck = onExportDeck,
-                            onDeleteDeck = onDeleteDeck,
-                            onRebuildFiltered = onRebuildFiltered,
-                            onEmptyFiltered = onEmptyFiltered,
-                            onCustomStudy = onCustomStudy,
-                            onOpenCardInfo = onOpenCardInfo,
-                            onShowDialogFragment = onShowDialogFragment,
-                            onInvalidateOptionsMenu = onInvalidateOptionsMenu,
-                            onSync = onSync,
-                            lifecycle = lifecycle
-                        )
-                    }
-                }
-
-                is HelpScreen -> {
-                    NavEntry(key) {
-                        HelpScreen(onNavigateUp = { navigator.goBack() })
-                    }
-                }
-
-                is CongratsScreen -> {
-                    NavEntry(key) {
-                        CongratsComposable(
-                            onNavigateUp = { navigator.goBack() },
-                            onDeckOptions = { viewModel.openDeckOptions(key.deckId) },
-                            timeUntilNextDay = timeUntilNextDay
-                        )
-                    }
-                }
-
-                is StatisticsDestination -> {
-                    NavEntry(key) {
-                        StatisticsScreen(onNavigateUp = { navigator.goBack() })
-                    }
-                }
-
-                else -> NavEntry(key) {
-                    Timber.w("Unknown navigation route: %s", key)
-                    Text("Unknown Route")
-                }
-            }
-        })
+        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() }
+    )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -340,7 +328,7 @@ private fun DeckPickerMainContent(
             }
 
             AppNavigationItem.Statistics -> {
-                navigator.goTo(StatisticsDestination)
+                navigator.navigate(StatisticsDestination)
             }
 
             AppNavigationItem.Settings -> {
@@ -348,7 +336,7 @@ private fun DeckPickerMainContent(
             }
 
             AppNavigationItem.Help -> {
-                navigator.goTo(HelpScreen)
+                navigator.navigate(HelpScreen)
             }
 
             AppNavigationItem.Support -> {
@@ -647,7 +635,7 @@ private fun SetupFlows(
                 }
 
                 is DeckSelectionResult.NoCardsToStudy -> {
-                    navigator.goTo(CongratsScreen(result.deckId))
+                    navigator.navigate(CongratsScreen(result.deckId))
                 }
             }
         }
