@@ -208,11 +208,7 @@ open class Reviewer :
 
                     is ReviewerEffect.PerformRedo -> redo()
                     is ReviewerEffect.ToggleWhiteboard -> toggleWhiteboard()
-                    is ReviewerEffect.ShowTagsDialog -> {
-                        currentCard = effect.card
-                        showTagsDialog()
-                    }
-
+                    // TagsDialog is now handled in Compose via ViewModel state
                     is ReviewerEffect.ShowDeleteNoteDialog -> {
                         currentCard = effect.card
                         showDeleteNoteDialog()
@@ -411,7 +407,7 @@ open class Reviewer :
 
             R.id.action_tag -> {
                 Timber.i("Reviewer:: Tag button pressed")
-                showTagsDialog()
+                viewModel.onEvent(ReviewerEvent.EditTags)
             }
 
             R.id.action_edit -> {

@@ -104,6 +104,7 @@ import androidx.compose.ui.zIndex
 import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
+import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
@@ -188,6 +189,11 @@ fun ReviewerContent(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val layoutDirection = LocalLayoutDirection.current
+
+    // Tags dialog state
+    val showTagsDialog by viewModel.showTagsDialog.collectAsState()
+    val tagsState by viewModel.tagsState.collectAsState()
+    val currentNoteTags by viewModel.currentNoteTags.collectAsState()
 
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
@@ -521,8 +527,10 @@ fun ReviewerContent(
 
         // Color picker dialog for adding new brush
         if (showColorPickerDialog && whiteboardViewModel != null) {
+            val defaultColor by whiteboardViewModel.brushColor.collectAsState()
+
             ColorPickerDialog(
-                defaultColor = whiteboardViewModel.brushColor.value,
+                defaultColor = defaultColor,
                 showAlpha = true,
                 onColorPicked = { color ->
                     whiteboardViewModel.addBrush(color)
@@ -564,6 +572,20 @@ fun ReviewerContent(
         if (showEraserOptions && whiteboardViewModel != null) {
             EraserOptionsDialog(
                 viewModel = whiteboardViewModel, onDismissRequest = { showEraserOptions = false })
+        }
+
+        // Tags dialog
+        if (showTagsDialog) {
+            TagsDialog(
+                onDismissRequest = { viewModel.dismissTagsDialog() },
+                onConfirm = { checked, _ ->
+                    viewModel.updateNoteTags(checked)
+                },
+                allTags = tagsState,
+                initialSelection = currentNoteTags,
+                title = stringResource(R.string.card_details_tags),
+                confirmButtonText = stringResource(R.string.dialog_ok),
+                onAddTag = { viewModel.addTag(it) })
         }
     }
 }

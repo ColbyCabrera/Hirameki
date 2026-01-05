@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.ichi2.anki.dialogs.compose.TagsState
 import timber.log.Timber
 import java.io.File
 
@@ -110,7 +111,7 @@ sealed class ReviewerEffect {
     data class ShowSnackbar(val message: String) : ReviewerEffect()
     object PerformRedo : ReviewerEffect()
     object ToggleWhiteboard : ReviewerEffect()
-    data class ShowTagsDialog(val card: Card) : ReviewerEffect()
+    // ShowTagsDialog removed - now handled via ViewModel state in Compose
     data class ShowDeleteNoteDialog(val card: Card) : ReviewerEffect()
     data class ShowDueDateDialog(val card: Card) : ReviewerEffect()
     data class ReplayMedia(val card: Card) : ReviewerEffect()
@@ -128,6 +129,16 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
 
     private var currentCard: Card? = null
     private var queueState: CurrentQueueState? = null
+    
+    // Tags dialog state
+    private val _tagsState = MutableStateFlow<TagsState>(TagsState.Loading)
+    val tagsState: StateFlow<TagsState> = _tagsState.asStateFlow()
+    
+    private val _currentNoteTags = MutableStateFlow<Set<String>>(emptySet())
+    val currentNoteTags: StateFlow<Set<String>> = _currentNoteTags.asStateFlow()
+    
+    private val _showTagsDialog = MutableStateFlow(false)
+    val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
     private val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     private val cardMediaPlayer: CardMediaPlayer =
         CardMediaPlayer({ }, object : MediaErrorListener {
@@ -246,8 +257,53 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun editTags() {
+        currentCard ?: return
+        viewModelScope.launch {
+            loadTagsForCurrentCard()
+            _showTagsDialog.value = true
+        }
+    }
+    
+    private suspend fun loadTagsForCurrentCard() {
         val card = currentCard ?: return
-        viewModelScope.launch { _effect.emit(ReviewerEffect.ShowTagsDialog(card)) }
+        _tagsState.value = TagsState.Loading
+        
+        CollectionManager.withCol {
+            val note = card.note(this)
+            val allTags = this.tags.all().sorted()
+            _currentNoteTags.value = note.tags.toSet()
+            _tagsState.value = TagsState.Loaded(allTags)
+        }
+    }
+    
+    fun dismissTagsDialog() {
+        _showTagsDialog.value = false
+    }
+    
+    fun updateNoteTags(newTags: Set<String>) {
+        val card = currentCard ?: return
+        viewModelScope.launch {
+            CollectionManager.withCol {
+                val note = card.note(this)
+                note.setTagsFromStr(this, newTags.joinToString(" "))
+                this.updateNote(note)
+            }
+            _currentNoteTags.value = newTags
+            _showTagsDialog.value = false
+            
+            // Reload card to update UI (e.g., marked state if "marked" tag changed)
+            reloadCardSuspend()
+        }
+    }
+    
+    fun addTag(tag: String) {
+        viewModelScope.launch {
+            CollectionManager.withCol {
+                this.tags.setCollapsed(tag, collapsed = false)
+            }
+            // Refresh tags list
+            loadTagsForCurrentCard()
+        }
     }
 
     private fun onWhiteboardStateChanged(enabled: Boolean) {
