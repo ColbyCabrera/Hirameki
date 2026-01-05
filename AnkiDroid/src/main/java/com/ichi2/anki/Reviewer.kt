@@ -261,6 +261,10 @@ open class Reviewer :
         setRenderWorkaround(this)
     }
 
+    override fun editTags() {
+        viewModel.onEvent(ReviewerEvent.EditTags)
+    }
+
     @NeedsTest("is hidden if marked is on app bar")
     @NeedsTest("is not hidden if marked is not on app bar")
     @NeedsTest("is not hidden if marked is on app bar and fullscreen is enabled")

@@ -42,7 +42,6 @@ import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Decks
 import com.ichi2.anki.libanki.Note
-import com.ichi2.anki.model.CardsOrNotes
 import com.ichi2.anki.servicelayer.rescheduleCards
 import com.ichi2.anki.servicelayer.resetCards
 import com.ichi2.anki.snackbar.setMaxLines
@@ -250,7 +249,7 @@ open class AnkiDroidJsAPI(
             "setCardDue" -> {
                 try {
                     val days = apiParams.toInt()
-                    if (days < 0 || days > 9999) {
+                    if (days !in 0..9999) {
                         showDeveloperContact(ANKI_JS_ERROR_CODE_SET_DUE, apiContract.cardSuppliedDeveloperContact)
                         return@withContext convertToByteArray(apiContract, false)
                     }
@@ -258,7 +257,7 @@ open class AnkiDroidJsAPI(
                         activity.rescheduleCards(listOf(currentCard.id), days)
                     }
                     return@withContext convertToByteArray(apiContract, true)
-                } catch (e: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                     showDeveloperContact(ANKI_JS_ERROR_CODE_SET_DUE, apiContract.cardSuppliedDeveloperContact)
                     return@withContext convertToByteArray(apiContract, false)
                 }
@@ -313,7 +312,7 @@ open class AnkiDroidJsAPI(
             }
             "isDisplayingAnswer" -> convertToByteArray(apiContract, activity.isDisplayingAnswer)
             "addTagToCard" -> {
-                activity.runOnUiThread { activity.showTagsDialog() }
+                activity.runOnUiThread { activity.editTags() }
                 convertToByteArray(apiContract, true)
             }
             "isInFullscreen" -> convertToByteArray(apiContract, activity.isFullscreen)

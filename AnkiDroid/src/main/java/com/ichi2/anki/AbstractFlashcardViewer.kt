@@ -1305,7 +1305,7 @@ abstract class AbstractFlashcardViewer :
             }
 
             ViewerCommand.TAG -> {
-                viewModel.onEvent(ReviewerEvent.EditTags)
+                editTags()
                 true
             }
 
@@ -2277,6 +2277,11 @@ abstract class AbstractFlashcardViewer :
 
     val isDisplayingAnswer
         get() = displayAnswer
+
+    // Open function for subclasses to handle tag editing via their ViewModel
+    open fun editTags() {
+        // Default no-op - Reviewer overrides this to dispatch ViewModel event
+    }
 
     override fun onSelectedTags(
         selectedTags: List<String>,
