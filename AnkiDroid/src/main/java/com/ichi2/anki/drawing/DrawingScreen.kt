@@ -446,6 +446,8 @@ fun DrawingCanvas(
             }, onDrag = { change, _ ->
                 // Filter non-stylus input when stylus-only mode is enabled
                 if (isStylusOnlyMode && change.type != PointerType.Stylus) {
+                    // Clear path to prevent spurious dots from being added in onDragEnd
+                    currentPath = null
                     return@detectDragGestures
                 }
                 val path = currentPath ?: return@detectDragGestures
