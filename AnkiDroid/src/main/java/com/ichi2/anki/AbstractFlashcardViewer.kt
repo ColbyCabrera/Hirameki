@@ -1305,7 +1305,7 @@ abstract class AbstractFlashcardViewer :
             }
 
             ViewerCommand.TAG -> {
-                showTagsDialog()
+                viewModel.onEvent(ReviewerEvent.EditTags)
                 true
             }
 
@@ -2277,16 +2277,6 @@ abstract class AbstractFlashcardViewer :
 
     val isDisplayingAnswer
         get() = displayAnswer
-
-    internal fun showTagsDialog() {
-        Timber.i("opening tags dialog")
-        val noteId = currentCard!!.note(getColUnsafe).id
-        val dialog =
-            tagsDialogFactory!!
-                .newTagsDialog()
-                .withArguments(this, TagsDialog.DialogType.EDIT_TAGS, noteIds = listOf(noteId))
-        showDialogFragment(dialog)
-    }
 
     override fun onSelectedTags(
         selectedTags: List<String>,
