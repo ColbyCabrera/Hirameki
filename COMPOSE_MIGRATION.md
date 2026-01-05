@@ -118,7 +118,6 @@ Migrated the drawing screen to Jetpack Compose.
 - `02-strings.xml`: Removed duplicate `whiteboard_stroke_width` string
 
 **Files Kept (still in use):**
-- `reviewer_whiteboard_editor.xml` - Used by `DrawingActivity.kt`
 - `reviewer_menu_*.xml` - Used by Reviewer Menu Settings preferences
 - `reviewer.xml` - Minimal stub (see Technical Debt below)
 
@@ -162,6 +161,18 @@ DropdownMenuItem(onClick = {
 **Issue**: `DrawingActivity.kt` still uses `activity_drawing.xml` which includes `reviewer_whiteboard_editor.xml`. This is a standalone activity for creating drawings to add to notes.
 
 **Future Fix**: Migrate `DrawingActivity` to Compose, which would allow deleting `reviewer_whiteboard_editor.xml` and the associated style `reviewer_whiteboard_editor_button_style`.
+
+### FileProvider Authority Magic String
+**Issue**: The string `".apkgfileprovider"` is duplicated across 8+ files for constructing FileProvider authorities:
+- `AndroidManifest.xml`
+- `AnkiActivity.kt`
+- `DrawingViewModel.kt`
+- `IntentHandler.kt`
+- `MultimediaFragment.kt`
+- `MultimediaImageFragment.kt`
+- `SharedDecksDownloadFragment.kt`
+
+**Future Fix**: Create a centralized constant (e.g., `FileProviderUtil.AUTHORITY_SUFFIX`) and update all usages to prevent maintenance issues and typos.
 
 ---
 
