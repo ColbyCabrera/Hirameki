@@ -161,7 +161,7 @@ fun DeckItem(
                 ) {
                     Icon(
                         painter = painterResource(
-                            if (deck.collapsed) R.drawable.ic_expand_more_black_24dp else R.drawable.ic_expand_less_black_24dp,
+                            if (deck.collapsed) R.drawable.keyboard_arrow_right_24px else R.drawable.keyboard_arrow_down_24px,
                         ),
                         contentDescription = if (deck.collapsed) stringResource(R.string.expand) else stringResource(
                             R.string.collapse
