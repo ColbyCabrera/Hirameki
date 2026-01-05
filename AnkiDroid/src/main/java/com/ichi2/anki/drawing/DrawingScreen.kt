@@ -65,7 +65,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -432,7 +431,6 @@ fun DrawingCanvas(
 ) {
     // Current path state for live drawing
     var currentPath by remember { mutableStateOf<Path?>(null, policy = neverEqualPolicy()) }
-    var currentOffset by remember { mutableStateOf<Offset?>(null) }
 
     Canvas(modifier = modifier
         .background(Color(backgroundColor))
@@ -441,7 +439,6 @@ fun DrawingCanvas(
         }
         .pointerInput(isStylusOnlyMode) {
             detectDragGestures(onDragStart = { offset ->
-                currentOffset = offset
                 val newPath = Path().apply {
                     moveTo(offset.x, offset.y)
                 }
@@ -454,7 +451,6 @@ fun DrawingCanvas(
                 val path = currentPath ?: return@detectDragGestures
                 val offset = change.position
                 path.lineTo(offset.x, offset.y)
-                currentOffset = offset
                 // We need to recompose to show the new line - handled by neverEqualPolicy
                 currentPath = path
             }, onDragEnd = {
@@ -462,10 +458,8 @@ fun DrawingCanvas(
                     onPathDrawn(path)
                 }
                 currentPath = null
-                currentOffset = null
             }, onDragCancel = {
                 currentPath = null
-                currentOffset = null
             })
         }) {
         // Draw all completed paths
