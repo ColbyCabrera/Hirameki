@@ -28,7 +28,6 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModel
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
-import com.ichi2.anki.ui.windows.reviewer.whiteboard.EraserMode
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardRepository
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +79,6 @@ class DrawingViewModel : ViewModel() {
     val brushes = MutableStateFlow<List<BrushInfo>>(emptyList())
     val activeBrushIndex = MutableStateFlow(0)
     val isEraserActive = MutableStateFlow(false)
-    val eraserMode = MutableStateFlow(EraserMode.INK)
     val isStylusOnlyMode = MutableStateFlow(false)
     val toolbarAlignment = MutableStateFlow(ToolbarAlignment.BOTTOM)
 
@@ -163,11 +161,6 @@ class DrawingViewModel : ViewModel() {
     }
 
     // Brush Management
-    fun setBrushColor(color: Int) {
-        _brushColor.value = color
-        // Update active brush in list if needed, relying on UI to call setActiveBrush
-    }
-
     fun setActiveBrush(index: Int) {
         val brush = brushes.value.getOrNull(index) ?: return
 
@@ -231,11 +224,6 @@ class DrawingViewModel : ViewModel() {
             }
         }
     }
-
-    /**
-     * Checks if there are any paths drawn.
-     */
-    fun hasContent(): Boolean = _paths.value.isNotEmpty()
 
     /**
      * Saves the current drawing to a file and returns its URI.
