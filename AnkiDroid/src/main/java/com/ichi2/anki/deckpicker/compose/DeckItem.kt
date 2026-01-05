@@ -18,6 +18,7 @@
 package com.ichi2.anki.deckpicker.compose
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
@@ -76,8 +77,7 @@ private val CloverShape = RoundedPolygonShape(MaterialShapes.Clover4Leaf)
 private val GhostishShape = RoundedPolygonShape(MaterialShapes.Ghostish)
 
 @OptIn(
-    ExperimentalMaterial3ExpressiveApi::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class
+    ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class
 )
 @Composable
 fun DeckItem(
