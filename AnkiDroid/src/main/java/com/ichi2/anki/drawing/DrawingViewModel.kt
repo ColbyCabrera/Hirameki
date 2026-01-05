@@ -255,13 +255,12 @@ class DrawingViewModel : ViewModel() {
                 val bitmap = createBitmap(width, height)
                 val canvas = Canvas(bitmap)
 
-                // Use white background for light brush colors, black for dark
-                val avgBrightness = currentPaths.map {
-                    val r = Color.red(it.color)
-                    val g = Color.green(it.color)
-                    val b = Color.blue(it.color)
-                    (r + g + b) / 3
-                }.average()
+                // Calculate average brightness, excluding eraser paths
+                val avgBrightness = currentPaths.asSequence()
+                    .filterNot { it.isEraser }
+                    .map { (Color.red(it.color) + Color.green(it.color) + Color.blue(it.color)) / 3.0 }
+                    .average()
+                    .let { if (it.isNaN()) 0.0 else it }
 
                 if (avgBrightness > 128) {
                     canvas.drawColor(Color.BLACK)
