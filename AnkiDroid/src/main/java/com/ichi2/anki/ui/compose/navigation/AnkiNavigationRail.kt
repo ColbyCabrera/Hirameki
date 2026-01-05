@@ -37,12 +37,19 @@ import com.ichi2.anki.R
 enum class AppNavigationItem(
     @DrawableRes val icon: Int, @StringRes val labelResId: Int
 ) {
-    Decks(R.drawable.ic_list_black, R.string.decks),
-    CardBrowser(R.drawable.ic_flashcard_black, R.string.browser),
-    Statistics(R.drawable.ic_bar_chart_black, R.string.statistics),
-    Settings(R.drawable.ic_settings_black, R.string.settings),
-    Help(R.drawable.ic_help_black, R.string.help),
-    Support(R.drawable.ic_support_ankidroid, R.string.donate)
+    Decks(R.drawable.list_24px, R.string.decks), CardBrowser(
+        R.drawable.cards_stack_24px,
+        R.string.browser
+    ),
+    Statistics(R.drawable.bar_chart_24px, R.string.statistics), Settings(
+        R.drawable.settings_24px,
+        R.string.settings
+    ),
+    Help(
+        R.drawable.help_filled_24px,
+        R.string.help
+    ),
+    Support(R.drawable.volunteer_activism_filled_24px, R.string.donate)
 }
 
 @Composable
@@ -54,7 +61,10 @@ fun AnkiNavigationRail(
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(12.dp, alignment = Alignment.CenterVertically)
+            verticalArrangement = Arrangement.spacedBy(
+                12.dp,
+                alignment = Alignment.CenterVertically
+            )
         ) {
             AppNavigationItem.entries.forEach { item ->
                 NavigationRailItem(
