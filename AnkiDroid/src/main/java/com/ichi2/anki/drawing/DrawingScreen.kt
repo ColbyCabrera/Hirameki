@@ -491,7 +491,8 @@ fun DrawingCanvas(
 fun DrawingScreenPreview() {
     AnkiDroidTheme {
         DrawingScreen(
-            onFinish = {}, onSave = {}, viewModel = viewModel()
+            onFinish = {},
+            onSave = {},
         )
     }
 }
