@@ -194,6 +194,8 @@ fun ReviewerContent(
     val showTagsDialog by viewModel.showTagsDialog.collectAsState()
     val tagsState by viewModel.tagsState.collectAsState()
     val currentNoteTags by viewModel.currentNoteTags.collectAsState()
+    val deckTags by viewModel.deckTags.collectAsState()
+    val filterByDeck by viewModel.filterByDeck.collectAsState()
 
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
@@ -583,8 +585,12 @@ fun ReviewerContent(
                 },
                 allTags = tagsState,
                 initialSelection = currentNoteTags,
+                deckTags = deckTags,
+                initialFilterByDeck = filterByDeck,
+                onFilterByDeckChanged = { viewModel.setFilterByDeck(it) },
                 title = stringResource(R.string.card_details_tags),
                 confirmButtonText = stringResource(R.string.dialog_ok),
+                showFilterByDeckToggle = true,
                 onAddTag = { viewModel.addTag(it) })
         }
     }

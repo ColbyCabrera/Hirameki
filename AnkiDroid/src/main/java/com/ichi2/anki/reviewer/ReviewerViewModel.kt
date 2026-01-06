@@ -137,6 +137,12 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
     private val _currentNoteTags = MutableStateFlow<Set<String>>(emptySet())
     val currentNoteTags: StateFlow<Set<String>> = _currentNoteTags.asStateFlow()
     
+    private val _deckTags = MutableStateFlow<Set<String>>(emptySet())
+    val deckTags: StateFlow<Set<String>> = _deckTags.asStateFlow()
+    
+    private val _filterByDeck = MutableStateFlow(true)
+    val filterByDeck: StateFlow<Boolean> = _filterByDeck.asStateFlow()
+    
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
     private val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
@@ -273,7 +279,21 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             val allTags = this.tags.all().sorted()
             _currentNoteTags.value = note.tags.toSet()
             _tagsState.value = TagsState.Loaded(allTags)
+            
+            // Load tags specific to the current deck for filtering
+            val deckId = card.did
+            val cardsInDeck = this.findCards("did:$deckId")
+            val tagsInDeck = mutableSetOf<String>()
+            for (cardId in cardsInDeck) {
+                val cardNote = this.getCard(cardId).note(this)
+                tagsInDeck.addAll(cardNote.tags)
+            }
+            _deckTags.value = tagsInDeck
         }
+    }
+    
+    fun setFilterByDeck(filterByDeck: Boolean) {
+        _filterByDeck.value = filterByDeck
     }
     
     fun dismissTagsDialog() {
