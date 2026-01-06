@@ -281,12 +281,16 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             _tagsState.value = TagsState.Loaded(allTags)
             
             // Load tags specific to the current deck for filtering
-            val deckId = card.did
-            val cardsInDeck = this.findCards("did:$deckId")
+            // Use findNotes with deck query for efficiency instead of iterating over all cards
+            val deckName = this.decks.name(card.did)
+            val escapedDeckName = deckName.replace("\"", "\\\"")
+            val noteIds = this.findNotes("deck:\"$escapedDeckName\"")
+            
+            // Limit to 1000 notes to prevent extremely slow loads for massive decks
             val tagsInDeck = mutableSetOf<String>()
-            for (cardId in cardsInDeck) {
-                val cardNote = this.getCard(cardId).note(this)
-                tagsInDeck.addAll(cardNote.tags)
+            for (noteId in noteIds.take(10000)) {
+                val deckNote = this.getNote(noteId)
+                tagsInDeck.addAll(deckNote.tags)
             }
             _deckTags.value = tagsInDeck
         }
