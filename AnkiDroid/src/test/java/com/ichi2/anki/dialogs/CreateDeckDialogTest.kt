@@ -15,6 +15,8 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
  ****************************************************************************************/
 
+@file:Suppress("DEPRECATION") // Tests the deprecated legacy CreateDeckDialog
+
 package com.ichi2.anki.dialogs
 
 import androidx.appcompat.app.AlertDialog
@@ -41,7 +43,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.atomic.AtomicReference
 
-@Suppress("DEPRECATION") // Tests the deprecated legacy CreateDeckDialog
 @RunWith(RobolectricTestRunner::class)
 class CreateDeckDialogTest : RobolectricTest() {
     private lateinit var activityScenario: ActivityScenario<DeckPicker>
