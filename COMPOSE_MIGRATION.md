@@ -150,6 +150,13 @@ DropdownMenuItem(onClick = {
 
 ## 🔧 Technical Debt
 
+### CreateDeckDialog Call Site Migration
+**Issue**: `CreateDeckDialog.kt` (legacy) has been deprecated in favor of `com.ichi2.anki.dialogs.compose.CreateDeckDialog`. 
+**TODO**: Migrate all remaining call sites to the new Compose version:
+- `DeckPicker.kt`
+- `DeckSelectionDialog.kt`
+- `CreateDeckDialogTest.kt` (Rewrite/Update tests for the new implementation)
+
 ### AbstractFlashcardViewer Layout Dependency
 **Issue**: `AbstractFlashcardViewer.onCreate()` calls `setContentView(getContentViewAttr())` which requires a valid XML layout. While `Reviewer.kt` immediately overrides this with `ComposeView`, the base class still needs the layout to exist.
 
@@ -272,14 +279,14 @@ DropdownMenuItem(onClick = {
 
 The following tests are `@Ignore`d and require rewriting for Compose APIs:
 
-| Scope | Test Name | Issue & Goal |
-|-------|-----------|--------------|
-| **Selection** | `insertIntoFocusedFieldStartsAtSelection` (L365) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Selection** | `insertIntoFocusedFieldReplacesSelection` (L370) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Selection** | `insertIntoFocusedFieldReplacesSelectionIfBackwards` (L376) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Keyboard** | `defaultsToCapitalized` (L382) | **Issue**: Tests XML properties.<br>**Goal**: Rewrite using Compose `KeyboardOptions`. |
-| **Clipboard** | `pasteHtmlAsPlainTextTest` (L389) | **Issue**: Tests XML `FieldEditText` behavior.<br>**Goal**: Verify Compose clipboard semantics. |
-| **Note Types** | `can switch two image occlusion note types` (L394) | **Issue**: Tests XML `Spinner`.<br>**Goal**: Rewrite using `NoteEditorViewModel` note type selection. |
+| Scope          | Test Name                                                   | Issue & Goal                                                                                          |
+|----------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| **Selection**  | `insertIntoFocusedFieldStartsAtSelection` (L365)            | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Selection**  | `insertIntoFocusedFieldReplacesSelection` (L370)            | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Selection**  | `insertIntoFocusedFieldReplacesSelectionIfBackwards` (L376) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Keyboard**   | `defaultsToCapitalized` (L382)                              | **Issue**: Tests XML properties.<br>**Goal**: Rewrite using Compose `KeyboardOptions`.                |
+| **Clipboard**  | `pasteHtmlAsPlainTextTest` (L389)                           | **Issue**: Tests XML `FieldEditText` behavior.<br>**Goal**: Verify Compose clipboard semantics.       |
+| **Note Types** | `can switch two image occlusion note types` (L394)          | **Issue**: Tests XML `Spinner`.<br>**Goal**: Rewrite using `NoteEditorViewModel` note type selection. |
 
 ---
 
@@ -294,21 +301,22 @@ The following tests are `@Ignore`d and require rewriting for Compose APIs:
 
 ---
 
-### 7. Dialogs — 🟡 20% Migrated
+### 7. Dialogs — 🟡 22% Migrated
 
 **Compose Dialogs**:
-| Dialog                        | Status     |
-|-------------------------------|------------|
-| `TagsDialog.kt`               | ✅ Complete |
-| `ExportDialog.kt`             | ✅ Complete |
-| `FlagRenameDialog.kt`         | ✅ Complete |
-| `DeleteConfirmationDialog.kt` | ✅ Complete |
-| `DiscardChangesDialog.kt`     | ✅ Complete |
-| `BrowserOptionsComposable.kt` | ✅ Complete |
-| `NoteEditorDialogs.kt`        | ✅ Complete |
-| `OnErrorCallback.kt`          | ✅ Complete |
+| Dialog                        | Status                      |
+|-------------------------------|-----------------------------|
+| `TagsDialog.kt`               | ✅ Complete                  |
+| `ExportDialog.kt`             | ✅ Complete                  |
+| `FlagRenameDialog.kt`         | ✅ Complete                  |
+| `DeleteConfirmationDialog.kt` | ✅ Complete                  |
+| `DiscardChangesDialog.kt`     | ✅ Complete                  |
+| `BrowserOptionsComposable.kt` | ✅ Complete                  |
+| `NoteEditorDialogs.kt`        | ✅ Complete                  |
+| `OnErrorCallback.kt`          | ✅ Complete                  |
+| `CreateDeckDialog.kt`         | ✅ Complete (Call sites pending) |
 
-**Still View-Based** (35+ dialogs)
+**Still View-Based** (34+ dialogs)
 
 ---
 
@@ -363,15 +371,14 @@ The CardBrowser already renders inside the DeckPicker on tablets. To create a co
 ### 3. Migrate Simple Dialogs to Compose
 **Effort**: Low per dialog | **Impact**: Medium
 
-Migrating the remaining 35+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
-- `CreateDeckDialog`
+Migrating the remaining 34+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
 - Simple confirmation dialogs
 - `IntegerDialog`
 
 ### 4. Code Quality TODOs
 
-| File | Issue | Suggested Fix |
-|------|-------|---------------|
+| File                   | Issue                                           | Suggested Fix                                                                                   |
+|------------------------|-------------------------------------------------|-------------------------------------------------------------------------------------------------|
 | `DeckPickerNavHost.kt` | 24 parameters on `DeckPickerNavHost()` function | Group related callbacks into configuration objects (e.g., `DeckActions`, `NavigationCallbacks`) |
 
 ---
