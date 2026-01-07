@@ -48,6 +48,7 @@ import com.ichi2.anki.browser.CardBrowserViewModel.ToggleSelectionState.SELECT_A
 import com.ichi2.anki.browser.CardBrowserViewModel.ToggleSelectionState.SELECT_NONE
 import com.ichi2.anki.browser.RepositionCardsRequest.RepositionData
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.deckpicker.DeckPickerViewModel
 import com.ichi2.anki.dialogs.compose.DeckDialogType
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.export.ExportDialogFragment.ExportType
@@ -273,15 +274,20 @@ class CardBrowserViewModel(
         _createDeckDialogState.value = CreateDeckDialogState.Hidden
     }
 
-    enum class DeckNameError {
-        INVALID_NAME, ALREADY_EXISTS
-    }
-
-    fun validateDeckName(name: String, dialogState: CreateDeckDialogState.Visible): DeckNameError? {
+    fun validateDeckName(
+        name: String,
+        dialogState: CreateDeckDialogState.Visible
+    ): DeckPickerViewModel.DeckNameError? {
         return when {
             name.isBlank() -> null
-            !Decks.isValidDeckName(getFullDeckName(name, dialogState)) -> DeckNameError.INVALID_NAME
-            deckExists(name, dialogState) -> DeckNameError.ALREADY_EXISTS
+            !Decks.isValidDeckName(
+                getFullDeckName(
+                    name,
+                    dialogState
+                )
+            ) -> DeckPickerViewModel.DeckNameError.INVALID_NAME
+
+            deckExists(name, dialogState) -> DeckPickerViewModel.DeckNameError.ALREADY_EXISTS
             else -> null
         }
     }

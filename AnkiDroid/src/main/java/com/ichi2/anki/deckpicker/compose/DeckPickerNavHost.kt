@@ -664,6 +664,12 @@ private fun SetupFlows(
     }
 
     LaunchedEffect(Unit) {
+        viewModel.snackbarMessageResId.flowWithLifecycle(lifecycle).collect { messageResId ->
+            snackbarHostState.showSnackbar(applicationContext.getString(messageResId))
+        }
+    }
+
+    LaunchedEffect(Unit) {
         cardBrowserViewModel.flowOfSnackbarMessage.flowWithLifecycle(lifecycle)
             .collect { messageRes ->
                 snackbarHostState.showSnackbar(applicationContext.getString(messageRes))

@@ -156,6 +156,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val emptyCardsNotification = MutableSharedFlow<EmptyCardsResult>()
     val flowOfDestination = MutableSharedFlow<Destination>()
     val snackbarMessage = MutableSharedFlow<String>()
+    val snackbarMessageResId = MutableSharedFlow<Int>()
 
     override val onError = MutableSharedFlow<String>()
 
@@ -297,13 +298,13 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 _createDeckDialogState.value = CreateDeckDialogState.Hidden
                 updateDeckList()
 
-                val message = when (state.type) {
-                    DeckDialogType.RENAME_DECK -> "Deck renamed"
-                    else -> "Deck created"
+                val messageResId = when (state.type) {
+                    DeckDialogType.RENAME_DECK -> R.string.deck_renamed
+                    else -> R.string.deck_created
                 }
-                snackbarMessage.emit(message)
+                snackbarMessageResId.emit(messageResId)
             } catch (e: BackendDeckIsFilteredException) {
-                snackbarMessage.emit(e.localizedMessage ?: e.message ?: "Error")
+                snackbarMessage.emit(e.localizedMessage ?: e.message.orEmpty())
             }
         }
     }
