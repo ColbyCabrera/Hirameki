@@ -93,6 +93,7 @@ import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.compose.DeckPickerNavHost
 import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.ConfirmationDialog
+@Suppress("DEPRECATION") // TODO: Migrate to Compose CreateDeckDialog
 import com.ichi2.anki.dialogs.CreateDeckDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.CustomExceptionData
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
@@ -977,6 +978,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         }
     }
 
+    @Suppress("DEPRECATION") // TODO: Migrate to Compose CreateDeckDialog
     fun showCreateFilteredDeckDialog() {
         val createFilteredDeckDialog = CreateDeckDialog(
             this@DeckPicker,

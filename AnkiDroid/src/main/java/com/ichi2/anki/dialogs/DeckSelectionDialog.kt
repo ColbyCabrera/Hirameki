@@ -178,6 +178,7 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
      *
      * @param parentDeck The parent deck under which the subdeck will be created
      */
+    @Suppress("DEPRECATION") // Fallback uses legacy CreateDeckDialog
     private fun showSubDeckDialog(parentDeck: SelectableDeck.Deck) {
         val callback = onShowCreateSubDeckDialog
         if (callback != null) {
@@ -197,6 +198,7 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         }
     }
 
+    @Suppress("DEPRECATION") // Fallback uses legacy CreateDeckDialog
     private fun showDeckDialog() {
         val callback = onShowCreateDeckDialog
         if (callback != null) {
