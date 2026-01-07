@@ -21,7 +21,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
-import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.IntroductionActivity
 import com.ichi2.anki.R
@@ -40,13 +39,9 @@ import org.hamcrest.Matchers.hasItem
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 
+@Suppress("DEPRECATION") // Tests the deprecated legacy CreateDeckDialog
 @RunWith(RobolectricTestRunner::class)
 class CreateDeckDialogTest : RobolectricTest() {
     private lateinit var activityScenario: ActivityScenario<DeckPicker>
