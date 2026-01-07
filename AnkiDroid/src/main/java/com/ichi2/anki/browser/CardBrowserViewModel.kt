@@ -250,7 +250,9 @@ class CardBrowserViewModel(
 
     fun showCreateSubDeckDialog(parentId: DeckId) {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.SUB_DECK, titleResId = R.string.create_subdeck
+            type = DeckDialogType.SUB_DECK,
+            titleResId = R.string.create_subdeck,
+            parentId = parentId
         )
     }
 
@@ -323,13 +325,13 @@ class CardBrowserViewModel(
                 }
                 _createDeckDialogState.value = CreateDeckDialogState.Hidden
 
-                val message = when (state.type) {
-                    DeckDialogType.RENAME_DECK -> "Deck renamed"
-                    else -> "Deck created"
+                val messageResId = when (state.type) {
+                    DeckDialogType.RENAME_DECK -> R.string.deck_renamed
+                    else -> R.string.deck_created
                 }
-                flowOfSnackbarString.emit(message)
+                flowOfSnackbarMessage.emit(messageResId)
             } catch (e: BackendDeckIsFilteredException) {
-                flowOfSnackbarString.emit(e.localizedMessage ?: e.message ?: "Error")
+                flowOfSnackbarString.emit(e.localizedMessage ?: e.message.orEmpty())
             }
         }
     }
