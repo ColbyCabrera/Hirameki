@@ -77,6 +77,7 @@ import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.browser.BrowserRowWithId
 import com.ichi2.anki.browser.CardBrowserViewModel
+import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.dialogs.help.HelpDialog
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.pages.Statistics
@@ -94,14 +95,14 @@ private val transparentTextFieldColors: @Composable () -> TextFieldColors = {
         disabledIndicatorColor = Color.Transparent,
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
-        disabledContainerColor = Color.Transparent
+        disabledContainerColor = Color.Transparent,
     )
 }
 
 @OptIn(
     ExperimentalMaterial3WindowSizeClassApi::class,
     ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class
+    ExperimentalMaterial3ExpressiveApi::class,
 )
 @Composable
 fun CardBrowserLayout(
@@ -123,7 +124,7 @@ fun CardBrowserLayout(
     onGradeNow: () -> Unit,
     onResetProgress: () -> Unit,
     onExportCard: () -> Unit,
-    onFilterByTag: () -> Unit
+    onFilterByTag: () -> Unit,
 ) {
     val activity = LocalActivity.current
     val isTablet = if (activity != null) {
@@ -138,7 +139,7 @@ fun CardBrowserLayout(
     var availableDecks by remember { mutableStateOf<List<SelectableDeck.Deck>>(emptyList()) }
     val searchAnim by animateFloatAsState(
         targetValue = if (isSearchOpen) 1f else 0f,
-        animationSpec = motionScheme.defaultEffectsSpec()
+        animationSpec = motionScheme.defaultEffectsSpec(),
     )
     val density = LocalDensity.current
     val searchOffsetPx = with(density) { (-8).dp.toPx() }
@@ -162,29 +163,47 @@ fun CardBrowserLayout(
         availableDecks = viewModel.getAvailableDecks()
     }
 
+    // Create Deck Dialog
+    val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
+    when (val state = createDeckDialogState) {
+        is CardBrowserViewModel.CreateDeckDialogState.Visible -> {
+            CreateDeckDialog(
+                onDismissRequest = { viewModel.dismissCreateDeckDialog() },
+                onConfirm = { name -> viewModel.createDeck(name, state) },
+                dialogType = state.type,
+                title = stringResource(state.titleResId),
+                initialDeckName = state.initialName,
+                validateDeckName = { viewModel.validateDeckName(it, state) },
+            )
+        }
+
+        CardBrowserViewModel.CreateDeckDialogState.Hidden -> {}
+    }
+
     Row(modifier = Modifier.fillMaxSize()) {
         if (fragmented) {
             AnkiNavigationRail(
-                selectedItem = AppNavigationItem.CardBrowser, onNavigate = { item ->
+                selectedItem = AppNavigationItem.CardBrowser,
+                onNavigate = { item ->
                     when (item) {
                         AppNavigationItem.Decks -> onNavigateUp()
-                        AppNavigationItem.CardBrowser -> { /* Already here */
+                        AppNavigationItem.CardBrowser -> { // Already here
                         }
 
                         AppNavigationItem.Statistics -> activity?.startActivity(
                             Statistics.getIntent(
-                                activity
-                            )
+                                activity,
+                            ),
                         )
 
                         AppNavigationItem.Settings -> activity?.startActivity(
                             PreferencesActivity.getIntent(
-                                activity
-                            )
+                                activity,
+                            ),
                         )
 
                         AppNavigationItem.Help -> (activity as? AnkiActivity)?.showDialogFragment(
-                            HelpDialog.newHelpInstance()
+                            HelpDialog.newHelpInstance(),
                         )
 
                         AppNavigationItem.Support -> {
@@ -193,22 +212,29 @@ fun CardBrowserLayout(
                             activity?.startActivity(Intent(Intent.ACTION_VIEW, uri))
                         }
                     }
-                })
+                },
+            )
         }
         Scaffold(
-            modifier = Modifier.weight(1f), topBar = {
+            modifier = Modifier.weight(1f),
+            topBar = {
                 TopAppBar(title = {
-                    Row(modifier = Modifier.graphicsLayer {
-                        alpha = 1f - searchAnim
-                    }) {
+                    Row(
+                        modifier = Modifier.graphicsLayer {
+                            alpha = 1f - searchAnim
+                        },
+                    ) {
                         DeckSelector(
                             selectedDeck = viewModel.flowOfDeckSelection.collectAsStateWithLifecycle(
-                                null
-                            ).value, availableDecks = availableDecks, onDeckSelected = { deck ->
+                                    null,
+                                ).value,
+                            availableDecks = availableDecks,
+                            onDeckSelected = { deck ->
                                 coroutineScope.launch {
                                     viewModel.setSelectedDeck(deck)
                                 }
-                            })
+                            },
+                        )
                     }
                 }, navigationIcon = {
                     if (!isSearchOpen) {
@@ -230,8 +256,9 @@ fun CardBrowserLayout(
                         var textFieldValue by remember {
                             mutableStateOf(
                                 TextFieldValue(
-                                    searchQuery, selection = TextRange(0, searchQuery.length)
-                                )
+                                    searchQuery,
+                                    selection = TextRange(0, searchQuery.length),
+                                ),
                             )
                         }
 
@@ -243,45 +270,47 @@ fun CardBrowserLayout(
 
                         SearchBar(
                             inputField = {
-                            TextField(
-                                value = textFieldValue,
-                                onValueChange = {
-                                    textFieldValue = it
-                                    viewModel.setSearchQuery(it.text)
-                                },
-                                placeholder = { Text(text = stringResource(R.string.card_browser_search_hint)) },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = stringResource(R.string.card_browser_search_hint)
-                                    )
-                                },
-                                trailingIcon = {
-                                    IconButton(onClick = { viewModel.collapseSearchQuery() }) {
+                                TextField(
+                                    value = textFieldValue,
+                                    onValueChange = {
+                                        textFieldValue = it
+                                        viewModel.setSearchQuery(it.text)
+                                    },
+                                    placeholder = { Text(text = stringResource(R.string.card_browser_search_hint)) },
+                                    leadingIcon = {
                                         Icon(
-                                            Icons.Default.Close,
-                                            contentDescription = stringResource(R.string.close)
+                                            Icons.Default.Search,
+                                            contentDescription = stringResource(R.string.card_browser_search_hint),
                                         )
-                                    }
-                                },
-                                colors = transparentTextFieldColors(),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(
-                                    onSearch = {
-                                        viewModel.search(textFieldValue.text)
-                                        keyboardController?.hide()
-                                    }),
-                                singleLine = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequester)
-                                    .graphicsLayer {
-                                        alpha = searchAnim
-                                        translationY = searchOffsetPx * (1f - searchAnim)
-                                        scaleX = 0.98f + 0.02f * searchAnim
-                                        scaleY = 0.98f + 0.02f * searchAnim
-                                    })
-                        },
+                                    },
+                                    trailingIcon = {
+                                        IconButton(onClick = { viewModel.collapseSearchQuery() }) {
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = stringResource(R.string.close),
+                                            )
+                                        }
+                                    },
+                                    colors = transparentTextFieldColors(),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(
+                                        onSearch = {
+                                            viewModel.search(textFieldValue.text)
+                                            keyboardController?.hide()
+                                        },
+                                    ),
+                                    singleLine = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .focusRequester(focusRequester)
+                                        .graphicsLayer {
+                                            alpha = searchAnim
+                                            translationY = searchOffsetPx * (1f - searchAnim)
+                                            scaleX = 0.98f + 0.02f * searchAnim
+                                            scaleY = 0.98f + 0.02f * searchAnim
+                                        },
+                                )
+                            },
                             expanded = false,
                             onExpandedChange = { },
                             modifier = Modifier
@@ -291,7 +320,8 @@ fun CardBrowserLayout(
                             colors = SearchBarDefaults.colors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             ),
-                            content = { })
+                            content = { },
+                        )
                     } else {
                         FilledTonalIconButton(
                             onClick = {
@@ -301,12 +331,13 @@ fun CardBrowserLayout(
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.search_24px),
-                                contentDescription = stringResource(R.string.card_browser_search_hint)
+                                contentDescription = stringResource(R.string.card_browser_search_hint),
                             )
                         }
                     }
                 })
-            }) { paddingValues ->
+            },
+        ) { paddingValues ->
             // Don't apply paddingValues here to allow content to draw behind system bars
             // Instead pass them to CardBrowserScreen
             CardBrowserScreen(
@@ -328,7 +359,7 @@ fun CardBrowserLayout(
                 onGradeNow = onGradeNow,
                 onResetProgress = onResetProgress,
                 onExportCard = onExportCard,
-                onFilterByTag = onFilterByTag
+                onFilterByTag = onFilterByTag,
             )
             if (isTablet) {
                 // TODO: Re-enable NoteEditor split view after migration is complete
