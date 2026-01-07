@@ -221,7 +221,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     fun showCreateSubDeckDialog(parentId: DeckId) {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.SUB_DECK, titleResId = R.string.create_subdeck
+            type = DeckDialogType.SUB_DECK,
+            titleResId = R.string.create_subdeck,
+            parentId = parentId
         )
     }
 
@@ -281,10 +283,12 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                             val fullName = decks.getSubdeckName(state.parentId!!, name)
                             decks.id(fullName!!)
                         }
+
                         DeckDialogType.RENAME_DECK -> {
                             val deckId = decks.id(state.initialName)
                             decks.rename(decks.getLegacy(deckId)!!, name)
                         }
+
                         DeckDialogType.FILTERED_DECK -> {
                             decks.newFiltered(name)
                         }
@@ -292,7 +296,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 }
                 _createDeckDialogState.value = CreateDeckDialogState.Hidden
                 updateDeckList()
-                
+
                 val message = when (state.type) {
                     DeckDialogType.RENAME_DECK -> "Deck renamed"
                     else -> "Deck created"
