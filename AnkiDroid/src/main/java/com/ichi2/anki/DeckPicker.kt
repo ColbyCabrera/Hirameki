@@ -21,7 +21,7 @@
 
 // usage of 'this' in constructors when class is non-final - weak warning
 // should be OK as this is only non-final for tests
-@file:Suppress("LeakingThis")
+@file:Suppress("LeakingThis", "DEPRECATION") // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
 
 package com.ichi2.anki
 
