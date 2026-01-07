@@ -124,9 +124,9 @@ class DeckSpinnerSelection(
         col: Collection,
         @LayoutRes layoutResource: Int = R.layout.multiline_spinner_item,
     ) {
-        computeDropDownDecks(col, includeFiltered = false).toMutableList().let {
-            dropDownDecks = it
-            val deckNames = it.map { it.name }
+        computeDropDownDecks(col, includeFiltered = false).toMutableList().let { decks ->
+            dropDownDecks = decks
+            val deckNames = decks.map { it.name }
             val noteDeckAdapter: ArrayAdapter<String?> =
                 object :
                     ArrayAdapter<String?>(context, layoutResource, deckNames as List<String?>) {
@@ -297,8 +297,16 @@ class DeckSpinnerSelection(
         val dialog = DeckSelectionDialog.newInstance(context.getString(R.string.search_deck), null, false, decks)
         // TODO: retain state after onDestroy
         dialog.deckCreationListener = DeckCreationListener { onDeckAdded(it) }
+        dialog.onShowCreateDeckDialog = onShowCreateDeckDialog
+        dialog.onShowCreateSubDeckDialog = onShowCreateSubDeckDialog
         showDialogFragmentImpl(fragmentManagerSupplier.getFragmentManager(), dialog)
     }
+
+    /** Callback to show the create deck dialog. Set by the parent activity. */
+    var onShowCreateDeckDialog: ((onDeckCreated: (DeckId) -> Unit) -> Unit)? = null
+
+    /** Callback to show the create subdeck dialog. Set by the parent activity. */
+    var onShowCreateSubDeckDialog: ((parentId: DeckId, onDeckCreated: (DeckId) -> Unit) -> Unit)? = null
 
     private fun onDeckAdded(deck: DeckNameId) {
         Timber.d("added deck %s to spinner", deck)

@@ -81,4 +81,5 @@
     <string name="statistics_failed_to_load_decks">Failed to load decks</string>
     <string name="note_type_type">Type</string>
     <string name="note_type_name">Name</string>
+    <string name="deck_name">Deck name</string>
 </resources>

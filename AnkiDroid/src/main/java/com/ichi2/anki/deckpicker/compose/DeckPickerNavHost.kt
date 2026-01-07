@@ -73,6 +73,7 @@ import com.ichi2.anki.deckpicker.DeckPickerViewModel
 import com.ichi2.anki.deckpicker.DeckSelectionResult
 import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.DisplayDeckNode
+import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
@@ -287,6 +288,7 @@ private fun DeckPickerMainContent(
     val isRefreshing by viewModel.isSyncing.collectAsState(initial = false)
     val syncState by viewModel.syncState.collectAsState()
     val syncDialogState by viewModel.syncDialogState.collectAsState()
+    val createDeckDialogState by viewModel.createDeckDialogState.collectAsState()
 
     syncDialogState?.let {
         SyncProgressDialog(
@@ -294,6 +296,20 @@ private fun DeckPickerMainContent(
             message = it.message,
             onCancel = it.onCancel,
         )
+    }
+
+    when (val state = createDeckDialogState) {
+        is DeckPickerViewModel.CreateDeckDialogState.Visible -> {
+            CreateDeckDialog(
+                onDismissRequest = { viewModel.dismissCreateDeckDialog() },
+                onConfirm = { name -> viewModel.createDeck(name, state) },
+                dialogType = state.type,
+                title = stringResource(state.titleResId),
+                initialDeckName = state.initialName,
+                validateDeckName = { viewModel.validateDeckName(it, state) }
+            )
+        }
+         DeckPickerViewModel.CreateDeckDialogState.Hidden -> { }
     }
 
     var searchQuery by remember { mutableStateOf("") }

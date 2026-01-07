@@ -1726,18 +1726,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
     fun renameDeckDialog(did: DeckId) {
         val currentName = getColUnsafe.decks.name(did)
-        val createDeckDialog = CreateDeckDialog(
-            this@DeckPicker,
-            R.string.rename_deck,
-            CreateDeckDialog.DeckDialogType.RENAME_DECK,
-            null,
-        )
-        createDeckDialog.deckName = currentName
-        createDeckDialog.onNewDeckCreated = {
-            dismissAllDialogFragments()
-            viewModel.updateDeckList()
-        }
-        createDeckDialog.showDialog()
+       viewModel.showRenameDeckDialog(did, currentName)
     }
 
     /**
@@ -1746,22 +1735,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * @see CreateDeckDialog
      */
     fun showCreateDeckDialog() {
-        val createDeckDialog = CreateDeckDialog(
-            this@DeckPicker,
-            R.string.new_deck,
-            CreateDeckDialog.DeckDialogType.DECK,
-            null,
-        )
-        createDeckDialog.onNewDeckCreated = {
-            updateDeckList()
-            invalidateOptionsMenu()
-        }
-        createDeckDialog.onSnackbarMessage = { message ->
-            lifecycleScope.launch {
-                viewModel.snackbarMessage.emit(message)
-            }
-        }
-        createDeckDialog.showDialog()
+       viewModel.showCreateDeckDialog()
     }
 
     /**
