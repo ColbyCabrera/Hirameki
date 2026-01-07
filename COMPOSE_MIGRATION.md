@@ -1,6 +1,6 @@
 # AnkiDroid Compose & Nav3 Migration Status
 
-**Last Updated**: January 3, 2026
+**Last Updated**: January 7, 2026
 
 ---
 
@@ -121,6 +121,32 @@ Migrated the drawing screen to Jetpack Compose.
 - `reviewer_menu_*.xml` - Used by Reviewer Menu Settings preferences
 - `reviewer.xml` - Minimal stub (see Technical Debt below)
 
+### CreateDeckDialog Compose Migration (January 7, 2026)
+Migrated the deck creation dialog to Jetpack Compose with ViewModel-based state management.
+
+**New Components:**
+- `dialogs/compose/CreateDeckDialog.kt` - Compose dialog supporting DECK, SUB_DECK, RENAME_DECK, FILTERED_DECK types
+- `DeckPickerViewModel.kt` - Added `CreateDeckDialogState`, `validateDeckName()`, `createDeck()`, and show/dismiss functions
+- `dialogs/compose/CreateDeckDialogTest.kt` - Unit tests for helper functions
+
+**Architecture Pattern:**
+- ViewModel exposes `createDeckDialogState: StateFlow<CreateDeckDialogState>` (sealed class: Hidden/Visible)
+- Validation returns enum (`DeckNameError.INVALID_NAME`, `ALREADY_EXISTS`) instead of strings to avoid Context dependency in ViewModel
+- Composable maps enum to localized strings via `stringResource()`
+- `DeckSelectionDialog.kt` and `DeckSpinnerSelection.kt` updated with callback properties for gradual migration
+- Fallback to legacy dialog when callbacks not set (backwards compatible)
+
+**Files Modified:**
+- `dialogs/CreateDeckDialog.kt` - Marked `@Deprecated` with ReplaceWith hint
+- `dialogs/DeckSelectionDialog.kt` - Added `onShowCreateDeckDialog`, `onShowCreateSubDeckDialog` callbacks with fallback
+- `DeckSpinnerSelection.kt` - Added matching callbacks, wired to dialog
+- `DeckPicker.kt` - Added `@file:Suppress("DEPRECATION")` for legacy usage
+- `dialogs/CreateDeckDialogTest.kt` - Added `@Suppress("DEPRECATION")`
+
+**Remaining Work:**
+- Wire up callbacks in call sites to use Compose dialog (DeckPicker, NoteEditor, CardBrowser)
+- Remove legacy `CreateDeckDialog.kt` once all call sites migrated
+
 ### Compose Popup Leak Fix Pattern
 Fixed memory leaks in `DropdownMenu` components by ensuring menus are dismissed **before** executing action callbacks:
 
@@ -152,10 +178,18 @@ DropdownMenuItem(onClick = {
 
 ### CreateDeckDialog Call Site Migration
 **Issue**: `CreateDeckDialog.kt` (legacy) has been deprecated in favor of `com.ichi2.anki.dialogs.compose.CreateDeckDialog`. 
-**TODO**: Migrate all remaining call sites to the new Compose version:
-- `DeckPicker.kt`
-- `DeckSelectionDialog.kt`
-- `CreateDeckDialogTest.kt` (Rewrite/Update tests for the new implementation)
+
+**Architecture**: The Compose dialog uses a callback-based integration pattern:
+1. `DeckSelectionDialog` and `DeckSpinnerSelection` expose optional callbacks (`onShowCreateDeckDialog`, `onShowCreateSubDeckDialog`)
+2. Parent activities wire callbacks to their ViewModel
+3. Fallback to legacy dialog when callbacks are null (backwards compatible)
+
+**TODO**: Wire up callbacks in remaining call sites:
+- `DeckPicker.kt` - `showCreateFilteredDeckDialog()` (uses legacy directly)
+- `NoteEditorFragment.kt` - via `DeckSpinnerSelection`
+- `CardBrowser.kt` - via `DeckSpinnerSelection`
+- `CardTemplateEditor.kt`
+- Call sites using `DeckSelectionDialog` without setting callbacks
 
 ### AbstractFlashcardViewer Layout Dependency
 **Issue**: `AbstractFlashcardViewer.onCreate()` calls `setContentView(getContentViewAttr())` which requires a valid XML layout. While `Reviewer.kt` immediately overrides this with `ComposeView`, the base class still needs the layout to exist.
@@ -314,7 +348,7 @@ The following tests are `@Ignore`d and require rewriting for Compose APIs:
 | `BrowserOptionsComposable.kt` | ✅ Complete                  |
 | `NoteEditorDialogs.kt`        | ✅ Complete                  |
 | `OnErrorCallback.kt`          | ✅ Complete                  |
-| `CreateDeckDialog.kt`         | ✅ Complete (Call sites pending) |
+| `CreateDeckDialog.kt`         | ✅ Complete (Legacy deprecated, call sites pending) |
 
 **Still View-Based** (34+ dialogs)
 
