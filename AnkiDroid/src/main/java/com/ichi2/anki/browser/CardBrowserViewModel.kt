@@ -244,7 +244,9 @@ class CardBrowserViewModel(
 
     fun showRenameDeckDialog(deckId: DeckId, currentName: String) {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.RENAME_DECK, titleResId = R.string.rename_deck
+            type = DeckDialogType.RENAME_DECK,
+            titleResId = R.string.rename_deck,
+            initialName = currentName
         )
     }
 
