@@ -295,8 +295,10 @@ class CardBrowserViewModel(
 
     private fun getFullDeckName(name: String, state: CreateDeckDialogState.Visible): String {
         return when (state.type) {
-            DeckDialogType.SUB_DECK -> getColUnsafe().decks.getSubdeckName(state.parentId!!, name)
-                ?: name
+            DeckDialogType.SUB_DECK -> {
+                val parentId = state.parentId ?: return name
+                getColUnsafe().decks.getSubdeckName(parentId, name) ?: name
+            }
 
             else -> name
         }
@@ -309,13 +311,20 @@ class CardBrowserViewModel(
                     when (state.type) {
                         DeckDialogType.DECK -> decks.id(name)
                         DeckDialogType.SUB_DECK -> {
-                            val fullName = decks.getSubdeckName(state.parentId!!, name)
-                            decks.id(fullName!!)
+                            val parentId = state.parentId
+                            if (parentId != null) {
+                                val fullName = decks.getSubdeckName(parentId, name)
+                                if (fullName != null) {
+                                    decks.id(fullName)
+                                }
+                            }
                         }
 
                         DeckDialogType.RENAME_DECK -> {
                             val deckId = decks.id(state.initialName)
-                            decks.rename(decks.getLegacy(deckId)!!, name)
+                            decks.getLegacy(deckId)?.let {
+                                decks.rename(it, name)
+                            } ?: Timber.w("Deck no longer exists for rename: %s", state.initialName)
                         }
 
                         DeckDialogType.FILTERED_DECK -> {
