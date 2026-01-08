@@ -209,7 +209,7 @@ class AudioRecordingController(
         // if the recorder is in the 'cleared' state
         // holding the 'record' button should start a recording
         // releasing the 'record' button should complete the recording
-        // TODO: remove haptics from the long press - the 'buzz' can be heard on the recording
+        recordButton.isHapticFeedbackEnabled = false
         recordButton.setOnHoldListener(
             object : OnHoldListener {
                 override fun onTouchStart() {
