@@ -1725,7 +1725,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
     fun renameDeckDialog(did: DeckId) {
         val currentName = getColUnsafe.decks.name(did)
-       viewModel.showRenameDeckDialog(did, currentName)
+       viewModel.showRenameDeckDialog(currentName)
     }
 
     /**

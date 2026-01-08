@@ -279,10 +279,6 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         dialog!!.dismiss()
     }
 
-    protected fun displayErrorAndCancel() {
-        dialog!!.dismiss()
-    }
-
     open inner class DecksArrayAdapter(
         decks: List<SelectableDeck>,
     ) : RecyclerView.Adapter<DecksArrayAdapter.ViewHolder>(), Filterable {

@@ -34,7 +34,6 @@ import com.ichi2.anki.OnErrorListener
 import com.ichi2.anki.PermissionSet
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
-import com.ichi2.anki.browser.BrowserDestination
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.configureRenderingMode
 import com.ichi2.anki.dialogs.compose.DeckDialogType
@@ -52,7 +51,6 @@ import com.ichi2.anki.notetype.ManageNoteTypesDestination
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.DeckOptionsDestination
 import com.ichi2.anki.performBackupInBackground
-import com.ichi2.anki.reviewreminders.ScheduleRemindersDestination
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.syncAuth
 import com.ichi2.anki.utils.Destination
@@ -214,7 +212,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         )
     }
 
-    fun showRenameDeckDialog(deckId: DeckId, currentName: String) {
+    fun showRenameDeckDialog(currentName: String) {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
             type = DeckDialogType.RENAME_DECK,
             titleResId = R.string.rename_deck,
@@ -222,24 +220,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         )
     }
 
-    fun showCreateSubDeckDialog(parentId: DeckId) {
-        _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.SUB_DECK,
-            titleResId = R.string.create_subdeck,
-            parentId = parentId
-        )
-    }
 
-    fun showCreateFilteredDeckDialog() {
-        viewModelScope.launch {
-            val initialName = withCol { sched.getOrCreateFilteredDeck(did = 0).name }
-            _createDeckDialogState.value = CreateDeckDialogState.Visible(
-                type = DeckDialogType.FILTERED_DECK,
-                titleResId = R.string.new_deck,
-                initialName = initialName
-            )
-        }
-    }
 
     fun dismissCreateDeckDialog() {
         _createDeckDialogState.value = CreateDeckDialogState.Hidden
@@ -313,12 +294,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         }
     }
 
-    /** Flow that determines when the resizing divider should be visible */
-    val flowOfResizingDividerVisible = combine(
-        flowOfDeckListInInitialState, flowOfCollectionHasNoCards
-    ) { isInInitialState, hasNoCards ->
-        isInInitialState != true && !hasNoCards
-    }
+
 
     // HACK: dismiss a legacy progress bar
     // TODO: Replace with better progress handling for first load/corrupt collections
@@ -416,10 +392,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         flowOfDeckCountsChanged.emit(Unit)
     }
 
-    fun browseCards(deckId: DeckId) = launchCatchingIO {
-        withCol { decks.select(deckId) }
-        flowOfDestination.emit(BrowserDestination(deckId))
-    }
+
 
     fun addNote(
         deckId: DeckId?,
@@ -456,9 +429,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         undoableOp { sched.unburyDeck(deckId) }
     }
 
-    fun scheduleReviewReminders(deckId: DeckId) = viewModelScope.launch {
-        flowOfDestination.emit(ScheduleRemindersDestination(deckId))
-    }
+
 
     /**
      * Launch an asynchronous task to rebuild the deck list and recalculate the deck counts. Use this
