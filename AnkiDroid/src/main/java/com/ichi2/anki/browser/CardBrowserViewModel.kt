@@ -71,6 +71,7 @@ import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.preferences.SharedPreferencesProvider
 import com.ichi2.anki.utils.ext.normalizeForSearch
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -298,10 +299,10 @@ class CardBrowserViewModel(
     private suspend fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
         val fullName = getFullDeckName(name, state)
         val existingDeck = withCol { decks.byName(fullName) }
-        
+
         // No deck with this name exists
         if (existingDeck == null) return false
-        
+
         // Allow renaming a deck to itself (same deck ID)
         if (state.type == DeckDialogType.RENAME_DECK && state.deckIdToRename != null) {
             val existingDeckId = existingDeck.getLong("id")
@@ -309,7 +310,7 @@ class CardBrowserViewModel(
                 return false
             }
         }
-        
+
         return true
     }
 
@@ -363,17 +364,25 @@ class CardBrowserViewModel(
                         }
                     }
                 }
-                _createDeckDialogState.value = CreateDeckDialogState.Hidden
 
                 if (operationSucceeded) {
+                    _createDeckDialogState.value = CreateDeckDialogState.Hidden
                     val messageResId = when (state.type) {
                         DeckDialogType.RENAME_DECK -> R.string.deck_renamed
                         else -> R.string.deck_created
                     }
                     flowOfSnackbarMessage.emit(messageResId)
+                } else {
+                    // Keep dialog open and show error
+                    flowOfSnackbarMessage.emit(R.string.something_wrong)
                 }
+            } catch (e: CancellationException) {
+                throw e // Don't catch coroutine cancellation
             } catch (e: BackendDeckIsFilteredException) {
                 flowOfSnackbarString.emit(e.localizedMessage ?: e.message.orEmpty())
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to create/rename deck")
+                flowOfSnackbarMessage.emit(R.string.something_wrong)
             }
         }
     }

@@ -53,6 +53,7 @@ import com.ichi2.anki.performBackupInBackground
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.syncAuth
 import com.ichi2.anki.utils.Destination
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -308,18 +309,26 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                         }
                     }
                 }
-                _createDeckDialogState.value = CreateDeckDialogState.Hidden
-                updateDeckList()
 
                 if (operationSucceeded) {
+                    _createDeckDialogState.value = CreateDeckDialogState.Hidden
+                    updateDeckList()
                     val messageResId = when (state.type) {
                         DeckDialogType.RENAME_DECK -> R.string.deck_renamed
                         else -> R.string.deck_created
                     }
                     snackbarMessageResId.emit(messageResId)
+                } else {
+                    // Keep dialog open and show error
+                    snackbarMessageResId.emit(R.string.something_wrong)
                 }
+            } catch (e: CancellationException) {
+                throw e // Don't catch coroutine cancellation
             } catch (e: BackendDeckIsFilteredException) {
                 snackbarMessage.emit(e.localizedMessage ?: e.message.orEmpty())
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to create/rename deck")
+                snackbarMessageResId.emit(R.string.something_wrong)
             }
         }
     }
