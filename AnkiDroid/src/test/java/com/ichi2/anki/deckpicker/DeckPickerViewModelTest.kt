@@ -180,6 +180,127 @@ class DeckPickerViewModelTest : RobolectricTest() {
             assertThat("filter - odid", assertOn.firstCard().oDid, equalTo(Consts.DEFAULT_DECK_ID))
         }
 
+    // region Deck Name Validation Tests
+
+    @Test
+    fun `validateDeckName - blank name returns null`() = runTest {
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK,
+            titleResId = 0
+        )
+        val result = viewModel.validateDeckName("", state)
+        assertThat("blank name should be null (no error)", result, equalTo(null))
+
+        val resultWithSpaces = viewModel.validateDeckName("   ", state)
+        assertThat("whitespace-only name should be null", resultWithSpaces, equalTo(null))
+    }
+
+    @Test
+    fun `validateDeckName - existing deck name returns ALREADY_EXISTS`() = runTest {
+        // Create a deck first
+        col.decks.id("Existing Deck")
+
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK,
+            titleResId = 0
+        )
+        val result = viewModel.validateDeckName("Existing Deck", state)
+        assertThat("existing deck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS))
+    }
+
+    @Test
+    fun `validateDeckName - new valid name returns null`() = runTest {
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK,
+            titleResId = 0
+        )
+        val result = viewModel.validateDeckName("Brand New Deck", state)
+        assertThat("new valid deck name", result, equalTo(null))
+    }
+
+    @Test
+    fun `validateDeckName - rename to same name is allowed`() = runTest {
+        // Create a deck first
+        val deckId = col.decks.id("My Deck")
+
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK,
+            titleResId = 0,
+            initialName = "My Deck",
+            deckIdToRename = deckId
+        )
+        // Renaming to the same name should be allowed
+        val result = viewModel.validateDeckName("My Deck", state)
+        assertThat("rename to same name", result, equalTo(null))
+    }
+
+    @Test
+    fun `validateDeckName - rename to existing different name returns ALREADY_EXISTS`() = runTest {
+        // Create two decks
+        col.decks.id("Deck A")
+        val deckBId = col.decks.id("Deck B")
+
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK,
+            titleResId = 0,
+            initialName = "Deck B",
+            deckIdToRename = deckBId
+        )
+        // Trying to rename Deck B to Deck A (which exists) should fail
+        val result = viewModel.validateDeckName("Deck A", state)
+        assertThat("rename to existing deck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS))
+    }
+
+    @Test
+    fun `validateDeckName - subdeck with valid parent`() = runTest {
+        // Create parent deck
+        val parentId = col.decks.id("Parent")
+
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.SUB_DECK,
+            titleResId = 0,
+            parentId = parentId
+        )
+        val result = viewModel.validateDeckName("Child", state)
+        assertThat("valid subdeck name", result, equalTo(null))
+    }
+
+    @Test
+    fun `validateDeckName - subdeck with existing name returns ALREADY_EXISTS`() = runTest {
+        // Create parent deck and subdeck
+        val parentId = col.decks.id("Parent")
+        col.decks.id("Parent::Existing Child")
+
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.SUB_DECK,
+            titleResId = 0,
+            parentId = parentId
+        )
+        val result = viewModel.validateDeckName("Existing Child", state)
+        assertThat("existing subdeck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS))
+    }
+
+    @Test
+    fun `validateDeckName - subdeck rename to same name is allowed`() = runTest {
+        // Create parent deck and subdeck
+        val parentId = col.decks.id("Parent")
+        val subdeckId = col.decks.id("Parent::Child")
+
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK,
+            titleResId = 0,
+            // The dialog shows "Child" as initial name, but full path is "Parent::Child"
+            initialName = "Parent::Child",
+            deckIdToRename = subdeckId
+        )
+        // User enters "Child" (short name) - this should be allowed since it's the same deck
+        // This tests the deckIdToRename-based comparison, not name string comparison
+        val result = viewModel.validateDeckName("Child", state)
+        assertThat("subdeck rename to same short name should be allowed", result, equalTo(null))
+    }
+
+    // endregion
+
     companion object {
         private const val EXPECTED_CARDS: Int = 3
     }

@@ -40,12 +40,15 @@ import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckSpinnerSelection.Companion.ALL_DECKS_ID
 import com.ichi2.anki.Flag
+import com.ichi2.anki.R
 import com.ichi2.anki.browser.CardBrowserViewModel.ChangeMultiSelectMode.MultiSelectCause
 import com.ichi2.anki.browser.CardBrowserViewModel.ChangeMultiSelectMode.SingleSelectCause
 import com.ichi2.anki.browser.CardBrowserViewModel.ToggleSelectionState.SELECT_ALL
 import com.ichi2.anki.browser.CardBrowserViewModel.ToggleSelectionState.SELECT_NONE
 import com.ichi2.anki.browser.RepositionCardsRequest.RepositionData
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.deckpicker.DeckPickerViewModel
+import com.ichi2.anki.dialogs.compose.DeckDialogType
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.export.ExportDialogFragment.ExportType
 import com.ichi2.anki.launchCatchingIO
@@ -53,6 +56,7 @@ import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.CardType
 import com.ichi2.anki.libanki.DeckId
+import com.ichi2.anki.libanki.Decks
 import com.ichi2.anki.libanki.QueueType
 import com.ichi2.anki.libanki.QueueType.ManuallyBuried
 import com.ichi2.anki.libanki.QueueType.SiblingBuried
@@ -67,6 +71,7 @@ import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.preferences.SharedPreferencesProvider
 import com.ichi2.anki.utils.ext.normalizeForSearch
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -76,6 +81,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.filter
@@ -89,6 +95,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import net.ankiweb.rsdroid.BackendException
+import net.ankiweb.rsdroid.exceptions.BackendDeckIsFilteredException
 import net.ankiweb.rsdroid.exceptions.BackendNotFoundException
 import org.jetbrains.annotations.VisibleForTesting
 import timber.log.Timber
@@ -223,6 +230,173 @@ class CardBrowserViewModel(
 
     var shouldIgnoreAccents: Boolean = false
 
+    private val _createDeckDialogState = MutableStateFlow<CreateDeckDialogState>(
+        CreateDeckDialogState.Hidden
+    )
+
+    val createDeckDialogState: StateFlow<CreateDeckDialogState> =
+        _createDeckDialogState.asStateFlow()
+
+    fun showCreateDeckDialog() {
+        _createDeckDialogState.value = CreateDeckDialogState.Visible(
+            type = DeckDialogType.DECK, titleResId = R.string.new_deck
+        )
+    }
+
+    fun showRenameDeckDialog(deckId: DeckId, currentName: String) {
+        _createDeckDialogState.value = CreateDeckDialogState.Visible(
+            type = DeckDialogType.RENAME_DECK,
+            titleResId = R.string.rename_deck,
+            initialName = currentName,
+            deckIdToRename = deckId
+        )
+    }
+
+    fun showCreateSubDeckDialog(parentId: DeckId) {
+        _createDeckDialogState.value = CreateDeckDialogState.Visible(
+            type = DeckDialogType.SUB_DECK,
+            titleResId = R.string.create_subdeck,
+            parentId = parentId
+        )
+    }
+
+    fun showCreateFilteredDeckDialog() {
+        viewModelScope.launch {
+            try {
+                val initialName = withCol { sched.getOrCreateFilteredDeck(did = 0).name }
+                _createDeckDialogState.value = CreateDeckDialogState.Visible(
+                    type = DeckDialogType.FILTERED_DECK,
+                    titleResId = R.string.new_deck,
+                    initialName = initialName
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to create filtered deck dialog")
+                flowOfSnackbarMessage.emit(R.string.something_wrong)
+            }
+        }
+    }
+
+    fun dismissCreateDeckDialog() {
+        _createDeckDialogState.value = CreateDeckDialogState.Hidden
+    }
+
+    suspend fun validateDeckName(
+        name: String, dialogState: CreateDeckDialogState.Visible
+    ): DeckPickerViewModel.DeckNameError? {
+        return when {
+            name.isBlank() -> null
+            !Decks.isValidDeckName(
+                getFullDeckName(
+                    name, dialogState
+                )
+            ) -> DeckPickerViewModel.DeckNameError.INVALID_NAME
+
+            deckExists(name, dialogState) -> DeckPickerViewModel.DeckNameError.ALREADY_EXISTS
+            else -> null
+        }
+    }
+
+    private suspend fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
+        val fullName = getFullDeckName(name, state)
+        val existingDeck = withCol { decks.byName(fullName) }
+
+        // No deck with this name exists
+        if (existingDeck == null) return false
+
+        // Allow renaming a deck to itself (same deck ID)
+        if (state.type == DeckDialogType.RENAME_DECK && state.deckIdToRename != null) {
+            val existingDeckId = existingDeck.getLong("id")
+            if (existingDeckId == state.deckIdToRename) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private suspend fun getFullDeckName(
+        name: String, state: CreateDeckDialogState.Visible
+    ): String {
+        return when (state.type) {
+            DeckDialogType.SUB_DECK -> {
+                val parentId = state.parentId ?: return name
+                withCol { decks.getSubdeckName(parentId, name) } ?: name
+            }
+
+            else -> name
+        }
+    }
+
+    fun createDeck(name: String, state: CreateDeckDialogState.Visible) {
+        viewModelScope.launch {
+            try {
+                var operationSucceeded = true
+                withCol {
+                    when (state.type) {
+                        DeckDialogType.DECK -> decks.id(name)
+                        DeckDialogType.SUB_DECK -> {
+                            val parentId = state.parentId
+                            if (parentId != null) {
+                                decks.getSubdeckName(parentId, name)?.let { fullName ->
+                                    decks.id(fullName)
+                                } ?: run {
+                                    Timber.w("Failed to get subdeck name for parent %d", parentId)
+                                    operationSucceeded = false
+                                }
+                            } else {
+                                Timber.w("SUB_DECK dialog opened without parentId")
+                                operationSucceeded = false
+                            }
+                        }
+
+                        DeckDialogType.RENAME_DECK -> {
+                            val deckId = state.deckIdToRename ?: decks.byName(state.initialName)
+                                ?.getLong("id")
+
+                            if (deckId != null) {
+                                decks.getLegacy(deckId)?.let {
+                                    decks.rename(it, name)
+                                } ?: run {
+                                    Timber.w(
+                                        "Deck no longer exists for rename: %s",
+                                        state.initialName
+                                    )
+                                    operationSucceeded = false
+                                }
+                            } else {
+                                Timber.w("Deck not found for rename: %s", state.initialName)
+                                operationSucceeded = false
+                            }
+                        }
+
+                        DeckDialogType.FILTERED_DECK -> {
+                            decks.newFiltered(name)
+                        }
+                    }
+                }
+
+                if (operationSucceeded) {
+                    _createDeckDialogState.value = CreateDeckDialogState.Hidden
+                    val messageResId = when (state.type) {
+                        DeckDialogType.RENAME_DECK -> R.string.deck_renamed
+                        else -> R.string.deck_created
+                    }
+                    flowOfSnackbarMessage.emit(messageResId)
+                } else {
+                    // Keep dialog open and show error
+                    flowOfSnackbarMessage.emit(R.string.something_wrong)
+                }
+            } catch (e: CancellationException) {
+                throw e // Don't catch coroutine cancellation
+            } catch (e: BackendDeckIsFilteredException) {
+                flowOfSnackbarString.emit(e.localizedMessage ?: e.message.orEmpty())
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to create/rename deck")
+                flowOfSnackbarMessage.emit(R.string.something_wrong)
+            }
+        }
+    }
+
     private val _selectedRows: MutableSet<CardOrNoteId> =
         Collections.synchronizedSet(LinkedHashSet())
 
@@ -274,6 +448,8 @@ class CardBrowserViewModel(
     val flowOfSaveSearchNamePrompt = MutableSharedFlow<String>()
 
     val flowOfSnackbarMessage = MutableSharedFlow<Int>()
+
+    val flowOfSnackbarString = MutableSharedFlow<String>()
 
     val flowOfDeleteResult = MutableSharedFlow<Int>()
 
@@ -483,8 +659,8 @@ class CardBrowserViewModel(
         }
 
         performSearchFlow.onEach {
-                launchSearchForCards()
-            }.launchIn(viewModelScope)
+            launchSearchForCards()
+        }.launchIn(viewModelScope)
 
         reverseDirectionFlow.ignoreValuesFromViewModelLaunch()
             .onEach { newValue -> withCol { newValue.updateConfig(config) } }
@@ -495,13 +671,13 @@ class CardBrowserViewModel(
             .launchIn(viewModelScope)
 
         flowOfCardsOrNotes.onEach { cardsOrNotes ->
-                Timber.d("loading columns for %s mode", cardsOrNotes)
-                updateActiveColumns(BrowserColumnCollection.load(sharedPrefs(), cardsOrNotes))
-            }.launchIn(viewModelScope)
+            Timber.d("loading columns for %s mode", cardsOrNotes)
+            updateActiveColumns(BrowserColumnCollection.load(sharedPrefs(), cardsOrNotes))
+        }.launchIn(viewModelScope)
 
         flowOfMultiSelectModeChanged.onEach {
-                savedStateHandle[STATE_MULTISELECT] = it.resultedInMultiSelect
-            }.launchIn(viewModelScope)
+            savedStateHandle[STATE_MULTISELECT] = it.resultedInMultiSelect
+        }.launchIn(viewModelScope)
 
         viewModelScope.launch {
             shouldIgnoreAccents =
@@ -1075,12 +1251,12 @@ class CardBrowserViewModel(
         try {
             return withCol {
                 val (min, max) = db.query(
-                        "select min(due), max(due) from cards where type=? and odid=0",
-                        CardType.New.code,
-                    ).use {
-                        it.moveToNext()
-                        Pair(max(0, it.getInt(0)), it.getInt(1))
-                    }
+                    "select min(due), max(due) from cards where type=? and odid=0",
+                    CardType.New.code,
+                ).use {
+                    it.moveToNext()
+                    Pair(max(0, it.getInt(0)), it.getInt(1))
+                }
                 val defaults = sched.repositionDefaults()
                 RepositionData(
                     min = min,
@@ -1321,10 +1497,15 @@ class CardBrowserViewModel(
                 _searchState.emit(SearchState.Completed)
                 // Apply pending selection if any, using the captured value.
                 // We use the captured value because another search may have started
-                // before this IO block completes. The pending selection is cleared
-                // in the init block after all init searches complete.
+                // before this IO block completes.
                 val idsToSelect = capturedPendingSelection ?: cardOrNoteIdsToSelect
                 selectUnvalidatedRowIds(idsToSelect)
+
+                // Clear pending selection only if we consumed it (reference identity check
+                // ensures thread safety if multiple searches complete concurrently)
+                if (capturedPendingSelection != null && pendingSelectionToRestore === capturedPendingSelection) {
+                    pendingSelectionToRestore = null
+                }
             }
         }
     }
@@ -1413,7 +1594,7 @@ class CardBrowserViewModel(
             refreshSearch()
         } catch (e: BackendException) {
             Timber.w(e, "Undo failed - likely empty stack")
-            flowOfSnackbarMessage.emit(com.ichi2.anki.R.string.undo_empty)
+            flowOfSnackbarMessage.emit(R.string.undo_empty)
         }
     }
 
@@ -1556,6 +1737,17 @@ class CardBrowserViewModel(
         val wasBuried: Boolean,
         val count: Int,
     )
+
+    sealed class CreateDeckDialogState {
+        data object Hidden : CreateDeckDialogState()
+        data class Visible(
+            val type: DeckDialogType,
+            val titleResId: Int,
+            val initialName: String = "",
+            val parentId: DeckId? = null,
+            val deckIdToRename: DeckId? = null
+        ) : CreateDeckDialogState()
+    }
 
     private sealed interface ChangeCardOrder {
         data class OrderChange(

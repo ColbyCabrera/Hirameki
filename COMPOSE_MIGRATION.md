@@ -1,6 +1,6 @@
 # AnkiDroid Compose & Nav3 Migration Status
 
-**Last Updated**: January 3, 2026
+**Last Updated**: January 7, 2026
 
 ---
 
@@ -121,6 +121,32 @@ Migrated the drawing screen to Jetpack Compose.
 - `reviewer_menu_*.xml` - Used by Reviewer Menu Settings preferences
 - `reviewer.xml` - Minimal stub (see Technical Debt below)
 
+### CreateDeckDialog Compose Migration (January 7, 2026)
+Migrated the deck creation dialog to Jetpack Compose with ViewModel-based state management.
+
+**New Components:**
+- `dialogs/compose/CreateDeckDialog.kt` - Compose dialog supporting DECK, SUB_DECK, RENAME_DECK, FILTERED_DECK types
+- `DeckPickerViewModel.kt` - Added `CreateDeckDialogState`, `validateDeckName()`, `createDeck()`, and show/dismiss functions
+- `dialogs/compose/CreateDeckDialogTest.kt` - Unit tests for helper functions
+
+**Architecture Pattern:**
+- ViewModel exposes `createDeckDialogState: StateFlow<CreateDeckDialogState>` (sealed class: Hidden/Visible)
+- Validation returns enum (`DeckNameError.INVALID_NAME`, `ALREADY_EXISTS`) instead of strings to avoid Context dependency in ViewModel
+- Composable maps enum to localized strings via `stringResource()`
+- `DeckSelectionDialog.kt` and `DeckSpinnerSelection.kt` updated with callback properties for gradual migration
+- Fallback to legacy dialog when callbacks not set (backwards compatible)
+
+**Files Modified:**
+- `dialogs/CreateDeckDialog.kt` - Marked `@Deprecated` with ReplaceWith hint
+- `dialogs/DeckSelectionDialog.kt` - Added `onShowCreateDeckDialog`, `onShowCreateSubDeckDialog` callbacks with fallback
+- `DeckSpinnerSelection.kt` - Added matching callbacks, wired to dialog
+- `DeckPicker.kt` - Added `@file:Suppress("DEPRECATION")` for legacy usage
+- `dialogs/CreateDeckDialogTest.kt` - Added `@Suppress("DEPRECATION")`
+
+**Remaining Work:**
+- Wire up callbacks in call sites to use Compose dialog (DeckPicker, NoteEditor, CardBrowser)
+- Remove legacy `CreateDeckDialog.kt` once all call sites migrated
+
 ### Compose Popup Leak Fix Pattern
 Fixed memory leaks in `DropdownMenu` components by ensuring menus are dismissed **before** executing action callbacks:
 
@@ -149,6 +175,31 @@ DropdownMenuItem(onClick = {
 ---
 
 ## 🔧 Technical Debt
+
+### CreateDeckDialog Call Site Migration
+**Issue**: `CreateDeckDialog.kt` (legacy) has been deprecated in favor of `com.ichi2.anki.dialogs.compose.CreateDeckDialog`. 
+
+**Architecture**: The Compose dialog uses a callback-based integration pattern:
+1. `DeckSelectionDialog` and `DeckSpinnerSelection` expose optional callbacks (`onShowCreateDeckDialog`, `onShowCreateSubDeckDialog`)
+2. Parent activities wire callbacks to their ViewModel
+3. Fallback to legacy dialog when callbacks are null (backwards compatible)
+
+**TODO**: Wire up callbacks in remaining call sites:
+- `DeckPicker.kt` - `showCreateFilteredDeckDialog()` (uses legacy directly)
+- `NoteEditorFragment.kt` - via `DeckSpinnerSelection`
+- `CardBrowser.kt` - via `DeckSpinnerSelection`
+- `CardTemplateEditor.kt`
+- Call sites using `DeckSelectionDialog` without setting callbacks
+
+### CreateDeckDialog ViewModel Duplication
+**Issue**: `CardBrowserViewModel` and `DeckPickerViewModel` both contain nearly identical code for managing the CreateDeckDialog state, validation, and creation logic.
+
+**Current State**: This duplication was introduced during the Compose migration to enable both ViewModels to independently manage their dialog state. The implementations are similar but have context-specific post-creation behaviors.
+
+**Future Consideration**: Once the pattern stabilizes across all call sites, consider extracting shared logic into a helper class (NOT a base ViewModel, which creates tight coupling). However, this is low priority because:
+1. The duplication is intentional for now to allow independent evolution
+2. Each ViewModel may need unique post-creation behavior
+3. Premature abstraction adds complexity without proven benefit
 
 ### AbstractFlashcardViewer Layout Dependency
 **Issue**: `AbstractFlashcardViewer.onCreate()` calls `setContentView(getContentViewAttr())` which requires a valid XML layout. While `Reviewer.kt` immediately overrides this with `ComposeView`, the base class still needs the layout to exist.
@@ -273,14 +324,14 @@ DropdownMenuItem(onClick = {
 
 The following tests are `@Ignore`d and require rewriting for Compose APIs:
 
-| Scope | Test Name | Issue & Goal |
-|-------|-----------|--------------|
-| **Selection** | `insertIntoFocusedFieldStartsAtSelection` (L365) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Selection** | `insertIntoFocusedFieldReplacesSelection` (L370) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Selection** | `insertIntoFocusedFieldReplacesSelectionIfBackwards` (L376) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Keyboard** | `defaultsToCapitalized` (L382) | **Issue**: Tests XML properties.<br>**Goal**: Rewrite using Compose `KeyboardOptions`. |
-| **Clipboard** | `pasteHtmlAsPlainTextTest` (L389) | **Issue**: Tests XML `FieldEditText` behavior.<br>**Goal**: Verify Compose clipboard semantics. |
-| **Note Types** | `can switch two image occlusion note types` (L394) | **Issue**: Tests XML `Spinner`.<br>**Goal**: Rewrite using `NoteEditorViewModel` note type selection. |
+| Scope          | Test Name                                                   | Issue & Goal                                                                                          |
+|----------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| **Selection**  | `insertIntoFocusedFieldStartsAtSelection` (L365)            | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Selection**  | `insertIntoFocusedFieldReplacesSelection` (L370)            | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Selection**  | `insertIntoFocusedFieldReplacesSelectionIfBackwards` (L376) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
+| **Keyboard**   | `defaultsToCapitalized` (L382)                              | **Issue**: Tests XML properties.<br>**Goal**: Rewrite using Compose `KeyboardOptions`.                |
+| **Clipboard**  | `pasteHtmlAsPlainTextTest` (L389)                           | **Issue**: Tests XML `FieldEditText` behavior.<br>**Goal**: Verify Compose clipboard semantics.       |
+| **Note Types** | `can switch two image occlusion note types` (L394)          | **Issue**: Tests XML `Spinner`.<br>**Goal**: Rewrite using `NoteEditorViewModel` note type selection. |
 
 ---
 
@@ -295,21 +346,22 @@ The following tests are `@Ignore`d and require rewriting for Compose APIs:
 
 ---
 
-### 7. Dialogs — 🟡 20% Migrated
+### 7. Dialogs — 🟡 22% Migrated
 
 **Compose Dialogs**:
-| Dialog                        | Status     |
-|-------------------------------|------------|
-| `TagsDialog.kt`               | ✅ Complete |
-| `ExportDialog.kt`             | ✅ Complete |
-| `FlagRenameDialog.kt`         | ✅ Complete |
-| `DeleteConfirmationDialog.kt` | ✅ Complete |
-| `DiscardChangesDialog.kt`     | ✅ Complete |
-| `BrowserOptionsComposable.kt` | ✅ Complete |
-| `NoteEditorDialogs.kt`        | ✅ Complete |
-| `OnErrorCallback.kt`          | ✅ Complete |
+| Dialog                        | Status                      |
+|-------------------------------|-----------------------------|
+| `TagsDialog.kt`               | ✅ Complete                  |
+| `ExportDialog.kt`             | ✅ Complete                  |
+| `FlagRenameDialog.kt`         | ✅ Complete                  |
+| `DeleteConfirmationDialog.kt` | ✅ Complete                  |
+| `DiscardChangesDialog.kt`     | ✅ Complete                  |
+| `BrowserOptionsComposable.kt` | ✅ Complete                  |
+| `NoteEditorDialogs.kt`        | ✅ Complete                  |
+| `OnErrorCallback.kt`          | ✅ Complete                  |
+| `CreateDeckDialog.kt`         | ✅ Complete (Legacy deprecated, call sites pending) |
 
-**Still View-Based** (35+ dialogs)
+**Still View-Based** (34+ dialogs)
 
 ---
 
@@ -364,15 +416,14 @@ The CardBrowser already renders inside the DeckPicker on tablets. To create a co
 ### 3. Migrate Simple Dialogs to Compose
 **Effort**: Low per dialog | **Impact**: Medium
 
-Migrating the remaining 35+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
-- `CreateDeckDialog`
+Migrating the remaining 34+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
 - Simple confirmation dialogs
 - `IntegerDialog`
 
 ### 4. Code Quality TODOs
 
-| File | Issue | Suggested Fix |
-|------|-------|---------------|
+| File                   | Issue                                           | Suggested Fix                                                                                   |
+|------------------------|-------------------------------------------------|-------------------------------------------------------------------------------------------------|
 | `DeckPickerNavHost.kt` | 24 parameters on `DeckPickerNavHost()` function | Group related callbacks into configuration objects (e.g., `DeckActions`, `NavigationCallbacks`) |
 
 ---

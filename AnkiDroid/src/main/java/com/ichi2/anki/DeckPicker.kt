@@ -21,7 +21,7 @@
 
 // usage of 'this' in constructors when class is non-final - weak warning
 // should be OK as this is only non-final for tests
-@file:Suppress("LeakingThis")
+@file:Suppress("LeakingThis", "DEPRECATION") // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
 
 package com.ichi2.anki
 
@@ -141,7 +141,6 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
-import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.worker.SyncMediaWorker
@@ -1726,18 +1725,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
     fun renameDeckDialog(did: DeckId) {
         val currentName = getColUnsafe.decks.name(did)
-        val createDeckDialog = CreateDeckDialog(
-            this@DeckPicker,
-            R.string.rename_deck,
-            CreateDeckDialog.DeckDialogType.RENAME_DECK,
-            null,
-        )
-        createDeckDialog.deckName = currentName
-        createDeckDialog.onNewDeckCreated = {
-            dismissAllDialogFragments()
-            viewModel.updateDeckList()
-        }
-        createDeckDialog.showDialog()
+        viewModel.showRenameDeckDialog(did, currentName)
     }
 
     /**
@@ -1746,22 +1734,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * @see CreateDeckDialog
      */
     fun showCreateDeckDialog() {
-        val createDeckDialog = CreateDeckDialog(
-            this@DeckPicker,
-            R.string.new_deck,
-            CreateDeckDialog.DeckDialogType.DECK,
-            null,
-        )
-        createDeckDialog.onNewDeckCreated = {
-            updateDeckList()
-            invalidateOptionsMenu()
-        }
-        createDeckDialog.onSnackbarMessage = { message ->
-            lifecycleScope.launch {
-                viewModel.snackbarMessage.emit(message)
-            }
-        }
-        createDeckDialog.showDialog()
+       viewModel.showCreateDeckDialog()
     }
 
     /**

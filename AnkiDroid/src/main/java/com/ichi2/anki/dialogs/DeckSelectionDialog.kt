@@ -82,11 +82,10 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         super.onCreate(savedInstanceState)
         isCancelable = true
 
-        val attrs =
-            intArrayOf(
-                R.attr.expandRef,
-                R.attr.collapseRef,
-            )
+        val attrs = intArrayOf(
+            R.attr.expandRef,
+            R.attr.collapseRef,
+        )
         val typedArray = requireContext().obtainStyledAttributes(attrs)
         expandImage = typedArray.getDrawable(0)!!
         expandImage.isAutoMirrored = true
@@ -96,9 +95,7 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialogView =
-            LayoutInflater
-                .from(activity)
-                .inflate(R.layout.deck_picker_dialog, null, false)
+            LayoutInflater.from(activity).inflate(R.layout.deck_picker_dialog, null, false)
         val summary = dialogView.findViewById<TextView>(R.id.deck_picker_dialog_summary)
         val arguments = requireArguments()
         if (getSummaryMessage(arguments) == null) {
@@ -111,22 +108,22 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         recyclerView.requestFocus()
         val deckLayoutManager: RecyclerView.LayoutManager = LinearLayoutManager(requireActivity())
         recyclerView.layoutManager = deckLayoutManager
-        val dividerItemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        val dividerItemDecoration =
+            DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(dividerItemDecoration)
         val decks: List<SelectableDeck> = getDeckNames(arguments)
         val adapter = DecksArrayAdapter(decks)
         recyclerView.adapter = adapter
         adjustToolbar(dialogView, adapter)
-        dialog =
-            AlertDialog.Builder(requireActivity()).create {
-                negativeButton(R.string.dialog_cancel)
-                customView(view = dialogView)
-                if (arguments.getBoolean(KEEP_RESTORE_DEFAULT_BUTTON)) {
-                    positiveButton(R.string.restore_default) {
-                        onDeckSelected(null)
-                    }
+        dialog = AlertDialog.Builder(requireActivity()).create {
+            negativeButton(R.string.dialog_cancel)
+            customView(view = dialogView)
+            if (arguments.getBoolean(KEEP_RESTORE_DEFAULT_BUTTON)) {
+                positiveButton(R.string.restore_default) {
+                    onDeckSelected(null)
                 }
             }
+        }
         return dialog!!
     }
 
@@ -181,17 +178,44 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
      *
      * @param parentDeck The parent deck under which the subdeck will be created
      */
+    @Suppress("DEPRECATION") // Fallback uses legacy CreateDeckDialog
     private fun showSubDeckDialog(parentDeck: SelectableDeck.Deck) {
-        val createDeckDialog =
-            CreateDeckDialog(requireActivity(), R.string.create_subdeck, CreateDeckDialog.DeckDialogType.SUB_DECK, parentDeck.deckId)
-        createDeckDialog.onNewDeckCreated = { did: DeckId -> onNewDeckCreated(did) }
-        createDeckDialog.showDialog()
+        val callback = onShowCreateSubDeckDialog
+        if (callback != null) {
+            callback.invoke(parentDeck.deckId) { deckId ->
+                onNewDeckCreated(deckId)
+            }
+        } else {
+            // Fallback to legacy dialog for call sites that haven't been migrated
+            val createDeckDialog = CreateDeckDialog(
+                requireActivity(),
+                R.string.create_subdeck,
+                CreateDeckDialog.DeckDialogType.SUB_DECK,
+                parentDeck.deckId
+            )
+            createDeckDialog.onNewDeckCreated = { did: DeckId -> onNewDeckCreated(did) }
+            createDeckDialog.showDialog()
+        }
     }
 
+    @Suppress("DEPRECATION") // Fallback uses legacy CreateDeckDialog
     private fun showDeckDialog() {
-        val createDeckDialog = CreateDeckDialog(requireActivity(), R.string.new_deck, CreateDeckDialog.DeckDialogType.DECK, null)
-        createDeckDialog.onNewDeckCreated = { did: DeckId -> onNewDeckCreated(did) }
-        createDeckDialog.showDialog()
+        val callback = onShowCreateDeckDialog
+        if (callback != null) {
+            callback.invoke { deckId ->
+                onNewDeckCreated(deckId)
+            }
+        } else {
+            // Fallback to legacy dialog for call sites that haven't been migrated
+            val createDeckDialog = CreateDeckDialog(
+                requireActivity(),
+                R.string.new_deck,
+                CreateDeckDialog.DeckDialogType.DECK,
+                null
+            )
+            createDeckDialog.onNewDeckCreated = { did: DeckId -> onNewDeckCreated(did) }
+            createDeckDialog.showDialog()
+        }
     }
 
     /** Updates the list and simulates a click on the newly created deck */
@@ -227,10 +251,9 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
                 return activity
             }
             // try to find inside the activity an active fragment that is a DeckSelectionListener
-            val foundAvailableFragments =
-                parentFragmentManager.fragments.filter {
-                    it.isResumed && it is DeckSelectionListener
-                }
+            val foundAvailableFragments = parentFragmentManager.fragments.filter {
+                it.isResumed && it is DeckSelectionListener
+            }
             if (foundAvailableFragments.isNotEmpty()) {
                 // if we found at least one resumed candidate fragment use it
                 return foundAvailableFragments[0] as DeckSelectionListener
@@ -239,6 +262,13 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         }
 
     var deckCreationListener: DeckCreationListener? = null
+
+    /** Callback to show the create deck dialog. Called with a callback to invoke when deck is created. */
+    var onShowCreateDeckDialog: ((onDeckCreated: (DeckId) -> Unit) -> Unit)? = null
+
+    /** Callback to show the create subdeck dialog. Called with parent deck ID and a callback to invoke when deck is created. */
+    var onShowCreateSubDeckDialog: ((parentId: DeckId, onDeckCreated: (DeckId) -> Unit) -> Unit)? =
+        null
 
     /**
      * Same action as pressing on the deck in the list. I.e. send the deck to listener and close the dialog.
@@ -249,14 +279,9 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         dialog!!.dismiss()
     }
 
-    protected fun displayErrorAndCancel() {
-        dialog!!.dismiss()
-    }
-
     open inner class DecksArrayAdapter(
         decks: List<SelectableDeck>,
-    ) : RecyclerView.Adapter<DecksArrayAdapter.ViewHolder>(),
-        Filterable {
+    ) : RecyclerView.Adapter<DecksArrayAdapter.ViewHolder>(), Filterable {
         inner class ViewHolder(
             deckHolder: View,
         ) : RecyclerView.ViewHolder(deckHolder) {
@@ -291,11 +316,10 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
             }
 
             private fun toggleExpansion(deck: SelectableDeck) {
-                val deckId =
-                    when (deck) {
-                        is SelectableDeck.AllDecks -> return
-                        is SelectableDeck.Deck -> deck.deckId
-                    }
+                val deckId = when (deck) {
+                    is SelectableDeck.AllDecks -> return
+                    is SelectableDeck.Deck -> deck.deckId
+                }
                 decksRoot.find(deckId)?.apply {
                     collapsed = !collapsed
                     Timber.d("The deck with ID $id is currently expanded: ${!collapsed}.")
@@ -317,10 +341,8 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
             parent: ViewGroup,
             viewType: Int,
         ): ViewHolder {
-            val v =
-                LayoutInflater
-                    .from(parent.context)
-                    .inflate(R.layout.deck_picker_dialog_list_item, parent, false)
+            val v = LayoutInflater.from(parent.context)
+                .inflate(R.layout.deck_picker_dialog_list_item, parent, false)
             return ViewHolder(v)
         }
 
@@ -353,7 +375,8 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
                 expander.apply {
                     importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
                     setImageDrawable(if (node.collapsed) expandImage else collapseImage)
-                    contentDescription = context.getString(if (node.collapsed) R.string.expand else R.string.collapse)
+                    contentDescription =
+                        context.getString(if (node.collapsed) R.string.expand else R.string.collapse)
                     visibility = View.VISIBLE
                 }
             } else {
@@ -362,7 +385,8 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
                     importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 }
             }
-            indent.minimumWidth = node.depth * expander.resources.getDimensionPixelSize(R.dimen.keyline_1)
+            indent.minimumWidth =
+                node.depth * expander.resources.getDimensionPixelSize(R.dimen.keyline_1)
         }
 
         private fun hasSubDecks(node: DeckNode): Boolean = node.children.isNotEmpty()
@@ -405,18 +429,20 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         init {
             launchCatchingTask {
                 decksRoot = withCol { Pair(sched.deckDueTree(), isEmpty) }.first
-                val allDecksSet =
-                    decks
-                        .mapNotNull { it as? SelectableDeck.Deck }
-                        .mapNotNull { decksRoot.find(it.deckId) }
-                        .toSet()
+                val allDecksSet = decks.mapNotNull { it as? SelectableDeck.Deck }
+                    .mapNotNull { decksRoot.find(it.deckId) }.toSet()
                 if (decks.any { it is SelectableDeck.AllDecks }) {
-                    val newDeckNode =
-                        deckTreeNode {
-                            deckId = ALL_DECKS_ID
-                            name = "all"
-                        }
-                    allDecksList.add(DeckNode(newDeckNode, getString(R.string.card_browser_all_decks), null))
+                    val newDeckNode = deckTreeNode {
+                        deckId = ALL_DECKS_ID
+                        name = "all"
+                    }
+                    allDecksList.add(
+                        DeckNode(
+                            newDeckNode,
+                            getString(R.string.card_browser_all_decks),
+                            null
+                        )
+                    )
                 }
 
                 allDecksList.addAll(allDecksSet)

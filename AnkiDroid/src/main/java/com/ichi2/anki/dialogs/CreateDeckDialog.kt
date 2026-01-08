@@ -49,6 +49,14 @@ import timber.log.Timber
  *
  * required property: [onNewDeckCreated]. Called on successful creation of a deck
  */
+@Deprecated(
+    message = "Use com.ichi2.anki.dialogs.compose.CreateDeckDialog instead. " +
+        "This legacy dialog will be removed once all call sites are migrated.",
+    replaceWith = ReplaceWith(
+        "CreateDeckDialog",
+        "com.ichi2.anki.dialogs.compose.CreateDeckDialog"
+    )
+)
 @NeedsTest("Ensure a toast is shown on a successful action")
 class CreateDeckDialog(
     private val context: Context,

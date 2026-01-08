@@ -3,14 +3,12 @@
 package com.ichi2.anki
 
 import android.content.Intent
-import android.os.Build
 import android.os.Parcelable
 import android.webkit.RenderProcessGoneDetail
 import androidx.annotation.CheckResult
 import androidx.core.os.BundleCompat
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import anki.config.ConfigKey
 import anki.scheduler.CardAnswer.Rating
 import com.ichi2.anim.ActivityTransitionAnimation
@@ -23,14 +21,12 @@ import com.ichi2.anki.NoteEditorFragment.Companion.NoteEditorCaller
 import com.ichi2.anki.cardviewer.Gesture
 import com.ichi2.anki.cardviewer.ViewerCommand
 import com.ichi2.anki.libanki.testutils.ext.addNote
-import com.ichi2.anki.libanki.testutils.ext.createBasicTypingNoteType
 import com.ichi2.anki.libanki.testutils.ext.newNote
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.AutomaticAnswer
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
 import com.ichi2.anki.reviewer.AutomaticAnswerSettings
-import com.ichi2.anki.servicelayer.LanguageHintService
 import com.ichi2.testutils.common.Flaky
 import com.ichi2.testutils.common.OS
 import org.hamcrest.MatcherAssert.assertThat
@@ -38,7 +34,6 @@ import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.notNullValue
-import org.hamcrest.Matchers.nullValue
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -50,11 +45,9 @@ import org.mockito.Mockito.mock
 import org.robolectric.Robolectric
 import org.robolectric.android.controller.ActivityController
 import timber.log.Timber
-import java.util.Locale
 import java.util.stream.Stream
 
 @Suppress("SameParameterValue")
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O) // getImeHintLocales, toLanguageTags, onRenderProcessGone, RenderProcessGoneDetail
 @RunWith(AndroidJUnit4::class)
 class AbstractFlashcardViewerTest : RobolectricTest() {
     override fun getCollectionStorageMode() = CollectionStorageMode.IN_MEMORY_WITH_MEDIA
@@ -81,11 +74,6 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
                         .sharedPrefs()
                         .getInt("doubleTapTimeout", DEFAULT_DOUBLE_TAP_TIME_INTERVAL)
                 return lastTime.toLong()
-            }
-        val hintLocale: String?
-            get() {
-                val imeHintLocales = answerField!!.imeHintLocales ?: return null
-                return imeHintLocales.toLanguageTags()
             }
 
         fun hasAutomaticAnswerQueued(): Boolean = automaticAnswer.timeoutHandler.hasMessages(0)
@@ -246,32 +234,6 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
         assertThat(viewer.answered, notNullValue())
     }
 
-    @Test
-    fun defaultLanguageIsNull() {
-        assertThat(viewer.hintLocale, nullValue())
-    }
-
-    @Test
-    @Flaky(OS.ALL, "executeCommand(FLIP_OR_ANSWER_EASE4) cannot be awaited")
-    fun typedLanguageIsSet() =
-        runTest {
-            val withLanguage = col.createBasicTypingNoteType("a")
-            val normal = col.createBasicTypingNoteType("b")
-            val typedField = 1 // BACK
-
-            LanguageHintService.setLanguageHintForField(col.notetypes, withLanguage, typedField, Locale.JAPANESE)
-
-            addNoteUsingNoteTypeName(withLanguage.name, "ichi", "ni")
-            addNoteUsingNoteTypeName(normal.name, "one", "two")
-            val viewer = getViewer(false)
-
-            assertThat("A note type with a language hint (japanese) should use it", viewer.hintLocale, equalTo("ja"))
-
-            viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE4)
-            viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE4)
-
-            assertThat("A default note type should have no preference", viewer.hintLocale, nullValue())
-        }
 
     @Test
     fun automaticAnswerDisabledProperty() {
@@ -397,7 +359,7 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
 
     companion object {
         @JvmStatic // required for @MethodSource
-        fun getSignalFromUrlTest_args() =
+        fun getSignalFromUrlTest_args(): Stream<Arguments> =
             Stream.of(
                 Arguments.of("signal:show_answer", Signal.SHOW_ANSWER),
                 Arguments.of("signal:typefocus", Signal.TYPE_FOCUS),

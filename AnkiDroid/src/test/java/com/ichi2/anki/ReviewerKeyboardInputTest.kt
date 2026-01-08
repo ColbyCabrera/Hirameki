@@ -265,9 +265,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             executeCommand(action)
             return true
         }
-
-        override fun answerFieldIsFocused(): Boolean = focusTextField
-
         override fun displayCardAnswer() {
             cardFlips.add("answer")
             displayAnswer = true

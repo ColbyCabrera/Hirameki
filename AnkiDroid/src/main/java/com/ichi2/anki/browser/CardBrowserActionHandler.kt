@@ -19,9 +19,7 @@ package com.ichi2.anki.browser
 import android.content.Intent
 import com.ichi2.anim.ActivityTransitionAnimation.Direction
 import com.ichi2.anki.AnkiActivity
-import com.ichi2.anki.FilteredDeckOptions
 import com.ichi2.anki.R
-import com.ichi2.anki.dialogs.CreateDeckDialog
 import com.ichi2.anki.dialogs.DeckSelectionDialog
 import com.ichi2.anki.dialogs.GradeNowDialog
 import com.ichi2.anki.dialogs.SimpleMessageDialog
@@ -194,18 +192,7 @@ class CardBrowserActionHandler(
     }
 
     fun showCreateFilteredDeckDialog() {
-        val createFilteredDeckDialog = CreateDeckDialog(
-            activity, R.string.new_deck, CreateDeckDialog.DeckDialogType.FILTERED_DECK, null
-        )
-        createFilteredDeckDialog.onNewDeckCreated = { deckId ->
-            val intent = FilteredDeckOptions.getIntent(activity, deckId)
-            activity.startActivity(intent)
-        }
-        activity.launchCatchingTask {
-            withProgress {
-                createFilteredDeckDialog.showFilteredDeckDialog()
-            }
-        }
+       viewModel.showCreateFilteredDeckDialog()
     }
 
     /**
