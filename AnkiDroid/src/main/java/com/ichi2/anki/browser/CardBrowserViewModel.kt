@@ -281,8 +281,7 @@ class CardBrowserViewModel(
             name.isBlank() -> null
             !Decks.isValidDeckName(
                 getFullDeckName(
-                    name,
-                    dialogState
+                    name, dialogState
                 )
             ) -> DeckPickerViewModel.DeckNameError.INVALID_NAME
 
@@ -301,8 +300,7 @@ class CardBrowserViewModel(
     }
 
     private suspend fun getFullDeckName(
-        name: String,
-        state: CreateDeckDialogState.Visible
+        name: String, state: CreateDeckDialogState.Visible
     ): String {
         return when (state.type) {
             DeckDialogType.SUB_DECK -> {
@@ -1466,10 +1464,15 @@ class CardBrowserViewModel(
                 _searchState.emit(SearchState.Completed)
                 // Apply pending selection if any, using the captured value.
                 // We use the captured value because another search may have started
-                // before this IO block completes. The pending selection is cleared
-                // in the init block after all init searches complete.
+                // before this IO block completes.
                 val idsToSelect = capturedPendingSelection ?: cardOrNoteIdsToSelect
                 selectUnvalidatedRowIds(idsToSelect)
+
+                // Clear pending selection only if we consumed it (reference identity check
+                // ensures thread safety if multiple searches complete concurrently)
+                if (capturedPendingSelection != null && pendingSelectionToRestore === capturedPendingSelection) {
+                    pendingSelectionToRestore = null
+                }
             }
         }
     }
