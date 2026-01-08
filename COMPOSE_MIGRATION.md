@@ -191,6 +191,16 @@ DropdownMenuItem(onClick = {
 - `CardTemplateEditor.kt`
 - Call sites using `DeckSelectionDialog` without setting callbacks
 
+### CreateDeckDialog ViewModel Duplication
+**Issue**: `CardBrowserViewModel` and `DeckPickerViewModel` both contain nearly identical code for managing the CreateDeckDialog state, validation, and creation logic.
+
+**Current State**: This duplication was introduced during the Compose migration to enable both ViewModels to independently manage their dialog state. The implementations are similar but have context-specific post-creation behaviors.
+
+**Future Consideration**: Once the pattern stabilizes across all call sites, consider extracting shared logic into a helper class (NOT a base ViewModel, which creates tight coupling). However, this is low priority because:
+1. The duplication is intentional for now to allow independent evolution
+2. Each ViewModel may need unique post-creation behavior
+3. Premature abstraction adds complexity without proven benefit
+
 ### AbstractFlashcardViewer Layout Dependency
 **Issue**: `AbstractFlashcardViewer.onCreate()` calls `setContentView(getContentViewAttr())` which requires a valid XML layout. While `Reviewer.kt` immediately overrides this with `ComposeView`, the base class still needs the layout to exist.
 
