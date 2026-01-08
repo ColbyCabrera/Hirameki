@@ -269,8 +269,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     private fun getFullDeckName(name: String, state: CreateDeckDialogState.Visible): String {
         return when (state.type) {
-            DeckDialogType.SUB_DECK -> getColUnsafe().decks.getSubdeckName(state.parentId!!, name)
-                ?: name
+            DeckDialogType.SUB_DECK -> {
+                val parentId = state.parentId ?: return name
+                getColUnsafe().decks.getSubdeckName(parentId, name) ?: name
+            }
 
             else -> name
         }
