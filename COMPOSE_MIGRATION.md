@@ -214,7 +214,8 @@ DropdownMenuItem(onClick = {
 
 **Still View-Based**:
 - `CardBrowser.kt` Activity container
-- `BrowserColumnSelectionFragment.kt`
+- `BrowserColumnSelectionFragment.kt` - Uses `fitsSystemWindows` workaround for edge-to-edge status bar overlap
+- `ColumnSelectionDialogFragment.kt`
 - `RepositionCardFragment.kt`
 - `FindAndReplaceDialogFragment.kt`
 
