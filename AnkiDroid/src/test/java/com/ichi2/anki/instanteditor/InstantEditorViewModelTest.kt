@@ -18,6 +18,7 @@
 package com.ichi2.anki.instanteditor
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import anki.notetypes.StockNotetype
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.instantnoteeditor.InstantEditorViewModel
@@ -36,6 +37,35 @@ class InstantEditorViewModelTest : RobolectricTest() {
         runViewModelTest {
             assertEquals(InstantNoteEditorActivity.DialogType.SHOW_EDITOR_DIALOG, dialogType.value)
         }
+
+    @Test
+    fun testSetUpNoteType_UsesDeckDefault() = runViewModelTest {
+        // Create two cloze types
+        val cloze1 = col.getStockNotetype(StockNotetype.Kind.KIND_CLOZE)
+        cloze1.name = "Cloze 1"
+        col.notetypes.add(cloze1)
+
+        val cloze2 = col.getStockNotetype(StockNotetype.Kind.KIND_CLOZE)
+        cloze2.name = "Cloze 2"
+        col.notetypes.add(cloze2)
+
+        // Create a deck
+        val deckId = col.decks.id("My Deck", create = true)!!
+        val deck = col.decks.getLegacy(deckId)!!
+
+        // Set default note type for deck to Cloze 2
+        deck.put("mid", cloze2.id)
+        col.decks.save(deck)
+
+        // Set current deck
+        col.decks.select(deckId)
+
+        // Re-initialize the viewModel to pick up the changes
+        runViewModelTest({ InstantEditorViewModel() }) {
+             // currentlySelectedNotetype should be cloze2
+             assertEquals("Cloze 2", currentlySelectedNotetype.value?.name)
+        }
+    }
 
     @Test
     fun testSetUpNoteType_with_NoCloze_NoteType() =
