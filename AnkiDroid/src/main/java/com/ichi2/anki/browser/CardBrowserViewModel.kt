@@ -261,12 +261,17 @@ class CardBrowserViewModel(
 
     fun showCreateFilteredDeckDialog() {
         viewModelScope.launch {
-            val initialName = withCol { sched.getOrCreateFilteredDeck(did = 0).name }
-            _createDeckDialogState.value = CreateDeckDialogState.Visible(
-                type = DeckDialogType.FILTERED_DECK,
-                titleResId = R.string.new_deck,
-                initialName = initialName
-            )
+            try {
+                val initialName = withCol { sched.getOrCreateFilteredDeck(did = 0).name }
+                _createDeckDialogState.value = CreateDeckDialogState.Visible(
+                    type = DeckDialogType.FILTERED_DECK,
+                    titleResId = R.string.new_deck,
+                    initialName = initialName
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to create filtered deck dialog")
+                flowOfSnackbarMessage.emit(R.string.something_wrong)
+            }
         }
     }
 
