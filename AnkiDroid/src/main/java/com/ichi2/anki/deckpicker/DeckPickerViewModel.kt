@@ -315,7 +315,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val flowOfResizingDividerVisible = combine(
         flowOfDeckListInInitialState, flowOfCollectionHasNoCards
     ) { isInInitialState, hasNoCards ->
-        !(isInInitialState == true || hasNoCards)
+        isInInitialState != true && !hasNoCards
     }
 
     // HACK: dismiss a legacy progress bar
