@@ -105,11 +105,51 @@ fun CreateDeckDialog(
 
 @Preview
 @Composable
-fun CreateDeckDialogPreview() {
+private fun CreateDeckDialogPreview() {
     CreateDeckDialog(
         onDismissRequest = {},
         onConfirm = {},
         dialogType = DeckDialogType.DECK,
         title = "Create Deck",
-        validateDeckName = { null })
+        validateDeckName = { null }
+    )
+}
+
+@Preview
+@Composable
+private fun CreateDeckDialogErrorPreview() {
+    CreateDeckDialog(
+        onDismissRequest = {},
+        onConfirm = {},
+        dialogType = DeckDialogType.DECK,
+        title = "Create Deck",
+        initialDeckName = "Existing Deck",
+        validateDeckName = { DeckNameError.ALREADY_EXISTS }
+    )
+}
+
+@Preview
+@Composable
+private fun CreateDeckDialogRenamePreview() {
+    CreateDeckDialog(
+        onDismissRequest = {},
+        onConfirm = {},
+        dialogType = DeckDialogType.RENAME_DECK,
+        title = "Rename Deck",
+        initialDeckName = "My Study Deck",
+        validateDeckName = { null }
+    )
+}
+
+@Preview
+@Composable
+private fun CreateDeckDialogNumericHintPreview() {
+    CreateDeckDialog(
+        onDismissRequest = {},
+        onConfirm = {},
+        dialogType = DeckDialogType.DECK,
+        title = "Create Deck",
+        initialDeckName = "10. Chemistry",
+        validateDeckName = { null }
+    )
 }
