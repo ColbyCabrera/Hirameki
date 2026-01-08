@@ -590,7 +590,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     sealed class CreateDeckDialogState {
-        object Hidden : CreateDeckDialogState()
+        data object Hidden : CreateDeckDialogState()
         data class Visible(
             val type: DeckDialogType,
             val titleResId: Int,
