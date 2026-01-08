@@ -194,10 +194,13 @@ class TtsVoicesDialogFragment : DialogFragment() {
             val string = it.localizedErrorMessage(requireContext())
             dialog?.window?.decorView?.showSnackbar(string) {
                 setAction(R.string.help) {
-                    // TODO: Should do this in ViewModel, but we need an Activity
-                    requireContext().openUrl(R.string.link_faq_tts)
+                    viewModel.onHelpClicked()
                 }
             }
+        }
+
+        viewModel.openUrl.observe {
+            requireContext().openUrl(it)
         }
     }
 
