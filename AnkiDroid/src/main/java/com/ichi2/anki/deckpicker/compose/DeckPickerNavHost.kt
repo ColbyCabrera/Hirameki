@@ -40,6 +40,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -244,8 +245,7 @@ fun DeckPickerNavHost(
         popTransitionSpec = {
             fadeIn() togetherWith fadeOut()
         },
-        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() }
-    )
+        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() })
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -306,10 +306,10 @@ private fun DeckPickerMainContent(
                 dialogType = state.type,
                 title = stringResource(state.titleResId),
                 initialDeckName = state.initialName,
-                validateDeckName = { viewModel.validateDeckName(it, state) }
-            )
+                validateDeckName = { viewModel.validateDeckName(it, state) })
         }
-         DeckPickerViewModel.CreateDeckDialogState.Hidden -> { }
+
+        DeckPickerViewModel.CreateDeckDialogState.Hidden -> {}
     }
 
     var searchQuery by remember { mutableStateOf("") }
@@ -644,6 +644,7 @@ private fun SetupFlows(
                     val snackbarResult = snackbarHostState.showSnackbar(
                         message = applicationContext.getString(R.string.empty_deck),
                         actionLabel = applicationContext.getString(R.string.menu_add),
+                        duration = SnackbarDuration.Short,
                     )
                     if (snackbarResult == SnackbarResult.ActionPerformed) {
                         viewModel.addNote(result.deckId, true)
@@ -659,20 +660,24 @@ private fun SetupFlows(
 
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.flowWithLifecycle(lifecycle).collect { message ->
-            snackbarHostState.showSnackbar(message)
+            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
         }
     }
 
     LaunchedEffect(Unit) {
         viewModel.snackbarMessageResId.flowWithLifecycle(lifecycle).collect { messageResId ->
-            snackbarHostState.showSnackbar(applicationContext.getString(messageResId))
+            snackbarHostState.showSnackbar(
+                applicationContext.getString(messageResId), duration = SnackbarDuration.Short
+            )
         }
     }
 
     LaunchedEffect(Unit) {
         cardBrowserViewModel.flowOfSnackbarMessage.flowWithLifecycle(lifecycle)
             .collect { messageRes ->
-                snackbarHostState.showSnackbar(applicationContext.getString(messageRes))
+                snackbarHostState.showSnackbar(
+                    applicationContext.getString(messageRes), duration = SnackbarDuration.Short
+                )
             }
     }
 }
@@ -683,6 +688,7 @@ private suspend fun showUndoSnackbar(
     val result = snackbarHostState.showSnackbar(
         message = message,
         actionLabel = undoLabel,
+        duration = SnackbarDuration.Short,
     )
     if (result == SnackbarResult.ActionPerformed) {
         onUndo()
