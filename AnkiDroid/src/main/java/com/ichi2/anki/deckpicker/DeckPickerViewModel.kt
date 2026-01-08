@@ -212,11 +212,12 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         )
     }
 
-    fun showRenameDeckDialog(currentName: String) {
+    fun showRenameDeckDialog(deckId: DeckId, currentName: String) {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
             type = DeckDialogType.RENAME_DECK,
             titleResId = R.string.rename_deck,
-            initialName = currentName
+            initialName = currentName,
+            deckIdToRename = deckId
         )
     }
 
@@ -273,7 +274,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                         }
 
                         DeckDialogType.RENAME_DECK -> {
-                            val deckId = decks.id(state.initialName)
+                            val deckId = state.deckIdToRename ?: decks.id(state.initialName)
                             decks.getLegacy(deckId)?.let {
                                 decks.rename(it, name)
                             } ?: Timber.w("Deck no longer exists for rename: %s", state.initialName)
@@ -550,7 +551,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             val type: DeckDialogType,
             val titleResId: Int,
             val initialName: String = "",
-            val parentId: DeckId? = null
+            val parentId: DeckId? = null,
+            val deckIdToRename: DeckId? = null
         ) : CreateDeckDialogState()
     }
 

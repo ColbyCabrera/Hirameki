@@ -247,7 +247,8 @@ class CardBrowserViewModel(
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
             type = DeckDialogType.RENAME_DECK,
             titleResId = R.string.rename_deck,
-            initialName = currentName
+            initialName = currentName,
+            deckIdToRename = deckId
         )
     }
 
@@ -1695,7 +1696,8 @@ class CardBrowserViewModel(
             val type: DeckDialogType,
             val titleResId: Int,
             val initialName: String = "",
-            val parentId: DeckId? = null
+            val parentId: DeckId? = null,
+            val deckIdToRename: DeckId? = null
         ) : CreateDeckDialogState()
     }
 
