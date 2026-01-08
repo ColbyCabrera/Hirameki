@@ -42,6 +42,7 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.ichi2.anki.AndroidTtsVoice
 import com.ichi2.anki.R
+import com.google.android.material.R as RMaterial
 import com.ichi2.anki.dialogs.viewmodel.TtsVoicesViewModel
 import com.ichi2.anki.libanki.TtsVoice
 import com.ichi2.anki.localizedErrorMessage
@@ -117,9 +118,7 @@ class TtsVoicesDialogFragment : DialogFragment() {
                             viewModel.showInternetEnabled.value = value
                             chipBackgroundColor =
                                 if (value) {
-                                    // TODO: This should be RMaterial.attr.colorSecondaryContainer
-                                    // but this shows as Purple after Themes.setTheme
-                                    ColorStateList.valueOf(requireContext().getColor(R.color.text_input_background))
+                                    ColorStateList.valueOf(Themes.getColorFromAttr(requireContext(), RMaterial.attr.colorSecondaryContainer))
                                 } else {
                                     ColorStateList.valueOf(Color.TRANSPARENT)
                                 }
@@ -131,7 +130,7 @@ class TtsVoicesDialogFragment : DialogFragment() {
                         viewModel.showNotInstalled.value = value
                         chipBackgroundColor =
                             if (value) {
-                                ColorStateList.valueOf(requireContext().getColor(R.color.text_input_background))
+                                ColorStateList.valueOf(Themes.getColorFromAttr(requireContext(), RMaterial.attr.colorSecondaryContainer))
                             } else {
                                 ColorStateList.valueOf(Color.TRANSPARENT)
                             }
