@@ -275,38 +275,32 @@ class CardBrowserViewModel(
         _createDeckDialogState.value = CreateDeckDialogState.Hidden
     }
 
-    fun validateDeckName(
+    suspend fun validateDeckName(
         name: String,
         dialogState: CreateDeckDialogState.Visible
     ): DeckPickerViewModel.DeckNameError? {
         return when {
             name.isBlank() -> null
-            !Decks.isValidDeckName(
-                getFullDeckName(
-                    name,
-                    dialogState
-                )
-            ) -> DeckPickerViewModel.DeckNameError.INVALID_NAME
-
+            !Decks.isValidDeckName(getFullDeckName(name, dialogState)) -> DeckPickerViewModel.DeckNameError.INVALID_NAME
             deckExists(name, dialogState) -> DeckPickerViewModel.DeckNameError.ALREADY_EXISTS
             else -> null
         }
     }
 
-    private fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
+    private suspend fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
         val fullName = getFullDeckName(name, state)
         // Allow same name for rename to itself
         if (state.type == DeckDialogType.RENAME_DECK && fullName == state.initialName) {
             return false
         }
-        return getColUnsafe().decks.byName(fullName) != null
+        return withCol { decks.byName(fullName) } != null
     }
 
-    private fun getFullDeckName(name: String, state: CreateDeckDialogState.Visible): String {
+    private suspend fun getFullDeckName(name: String, state: CreateDeckDialogState.Visible): String {
         return when (state.type) {
             DeckDialogType.SUB_DECK -> {
                 val parentId = state.parentId ?: return name
-                getColUnsafe().decks.getSubdeckName(parentId, name) ?: name
+                withCol { decks.getSubdeckName(parentId, name) } ?: name
             }
 
             else -> name

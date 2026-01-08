@@ -26,7 +26,6 @@ import anki.sync.SyncStatusResponse
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.TR
-import com.ichi2.anki.CollectionManager.getColUnsafe
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.InitialActivity
@@ -230,7 +229,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         INVALID_NAME, ALREADY_EXISTS
     }
 
-    fun validateDeckName(name: String, dialogState: CreateDeckDialogState.Visible): DeckNameError? {
+    suspend fun validateDeckName(
+        name: String,
+        dialogState: CreateDeckDialogState.Visible
+    ): DeckNameError? {
         return when {
             name.isBlank() -> null
             !Decks.isValidDeckName(getFullDeckName(name, dialogState)) -> DeckNameError.INVALID_NAME
@@ -239,20 +241,23 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         }
     }
 
-    private fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
+    private suspend fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
         val fullName = getFullDeckName(name, state)
         // Allow same name for rename to itself
         if (state.type == DeckDialogType.RENAME_DECK && fullName == state.initialName) {
             return false
         }
-        return getColUnsafe().decks.byName(fullName) != null
+        return withCol { decks.byName(fullName) } != null
     }
 
-    private fun getFullDeckName(name: String, state: CreateDeckDialogState.Visible): String {
+    private suspend fun getFullDeckName(
+        name: String,
+        state: CreateDeckDialogState.Visible
+    ): String {
         return when (state.type) {
             DeckDialogType.SUB_DECK -> {
                 val parentId = state.parentId ?: return name
-                getColUnsafe().decks.getSubdeckName(parentId, name) ?: name
+                withCol { decks.getSubdeckName(parentId, name) } ?: name
             }
 
             else -> name

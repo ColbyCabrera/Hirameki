@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import com.ichi2.anki.R
 import com.ichi2.anki.deckpicker.DeckPickerViewModel.DeckNameError
+import kotlinx.coroutines.delay
 
 enum class DeckDialogType {
     DECK, SUB_DECK, RENAME_DECK, FILTERED_DECK
@@ -52,11 +53,25 @@ fun CreateDeckDialog(
     dialogType: DeckDialogType,
     title: String,
     initialDeckName: String = "",
-    validateDeckName: (String) -> DeckNameError? // Returns error message or null if valid
+    validateDeckName: suspend (String) -> DeckNameError? // Suspend function for async validation
 ) {
     var deckName by remember { mutableStateOf(initialDeckName) }
     val focusRequester = remember { FocusRequester() }
-    val error = validateDeckName(deckName)
+    var error by remember { mutableStateOf<DeckNameError?>(null) }
+    var isValidating by remember { mutableStateOf(false) }
+
+    // Debounced validation - runs asynchronously with 300ms delay
+    LaunchedEffect(deckName) {
+        if (deckName.isBlank()) {
+            error = null
+            isValidating = false
+            return@LaunchedEffect
+        }
+        isValidating = true
+        delay(300) // Debounce to avoid excessive validation calls
+        error = validateDeckName(deckName)
+        isValidating = false
+    }
 
     val errorMessage = when (error) {
         DeckNameError.INVALID_NAME -> stringResource(R.string.invalid_deck_name)
@@ -87,12 +102,13 @@ fun CreateDeckDialog(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onDone = { if (error == null && deckName.isNotBlank()) onConfirm(deckName) })
+                    onDone = { if (error == null && deckName.isNotBlank() && !isValidating) onConfirm(deckName) })
             )
         }
     }, confirmButton = {
         TextButton(
-            onClick = { onConfirm(deckName) }, enabled = error == null && deckName.isNotBlank()
+            onClick = { onConfirm(deckName) }, 
+            enabled = error == null && deckName.isNotBlank() && !isValidating
         ) {
             Text(stringResource(R.string.dialog_ok))
         }
