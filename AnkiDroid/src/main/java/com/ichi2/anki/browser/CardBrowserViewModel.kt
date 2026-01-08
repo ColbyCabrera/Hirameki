@@ -37,7 +37,6 @@ import anki.search.BrowserRow
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.TR
-import com.ichi2.anki.CollectionManager.getColUnsafe
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckSpinnerSelection.Companion.ALL_DECKS_ID
 import com.ichi2.anki.Flag
@@ -276,12 +275,17 @@ class CardBrowserViewModel(
     }
 
     suspend fun validateDeckName(
-        name: String,
-        dialogState: CreateDeckDialogState.Visible
+        name: String, dialogState: CreateDeckDialogState.Visible
     ): DeckPickerViewModel.DeckNameError? {
         return when {
             name.isBlank() -> null
-            !Decks.isValidDeckName(getFullDeckName(name, dialogState)) -> DeckPickerViewModel.DeckNameError.INVALID_NAME
+            !Decks.isValidDeckName(
+                getFullDeckName(
+                    name,
+                    dialogState
+                )
+            ) -> DeckPickerViewModel.DeckNameError.INVALID_NAME
+
             deckExists(name, dialogState) -> DeckPickerViewModel.DeckNameError.ALREADY_EXISTS
             else -> null
         }
@@ -296,7 +300,10 @@ class CardBrowserViewModel(
         return withCol { decks.byName(fullName) } != null
     }
 
-    private suspend fun getFullDeckName(name: String, state: CreateDeckDialogState.Visible): String {
+    private suspend fun getFullDeckName(
+        name: String,
+        state: CreateDeckDialogState.Visible
+    ): String {
         return when (state.type) {
             DeckDialogType.SUB_DECK -> {
                 val parentId = state.parentId ?: return name
@@ -310,24 +317,33 @@ class CardBrowserViewModel(
     fun createDeck(name: String, state: CreateDeckDialogState.Visible) {
         viewModelScope.launch {
             try {
+                var operationSucceeded = true
                 withCol {
                     when (state.type) {
                         DeckDialogType.DECK -> decks.id(name)
                         DeckDialogType.SUB_DECK -> {
                             val parentId = state.parentId
                             if (parentId != null) {
-                                val fullName = decks.getSubdeckName(parentId, name)
-                                if (fullName != null) {
+                                decks.getSubdeckName(parentId, name)?.let { fullName ->
                                     decks.id(fullName)
+                                } ?: run {
+                                    Timber.w("Failed to get subdeck name for parent %d", parentId)
+                                    operationSucceeded = false
                                 }
+                            } else {
+                                Timber.w("SUB_DECK dialog opened without parentId")
+                                operationSucceeded = false
                             }
                         }
 
                         DeckDialogType.RENAME_DECK -> {
-                            val deckId = decks.id(state.initialName)
+                            val deckId = state.deckIdToRename ?: decks.id(state.initialName)
                             decks.getLegacy(deckId)?.let {
                                 decks.rename(it, name)
-                            } ?: Timber.w("Deck no longer exists for rename: %s", state.initialName)
+                            } ?: run {
+                                Timber.w("Deck no longer exists for rename: %s", state.initialName)
+                                operationSucceeded = false
+                            }
                         }
 
                         DeckDialogType.FILTERED_DECK -> {
@@ -337,11 +353,13 @@ class CardBrowserViewModel(
                 }
                 _createDeckDialogState.value = CreateDeckDialogState.Hidden
 
-                val messageResId = when (state.type) {
-                    DeckDialogType.RENAME_DECK -> R.string.deck_renamed
-                    else -> R.string.deck_created
+                if (operationSucceeded) {
+                    val messageResId = when (state.type) {
+                        DeckDialogType.RENAME_DECK -> R.string.deck_renamed
+                        else -> R.string.deck_created
+                    }
+                    flowOfSnackbarMessage.emit(messageResId)
                 }
-                flowOfSnackbarMessage.emit(messageResId)
             } catch (e: BackendDeckIsFilteredException) {
                 flowOfSnackbarString.emit(e.localizedMessage ?: e.message.orEmpty())
             }

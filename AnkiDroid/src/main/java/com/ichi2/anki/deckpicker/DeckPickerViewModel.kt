@@ -230,8 +230,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     suspend fun validateDeckName(
-        name: String,
-        dialogState: CreateDeckDialogState.Visible
+        name: String, dialogState: CreateDeckDialogState.Visible
     ): DeckNameError? {
         return when {
             name.isBlank() -> null
@@ -251,8 +250,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     private suspend fun getFullDeckName(
-        name: String,
-        state: CreateDeckDialogState.Visible
+        name: String, state: CreateDeckDialogState.Visible
     ): String {
         return when (state.type) {
             DeckDialogType.SUB_DECK -> {
@@ -267,14 +265,22 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     fun createDeck(name: String, state: CreateDeckDialogState.Visible) {
         viewModelScope.launch {
             try {
+                var operationSucceeded = true
                 withCol {
                     when (state.type) {
                         DeckDialogType.DECK -> decks.id(name)
                         DeckDialogType.SUB_DECK -> {
-                            state.parentId?.let { parentId ->
+                            val parentId = state.parentId
+                            if (parentId != null) {
                                 decks.getSubdeckName(parentId, name)?.let { fullName ->
                                     decks.id(fullName)
+                                } ?: run {
+                                    Timber.w("Failed to get subdeck name for parent %d", parentId)
+                                    operationSucceeded = false
                                 }
+                            } else {
+                                Timber.w("SUB_DECK dialog opened without parentId")
+                                operationSucceeded = false
                             }
                         }
 
@@ -282,7 +288,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                             val deckId = state.deckIdToRename ?: decks.id(state.initialName)
                             decks.getLegacy(deckId)?.let {
                                 decks.rename(it, name)
-                            } ?: Timber.w("Deck no longer exists for rename: %s", state.initialName)
+                            } ?: run {
+                                Timber.w("Deck no longer exists for rename: %s", state.initialName)
+                                operationSucceeded = false
+                            }
                         }
 
                         DeckDialogType.FILTERED_DECK -> {
@@ -293,11 +302,13 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 _createDeckDialogState.value = CreateDeckDialogState.Hidden
                 updateDeckList()
 
-                val messageResId = when (state.type) {
-                    DeckDialogType.RENAME_DECK -> R.string.deck_renamed
-                    else -> R.string.deck_created
+                if (operationSucceeded) {
+                    val messageResId = when (state.type) {
+                        DeckDialogType.RENAME_DECK -> R.string.deck_renamed
+                        else -> R.string.deck_created
+                    }
+                    snackbarMessageResId.emit(messageResId)
                 }
-                snackbarMessageResId.emit(messageResId)
             } catch (e: BackendDeckIsFilteredException) {
                 snackbarMessage.emit(e.localizedMessage ?: e.message.orEmpty())
             }
