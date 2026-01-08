@@ -90,17 +90,12 @@ private fun normalizeTag(tag: String): String {
     // Trim leading/trailing whitespace, split on any whitespace runs, filter out
     // any empty parts (defensive), then rejoin with single spaces and lowercase
     // to mirror backend tag splitting and duplicate detection.
-    return tag.trim()
-        .split(Regex("\\s+"))
-        .filter { it.isNotEmpty() }
-        .joinToString(" ")
+    return tag.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
         .lowercase(Locale.getDefault())
 }
 
 private fun isDuplicateTag(
-    tag: String,
-    existingTags: List<String>,
-    selectedTags: Set<String>
+    tag: String, existingTags: List<String>, selectedTags: Set<String>
 ): Boolean {
     val normalized = normalizeTag(tag)
     val normalizedExisting = existingTags.map { normalizeTag(it) }
@@ -147,131 +142,137 @@ fun TagsDialog(
         }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(text = title) },
-        text = {
-            when (allTags) {
-                is TagsState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularWavyProgressIndicator(modifier = Modifier.padding(vertical = 32.dp))
-                    }
+    AlertDialog(onDismissRequest = onDismissRequest, title = { Text(text = title) }, text = {
+        when (allTags) {
+            is TagsState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center
+                ) {
+                    CircularWavyProgressIndicator(modifier = Modifier.padding(vertical = 32.dp))
                 }
+            }
 
-                is TagsState.Loaded -> {
-                    Column {
-                        SearchBarRow(
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = { searchQuery = it },
-                            isToggleChecked = isToggleChecked,
-                            onToggleCheckedChange = {
-                                isToggleChecked = it
-                                onFilterByDeckChanged(it)
-                            },
-                            showFilterByDeckToggle = showFilterByDeckToggle,
-                            onDone = addNewTag
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            shape = MaterialTheme.shapes.large
+            is TagsState.Loaded -> {
+                Column {
+                    SearchBarRow(
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = { searchQuery = it },
+                        isToggleChecked = isToggleChecked,
+                        onToggleCheckedChange = {
+                            isToggleChecked = it
+                            onFilterByDeckChanged(it)
+                        },
+                        showFilterByDeckToggle = showFilterByDeckToggle,
+                        onDone = addNewTag
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        val filteredTags by remember(
+                            allTags, searchQuery, isToggleChecked, deckTags
                         ) {
-                            val filteredTags by remember(
-                                allTags, searchQuery, isToggleChecked, deckTags
-                            ) {
-                                derivedStateOf {
-                                    allTags.tags.filter {
-                                        it.contains(
-                                            other = searchQuery, ignoreCase = true
-                                        ) && (!isToggleChecked || it in deckTags)
+                            derivedStateOf {
+                                allTags.tags.filter {
+                                    it.contains(
+                                        other = searchQuery, ignoreCase = true
+                                    ) && (!isToggleChecked || it in deckTags)
+                                }
+                            }
+                        }
+                        val potentialNewTag by remember(
+                            searchQuery,
+                            allTags,
+                            filteredTags,
+                            checkedTags,
+                            indeterminateTags
+                        ) {
+                            derivedStateOf {
+                                val trimmedQuery = searchQuery.trim()
+                                if (trimmedQuery.isEmpty()) {
+                                    null
+                                } else {
+                                    val existingTagsList = allTags.tags
+                                    // Show potential new tag only if it doesn't exist in all tags or selection
+                                    trimmedQuery.takeIf {
+                                        !isDuplicateTag(
+                                            trimmedQuery,
+                                            existingTagsList,
+                                            checkedTags + indeterminateTags
+                                        )
                                     }
                                 }
                             }
-                            val potentialNewTag by remember(searchQuery, allTags, filteredTags, checkedTags, indeterminateTags) {
-                                derivedStateOf {
-                                    val trimmedQuery = searchQuery.trim()
-                                    if (trimmedQuery.isEmpty()) {
-                                        null
-                                    } else {
-                                        val existingTagsList = allTags.tags
-                                        // Show potential new tag only if it doesn't exist in all tags or selection
-                                        trimmedQuery.takeIf {
-                                            !isDuplicateTag(trimmedQuery, existingTagsList, checkedTags + indeterminateTags)
-                                        }
-                                    }
-                                }
-                            }
+                        }
 
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
-                                contentPadding = PaddingValues(vertical = 16.dp)
-                            ) {
-                                item {
-                                    if (filteredTags.isEmpty() && potentialNewTag == null) {
-                                        Box(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.card_browser_no_tags_found),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    } else {
-                                        FlowRow(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            potentialNewTag?.let { newTag ->
-                                                FilterChip(
-                                                    modifier = Modifier.height(
-                                                        FilterChipDefaults.Height
-                                                    ),
-                                                    selected = false,
-                                                    onClick = addNewTag,
-                                                    label = { Text(text = newTag) },
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.add_24px),
-                                                            contentDescription = stringResource(R.string.add_tag),
-                                                            modifier = Modifier.size(
-                                                                FilterChipDefaults.IconSize
-                                                            )
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            contentPadding = PaddingValues(vertical = 16.dp)
+                        ) {
+                            item {
+                                if (filteredTags.isEmpty() && potentialNewTag == null) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.card_browser_no_tags_found),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                } else {
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        potentialNewTag?.let { newTag ->
+                                            FilterChip(
+                                                modifier = Modifier.height(
+                                                    FilterChipDefaults.Height
+                                                ),
+                                                selected = false,
+                                                onClick = addNewTag,
+                                                label = { Text(text = newTag) },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.add_24px),
+                                                        contentDescription = stringResource(R.string.add_tag),
+                                                        modifier = Modifier.size(
+                                                            FilterChipDefaults.IconSize
                                                         )
-                                                    }
-                                                )
-                                            }
-                                            filteredTags.forEach { tag ->
-                                                TagFilterChip(
-                                                    tag = tag,
-                                                    isSelected = tag in checkedTags,
-                                                    isIndeterminate = tag in indeterminateTags,
-                                                    onClick = {
-                                                        when (tag) {
-                                                            in indeterminateTags -> {
-                                                                // Indeterminate -> Checked
-                                                                indeterminateTags = indeterminateTags - tag
-                                                                checkedTags = checkedTags + tag
-                                                            }
-                                                            in checkedTags -> {
-                                                                // Checked -> Unchecked
-                                                                checkedTags = checkedTags - tag
-                                                            }
-                                                            else -> {
-                                                                // Unchecked -> Checked
-                                                                checkedTags = checkedTags + tag
-                                                            }
+                                                    )
+                                                })
+                                        }
+                                        filteredTags.forEach { tag ->
+                                            TagFilterChip(
+                                                tag = tag,
+                                                isSelected = tag in checkedTags,
+                                                isIndeterminate = tag in indeterminateTags,
+                                                onClick = {
+                                                    when (tag) {
+                                                        in indeterminateTags -> {
+                                                            // Indeterminate -> Checked
+                                                            indeterminateTags =
+                                                                indeterminateTags - tag
+                                                            checkedTags = checkedTags + tag
+                                                        }
+
+                                                        in checkedTags -> {
+                                                            // Checked -> Unchecked
+                                                            checkedTags = checkedTags - tag
+                                                        }
+
+                                                        else -> {
+                                                            // Unchecked -> Checked
+                                                            checkedTags = checkedTags + tag
                                                         }
                                                     }
-                                                )
-                                            }
+                                                })
                                         }
                                     }
                                 }
@@ -280,18 +281,16 @@ fun TagsDialog(
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(checkedTags, indeterminateTags) }) {
-                Text(text = confirmButtonText)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(id = R.string.dialog_cancel))
-            }
         }
-    )
+    }, confirmButton = {
+        TextButton(onClick = { onConfirm(checkedTags, indeterminateTags) }) {
+            Text(text = confirmButtonText)
+        }
+    }, dismissButton = {
+        TextButton(onClick = onDismissRequest) {
+            Text(text = stringResource(id = R.string.dialog_cancel))
+        }
+    })
 }
 
 @Composable
@@ -306,11 +305,14 @@ private fun TagFilterChip(
         targetValue = if (isSelected || isIndeterminate) 24.dp else 8.dp,
         label = "corner radius",
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow
         )
     )
 
+
+    // We manually adjust the icon size by -0.2.dp for the selected state to prevent a slight layout shift.
+    // The unselected state uses half-size spacers on both sides for visual balance, while the selected state
+    // uses a full-size leading icon. This structure caused a tiny width discrepancy that -0.2.dp corrects.
     FilterChip(
         modifier = modifier.height(FilterChipDefaults.Height),
         selected = isSelected || isIndeterminate,
@@ -321,13 +323,13 @@ private fun TagFilterChip(
                 Icon(
                     painter = painterResource(R.drawable.check_24px),
                     contentDescription = stringResource(R.string.done_icon),
-                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                    modifier = Modifier.size(FilterChipDefaults.IconSize - 0.2.dp)
                 )
             } else if (isIndeterminate) {
                 Icon(
                     painter = painterResource(R.drawable.remove_24px),
                     contentDescription = stringResource(R.string.tag_indeterminate_state),
-                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                    modifier = Modifier.size(FilterChipDefaults.IconSize - 0.2.dp)
                 )
             } else {
                 Spacer(Modifier.size(FilterChipDefaults.IconSize / 2))
@@ -412,13 +414,11 @@ private fun SearchBarRow(
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                         TooltipAnchorPosition.Above
-                    ),
-                    tooltip = {
+                    ), tooltip = {
                         PlainTooltip {
                             Text(tooltipContent)
                         }
-                    },
-                    state = rememberTooltipState()
+                    }, state = rememberTooltipState()
                 ) {
                     FilledTonalIconToggleButton(
                         checked = isToggleChecked,
@@ -428,8 +428,7 @@ private fun SearchBarRow(
                         Icon(
                             painter = painterResource(
                                 if (isToggleChecked) R.drawable.filter_alt_24px else R.drawable.filter_alt_off_24px
-                            ),
-                            contentDescription = tooltipContent
+                            ), contentDescription = tooltipContent
                         )
                     }
                 }
@@ -450,8 +449,7 @@ private fun TagsDialogPreview() {
             title = "Filter by Tags",
             confirmButtonText = "OK",
             showFilterByDeckToggle = true,
-            onAddTag = {}
-        )
+            onAddTag = {})
     }
 }
 
@@ -468,8 +466,7 @@ private fun TagsDialogIndeterminatePreview() {
             title = "Filter by Tags",
             confirmButtonText = "OK",
             showFilterByDeckToggle = true,
-            onAddTag = {}
-        )
+            onAddTag = {})
     }
 }
 
@@ -485,8 +482,7 @@ private fun TagsDialogLoadingPreview() {
             title = "Filter by Tags",
             confirmButtonText = "OK",
             showFilterByDeckToggle = true,
-            onAddTag = {}
-        )
+            onAddTag = {})
     }
 }
 
@@ -502,7 +498,6 @@ private fun TagsDialogEmptyPreview() {
             title = "Filter by Tags",
             confirmButtonText = "OK",
             showFilterByDeckToggle = true,
-            onAddTag = {}
-        )
+            onAddTag = {})
     }
 }
