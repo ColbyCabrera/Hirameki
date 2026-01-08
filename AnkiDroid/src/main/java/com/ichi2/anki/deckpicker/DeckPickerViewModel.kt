@@ -295,11 +295,21 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                         }
 
                         DeckDialogType.RENAME_DECK -> {
-                            val deckId = state.deckIdToRename ?: decks.id(state.initialName)
-                            decks.getLegacy(deckId)?.let {
-                                decks.rename(it, name)
-                            } ?: run {
-                                Timber.w("Deck no longer exists for rename: %s", state.initialName)
+                            // Use lookup-only (not get-or-create) to avoid accidentally creating a deck
+                            val deckId = state.deckIdToRename ?: decks.byName(state.initialName)
+                                ?.getLong("id")
+                            if (deckId != null) {
+                                decks.getLegacy(deckId)?.let {
+                                    decks.rename(it, name)
+                                } ?: run {
+                                    Timber.w(
+                                        "Deck no longer exists for rename: %s",
+                                        state.initialName
+                                    )
+                                    operationSucceeded = false
+                                }
+                            } else {
+                                Timber.w("Deck not found for rename: %s", state.initialName)
                                 operationSucceeded = false
                             }
                         }
