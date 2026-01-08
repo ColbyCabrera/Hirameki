@@ -221,7 +221,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
 
-
     fun dismissCreateDeckDialog() {
         _createDeckDialogState.value = CreateDeckDialogState.Hidden
     }
@@ -266,13 +265,18 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                     when (state.type) {
                         DeckDialogType.DECK -> decks.id(name)
                         DeckDialogType.SUB_DECK -> {
-                            val fullName = decks.getSubdeckName(state.parentId!!, name)
-                            decks.id(fullName!!)
+                            state.parentId?.let { parentId ->
+                                decks.getSubdeckName(parentId, name)?.let { fullName ->
+                                    decks.id(fullName)
+                                }
+                            }
                         }
 
                         DeckDialogType.RENAME_DECK -> {
                             val deckId = decks.id(state.initialName)
-                            decks.rename(decks.getLegacy(deckId)!!, name)
+                            decks.getLegacy(deckId)?.let {
+                                decks.rename(it, name)
+                            } ?: Timber.w("Deck no longer exists for rename: %s", state.initialName)
                         }
 
                         DeckDialogType.FILTERED_DECK -> {
@@ -293,7 +297,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             }
         }
     }
-
 
 
     // HACK: dismiss a legacy progress bar
@@ -393,7 +396,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
 
-
     fun addNote(
         deckId: DeckId?,
         setAsCurrent: Boolean,
@@ -428,7 +430,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     fun unburyDeck(deckId: DeckId) = launchCatchingIO {
         undoableOp { sched.unburyDeck(deckId) }
     }
-
 
 
     /**
