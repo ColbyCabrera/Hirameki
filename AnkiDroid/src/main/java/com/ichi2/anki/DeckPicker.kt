@@ -141,7 +141,6 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
-import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.worker.SyncMediaWorker
@@ -977,7 +976,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         }
     }
 
-    @Suppress("DEPRECATION") // TODO: Migrate to Compose CreateDeckDialog
     fun showCreateFilteredDeckDialog() {
         val createFilteredDeckDialog = CreateDeckDialog(
             this@DeckPicker,

@@ -83,9 +83,6 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
                         .getInt("doubleTapTimeout", DEFAULT_DOUBLE_TAP_TIME_INTERVAL)
                 return lastTime.toLong()
             }
-        // Note: hintLocale and answerField were removed during Compose migration
-        // Language hint is now handled differently in Compose UI
-        val hintLocale: String? = null
 
         fun hasAutomaticAnswerQueued(): Boolean = automaticAnswer.timeoutHandler.hasMessages(0)
 
@@ -245,34 +242,6 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
         assertThat(viewer.answered, notNullValue())
     }
 
-    @Ignore("Language hint tests removed during Compose migration - answerField no longer exists")
-    @Test
-    fun defaultLanguageIsNull() {
-        assertThat(viewer.hintLocale, nullValue())
-    }
-
-    @Ignore("Language hint tests removed during Compose migration - answerField no longer exists")
-    @Test
-    @Flaky(OS.ALL, "executeCommand(FLIP_OR_ANSWER_EASE4) cannot be awaited")
-    fun typedLanguageIsSet() =
-        runTest {
-            val withLanguage = col.createBasicTypingNoteType("a")
-            val normal = col.createBasicTypingNoteType("b")
-            val typedField = 1 // BACK
-
-            LanguageHintService.setLanguageHintForField(col.notetypes, withLanguage, typedField, Locale.JAPANESE)
-
-            addNoteUsingNoteTypeName(withLanguage.name, "ichi", "ni")
-            addNoteUsingNoteTypeName(normal.name, "one", "two")
-            val viewer = getViewer(false)
-
-            assertThat("A note type with a language hint (japanese) should use it", viewer.hintLocale, equalTo("ja"))
-
-            viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE4)
-            viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE4)
-
-            assertThat("A default note type should have no preference", viewer.hintLocale, nullValue())
-        }
 
     @Test
     fun automaticAnswerDisabledProperty() {
