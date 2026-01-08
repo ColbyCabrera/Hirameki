@@ -297,11 +297,20 @@ class CardBrowserViewModel(
 
     private suspend fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
         val fullName = getFullDeckName(name, state)
-        // Allow same name for rename to itself
-        if (state.type == DeckDialogType.RENAME_DECK && fullName == state.initialName) {
-            return false
+        val existingDeck = withCol { decks.byName(fullName) }
+        
+        // No deck with this name exists
+        if (existingDeck == null) return false
+        
+        // Allow renaming a deck to itself (same deck ID)
+        if (state.type == DeckDialogType.RENAME_DECK && state.deckIdToRename != null) {
+            val existingDeckId = existingDeck.getLong("id")
+            if (existingDeckId == state.deckIdToRename) {
+                return false
+            }
         }
-        return withCol { decks.byName(fullName) } != null
+        
+        return true
     }
 
     private suspend fun getFullDeckName(
