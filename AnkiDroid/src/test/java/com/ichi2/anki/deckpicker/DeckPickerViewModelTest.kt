@@ -280,6 +280,25 @@ class DeckPickerViewModelTest : RobolectricTest() {
         assertThat("existing subdeck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS))
     }
 
+    @Test
+    fun `validateDeckName - subdeck rename to same name is allowed`() = runTest {
+        // Create parent deck and subdeck
+        val parentId = col.decks.id("Parent")
+        val subdeckId = col.decks.id("Parent::Child")
+
+        val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK,
+            titleResId = 0,
+            // The dialog shows "Child" as initial name, but full path is "Parent::Child"
+            initialName = "Parent::Child",
+            deckIdToRename = subdeckId
+        )
+        // User enters "Child" (short name) - this should be allowed since it's the same deck
+        // This tests the deckIdToRename-based comparison, not name string comparison
+        val result = viewModel.validateDeckName("Child", state)
+        assertThat("subdeck rename to same short name should be allowed", result, equalTo(null))
+    }
+
     // endregion
 
     companion object {
