@@ -108,6 +108,11 @@ private val helpLinks = listOf(
         R.string.help_donate_subtitle,
         R.drawable.volunteer_activism_24px,
         "https://ankidroid.org/#donations"
+    ), HelpLink(
+        R.string.help_ankiweb_terms_title,
+        R.string.help_ankiweb_terms_subtitle,
+        R.drawable.info_24px,
+        "https://ankiweb.net/account/terms"
     )
 )
 
