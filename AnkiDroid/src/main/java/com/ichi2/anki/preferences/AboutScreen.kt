@@ -138,7 +138,7 @@ fun AboutScreen(
                                 rotationZ = rotation
                             }
                             .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.colorScheme.tertiaryContainer,
                                 shape = SoftBurstShape,
                             ),
                     )
@@ -146,7 +146,7 @@ fun AboutScreen(
                         modifier = Modifier.size(60.dp),
                         painter = painterResource(R.drawable.info_24px),
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer),
                     )
                 }
 
