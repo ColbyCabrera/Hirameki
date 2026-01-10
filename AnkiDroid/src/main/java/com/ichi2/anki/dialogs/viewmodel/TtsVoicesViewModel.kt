@@ -21,6 +21,7 @@ import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.AndroidTtsPlayer
 import com.ichi2.anki.AndroidTtsVoice
 import com.ichi2.anki.AnkiDroidApp
+import com.ichi2.anki.R
 import com.ichi2.anki.TtsVoices
 import com.ichi2.anki.dialogs.tryDisplayLocalizedName
 import com.ichi2.anki.libanki.TTSTag
@@ -74,6 +75,9 @@ class TtsVoicesViewModel : ViewModel() {
 
     /** When a voice is played which has not yet been installed */
     val uninstalledVoicePlayed = MutableSharedFlow<TtsVoice>()
+
+    /** When the user clicks the help button on the snackbar */
+    val openUrl = MutableSharedFlow<Int>()
 
     /** Combines individual filters into a single object */
     private val filterFlow =
@@ -200,6 +204,12 @@ class TtsVoicesViewModel : ViewModel() {
         AnkiDroidApp.instance.copyToClipboard(
             text = voice.toString(),
         )
+    }
+
+    fun onHelpClicked() {
+        viewModelScope.launch {
+            openUrl.emit(R.string.link_faq_tts)
+        }
     }
 
     private suspend fun playTts(

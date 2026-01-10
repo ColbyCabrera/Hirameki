@@ -144,24 +144,11 @@ class TtsVoicesDialogFragment : DialogFragment() {
         return layout
     }
 
-    fun openTtsSettings() {
-        try {
-            requireContext().startActivity(
-                Intent("com.android.settings.TTS_SETTINGS").apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                },
-            )
-        } catch (e: ActivityNotFoundException) {
-            Timber.w(e)
-            showThemedToast(requireContext(), R.string.tts_voices_failed_opening_tts_system_settings, shortLength = true)
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        dialog?.makeFullscreen()
-
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
+        super.onViewCreated(view, savedInstanceState)
         viewModel.availableVoicesFlow.observe {
             if (it is TtsVoicesViewModel.VoiceLoadingState.Failure) {
                 progressBar.visibility = View.VISIBLE
@@ -194,11 +181,19 @@ class TtsVoicesDialogFragment : DialogFragment() {
             val string = it.localizedErrorMessage(requireContext())
             dialog?.window?.decorView?.showSnackbar(string) {
                 setAction(R.string.help) {
-                    // TODO: Should do this in ViewModel, but we need an Activity
-                    requireContext().openUrl(R.string.link_faq_tts)
+                    viewModel.onHelpClicked()
                 }
             }
         }
+
+        viewModel.openUrl.observe {
+            requireContext().openUrl(it)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.makeFullscreen()
     }
 
     override fun onResume() {
@@ -206,13 +201,26 @@ class TtsVoicesDialogFragment : DialogFragment() {
         viewModel.waitForRefresh()
     }
 
+    fun openTtsSettings() {
+        try {
+            requireContext().startActivity(
+                Intent("com.android.settings.TTS_SETTINGS").apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                },
+            )
+        } catch (e: ActivityNotFoundException) {
+            Timber.w(e)
+            showThemedToast(requireContext(), R.string.tts_voices_failed_opening_tts_system_settings, shortLength = true)
+        }
+    }
+
     /**
      * Helper function to observe a flow while the current lifecycle is active
      */
     private fun <T> Flow<T>.observe(exec: (T) -> Unit) {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             this@observe
-                .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED)
                 .collect(exec)
         }
     }
