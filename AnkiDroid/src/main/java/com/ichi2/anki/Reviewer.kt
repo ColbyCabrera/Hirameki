@@ -600,6 +600,10 @@ open class Reviewer :
      */
     @VisibleForTesting
     fun openMicToolbar(): Boolean {
+        if (!::micToolBarLayer.isInitialized) {
+            Timber.w("openMicToolbar() called but micToolBarLayer not initialized")
+            return false
+        }
         if (micToolBarLayer.visibility != View.VISIBLE || audioRecordingController == null) {
             openOrToggleMicToolbar()
         }
@@ -621,6 +625,10 @@ open class Reviewer :
 
     private fun toggleMicToolBar() {
         Timber.i("toggle mic toolbar")
+        if (!::micToolBarLayer.isInitialized) {
+            Timber.w("toggleMicToolBar() called but micToolBarLayer not initialized")
+            return
+        }
         tempAudioPath = generateTempAudioFile(this)
         if (isMicToolBarVisible) {
             micToolBarLayer.visibility = View.GONE

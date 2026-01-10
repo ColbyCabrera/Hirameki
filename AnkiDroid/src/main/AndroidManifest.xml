@@ -460,7 +460,7 @@
         </activity>
         <activity
             android:name="com.ichi2.anki.analytics.AnkiDroidCrashReportDialog"
-            android:theme="@android:style/Theme.DeviceDefault.Dialog"
+            android:theme="@style/AlertDialogStyle"
             android:process=":acra"
             android:launchMode="singleInstance"
             android:excludeFromRecents="true"
