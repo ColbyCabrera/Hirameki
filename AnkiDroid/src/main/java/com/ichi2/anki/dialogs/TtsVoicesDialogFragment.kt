@@ -191,6 +191,16 @@ class TtsVoicesDialogFragment : DialogFragment() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        dialog?.makeFullscreen()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.waitForRefresh()
+    }
+
     fun openTtsSettings() {
         try {
             requireContext().startActivity(
@@ -202,17 +212,6 @@ class TtsVoicesDialogFragment : DialogFragment() {
             Timber.w(e)
             showThemedToast(requireContext(), R.string.tts_voices_failed_opening_tts_system_settings, shortLength = true)
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        dialog?.makeFullscreen()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.waitForRefresh()
     }
 
     /**
