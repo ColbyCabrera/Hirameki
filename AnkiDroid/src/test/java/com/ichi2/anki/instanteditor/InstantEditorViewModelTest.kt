@@ -40,7 +40,7 @@ class InstantEditorViewModelTest : RobolectricTest() {
     }
 
     @Test
-    fun testSetUpNoteType_UsesDeckDefault() = runViewModelTest {
+    fun testSetUpNoteType_UsesDeckDefault() = runTest {
         // Create two cloze types
         val cloze1 = col.getStockNotetype(StockNotetype.Kind.KIND_CLOZE)
         cloze1.name = "Cloze 1"
