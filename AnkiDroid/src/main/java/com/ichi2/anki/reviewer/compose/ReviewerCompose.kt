@@ -111,6 +111,7 @@ import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
+import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -170,7 +171,10 @@ class InvertedTopCornersShape(private val cornerRadius: Dp) : Shape {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ReviewerContent(
-    viewModel: ReviewerViewModel, whiteboardViewModel: WhiteboardViewModel?
+    viewModel: ReviewerViewModel,
+    whiteboardViewModel: WhiteboardViewModel?,
+    voicePlaybackViewModel: VoicePlaybackViewModel?,
+    voicePlaybackTempFile: java.io.File?
 ) {
     val state by viewModel.state.collectAsState()
     val sheetState = rememberModalBottomSheetState()
@@ -367,6 +371,29 @@ fun ReviewerContent(
                                 .onSizeChanged { whiteboardToolbarHeight = it.height })
                     }
 
+                    // Voice Playback Toolbar
+                    if (state.isVoicePlaybackEnabled && voicePlaybackViewModel != null && voicePlaybackTempFile != null) {
+                        val voicePlaybackIsVisible by voicePlaybackViewModel.isVisible.collectAsState()
+                        if (voicePlaybackIsVisible) {
+                            VoicePlaybackToolbar(
+                                viewModel = voicePlaybackViewModel,
+                                onToggleRecording = {
+                                    voicePlaybackViewModel.toggleRecording(
+                                        context,
+                                        voicePlaybackTempFile
+                                    )
+                                },
+                                onDismiss = {
+                                    voicePlaybackViewModel.setVisible(false)
+                                    viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .offset(y = -ScreenOffset - toolbarHeightDp - 16.dp)
+                                    .padding(bottom = paddingValues.calculateBottomPadding())
+                            )
+                        }
+                    }
 
                     HorizontalFloatingToolbar(
                         modifier = Modifier

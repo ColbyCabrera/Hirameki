@@ -86,6 +86,7 @@ import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.reviewer.ReviewerUi
 import com.ichi2.anki.reviewer.ReviewerViewModel
+import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.reviewer.WhiteboardController
 import com.ichi2.anki.scheduling.ForgetCardsDialog
 import com.ichi2.anki.scheduling.SetDueDateDialog
@@ -155,6 +156,7 @@ open class Reviewer :
     private var audioRecordingController: AudioRecordingController? = null
     private var isAudioUIInitialized = false
     private lateinit var micToolBarLayer: LinearLayout
+    private val voicePlaybackViewModel: VoicePlaybackViewModel by viewModels()
 
     // ETA
     private var eta = 0
@@ -194,7 +196,12 @@ open class Reviewer :
         composeView.setContent {
             AnkiDroidTheme {
                 com.ichi2.anki.reviewer.compose
-                    .ReviewerContent(viewModel, whiteboardViewModel)
+                    .ReviewerContent(
+                        viewModel = viewModel,
+                        whiteboardViewModel = whiteboardViewModel,
+                        voicePlaybackViewModel = voicePlaybackViewModel,
+                        voicePlaybackTempFile = tempAudioPath
+                    )
             }
         }
 
@@ -224,7 +231,12 @@ open class Reviewer :
                         playMedia(true)
                     }
 
-                    is ReviewerEffect.ToggleVoicePlayback -> openOrToggleMicToolbar()
+                    is ReviewerEffect.ToggleVoicePlayback -> {
+                        val isNowVisible = !voicePlaybackViewModel.isVisible.value
+                        voicePlaybackViewModel.setVisible(isNowVisible)
+                        isMicToolBarVisible = isNowVisible
+                        viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(isNowVisible))
+                    }
                     is ReviewerEffect.NavigateToDeckOptions -> {
                         val i =
                             com.ichi2.anki.pages.DeckOptions.getIntent(
