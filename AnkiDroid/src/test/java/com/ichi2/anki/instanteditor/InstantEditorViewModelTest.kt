@@ -26,6 +26,7 @@ import com.ichi2.anki.instantnoteeditor.InstantNoteEditorActivity
 import com.ichi2.anki.instantnoteeditor.SaveNoteResult
 import com.ichi2.anki.libanki.getStockNotetype
 import com.ichi2.anki.libanki.testutils.AnkiTest
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -62,6 +63,10 @@ class InstantEditorViewModelTest : RobolectricTest() {
 
         // Initialize the viewModel to pick up the deck preference
         runViewModelTest({ InstantEditorViewModel() }) {
+            // Wait for initialization to complete (dialogType is set at the end of init)
+            dialogType.first { it != null }
+            // Flush the main looper to process postValue calls
+            advanceRobolectricLooper()
             // currentlySelectedNotetype should be cloze2
             assertEquals("Cloze 2", currentlySelectedNotetype.value?.name)
         }
