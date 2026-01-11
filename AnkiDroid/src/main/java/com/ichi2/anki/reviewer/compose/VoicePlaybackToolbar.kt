@@ -32,8 +32,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -162,8 +162,7 @@ fun VoicePlaybackToolbarContent(
                     containerColor = when (state) {
                         is VoicePlaybackViewModel.RecordingState.Recording -> MaterialTheme.colorScheme.error
                         else -> IconButtonDefaults.filledIconButtonColors().containerColor
-                    },
-                    contentColor = when (state) {
+                    }, contentColor = when (state) {
                         is VoicePlaybackViewModel.RecordingState.Recording -> MaterialTheme.colorScheme.onError
                         else -> IconButtonDefaults.filledIconButtonColors().contentColor
                     }
@@ -175,13 +174,14 @@ fun VoicePlaybackToolbarContent(
                         is VoicePlaybackViewModel.RecordingState.Recording -> Icons.Default.Stop
                         is VoicePlaybackViewModel.RecordingState.PlaybackReady -> Icons.Default.PlayArrow
                         is VoicePlaybackViewModel.RecordingState.Playing -> Icons.Default.Pause
-                    }, contentDescription = null, // Icons are self-explanatory
+                    },
+                    contentDescription = null, // Icons are self-explanatory
                 )
             }
 
             // Secondary action (Discard or Close)
-            IconButton(
-                onClick = {
+            FilledTonalIconButton(
+                modifier = Modifier.size(48.dp), onClick = {
                     when (state) {
                         is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> onDiscardRecording()
                         else -> onDismiss()
@@ -192,12 +192,10 @@ fun VoicePlaybackToolbarContent(
                         is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> painterResource(
                             R.drawable.delete_24px
                         )
+
                         else -> painterResource(R.drawable.close_24px)
-                    }, contentDescription = null, // Icons are self-explanatory
-                    tint = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.onSurface
-                    }
+                    },
+                    contentDescription = null, // Icons are self-explanatory
                 )
             }
         }
