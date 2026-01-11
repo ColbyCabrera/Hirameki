@@ -19,6 +19,7 @@ import android.content.Context
 import android.media.MediaPlayer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ichi2.anki.multimedia.audio.AudioRecordingController
 import com.ichi2.anki.multimediacard.AudioRecorder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -68,17 +69,19 @@ class VoicePlaybackViewModel : ViewModel() {
     fun toggleRecording(context: Context) {
         when (_state.value) {
             is RecordingState.Idle -> {
-                val tempFile = com.ichi2.anki.multimedia.audio.AudioRecordingController.generateTempAudioFile(context)
+                val tempFile = AudioRecordingController.generateTempAudioFile(context)
                 if (tempFile != null) startRecording(context, tempFile)
             }
+
             is RecordingState.Recording -> stopRecording()
             is RecordingState.PlaybackReady -> {
-                val tempFile = com.ichi2.anki.multimedia.audio.AudioRecordingController.generateTempAudioFile(context)
+                val tempFile = AudioRecordingController.generateTempAudioFile(context)
                 if (tempFile != null) startRecording(context, tempFile)
             }
+
             is RecordingState.Playing -> {
                 stopPlayback()
-                val tempFile = com.ichi2.anki.multimedia.audio.AudioRecordingController.generateTempAudioFile(context)
+                val tempFile = AudioRecordingController.generateTempAudioFile(context)
                 if (tempFile != null) startRecording(context, tempFile)
             }
         }
