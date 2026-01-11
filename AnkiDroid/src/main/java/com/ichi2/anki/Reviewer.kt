@@ -28,9 +28,7 @@ import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
 import android.view.SubMenu
-import android.view.View
 import android.webkit.WebView
-import android.widget.LinearLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,18 +63,12 @@ import com.ichi2.anki.libanki.redoLabel
 import com.ichi2.anki.libanki.sched.CurrentQueueState
 import com.ichi2.anki.libanki.undoAvailable
 import com.ichi2.anki.libanki.undoLabel
-import com.ichi2.anki.multimedia.audio.AudioRecordingController
-import com.ichi2.anki.multimedia.audio.AudioRecordingController.Companion.generateTempAudioFile
-import com.ichi2.anki.multimedia.audio.AudioRecordingController.Companion.isAudioRecordingSaved
-import com.ichi2.anki.multimedia.audio.AudioRecordingController.Companion.isRecording
-import com.ichi2.anki.multimedia.audio.AudioRecordingController.Companion.setEditorStatus
-import com.ichi2.anki.multimedia.audio.AudioRecordingController.Companion.tempAudioPath
-import com.ichi2.anki.multimedia.audio.AudioRecordingController.RecordingState
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.AnkiServer.Companion.ANKIDROID_JS_PREFIX
 import com.ichi2.anki.pages.AnkiServer.Companion.ANKI_PREFIX
 import com.ichi2.anki.pages.CardInfoDestination
+import com.ichi2.anki.pages.DeckOptions
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.ActionButtons
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
@@ -121,9 +113,7 @@ import timber.log.Timber
 import kotlin.coroutines.resume
 
 @NeedsTest("#14709: Timebox shouldn't appear instantly when the Reviewer is opened")
-open class Reviewer :
-    AbstractFlashcardViewer(),
-    ReviewerUi {
+open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     private var queueState: CurrentQueueState? = null
     private val customSchedulingKey = TimeManager.time.intTimeMS().toString()
     private var hasDrawerSwipeConflicts = false
@@ -149,13 +139,6 @@ open class Reviewer :
     // been configured
     private var statesMutated = false
 
-    // Record Audio
-    private var isMicToolBarVisible = false
-
-    /** Controller for 'Voice Playback' feature */
-    private var audioRecordingController: AudioRecordingController? = null
-    private var isAudioUIInitialized = false
-    private lateinit var micToolBarLayer: LinearLayout
     private val voicePlaybackViewModel: VoicePlaybackViewModel by viewModels()
 
     // ETA
@@ -178,11 +161,10 @@ open class Reviewer :
         if (showedActivityFailedScreen(savedInstanceState)) {
             return
         }
-        addNoteLauncher =
-            registerForActivityResult(
-                ActivityResultContracts.StartActivityForResult(),
-                FlashCardViewerResultCallback(),
-            )
+        addNoteLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+            FlashCardViewerResultCallback(),
+        )
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -195,8 +177,7 @@ open class Reviewer :
 
         composeView.setContent {
             AnkiDroidTheme {
-                com.ichi2.anki.reviewer.compose
-                    .ReviewerContent(
+                com.ichi2.anki.reviewer.compose.ReviewerContent(
                         viewModel = viewModel,
                         whiteboardViewModel = whiteboardViewModel,
                         voicePlaybackViewModel = voicePlaybackViewModel
@@ -231,17 +212,28 @@ open class Reviewer :
                     }
 
                     is ReviewerEffect.ToggleVoicePlayback -> {
-                        val isNowVisible = !voicePlaybackViewModel.isVisible.value
-                        voicePlaybackViewModel.setVisible(isNowVisible)
-                        isMicToolBarVisible = isNowVisible
-                        viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(isNowVisible))
-                    }
-                    is ReviewerEffect.NavigateToDeckOptions -> {
-                        val i =
-                            com.ichi2.anki.pages.DeckOptions.getIntent(
+                        if (!canRecordAudio(this@Reviewer)) {
+                            Timber.i("requesting 'RECORD_AUDIO' permission")
+                            ActivityCompat.requestPermissions(
                                 this@Reviewer,
-                                getColUnsafe.decks.current().id,
+                                arrayOf(Manifest.permission.RECORD_AUDIO),
+                                ReviewerConstants.REQUEST_AUDIO_PERMISSION,
                             )
+                        } else {
+                            val isNowVisible = !voicePlaybackViewModel.isVisible.value
+                            voicePlaybackViewModel.setVisible(isNowVisible)
+                            viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(isNowVisible))
+                            lifecycleScope.launch(ioDispatcher) {
+                                MetaDB.storeMicToolbarState(this@Reviewer, parentDid, isNowVisible)
+                            }
+                        }
+                    }
+
+                    is ReviewerEffect.NavigateToDeckOptions -> {
+                        val i = DeckOptions.getIntent(
+                            this@Reviewer,
+                            getColUnsafe.decks.current().id,
+                        )
                         deckOptionsLauncher.launch(i)
                     }
 
@@ -261,9 +253,6 @@ open class Reviewer :
     }
 
     override fun onDestroy() {
-        if (::micToolBarLayer.isInitialized) {
-            micToolBarLayer.removeAllViews()
-        }
         super.onDestroy()
     }
 
@@ -336,7 +325,6 @@ open class Reviewer :
     }
 
 
-
     public override fun fitsSystemWindows(): Boolean = !fullscreenMode.isFullScreenReview()
 
     override fun onCollectionLoaded(col: Collection) {
@@ -352,9 +340,9 @@ open class Reviewer :
             val isMicToolbarEnabled =
                 withContext(ioDispatcher) { MetaDB.getMicToolbarState(this@Reviewer, parentDid) }
             if (isMicToolbarEnabled) {
-                openMicToolbar()
+                voicePlaybackViewModel.setVisible(true)
             }
-            viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(isMicToolBarVisible))
+            viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(voicePlaybackViewModel.isVisible.value))
 
             withCol { startTimebox() }
             updateCardAndRedraw()
@@ -415,9 +403,8 @@ open class Reviewer :
             }
 
             R.id.action_toggle_mic_tool_bar -> {
-                Timber.i("Reviewer:: Voice playback visibility set to %b", !isMicToolBarVisible)
-                // Check permission to record and request if not granted
-                openOrToggleMicToolbar()
+                Timber.i("Reviewer:: Voice playback toggle requested")
+                viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
             }
 
             R.id.action_tag -> {
@@ -490,11 +477,10 @@ open class Reviewer :
 
             R.id.action_open_deck_options -> {
                 Timber.i("Reviewer:: Opening deck options")
-                val i =
-                    com.ichi2.anki.pages.DeckOptions.getIntent(
-                        this,
-                        getColUnsafe.decks.current().id,
-                    )
+                val i = DeckOptions.getIntent(
+                    this,
+                    getColUnsafe.decks.current().id,
+                )
                 deckOptionsLauncher.launch(i)
             }
 
@@ -556,32 +542,25 @@ open class Reviewer :
     }
 
     override fun replayVoice() {
-        if (!openMicToolbar()) {
-            return
+        if (!voicePlaybackViewModel.isVisible.value) {
+            voicePlaybackViewModel.setVisible(true)
+            viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(true))
         }
-        if (isAudioRecordingSaved) {
-            audioRecordingController?.playPausePlayer()
-        } else {
-            return
+        if (voicePlaybackViewModel.hasRecording) {
+            voicePlaybackViewModel.playRecording()
         }
     }
 
     override fun recordVoice() {
-        if (!openMicToolbar()) {
-            return
+        if (!voicePlaybackViewModel.isVisible.value) {
+            voicePlaybackViewModel.setVisible(true)
+            viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(true))
         }
-        audioRecordingController?.toggleToRecorder()
+        voicePlaybackViewModel.startRecordingIfIdle(this)
     }
 
     override fun saveRecording() {
-        if (!openMicToolbar()) {
-            return
-        }
-        if (isRecording) {
-            audioRecordingController?.toggleSave()
-        } else {
-            return
-        }
+        voicePlaybackViewModel.stopAndSaveRecording()
     }
 
     override fun updateForNewCard() {
@@ -589,94 +568,15 @@ open class Reviewer :
         if (::whiteboardController.isInitialized) {
             whiteboardController.updateForNewCard()
         }
-        audioRecordingController?.updateUIForNewCard()
+        voicePlaybackViewModel.discardRecording()
     }
 
     override fun closeReviewer(result: Int) {
-        // Stop the mic recording if still pending
-        if (isRecording) audioRecordingController?.stopAndSaveRecording()
-
-        // Remove the temporary audio file
-        tempAudioPath?.let { tempAudioPathToDelete ->
-            if (tempAudioPathToDelete.exists()) {
-                tempAudioPathToDelete.delete()
-            }
-        }
+        // Stop any pending recording
+        voicePlaybackViewModel.stopAndSaveRecording()
+        // Discard the recording (which deletes the temp file)
+        voicePlaybackViewModel.discardRecording()
         super.closeReviewer(result)
-    }
-
-    /**
-     *
-     * @return Whether the mic toolbar is usable
-     */
-    @VisibleForTesting
-    fun openMicToolbar(): Boolean {
-        if (!::micToolBarLayer.isInitialized) {
-            Timber.w("openMicToolbar() called but micToolBarLayer not initialized")
-            return false
-        }
-        if (micToolBarLayer.visibility != View.VISIBLE || audioRecordingController == null) {
-            openOrToggleMicToolbar()
-        }
-        return audioRecordingController != null
-    }
-
-    private fun openOrToggleMicToolbar() {
-        if (!canRecordAudio(this)) {
-            Timber.i("requesting 'RECORD_AUDIO' permission")
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.RECORD_AUDIO),
-                ReviewerConstants.REQUEST_AUDIO_PERMISSION,
-            )
-        } else {
-            toggleMicToolBar()
-        }
-    }
-
-    private fun toggleMicToolBar() {
-        Timber.i("toggle mic toolbar")
-        if (!::micToolBarLayer.isInitialized) {
-            Timber.w("toggleMicToolBar() called but micToolBarLayer not initialized")
-            return
-        }
-        tempAudioPath = generateTempAudioFile(this)
-        if (isMicToolBarVisible) {
-            micToolBarLayer.visibility = View.GONE
-        } else {
-            setEditorStatus(false)
-            if (!isAudioUIInitialized) {
-                try {
-                    audioRecordingController = AudioRecordingController(context = this)
-                    audioRecordingController?.createUI(
-                        this,
-                        micToolBarLayer,
-                        initialState = RecordingState.ImmediatePlayback.CLEARED,
-                        R.layout.activity_audio_recording_reviewer,
-                    )
-                } catch (e: Exception) {
-                    Timber.w(e, "unable to add the audio recorder to toolbar")
-                    CrashReportService.sendExceptionReport(e, "Unable to create recorder tool bar")
-                    showThemedToast(
-                        this,
-                        this
-                            .getText(R.string.multimedia_editor_audio_view_create_failed)
-                            .toString(),
-                        true,
-                    )
-                }
-                isAudioUIInitialized = true
-            }
-            micToolBarLayer.visibility = View.VISIBLE
-        }
-        isMicToolBarVisible = !isMicToolBarVisible
-        viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(isMicToolBarVisible))
-
-        lifecycleScope.launch(ioDispatcher) {
-            MetaDB.storeMicToolbarState(this@Reviewer, parentDid, isMicToolBarVisible)
-        }
-
-        refreshActionBar()
     }
 
     override fun onRequestPermissionsResult(
@@ -685,22 +585,18 @@ open class Reviewer :
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == ReviewerConstants.REQUEST_AUDIO_PERMISSION &&
-            permissions.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Get get audio record permission, so we can create the record tool bar
-            toggleMicToolBar()
+        if (requestCode == ReviewerConstants.REQUEST_AUDIO_PERMISSION && permissions.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            // Audio permission granted, start recording
+            voicePlaybackViewModel.toggleRecording(this)
         }
     }
 
-    private fun showDueDateDialog() =
-        launchCatchingTask {
-            Timber.i("showing due date dialog")
-            val cardId = currentCardId ?: return@launchCatchingTask
-            val dialog = SetDueDateDialog.newInstance(listOf(cardId))
-            showDialogFragment(dialog)
-        }
+    private fun showDueDateDialog() = launchCatchingTask {
+        Timber.i("showing due date dialog")
+        val cardId = currentCardId ?: return@launchCatchingTask
+        val dialog = SetDueDateDialog.newInstance(listOf(cardId))
+        showDialogFragment(dialog)
+    }
 
     private fun showResetCardDialog() {
         Timber.i("showResetCardDialog() Reset progress button pressed")
@@ -725,11 +621,10 @@ open class Reviewer :
             return
         }
         Timber.i("opening card info")
-        val intent =
-            CardInfoDestination(
-                currentCard!!.id,
-                TR.cardStatsCurrentCard(TR.decksStudy()),
-            ).toIntent(this)
+        val intent = CardInfoDestination(
+            currentCard!!.id,
+            TR.cardStatsCurrentCard(TR.decksStudy()),
+        ).toIntent(this)
         val animation = getAnimationTransitionFromGesture(fromGesture)
         intent.putExtra(FINISH_ANIMATION_EXTRA, getInverseTransition(animation) as Parcelable)
         startActivityWithAnimation(intent, animation)
@@ -863,14 +758,12 @@ open class Reviewer :
                 changePenColorIcon.isVisible = true
             }
             val whiteboardIcon =
-                ContextCompat
-                    .getDrawable(applicationContext, R.drawable.ic_gesture_white)!!
+                ContextCompat.getDrawable(applicationContext, R.drawable.ic_gesture_white)!!
                     .mutate()
             val stylusIcon =
                 ContextCompat.getDrawable(this, R.drawable.ic_gesture_stylus)!!.mutate()
             val whiteboardColorPaletteIcon =
-                ContextCompat
-                    .getDrawable(applicationContext, R.drawable.ic_color_lens_white_24dp)!!
+                ContextCompat.getDrawable(applicationContext, R.drawable.ic_color_lens_white_24dp)!!
                     .mutate()
             val eraserIcon =
                 ContextCompat.getDrawable(applicationContext, R.drawable.ic_eraser)!!.mutate()
@@ -927,7 +820,7 @@ open class Reviewer :
         }
 
         val voicePlaybackIcon = menu.findItem(R.id.action_toggle_mic_tool_bar)
-        if (isMicToolBarVisible) {
+        if (voicePlaybackViewModel.isVisible.value) {
             voicePlaybackIcon.setTitle(R.string.menu_disable_voice_playback)
             // #18477: always show 'disable', even if 'enable' was invisible
             voicePlaybackIcon.isVisible = true
@@ -955,11 +848,10 @@ open class Reviewer :
         try {
             if (menu is MenuBuilder) {
                 // Use reflection to bypass package-private visibility
-                val method =
-                    menu.javaClass.getDeclaredMethod(
-                        "setOptionalIconsVisible",
-                        Boolean::class.javaPrimitiveType,
-                    )
+                val method = menu.javaClass.getDeclaredMethod(
+                    "setOptionalIconsVisible",
+                    Boolean::class.javaPrimitiveType,
+                )
                 method.isAccessible = true
                 method.invoke(menu, true)
             }
@@ -1006,12 +898,11 @@ open class Reviewer :
     }
 
     override suspend fun updateCurrentCard() {
-        val state =
-            withCol {
-                sched.currentQueueState()?.apply {
-                    topCard.renderOutput(this@withCol, reload = true)
-                }
+        val state = withCol {
+            sched.currentQueueState()?.apply {
+                topCard.renderOutput(this@withCol, reload = true)
             }
+        }
         state?.timeboxReached?.let { dealWithTimeBox(it) }
         currentCard = state?.topCard
         queueState = state
@@ -1213,40 +1104,31 @@ open class Reviewer :
     override suspend fun handlePostRequest(
         uri: String,
         bytes: ByteArray,
-    ): ByteArray =
-        if (uri.startsWith(ANKI_PREFIX)) {
-            when (val methodName = uri.substring(ANKI_PREFIX.length)) {
-                "getSchedulingStatesWithContext" -> getSchedulingStatesWithContext()
-                "setSchedulingStates" -> setSchedulingStates(bytes)
-                "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
-                else -> throw IllegalArgumentException("unhandled request: $methodName")
-            }
-        } else if (uri.startsWith(ANKIDROID_JS_PREFIX)) {
-            jsApi.handleJsApiRequest(
-                uri.substring(ANKIDROID_JS_PREFIX.length),
-                bytes,
-                returnDefaultValues = false,
-            )
-        } else {
-            throw IllegalArgumentException("unhandled request: $uri")
+    ): ByteArray = if (uri.startsWith(ANKI_PREFIX)) {
+        when (val methodName = uri.substring(ANKI_PREFIX.length)) {
+            "getSchedulingStatesWithContext" -> getSchedulingStatesWithContext()
+            "setSchedulingStates" -> setSchedulingStates(bytes)
+            "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
+            else -> throw IllegalArgumentException("unhandled request: $methodName")
         }
+    } else if (uri.startsWith(ANKIDROID_JS_PREFIX)) {
+        jsApi.handleJsApiRequest(
+            uri.substring(ANKIDROID_JS_PREFIX.length),
+            bytes,
+            returnDefaultValues = false,
+        )
+    } else {
+        throw IllegalArgumentException("unhandled request: $uri")
+    }
 
     private fun getSchedulingStatesWithContext(): ByteArray {
         val state = queueState ?: return ByteArray(0)
-        return state
-            .schedulingStatesWithContext()
-            .toBuilder()
-            .mergeStates(
-                state.states
-                    .toBuilder()
-                    .mergeCurrent(
-                        state.states.current
-                            .toBuilder()
-                            .setCustomData(state.topCard.customData)
+        return state.schedulingStatesWithContext().toBuilder().mergeStates(
+                state.states.toBuilder().mergeCurrent(
+                        state.states.current.toBuilder().setCustomData(state.topCard.customData)
                             .build(),
                     ).build(),
-            ).build()
-            .toByteArray()
+            ).build().toByteArray()
     }
 
     private fun setSchedulingStates(bytes: ByteArray): ByteArray {
@@ -1313,25 +1195,24 @@ open class Reviewer :
     fun hasDrawerSwipeConflicts(): Boolean = hasDrawerSwipeConflicts
 
     override fun getCardDataForJsApi(): AnkiDroidJsAPI.CardDataForJsApi {
-        val cardDataForJsAPI =
-            AnkiDroidJsAPI.CardDataForJsApi().apply {
-                newCardCount = queueState?.counts?.new ?: -1
-                lrnCardCount = queueState?.counts?.lrn ?: -1
-                revCardCount = queueState?.counts?.rev ?: -1
-                if (currentCard != null) {
-                    val s = getColUnsafe.sched
-                    nextTime1 = s.nextIvlStr(currentCard!!, Rating.AGAIN)
-                    nextTime2 = s.nextIvlStr(currentCard!!, Rating.HARD)
-                    nextTime3 = s.nextIvlStr(currentCard!!, Rating.GOOD)
-                    nextTime4 = s.nextIvlStr(currentCard!!, Rating.EASY)
-                } else {
-                    nextTime1 = ""
-                    nextTime2 = ""
-                    nextTime3 = ""
-                    nextTime4 = ""
-                }
-                eta = this@Reviewer.eta
+        val cardDataForJsAPI = AnkiDroidJsAPI.CardDataForJsApi().apply {
+            newCardCount = queueState?.counts?.new ?: -1
+            lrnCardCount = queueState?.counts?.lrn ?: -1
+            revCardCount = queueState?.counts?.rev ?: -1
+            if (currentCard != null) {
+                val s = getColUnsafe.sched
+                nextTime1 = s.nextIvlStr(currentCard!!, Rating.AGAIN)
+                nextTime2 = s.nextIvlStr(currentCard!!, Rating.HARD)
+                nextTime3 = s.nextIvlStr(currentCard!!, Rating.GOOD)
+                nextTime4 = s.nextIvlStr(currentCard!!, Rating.EASY)
+            } else {
+                nextTime1 = ""
+                nextTime2 = ""
+                nextTime3 = ""
+                nextTime4 = ""
             }
+            eta = this@Reviewer.eta
+        }
         return cardDataForJsAPI
     }
 
@@ -1342,44 +1223,41 @@ open class Reviewer :
         const val EXTRA_DECK_ID = "deckId"
 
         /** Maps ViewerCommand to corresponding Flag for toggle operations */
-        private val VIEWER_COMMAND_TO_FLAG =
-            mapOf(
-                ViewerCommand.TOGGLE_FLAG_RED to Flag.RED,
-                ViewerCommand.TOGGLE_FLAG_ORANGE to Flag.ORANGE,
-                ViewerCommand.TOGGLE_FLAG_GREEN to Flag.GREEN,
-                ViewerCommand.TOGGLE_FLAG_BLUE to Flag.BLUE,
-                ViewerCommand.TOGGLE_FLAG_PINK to Flag.PINK,
-                ViewerCommand.TOGGLE_FLAG_TURQUOISE to Flag.TURQUOISE,
-                ViewerCommand.TOGGLE_FLAG_PURPLE to Flag.PURPLE,
-            )
+        private val VIEWER_COMMAND_TO_FLAG = mapOf(
+            ViewerCommand.TOGGLE_FLAG_RED to Flag.RED,
+            ViewerCommand.TOGGLE_FLAG_ORANGE to Flag.ORANGE,
+            ViewerCommand.TOGGLE_FLAG_GREEN to Flag.GREEN,
+            ViewerCommand.TOGGLE_FLAG_BLUE to Flag.BLUE,
+            ViewerCommand.TOGGLE_FLAG_PINK to Flag.PINK,
+            ViewerCommand.TOGGLE_FLAG_TURQUOISE to Flag.TURQUOISE,
+            ViewerCommand.TOGGLE_FLAG_PURPLE to Flag.PURPLE,
+        )
 
         /** Maps ViewerCommand to corresponding user action number */
-        private val VIEWER_COMMAND_TO_USER_ACTION =
-            mapOf(
-                ViewerCommand.USER_ACTION_1 to 1,
-                ViewerCommand.USER_ACTION_2 to 2,
-                ViewerCommand.USER_ACTION_3 to 3,
-                ViewerCommand.USER_ACTION_4 to 4,
-                ViewerCommand.USER_ACTION_5 to 5,
-                ViewerCommand.USER_ACTION_6 to 6,
-                ViewerCommand.USER_ACTION_7 to 7,
-                ViewerCommand.USER_ACTION_8 to 8,
-                ViewerCommand.USER_ACTION_9 to 9,
-            )
+        private val VIEWER_COMMAND_TO_USER_ACTION = mapOf(
+            ViewerCommand.USER_ACTION_1 to 1,
+            ViewerCommand.USER_ACTION_2 to 2,
+            ViewerCommand.USER_ACTION_3 to 3,
+            ViewerCommand.USER_ACTION_4 to 4,
+            ViewerCommand.USER_ACTION_5 to 5,
+            ViewerCommand.USER_ACTION_6 to 6,
+            ViewerCommand.USER_ACTION_7 to 7,
+            ViewerCommand.USER_ACTION_8 to 8,
+            ViewerCommand.USER_ACTION_9 to 9,
+        )
 
         /** Menu item IDs for user actions, ordered 1-9 */
-        private val USER_ACTION_MENU_IDS =
-            listOf(
-                R.id.user_action_1,
-                R.id.user_action_2,
-                R.id.user_action_3,
-                R.id.user_action_4,
-                R.id.user_action_5,
-                R.id.user_action_6,
-                R.id.user_action_7,
-                R.id.user_action_8,
-                R.id.user_action_9,
-            )
+        private val USER_ACTION_MENU_IDS = listOf(
+            R.id.user_action_1,
+            R.id.user_action_2,
+            R.id.user_action_3,
+            R.id.user_action_4,
+            R.id.user_action_5,
+            R.id.user_action_6,
+            R.id.user_action_7,
+            R.id.user_action_8,
+            R.id.user_action_9,
+        )
 
         fun getIntent(context: Context): Intent = Intent(context, Reviewer::class.java)
     }

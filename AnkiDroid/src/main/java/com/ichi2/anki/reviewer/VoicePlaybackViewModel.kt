@@ -183,6 +183,32 @@ class VoicePlaybackViewModel : ViewModel() {
         _state.value = RecordingState.PlaybackReady
     }
 
+    /** Returns true if there is a saved recording available for playback */
+    val hasRecording: Boolean
+        get() = audioFile?.exists() == true && _state.value is RecordingState.PlaybackReady
+
+    /** For JS API: Start recording if idle, otherwise no-op */
+    fun startRecordingIfIdle(context: Context) {
+        if (_state.value == RecordingState.Idle) {
+            val tempFile = AudioRecordingController.generateTempAudioFile(context)
+            if (tempFile != null) startRecording(context, tempFile)
+        }
+    }
+
+    /** For JS API: Stop recording and prepare for playback */
+    fun stopAndSaveRecording() {
+        if (_state.value == RecordingState.Recording) {
+            stopRecording()
+        }
+    }
+
+    /** For JS API: Play the saved recording if available */
+    fun playRecording() {
+        if (_state.value == RecordingState.PlaybackReady) {
+            startPlayback()
+        }
+    }
+
     fun discardRecording() {
         Timber.i("VoicePlaybackViewModel: discarding recording")
         stopAndReset()
