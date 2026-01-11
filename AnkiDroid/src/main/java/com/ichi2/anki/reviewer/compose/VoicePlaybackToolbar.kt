@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
@@ -175,7 +176,12 @@ fun VoicePlaybackToolbarContent(
                         is VoicePlaybackViewModel.RecordingState.PlaybackReady -> Icons.Default.PlayArrow
                         is VoicePlaybackViewModel.RecordingState.Playing -> Icons.Default.Pause
                     },
-                    contentDescription = null, // Icons are self-explanatory
+                    contentDescription = when (state) {
+                        is VoicePlaybackViewModel.RecordingState.Idle -> stringResource(R.string.start_recording)
+                        is VoicePlaybackViewModel.RecordingState.Recording -> stringResource(R.string.stop_recording)
+                        is VoicePlaybackViewModel.RecordingState.PlaybackReady -> stringResource(R.string.play_recording)
+                        is VoicePlaybackViewModel.RecordingState.Playing -> stringResource(R.string.pause_playback)
+                    },
                 )
             }
 
@@ -195,7 +201,10 @@ fun VoicePlaybackToolbarContent(
 
                         else -> painterResource(R.drawable.close_24px)
                     },
-                    contentDescription = null, // Icons are self-explanatory
+                    contentDescription = when (state) {
+                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> stringResource(R.string.discard)
+                        else -> stringResource(R.string.dialog_cancel)
+                    },
                 )
             }
         }
