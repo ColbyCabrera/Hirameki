@@ -326,12 +326,7 @@ The following tests are `@Ignore`d and require rewriting for Compose APIs:
 
 | Scope          | Test Name                                                   | Issue & Goal                                                                                          |
 |----------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| **Selection**  | `insertIntoFocusedFieldStartsAtSelection` (L365)            | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Selection**  | `insertIntoFocusedFieldReplacesSelection` (L370)            | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Selection**  | `insertIntoFocusedFieldReplacesSelectionIfBackwards` (L376) | **Issue**: Tests XML `EditText` selection.<br>**Goal**: Rewrite using `TextFieldValue` selection API. |
-| **Keyboard**   | `defaultsToCapitalized` (L382)                              | **Issue**: Tests XML properties.<br>**Goal**: Rewrite using Compose `KeyboardOptions`.                |
 | **Clipboard**  | `pasteHtmlAsPlainTextTest` (L389)                           | **Issue**: Tests XML `FieldEditText` behavior.<br>**Goal**: Verify Compose clipboard semantics.       |
-| **Note Types** | `can switch two image occlusion note types` (L394)          | **Issue**: Tests XML `Spinner`.<br>**Goal**: Rewrite using `NoteEditorViewModel` note type selection. |
 
 ---
 
