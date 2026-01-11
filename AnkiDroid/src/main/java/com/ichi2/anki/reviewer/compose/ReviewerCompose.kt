@@ -173,8 +173,7 @@ class InvertedTopCornersShape(private val cornerRadius: Dp) : Shape {
 fun ReviewerContent(
     viewModel: ReviewerViewModel,
     whiteboardViewModel: WhiteboardViewModel?,
-    voicePlaybackViewModel: VoicePlaybackViewModel?,
-    voicePlaybackTempFile: java.io.File?
+    voicePlaybackViewModel: VoicePlaybackViewModel?
 ) {
     val state by viewModel.state.collectAsState()
     val sheetState = rememberModalBottomSheetState()
@@ -372,16 +371,13 @@ fun ReviewerContent(
                     }
 
                     // Voice Playback Toolbar
-                    if (state.isVoicePlaybackEnabled && voicePlaybackViewModel != null && voicePlaybackTempFile != null) {
+                    if (state.isVoicePlaybackEnabled && voicePlaybackViewModel != null) {
                         val voicePlaybackIsVisible by voicePlaybackViewModel.isVisible.collectAsState()
                         if (voicePlaybackIsVisible) {
                             VoicePlaybackToolbar(
                                 viewModel = voicePlaybackViewModel,
                                 onToggleRecording = {
-                                    voicePlaybackViewModel.toggleRecording(
-                                        context,
-                                        voicePlaybackTempFile
-                                    )
+                                    voicePlaybackViewModel.toggleRecording(context)
                                 },
                                 onDismiss = {
                                     voicePlaybackViewModel.setVisible(false)

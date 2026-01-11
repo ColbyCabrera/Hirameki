@@ -199,8 +199,7 @@ open class Reviewer :
                     .ReviewerContent(
                         viewModel = viewModel,
                         whiteboardViewModel = whiteboardViewModel,
-                        voicePlaybackViewModel = voicePlaybackViewModel,
-                        voicePlaybackTempFile = tempAudioPath
+                        voicePlaybackViewModel = voicePlaybackViewModel
                     )
             }
         }

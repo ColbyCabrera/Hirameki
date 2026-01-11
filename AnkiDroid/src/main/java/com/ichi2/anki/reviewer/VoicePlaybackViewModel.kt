@@ -65,14 +65,21 @@ class VoicePlaybackViewModel : ViewModel() {
         }
     }
 
-    fun toggleRecording(context: Context, tempAudioFile: File) {
+    fun toggleRecording(context: Context) {
         when (_state.value) {
-            is RecordingState.Idle -> startRecording(context, tempAudioFile)
+            is RecordingState.Idle -> {
+                val tempFile = com.ichi2.anki.multimedia.audio.AudioRecordingController.generateTempAudioFile(context)
+                if (tempFile != null) startRecording(context, tempFile)
+            }
             is RecordingState.Recording -> stopRecording()
-            is RecordingState.PlaybackReady -> startRecording(context, tempAudioFile)
+            is RecordingState.PlaybackReady -> {
+                val tempFile = com.ichi2.anki.multimedia.audio.AudioRecordingController.generateTempAudioFile(context)
+                if (tempFile != null) startRecording(context, tempFile)
+            }
             is RecordingState.Playing -> {
                 stopPlayback()
-                startRecording(context, tempAudioFile)
+                val tempFile = com.ichi2.anki.multimedia.audio.AudioRecordingController.generateTempAudioFile(context)
+                if (tempFile != null) startRecording(context, tempFile)
             }
         }
     }
