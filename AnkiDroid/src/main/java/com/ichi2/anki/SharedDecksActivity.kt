@@ -97,6 +97,22 @@ class SharedDecksActivity : AnkiActivity() {
                 super.onPageFinished(view, url)
             }
 
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                if (url == null) return
+
+                val uri = android.net.Uri.parse(url)
+                val host = uri.host
+                if (host != null) {
+                    if (allowedHosts.any { regex -> regex.matches(host) }) {
+                        if (uri.path?.trimEnd('/') == "/decks") {
+                            Timber.i("Redirecting to shared decks from user decks")
+                            view?.loadUrl(getString(R.string.shared_decks_url))
+                        }
+                    }
+                }
+            }
+
             /**
              * Prevent the WebView from loading urls which arent needed for importing shared decks.
              * This is to prevent potential misuse, such as bypassing content restrictions or
@@ -191,9 +207,6 @@ class SharedDecksActivity : AnkiActivity() {
                 }
 
                 // redirect user to /account/login
-                // TODO: the result of login is typically redirecting the user to their decks
-                // this should be improved
-
                 if (redirectTimes++ < 3) {
                     val url = getString(R.string.shared_decks_login_url)
                     Timber.i("HTTP 429, redirecting to login: '$url'")
