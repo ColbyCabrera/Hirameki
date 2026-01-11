@@ -380,7 +380,6 @@ fun ReviewerContent(
                                     voicePlaybackViewModel.toggleRecording(context)
                                 },
                                 onDismiss = {
-                                    voicePlaybackViewModel.setVisible(false)
                                     viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
                                 },
                                 modifier = Modifier
