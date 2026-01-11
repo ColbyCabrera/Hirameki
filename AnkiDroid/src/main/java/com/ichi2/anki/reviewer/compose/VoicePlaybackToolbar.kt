@@ -44,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -177,7 +176,6 @@ fun VoicePlaybackToolbarContent(
                         is VoicePlaybackViewModel.RecordingState.PlaybackReady -> Icons.Default.PlayArrow
                         is VoicePlaybackViewModel.RecordingState.Playing -> Icons.Default.Pause
                     }, contentDescription = null, // Icons are self-explanatory
-                    tint = Color.White
                 )
             }
 
@@ -191,7 +189,9 @@ fun VoicePlaybackToolbarContent(
                 }) {
                 Icon(
                     painter = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> painterResource(R.drawable.delete_24px)
+                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> painterResource(
+                            R.drawable.delete_24px
+                        )
                         else -> painterResource(R.drawable.close_24px)
                     }, contentDescription = null, // Icons are self-explanatory
                     tint = when (state) {
