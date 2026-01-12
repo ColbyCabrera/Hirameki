@@ -23,6 +23,7 @@ import android.os.Bundle
 import android.widget.Spinner
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.core.content.edit
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -62,7 +63,6 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.assertNotNull
-import androidx.core.content.edit
 
 /**
  * Tests for NoteEditor functionality.
@@ -467,19 +467,13 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun `can switch two image occlusion note types 15579`() {
-        // Ensure IO note type exists for the test
-        if (col.notetypes.byName("Image Occlusion") == null) {
-            return
-        }
+        // Skip test if Image Occlusion note type doesn't exist
+        org.junit.Assume.assumeTrue(
+            "Image Occlusion note type required", col.notetypes.byName("Image Occlusion") != null
+        )
 
         val ioType1 = col.notetypes.byName("Image Occlusion")!!
         val ioType2 = getSecondImageOcclusionNoteType()
-
-        // Ensure names are distinct
-        if (ioType2.name == ioType1.name) {
-            ioType2.name = "Image Occlusion 2"
-            col.notetypes.save(ioType2)
-        }
 
         val type1Name = ioType1.name
         val type2Name = ioType2.name
@@ -590,7 +584,11 @@ class NoteEditorTest : RobolectricTest() {
         return if (imageOcclusionNotes.size >= 2) {
             imageOcclusionNotes.first { it.name != "Image Occlusion" }
         } else {
-            col.notetypes.byName("Image Occlusion")!!.createClone()
+            // Clone and save the note type so it's available for selection
+            val clone = col.notetypes.byName("Image Occlusion")!!.createClone()
+            clone.name = "Image Occlusion 2"
+            col.notetypes.save(clone)
+            clone
         }
     }
 
