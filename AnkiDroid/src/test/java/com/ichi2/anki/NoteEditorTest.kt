@@ -44,7 +44,6 @@ import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.noteeditor.NoteEditorViewModel
-import com.ichi2.anki.noteeditor.compose.NoteEditorState
 import com.ichi2.testutils.getString
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.runBlocking
@@ -63,6 +62,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.assertNotNull
+import androidx.core.content.edit
 
 /**
  * Tests for NoteEditor functionality.
@@ -85,15 +85,9 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
     }
 
-    // Access to NoteEditorViewModel for testing
+    // Extension to access the internal viewModel for testing
     val NoteEditorFragment.viewModel: NoteEditorViewModel
-        get() {
-            // "noteEditorViewModel" is delegated, so the backing field is "noteEditorViewModel$delegate"
-            val field = NoteEditorFragment::class.java.getDeclaredField("noteEditorViewModel\$delegate")
-            field.isAccessible = true
-            val lazyValue = field.get(this) as Lazy<*>
-            return lazyValue.value as NoteEditorViewModel
-        }
+        get() = noteEditorViewModel
 
     @After
     override fun tearDown() {
@@ -445,8 +439,24 @@ class NoteEditorTest : RobolectricTest() {
         val editor = getNoteEditorAddingNote(DECK_LIST)
         idleMainLooper()
 
-        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(editor.requireContext())
-        assertThat(prefs.getBoolean("note_editor_capitalize", true), equalTo(true))
+        val prefs =
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(editor.requireContext())
+
+        // Verify the default is true when the preference is not set
+        prefs.edit { remove(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE) }
+        assertThat(
+            "Default value for capitalization should be true",
+            prefs.getBoolean(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE, true),
+            equalTo(true)
+        )
+
+        // Verify that setting the preference to false is respected
+        prefs.edit { putBoolean(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE, false) }
+        assertThat(
+            "After setting to false, the preference should be false",
+            prefs.getBoolean(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE, true),
+            equalTo(false)
+        )
     }
 
     @Test
