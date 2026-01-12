@@ -499,8 +499,6 @@ object UsageAnalytics {
             R.string.pref_monthly_backups_to_keep_key,
             // ******************************** Appearance *********************************************
             R.string.app_theme_key, // Theme
-            R.string.day_theme_key, // Day theme
-            R.string.night_theme_key, // Night theme
             R.string.fullscreen_mode_preference, // Fullscreen mode
             R.string.center_vertically_preference, // Center align
             R.string.show_estimates_preference, // Show button time
@@ -619,8 +617,6 @@ object UsageAnalytics {
             R.string.custom_button_user_action_7_key,
             R.string.custom_button_user_action_8_key,
             R.string.custom_button_user_action_9_key,
-            // *********************************** Study Screen ************************************
-            R.string.show_answer_feedback_key,
         )
 
     lateinit var preferencesWhoseChangesShouldBeReported: Set<String>
