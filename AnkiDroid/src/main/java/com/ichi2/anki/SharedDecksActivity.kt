@@ -18,7 +18,7 @@
 package com.ichi2.anki
 
 import android.app.DownloadManager
-import android.content.Context
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -33,11 +33,13 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFINITE
+import com.ichi2.anki.SharedDecksActivity.Companion.MAX_REDIRECTS
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.ui.AccessibleSearchView
@@ -57,13 +59,16 @@ class SharedDecksActivity : AnkiActivity() {
 
     private var shouldHistoryBeCleared = false
 
-    private val allowedHosts = listOf(Regex("""^(?:.*\.)?ankiweb\.net$"""), Regex("""^ankiuser\.net$"""), Regex("""^ankisrs\.net$"""))
-    private val onBackPressedCallback =
-        object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack()
-            }
+    private val allowedHosts = listOf(
+        Regex("""^(?:.*\.)?ankiweb\.net$"""),
+        Regex("""^ankiuser\.net$"""),
+        Regex("""^ankisrs\.net$""")
+    )
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (webView.canGoBack()) webView.goBack()
         }
+    }
 
     /**
      * Handle condition when page finishes loading and history needs to be cleared.
@@ -72,143 +77,161 @@ class SharedDecksActivity : AnkiActivity() {
      * History should not be cleared before the page finishes loading otherwise there would be
      * an extra entry in the history since the previous page would not get cleared.
      */
-    private val webViewClient =
-        object : WebViewClient() {
-            private var redirectTimes = 0
+    private val webViewClient = object : WebViewClient() {
+        private var redirectTimes = 0
 
-            override fun doUpdateVisitedHistory(
-                view: WebView?,
-                url: String?,
-                isReload: Boolean,
-            ) {
-                super.doUpdateVisitedHistory(view, url, isReload)
-                onBackPressedCallback.isEnabled = webView.canGoBack()
-            }
+        override fun doUpdateVisitedHistory(
+            view: WebView?,
+            url: String?,
+            isReload: Boolean,
+        ) {
+            super.doUpdateVisitedHistory(view, url, isReload)
+            onBackPressedCallback.isEnabled = webView.canGoBack()
+        }
 
-            override fun onPageFinished(
-                view: WebView?,
-                url: String?,
-            ) {
-                // Clear history if mShouldHistoryBeCleared is true and set it to false
-                if (shouldHistoryBeCleared) {
-                    webView.clearHistory()
-                    shouldHistoryBeCleared = false
-                }
-                super.onPageFinished(view, url)
-            }
-
-            /**
-             * Prevent the WebView from loading urls which arent needed for importing shared decks.
-             * This is to prevent potential misuse, such as bypassing content restrictions or
-             * using the AnkiDroid WebView as a regular browser to bypass browser blocks,
-             * which could lead to procrastination.
-             */
-            override fun shouldOverrideUrlLoading(
-                view: WebView?,
-                request: WebResourceRequest?,
-            ): Boolean {
-                val host = request?.url?.host
-                if (host != null) {
-                    if (allowedHosts.any { regex -> regex.matches(host) }) {
-                        return super.shouldOverrideUrlLoading(view, request)
-                    }
-                }
-
-                request?.url?.let { super@SharedDecksActivity.openUrl(it) }
-
-                return true
-            }
-
-            private val cookieManager: CookieManager by lazy {
-                CookieManager.getInstance()
-            }
-
-            private val isLoggedInToAnkiWeb: Boolean
-                get() {
-                    try {
-                        // cookies are null after the user logs out, or if the site is first visited
-                        val cookies = cookieManager.getCookie("https://ankiweb.net") ?: return false
-                        // ankiweb currently (2024-09-25) sets two cookies:
-                        // * `ankiweb`, which is base64-encoded JSON
-                        // * `has_auth`, which is 1
-                        return cookies.contains("has_auth=1")
-                    } catch (e: Exception) {
-                        Timber.w(e, "Could not determine login status")
-                        return false
-                    }
-                }
-
-            @NeedsTest("A user is not redirected to login/signup if they are logged in to AnkiWeb")
-            override fun onReceivedHttpError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                errorResponse: WebResourceResponse?,
-            ) {
-                super.onReceivedHttpError(view, request, errorResponse)
-
-                if (errorResponse?.statusCode != HTTP_STATUS_TOO_MANY_REQUESTS) return
-
-                // If a user is logged in, they see: "Daily limit exceeded; please try again tomorrow."
-                // We have nothing we can do here
-                if (isLoggedInToAnkiWeb) return
-
-                // The following cases are handled below:
-                // "Please log in to download more decks." - on clicking "Download"
-                // "Please log in to perform more searches" - on searching
-                redirectUserToSignUpOrLogin()
-            }
-
-            override fun onReceivedError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                error: WebResourceError?,
-            ) {
-                // Set mShouldHistoryBeCleared to false if error occurs since it might have been true
+        override fun onPageFinished(
+            view: WebView?,
+            url: String?,
+        ) {
+            // Clear history if mShouldHistoryBeCleared is true and set it to false
+            if (shouldHistoryBeCleared) {
+                webView.clearHistory()
                 shouldHistoryBeCleared = false
-                super.onReceivedError(view, request, error)
             }
+            redirectTimes = 0
+            super.onPageFinished(view, url)
+        }
 
-            /**
-             * Redirects the user to a login page
-             *
-             * A message is shown informing the user they need to log in to download more decks
-             *
-             * If the user has not logged in **inside AnkiDroid** then the message provides
-             * the user with an action to sign up
-             *
-             * The redirect is not performed if [redirectTimes] is 3 or more
-             */
-            private fun redirectUserToSignUpOrLogin() {
-                // inform the user they need to log in as they've hit a rate limit
-                showSnackbar(R.string.shared_decks_login_required, LENGTH_INDEFINITE) {
-                    if (isLoggedIn()) return@showSnackbar
+        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+            super.onPageStarted(view, url, favicon)
+            if (url == null) return
 
-                    // If a user is not logged in inside AnkiDroid, assume they have no AnkiWeb account
-                    // and give them the option to sign up
-                    setAction(R.string.sign_up) {
-                        webView.loadUrl(getString(R.string.shared_decks_sign_up_url))
-                    }
-                }
+            val uri = url.toUri()
+            val host = uri.host ?: return
+            val isAllowedHost = allowedHosts.any { it.matches(host) }
+            val isUserDecksPath = uri.path?.trimEnd('/') == USER_DECKS_PATH
 
-                // redirect user to /account/login
-                // TODO: the result of login is typically redirecting the user to their decks
-                // this should be improved
+            if (!isAllowedHost || !isUserDecksPath) return
 
-                if (redirectTimes++ < 3) {
-                    val url = getString(R.string.shared_decks_login_url)
-                    Timber.i("HTTP 429, redirecting to login: '$url'")
-                    webView.loadUrl(url)
-                } else {
-                    // Ensure that we do not have an infinite redirect
-                    Timber.w("HTTP 429 redirect limit exceeded, only displaying message")
-                }
+            if (redirectTimes++ < MAX_REDIRECTS) {
+                Timber.i("Redirecting to shared decks from user decks")
+                view?.loadUrl(getString(R.string.shared_decks_url))
+            } else {
+                Timber.w("Redirect limit reached for /decks redirect, skipping")
             }
         }
+
+        /**
+         * Prevent the WebView from loading urls which arent needed for importing shared decks.
+         * This is to prevent potential misuse, such as bypassing content restrictions or
+         * using the AnkiDroid WebView as a regular browser to bypass browser blocks,
+         * which could lead to procrastination.
+         */
+        override fun shouldOverrideUrlLoading(
+            view: WebView?,
+            request: WebResourceRequest?,
+        ): Boolean {
+            val host = request?.url?.host
+            if (host != null) {
+                if (allowedHosts.any { regex -> regex.matches(host) }) {
+                    return super.shouldOverrideUrlLoading(view, request)
+                }
+            }
+
+            request?.url?.let { super@SharedDecksActivity.openUrl(it) }
+
+            return true
+        }
+
+        private val cookieManager: CookieManager by lazy {
+            CookieManager.getInstance()
+        }
+
+        private val isLoggedInToAnkiWeb: Boolean
+            get() {
+                try {
+                    // cookies are null after the user logs out, or if the site is first visited
+                    val cookies = cookieManager.getCookie("https://ankiweb.net") ?: return false
+                    // ankiweb currently (2024-09-25) sets two cookies:
+                    // * `ankiweb`, which is base64-encoded JSON
+                    // * `has_auth`, which is 1
+                    return cookies.contains("has_auth=1")
+                } catch (e: Exception) {
+                    Timber.w(e, "Could not determine login status")
+                    return false
+                }
+            }
+
+        @NeedsTest("A user is not redirected to login/signup if they are logged in to AnkiWeb")
+        override fun onReceivedHttpError(
+            view: WebView?,
+            request: WebResourceRequest?,
+            errorResponse: WebResourceResponse?,
+        ) {
+            super.onReceivedHttpError(view, request, errorResponse)
+
+            if (errorResponse?.statusCode != HTTP_STATUS_TOO_MANY_REQUESTS) return
+
+            // If a user is logged in, they see: "Daily limit exceeded; please try again tomorrow."
+            // We have nothing we can do here
+            if (isLoggedInToAnkiWeb) return
+
+            // The following cases are handled below:
+            // "Please log in to download more decks." - on clicking "Download"
+            // "Please log in to perform more searches" - on searching
+            redirectUserToSignUpOrLogin()
+        }
+
+        override fun onReceivedError(
+            view: WebView?,
+            request: WebResourceRequest?,
+            error: WebResourceError?,
+        ) {
+            // Set mShouldHistoryBeCleared to false if error occurs since it might have been true
+            shouldHistoryBeCleared = false
+            super.onReceivedError(view, request, error)
+        }
+
+        /**
+         * Redirects the user to a login page
+         *
+         * A message is shown informing the user they need to log in to download more decks
+         *
+         * If the user has not logged in **inside AnkiDroid** then the message provides
+         * the user with an action to sign up
+         *
+         * The redirect is not performed if [redirectTimes] is [MAX_REDIRECTS] or more
+         */
+        private fun redirectUserToSignUpOrLogin() {
+            // inform the user they need to log in as they've hit a rate limit
+            showSnackbar(R.string.shared_decks_login_required, LENGTH_INDEFINITE) {
+                if (isLoggedIn()) return@showSnackbar
+
+                // If a user is not logged in inside AnkiDroid, assume they have no AnkiWeb account
+                // and give them the option to sign up
+                setAction(R.string.sign_up) {
+                    webView.loadUrl(getString(R.string.shared_decks_sign_up_url))
+                }
+            }
+
+            // redirect user to /account/login
+            if (redirectTimes++ < MAX_REDIRECTS) {
+                val url = getString(R.string.shared_decks_login_url)
+                Timber.i("HTTP 429, redirecting to login: '$url'")
+                webView.loadUrl(url)
+            } else {
+                // Ensure that we do not have an infinite redirect
+                Timber.w("HTTP 429 redirect limit exceeded, only displaying message")
+            }
+        }
+    }
 
     companion object {
         const val SHARED_DECKS_DOWNLOAD_FRAGMENT = "SharedDecksDownloadFragment"
         const val DOWNLOAD_FILE = "DownloadFile"
         private const val HTTP_STATUS_TOO_MANY_REQUESTS = 429
+        private const val USER_DECKS_PATH = "/decks"
+        private const val MAX_REDIRECTS = 3
     }
 
     // Show WebView with AnkiWeb shared decks with the functionality to capture downloads and import decks.
@@ -239,7 +262,7 @@ class SharedDecksActivity : AnkiActivity() {
 
         webView = findViewById(R.id.media_check_webview)
 
-        downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
 
         webView.settings.javaScriptEnabled = true
         webView.loadUrl(resources.getString(R.string.shared_decks_url))
@@ -249,10 +272,9 @@ class SharedDecksActivity : AnkiActivity() {
             // avoid handling the download, as FragmentManager.commit will throw
             if (!supportFragmentManager.isStateSaved) {
                 val sharedDecksDownloadFragment = SharedDecksDownloadFragment()
-                sharedDecksDownloadFragment.arguments =
-                    bundleOf(
-                        DOWNLOAD_FILE to DownloadFile(url, userAgent, contentDisposition, mimetype),
-                    )
+                sharedDecksDownloadFragment.arguments = bundleOf(
+                    DOWNLOAD_FILE to DownloadFile(url, userAgent, contentDisposition, mimetype),
+                )
                 supportFragmentManager.commit {
                     add(
                         R.id.shared_decks_fragment_container,
@@ -312,21 +334,19 @@ data class DownloadFile(
     val mimeType: String,
 ) : Serializable {
     /** @return a filename with the provided extension */
-    fun toFileName(extension: String): String =
-        URLUtil
-            .guessFileName(
-                this.url,
-                this.contentDisposition,
-                this.mimeType,
-            ).let { maybeCorruptFileName ->
-                // #17573: https://issuetracker.google.com/issues/382864232
-                // guessFileName may return ".bin" as an extension
-                (
-                    FileNameAndExtension.fromString(maybeCorruptFileName)
-                        // default if maybeCorruptFileName doesn't contain a '.'
-                        // Add randomness to avoid file name conflicts between different decks
-                        ?: FileNameAndExtension.fromString("download-${Random.nextInt()}$extension")!!
-                ).replaceExtension(extension = extension) // enforce the provided extension
-                    .toString()
-            }
+    fun toFileName(extension: String): String = URLUtil.guessFileName(
+            this.url,
+            this.contentDisposition,
+            this.mimeType,
+        ).let { maybeCorruptFileName ->
+            // #17573: https://issuetracker.google.com/issues/382864232
+            // guessFileName may return ".bin" as an extension
+            (FileNameAndExtension.fromString(maybeCorruptFileName)
+            // default if maybeCorruptFileName doesn't contain a '.'
+            // Add randomness to avoid file name conflicts between different decks
+                ?: FileNameAndExtension.fromString("download-${Random.nextInt()}$extension")!!).replaceExtension(
+                    extension = extension
+                ) // enforce the provided extension
+                .toString()
+        }
 }
