@@ -197,7 +197,7 @@ class SharedDecksActivity : AnkiActivity() {
              * If the user has not logged in **inside AnkiDroid** then the message provides
              * the user with an action to sign up
              *
-             * The redirect is not performed if [redirectTimes] is 3 or more
+             * The redirect is not performed if [redirectTimes] is [MAX_REDIRECTS] or more
              */
             private fun redirectUserToSignUpOrLogin() {
                 // inform the user they need to log in as they've hit a rate limit
@@ -212,7 +212,7 @@ class SharedDecksActivity : AnkiActivity() {
                 }
 
                 // redirect user to /account/login
-                if (redirectTimes++ < 3) {
+                if (redirectTimes++ < MAX_REDIRECTS) {
                     val url = getString(R.string.shared_decks_login_url)
                     Timber.i("HTTP 429, redirecting to login: '$url'")
                     webView.loadUrl(url)
