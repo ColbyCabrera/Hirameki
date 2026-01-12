@@ -369,7 +369,8 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         }
     }
 
-    private val noteEditorViewModel: NoteEditorViewModel by activityViewModels()
+    @VisibleForTesting
+    internal val noteEditorViewModel: NoteEditorViewModel by activityViewModels()
 
     override fun onViewCreated(
         view: View,
@@ -1783,7 +1784,8 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         const val PREF_NOTE_EDITOR_SCROLL_TOOLBAR = "noteEditorScrollToolbar"
         private const val PREF_NOTE_EDITOR_SHOW_TOOLBAR = "noteEditorShowToolbar"
         private const val PREF_NOTE_EDITOR_NEWLINE_REPLACE = "noteEditorNewlineReplace"
-        private const val PREF_NOTE_EDITOR_CAPITALIZE = "note_editor_capitalize"
+        @VisibleForTesting
+        internal const val PREF_NOTE_EDITOR_CAPITALIZE = "note_editor_capitalize"
         private const val PREF_NOTE_EDITOR_FONT_SIZE = "note_editor_font_size"
         private const val PREF_NOTE_EDITOR_CUSTOM_BUTTONS = "note_editor_custom_buttons"
 
