@@ -104,18 +104,17 @@ class SharedDecksActivity : AnkiActivity() {
                 if (url == null) return
 
                 val uri = url.toUri()
-                val host = uri.host
-                if (host != null) {
-                    if (allowedHosts.any { regex -> regex.matches(host) }) {
-                        if (uri.path?.trimEnd('/') == "/decks") {
-                            if (redirectTimes++ < 3) {
-                                Timber.i("Redirecting to shared decks from user decks")
-                                view?.loadUrl(getString(R.string.shared_decks_url))
-                            } else {
-                                Timber.w("Redirect limit reached for /decks redirect, skipping")
-                            }
-                        }
-                    }
+                val host = uri.host ?: return
+                val isAllowedHost = allowedHosts.any { it.matches(host) }
+                val isUserDecksPath = uri.path?.trimEnd('/') == USER_DECKS_PATH
+
+                if (!isAllowedHost || !isUserDecksPath) return
+
+                if (redirectTimes++ < MAX_REDIRECTS) {
+                    Timber.i("Redirecting to shared decks from user decks")
+                    view?.loadUrl(getString(R.string.shared_decks_url))
+                } else {
+                    Timber.w("Redirect limit reached for /decks redirect, skipping")
                 }
             }
 
@@ -228,6 +227,8 @@ class SharedDecksActivity : AnkiActivity() {
         const val SHARED_DECKS_DOWNLOAD_FRAGMENT = "SharedDecksDownloadFragment"
         const val DOWNLOAD_FILE = "DownloadFile"
         private const val HTTP_STATUS_TOO_MANY_REQUESTS = 429
+        private const val USER_DECKS_PATH = "/decks"
+        private const val MAX_REDIRECTS = 3
     }
 
     // Show WebView with AnkiWeb shared decks with the functionality to capture downloads and import decks.
