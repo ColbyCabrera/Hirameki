@@ -18,7 +18,7 @@
 package com.ichi2.anki
 
 import android.app.DownloadManager
-import android.content.Context
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -45,6 +45,7 @@ import com.ichi2.utils.FileNameAndExtension
 import timber.log.Timber
 import java.io.Serializable
 import kotlin.random.Random
+import androidx.core.net.toUri
 
 /**
  * Browse AnkiWeb shared decks with the functionality to download and import them.
@@ -94,20 +95,25 @@ class SharedDecksActivity : AnkiActivity() {
                     webView.clearHistory()
                     shouldHistoryBeCleared = false
                 }
+                redirectTimes = 0
                 super.onPageFinished(view, url)
             }
 
-            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 if (url == null) return
 
-                val uri = android.net.Uri.parse(url)
+                val uri = url.toUri()
                 val host = uri.host
                 if (host != null) {
                     if (allowedHosts.any { regex -> regex.matches(host) }) {
                         if (uri.path?.trimEnd('/') == "/decks") {
-                            Timber.i("Redirecting to shared decks from user decks")
-                            view?.loadUrl(getString(R.string.shared_decks_url))
+                            if (redirectTimes++ < 3) {
+                                Timber.i("Redirecting to shared decks from user decks")
+                                view?.loadUrl(getString(R.string.shared_decks_url))
+                            } else {
+                                Timber.w("Redirect limit reached for /decks redirect, skipping")
+                            }
                         }
                     }
                 }
@@ -252,7 +258,7 @@ class SharedDecksActivity : AnkiActivity() {
 
         webView = findViewById(R.id.media_check_webview)
 
-        downloadManager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
 
         webView.settings.javaScriptEnabled = true
         webView.loadUrl(resources.getString(R.string.shared_decks_url))
