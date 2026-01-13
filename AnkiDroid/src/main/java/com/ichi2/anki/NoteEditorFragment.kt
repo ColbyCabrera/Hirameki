@@ -1128,6 +1128,8 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         closeNoteEditor(closeIntent ?: Intent())
                     } else {
                         noteEditorViewModel.resetFieldEditedFlag()
+                        // Update card info for the new (blank) note
+                        updateCards(noteEditorViewModel.currentNote.value?.notetype)
                     }
                 } else {
                     closeNoteEditor()
