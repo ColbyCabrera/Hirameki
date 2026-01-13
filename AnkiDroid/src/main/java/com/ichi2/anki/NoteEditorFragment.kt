@@ -55,7 +55,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.NoteEditorFragment.Companion.NoteEditorCaller.Companion.fromValue
 import com.ichi2.anki.android.input.ShortcutGroup
 import com.ichi2.anki.android.input.ShortcutGroupProvider
 import com.ichi2.anki.android.input.shortcut
@@ -92,6 +91,8 @@ import com.ichi2.anki.multimediacard.fields.MediaClipField
 import com.ichi2.anki.multimediacard.impl.MultimediaEditableNote
 import com.ichi2.anki.noteeditor.ClozeInsertionMode
 import com.ichi2.anki.noteeditor.CustomToolbarButton
+import com.ichi2.anki.noteeditor.NoteEditorCaller
+import com.ichi2.anki.noteeditor.NoteEditorCaller.Companion.fromValue
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.noteeditor.NoteEditorViewModel
 import com.ichi2.anki.noteeditor.ToolbarButtonModel
@@ -130,8 +131,6 @@ import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
 import java.util.function.Consumer
 
-const val CALLER_KEY = "caller"
-
 /**
  * Fragment for creating and editing notes (flashcards) in Anki.
  *
@@ -152,7 +151,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     TagsDialogListener, BaseSnackbarBuilderProvider, DispatchKeyEventListener,
     ShortcutGroupProvider {
     /** Whether any change are saved. E.g. multimedia, new card added, field changed and saved. */
-    private var changed = false
+    private var changed: Boolean
+        get() = noteEditorViewModel.changed.value
+        set(value) = noteEditorViewModel.setChanged(value)
 
     private var multimediaActionJob: Job? = null
 
@@ -162,7 +163,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     /**
      * Flag which forces the calling activity to rebuild it's definition of current card from scratch
      */
-    private var reloadRequired = false
+    private var reloadRequired: Boolean
+        get() = noteEditorViewModel.reloadRequired.value
+        set(value) = noteEditorViewModel.setReloadRequired(value)
 
     private var tagsDialogFactory: TagsDialogFactory? = null
 
@@ -180,10 +183,15 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
     // indicates if a new note is added or a card is edited
     private var addNote = false
-    private var aedictIntent = false
+
+    private var aedictIntent: Boolean
+        get() = noteEditorViewModel.aedictIntent.value
+        set(value) = noteEditorViewModel.setAedictIntent(value)
 
     // indicates which activity called Note Editor
-    private var caller = NoteEditorCaller.NO_CALLER
+    private var caller: NoteEditorCaller
+        get() = noteEditorViewModel.caller.value
+        set(value) = noteEditorViewModel.setCaller(value)
 
     private var sourceText: Array<String?>? = null
 
@@ -351,12 +359,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         super.onCreate(savedInstanceState)
         val intent = requireActivity().intent
         if (savedInstanceState != null) {
-            caller = fromValue(savedInstanceState.getInt(CALLER_KEY))
+            // caller, reloadRequired, and changed are restored via ViewModel's SavedStateHandle
             addNote = savedInstanceState.getBoolean("addNote")
             deckId = savedInstanceState.getLong("did")
-            // Tags are restored via ViewModel's SavedStateHandle, not instance state
-            reloadRequired = savedInstanceState.getBoolean(RELOAD_REQUIRED_EXTRA_KEY)
-            changed = savedInstanceState.getBoolean(NOTE_CHANGED_EXTRA_KEY)
         } else {
             caller =
                 fromValue(requireArguments().getInt(EXTRA_CALLER, NoteEditorCaller.NO_CALLER.value))
@@ -847,12 +852,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
     private fun addInstanceStateToBundle(savedInstanceState: Bundle) {
         Timber.i("Saving instance")
-        savedInstanceState.putInt(CALLER_KEY, caller.value)
+        // caller, reloadRequired, and changed are persisted via ViewModel's SavedStateHandle
         savedInstanceState.putBoolean("addNote", addNote)
         savedInstanceState.putLong("did", deckId)
-        savedInstanceState.putBoolean(NOTE_CHANGED_EXTRA_KEY, changed)
-        savedInstanceState.putBoolean(RELOAD_REQUIRED_EXTRA_KEY, reloadRequired)
-        // Tags are persisted via ViewModel's SavedStateHandle, not instance state
     }
 
     private fun applyFormatter(
@@ -1126,6 +1128,8 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         closeNoteEditor(closeIntent ?: Intent())
                     } else {
                         noteEditorViewModel.resetFieldEditedFlag()
+                        // Update card info for the new (blank) note
+                        updateCards(noteEditorViewModel.currentNote.value?.notetype)
                     }
                 } else {
                     closeNoteEditor()
@@ -1763,27 +1767,12 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         const val EXTRA_IMG_OCCLUSION = "image_uri"
         const val IN_CARD_BROWSER_ACTIVITY = "inCardBrowserActivity"
 
-        enum class NoteEditorCaller(
-            val value: Int,
-        ) {
-            NO_CALLER(0), EDIT(1), STUDYOPTIONS(2), DECKPICKER(3), REVIEWER_ADD(11), CARDBROWSER_ADD(
-                7
-            ),
-            NOTEEDITOR(8), PREVIEWER_EDIT(9), NOTEEDITOR_INTENT_ADD(10), IMG_OCCLUSION(12), ADD_IMAGE(
-                13
-            ),
-            INSTANT_NOTE_EDITOR(14), ;
-
-            companion object {
-                fun fromValue(value: Int) = NoteEditorCaller.entries.first { it.value == value }
-            }
-        }
-
         const val RESULT_UPDATED_IO_NOTE = 11
 
         const val PREF_NOTE_EDITOR_SCROLL_TOOLBAR = "noteEditorScrollToolbar"
         private const val PREF_NOTE_EDITOR_SHOW_TOOLBAR = "noteEditorShowToolbar"
         private const val PREF_NOTE_EDITOR_NEWLINE_REPLACE = "noteEditorNewlineReplace"
+
         @VisibleForTesting
         internal const val PREF_NOTE_EDITOR_CAPITALIZE = "note_editor_capitalize"
         private const val PREF_NOTE_EDITOR_FONT_SIZE = "note_editor_font_size"
