@@ -21,10 +21,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import anki.config.ConfigKey
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.NoteFieldsCheckResult
 import com.ichi2.anki.checkNoteFieldsResponse
-import anki.config.ConfigKey
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Collection
