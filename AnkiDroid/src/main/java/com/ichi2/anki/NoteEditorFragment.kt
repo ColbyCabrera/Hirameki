@@ -131,8 +131,6 @@ import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
 import java.util.function.Consumer
 
-const val CALLER_KEY = "caller"
-
 /**
  * Fragment for creating and editing notes (flashcards) in Anki.
  *
@@ -1772,6 +1770,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         const val PREF_NOTE_EDITOR_SCROLL_TOOLBAR = "noteEditorScrollToolbar"
         private const val PREF_NOTE_EDITOR_SHOW_TOOLBAR = "noteEditorShowToolbar"
         private const val PREF_NOTE_EDITOR_NEWLINE_REPLACE = "noteEditorNewlineReplace"
+
         @VisibleForTesting
         internal const val PREF_NOTE_EDITOR_CAPITALIZE = "note_editor_capitalize"
         private const val PREF_NOTE_EDITOR_FONT_SIZE = "note_editor_font_size"
