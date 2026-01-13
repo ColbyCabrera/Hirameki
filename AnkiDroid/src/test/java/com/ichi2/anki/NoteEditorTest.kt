@@ -549,6 +549,29 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
+    fun `cards info is updated after saving new note`() = runTest {
+        val editor =
+            getNoteEditorAdding(NoteType.BASIC).withFirstField("Front").withSecondField("Back")
+                .build()
+        idleMainLooper()
+
+        // Initial state check
+        assertThat(
+            editor.viewModel.noteEditorState.value.cardsInfo, equalTo("Cards: Card 1")
+        )
+
+        editor.saveNote()
+        idleMainLooper()
+
+        // After save, we are on a new blank note of the same type.
+        // It should still say "Cards: Card 1" because the note type hasn't changed.
+        // It should NOT be empty (which causes the raw format string issue in UI)
+        assertThat(
+            editor.viewModel.noteEditorState.value.cardsInfo, equalTo("Cards: Card 1")
+        )
+    }
+
+    @Test
     fun `editing card in filtered deck retains deck`() = runTest {
         val homeDeckId = addDeck("A")
         val note = addBasicNote().updateCards { did = homeDeckId }
