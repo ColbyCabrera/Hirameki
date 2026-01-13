@@ -55,7 +55,8 @@ import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.NoteEditorFragment.Companion.NoteEditorCaller.Companion.fromValue
+import com.ichi2.anki.noteeditor.NoteEditorCaller
+import com.ichi2.anki.noteeditor.NoteEditorCaller.Companion.fromValue
 import com.ichi2.anki.android.input.ShortcutGroup
 import com.ichi2.anki.android.input.ShortcutGroupProvider
 import com.ichi2.anki.android.input.shortcut
@@ -1762,22 +1763,6 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         const val RELOAD_REQUIRED_EXTRA_KEY = "reloadRequired"
         const val EXTRA_IMG_OCCLUSION = "image_uri"
         const val IN_CARD_BROWSER_ACTIVITY = "inCardBrowserActivity"
-
-        enum class NoteEditorCaller(
-            val value: Int,
-        ) {
-            NO_CALLER(0), EDIT(1), STUDYOPTIONS(2), DECKPICKER(3), REVIEWER_ADD(11), CARDBROWSER_ADD(
-                7
-            ),
-            NOTEEDITOR(8), PREVIEWER_EDIT(9), NOTEEDITOR_INTENT_ADD(10), IMG_OCCLUSION(12), ADD_IMAGE(
-                13
-            ),
-            INSTANT_NOTE_EDITOR(14), ;
-
-            companion object {
-                fun fromValue(value: Int) = NoteEditorCaller.entries.first { it.value == value }
-            }
-        }
 
         const val RESULT_UPDATED_IO_NOTE = 11
 

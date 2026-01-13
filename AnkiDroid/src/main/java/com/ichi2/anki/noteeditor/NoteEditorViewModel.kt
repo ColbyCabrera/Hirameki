@@ -55,6 +55,38 @@ enum class ClozeInsertionMode {
 }
 
 /**
+ * Identifies the source that launched the Note Editor.
+ * This is used to determine the editor's behavior (add vs edit mode)
+ * and how to handle the result when closing.
+ *
+ * Moved from NoteEditorFragment.Companion for shared access during migration.
+ */
+enum class NoteEditorCaller(val value: Int) {
+    NO_CALLER(0),
+    EDIT(1),
+    STUDYOPTIONS(2),
+    DECKPICKER(3),
+    CARDBROWSER_ADD(7),
+    NOTEEDITOR(8),
+    PREVIEWER_EDIT(9),
+    NOTEEDITOR_INTENT_ADD(10),
+    REVIEWER_ADD(11),
+    IMG_OCCLUSION(12),
+    ADD_IMAGE(13),
+    INSTANT_NOTE_EDITOR(14),
+    ;
+
+    companion object {
+        /**
+         * Converts an integer value to the corresponding [NoteEditorCaller].
+         * Returns [NO_CALLER] for unknown values to prevent crashes from corrupted SavedStateHandle data.
+         */
+        fun fromValue(value: Int): NoteEditorCaller =
+            entries.firstOrNull { it.value == value } ?: NO_CALLER
+    }
+}
+
+/**
  * Represents the result of a note save operation with type-safe data.
  * Eliminates the need for unchecked casts by providing a sealed class hierarchy.
  */
@@ -109,6 +141,12 @@ class NoteEditorViewModel(
         private const val KEY_TAGS = "note_editor_tags"
         private const val KEY_SELECTED_DECK_NAME = "note_editor_selected_deck_name"
         private const val KEY_FOCUSED_FIELD_INDEX = "note_editor_focused_field_index"
+
+        // Keys for caller/result state (migrated from Fragment)
+        private const val KEY_CALLER = "note_editor_caller"
+        private const val KEY_CHANGED = "note_editor_changed"
+        private const val KEY_RELOAD_REQUIRED = "note_editor_reload_required"
+        private const val KEY_AEDICT_INTENT = "note_editor_aedict_intent"
 
         /**
          * Note: SavedStateHandle is nullable to maintain backward compatibility with existing code
@@ -224,6 +262,72 @@ class NoteEditorViewModel(
 
     // Store initial note type ID to detect note type changes
     private var initialNoteTypeId: Long = 0L
+
+    // ============================================================================
+    // Caller/Result State (migrated from NoteEditorFragment)
+    // ============================================================================
+
+    private val _caller = MutableStateFlow(NoteEditorCaller.NO_CALLER)
+
+    /** Identifies which component launched the editor (determines add/edit mode and result handling). */
+    val caller: StateFlow<NoteEditorCaller> = _caller.asStateFlow()
+
+    private val _changed = MutableStateFlow(false)
+
+    /** True if any changes have been saved (e.g., multimedia added, note saved). */
+    val changed: StateFlow<Boolean> = _changed.asStateFlow()
+
+    private val _reloadRequired = MutableStateFlow(false)
+
+    /** Signals that the calling activity should rebuild its card definition from scratch. */
+    val reloadRequired: StateFlow<Boolean> = _reloadRequired.asStateFlow()
+
+    private val _aedictIntent = MutableStateFlow(false)
+
+    /** True if the editor was opened from Aedict Notepad with special handling. */
+    val aedictIntent: StateFlow<Boolean> = _aedictIntent.asStateFlow()
+
+    init {
+        // Restore caller state from SavedStateHandle on process death recovery
+        savedStateHandle?.get<Int>(KEY_CALLER)?.let { callerValue ->
+            _caller.value = NoteEditorCaller.fromValue(callerValue)
+        }
+        savedStateHandle?.get<Boolean>(KEY_CHANGED)?.let { _changed.value = it }
+        savedStateHandle?.get<Boolean>(KEY_RELOAD_REQUIRED)?.let { _reloadRequired.value = it }
+        savedStateHandle?.get<Boolean>(KEY_AEDICT_INTENT)?.let { _aedictIntent.value = it }
+    }
+
+    /**
+     * Sets the caller and persists to SavedStateHandle for process death recovery.
+     */
+    fun setCaller(newCaller: NoteEditorCaller) {
+        _caller.value = newCaller
+        savedStateHandle?.set(KEY_CALLER, newCaller.value)
+    }
+
+    /**
+     * Marks that changes have been made and persists to SavedStateHandle.
+     */
+    fun setChanged(value: Boolean) {
+        _changed.value = value
+        savedStateHandle?.set(KEY_CHANGED, value)
+    }
+
+    /**
+     * Marks that reload is required and persists to SavedStateHandle.
+     */
+    fun setReloadRequired(value: Boolean) {
+        _reloadRequired.value = value
+        savedStateHandle?.set(KEY_RELOAD_REQUIRED, value)
+    }
+
+    /**
+     * Sets the Aedict intent flag.
+     */
+    fun setAedictIntent(value: Boolean) {
+        _aedictIntent.value = value
+        savedStateHandle?.set(KEY_AEDICT_INTENT, value)
+    }
 
     /**
      * Initialize the editor with a new or existing note

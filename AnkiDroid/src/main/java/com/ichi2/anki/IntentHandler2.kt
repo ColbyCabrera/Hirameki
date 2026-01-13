@@ -17,7 +17,7 @@
 package com.ichi2.anki
 
 import android.os.Bundle
-import com.ichi2.anki.NoteEditorFragment.Companion.NoteEditorCaller
+import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import timber.log.Timber
 
