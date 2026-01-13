@@ -66,6 +66,8 @@ enum class NoteEditorCaller(val value: Int) {
     EDIT(1),
     STUDYOPTIONS(2),
     DECKPICKER(3),
+    // Values 4, 5, 6 intentionally skipped - deprecated callers removed during migration
+    // from NoteEditorFragment.Companion. Do not reuse these values.
     CARDBROWSER_ADD(7),
     NOTEEDITOR(8),
     PREVIEWER_EDIT(9),
@@ -322,7 +324,7 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Sets the Aedict intent flag.
+     * Sets the Aedict intent flag and persists to SavedStateHandle.
      */
     fun setAedictIntent(value: Boolean) {
         _aedictIntent.value = value
