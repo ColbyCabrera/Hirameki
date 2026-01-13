@@ -92,55 +92,53 @@ class TtsVoicesDialogFragment : DialogFragment() {
         voicesAdapter = TtsVoiceAdapter()
         Themes.setTheme(requireContext()) // (re)-enable selectableItemBackground on theme change
 
-        layout =
-            inflater.inflate(R.layout.dialog_tts_voices, null).apply {
-                recyclerView =
-                    findViewById<RecyclerView>(R.id.files).apply {
-                        this.adapter = voicesAdapter
-                    }
-                spokenTextEditText =
-                    findViewById<EditText>(R.id.spoken_text).apply {
-                        // setup the initial value from the UI
-                        viewModel.setSpokenText(text.toString())
-                        doOnTextChanged { text, _, _, _ -> viewModel.setSpokenText(text.toString()) }
-                    }
-                findViewById<MaterialButton>(R.id.back_button).apply {
-                    setOnClickListener {
-                        this@TtsVoicesDialogFragment.dismiss()
-                    }
-                }
-                findViewById<Button>(R.id.options_buttons).apply {
-                    setOnClickListener { openTtsSettings() }
-                }
-                internetRequiredChip =
-                    findViewById<Chip>(R.id.toggle_internet_required).apply {
-                        setOnCheckedChangeListener { _, value ->
-                            viewModel.showInternetEnabled.value = value
-                            chipBackgroundColor =
-                                if (value) {
-                                    ColorStateList.valueOf(Themes.getColorFromAttr(requireContext(), RMaterial.attr.colorSecondaryContainer))
-                                } else {
-                                    ColorStateList.valueOf(Color.TRANSPARENT)
-                                }
-                        }
-                        viewModel.showInternetEnabled.value = this.isChecked
-                    }
-                findViewById<Chip>(R.id.only_show_uninstalled).apply {
-                    setOnCheckedChangeListener { _, value ->
-                        viewModel.showNotInstalled.value = value
-                        chipBackgroundColor =
-                            if (value) {
-                                ColorStateList.valueOf(Themes.getColorFromAttr(requireContext(), RMaterial.attr.colorSecondaryContainer))
-                            } else {
-                                ColorStateList.valueOf(Color.TRANSPARENT)
-                            }
-                    }
-                    viewModel.showNotInstalled.value = this.isChecked
-                }
-                progressBar = findViewById(R.id.progress)
+        layout = inflater.inflate(R.layout.dialog_tts_voices, null).apply {
+            recyclerView = findViewById<RecyclerView>(R.id.files).apply {
+                this.adapter = voicesAdapter
             }
+            spokenTextEditText = findViewById<EditText>(R.id.spoken_text).apply {
+                // setup the initial value from the UI
+                viewModel.setSpokenText(text.toString())
+                doOnTextChanged { text, _, _, _ -> viewModel.setSpokenText(text.toString()) }
+            }
+            findViewById<MaterialButton>(R.id.back_button).apply {
+                setOnClickListener {
+                    this@TtsVoicesDialogFragment.dismiss()
+                }
+            }
+            findViewById<Button>(R.id.options_buttons).apply {
+                setOnClickListener { openTtsSettings() }
+            }
+            internetRequiredChip = findViewById<Chip>(R.id.toggle_internet_required).apply {
+                setOnCheckedChangeListener { _, value ->
+                    viewModel.showInternetEnabled.value = value
+                    chipBackgroundColor = getChipBackgroundColor(value)
+                }
+                viewModel.showInternetEnabled.value = this.isChecked
+                chipBackgroundColor = getChipBackgroundColor(this.isChecked)
+            }
+            findViewById<Chip>(R.id.only_show_uninstalled).apply {
+                setOnCheckedChangeListener { _, value ->
+                    viewModel.showNotInstalled.value = value
+                    chipBackgroundColor = getChipBackgroundColor(value)
+                }
+                viewModel.showNotInstalled.value = this.isChecked
+                chipBackgroundColor = getChipBackgroundColor(this.isChecked)
+            }
+            progressBar = findViewById(R.id.progress)
+        }
 
         return layout
+    }
+
+    private fun getChipBackgroundColor(checked: Boolean): ColorStateList {
+        return ColorStateList.valueOf(
+            if (checked) {
+                Themes.getColorFromAttr(requireContext(), RMaterial.attr.colorSecondaryContainer)
+            } else {
+                Color.TRANSPARENT
+            }
+        )
     }
 
     override fun onViewCreated(
@@ -151,11 +149,8 @@ class TtsVoicesDialogFragment : DialogFragment() {
         viewModel.availableVoicesFlow.observe {
             if (it is TtsVoicesViewModel.VoiceLoadingState.Failure) {
                 progressBar.visibility = View.VISIBLE
-                AlertDialog
-                    .Builder(requireContext())
-                    .setMessage(it.exception.localizedMessage)
-                    .setOnDismissListener { this@TtsVoicesDialogFragment.dismiss() }
-                    .show()
+                AlertDialog.Builder(requireContext()).setMessage(it.exception.localizedMessage)
+                    .setOnDismissListener { this@TtsVoicesDialogFragment.dismiss() }.show()
             }
 
             if (it is TtsVoicesViewModel.VoiceLoadingState.Success) {
@@ -172,7 +167,11 @@ class TtsVoicesDialogFragment : DialogFragment() {
 
         viewModel.uninstalledVoicePlayed.observe { voice ->
             dialog?.window?.decorView?.showSnackbar(R.string.tts_voices_selected_voice_should_be_installed) {
-                setAction(R.string.tts_voices_use_selected_voice_without_install) { viewModel.copyToClipboard(voice) }
+                setAction(R.string.tts_voices_use_selected_voice_without_install) {
+                    viewModel.copyToClipboard(
+                        voice
+                    )
+                }
             }
         }
 
@@ -237,14 +236,17 @@ class TtsVoicesDialogFragment : DialogFragment() {
     }
 
     // inner allows access to viewModel/openTtsSettings
-    inner class TtsVoiceAdapter : ListAdapter<AndroidTtsVoice, TtsVoiceAdapter.TtsViewHolder>(TtsVoiceDiffCallback()) {
+    inner class TtsVoiceAdapter :
+        ListAdapter<AndroidTtsVoice, TtsVoiceAdapter.TtsViewHolder>(TtsVoiceDiffCallback()) {
         inner class TtsViewHolder(
             private val voiceView: View,
         ) : RecyclerView.ViewHolder(voiceView) {
-            private val textViewTop = voiceView.findViewById<TextView>(R.id.mtrl_list_item_secondary_text)
+            private val textViewTop =
+                voiceView.findViewById<TextView>(R.id.mtrl_list_item_secondary_text)
             private val textViewBottom = voiceView.findViewById<TextView>(R.id.mtrl_list_item_text)
             private val actionButton = voiceView.findViewById<MaterialButton>(R.id.action_button)
-            private val localOrOffline = voiceView.findViewById<MaterialButton>(R.id.local_or_network)
+            private val localOrOffline =
+                voiceView.findViewById<MaterialButton>(R.id.local_or_network)
 
             fun bind(voice: AndroidTtsVoice) {
                 textViewTop.text = voice.normalizedLocale.displayName
@@ -269,7 +271,8 @@ class TtsVoicesDialogFragment : DialogFragment() {
             parent: ViewGroup,
             viewType: Int,
         ): TtsViewHolder {
-            val v = LayoutInflater.from(parent.context).inflate(R.layout.dialog_tts_voices_voice, parent, false)
+            val v = LayoutInflater.from(parent.context)
+                .inflate(R.layout.dialog_tts_voices_voice, parent, false)
             return TtsViewHolder(v)
         }
 
@@ -306,10 +309,7 @@ fun TtsVoice.tryDisplayLocalizedName(): String {
  * We can remove the network/local suffix as this can be obtained from the TTS Engine
  */
 fun prettyPrintGoogle(voice: AndroidTtsVoice): String {
-    val parts =
-        voice.voice.name
-            .split("-")
-            .toMutableList()
+    val parts = voice.voice.name.split("-").toMutableList()
 
     if (parts.last() == "language") {
         return parts.dropLast(1).joinToString(" ")
