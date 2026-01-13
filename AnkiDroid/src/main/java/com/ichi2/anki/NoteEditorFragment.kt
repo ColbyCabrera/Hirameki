@@ -55,8 +55,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.noteeditor.NoteEditorCaller
-import com.ichi2.anki.noteeditor.NoteEditorCaller.Companion.fromValue
 import com.ichi2.anki.android.input.ShortcutGroup
 import com.ichi2.anki.android.input.ShortcutGroupProvider
 import com.ichi2.anki.android.input.shortcut
@@ -93,6 +91,8 @@ import com.ichi2.anki.multimediacard.fields.MediaClipField
 import com.ichi2.anki.multimediacard.impl.MultimediaEditableNote
 import com.ichi2.anki.noteeditor.ClozeInsertionMode
 import com.ichi2.anki.noteeditor.CustomToolbarButton
+import com.ichi2.anki.noteeditor.NoteEditorCaller
+import com.ichi2.anki.noteeditor.NoteEditorCaller.Companion.fromValue
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.noteeditor.NoteEditorViewModel
 import com.ichi2.anki.noteeditor.ToolbarButtonModel
