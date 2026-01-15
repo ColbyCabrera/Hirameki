@@ -41,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +52,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -75,13 +75,13 @@ fun WhiteboardToolbar(
     onEraserClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val canUndo by viewModel.canUndo.collectAsState()
-    val canRedo by viewModel.canRedo.collectAsState()
-    val brushes by viewModel.brushes.collectAsState()
-    val activeBrushIndex by viewModel.activeBrushIndex.collectAsState()
-    val isEraserActive by viewModel.isEraserActive.collectAsState()
-    val alignment by viewModel.toolbarAlignment.collectAsState()
-    val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsState()
+    val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
+    val canRedo by viewModel.canRedo.collectAsStateWithLifecycle()
+    val brushes by viewModel.brushes.collectAsStateWithLifecycle()
+    val activeBrushIndex by viewModel.activeBrushIndex.collectAsStateWithLifecycle()
+    val isEraserActive by viewModel.isEraserActive.collectAsStateWithLifecycle()
+    val alignment by viewModel.toolbarAlignment.collectAsStateWithLifecycle()
+    val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsStateWithLifecycle()
 
     WhiteboardToolbarContent(
         canUndo = canUndo,

@@ -17,8 +17,6 @@ package com.ichi2.anki.ui.compose.help
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -75,10 +73,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
+import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.delay
 import timber.log.Timber
+import androidx.core.net.toUri
 
 private data class HelpLink(
     @StringRes val titleRes: Int,
@@ -197,15 +197,11 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         onClick = {
                             try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(helpLink.url))
+                                val intent = Intent(Intent.ACTION_VIEW, helpLink.url.toUri())
                                 context.startActivity(intent)
                             } catch (_: ActivityNotFoundException) {
                                 Timber.w("No application found to open link: %s", helpLink.url)
-                                Toast.makeText(
-                                    context,
-                                    R.string.no_application_to_open_link,
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                showThemedToast(context, R.string.no_application_to_open_link, true)
                             }
                         })
                 }

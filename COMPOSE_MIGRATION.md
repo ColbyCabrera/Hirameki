@@ -225,6 +225,23 @@ DropdownMenuItem(onClick = {
 
 **Future Fix**: Create a centralized constant (e.g., `FileProviderUtil.AUTHORITY_SUFFIX`) and update all usages to prevent maintenance issues and typos.
 
+### PageWebViewViewModel AndroidViewModel Usage
+**Issue**: `PageWebViewViewModel` extends `AndroidViewModel`, holding an `Application` context. This couples the ViewModel to the Android framework and reduces testability (can't use standard JUnit tests without Robolectric/AndroidX Test).
+
+**Current State**: The ViewModel needs `Application` context to manage `AnkiServer` lifecycle. This is functional but not ideal for unit testing.
+
+**Future Fix**: Refactor to use constructor injection via a factory. Create `PageWebViewViewModelFactory` that injects a `ServerProvider` interface, allowing test doubles to be used in unit tests.
+
+### Generic Exception Catching Audit
+**Issue**: ~220 usages of `catch (e: Exception)` or `catch (e: Throwable)` were found in the codebase. In coroutine contexts, this can accidentally swallow `CancellationException`, causing structured concurrency issues.
+
+**Current State**: These require manual triage on a case-by-case basis. Some are intentional (framework callbacks), others may need to rethrow `CancellationException`.
+
+**Future Fix**: Audit each usage incrementally. For coroutine contexts, ensure either:
+1. `CancellationException` is rethrown: `catch (e: Exception) { if (e is CancellationException) throw e; ... }`
+2. Or use `runCatching` with explicit handling
+3. Or catch specific exception types instead of generic `Exception`
+
 ---
 
 ## ✅ Compose Adoption by Feature

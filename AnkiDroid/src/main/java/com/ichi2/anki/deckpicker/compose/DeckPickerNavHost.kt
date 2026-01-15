@@ -47,7 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -184,7 +184,7 @@ fun DeckPickerNavHost(
     onInvalidateOptionsMenu: () -> Unit,
     onSync: () -> Unit,
 ) {
-    val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsState()
+    val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     val entryProvider = entryProvider {
@@ -281,14 +281,14 @@ private fun DeckPickerMainContent(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val applicationContext = LocalContext.current.applicationContext
-    val deckList by viewModel.flowOfDeckList.collectAsState(
-        initial = DeckPickerViewModel.FlattenedDeckList(emptyList(), false),
+    val deckList by viewModel.flowOfDeckList.collectAsStateWithLifecycle(
+        initialValue = DeckPickerViewModel.FlattenedDeckList(emptyList(), false),
     )
-    val isInInitialState by viewModel.flowOfDeckListInInitialState.collectAsState()
-    val isRefreshing by viewModel.isSyncing.collectAsState(initial = false)
-    val syncState by viewModel.syncState.collectAsState()
-    val syncDialogState by viewModel.syncDialogState.collectAsState()
-    val createDeckDialogState by viewModel.createDeckDialogState.collectAsState()
+    val isInInitialState by viewModel.flowOfDeckListInInitialState.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isSyncing.collectAsStateWithLifecycle(initialValue = false)
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+    val syncDialogState by viewModel.syncDialogState.collectAsStateWithLifecycle()
+    val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
 
     syncDialogState?.let {
         SyncProgressDialog(
@@ -314,7 +314,7 @@ private fun DeckPickerMainContent(
 
     var searchQuery by remember { mutableStateOf("") }
     var requestSearchFocus by remember { mutableStateOf(false) }
-    val focusedDeckId by viewModel.flowOfFocusedDeck.collectAsState()
+    val focusedDeckId by viewModel.flowOfFocusedDeck.collectAsStateWithLifecycle()
     var studyOptionsData by remember {
         mutableStateOf<StudyOptionsData?>(
             null,

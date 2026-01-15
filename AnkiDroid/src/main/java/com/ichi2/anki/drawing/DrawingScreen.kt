@@ -54,7 +54,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -79,6 +78,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.reviewer.compose.ColorPickerDialog
@@ -107,17 +107,17 @@ fun DrawingScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val paths by viewModel.paths.collectAsState()
-    val brushColor by viewModel.brushColor.collectAsState()
-    val strokeWidth by viewModel.strokeWidth.collectAsState()
+    val paths by viewModel.paths.collectAsStateWithLifecycle()
+    val brushColor by viewModel.brushColor.collectAsStateWithLifecycle()
+    val strokeWidth by viewModel.strokeWidth.collectAsStateWithLifecycle()
 
     // Toolbar state
-    val canUndo by viewModel.canUndo.collectAsState(initial = false)
-    val canRedo by viewModel.canRedo.collectAsState()
-    val brushes by viewModel.brushes.collectAsState()
-    val activeBrushIndex by viewModel.activeBrushIndex.collectAsState()
-    val isEraserActive by viewModel.isEraserActive.collectAsState()
-    val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsState()
+    val canUndo by viewModel.canUndo.collectAsStateWithLifecycle(initialValue = false)
+    val canRedo by viewModel.canRedo.collectAsStateWithLifecycle()
+    val brushes by viewModel.brushes.collectAsStateWithLifecycle()
+    val activeBrushIndex by viewModel.activeBrushIndex.collectAsStateWithLifecycle()
+    val isEraserActive by viewModel.isEraserActive.collectAsStateWithLifecycle()
+    val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsStateWithLifecycle()
 
     // Set default color to primary if not set (ViewModel defaults to Transparent)
     val primaryColor = MaterialTheme.colorScheme.primary.toArgb()

@@ -35,7 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.ichi2.anki.R
@@ -61,7 +61,9 @@ fun SyncIcon(
                 SyncIconState.OneWay, SyncIconState.NotLoggedIn -> Badge {
                     Text("!")
                 }
-                else -> { /* No badge for Normal state */ }
+
+                else -> { /* No badge for Normal state */
+                }
             }
         },
     ) {
@@ -94,7 +96,7 @@ fun SyncIcon(
             Icon(
                 painter = painterResource(R.drawable.sync_24px),
                 contentDescription = contentDescription,
-                modifier = Modifier.rotate(rotation.value),
+                modifier = Modifier.graphicsLayer { rotationZ = rotation.value },
             )
         }
     }

@@ -75,12 +75,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -101,6 +101,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
@@ -109,9 +110,9 @@ import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.reviewer.ReviewerViewModel
+import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
-import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -175,7 +176,7 @@ fun ReviewerContent(
     whiteboardViewModel: WhiteboardViewModel?,
     voicePlaybackViewModel: VoicePlaybackViewModel?
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -190,15 +191,16 @@ fun ReviewerContent(
     val totalBottomPadding =
         toolbarHeightDp + (if (state.isWhiteboardEnabled) whiteboardToolbarHeightDp + 8.dp else 0.dp)
     val context = LocalContext.current
+    val currentContext by rememberUpdatedState(context)
     val snackbarHostState = remember { SnackbarHostState() }
     val layoutDirection = LocalLayoutDirection.current
 
     // Tags dialog state
-    val showTagsDialog by viewModel.showTagsDialog.collectAsState()
-    val tagsState by viewModel.tagsState.collectAsState()
-    val currentNoteTags by viewModel.currentNoteTags.collectAsState()
-    val deckTags by viewModel.deckTags.collectAsState()
-    val filterByDeck by viewModel.filterByDeck.collectAsState()
+    val showTagsDialog by viewModel.showTagsDialog.collectAsStateWithLifecycle()
+    val tagsState by viewModel.tagsState.collectAsStateWithLifecycle()
+    val currentNoteTags by viewModel.currentNoteTags.collectAsStateWithLifecycle()
+    val deckTags by viewModel.deckTags.collectAsStateWithLifecycle()
+    val filterByDeck by viewModel.filterByDeck.collectAsStateWithLifecycle()
 
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
@@ -222,7 +224,7 @@ fun ReviewerContent(
                 is ReviewerEffect.NavigateToEditCard -> {
                     val intent = NoteEditorLauncher.EditCard(
                         effect.cardId, ActivityTransitionAnimation.Direction.FADE
-                    ).toIntent(context)
+                    ).toIntent(currentContext)
                     editCardLauncher.launch(intent)
                 }
 
@@ -309,7 +311,7 @@ fun ReviewerContent(
 
                     // Whiteboard canvas and toolbar
                     if (state.isWhiteboardEnabled && whiteboardViewModel != null) {
-                        val toolbarAlignment by whiteboardViewModel.toolbarAlignment.collectAsState()
+                        val toolbarAlignment by whiteboardViewModel.toolbarAlignment.collectAsStateWithLifecycle()
 
                         // Canvas padding based on toolbar alignment
                         val canvasPadding = when (toolbarAlignment) {
@@ -372,12 +374,12 @@ fun ReviewerContent(
 
                     // Voice Playback Toolbar
                     if (state.isVoicePlaybackEnabled && voicePlaybackViewModel != null) {
-                        val voicePlaybackIsVisible by voicePlaybackViewModel.isVisible.collectAsState()
+                        val voicePlaybackIsVisible by voicePlaybackViewModel.isVisible.collectAsStateWithLifecycle()
                         if (voicePlaybackIsVisible) {
                             VoicePlaybackToolbar(
                                 viewModel = voicePlaybackViewModel,
                                 onToggleRecording = {
-                                    voicePlaybackViewModel.toggleRecording(context)
+                                    voicePlaybackViewModel.toggleRecording(currentContext)
                                 },
                                 onDismiss = {
                                     viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
@@ -551,7 +553,7 @@ fun ReviewerContent(
 
         // Color picker dialog for adding new brush
         if (showColorPickerDialog && whiteboardViewModel != null) {
-            val defaultColor by whiteboardViewModel.brushColor.collectAsState()
+            val defaultColor by whiteboardViewModel.brushColor.collectAsStateWithLifecycle()
 
             ColorPickerDialog(
                 defaultColor = defaultColor,
