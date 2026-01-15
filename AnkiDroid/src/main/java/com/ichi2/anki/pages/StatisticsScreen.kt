@@ -24,7 +24,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.compose.components.DeckSelector
@@ -43,11 +46,14 @@ fun StatisticsScreen(
     val availableDecks by viewModel.availableDecks.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val currentContext by rememberUpdatedState(context)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    LaunchedEffect(viewModel) {
-        viewModel.snackbarMessage.collect { messageResId ->
-            showThemedToast(currentContext, messageResId, true)
-        }
+    LaunchedEffect(viewModel, lifecycle) {
+        viewModel.snackbarMessage
+            .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+            .collect { messageResId ->
+                showThemedToast(currentContext, messageResId, true)
+            }
     }
 
     PageWebView(
