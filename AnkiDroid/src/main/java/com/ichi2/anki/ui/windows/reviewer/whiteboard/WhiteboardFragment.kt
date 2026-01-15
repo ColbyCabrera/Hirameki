@@ -26,7 +26,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.R
@@ -83,21 +83,21 @@ class WhiteboardFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         // Collect snackbar events with lifecycle-aware scope
         viewModel.snackbarEvent.onEach { messageResId ->
-                showSnackbar(messageResId)
-            }.launchIn(viewLifecycleOwner.lifecycleScope)
+            showSnackbar(messageResId)
+        }.launchIn(viewLifecycleOwner.lifecycleScope)
     }
 
     @Composable
     private fun WhiteboardScreen(viewModel: WhiteboardViewModel) {
-        val alignment by viewModel.toolbarAlignment.collectAsState()
-        val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsState()
-        val brushes by viewModel.brushes.collectAsState()
-        val activeBrushIndex by viewModel.activeBrushIndex.collectAsState()
-        val isEraserActive by viewModel.isEraserActive.collectAsState()
-        val paths by viewModel.paths.collectAsState()
-        val brushColor by viewModel.brushColor.collectAsState()
-        val activeStrokeWidth by viewModel.activeStrokeWidth.collectAsState()
-        val eraserMode by viewModel.eraserMode.collectAsState()
+        val alignment by viewModel.toolbarAlignment.collectAsStateWithLifecycle()
+        val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsStateWithLifecycle()
+        val brushes by viewModel.brushes.collectAsStateWithLifecycle()
+        val activeBrushIndex by viewModel.activeBrushIndex.collectAsStateWithLifecycle()
+        val isEraserActive by viewModel.isEraserActive.collectAsStateWithLifecycle()
+        val paths by viewModel.paths.collectAsStateWithLifecycle()
+        val brushColor by viewModel.brushColor.collectAsStateWithLifecycle()
+        val activeStrokeWidth by viewModel.activeStrokeWidth.collectAsStateWithLifecycle()
+        val eraserMode by viewModel.eraserMode.collectAsStateWithLifecycle()
         // Note: WhiteboardView needs to know eraser display width too if it draws a preview
         // but looking at WhiteboardView.kt, it uses currentPaint.strokeWidth for eraserPreviewPaint
 
@@ -175,11 +175,11 @@ class WhiteboardFragment : Fragment() {
 
     @Composable
     private fun PopupsContent() {
-        val eraserVisible by showEraserOptions.collectAsState()
-        val brushIndex by showBrushOptionsIndex.collectAsState()
-        val addBrushVisible by showAddBrushDialog.collectAsState()
-        val removeBrushIndex by showRemoveBrushDialogIndex.collectAsState()
-        val brushColor by viewModel.brushColor.collectAsState()
+        val eraserVisible by showEraserOptions.collectAsStateWithLifecycle()
+        val brushIndex by showBrushOptionsIndex.collectAsStateWithLifecycle()
+        val addBrushVisible by showAddBrushDialog.collectAsStateWithLifecycle()
+        val removeBrushIndex by showRemoveBrushDialogIndex.collectAsStateWithLifecycle()
+        val brushColor by viewModel.brushColor.collectAsStateWithLifecycle()
 
         if (eraserVisible) {
             EraserOptionsPopup(

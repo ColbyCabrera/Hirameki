@@ -37,7 +37,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
-import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +50,7 @@ import androidx.core.content.edit
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anim.ActivityTransitionAnimation
@@ -557,17 +558,17 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
         composeView?.setContent {
             AnkiDroidTheme {
-                val noteEditorState by noteEditorViewModel.noteEditorState.collectAsState()
-                val availableDecks by noteEditorViewModel.availableDecks.collectAsState()
-                val availableNoteTypes by noteEditorViewModel.availableNoteTypes.collectAsState()
-                val toolbarButtons by noteEditorViewModel.toolbarButtons.collectAsState()
-                val showToolbar by noteEditorViewModel.showToolbar.collectAsState()
-                val allTags by noteEditorViewModel.tagsState.collectAsState()
-                val deckTags by noteEditorViewModel.deckTags.collectAsState()
-                val showDiscardChangesDialog by noteEditorViewModel.showDiscardChangesDialog.collectAsState()
-                val noClozeDialogMessage by noteEditorViewModel.noClozeDialogState.collectAsState()
-                val toolbarDialogState by noteEditorViewModel.toolbarDialogState.collectAsState()
-                val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+                val noteEditorState by noteEditorViewModel.noteEditorState.collectAsStateWithLifecycle()
+                val availableDecks by noteEditorViewModel.availableDecks.collectAsStateWithLifecycle()
+                val availableNoteTypes by noteEditorViewModel.availableNoteTypes.collectAsStateWithLifecycle()
+                val toolbarButtons by noteEditorViewModel.toolbarButtons.collectAsStateWithLifecycle()
+                val showToolbar by noteEditorViewModel.showToolbar.collectAsStateWithLifecycle()
+                val allTags by noteEditorViewModel.tagsState.collectAsStateWithLifecycle()
+                val deckTags by noteEditorViewModel.deckTags.collectAsStateWithLifecycle()
+                val showDiscardChangesDialog by noteEditorViewModel.showDiscardChangesDialog.collectAsStateWithLifecycle()
+                val noClozeDialogMessage by noteEditorViewModel.noClozeDialogState.collectAsStateWithLifecycle()
+                val toolbarDialogState by noteEditorViewModel.toolbarDialogState.collectAsStateWithLifecycle()
+                val snackbarHostState = remember { SnackbarHostState() }
                 var capitalizeChecked by remember {
                     mutableStateOf(
                         sharedPrefs().getBoolean(

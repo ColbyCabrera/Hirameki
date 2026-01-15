@@ -26,7 +26,7 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -158,10 +158,10 @@ open class CardBrowser :
                     var showBrowserOptionsDialog by rememberSaveable { mutableStateOf(false) }
                     var showFilterByTagsDialog by rememberSaveable { mutableStateOf(false) }
                     var showFlagRenameDialog by rememberSaveable { mutableStateOf(false) }
-                    val selectedTags by viewModel.selectedTags.collectAsState()
-                    val allTagsState by viewModel.allTags.collectAsState()
-                    val deckTags by viewModel.deckTags.collectAsState()
-                    val filterTagsByDeck by viewModel.filterTagsByDeck.collectAsState()
+                    val selectedTags by viewModel.selectedTags.collectAsStateWithLifecycle()
+                    val allTagsState by viewModel.allTags.collectAsStateWithLifecycle()
+                    val deckTags by viewModel.deckTags.collectAsStateWithLifecycle()
+                    val filterTagsByDeck by viewModel.filterTagsByDeck.collectAsStateWithLifecycle()
 
                     if (showBrowserOptionsDialog) {
                         BrowserOptionsDialog(

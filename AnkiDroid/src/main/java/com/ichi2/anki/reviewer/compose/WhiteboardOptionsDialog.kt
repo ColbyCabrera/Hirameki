@@ -41,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +55,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.EraserMode
@@ -92,8 +92,8 @@ fun BrushOptionsDialog(
 fun BrushOptionsContent(
     viewModel: WhiteboardViewModel,
 ) {
-    val brushes by viewModel.brushes.collectAsState()
-    val activeIndex by viewModel.activeBrushIndex.collectAsState()
+    val brushes by viewModel.brushes.collectAsStateWithLifecycle()
+    val activeIndex by viewModel.activeBrushIndex.collectAsStateWithLifecycle()
     val brush = brushes.getOrNull(activeIndex) ?: return
 
     var showColorPicker by remember { mutableStateOf(false) }
@@ -188,8 +188,8 @@ fun EraserOptionsContent(
     viewModel: WhiteboardViewModel,
     onClearCanvas: () -> Unit = {},
 ) {
-    val mode by viewModel.eraserMode.collectAsState()
-    val width by viewModel.eraserDisplayWidth.collectAsState()
+    val mode by viewModel.eraserMode.collectAsStateWithLifecycle()
+    val width by viewModel.eraserDisplayWidth.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier.fillMaxWidth(),

@@ -2,7 +2,7 @@ package com.ichi2.anki.deckpicker.compose
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,10 +30,10 @@ fun DeckPickerTabletCardBrowser(
     BackHandler {
         onNavigateToDecks()
     }
-    val allTagsState by cardBrowserViewModel.allTags.collectAsState()
-    val selectedTags by cardBrowserViewModel.selectedTags.collectAsState()
-    val deckTags by cardBrowserViewModel.deckTags.collectAsState()
-    val filterTagsByDeck by cardBrowserViewModel.filterTagsByDeck.collectAsState()
+    val allTagsState by cardBrowserViewModel.allTags.collectAsStateWithLifecycle()
+    val selectedTags by cardBrowserViewModel.selectedTags.collectAsStateWithLifecycle()
+    val deckTags by cardBrowserViewModel.deckTags.collectAsStateWithLifecycle()
+    val filterTagsByDeck by cardBrowserViewModel.filterTagsByDeck.collectAsStateWithLifecycle()
     var showBrowserOptionsDialog by remember { mutableStateOf(false) }
     var showFilterByTagsDialog by remember { mutableStateOf(false) }
     var showFlagRenameDialog by remember { mutableStateOf(false) }

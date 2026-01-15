@@ -18,12 +18,12 @@ package com.ichi2.anki.reviewer.compose
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardView
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
 
@@ -32,16 +32,15 @@ import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
  */
 @Composable
 fun WhiteboardCanvas(
-    viewModel: WhiteboardViewModel,
-    modifier: Modifier = Modifier
+    viewModel: WhiteboardViewModel, modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val paths by viewModel.paths.collectAsState()
-    val brushColor by viewModel.brushColor.collectAsState()
-    val strokeWidth by viewModel.activeStrokeWidth.collectAsState()
-    val isEraserActive by viewModel.isEraserActive.collectAsState()
-    val eraserMode by viewModel.eraserMode.collectAsState()
-    val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsState()
+    val paths by viewModel.paths.collectAsStateWithLifecycle()
+    val brushColor by viewModel.brushColor.collectAsStateWithLifecycle()
+    val strokeWidth by viewModel.activeStrokeWidth.collectAsStateWithLifecycle()
+    val isEraserActive by viewModel.isEraserActive.collectAsStateWithLifecycle()
+    val eraserMode by viewModel.eraserMode.collectAsStateWithLifecycle()
+    val isStylusOnlyMode by viewModel.isStylusOnlyMode.collectAsStateWithLifecycle()
 
     val whiteboardView = remember {
         WhiteboardView(context).apply {
@@ -75,7 +74,6 @@ fun WhiteboardCanvas(
     }
 
     AndroidView(
-        factory = { whiteboardView },
-        modifier = modifier.fillMaxSize()
+        factory = { whiteboardView }, modifier = modifier.fillMaxSize()
     )
 }
