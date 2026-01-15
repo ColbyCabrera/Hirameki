@@ -39,7 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +50,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -82,7 +85,7 @@ fun PageWebView(
     jsCommands: Flow<String>? = null, // NEW
     topBarActions: @Composable (RowScope.() -> Unit)? = null, // NEW
 ) {
-    val serverState by viewModel.serverState.collectAsState()
+    val serverState by viewModel.serverState.collectAsStateWithLifecycle()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -144,9 +147,14 @@ private fun PageWebViewInternal(
     var hasError by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
-    LaunchedEffect(jsCommands, webViewRef) {
-        jsCommands?.collect { script ->
-            webViewRef?.evaluateJavascript(script, null)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(jsCommands, webViewRef, lifecycleOwner) {
+        jsCommands?.let { commands ->
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                commands.collect { script ->
+                    webViewRef?.evaluateJavascript(script, null)
+                }
+            }
         }
     }
 
@@ -214,9 +222,7 @@ private fun PageWebViewTopBar(
     TopAppBar(title = {
         title?.let {
             Text(
-                it,
-                style = MaterialTheme.typography.displayMediumEmphasized,
-                maxLines = 1
+                it, style = MaterialTheme.typography.displayMediumEmphasized, maxLines = 1
             )
         }
     }, navigationIcon = {
