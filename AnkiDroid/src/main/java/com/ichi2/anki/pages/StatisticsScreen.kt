@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -41,10 +42,11 @@ fun StatisticsScreen(
     val selectedDeck by viewModel.selectedDeck.collectAsStateWithLifecycle()
     val availableDecks by viewModel.availableDecks.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val currentContext by rememberUpdatedState(context)
 
     LaunchedEffect(viewModel) {
         viewModel.snackbarMessage.collect { messageResId ->
-            showThemedToast(context, messageResId, true)
+            showThemedToast(currentContext, messageResId, true)
         }
     }
 

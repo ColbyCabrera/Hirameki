@@ -80,6 +80,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -190,6 +191,7 @@ fun ReviewerContent(
     val totalBottomPadding =
         toolbarHeightDp + (if (state.isWhiteboardEnabled) whiteboardToolbarHeightDp + 8.dp else 0.dp)
     val context = LocalContext.current
+    val currentContext by rememberUpdatedState(context)
     val snackbarHostState = remember { SnackbarHostState() }
     val layoutDirection = LocalLayoutDirection.current
 
@@ -222,7 +224,7 @@ fun ReviewerContent(
                 is ReviewerEffect.NavigateToEditCard -> {
                     val intent = NoteEditorLauncher.EditCard(
                         effect.cardId, ActivityTransitionAnimation.Direction.FADE
-                    ).toIntent(context)
+                    ).toIntent(currentContext)
                     editCardLauncher.launch(intent)
                 }
 
@@ -377,7 +379,7 @@ fun ReviewerContent(
                             VoicePlaybackToolbar(
                                 viewModel = voicePlaybackViewModel,
                                 onToggleRecording = {
-                                    voicePlaybackViewModel.toggleRecording(context)
+                                    voicePlaybackViewModel.toggleRecording(currentContext)
                                 },
                                 onDismiss = {
                                     viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
