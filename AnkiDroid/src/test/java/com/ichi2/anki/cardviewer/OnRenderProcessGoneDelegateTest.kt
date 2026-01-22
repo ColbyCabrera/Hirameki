@@ -16,11 +16,9 @@
 package com.ichi2.anki.cardviewer
 
 import android.content.res.Resources
-import android.os.Build
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import androidx.lifecycle.Lifecycle
-import androidx.test.filters.SdkSuppress
 import com.ichi2.anki.AbstractFlashcardViewer
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
@@ -38,7 +36,6 @@ import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 import java.util.concurrent.locks.Lock
 
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O) // onRenderProcessGone & RenderProcessGoneDetail
 class OnRenderProcessGoneDelegateTest {
     @Test
     fun singleCallCausesRefresh() {
@@ -64,8 +61,7 @@ class OnRenderProcessGoneDelegateTest {
 
         verify(
             mock,
-            times(1)
-                .description("displayCardQuestion should not be called again as the screen should close"),
+            times(1).description("displayCardQuestion should not be called again as the screen should close"),
         ).displayCardQuestion()
         assertThat(delegate.displayedDialog, equalTo(true))
         verify(mock, times(1).description("After the dialog, the screen should be closed")).finish()
@@ -84,8 +80,7 @@ class OnRenderProcessGoneDelegateTest {
 
         verify(
             mock,
-            times(2)
-                .description("displayCardQuestion should be called again as the app was minimised"),
+            times(2).description("displayCardQuestion should be called again as the app was minimised"),
         ).displayCardQuestion()
         assertThat(delegate.displayedDialog, equalTo(false))
     }
@@ -97,7 +92,10 @@ class OnRenderProcessGoneDelegateTest {
 
         callOnRenderProcessGone(delegate, mock(WebView::class.java))
 
-        verify(mock, never().description("No mutating methods should be called if the WebView is not relevant")).destroyWebViewFrame()
+        verify(
+            mock,
+            never().description("No mutating methods should be called if the WebView is not relevant")
+        ).destroyWebViewFrame()
     }
 
     @Test
@@ -126,7 +124,11 @@ class OnRenderProcessGoneDelegateTest {
         verify(mock, times(1)).destroyWebViewFrame()
         verify(mock, never()).recreateWebViewFrame()
 
-        assertThat("A toast should not be displayed as the screen is minimised", delegate.displayedToast, equalTo(false))
+        assertThat(
+            "A toast should not be displayed as the screen is minimised",
+            delegate.displayedToast,
+            equalTo(false)
+        )
         verify(mock, times(1).description("screen should be closed")).finish()
     }
 
@@ -139,7 +141,11 @@ class OnRenderProcessGoneDelegateTest {
         webView: WebView?,
     ) {
         val result = delegate.onRenderProcessGone(webView!!, crashDetail)
-        assertThat("onRenderProcessGone should only return false if we want the app killed", result, equalTo(true))
+        assertThat(
+            "onRenderProcessGone should only return false if we want the app killed",
+            result,
+            equalTo(true)
+        )
     }
 
     private val minimisedViewer: AbstractFlashcardViewer
@@ -168,7 +174,8 @@ class OnRenderProcessGoneDelegateTest {
         return ret
     }
 
-    private fun getInstance(mock: AbstractFlashcardViewer?): OnRenderProcessGoneDelegateImpl = spy(OnRenderProcessGoneDelegateImpl(mock))
+    private fun getInstance(mock: AbstractFlashcardViewer?): OnRenderProcessGoneDelegateImpl =
+        spy(OnRenderProcessGoneDelegateImpl(mock))
 
     // this value doesn't matter for now as it only defines a string
     private val crashDetail: RenderProcessGoneDetail
