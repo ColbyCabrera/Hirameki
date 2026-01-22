@@ -47,6 +47,7 @@ open class OnRenderProcessGoneDelegate(
     private var lastCrashingCardId: CardId? = null
 
     /** Fix: #5780 - WebView Renderer OOM crashes reviewer  */
+    @Suppress("SameReturnValue")
     fun onRenderProcessGone(
         view: WebView,
         detail: RenderProcessGoneDetail,
@@ -149,9 +150,7 @@ open class OnRenderProcessGoneDelegate(
             title(R.string.webview_crash_loop_dialog_title)
             message(
                 text = res.getString(
-                    R.string.webview_crash_loop_dialog_content,
-                    cardInformation,
-                    errorDetails
+                    R.string.webview_crash_loop_dialog_content, cardInformation, errorDetails
                 )
             )
             positiveButton(R.string.dialog_ok) {
