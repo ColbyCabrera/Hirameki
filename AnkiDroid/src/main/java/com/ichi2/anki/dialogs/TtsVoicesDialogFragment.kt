@@ -65,8 +65,8 @@ import timber.log.Timber
  * is installed on the system
  *
  * We filter by online/offline to discourage data usage and reduce latency
- * Although uninstalled voices can be used, and a TTS should install an uninstalled voice,
- * in practice there are many bugs in the TTS Engines, so we want to explicitly inform a user
+ * Although uninstalled voices can be used, and a TTS should install an uninstalled voice.
+ * In practice there are many bugs in the TTS Engines, so we want to explicitly inform a user
  *
  * As a future extension: this dialog should have a 'refresh' button/functionality to handle
  * voice installs
@@ -97,7 +97,7 @@ class TtsVoicesDialogFragment : DialogFragment() {
                 this.adapter = voicesAdapter
             }
             spokenTextEditText = findViewById<EditText>(R.id.spoken_text).apply {
-                // setup the initial value from the UI
+                // set up the initial value from the UI
                 viewModel.setSpokenText(text.toString())
                 doOnTextChanged { text, _, _, _ -> viewModel.setSpokenText(text.toString()) }
             }
