@@ -29,6 +29,7 @@ import com.ichi2.anki.reviewer.AutomaticAnswerAction
 import com.ichi2.anki.reviewer.AutomaticAnswerSettings
 import com.ichi2.testutils.common.Flaky
 import com.ichi2.testutils.common.OS
+import net.ankiweb.rsdroid.BackendException
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
@@ -41,6 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.robolectric.Robolectric
 import org.robolectric.android.controller.ActivityController
@@ -108,6 +110,17 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
                 require(mediaGroupCompleted) { "mediaGroupCompleted never occurred" }
             }
         }
+        override suspend fun answerCardInner(rating: Rating) {
+            if (shouldThrowCardModified) {
+                // We use mock since we cannot instantiate BackendException easily
+                val mockException = mock(BackendException::class.java)
+                Mockito.`when`(mockException.message).thenReturn("card was modified")
+                throw mockException
+            }
+            super.answerCardInner(rating)
+        }
+
+        var shouldThrowCardModified = false
     }
 
     @ParameterizedTest
@@ -233,6 +246,18 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
 
         assertThat(viewer.answered, notNullValue())
     }
+    @Test
+    fun testAnswerCardCatchesCardModifiedException() {
+        val viewer: NonAbstractFlashcardViewer = getViewer(true)
+        viewer.shouldThrowCardModified = true
+        
+        // Ensure no crash occurs when answering the card
+        assertDoesNotThrow {
+            viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE2) // Show answer
+            viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE2) // Answer card
+        }
+    }
+
 
 
     @Test
@@ -308,7 +333,7 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
     private fun setHidePlayAudioButtons(value: Boolean) = col.config.setBool(ConfigKey.Bool.HIDE_AUDIO_PLAY_BUTTONS, value)
 
     private fun getViewerContent(): String? {
-        // PERF: Optimise this to not create a new viewer each time
+        // PERF: Optimize this to not create a new viewer each time
         return getViewer(addCard = false).cardContent
     }
 
@@ -351,7 +376,7 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
         viewer.onCollectionLoaded(col)
         viewer.loadInitialCard()
         // Without this, AbstractFlashcardViewer.mCard is still null, and RobolectricTest.tearDown executes before
-        // AsyncTasks spawned by by loading the viewer finish. Is there a way to synchronize these things while under test?
+        // AsyncTasks spawned by loading the viewer finish. Is there a way to synchronize these things while under test?
         advanceRobolectricLooper()
         advanceRobolectricLooper()
         return multimediaController
