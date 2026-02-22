@@ -337,10 +337,6 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
         return getViewer(addCard = false).cardContent
     }
 
-    @get:CheckResult
-    private val viewer: NonAbstractFlashcardViewer
-        get() = getViewer(true)
-
     @CheckResult
     private fun getViewer(addCard: Boolean): NonAbstractFlashcardViewer = getViewer(addCard, false)
 
