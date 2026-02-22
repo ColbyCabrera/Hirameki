@@ -157,6 +157,7 @@ import com.ichi2.utils.title
 import com.squareup.seismic.ShakeDetector
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
+import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
 import java.io.File
 import java.io.UnsupportedEncodingException
@@ -746,7 +747,20 @@ abstract class AbstractFlashcardViewer :
                 stopCardMediaPlayer()
                 currentEase = rating
 
-                answerCardInner(rating)
+                try {
+                    answerCardInner(rating)
+                } catch (e: BackendException) {
+                    val msg = e.message ?: ""
+                    // Note: String matching is fragile but necessary because the Backend does not
+                    // expose a specific BackendError.Kind or typed subclass for CardModified.
+                    // A unit test (testAnswerCardCatchesCardModifiedException) enforces this behavior.
+                    if (msg.contains("card was modified", ignoreCase = true)) {
+                        Timber.w(e, "Card was modified by another operation. Reloading queue")
+                        updateCardAndRedraw()
+                        return@launchCatchingTask
+                    }
+                    throw e
+                }
                 updateCardAndRedraw()
             }
         }
