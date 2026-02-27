@@ -236,7 +236,7 @@ class NoteEditorViewModel(
     val currentNote: StateFlow<Note?> = _currentNote.asStateFlow()
 
     private val _currentCard = MutableStateFlow<Card?>(null)
-    private val _deckId = MutableStateFlow<DeckId>(0L)
+    private val _deckId = MutableStateFlow(0L)
 
     private val _tagsState = MutableStateFlow<TagsState>(TagsState.Loading)
     val tagsState: StateFlow<TagsState> = _tagsState.asStateFlow()
@@ -1174,7 +1174,7 @@ class NoteEditorViewModel(
             notetype.fields.length(),
         )
 
-        // Map based on the notetype's field definitions (not the note's current fields)
+        // Map based on the note type's field definitions (not the note's current fields)
         // This ensures we get the correct number of fields
         val fields = mapFieldsFromNote(note, notetype)
 
