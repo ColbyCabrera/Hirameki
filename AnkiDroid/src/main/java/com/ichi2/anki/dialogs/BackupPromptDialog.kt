@@ -128,13 +128,10 @@ class BackupPromptDialog private constructor(
 
     private fun dismiss() {
         val cv = composeView ?: return
+        composeView = null
         val activity = windowContext as? Activity ?: return
         val viewGroup = activity.findViewById<ViewGroup>(android.R.id.content)
-        // Post removal so Compose finishes recomposition (clearing the scrim) first
-        cv.post {
-            viewGroup.removeView(cv)
-        }
-        composeView = null
+        cv.post { viewGroup.removeView(cv) }
     }
 
     private fun show(
@@ -161,16 +158,20 @@ class BackupPromptDialog private constructor(
                         onBackup = {
                             Timber.i("User selected 'backup'")
                             userCheckedDoNotShowAgain = isDoNotShowAgainChecked
-                            onBackup()
                             showDialog = false
-                            performBackup()
-                            dismiss()
+                            cv.post {
+                                onBackup()
+                                dismiss()
+                                performBackup()
+                            }
                         },
                         onDismissRequest = {
                             userCheckedDoNotShowAgain = isDoNotShowAgainChecked
                             showDialog = false
-                            onDismiss()
-                            dismiss()
+                            cv.post {
+                                dismiss()
+                                onDismiss()
+                            }
                         },
                         onDoNotShowAgainChanged = { checked ->
                             Timber.d("Don't show again checked: %b", checked)
