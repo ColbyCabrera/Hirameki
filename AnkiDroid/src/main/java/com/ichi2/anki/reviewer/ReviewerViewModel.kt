@@ -350,11 +350,12 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this, reload = true)
+            val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
 
             _state.update {
                 it.copy(
                     mediaError = null,
-                    html = processHtml(renderOutput.questionText, renderOutput),
+                    html = processHtml(questionHtml, renderOutput),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -443,13 +444,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this)
+            val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
             _state.update {
                 it.copy(
                     mediaError = null,
                     newCount = queue.counts.new,
                     learnCount = queue.counts.lrn,
                     reviewCount = queue.counts.rev,
-                    html = processHtml(renderOutput.questionText, renderOutput),
+                    html = processHtml(questionHtml, renderOutput),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -523,9 +525,10 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             CollectionManager.withCol {
                 val renderOutput = card.renderOutput(this)
+                val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
                 _state.update {
                     it.copy(
-                        html = processHtml(renderOutput.questionText, renderOutput),
+                        html = processHtml(questionHtml, renderOutput),
                         isAnswerShown = false,
                         nextTimes = List(4) { "" },
                         chosenAnswer = ""
