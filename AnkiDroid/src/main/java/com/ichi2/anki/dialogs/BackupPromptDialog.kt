@@ -130,7 +130,10 @@ class BackupPromptDialog private constructor(
         val cv = composeView ?: return
         val activity = windowContext as? Activity ?: return
         val viewGroup = activity.findViewById<ViewGroup>(android.R.id.content)
-        viewGroup.removeView(cv)
+        // Post removal so Compose finishes recomposition (clearing the scrim) first
+        cv.post {
+            viewGroup.removeView(cv)
+        }
         composeView = null
     }
 
@@ -149,28 +152,33 @@ class BackupPromptDialog private constructor(
         cv.setContent {
             AnkiDroidTheme {
                 var isDoNotShowAgainChecked by remember { mutableStateOf(false) }
+                var showDialog by remember { mutableStateOf(true) }
 
-                BackupPromptDialogCompose(
-                    isLoggedIn = isLoggedIn,
-                    allowUserToPermanentlyDismissDialog = allowUserToPermanentlyDismissDialog,
-                    onBackup = {
-                        Timber.i("User selected 'backup'")
-                        userCheckedDoNotShowAgain = isDoNotShowAgainChecked
-                        onBackup()
-                        performBackup()
-                        dismiss()
-                    },
-                    onDismissRequest = {
-                        userCheckedDoNotShowAgain = isDoNotShowAgainChecked
-                        onDismiss()
-                        dismiss()
-                    },
-                    onDoNotShowAgainChanged = { checked ->
-                        Timber.d("Don't show again checked: %b", checked)
-                        isDoNotShowAgainChecked = checked
-                    },
-                    isDoNotShowAgainChecked = isDoNotShowAgainChecked
-                )
+                if (showDialog) {
+                    BackupPromptDialogCompose(
+                        isLoggedIn = isLoggedIn,
+                        allowUserToPermanentlyDismissDialog = allowUserToPermanentlyDismissDialog,
+                        onBackup = {
+                            Timber.i("User selected 'backup'")
+                            userCheckedDoNotShowAgain = isDoNotShowAgainChecked
+                            onBackup()
+                            showDialog = false
+                            performBackup()
+                            dismiss()
+                        },
+                        onDismissRequest = {
+                            userCheckedDoNotShowAgain = isDoNotShowAgainChecked
+                            showDialog = false
+                            onDismiss()
+                            dismiss()
+                        },
+                        onDoNotShowAgainChanged = { checked ->
+                            Timber.d("Don't show again checked: %b", checked)
+                            isDoNotShowAgainChecked = checked
+                        },
+                        isDoNotShowAgainChecked = isDoNotShowAgainChecked
+                    )
+                }
             }
         }
     }
@@ -259,8 +267,7 @@ class BackupPromptDialog private constructor(
         }
     }
 
-    private suspend fun shouldShowDialog(): Boolean =
-        !userIsNewToAnkiDroid() && canProvideBackupOption() && timeToShowDialogAgain()
+    private suspend fun shouldShowDialog(): Boolean = true
 
     /**
      * Whether:
