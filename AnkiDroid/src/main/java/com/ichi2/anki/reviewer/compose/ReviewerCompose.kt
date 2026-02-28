@@ -8,7 +8,7 @@
  * Foundation; either version 3 of the License, or (at your option) any later           *
  * version.                                                                             *
  *                                                                                      *
- * This program is distributed in the hope that in editing this file it will be useful, but WITHOUT ANY      *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY      *
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A      *
  * PARTICULAR PURPOSE. See the GNU General Public License for more details.             *
  *                                                                                      *
@@ -19,17 +19,10 @@ package com.ichi2.anki.reviewer.compose
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,7 +35,6 @@ import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Replay
@@ -50,20 +42,12 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -95,14 +79,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.compose.TagsDialog
@@ -115,13 +97,6 @@ import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
-private val ratings = listOf(
-    "Again" to CardAnswer.Rating.AGAIN,
-    "Hard" to CardAnswer.Rating.HARD,
-    "Good" to CardAnswer.Rating.GOOD,
-    "Easy" to CardAnswer.Rating.EASY
-)
 
 private val WhiteboardToolbarWidth = 56.dp
 private val WhiteboardBottomBarOffset = 48.dp
@@ -392,105 +367,21 @@ fun ReviewerContent(
                         }
                     }
 
-                    HorizontalFloatingToolbar(
+                    AnswerButtons(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .offset(y = -ScreenOffset)
                             .padding(bottom = paddingValues.calculateBottomPadding())
                             .onSizeChanged { toolbarHeight = it.height },
-                        expanded = true,
-                        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = { showBottomSheet = true },
-                                modifier = Modifier.height(48.dp),
-                            ) {
-                                Icon(
-                                    Icons.Filled.MoreVert,
-                                    contentDescription = stringResource(R.string.more_options)
-                                )
-                            }
-                            Box(
-                                modifier = Modifier.animateContentSize(motionScheme.fastSpatialSpec())
-                            ) {
-                                if (!state.isAnswerShown) {
-                                    val interactionSource = remember { MutableInteractionSource() }
-                                    val isPressed by interactionSource.collectIsPressedAsState()
-                                    val defaultHorizontalPadding =
-                                        ButtonDefaults.MediumContentPadding.calculateLeftPadding(
-                                            layoutDirection = LocalLayoutDirection.current
-                                        )
-                                    val horizontalPadding by animateDpAsState(
-                                        if (isPressed) defaultHorizontalPadding + 4.dp else defaultHorizontalPadding,
-                                        motionScheme.fastSpatialSpec()
-                                    )
-                                    Button(
-                                        onClick = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
-                                        modifier = Modifier.height(56.dp),
-                                        interactionSource = interactionSource,
-                                        contentPadding = PaddingValues(horizontal = horizontalPadding),
-                                        colors = ButtonDefaults.buttonColors(
-                                            MaterialTheme.colorScheme.primary,
-                                            MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.show_answer),
-                                            softWrap = false,
-                                            overflow = TextOverflow.Clip
-                                        )
-                                    }
-                                } else {
-                                    ButtonGroup(
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                        overflowIndicator = { }) {
-
-                                        ratings.forEachIndexed { index, (_, rating) ->
-                                            customItem(
-                                                buttonGroupContent = {
-                                                    val interactionSource =
-                                                        remember { MutableInteractionSource() }
-                                                    Button(
-                                                        onClick = {
-                                                            viewModel.onEvent(
-                                                                ReviewerEvent.RateCard(
-                                                                    rating
-                                                                )
-                                                            )
-                                                        },
-                                                        modifier = Modifier
-                                                            .animateWidth(
-                                                                interactionSource
-                                                            )
-                                                            .height(56.dp),
-                                                        contentPadding = ButtonDefaults.ExtraSmallContentPadding,
-                                                        shape = when (index) {
-                                                            0 -> ButtonGroupDefaults.connectedLeadingButtonShape
-                                                            3 -> ButtonGroupDefaults.connectedTrailingButtonShape
-                                                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes().shape
-                                                        },
-                                                        interactionSource = interactionSource,
-                                                        colors = ButtonDefaults.buttonColors(
-                                                            MaterialTheme.colorScheme.primary,
-                                                            MaterialTheme.colorScheme.onPrimary
-                                                        )
-                                                    ) {
-                                                        Text(
-                                                            state.nextTimes[index],
-                                                            softWrap = false,
-                                                            overflow = TextOverflow.Visible
-                                                        )
-                                                    }
-                                                },
-                                                menuContent = {},
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                        isAnswerShown = state.isAnswerShown,
+                        showTypeInAnswer = state.showTypeInAnswer,
+                        typedAnswer = state.typedAnswer,
+                        onTypedAnswerChanged = { viewModel.onEvent(ReviewerEvent.OnTypedAnswerChanged(it)) },
+                        onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
+                        onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
+                        nextTimes = state.nextTimes,
+                        onMoreOptionsClick = { showBottomSheet = true }
+                    )
                 }
             }
         }
@@ -615,7 +506,7 @@ fun ReviewerContent(
                 title = stringResource(R.string.card_details_tags),
                 confirmButtonText = stringResource(R.string.dialog_ok),
                 showFilterByDeckToggle = true,
-                onAddTag = { viewModel.addTag(it) })
+                onAddTag = { viewModel.registerNewTag(it) })
         }
     }
 }

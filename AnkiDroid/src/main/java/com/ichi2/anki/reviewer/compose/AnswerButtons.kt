@@ -15,187 +15,254 @@
  */
 package com.ichi2.anki.reviewer.compose
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import anki.scheduler.CardAnswer
+import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
+val ratings = listOf(
+    R.string.ease_button_again to CardAnswer.Rating.AGAIN,
+    R.string.ease_button_hard to CardAnswer.Rating.HARD,
+    R.string.ease_button_good to CardAnswer.Rating.GOOD,
+    R.string.ease_button_easy to CardAnswer.Rating.EASY
+)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnswerButtons(
+    modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
     showTypeInAnswer: Boolean,
     typedAnswer: String,
     onTypedAnswerChanged: (String) -> Unit,
     onShowAnswer: () -> Unit,
-    onAgain: () -> Unit,
-    onHard: () -> Unit,
-    onGood: () -> Unit,
-    onEasy: () -> Unit,
+    onRateCard: (CardAnswer.Rating) -> Unit,
     nextTimes: List<String>,
-    modifier: Modifier = Modifier
+    onMoreOptionsClick: () -> Unit
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier.imePadding(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (showTypeInAnswer) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isFocused by interactionSource.collectIsFocusedAsState()
+
             TextField(
                 value = typedAnswer,
                 onValueChange = onTypedAnswerChanged,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Type in the answer") },
-                readOnly = isAnswerShown
+                label = { Text(stringResource(R.string.type_in_the_answer)) },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .border(
+                        2.dp,
+                        if (isFocused) MaterialTheme.colorScheme.tertiary else Color.Transparent,
+                        MaterialTheme.shapes.extraLargeIncreased
+                    ),
+                shape = MaterialTheme.shapes.extraLargeIncreased,
+                interactionSource = interactionSource,
+                readOnly = isAnswerShown, // when answer shown, don't allow typing
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                )
             )
         }
 
-        if (isAnswerShown) {
-            EaseButtons(
-                onAgain = onAgain,
-                onHard = onHard,
-                onGood = onGood,
-                onEasy = onEasy,
-                nextTimes = nextTimes
-            )
-        } else {
-            ShowAnswerButton(onShowAnswer)
+        HorizontalFloatingToolbar(
+            expanded = true,
+            colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onMoreOptionsClick,
+                    modifier = Modifier.height(48.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.more_options)
+                    )
+                }
+                Box(
+                    modifier = Modifier.animateContentSize(motionScheme.fastSpatialSpec())
+                ) {
+                    if (!isAnswerShown) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val isPressed by interactionSource.collectIsPressedAsState()
+                        val defaultHorizontalPadding =
+                            ButtonDefaults.MediumContentPadding.calculateLeftPadding(
+                                layoutDirection = LocalLayoutDirection.current
+                            )
+                        val horizontalPadding by animateDpAsState(
+                            if (isPressed) defaultHorizontalPadding + 4.dp else defaultHorizontalPadding,
+                            motionScheme.fastSpatialSpec()
+                        )
+                        Button(
+                            onClick = onShowAnswer,
+                            modifier = Modifier.height(56.dp),
+                            interactionSource = interactionSource,
+                            contentPadding = PaddingValues(horizontal = horizontalPadding),
+                            colors = ButtonDefaults.buttonColors(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text(
+                                text = stringResource(R.string.show_answer),
+                                softWrap = false,
+                                overflow = TextOverflow.Clip
+                            )
+                        }
+                    } else {
+                        ButtonGroup(
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            overflowIndicator = { }) {
+                            ratings.forEachIndexed { index, (labelResId, rating) ->
+                                customItem(
+                                    buttonGroupContent = {
+                                        val interactionSource =
+                                            remember { MutableInteractionSource() }
+
+                                        Box(
+                                            modifier = Modifier.animateWidth(interactionSource),
+                                            contentAlignment = Alignment.BottomCenter
+                                        ) {
+                                            Button(
+                                                onClick = { onRateCard(rating) },
+                                                modifier = Modifier
+                                                    .height(56.dp)
+                                                    .fillMaxWidth()
+                                                    .padding(bottom = 6.dp), // add slight padding so the badge doesn't overlap excessively
+                                                contentPadding = ButtonDefaults.ExtraSmallContentPadding,
+                                                shape = when (index) {
+                                                    0 -> ButtonGroupDefaults.connectedLeadingButtonShape
+                                                    ratings.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShape
+                                                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes().shape
+                                                },
+                                                interactionSource = interactionSource,
+                                                colors = ButtonDefaults.buttonColors(
+                                                    MaterialTheme.colorScheme.primary,
+                                                    MaterialTheme.colorScheme.onPrimary
+                                                )
+                                            ) {
+                                                Text(
+                                                    nextTimes.getOrElse(index) { "" },
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Visible
+                                                )
+                                            }
+
+                                            Badge(
+                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            ) {
+                                                Text(
+                                                    modifier = Modifier.padding(1.dp),
+                                                    text = stringResource(labelResId),
+                                                    style = MaterialTheme.typography.labelSmall
+                                                )
+                                            }
+                                        }
+                                    },
+                                    menuContent = {},
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
+@Preview(name = "Show Answer", showBackground = true)
 @Composable
-fun ShowAnswerButton(
-    onShowAnswer: () -> Unit, modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onShowAnswer,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(48.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    ) {
-        Text("Show Answer")
-    }
-}
-
-@Composable
-fun EaseButtons(
-    onAgain: () -> Unit,
-    onHard: () -> Unit,
-    onGood: () -> Unit,
-    onEasy: () -> Unit,
-    nextTimes: List<String>,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        EaseButton(
-            label = "Again",
-            nextTime = nextTimes.getOrNull(0) ?: "",
-            onClick = onAgain,
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-            modifier = Modifier.weight(1f)
-        )
-        EaseButton(
-            label = "Hard",
-            nextTime = nextTimes.getOrNull(1) ?: "",
-            onClick = onHard,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.weight(1f)
-        )
-        EaseButton(
-            label = "Good",
-            nextTime = nextTimes.getOrNull(2) ?: "",
-            onClick = onGood,
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.weight(1f)
-        )
-        EaseButton(
-            label = "Easy",
-            nextTime = nextTimes.getOrNull(3) ?: "",
-            onClick = onEasy,
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-fun EaseButton(
-    label: String,
-    nextTime: String,
-    onClick: () -> Unit,
-    containerColor: Color,
-    contentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick, modifier = modifier.height(64.dp), colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor, contentColor = contentColor
-        )
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = nextTime)
-            Text(text = label)
-        }
-    }
-}
-
-@Preview(name = "Show Answer Button", showBackground = true)
-@Composable
-fun AnswerButtonsPreview_ShowAnswer() {
+fun AnswerButtonsShowAnswerPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = false,
-            showTypeInAnswer = true,
+            showTypeInAnswer = false,
+            typedAnswer = "",
+            onTypedAnswerChanged = {},
             onShowAnswer = {},
-            onAgain = {},
-            onHard = {},
-            onGood = {},
-            onEasy = {},
+            onRateCard = {},
             nextTimes = emptyList(),
-            typedAnswer = "Some answer",
-            onTypedAnswerChanged = {})
+            onMoreOptionsClick = {})
     }
 }
 
-@Preview(name = "Ease Buttons", showBackground = true)
+@Preview(name = "Rating Buttons", showBackground = true)
 @Composable
-fun AnswerButtonsPreview_EaseButtons() {
+fun AnswerButtonsRatingPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = true,
             showTypeInAnswer = false,
-            onShowAnswer = {},
-            onAgain = {},
-            onHard = {},
-            onGood = {},
-            onEasy = {},
-            nextTimes = listOf("<10m", "2d", "3d", "4d"),
             typedAnswer = "",
-            onTypedAnswerChanged = {})
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = listOf("1m", "2d", "4d", "7d"),
+            onMoreOptionsClick = {})
+    }
+}
+
+@Preview(name = "Type In Answer", showBackground = true)
+@Composable
+fun AnswerButtonsTypeInPreview() {
+    AnkiDroidTheme {
+        AnswerButtons(
+            isAnswerShown = false,
+            showTypeInAnswer = true,
+            typedAnswer = "Typed Answer",
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = emptyList(),
+            onMoreOptionsClick = {})
     }
 }

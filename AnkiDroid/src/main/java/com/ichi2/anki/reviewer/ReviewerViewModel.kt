@@ -31,6 +31,7 @@ import com.ichi2.anki.cardviewer.MediaErrorBehavior
 import com.ichi2.anki.cardviewer.MediaErrorListener
 import com.ichi2.anki.cardviewer.SingleCardSide
 import com.ichi2.anki.cardviewer.TypeAnswer
+import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Sound
@@ -49,7 +50,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.ichi2.anki.dialogs.compose.TagsState
 import timber.log.Timber
 import java.io.File
 
@@ -111,6 +111,7 @@ sealed class ReviewerEffect {
     data class ShowSnackbar(val message: String) : ReviewerEffect()
     object PerformRedo : ReviewerEffect()
     object ToggleWhiteboard : ReviewerEffect()
+
     // ShowTagsDialog removed - now handled via ViewModel state in Compose
     data class ShowDeleteNoteDialog(val card: Card) : ReviewerEffect()
     data class ShowDueDateDialog(val card: Card) : ReviewerEffect()
@@ -129,20 +130,20 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
 
     private var currentCard: Card? = null
     private var queueState: CurrentQueueState? = null
-    
+
     // Tags dialog state
     private val _tagsState = MutableStateFlow<TagsState>(TagsState.Loading)
     val tagsState: StateFlow<TagsState> = _tagsState.asStateFlow()
-    
+
     private val _currentNoteTags = MutableStateFlow<Set<String>>(emptySet())
     val currentNoteTags: StateFlow<Set<String>> = _currentNoteTags.asStateFlow()
-    
+
     private val _deckTags = MutableStateFlow<Set<String>>(emptySet())
     val deckTags: StateFlow<Set<String>> = _deckTags.asStateFlow()
-    
+
     private val _filterByDeck = MutableStateFlow(true)
     val filterByDeck: StateFlow<Boolean> = _filterByDeck.asStateFlow()
-    
+
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
     private val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
@@ -269,23 +270,23 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             _showTagsDialog.value = true
         }
     }
-    
+
     private suspend fun loadTagsForCurrentCard() {
         val card = currentCard ?: return
         _tagsState.value = TagsState.Loading
-        
+
         CollectionManager.withCol {
             val note = card.note(this)
             val allTags = this.tags.all().sorted()
             _currentNoteTags.value = note.tags.toSet()
             _tagsState.value = TagsState.Loaded(allTags)
-            
+
             // Load tags specific to the current deck for filtering
             // Use findNotes with deck query for efficiency instead of iterating over all cards
             val deckName = this.decks.name(card.did)
             val escapedDeckName = deckName.replace("\"", "\\\"")
             val noteIds = this.findNotes("deck:\"$escapedDeckName\"")
-            
+
             // Limit to 1000 notes to prevent extremely slow loads for massive decks
             val tagsInDeck = mutableSetOf<String>()
             for (noteId in noteIds.take(10000)) {
@@ -295,15 +296,15 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             _deckTags.value = tagsInDeck
         }
     }
-    
+
     fun setFilterByDeck(filterByDeck: Boolean) {
         _filterByDeck.value = filterByDeck
     }
-    
+
     fun dismissTagsDialog() {
         _showTagsDialog.value = false
     }
-    
+
     fun updateNoteTags(newTags: Set<String>) {
         val card = currentCard ?: return
         viewModelScope.launch {
@@ -314,13 +315,20 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             }
             _currentNoteTags.value = newTags
             _showTagsDialog.value = false
-            
+
             // Reload card to update UI (e.g., marked state if "marked" tag changed)
             reloadCardSuspend()
         }
     }
-    
-    fun addTag(tag: String) {
+
+    /**
+     * Registers a new tag in the collection by expanding it in the tag hierarchy.
+     * This method was formerly called addTag, but has been renamed to registerNewTag to clarify
+     * its purpose: it ensures the tag exists and is expanded via [setCollapsed] using
+     * [CollectionManager.withCol], then refreshes the available tags via [loadTagsForCurrentCard].
+     * It does not directly attach the tag to the current note.
+     */
+    fun registerNewTag(tag: String) {
         viewModelScope.launch {
             CollectionManager.withCol {
                 this.tags.setCollapsed(tag, collapsed = false)
@@ -350,11 +358,12 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this, reload = true)
+            val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
 
             _state.update {
                 it.copy(
                     mediaError = null,
-                    html = processHtml(renderOutput.questionText, renderOutput),
+                    html = processHtml(questionHtml, renderOutput),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -443,13 +452,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this)
+            val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
             _state.update {
                 it.copy(
                     mediaError = null,
                     newCount = queue.counts.new,
                     learnCount = queue.counts.lrn,
                     reviewCount = queue.counts.rev,
-                    html = processHtml(renderOutput.questionText, renderOutput),
+                    html = processHtml(questionHtml, renderOutput),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -523,9 +533,10 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             CollectionManager.withCol {
                 val renderOutput = card.renderOutput(this)
+                val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
                 _state.update {
                     it.copy(
-                        html = processHtml(renderOutput.questionText, renderOutput),
+                        html = processHtml(questionHtml, renderOutput),
                         isAnswerShown = false,
                         nextTimes = List(4) { "" },
                         chosenAnswer = ""
