@@ -17,7 +17,9 @@ package com.ichi2.anki.reviewer.compose
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +28,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
@@ -43,11 +45,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,19 +82,32 @@ fun AnswerButtons(
     onMoreOptionsClick: () -> Unit
 ) {
     Column(
-        modifier = modifier,
+        modifier = modifier.imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (showTypeInAnswer) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isFocused by interactionSource.collectIsFocusedAsState()
+
             TextField(
                 value = typedAnswer,
                 onValueChange = onTypedAnswerChanged,
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .padding(horizontal = 16.dp),
                 label = { Text(stringResource(R.string.type_in_the_answer)) },
-                readOnly = isAnswerShown // when answer shown, don't allow typing
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .border(
+                        2.dp,
+                        if (isFocused) MaterialTheme.colorScheme.tertiary else Color.Transparent,
+                        MaterialTheme.shapes.extraLargeIncreased
+                    ),
+                shape = MaterialTheme.shapes.extraLargeIncreased,
+                interactionSource = interactionSource,
+                readOnly = isAnswerShown, // when answer shown, don't allow typing
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                )
             )
         }
 
