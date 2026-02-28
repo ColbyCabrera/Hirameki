@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -18,19 +19,17 @@ fun CheckboxPrompt(
     text: String,
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    horizontalPadding: Dp = 18.dp
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!isChecked) }
-            // Original XML: marginTop=8dp, marginHorizontal=18dp
-            .padding(top = 8.dp, start = 18.dp, end = 18.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(modifier = modifier
+        .fillMaxWidth()
+        .clickable { onCheckedChange(!isChecked) }
+        // Original XML: marginTop=8dp, marginHorizontal=18dp
+        .padding(top = 8.dp, start = horizontalPadding, end = horizontalPadding),
+        verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
-            checked = isChecked,
-            onCheckedChange = null
+            checked = isChecked, onCheckedChange = null
         )
         Text(
             text = text,
@@ -46,9 +45,6 @@ fun CheckboxPrompt(
 private fun CheckboxPromptPreview() {
     MaterialTheme {
         CheckboxPrompt(
-            text = "Enable analytics",
-            isChecked = true,
-            onCheckedChange = {}
-        )
+            text = "Enable analytics", isChecked = true, onCheckedChange = {})
     }
 }

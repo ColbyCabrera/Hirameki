@@ -17,6 +17,7 @@ package com.ichi2.anki.dialogs.compose
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -56,15 +57,17 @@ fun BackupPromptDialogCompose(
             if (allowUserToPermanentlyDismissDialog) {
                 Spacer(modifier = Modifier.height(16.dp))
                 CheckboxPrompt(
+                    modifier = Modifier.fillMaxWidth(),
                     text = stringResource(R.string.button_do_not_show_again),
                     isChecked = isDoNotShowAgainChecked,
-                    onCheckedChange = onDoNotShowAgainChanged
+                    onCheckedChange = onDoNotShowAgainChanged,
+                    horizontalPadding = 0.dp
                 )
             }
         }
     }, confirmButton = {
         TextButton(
-            onClick = onBackup, enabled = !isDoNotShowAgainChecked
+            onClick = onBackup, enabled = !(allowUserToPermanentlyDismissDialog && isDoNotShowAgainChecked)
         ) {
             Text(stringResource(if (isLoggedIn) R.string.button_sync else R.string.button_backup))
         }
