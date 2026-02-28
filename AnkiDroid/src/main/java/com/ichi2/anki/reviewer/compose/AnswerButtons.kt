@@ -180,7 +180,7 @@ fun AnswerButtons(
                                                 contentPadding = ButtonDefaults.ExtraSmallContentPadding,
                                                 shape = when (index) {
                                                     0 -> ButtonGroupDefaults.connectedLeadingButtonShape
-                                                    3 -> ButtonGroupDefaults.connectedTrailingButtonShape
+                                                    ratings.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShape
                                                     else -> ButtonGroupDefaults.connectedMiddleButtonShapes().shape
                                                 },
                                                 interactionSource = interactionSource,
