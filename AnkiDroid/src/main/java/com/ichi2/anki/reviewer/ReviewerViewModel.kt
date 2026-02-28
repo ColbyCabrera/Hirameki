@@ -321,7 +321,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun addTag(tag: String) {
+    /**
+     * Registers a new tag in the collection by expanding it in the tag hierarchy.
+     * This method was formerly called addTag, but has been renamed to registerNewTag to clarify
+     * its purpose: it ensures the tag exists and is expanded via [setCollapsed] using
+     * [CollectionManager.withCol], then refreshes the available tags via [loadTagsForCurrentCard].
+     * It does not directly attach the tag to the current note.
+     */
+    fun registerNewTag(tag: String) {
         viewModelScope.launch {
             CollectionManager.withCol {
                 this.tags.setCollapsed(tag, collapsed = false)
