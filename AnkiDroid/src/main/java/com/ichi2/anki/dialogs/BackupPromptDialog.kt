@@ -139,7 +139,7 @@ class BackupPromptDialog private constructor(
         performBackup: () -> Unit,
     ) {
         dismiss()
-        val activity = windowContext as Activity
+        val activity = windowContext as? Activity ?: return
         val viewGroup = activity.findViewById<ViewGroup>(android.R.id.content)
         val cv = ComposeView(activity).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
