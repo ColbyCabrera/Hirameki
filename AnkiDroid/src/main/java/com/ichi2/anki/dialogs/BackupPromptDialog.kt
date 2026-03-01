@@ -16,26 +16,33 @@
 
 package com.ichi2.anki.dialogs
 
+import android.app.Activity
 import android.content.Context
+import android.view.ViewGroup
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.edit
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.common.time.TimeManager
+import com.ichi2.anki.dialogs.compose.BackupPromptDialogCompose
 import com.ichi2.anki.isLoggedIn
 import com.ichi2.anki.millisecondsSinceLastSync
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.servicelayer.ScopedStorageService.collectionWillBeMadeInaccessibleAfterUninstall
 import com.ichi2.anki.servicelayer.ScopedStorageService.userIsPromptedToDeleteCollectionOnUninstall
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.compat.CompatHelper.Companion.getPackageInfoCompat
 import com.ichi2.compat.PackageInfoFlagsCompat
 import com.ichi2.utils.Permissions
-import com.ichi2.utils.cancelable
-import com.ichi2.utils.checkBoxPrompt
-import com.ichi2.utils.create
 import com.ichi2.utils.message
 import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
@@ -44,7 +51,7 @@ import com.ichi2.utils.title
 import timber.log.Timber
 
 /**
- * Prompts a user to backup via either sync or 'export collection'
+ * Prompts a user to back up via either sync or 'export collection'
  *
  * If dismissed, it will not appear for a period of time (~2 weeks): [calculateNextTimeToShowDialog]
  * After 2 dismissals, the user may hide the dialog permanently.
@@ -56,7 +63,7 @@ import timber.log.Timber
 class BackupPromptDialog private constructor(
     private val windowContext: Context,
 ) {
-    private lateinit var alertDialog: AlertDialog
+    private var composeView: ComposeView? = null
 
     /**
      * After 2 dismissals, allow ignoring
@@ -70,10 +77,8 @@ class BackupPromptDialog private constructor(
 
     private var timesDialogDismissed: Int
         get() = windowContext.sharedPrefs().getInt("backupPromptDismissedCount", 0)
-        set(value) =
-            windowContext
-                .sharedPrefs()
-                .edit { putInt("backupPromptDismissedCount", value) }
+        set(value) = windowContext.sharedPrefs()
+            .edit { putInt("backupPromptDismissedCount", value) }
 
     private var dialogPermanentlyDismissed: Boolean
         get() = windowContext.sharedPrefs().getBoolean("backupPromptDisabled", false)
@@ -90,9 +95,7 @@ class BackupPromptDialog private constructor(
     private var nextTimeToShowDialog: Long
         get() = windowContext.sharedPrefs().getLong("timeToShowBackupDialog", 0)
         set(value) {
-            windowContext
-                .sharedPrefs()
-                .edit { putLong("timeToShowBackupDialog", value) }
+            windowContext.sharedPrefs().edit { putLong("timeToShowBackupDialog", value) }
         }
 
     private fun onDismiss() {
@@ -123,30 +126,63 @@ class BackupPromptDialog private constructor(
         return now + (fixedDayCount + oneToFourDays) * ONE_DAY_IN_MS
     }
 
-    private fun build(
+    private fun dismiss() {
+        val cv = composeView ?: return
+        composeView = null
+        val activity = windowContext as? Activity ?: return
+        val viewGroup = activity.findViewById<ViewGroup>(android.R.id.content)
+        cv.post { viewGroup.removeView(cv) }
+    }
+
+    private fun show(
         isLoggedIn: Boolean,
         performBackup: () -> Unit,
     ) {
-        this.alertDialog =
-            AlertDialog.Builder(windowContext).create {
-                setIcon(if (isLoggedIn) R.drawable.ic_baseline_backup_24 else R.drawable.ic_backup_restore)
-                title(R.string.backup_your_collection)
-                message(R.string.backup_collection_message)
-                positiveButton(if (isLoggedIn) R.string.button_sync else R.string.button_backup) {
-                    Timber.i("User selected 'backup'")
-                    onBackup()
-                    performBackup()
+        dismiss()
+        val activity = windowContext as? Activity ?: return
+        val viewGroup = activity.findViewById<ViewGroup>(android.R.id.content)
+        val cv = ComposeView(activity).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        }
+        this.composeView = cv
+        viewGroup.addView(cv)
+
+        cv.setContent {
+            AnkiDroidTheme {
+                var isDoNotShowAgainChecked by remember { mutableStateOf(false) }
+                var showDialog by remember { mutableStateOf(true) }
+
+                if (showDialog) {
+                    BackupPromptDialogCompose(
+                        isLoggedIn = isLoggedIn,
+                        allowUserToPermanentlyDismissDialog = allowUserToPermanentlyDismissDialog,
+                        onBackup = {
+                            Timber.i("User selected 'backup'")
+                            userCheckedDoNotShowAgain = isDoNotShowAgainChecked
+                            showDialog = false
+                            cv.post {
+                                onBackup()
+                                dismiss()
+                                performBackup()
+                            }
+                        },
+                        onDismissRequest = {
+                            userCheckedDoNotShowAgain = isDoNotShowAgainChecked
+                            showDialog = false
+                            cv.post {
+                                dismiss()
+                                onDismiss()
+                            }
+                        },
+                        onDoNotShowAgainChanged = { checked ->
+                            Timber.d("Don't show again checked: %b", checked)
+                            isDoNotShowAgainChecked = checked
+                        },
+                        isDoNotShowAgainChecked = isDoNotShowAgainChecked
+                    )
                 }
-                if (allowUserToPermanentlyDismissDialog) {
-                    checkBoxPrompt(R.string.button_do_not_show_again, isCheckedDefault = false) { checked ->
-                        Timber.d("Don't show again checked: %b", checked)
-                        userCheckedDoNotShowAgain = checked
-                        alertDialog.positiveButton.isEnabled = !checked
-                    }
-                }
-                negativeButton(R.string.button_backup_later) { onDismiss() }
-                cancelable(false)
             }
+        }
     }
 
     companion object {
@@ -161,14 +197,13 @@ class BackupPromptDialog private constructor(
             }
             val isLoggedIn = isLoggedIn()
             backupPrompt.apply {
-                build(isLoggedIn) {
+                show(isLoggedIn) {
                     if (isLoggedIn) {
                         deckPicker.sync(conflict = null)
                     } else {
                         deckPicker.exportCollection()
                     }
                 }
-                alertDialog.show()
             }
             return true
         }
@@ -200,10 +235,12 @@ class BackupPromptDialog private constructor(
                 R.string.dismiss_backup_warning_upgrade
             } else {
                 // A user is on a Play Store Build. They are on a version of Android with storage restrictions
-                // Their collection is in a 'legacy' location but they are not going to lose access to their collection when they uninstall
+                // Their collection is in a 'legacy' location, but they are not going to lose access to their collection when they uninstall
                 // The user is very likely syncing
                 Timber.w("getPermanentlyDismissDialogMessage: unexpected state")
-                CrashReportService.sendExceptionReport(IllegalStateException("unexpected state"), "getPermanentlyDismissDialogMessage")
+                CrashReportService.sendExceptionReport(
+                    IllegalStateException("unexpected state"), "getPermanentlyDismissDialogMessage"
+                )
                 // assume this is a mistake and show a scary confirmation prompt
                 R.string.dismiss_backup_warning_new_user // message stating collection will be deleted
             }
@@ -232,7 +269,8 @@ class BackupPromptDialog private constructor(
         }
     }
 
-    private suspend fun shouldShowDialog(): Boolean = !userIsNewToAnkiDroid() && canProvideBackupOption() && timeToShowDialogAgain()
+    private suspend fun shouldShowDialog(): Boolean =
+        !userIsNewToAnkiDroid() && canProvideBackupOption() && timeToShowDialogAgain()
 
     /**
      * Whether:
@@ -262,7 +300,8 @@ class BackupPromptDialog private constructor(
         return collectionWillBeMadeInaccessibleAfterUninstall(windowContext)
     }
 
-    private fun timeToShowDialogAgain(): Boolean = !dialogPermanentlyDismissed && nextTimeToShowDialog <= TimeManager.time.intTimeMS()
+    private fun timeToShowDialogAgain(): Boolean =
+        !dialogPermanentlyDismissed && nextTimeToShowDialog <= TimeManager.time.intTimeMS()
 
     private suspend fun userIsNewToAnkiDroid(): Boolean {
         // A user is new if the app was installed > 7 days ago  OR if they have no cards
@@ -280,12 +319,11 @@ class BackupPromptDialog private constructor(
     /** The time at which the app was first installed. Units are as per [System.currentTimeMillis()]. */
     private fun getFirstInstallTime(): Long? {
         return try {
-            return windowContext.packageManager
-                .getPackageInfoCompat(
-                    windowContext.packageName,
-                    PackageInfoFlagsCompat.of(0),
-                )?.firstInstallTime
-        } catch (exception: Exception) {
+            return windowContext.packageManager.getPackageInfoCompat(
+                windowContext.packageName,
+                PackageInfoFlagsCompat.of(0),
+            )?.firstInstallTime
+        } catch (_: Exception) {
             Timber.w("failed to get first install time")
             null
         }
