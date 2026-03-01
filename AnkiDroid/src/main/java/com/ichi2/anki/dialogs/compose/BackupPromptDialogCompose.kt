@@ -67,7 +67,8 @@ fun BackupPromptDialogCompose(
         }
     }, confirmButton = {
         TextButton(
-            onClick = onBackup, enabled = !(allowUserToPermanentlyDismissDialog && isDoNotShowAgainChecked)
+            onClick = onBackup,
+            enabled = !(allowUserToPermanentlyDismissDialog && isDoNotShowAgainChecked)
         ) {
             Text(stringResource(if (isLoggedIn) R.string.button_sync else R.string.button_backup))
         }
@@ -104,6 +105,21 @@ fun BackupPromptDialogComposeNotLoggedInPreview() {
             onDismissRequest = {},
             onDoNotShowAgainChanged = {},
             isDoNotShowAgainChecked = false
+        )
+    }
+}
+
+@Preview(name = "Do Not Show Again Checked")
+@Composable
+fun BackupPromptDialogComposeDoNotShowAgainPreview() {
+    AnkiDroidTheme {
+        BackupPromptDialogCompose(
+            isLoggedIn = true,
+            allowUserToPermanentlyDismissDialog = true,
+            onBackup = {},
+            onDismissRequest = {},
+            onDoNotShowAgainChanged = {},
+            isDoNotShowAgainChecked = true
         )
     }
 }
