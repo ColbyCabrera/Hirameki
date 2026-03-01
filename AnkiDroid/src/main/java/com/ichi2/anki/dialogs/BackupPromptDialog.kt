@@ -138,6 +138,7 @@ class BackupPromptDialog private constructor(
         isLoggedIn: Boolean,
         performBackup: () -> Unit,
     ) {
+        dismiss()
         val activity = windowContext as Activity
         val viewGroup = activity.findViewById<ViewGroup>(android.R.id.content)
         val cv = ComposeView(activity).apply {
@@ -268,7 +269,8 @@ class BackupPromptDialog private constructor(
         }
     }
 
-    private suspend fun shouldShowDialog(): Boolean = true
+    private suspend fun shouldShowDialog(): Boolean =
+        !userIsNewToAnkiDroid() && canProvideBackupOption() && timeToShowDialogAgain()
 
     /**
      * Whether:
