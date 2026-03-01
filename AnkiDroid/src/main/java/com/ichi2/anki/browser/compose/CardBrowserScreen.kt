@@ -327,9 +327,6 @@ fun CardBrowserScreen(
         ) { snackbarData ->
             Snackbar(
                 snackbarData = snackbarData,
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
-                actionColor = MaterialTheme.colorScheme.onSecondary,
             )
         }
 
