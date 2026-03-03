@@ -451,6 +451,12 @@ class CardBrowserViewModel(
 
     val flowOfSnackbarString = MutableSharedFlow<String>()
 
+    fun emitSnackbarMessage(message: String) {
+        viewModelScope.launch {
+            flowOfSnackbarString.emit(message)
+        }
+    }
+
     val flowOfDeleteResult = MutableSharedFlow<Int>()
 
     var focusedRow: CardOrNoteId? = null

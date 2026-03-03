@@ -73,7 +73,9 @@ open class CardBrowser :
     val fragmented: Boolean
         get() = resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK == Configuration.SCREENLAYOUT_SIZE_XLARGE
 
-    private lateinit var viewModel: CardBrowserViewModel
+    lateinit var viewModel: CardBrowserViewModel
+        private set
+
     private lateinit var actionHandler: CardBrowserActionHandler
 
     private val onMySearches = registerForActivityResult(MySearchesContract()) { query ->

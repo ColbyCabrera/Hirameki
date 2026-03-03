@@ -155,6 +155,12 @@ fun CardBrowserScreen(
         }
     }
 
+    LaunchedEffect(viewModel.flowOfSnackbarString) {
+        viewModel.flowOfSnackbarString.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
     LaunchedEffect(viewModel.flowOfDeleteResult) {
         viewModel.flowOfDeleteResult.collect { count ->
             val message = currentContext.resources.getQuantityString(
@@ -327,6 +333,9 @@ fun CardBrowserScreen(
         ) { snackbarData ->
             Snackbar(
                 snackbarData = snackbarData,
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
+                actionColor = MaterialTheme.colorScheme.onSecondary,
             )
         }
 

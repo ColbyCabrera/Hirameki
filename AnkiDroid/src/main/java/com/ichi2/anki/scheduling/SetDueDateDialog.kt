@@ -404,7 +404,10 @@ private fun AnkiActivity.updateDueDate(
     }
     Timber.d("updated %d cards", cardsUpdated)
     val message = TR.schedulingSetDueDateDone(cardsUpdated)
-    if (canProperlyShowSnackbars()) {
+    if (this@updateDueDate is com.ichi2.anki.CardBrowser) {
+        // CardBrowser handles snackbars internally with Compose
+        this@updateDueDate.viewModel.emitSnackbarMessage(message)
+    } else if (canProperlyShowSnackbars()) {
         showSnackbar(message, Snackbar.LENGTH_SHORT)
     } else {
         showThemedToast(this@updateDueDate, message, true)
