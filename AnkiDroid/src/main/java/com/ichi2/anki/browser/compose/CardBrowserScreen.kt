@@ -156,8 +156,19 @@ fun CardBrowserScreen(
     }
 
     LaunchedEffect(viewModel.flowOfSnackbarString) {
-        viewModel.flowOfSnackbarString.collect { message ->
-            snackbarHostState.showSnackbar(message)
+        viewModel.flowOfSnackbarString.collect { event ->
+            val result = if (event.action != null) {
+                snackbarHostState.showSnackbar(
+                    message = event.message,
+                    actionLabel = undoLabel,
+                    duration = SnackbarDuration.Short,
+                )
+            } else {
+                snackbarHostState.showSnackbar(event.message)
+            }
+            if (result == SnackbarResult.ActionPerformed) {
+                event.action?.invoke()
+            }
         }
     }
 

@@ -57,9 +57,6 @@ import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import timber.log.Timber
 
-interface SnackbarForwarder {
-    fun forwardSnackbar(message: String, action: (() -> Unit)? = null)
-}
 
 /**
  * A Jetpack Compose-based Activity for browsing cards.
@@ -77,7 +74,7 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber,
     private lateinit var viewModel: CardBrowserViewModel
 
     override fun forwardSnackbar(message: String, action: (() -> Unit)?) {
-        viewModel.emitSnackbarMessage(message)
+        viewModel.emitSnackbarMessage(message, action)
     }
 
     private lateinit var actionHandler: CardBrowserActionHandler

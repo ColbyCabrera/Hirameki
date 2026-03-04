@@ -41,6 +41,7 @@ import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckSpinnerSelection.Companion.ALL_DECKS_ID
 import com.ichi2.anki.Flag
 import com.ichi2.anki.R
+import com.ichi2.anki.SnackbarMessageEvent
 import com.ichi2.anki.browser.CardBrowserViewModel.ChangeMultiSelectMode.MultiSelectCause
 import com.ichi2.anki.browser.CardBrowserViewModel.ChangeMultiSelectMode.SingleSelectCause
 import com.ichi2.anki.browser.CardBrowserViewModel.ToggleSelectionState.SELECT_ALL
@@ -358,8 +359,7 @@ class CardBrowserViewModel(
                                     decks.rename(it, name)
                                 } ?: run {
                                     Timber.w(
-                                        "Deck no longer exists for rename: %s",
-                                        state.initialName
+                                        "Deck no longer exists for rename: %s", state.initialName
                                     )
                                     operationSucceeded = false
                                 }
@@ -389,7 +389,11 @@ class CardBrowserViewModel(
             } catch (e: CancellationException) {
                 throw e // Don't catch coroutine cancellation
             } catch (e: BackendDeckIsFilteredException) {
-                flowOfSnackbarString.emit(e.localizedMessage ?: e.message.orEmpty())
+                flowOfSnackbarString.emit(
+                    SnackbarMessageEvent(
+                        e.localizedMessage ?: e.message.orEmpty()
+                    )
+                )
             } catch (e: Exception) {
                 Timber.w(e, "Failed to create/rename deck")
                 flowOfSnackbarMessage.emit(R.string.something_wrong)
@@ -449,11 +453,11 @@ class CardBrowserViewModel(
 
     val flowOfSnackbarMessage = MutableSharedFlow<Int>()
 
-    val flowOfSnackbarString = MutableSharedFlow<String>()
+    val flowOfSnackbarString = MutableSharedFlow<SnackbarMessageEvent>()
 
-    fun emitSnackbarMessage(message: String) {
+    fun emitSnackbarMessage(message: String, action: (() -> Unit)? = null) {
         viewModelScope.launch {
-            flowOfSnackbarString.emit(message)
+            flowOfSnackbarString.emit(SnackbarMessageEvent(message, action))
         }
     }
 
@@ -777,7 +781,7 @@ class CardBrowserViewModel(
 
                 // Collect all tags from the notes
                 val tagsSet = withCol {
-                    noteIds.asSequence().map { getNote(it).tags }.flatten().toSet()
+                    noteIds.asSequence().flatMap { getNote(it).tags }.toSet()
                 }
 
                 _deckTags.value = tagsSet
