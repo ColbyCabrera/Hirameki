@@ -73,8 +73,8 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber,
 
     private lateinit var viewModel: CardBrowserViewModel
 
-    override fun forwardSnackbar(message: String, action: (() -> Unit)?) {
-        viewModel.emitSnackbarMessage(message, action)
+    override fun forwardSnackbar(message: String, actionLabel: String?, action: (() -> Unit)?) {
+        viewModel.emitSnackbarMessage(message, actionLabel, action)
     }
 
     private lateinit var actionHandler: CardBrowserActionHandler

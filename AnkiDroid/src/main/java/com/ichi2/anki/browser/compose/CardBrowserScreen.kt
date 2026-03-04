@@ -160,7 +160,7 @@ fun CardBrowserScreen(
             val result = if (event.action != null) {
                 snackbarHostState.showSnackbar(
                     message = event.message,
-                    actionLabel = undoLabel,
+                    actionLabel = event.actionLabel ?: undoLabel,
                     duration = SnackbarDuration.Short,
                 )
             } else {

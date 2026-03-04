@@ -389,10 +389,10 @@ class CardBrowserViewModel(
             } catch (e: CancellationException) {
                 throw e // Don't catch coroutine cancellation
             } catch (e: BackendDeckIsFilteredException) {
+                val errorMsg = (e.localizedMessage ?: e.message).takeIf { !it.isNullOrBlank() }
+                    ?: "An unexpected error occurred"
                 flowOfSnackbarString.emit(
-                    SnackbarMessageEvent(
-                        e.localizedMessage ?: e.message.orEmpty()
-                    )
+                    SnackbarMessageEvent(errorMsg)
                 )
             } catch (e: Exception) {
                 Timber.w(e, "Failed to create/rename deck")
@@ -455,9 +455,9 @@ class CardBrowserViewModel(
 
     val flowOfSnackbarString = MutableSharedFlow<SnackbarMessageEvent>()
 
-    fun emitSnackbarMessage(message: String, action: (() -> Unit)? = null) {
+    fun emitSnackbarMessage(message: String, actionLabel: String? = null, action: (() -> Unit)? = null) {
         viewModelScope.launch {
-            flowOfSnackbarString.emit(SnackbarMessageEvent(message, action))
+            flowOfSnackbarString.emit(SnackbarMessageEvent(message, actionLabel, action))
         }
     }
 
