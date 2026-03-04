@@ -119,6 +119,10 @@ fun DeckPicker.handleNewSync(
             // auth failed; log out
             updateLogin("", "")
             throw exc
+        } catch (exc: net.ankiweb.rsdroid.exceptions.BackendNetworkException) {
+            Timber.w(exc, "Network error during sync")
+            deckPicker.viewModel.setShowNetworkErrorDialog(true)
+            return@launchCatchingTask
         }
         withCol { notetypes.clearCache() }
         notifySubscribersAllValuesChanged(deckPicker)
@@ -248,7 +252,7 @@ private suspend fun handleNormalSync(
         null,
             -> {
             Timber.e("Unexpected sync status: ${output.required}")
-            deckPicker.showSyncErrorDialog(SyncErrorDialog.Type.DIALOG_CONNECTION_ERROR)
+            viewModel.setShowNetworkErrorDialog(true)
         }
     }
 }

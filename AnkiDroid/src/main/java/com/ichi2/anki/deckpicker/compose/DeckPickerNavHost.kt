@@ -77,6 +77,7 @@ import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
+import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
@@ -294,6 +295,7 @@ private fun DeckPickerMainContent(
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val syncDialogState by viewModel.syncDialogState.collectAsStateWithLifecycle()
     val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
+    val showNetworkErrorDialog by viewModel.showNetworkErrorDialog.collectAsStateWithLifecycle()
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
 
     val errorMessageState = viewModel.onError.collectAsStateWithLifecycle(initialValue = null)
@@ -309,6 +311,15 @@ private fun DeckPickerMainContent(
             onLoginClick = {
                 viewModel.setShowLoginToAnkiWebDialog(false)
                 onLoginToAnkiWeb()
+            })
+    }
+
+    if (showNetworkErrorDialog) {
+        NetworkErrorDialog(
+            onDismissRequest = { viewModel.setShowNetworkErrorDialog(false) },
+            onRetry = {
+                viewModel.setShowNetworkErrorDialog(false)
+                onSync()
             })
     }
 

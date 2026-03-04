@@ -89,8 +89,15 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     private val _showLoginToAnkiWebDialog = MutableStateFlow(false)
     val showLoginToAnkiWebDialog: StateFlow<Boolean> = _showLoginToAnkiWebDialog.asStateFlow()
 
+    private val _showNetworkErrorDialog = MutableStateFlow(false)
+    val showNetworkErrorDialog: StateFlow<Boolean> = _showNetworkErrorDialog.asStateFlow()
+
     fun setShowLoginToAnkiWebDialog(show: Boolean) {
         _showLoginToAnkiWebDialog.value = show
+    }
+
+    fun setShowNetworkErrorDialog(show: Boolean) {
+        _showNetworkErrorDialog.value = show
     }
 
     fun showSyncDialog(title: String, message: String, onCancel: () -> Unit) {
@@ -200,7 +207,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             tree.newCount + tree.revCount + tree.lrnCount
         }
 
-    /** "Studied N cards in 0 seconds today */
+    /** Studied N cards in 0 seconds today */
     val flowOfStudiedTodayStats = MutableStateFlow("")
 
     private val _flowOfTimeUntilNextDay = MutableStateFlow(0L)
@@ -310,8 +317,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                                     decks.rename(it, name)
                                 } ?: run {
                                     Timber.w(
-                                        "Deck no longer exists for rename: %s",
-                                        state.initialName
+                                        "Deck no longer exists for rename: %s", state.initialName
                                     )
                                     operationSucceeded = false
                                 }
