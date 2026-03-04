@@ -35,7 +35,6 @@ import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_SYNC_CORRUPT_COLLECTIO
 import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_SYNC_SANITY_ERROR
 import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_LOCAL
 import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_REMOTE
-import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.anki.utils.openUrl
 
@@ -71,14 +70,10 @@ class SyncErrorDialog : AsyncDialogFragment() {
                 .setTitle(title)
                 .setMessage(message)
         return when (dialogType) {
-            DIALOG_USER_NOT_LOGGED_IN_SYNC -> {
-                // User not logged in; take them to login screen
-                dialog
-                    .setIcon(R.drawable.ic_sync_problem)
-                    .setPositiveButton(R.string.log_in) { _, _ ->
-                        requireSyncErrorDialogListener().loginToSyncServer()
-                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }
-                    .create()
+            @Suppress("DEPRECATION")
+            SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> {
+                // Deprecated branch, should not be reached
+                dialog.create()
             }
             DIALOG_CONNECTION_ERROR -> {
                 // Connection error; allow user to retry or cancel
@@ -176,7 +171,8 @@ class SyncErrorDialog : AsyncDialogFragment() {
     private val title: String
         get() =
             when (dialogType) {
-                DIALOG_USER_NOT_LOGGED_IN_SYNC -> res().getString(R.string.not_logged_in_title)
+                @Suppress("DEPRECATION")
+                SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> ""
                 DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_LOCAL, DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_REMOTE ->
                     res().getString(
                         R.string.sync_conflict_replace_title,
@@ -199,17 +195,14 @@ class SyncErrorDialog : AsyncDialogFragment() {
      */
     override val notificationTitle: String
         get() {
-            return if (dialogType == DIALOG_USER_NOT_LOGGED_IN_SYNC) {
-                res().getString(R.string.sync_error)
-            } else {
-                title
-            }
+            return title
         }
 
     private val message: String?
         get() =
             when (dialogType) {
-                DIALOG_USER_NOT_LOGGED_IN_SYNC -> res().getString(R.string.login_create_account_message)
+                @Suppress("DEPRECATION")
+                SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> ""
                 DIALOG_CONNECTION_ERROR -> res().getString(R.string.connection_error_message)
                 DIALOG_SYNC_CONFLICT_RESOLUTION -> res().getString(R.string.sync_conflict_message_new)
                 DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_LOCAL, DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_LOCAL ->
@@ -254,11 +247,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
      */
     override val notificationMessage: String?
         get() {
-            return if (dialogType == DIALOG_USER_NOT_LOGGED_IN_SYNC) {
-                res().getString(R.string.not_logged_in_title)
-            } else {
-                message
-            }
+            return message
         }
 
     override val dialogHandlerMessage: SyncErrorDialogMessageHandler
@@ -278,6 +267,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
     enum class Type(
         val code: Int,
     ) {
+        @Deprecated("Replaced with Compose LoginToAnkiWebDialog")
         DIALOG_USER_NOT_LOGGED_IN_SYNC(0),
         DIALOG_CONNECTION_ERROR(1),
         DIALOG_SYNC_CONFLICT_RESOLUTION(2),

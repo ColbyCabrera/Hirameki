@@ -86,6 +86,13 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     private val _syncDialogState = MutableStateFlow<SyncDialogState?>(null)
     val syncDialogState: StateFlow<SyncDialogState?> = _syncDialogState.asStateFlow()
 
+    private val _showLoginToAnkiWebDialog = MutableStateFlow(false)
+    val showLoginToAnkiWebDialog: StateFlow<Boolean> = _showLoginToAnkiWebDialog.asStateFlow()
+
+    fun setShowLoginToAnkiWebDialog(show: Boolean) {
+        _showLoginToAnkiWebDialog.value = show
+    }
+
     fun showSyncDialog(title: String, message: String, onCancel: () -> Unit) {
         _syncDialogState.value = SyncDialogState(title, message, onCancel)
     }
