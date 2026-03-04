@@ -500,7 +500,8 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     },
                     onShowDialogFragment = { it.show(supportFragmentManager, null) },
                     onInvalidateOptionsMenu = { invalidateOptionsMenu() },
-                    onSync = { sync() })
+                    onSync = { sync() },
+                    onLoginToAnkiWeb = { loginToSyncServer() })
             }
         }
 
@@ -1531,6 +1532,10 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * @param message text to show
      */
     override fun showSyncErrorDialog(dialogType: SyncErrorDialog.Type, message: String?) {
+        if (dialogType == SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC) {
+            viewModel.setShowLoginToAnkiWebDialog(true)
+            return
+        }
         val dialog = newInstance(dialogType, message)
         showDialogFragment(dialog)
     }

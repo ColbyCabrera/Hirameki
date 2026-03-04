@@ -76,6 +76,7 @@ import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.dialogs.compose.ErrorDialog
+import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
@@ -184,6 +185,7 @@ fun DeckPickerNavHost(
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onSync: () -> Unit,
+    onLoginToAnkiWeb: () -> Unit,
 ) {
     val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -216,6 +218,7 @@ fun DeckPickerNavHost(
                 onShowDialogFragment = onShowDialogFragment,
                 onInvalidateOptionsMenu = onInvalidateOptionsMenu,
                 onSync = onSync,
+                onLoginToAnkiWeb = onLoginToAnkiWeb,
                 lifecycle = lifecycle
             )
         }
@@ -277,6 +280,7 @@ private fun DeckPickerMainContent(
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onSync: () -> Unit,
+    onLoginToAnkiWeb: () -> Unit,
     lifecycle: Lifecycle
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -289,6 +293,7 @@ private fun DeckPickerMainContent(
     val isRefreshing by viewModel.isSyncing.collectAsStateWithLifecycle(initialValue = false)
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val syncDialogState by viewModel.syncDialogState.collectAsStateWithLifecycle()
+    val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -301,6 +306,16 @@ private fun DeckPickerMainContent(
         ErrorDialog(
             errorMessage = message,
             onDismissRequest = { errorMessage = null }
+        )
+    }
+    
+    if (showLoginToAnkiWebDialog) {
+        LoginToAnkiWebDialog(
+            onDismissRequest = { viewModel.setShowLoginToAnkiWebDialog(false) },
+            onLoginClick = {
+                viewModel.setShowLoginToAnkiWebDialog(false)
+                onLoginToAnkiWeb()
+            }
         )
     }
 
