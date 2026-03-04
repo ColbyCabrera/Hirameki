@@ -708,8 +708,9 @@ class CardBrowserViewModel(
             Timber.i("initCompleted")
 
             if (!manualInit) {
-                flowOfInitCompleted.update { true }
-                // restore selection state
+                // Restore selection state BEFORE setting initCompleted, so that any searches
+                // triggered by performSearchFlow (which fires when flowOfInitCompleted becomes true)
+                // also see the pending selection and don't call clearCardsList() to wipe it.
                 val idsFile =
                     savedStateHandle.get<Bundle>(STATE_MULTISELECT_VALUES)?.let { bundle ->
                         BundleCompat.getParcelable(
@@ -723,13 +724,13 @@ class CardBrowserViewModel(
                 if (ids.isNotEmpty()) {
                     pendingSelectionToRestore = ids
                 }
-                launchSearchForCards()
-                // Note: pendingSelectionToRestore is intentionally not cleared here.
-                // Multiple searches can run during init, and each needs to see the pending
-                // selection to avoid clearing it. The trade-off is that if the user triggers
-                // a search before making any selection changes, the restored selection may
-                // be re-applied. This is considered acceptable as it only affects the edge
-                // case of immediate search after restore, and the selection content is correct.
+                // Setting initCompleted triggers performSearchFlow, which calls
+                // launchSearchForCards(). That search will see pendingSelectionToRestore
+                // and restore the selection. No explicit launchSearchForCards() call is
+                // needed here — a second call would run after the first search consumes
+                // pendingSelectionToRestore and would call clearCardsList(), wiping
+                // the restored selection.
+                flowOfInitCompleted.update { true }
             }
         }
 
