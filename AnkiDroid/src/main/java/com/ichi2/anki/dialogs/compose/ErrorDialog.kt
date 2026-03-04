@@ -32,7 +32,7 @@ fun ErrorDialog(
 
 @Preview(name = "Error Dialog")
 @Composable
-fun ErrorDialogPreview() {
+private fun ErrorDialogPreview() {
     AnkiDroidTheme {
         ErrorDialog(
             errorMessage = "A network error occurred.\n\nError details: error sending request",

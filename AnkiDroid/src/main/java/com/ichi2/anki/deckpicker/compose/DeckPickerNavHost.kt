@@ -296,27 +296,20 @@ private fun DeckPickerMainContent(
     val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(viewModel) {
-        viewModel.onError.collect { message ->
-            errorMessage = message
-        }
-    }
+    val errorMessageState = viewModel.onError.collectAsStateWithLifecycle(initialValue = null)
+    var errorMessage by remember(errorMessageState.value) { mutableStateOf(errorMessageState.value) }
     errorMessage?.let { message ->
         ErrorDialog(
-            errorMessage = message,
-            onDismissRequest = { errorMessage = null }
-        )
+            errorMessage = message, onDismissRequest = { errorMessage = null })
     }
-    
+
     if (showLoginToAnkiWebDialog) {
         LoginToAnkiWebDialog(
             onDismissRequest = { viewModel.setShowLoginToAnkiWebDialog(false) },
             onLoginClick = {
                 viewModel.setShowLoginToAnkiWebDialog(false)
                 onLoginToAnkiWeb()
-            }
-        )
+            })
     }
 
     syncDialogState?.let {
