@@ -85,7 +85,10 @@ fun ExportDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            TextButton(
+                onClick = onConfirm,
+                enabled = !decksLoading,
+            ) {
                 Text(text = stringResource(R.string.dialog_ok))
             }
         },

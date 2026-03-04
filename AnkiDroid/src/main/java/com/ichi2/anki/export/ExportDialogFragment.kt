@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.os.BundleCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
@@ -77,6 +78,7 @@ class ExportDialogFragment : DialogFragment() {
         )
 
         return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 AnkiDroidTheme {
                     val selectedFormatIndex = remember {
@@ -137,7 +139,7 @@ class ExportDialogFragment : DialogFragment() {
                         onCardsStateChanged = { cardsState.value = it },
                         onDismissRequest = { dismiss() },
                         onConfirm = {
-                            if (selectedFormatIndex.intValue != 0 && decksLoading.value) return@ExportDialog
+                            if (selectedFormatIndex.intValue != 0 && decksLoading.value) return
 
                             when (selectedFormatIndex.intValue) {
                                 0 -> handleCollectionExport(collectionState.value)
