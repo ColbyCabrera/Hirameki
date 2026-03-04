@@ -118,35 +118,35 @@ class SyncErrorDialog : AsyncDialogFragment() {
             DIALOG_SYNC_SANITY_ERROR -> {
                 // Sync sanity check error; allow user to cancel, or choose between local and remote versions
                 dialog.setPositiveButton(R.string.sync_sanity_local) { _, _ ->
-                        requireSyncErrorDialogListener().showSyncErrorDialog(
-                            DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_LOCAL
-                        )
-                    }.setNeutralButton(R.string.sync_sanity_remote) { _, _ ->
-                        requireSyncErrorDialogListener().showSyncErrorDialog(
-                            DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_REMOTE
-                        )
-                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
+                    requireSyncErrorDialogListener().showSyncErrorDialog(
+                        DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_LOCAL
+                    )
+                }.setNeutralButton(R.string.sync_sanity_remote) { _, _ ->
+                    requireSyncErrorDialogListener().showSyncErrorDialog(
+                        DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_REMOTE
+                    )
+                }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
             }
 
             DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_LOCAL -> {
                 // Confirmation before pushing local collection to server after sanity check error
                 dialog.setPositiveButton(R.string.dialog_positive_replace) { _, _ ->
-                        syncAndDismissAllDialogFragments(ConflictResolution.FULL_UPLOAD)
-                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
+                    syncAndDismissAllDialogFragments(ConflictResolution.FULL_UPLOAD)
+                }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
             }
 
             DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_REMOTE -> {
                 // Confirmation before overwriting local collection with server collection after sanity check error
                 dialog.setPositiveButton(R.string.dialog_positive_replace) { _, _ ->
-                        syncAndDismissAllDialogFragments(ConflictResolution.FULL_DOWNLOAD)
-                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
+                    syncAndDismissAllDialogFragments(ConflictResolution.FULL_DOWNLOAD)
+                }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
             }
 
             DIALOG_MEDIA_SYNC_ERROR -> {
                 dialog.setPositiveButton(R.string.check_media) { _, _ ->
-                        requireSyncErrorDialogListener().mediaCheck()
-                        activity?.dismissAllDialogFragments()
-                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
+                    requireSyncErrorDialogListener().mediaCheck()
+                    activity?.dismissAllDialogFragments()
+                }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
             }
 
             DIALOG_SYNC_CORRUPT_COLLECTION -> {
@@ -158,9 +158,9 @@ class SyncErrorDialog : AsyncDialogFragment() {
 
             DIALOG_SYNC_BASIC_CHECK_ERROR -> {
                 dialog.setPositiveButton(R.string.check_db) { _, _ ->
-                        requireSyncErrorDialogListener().integrityCheck()
-                        activity?.dismissAllDialogFragments()
-                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
+                    requireSyncErrorDialogListener().integrityCheck()
+                    activity?.dismissAllDialogFragments()
+                }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
             }
         }
     }
@@ -322,7 +322,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
         override fun toMessage(): Message = Message.obtain().apply {
             what = this@SyncErrorDialogMessageHandler.what
             data = bundleOf(
-                SYNC_ERROR_DIALOG_TYPE_KEY to dialogType,
+                SYNC_ERROR_DIALOG_TYPE_KEY to dialogType.code,
                 DIALOG_MESSAGE_KEY to dialogMessage,
             )
         }

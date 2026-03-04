@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.ankiweb.rsdroid.Backend
 import net.ankiweb.rsdroid.exceptions.BackendInterruptedException
+import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -119,9 +120,10 @@ fun DeckPicker.handleNewSync(
             // auth failed; log out
             updateLogin("", "")
             throw exc
-        } catch (exc: net.ankiweb.rsdroid.exceptions.BackendNetworkException) {
+        } catch (exc: BackendNetworkException) {
             Timber.w(exc, "Network error during sync")
             deckPicker.viewModel.setShowNetworkErrorDialog(true)
+            deckPicker.refreshState()
             return@launchCatchingTask
         }
         withCol { notetypes.clearCache() }
