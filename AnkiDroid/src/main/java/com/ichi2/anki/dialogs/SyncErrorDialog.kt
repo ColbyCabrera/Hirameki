@@ -72,8 +72,12 @@ class SyncErrorDialog : AsyncDialogFragment() {
         return when (dialogType) {
             @Suppress("DEPRECATION")
             SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> {
-                // Deprecated branch, should not be reached
-                dialog.create()
+                dialog
+                    .setIcon(R.drawable.ic_sync_problem)
+                    .setPositiveButton(R.string.log_in) { _, _ ->
+                        requireSyncErrorDialogListener().loginToSyncServer()
+                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }
+                    .create()
             }
             DIALOG_CONNECTION_ERROR -> {
                 // Connection error; allow user to retry or cancel
@@ -172,7 +176,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
         get() =
             when (dialogType) {
                 @Suppress("DEPRECATION")
-                SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> ""
+                SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> res().getString(R.string.not_logged_in_title)
                 DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_LOCAL, DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_REMOTE ->
                     res().getString(
                         R.string.sync_conflict_replace_title,
@@ -202,7 +206,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
         get() =
             when (dialogType) {
                 @Suppress("DEPRECATION")
-                SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> ""
+                SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> res().getString(R.string.login_create_account_message)
                 DIALOG_CONNECTION_ERROR -> res().getString(R.string.connection_error_message)
                 DIALOG_SYNC_CONFLICT_RESOLUTION -> res().getString(R.string.sync_conflict_message_new)
                 DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_LOCAL, DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_LOCAL ->
