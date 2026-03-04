@@ -75,6 +75,7 @@ import com.ichi2.anki.deckpicker.DeckSelectionResult
 import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.dialogs.compose.CreateDeckDialog
+import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
@@ -289,6 +290,19 @@ private fun DeckPickerMainContent(
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val syncDialogState by viewModel.syncDialogState.collectAsStateWithLifecycle()
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
+
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(viewModel) {
+        viewModel.onError.collect { message ->
+            errorMessage = message
+        }
+    }
+    errorMessage?.let { message ->
+        ErrorDialog(
+            errorMessage = message,
+            onDismissRequest = { errorMessage = null }
+        )
+    }
 
     syncDialogState?.let {
         SyncProgressDialog(
