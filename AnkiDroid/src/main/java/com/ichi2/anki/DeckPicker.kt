@@ -574,13 +574,8 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             }
         }
 
-        fun onError(errorMessage: String) {
-            AlertDialog.Builder(this).setTitle(R.string.vague_error).setMessage(errorMessage).show()
-        }
-
         viewModel.flowOfDeckCountsChanged.launchCollectionInLifecycleScope(::onDeckCountsChanged)
         viewModel.flowOfDestination.launchCollectionInLifecycleScope(::onDestinationChanged)
-        viewModel.onError.launchCollectionInLifecycleScope(::onError)
         viewModel.flowOfPromptUserToUpdateScheduler.launchCollectionInLifecycleScope(::onPromptUserToUpdateScheduler)
         viewModel.flowOfUndoUpdated.launchCollectionInLifecycleScope(::onUndoUpdated)
         viewModel.flowOfCardsDue.launchCollectionInLifecycleScope(::onCardsDueChanged)

@@ -75,6 +75,7 @@ import com.ichi2.anki.deckpicker.DeckSelectionResult
 import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.dialogs.compose.CreateDeckDialog
+import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
@@ -295,14 +296,20 @@ private fun DeckPickerMainContent(
     val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
 
+    val errorMessageState = viewModel.onError.collectAsStateWithLifecycle(initialValue = null)
+    var errorMessage by remember(errorMessageState.value) { mutableStateOf(errorMessageState.value) }
+    errorMessage?.let { message ->
+        ErrorDialog(
+            errorMessage = message, onDismissRequest = { errorMessage = null })
+    }
+
     if (showLoginToAnkiWebDialog) {
         LoginToAnkiWebDialog(
             onDismissRequest = { viewModel.setShowLoginToAnkiWebDialog(false) },
             onLoginClick = {
                 viewModel.setShowLoginToAnkiWebDialog(false)
                 onLoginToAnkiWeb()
-            }
-        )
+            })
     }
 
     syncDialogState?.let {
