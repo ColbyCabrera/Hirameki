@@ -79,58 +79,74 @@ fun ExportDialog(
     onNotesStateChanged: (NotesExportState) -> Unit,
     cardsState: CardsExportState,
     onCardsStateChanged: (CardsExportState) -> Unit,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-    ) {
-        // I'm not using HtmlCompat.fromHtml here because it's not directly supported in Compose.
-        // The strings will be plain text. If HTML is required, a more complex solution is needed.
-        Text(text = stringResource(R.string.exporting_export_format))
-        DropdownSelector(
-            options = exportFormats,
-            selectedOption = selectedFormat,
-            onOptionSelected = onFormatSelected,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(text = stringResource(R.string.exporting_include))
-
-        if (showDeckSelector) {
-            DropdownSelector(
-                options = decks.map { it.name },
-                selectedOption = selectedDeck?.name ?: "",
-                onOptionSelected = { name -> decks.find { it.name == name }?.let { onDeckSelected(it) } },
-                loading = decksLoading,
-            )
-        }
-
-        if (showSelectedNotesLabel) {
-            Text(
-                text = stringResource(R.string.exporting_selected_notes),
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(text = stringResource(R.string.dialog_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        },
+        text = {
+            Column(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-            )
-        }
+                        .verticalScroll(rememberScrollState()),
+            ) {
+                // I'm not using HtmlCompat.fromHtml here because it's not directly supported in Compose.
+                // The strings will be plain text. If HTML is required, a more complex solution is needed.
+                Text(text = stringResource(R.string.exporting_export_format))
+                DropdownSelector(
+                    options = exportFormats,
+                    selectedOption = selectedFormat,
+                    onOptionSelected = onFormatSelected,
+                )
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-        // This feels a bit clumsy, but it mirrors the logic of showing/hiding the layouts
-        // based on the selected export format index.
-        when (exportFormats.indexOf(selectedFormat)) {
-            0 -> CollectionExportOptions(collectionState, onCollectionStateChanged)
-            1 -> ApkgExportOptions(apkgState, onApkgStateChanged)
-            2 -> NotesExportOptions(notesState, onNotesStateChanged)
-            3 -> CardsExportOptions(cardsState, onCardsStateChanged)
+                Text(text = stringResource(R.string.exporting_include))
+
+                if (showDeckSelector) {
+                    DropdownSelector(
+                        options = decks.map { it.name },
+                        selectedOption = selectedDeck?.name ?: "",
+                        onOptionSelected = { name -> decks.find { it.name == name }?.let { onDeckSelected(it) } },
+                        loading = decksLoading,
+                    )
+                }
+
+                if (showSelectedNotesLabel) {
+                    Text(
+                        text = stringResource(R.string.exporting_selected_notes),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // This feels a bit clumsy, but it mirrors the logic of showing/hiding the layouts
+                // based on the selected export format index.
+                when (exportFormats.indexOf(selectedFormat)) {
+                    0 -> CollectionExportOptions(collectionState, onCollectionStateChanged)
+                    1 -> ApkgExportOptions(apkgState, onApkgStateChanged)
+                    2 -> NotesExportOptions(notesState, onNotesStateChanged)
+                    3 -> CardsExportOptions(cardsState, onCardsStateChanged)
+                }
+            }
         }
-    }
+    )
 }
 
 @Composable
@@ -331,6 +347,8 @@ fun ExportDialogPreview() {
             onNotesStateChanged = { notesState = it },
             cardsState = cardsState,
             onCardsStateChanged = { cardsState = it },
+            onDismissRequest = {},
+            onConfirm = {},
         )
 
 }

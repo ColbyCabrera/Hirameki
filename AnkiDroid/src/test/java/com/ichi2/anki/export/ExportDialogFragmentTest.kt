@@ -51,6 +51,8 @@ class ExportDialogFragmentTest : RobolectricTest() {
                 onNotesStateChanged = {},
                 cardsState = CardsExportState(),
                 onCardsStateChanged = {},
+                onDismissRequest = {},
+                onConfirm = {},
             )
         }
 

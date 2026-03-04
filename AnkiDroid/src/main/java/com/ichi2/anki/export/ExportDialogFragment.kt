@@ -20,9 +20,10 @@
  ****************************************************************************************/
 package com.ichi2.anki.export
 
-import android.app.Dialog
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,12 +55,17 @@ import com.ichi2.anki.exportSelectedNotes
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.DeckNameId
 import com.ichi2.anki.requireAnkiActivity
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import java.io.File
 
 class ExportDialogFragment : DialogFragment() {
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val activity = requireActivity()
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         val extraDid = arguments?.getLong(ARG_DECK_ID, -1)
         val extraType: ExportType? = arguments?.getSerializableCompat(ARG_TYPE)
 
@@ -70,9 +76,9 @@ class ExportDialogFragment : DialogFragment() {
             "${CollectionManager.TR.exportingCardsInPlainText()} (.txt)",
         )
 
-        return AlertDialog.Builder(activity).setView(
-            ComposeView(activity).apply {
-                setContent {
+        return ComposeView(requireContext()).apply {
+            setContent {
+                AnkiDroidTheme {
                     val selectedFormatIndex = remember {
                         mutableIntStateOf(if ((extraDid != null && extraDid != -1L) || extraType != null) 1 else 0)
                     }
@@ -129,13 +135,9 @@ class ExportDialogFragment : DialogFragment() {
                         onNotesStateChanged = { notesState.value = it },
                         cardsState = cardsState.value,
                         onCardsStateChanged = { cardsState.value = it },
-                    )
-
-                    // Set positive button action here, capturing the state
-                    val d = dialog as? AlertDialog
-                    LaunchedEffect(d) {
-                        d?.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
-                            if (selectedFormatIndex.intValue != 0 && decksLoading.value) return@setOnClickListener
+                        onDismissRequest = { dismiss() },
+                        onConfirm = {
+                            if (selectedFormatIndex.intValue != 0 && decksLoading.value) return@ExportDialog
 
                             when (selectedFormatIndex.intValue) {
                                 0 -> handleCollectionExport(collectionState.value)
@@ -150,14 +152,12 @@ class ExportDialogFragment : DialogFragment() {
                                     selectedDeck.value
                                 )
                             }
-                            d.dismiss()
+                            dismiss()
                         }
-                    }
+                    )
                 }
-            },
-        ).setNegativeButton(R.string.dialog_cancel, null)
-            .setPositiveButton(R.string.dialog_ok, null) // Listener is set in Compose content
-            .create()
+            }
+        }
     }
 
     private fun handleCollectionExport(state: CollectionExportState) {
