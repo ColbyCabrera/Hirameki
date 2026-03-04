@@ -26,7 +26,6 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -34,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.collection.OpChanges
 import com.ichi2.anki.browser.BrowserColumnSelectionFragment
 import com.ichi2.anki.browser.CardBrowserActionHandler
@@ -57,6 +57,7 @@ import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import timber.log.Timber
 
+
 /**
  * A Jetpack Compose-based Activity for browsing cards.
  *
@@ -64,16 +65,18 @@ import timber.log.Timber
  * Composable, which is responsible for rendering the UI. It retains the [CardBrowserViewModel]
  * for state management and business logic.
  */
-open class CardBrowser :
-    AnkiActivity(),
-    ChangeManager.Subscriber,
-    DeckSelectionDialog.DeckSelectionListener,
-    TagsDialogListener {
+open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber,
+    DeckSelectionDialog.DeckSelectionListener, TagsDialogListener, SnackbarForwarder {
 
     val fragmented: Boolean
         get() = resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK == Configuration.SCREENLAYOUT_SIZE_XLARGE
 
     private lateinit var viewModel: CardBrowserViewModel
+
+    override fun forwardSnackbar(message: String, actionLabel: String?, action: (() -> Unit)?) {
+        viewModel.emitSnackbarMessage(message, actionLabel, action)
+    }
+
     private lateinit var actionHandler: CardBrowserActionHandler
 
     private val onMySearches = registerForActivityResult(MySearchesContract()) { query ->
@@ -117,12 +120,9 @@ open class CardBrowser :
                 return@registerForActivityResult
             }
             val data = result.data
-            if (data != null && (
-                data.getBooleanExtra(
-                    NoteEditorFragment.RELOAD_REQUIRED_EXTRA_KEY,
-                    false
-                ) || data.getBooleanExtra(NoteEditorFragment.NOTE_CHANGED_EXTRA_KEY, false)
-                )
+            if (data != null && (data.getBooleanExtra(
+                    NoteEditorFragment.RELOAD_REQUIRED_EXTRA_KEY, false
+                ) || data.getBooleanExtra(NoteEditorFragment.NOTE_CHANGED_EXTRA_KEY, false))
             ) {
                 viewModel.search(viewModel.searchQuery.value)
             }
@@ -146,8 +146,7 @@ open class CardBrowser :
             viewModel,
             launchEditCard = { onEditCardActivityResult.launch(it) },
             launchAddNote = { onAddNoteActivityResult.launch(it) },
-            launchPreview = { onPreviewCardsActivityResult.launch(it) }
-        )
+            launchPreview = { onPreviewCardsActivityResult.launch(it) })
 
         startLoadingCollection()
 
@@ -166,8 +165,8 @@ open class CardBrowser :
                     if (showBrowserOptionsDialog) {
                         BrowserOptionsDialog(
                             onDismissRequest = {
-                                showBrowserOptionsDialog = false
-                            },
+                            showBrowserOptionsDialog = false
+                        },
                             onConfirm = { cardsOrNotes, isTruncated, shouldIgnoreAccents ->
                                 viewModel.setCardsOrNotes(cardsOrNotes)
                                 viewModel.setTruncated(isTruncated)
@@ -184,8 +183,7 @@ open class CardBrowser :
                             onRenameFlagClicked = {
                                 showBrowserOptionsDialog = false
                                 showFlagRenameDialog = true
-                            }
-                        )
+                            })
                     }
                     if (showFilterByTagsDialog) {
                         FilterByTagsDialog(
@@ -206,8 +204,7 @@ open class CardBrowser :
                             onDismissRequest = {
                                 showFlagRenameDialog = false
                                 invalidateOptionsMenu()
-                            }
-                        )
+                            })
                     }
                     CardBrowserLayout(
                         viewModel = viewModel,
@@ -217,12 +214,10 @@ open class CardBrowser :
                             if (viewModel.isInMultiSelectMode) {
                                 viewModel.toggleRowSelection(
                                     CardBrowserViewModel.RowSelection(
-                                        rowId = CardOrNoteId(row.id),
-                                        topOffset = 0
+                                        rowId = CardOrNoteId(row.id), topOffset = 0
                                     )
                                 )
-                            }
-                            else {
+                            } else {
                                 actionHandler.openNoteEditorForCard(row.id)
                             }
                         },
@@ -273,8 +268,7 @@ open class CardBrowser :
                             viewModel.loadAllTags()
                             viewModel.loadDeckTags()
                             showFilterByTagsDialog = true
-                        }
-                    )
+                        })
                 }
             }
         }
@@ -322,17 +316,14 @@ open class CardBrowser :
     }
 
     private fun createViewModel(
-        launchOptions: CardBrowserLaunchOptions?,
-        isFragmented: Boolean
+        launchOptions: CardBrowserLaunchOptions?, isFragmented: Boolean
     ) = ViewModelProvider(
-        viewModelStore,
-        CardBrowserViewModel.factory(
+        viewModelStore, CardBrowserViewModel.factory(
             lastDeckIdRepository = AnkiDroidApp.instance.sharedPrefsLastDeckIdRepository,
             cacheDir = cacheDir,
             options = launchOptions,
             isFragmented = isFragmented
-        ),
-        defaultViewModelCreationExtras
+        ), defaultViewModelCreationExtras
     )[CardBrowserViewModel::class.java]
 
     override fun opExecuted(changes: OpChanges, handler: Any?) {
@@ -352,9 +343,7 @@ open class CardBrowser :
     }
 
     override fun onSelectedTags(
-        selectedTags: List<String>,
-        indeterminateTags: List<String>,
-        stateFilter: CardStateFilter
+        selectedTags: List<String>, indeterminateTags: List<String>, stateFilter: CardStateFilter
     ) {
         actionHandler.onSelectedTags(selectedTags, indeterminateTags, stateFilter)
     }

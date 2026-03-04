@@ -41,6 +41,7 @@ import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckSpinnerSelection.Companion.ALL_DECKS_ID
 import com.ichi2.anki.Flag
 import com.ichi2.anki.R
+import com.ichi2.anki.SnackbarMessageEvent
 import com.ichi2.anki.browser.CardBrowserViewModel.ChangeMultiSelectMode.MultiSelectCause
 import com.ichi2.anki.browser.CardBrowserViewModel.ChangeMultiSelectMode.SingleSelectCause
 import com.ichi2.anki.browser.CardBrowserViewModel.ToggleSelectionState.SELECT_ALL
@@ -358,8 +359,7 @@ class CardBrowserViewModel(
                                     decks.rename(it, name)
                                 } ?: run {
                                     Timber.w(
-                                        "Deck no longer exists for rename: %s",
-                                        state.initialName
+                                        "Deck no longer exists for rename: %s", state.initialName
                                     )
                                     operationSucceeded = false
                                 }
@@ -389,7 +389,12 @@ class CardBrowserViewModel(
             } catch (e: CancellationException) {
                 throw e // Don't catch coroutine cancellation
             } catch (e: BackendDeckIsFilteredException) {
-                flowOfSnackbarString.emit(e.localizedMessage ?: e.message.orEmpty())
+                val backendMsg = (e.localizedMessage ?: e.message).takeIf { !it.isNullOrBlank() }
+                if (backendMsg != null) {
+                    flowOfSnackbarString.emit(SnackbarMessageEvent(backendMsg))
+                } else {
+                    flowOfSnackbarMessage.emit(R.string.something_wrong)
+                }
             } catch (e: Exception) {
                 Timber.w(e, "Failed to create/rename deck")
                 flowOfSnackbarMessage.emit(R.string.something_wrong)
@@ -449,7 +454,17 @@ class CardBrowserViewModel(
 
     val flowOfSnackbarMessage = MutableSharedFlow<Int>()
 
-    val flowOfSnackbarString = MutableSharedFlow<String>()
+    val flowOfSnackbarString = MutableSharedFlow<SnackbarMessageEvent>()
+
+    fun emitSnackbarMessage(
+        message: String,
+        actionLabel: String? = null,
+        action: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            flowOfSnackbarString.emit(SnackbarMessageEvent(message, actionLabel, action))
+        }
+    }
 
     val flowOfDeleteResult = MutableSharedFlow<Int>()
 
@@ -698,8 +713,9 @@ class CardBrowserViewModel(
             Timber.i("initCompleted")
 
             if (!manualInit) {
-                flowOfInitCompleted.update { true }
-                // restore selection state
+                // Restore selection state BEFORE setting initCompleted, so that any searches
+                // triggered by performSearchFlow (which fires when flowOfInitCompleted becomes true)
+                // also see the pending selection and don't call clearCardsList() to wipe it.
                 val idsFile =
                     savedStateHandle.get<Bundle>(STATE_MULTISELECT_VALUES)?.let { bundle ->
                         BundleCompat.getParcelable(
@@ -713,13 +729,13 @@ class CardBrowserViewModel(
                 if (ids.isNotEmpty()) {
                     pendingSelectionToRestore = ids
                 }
-                launchSearchForCards()
-                // Note: pendingSelectionToRestore is intentionally not cleared here.
-                // Multiple searches can run during init, and each needs to see the pending
-                // selection to avoid clearing it. The trade-off is that if the user triggers
-                // a search before making any selection changes, the restored selection may
-                // be re-applied. This is considered acceptable as it only affects the edge
-                // case of immediate search after restore, and the selection content is correct.
+                // Setting initCompleted triggers performSearchFlow, which calls
+                // launchSearchForCards(). That search will see pendingSelectionToRestore
+                // and restore the selection. No explicit launchSearchForCards() call is
+                // needed here — a second call would run after the first search consumes
+                // pendingSelectionToRestore and would call clearCardsList(), wiping
+                // the restored selection.
+                flowOfInitCompleted.update { true }
             }
         }
 
@@ -771,7 +787,7 @@ class CardBrowserViewModel(
 
                 // Collect all tags from the notes
                 val tagsSet = withCol {
-                    noteIds.asSequence().map { getNote(it).tags }.flatten().toSet()
+                    noteIds.asSequence().flatMap { getNote(it).tags }.toSet()
                 }
 
                 _deckTags.value = tagsSet

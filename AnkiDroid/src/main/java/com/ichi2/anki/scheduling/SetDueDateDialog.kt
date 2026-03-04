@@ -46,6 +46,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textview.MaterialTextView
 import com.ichi2.anki.AnkiActivity
+import com.ichi2.anki.SnackbarForwarder
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.asyncCatching
@@ -404,7 +405,10 @@ private fun AnkiActivity.updateDueDate(
     }
     Timber.d("updated %d cards", cardsUpdated)
     val message = TR.schedulingSetDueDateDone(cardsUpdated)
-    if (canProperlyShowSnackbars()) {
+    if (this@updateDueDate is SnackbarForwarder) {
+        // CardBrowser handles snackbars internally with Compose
+        this@updateDueDate.forwardSnackbar(message)
+    } else if (canProperlyShowSnackbars()) {
         showSnackbar(message, Snackbar.LENGTH_SHORT)
     } else {
         showThemedToast(this@updateDueDate, message, true)

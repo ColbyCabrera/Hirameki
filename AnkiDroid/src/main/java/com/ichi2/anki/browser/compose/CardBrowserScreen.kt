@@ -155,6 +155,23 @@ fun CardBrowserScreen(
         }
     }
 
+    LaunchedEffect(viewModel.flowOfSnackbarString) {
+        viewModel.flowOfSnackbarString.collect { event ->
+            val result = if (event.action != null) {
+                snackbarHostState.showSnackbar(
+                    message = event.message,
+                    actionLabel = event.actionLabel ?: undoLabel,
+                    duration = SnackbarDuration.Short,
+                )
+            } else {
+                snackbarHostState.showSnackbar(event.message)
+            }
+            if (result == SnackbarResult.ActionPerformed) {
+                event.action?.invoke()
+            }
+        }
+    }
+
     LaunchedEffect(viewModel.flowOfDeleteResult) {
         viewModel.flowOfDeleteResult.collect { count ->
             val message = currentContext.resources.getQuantityString(
