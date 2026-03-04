@@ -18,6 +18,7 @@ package com.ichi2.anki
 
 import androidx.annotation.StringRes
 import androidx.lifecycle.lifecycleScope
+import anki.backend.backendError
 import anki.sync.SyncAuth
 import anki.sync.SyncCollectionResponse
 import anki.sync.SyncStatusResponse
@@ -97,7 +98,11 @@ fun DeckPicker.handleNewSync(
     conflict: ConflictResolution?,
     syncMedia: Boolean,
 ) {
-    val auth = syncAuth() ?: return
+    val auth = syncAuth()
+    if (auth == null) {
+        viewModel.isSyncing.value = false
+        return
+    }
     val deckPicker = this
     launchCatchingTask {
         try {
@@ -116,6 +121,10 @@ fun DeckPicker.handleNewSync(
 
                 null -> handleNormalSync(deckPicker, auth, syncMedia)
             }
+            withCol { notetypes.clearCache() }
+            notifySubscribersAllValuesChanged(deckPicker)
+            setLastSyncTimeToNow()
+            refreshState()
         } catch (exc: BackendSyncException.BackendSyncAuthFailedException) {
             // auth failed; log out
             updateLogin("", "")
@@ -124,12 +133,9 @@ fun DeckPicker.handleNewSync(
             Timber.w(exc, "Network error during sync")
             deckPicker.viewModel.setShowNetworkErrorDialog(true)
             deckPicker.refreshState()
-            return@launchCatchingTask
+        } finally {
+            deckPicker.viewModel.isSyncing.value = false
         }
-        withCol { notetypes.clearCache() }
-        notifySubscribersAllValuesChanged(deckPicker)
-        setLastSyncTimeToNow()
-        refreshState()
     }
 }
 
@@ -254,7 +260,7 @@ private suspend fun handleNormalSync(
         null,
             -> {
             Timber.e("Unexpected sync status: ${output.required}")
-            viewModel.setShowNetworkErrorDialog(true)
+            throw BackendNetworkException(backendError {})
         }
     }
 }

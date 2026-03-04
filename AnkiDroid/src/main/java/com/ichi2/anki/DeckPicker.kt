@@ -1522,6 +1522,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * Show a specific sync error dialog
      * @param dialogType id of dialog to show
      */
+    @Suppress("DEPRECATION")
     override fun showSyncErrorDialog(dialogType: SyncErrorDialog.Type) {
         showSyncErrorDialog(dialogType, "")
     }
@@ -1531,6 +1532,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * @param dialogType id of dialog to show
      * @param message text to show
      */
+    @Suppress("DEPRECATION")
     override fun showSyncErrorDialog(dialogType: SyncErrorDialog.Type, message: String?) {
         if (dialogType == SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC) {
             viewModel.setShowLoginToAnkiWebDialog(true)
@@ -1630,7 +1632,12 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * The mother of all syncing attempts. This might be called from sync() as first attempt to sync a collection OR
      * from the mSyncConflictResolutionListener if the first attempt determines that a full-sync is required.
      */
+    @Suppress("DEPRECATION")
     override fun sync(conflict: ConflictResolution?) {
+        if (!viewModel.isSyncing.compareAndSet(false, true)) {
+            Timber.w("Sync already in progress")
+            return
+        }
         baseContext.sharedPrefs()
 
         val hkey = Prefs.hkey
