@@ -106,25 +106,33 @@ fun DeckPicker.handleNewSync(
     val deckPicker = this
     launchCatchingTask {
         try {
-            when (conflict) {
-                ConflictResolution.FULL_DOWNLOAD -> handleDownload(
-                    deckPicker,
-                    auth,
-                    deckPicker.mediaUsnOnConflict,
-                )
+            val syncCompleted = when (conflict) {
+                ConflictResolution.FULL_DOWNLOAD -> {
+                    handleDownload(
+                        deckPicker,
+                        auth,
+                        deckPicker.mediaUsnOnConflict,
+                    )
+                    true
+                }
 
-                ConflictResolution.FULL_UPLOAD -> handleUpload(
-                    deckPicker,
-                    auth,
-                    deckPicker.mediaUsnOnConflict,
-                )
+                ConflictResolution.FULL_UPLOAD -> {
+                    handleUpload(
+                        deckPicker,
+                        auth,
+                        deckPicker.mediaUsnOnConflict,
+                    )
+                    true
+                }
 
                 null -> handleNormalSync(deckPicker, auth, syncMedia)
             }
-            withCol { notetypes.clearCache() }
-            notifySubscribersAllValuesChanged(deckPicker)
-            setLastSyncTimeToNow()
-            refreshState()
+            if (syncCompleted) {
+                withCol { notetypes.clearCache() }
+                notifySubscribersAllValuesChanged(deckPicker)
+                setLastSyncTimeToNow()
+                refreshState()
+            }
         } catch (exc: BackendSyncException.BackendSyncAuthFailedException) {
             // auth failed; log out
             updateLogin("", "")
@@ -156,7 +164,7 @@ private suspend fun handleNormalSync(
     deckPicker: DeckPicker,
     auth: SyncAuth,
     syncMedia: Boolean,
-) {
+): Boolean {
     Timber.i("Sync: Normal collection sync")
     var auth2 = auth
     val viewModel = deckPicker.viewModel
@@ -223,7 +231,7 @@ private suspend fun handleNormalSync(
     }
 
     Timber.i("sync result: ${output.required}")
-    when (output.required) {
+    return when (output.required) {
         // a successful sync returns this value
         SyncCollectionResponse.ChangesRequired.NO_CHANGES -> {
             // scheduler version may have changed
@@ -236,23 +244,26 @@ private suspend fun handleNormalSync(
                 }
                 deckPicker.showSyncLogMessage(message, output.serverMessage)
             }
-            deckPicker.refreshState()
             if (syncMedia) {
                 SyncMediaWorker.start(deckPicker, auth2)
             }
+            true
         }
 
         SyncCollectionResponse.ChangesRequired.FULL_DOWNLOAD -> {
             handleDownload(deckPicker, auth2, mediaUsn)
+            true
         }
 
         SyncCollectionResponse.ChangesRequired.FULL_UPLOAD -> {
             handleUpload(deckPicker, auth2, mediaUsn)
+            true
         }
 
         SyncCollectionResponse.ChangesRequired.FULL_SYNC -> {
             deckPicker.mediaUsnOnConflict = mediaUsn
             deckPicker.showSyncErrorDialog(SyncErrorDialog.Type.DIALOG_SYNC_CONFLICT_RESOLUTION)
+            false
         }
 
         SyncCollectionResponse.ChangesRequired.NORMAL_SYNC,
@@ -295,7 +306,6 @@ private suspend fun handleDownload(
                 reopen(afterFullSync = true)
             }
         }
-        deckPicker.refreshState()
         if (mediaUsn != null) {
             SyncMediaWorker.start(deckPicker, auth)
         }
@@ -323,7 +333,6 @@ private suspend fun handleUpload(
                 reopen(afterFullSync = true)
             }
         }
-        deckPicker.refreshState()
         if (mediaUsn != null) {
             SyncMediaWorker.start(deckPicker, auth)
         }

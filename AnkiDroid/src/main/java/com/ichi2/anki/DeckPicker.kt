@@ -21,7 +21,10 @@
 
 // usage of 'this' in constructors when class is non-final - weak warning
 // should be OK as this is only non-final for tests
-@file:Suppress("LeakingThis", "DEPRECATION") // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
+@file:Suppress(
+    "LeakingThis",
+    "DEPRECATION"
+) // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
 
 package com.ichi2.anki
 
@@ -463,8 +466,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         setContent {
             AnkiDroidTheme {
                 val navigationState = rememberNavigationState(
-                    startRoute = DeckPickerScreen,
-                    topLevelRoutes = setOf(DeckPickerScreen)
+                    startRoute = DeckPickerScreen, topLevelRoutes = setOf(DeckPickerScreen)
                 )
                 val navigator = remember { Navigator(navigationState) }
 
@@ -605,8 +607,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             CrashReportService.sendExceptionReport(e, "DeckPicker::onReceiveContent")
             showSnackbar(
                 getString(
-                    R.string.import_error_handle_exception,
-                    e.localizedMessage ?: ""
+                    R.string.import_error_handle_exception, e.localizedMessage ?: ""
                 )
             )
             return@OnReceiveContentListener remaining
@@ -1660,7 +1661,8 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             AlertDialog.Builder(this).show {
                 message(R.string.metered_sync_data_warning)
                 positiveButton(R.string.dialog_continue) { doSync() }
-                negativeButton(R.string.dialog_cancel)
+                negativeButton(R.string.dialog_cancel) { viewModel.isSyncing.value = false }
+                setOnCancelListener { viewModel.isSyncing.value = false }
                 checkBoxPrompt(R.string.button_do_not_show_again) { isCheckboxChecked ->
                     Prefs.allowSyncOnMeteredConnections = isCheckboxChecked
                 }
@@ -1741,7 +1743,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * @see CreateDeckDialog
      */
     fun showCreateDeckDialog() {
-       viewModel.showCreateDeckDialog()
+        viewModel.showCreateDeckDialog()
     }
 
     /**
