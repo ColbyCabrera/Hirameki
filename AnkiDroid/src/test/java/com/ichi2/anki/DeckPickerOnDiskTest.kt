@@ -32,7 +32,7 @@ import org.hamcrest.Matchers.equalTo
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import org.junit.jupiter.api.assertNotNull
+import kotlin.test.assertNotNull
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -110,12 +110,7 @@ class DeckPickerOnDiskTest : RobolectricTest() {
                 "Collection should not be open",
                 !CollectionManager.isOpenUnsafe(),
             )
-            val dialogFragment =
-                deckPicker.supportFragmentManager.fragments.firstOrNull { it is com.ichi2.anki.dialogs.DatabaseErrorDialog } as? com.ichi2.anki.dialogs.DatabaseErrorDialog
-            assertNotNull(dialogFragment)
-            val dialogType = androidx.core.os.BundleCompat.getParcelable(
-                dialogFragment.requireArguments(), "dialog", DatabaseErrorDialogType::class.java
-            )
+            val dialogType = getDatabaseErrorDialogType(deckPicker)
             assertThat(
                 "An error dialog should be displayed",
                 dialogType,
@@ -140,12 +135,7 @@ class DeckPickerOnDiskTest : RobolectricTest() {
                 "Collection should not be open",
                 !CollectionManager.isOpenUnsafe(),
             )
-            val dialogFragment =
-                deckPicker.supportFragmentManager.fragments.firstOrNull { it is com.ichi2.anki.dialogs.DatabaseErrorDialog } as? com.ichi2.anki.dialogs.DatabaseErrorDialog
-            assertNotNull(dialogFragment)
-            val dialogType = androidx.core.os.BundleCompat.getParcelable(
-                dialogFragment.requireArguments(), "dialog", DatabaseErrorDialogType::class.java
-            )
+            val dialogType = getDatabaseErrorDialogType(deckPicker)
             assertThat(
                 "An error dialog should be displayed",
                 dialogType,
@@ -160,6 +150,17 @@ class DeckPickerOnDiskTest : RobolectricTest() {
         } finally {
             InitialActivityWithConflictTest.setupForDefault()
         }
+    }
+
+    private fun getDatabaseErrorDialogType(deckPicker: DeckPicker): DatabaseErrorDialogType? {
+        val dialogFragment =
+            deckPicker.supportFragmentManager.fragments.firstOrNull {
+                it is com.ichi2.anki.dialogs.DatabaseErrorDialog
+            } as? com.ichi2.anki.dialogs.DatabaseErrorDialog
+        assertNotNull(dialogFragment)
+        return androidx.core.os.BundleCompat.getParcelable(
+            dialogFragment.requireArguments(), "dialog", DatabaseErrorDialogType::class.java
+        )
     }
 
     private fun setupColV16() {
