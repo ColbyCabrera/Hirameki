@@ -112,7 +112,6 @@ fun MyAccountScreen(
         onBackPressedCallback?.isEnabled = state.screenState == MyAccountScreenState.REMOVE_ACCOUNT
     }
 
-
     when (state.screenState) {
         MyAccountScreenState.ACCOUNT_MANAGEMENT -> {
             Scaffold(
@@ -190,7 +189,8 @@ fun RemoveAccountContent(onBack: () -> Unit) {
     val removeAccountUrl = stringResource(R.string.remove_account_url)
 
     // Redirect logic from RemoveAccountFragment
-    val urlsToRedirect = stringArrayResource(R.array.account_redirect_urls).toList()
+    val urlsArray = stringArrayResource(R.array.account_redirect_urls)
+    val urlsToRedirect = remember(urlsArray) { urlsArray.toList() }
 
     Scaffold(
         topBar = {
@@ -426,7 +426,6 @@ fun LoggedOutContent(
             TextButton(onClick = onResetPasswordClick) {
                 Text(stringResource(R.string.reset_password))
             }
-
 
             Spacer(modifier = Modifier.height(24.dp))
 
