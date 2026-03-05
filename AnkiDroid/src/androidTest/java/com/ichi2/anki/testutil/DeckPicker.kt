@@ -24,6 +24,7 @@ import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.ichi2.anki.R
@@ -36,13 +37,11 @@ import com.ichi2.anki.testutil.ThreadUtils.sleep
  */
 
 fun closeGetStartedScreenIfExists() {
-    onView(withId(R.id.get_started)).withFailureHandler { _, _ -> }.perform(click())
+    onView(withText(R.string.intro_get_started)).withFailureHandler { _, _ -> }.perform(click())
 }
 
 fun closeBackupCollectionDialogIfExists() {
-    onView(withText(R.string.button_backup_later))
-        .withFailureHandler { _, _ -> }
-        .perform(click())
+    onView(withText(R.string.button_backup_later)).withFailureHandler { _, _ -> }.perform(click())
 }
 
 /**

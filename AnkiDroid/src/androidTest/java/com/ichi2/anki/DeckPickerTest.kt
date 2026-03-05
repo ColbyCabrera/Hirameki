@@ -18,18 +18,15 @@
 package com.ichi2.anki
 
 import android.annotation.SuppressLint
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withText
-import androidx.test.ext.junit.rules.ActivityScenarioRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission.storagePermission
 import com.ichi2.anki.testutil.disableIntroductionSlide
 import com.ichi2.anki.testutil.discardPreliminaryViews
 import com.ichi2.anki.testutil.grantPermissions
 import com.ichi2.anki.testutil.notificationPermission
-import org.hamcrest.CoreMatchers.allOf
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -38,7 +35,7 @@ import org.junit.Test
 @SuppressLint("DirectSystemCurrentTimeMillisUsage")
 class DeckPickerTest : InstrumentedTest() {
     @get:Rule
-    val activityRule = ActivityScenarioRule(DeckPicker::class.java)
+    val composeTestRule = createAndroidComposeRule<DeckPicker>()
 
     @get:Rule
     val runtimePermissionRule = grantPermissions(storagePermission, notificationPermission)
@@ -80,7 +77,6 @@ class DeckPickerTest : InstrumentedTest() {
 
         // Check if study options are displayed
         // In the new Compose UI, we check for the presence of the "Study" button text.
-        onView(allOf(withText(R.string.studyoptions_start), isDisplayed()))
-            .check(matches(isDisplayed()))
+        composeTestRule.onNodeWithText(testContext.getString(R.string.studyoptions_start)).assertIsDisplayed()
     }
 }
