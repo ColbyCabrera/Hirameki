@@ -68,6 +68,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -189,11 +190,7 @@ fun RemoveAccountContent(onBack: () -> Unit) {
     val removeAccountUrl = stringResource(R.string.remove_account_url)
 
     // Redirect logic from RemoveAccountFragment
-    val urlsToRedirect = listOf(
-        "https://ankiweb.net/account/login?afterAuth=1",
-        "https://ankiweb.net/decks",
-        "https://ankiweb.net/account/verify-email",
-    )
+    val urlsToRedirect = stringArrayResource(R.array.account_redirect_urls).toList()
 
     Scaffold(
         topBar = {
