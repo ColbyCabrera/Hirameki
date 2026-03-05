@@ -158,7 +158,7 @@ class ReviewerTest : InstrumentedTest() {
     }
 
     private fun clickOnStudyButtonIfExists() {
-        onView(withId(R.id.studyoptions_start))
+        onView(withText(R.string.studyoptions_start))
             .withFailureHandler { _, _ -> }
             .perform(click())
     }

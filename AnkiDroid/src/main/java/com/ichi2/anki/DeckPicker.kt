@@ -21,7 +21,10 @@
 
 // usage of 'this' in constructors when class is non-final - weak warning
 // should be OK as this is only non-final for tests
-@file:Suppress("LeakingThis", "DEPRECATION") // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
+@file:Suppress(
+    "LeakingThis",
+    "DEPRECATION"
+) // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
 
 package com.ichi2.anki
 
@@ -463,8 +466,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         setContent {
             AnkiDroidTheme {
                 val navigationState = rememberNavigationState(
-                    startRoute = DeckPickerScreen,
-                    topLevelRoutes = setOf(DeckPickerScreen)
+                    startRoute = DeckPickerScreen, topLevelRoutes = setOf(DeckPickerScreen)
                 )
                 val navigator = remember { Navigator(navigationState) }
 
@@ -605,8 +607,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             CrashReportService.sendExceptionReport(e, "DeckPicker::onReceiveContent")
             showSnackbar(
                 getString(
-                    R.string.import_error_handle_exception,
-                    e.localizedMessage ?: ""
+                    R.string.import_error_handle_exception, e.localizedMessage ?: ""
                 )
             )
             return@OnReceiveContentListener remaining
@@ -1522,6 +1523,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * Show a specific sync error dialog
      * @param dialogType id of dialog to show
      */
+    @Suppress("DEPRECATION")
     override fun showSyncErrorDialog(dialogType: SyncErrorDialog.Type) {
         showSyncErrorDialog(dialogType, "")
     }
@@ -1531,6 +1533,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * @param dialogType id of dialog to show
      * @param message text to show
      */
+    @Suppress("DEPRECATION")
     override fun showSyncErrorDialog(dialogType: SyncErrorDialog.Type, message: String?) {
         if (dialogType == SyncErrorDialog.Type.DIALOG_USER_NOT_LOGGED_IN_SYNC) {
             viewModel.setShowLoginToAnkiWebDialog(true)
@@ -1630,7 +1633,12 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * The mother of all syncing attempts. This might be called from sync() as first attempt to sync a collection OR
      * from the mSyncConflictResolutionListener if the first attempt determines that a full-sync is required.
      */
+    @Suppress("DEPRECATION")
     override fun sync(conflict: ConflictResolution?) {
+        if (!viewModel.isSyncing.compareAndSet(false, true)) {
+            Timber.w("Sync already in progress")
+            return
+        }
         baseContext.sharedPrefs()
 
         val hkey = Prefs.hkey
@@ -1653,7 +1661,8 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             AlertDialog.Builder(this).show {
                 message(R.string.metered_sync_data_warning)
                 positiveButton(R.string.dialog_continue) { doSync() }
-                negativeButton(R.string.dialog_cancel)
+                negativeButton(R.string.dialog_cancel) { viewModel.isSyncing.value = false }
+                setOnCancelListener { viewModel.isSyncing.value = false }
                 checkBoxPrompt(R.string.button_do_not_show_again) { isCheckboxChecked ->
                     Prefs.allowSyncOnMeteredConnections = isCheckboxChecked
                 }
@@ -1734,7 +1743,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * @see CreateDeckDialog
      */
     fun showCreateDeckDialog() {
-       viewModel.showCreateDeckDialog()
+        viewModel.showCreateDeckDialog()
     }
 
     /**

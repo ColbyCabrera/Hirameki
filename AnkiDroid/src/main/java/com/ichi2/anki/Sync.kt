@@ -18,6 +18,7 @@ package com.ichi2.anki
 
 import androidx.annotation.StringRes
 import androidx.lifecycle.lifecycleScope
+import anki.backend.backendError
 import anki.sync.SyncAuth
 import anki.sync.SyncCollectionResponse
 import anki.sync.SyncStatusResponse
@@ -40,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.ankiweb.rsdroid.Backend
 import net.ankiweb.rsdroid.exceptions.BackendInterruptedException
+import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -96,34 +98,52 @@ fun DeckPicker.handleNewSync(
     conflict: ConflictResolution?,
     syncMedia: Boolean,
 ) {
-    val auth = syncAuth() ?: return
+    val auth = syncAuth()
+    if (auth == null) {
+        viewModel.isSyncing.value = false
+        return
+    }
     val deckPicker = this
     launchCatchingTask {
         try {
-            when (conflict) {
-                ConflictResolution.FULL_DOWNLOAD -> handleDownload(
-                    deckPicker,
-                    auth,
-                    deckPicker.mediaUsnOnConflict,
-                )
+            val syncCompleted = when (conflict) {
+                ConflictResolution.FULL_DOWNLOAD -> {
+                    handleDownload(
+                        deckPicker,
+                        auth,
+                        deckPicker.mediaUsnOnConflict,
+                    )
+                    true
+                }
 
-                ConflictResolution.FULL_UPLOAD -> handleUpload(
-                    deckPicker,
-                    auth,
-                    deckPicker.mediaUsnOnConflict,
-                )
+                ConflictResolution.FULL_UPLOAD -> {
+                    handleUpload(
+                        deckPicker,
+                        auth,
+                        deckPicker.mediaUsnOnConflict,
+                    )
+                    true
+                }
 
                 null -> handleNormalSync(deckPicker, auth, syncMedia)
+            }
+            if (syncCompleted) {
+                withCol { notetypes.clearCache() }
+                notifySubscribersAllValuesChanged(deckPicker)
+                setLastSyncTimeToNow()
+                refreshState()
             }
         } catch (exc: BackendSyncException.BackendSyncAuthFailedException) {
             // auth failed; log out
             updateLogin("", "")
             throw exc
+        } catch (exc: BackendNetworkException) {
+            Timber.w(exc, "Network error during sync")
+            deckPicker.viewModel.setShowNetworkErrorDialog(true)
+            deckPicker.refreshState()
+        } finally {
+            deckPicker.viewModel.isSyncing.value = false
         }
-        withCol { notetypes.clearCache() }
-        notifySubscribersAllValuesChanged(deckPicker)
-        setLastSyncTimeToNow()
-        refreshState()
     }
 }
 
@@ -144,7 +164,7 @@ private suspend fun handleNormalSync(
     deckPicker: DeckPicker,
     auth: SyncAuth,
     syncMedia: Boolean,
-) {
+): Boolean {
     Timber.i("Sync: Normal collection sync")
     var auth2 = auth
     val viewModel = deckPicker.viewModel
@@ -211,7 +231,7 @@ private suspend fun handleNormalSync(
     }
 
     Timber.i("sync result: ${output.required}")
-    when (output.required) {
+    return when (output.required) {
         // a successful sync returns this value
         SyncCollectionResponse.ChangesRequired.NO_CHANGES -> {
             // scheduler version may have changed
@@ -224,23 +244,26 @@ private suspend fun handleNormalSync(
                 }
                 deckPicker.showSyncLogMessage(message, output.serverMessage)
             }
-            deckPicker.refreshState()
             if (syncMedia) {
                 SyncMediaWorker.start(deckPicker, auth2)
             }
+            true
         }
 
         SyncCollectionResponse.ChangesRequired.FULL_DOWNLOAD -> {
             handleDownload(deckPicker, auth2, mediaUsn)
+            true
         }
 
         SyncCollectionResponse.ChangesRequired.FULL_UPLOAD -> {
             handleUpload(deckPicker, auth2, mediaUsn)
+            true
         }
 
         SyncCollectionResponse.ChangesRequired.FULL_SYNC -> {
             deckPicker.mediaUsnOnConflict = mediaUsn
             deckPicker.showSyncErrorDialog(SyncErrorDialog.Type.DIALOG_SYNC_CONFLICT_RESOLUTION)
+            false
         }
 
         SyncCollectionResponse.ChangesRequired.NORMAL_SYNC,
@@ -248,7 +271,7 @@ private suspend fun handleNormalSync(
         null,
             -> {
             Timber.e("Unexpected sync status: ${output.required}")
-            deckPicker.showSyncErrorDialog(SyncErrorDialog.Type.DIALOG_CONNECTION_ERROR)
+            throw BackendNetworkException(backendError {})
         }
     }
 }
@@ -283,7 +306,6 @@ private suspend fun handleDownload(
                 reopen(afterFullSync = true)
             }
         }
-        deckPicker.refreshState()
         if (mediaUsn != null) {
             SyncMediaWorker.start(deckPicker, auth)
         }
@@ -311,7 +333,6 @@ private suspend fun handleUpload(
                 reopen(afterFullSync = true)
             }
         }
-        deckPicker.refreshState()
         if (mediaUsn != null) {
             SyncMediaWorker.start(deckPicker, auth)
         }
