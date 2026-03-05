@@ -18,8 +18,6 @@ package com.ichi2.anki
 
 import android.content.Intent
 import androidx.core.content.edit
-import com.ichi2.anki.DeckPickerTest.CollectionType
-import com.ichi2.anki.DeckPickerTest.DeckPickerEx
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.exception.UnknownDatabaseVersionException
@@ -34,6 +32,7 @@ import org.hamcrest.Matchers.equalTo
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import org.junit.jupiter.api.assertNotNull
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -68,11 +67,10 @@ class DeckPickerOnDiskTest : RobolectricTest() {
         try {
             setupColV16()
             InitialActivityWithConflictTest.setupForValid(targetContext)
-            val deckPicker: DeckPicker =
-                super.startActivityNormallyOpenCollectionWithIntent(
-                    DeckPickerEx::class.java,
-                    Intent(),
-                )
+            val deckPicker: DeckPicker = super.startActivityNormallyOpenCollectionWithIntent(
+                DeckPicker::class.java,
+                Intent(),
+            )
             advanceRobolectricLooper()
             assertThat(
                 "Collection should now be open",
@@ -86,7 +84,7 @@ class DeckPickerOnDiskTest : RobolectricTest() {
             )
             assertThat(
                 "Decks should be visible",
-               deckPicker.viewModel.flowOfDeckList.first().data.size,
+                deckPicker.viewModel.flowOfDeckList.first().data.size,
                 equalTo(1),
             )
         } finally {
@@ -103,19 +101,24 @@ class DeckPickerOnDiskTest : RobolectricTest() {
             // corrupt col
             DbUtils.performQuery(targetContext, "drop table decks")
             InitialActivityWithConflictTest.setupForValid(targetContext)
-            val deckPicker =
-                super.startActivityNormallyOpenCollectionWithIntent(
-                    DeckPickerEx::class.java,
-                    Intent(),
-                )
+            val deckPicker = super.startActivityNormallyOpenCollectionWithIntent(
+                DeckPicker::class.java,
+                Intent(),
+            )
             advanceRobolectricLooper()
             assertThat(
                 "Collection should not be open",
                 !CollectionManager.isOpenUnsafe(),
             )
+            val dialogFragment =
+                deckPicker.supportFragmentManager.fragments.firstOrNull { it is com.ichi2.anki.dialogs.DatabaseErrorDialog } as? com.ichi2.anki.dialogs.DatabaseErrorDialog
+            assertNotNull(dialogFragment)
+            val dialogType = androidx.core.os.BundleCompat.getParcelable(
+                dialogFragment.requireArguments(), "dialog", DatabaseErrorDialogType::class.java
+            )
             assertThat(
                 "An error dialog should be displayed",
-                deckPicker.databaseErrorDialog,
+                dialogType,
                 equalTo(DatabaseErrorDialogType.DIALOG_LOAD_FAILED),
             )
         } finally {
@@ -128,19 +131,24 @@ class DeckPickerOnDiskTest : RobolectricTest() {
         try {
             setupColV250()
             InitialActivityWithConflictTest.setupForValid(targetContext)
-            val deckPicker =
-                super.startActivityNormallyOpenCollectionWithIntent(
-                    DeckPickerEx::class.java,
-                    Intent(),
-                )
+            val deckPicker = super.startActivityNormallyOpenCollectionWithIntent(
+                DeckPicker::class.java,
+                Intent(),
+            )
             advanceRobolectricLooper()
             assertThat(
                 "Collection should not be open",
                 !CollectionManager.isOpenUnsafe(),
             )
+            val dialogFragment =
+                deckPicker.supportFragmentManager.fragments.firstOrNull { it is com.ichi2.anki.dialogs.DatabaseErrorDialog } as? com.ichi2.anki.dialogs.DatabaseErrorDialog
+            assertNotNull(dialogFragment)
+            val dialogType = androidx.core.os.BundleCompat.getParcelable(
+                dialogFragment.requireArguments(), "dialog", DatabaseErrorDialogType::class.java
+            )
             assertThat(
                 "An error dialog should be displayed",
-                deckPicker.databaseErrorDialog,
+                dialogType,
                 equalTo(DatabaseErrorDialogType.INCOMPATIBLE_DB_VERSION),
             )
             assertThat(
@@ -180,5 +188,18 @@ class DeckPickerOnDiskTest : RobolectricTest() {
             CollectionManager.isOpenUnsafe(),
             equalTo(false),
         )
+    }
+
+    enum class CollectionType(
+        val assetFile: String,
+        private val deckName: String,
+    ) {
+        SCHEMA_V_16("schema16.anki2", "ThisIsSchema16"), SCHEMA_V_250(
+            "schema250.anki2",
+            "ThisIsSchema250",
+        ), ;
+
+        fun isCollection(col: com.ichi2.anki.libanki.Collection): Boolean =
+            col.decks.byName(deckName) != null
     }
 }
