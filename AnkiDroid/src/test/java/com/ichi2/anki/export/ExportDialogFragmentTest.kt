@@ -46,7 +46,7 @@ class ExportDialogFragmentTest : RobolectricTest() {
                     onDeckSelected = {},
                     decksLoading = false,
                     showDeckSelector = true,
-                    showSelectedNotesLabel = false,
+                    selectedItemsLabelRes = null,
                     collectionState = CollectionExportState(),
                     onCollectionStateChanged = {},
                     apkgState = ApkgExportState(),

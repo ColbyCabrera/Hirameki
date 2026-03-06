@@ -20,6 +20,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.dialogs.compose
 
+import android.os.Parcelable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,30 +57,36 @@ import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.libanki.DeckNameId
 
+import kotlinx.parcelize.Parcelize
+
 // State holder classes for checkbox groups
+@Parcelize
 data class CollectionExportState(
     val includeMedia: Boolean = true,
     val supportOlderVersions: Boolean = false,
-)
+) : Parcelable
 
+@Parcelize
 data class ApkgExportState(
     val includeScheduling: Boolean = true,
     val includeDeckConfigs: Boolean = false,
     val includeMedia: Boolean = true,
     val supportOlderVersions: Boolean = false,
-)
+) : Parcelable
 
+@Parcelize
 data class NotesExportState(
     val includeHtml: Boolean = true,
     val includeTags: Boolean = true,
     val includeDeckName: Boolean = false,
     val includeNotetypeName: Boolean = false,
     val includeGuid: Boolean = false,
-)
+) : Parcelable
 
+@Parcelize
 data class CardsExportState(
     val includeHtml: Boolean = true,
-)
+) : Parcelable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

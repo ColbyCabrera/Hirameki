@@ -22,8 +22,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.os.BundleCompat
@@ -80,17 +82,23 @@ class ExportDialogFragment : DialogFragment() {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 AnkiDroidTheme {
-                    val selectedFormatIndex = remember {
+                    val selectedFormatIndex = rememberSaveable {
                         mutableIntStateOf(if ((extraDid != null && extraDid != -1L) || extraType != null) 1 else 0)
                     }
                     val decks = remember { mutableStateOf<List<DeckNameId>>(emptyList()) }
                     val selectedDeck = remember { mutableStateOf<DeckNameId?>(null) }
-                    val decksLoading = remember { mutableStateOf(true) }
+                    val selectedDeckId = rememberSaveable {
+                        val initialId =
+                            extraDid?.takeIf { it != -1L } ?: DeckSpinnerSelection.ALL_DECKS_ID
+                        mutableLongStateOf(initialId)
+                    }
+                    val decksLoading = remember { mutableStateOf(false) }
 
-                    val collectionState = remember { mutableStateOf(CollectionExportState()) }
-                    val apkgState = remember { mutableStateOf(ApkgExportState()) }
-                    val notesState = remember { mutableStateOf(NotesExportState()) }
-                    val cardsState = remember { mutableStateOf(CardsExportState()) }
+                    val collectionState =
+                        rememberSaveable { mutableStateOf(CollectionExportState()) }
+                    val apkgState = rememberSaveable { mutableStateOf(ApkgExportState()) }
+                    val notesState = rememberSaveable { mutableStateOf(NotesExportState()) }
+                    val cardsState = rememberSaveable { mutableStateOf(CardsExportState()) }
 
                     val showDeckSelector = selectedFormatIndex.intValue != 0 && extraType == null
                     val selectedItemsLabelRes =
@@ -101,24 +109,24 @@ class ExportDialogFragment : DialogFragment() {
                             }
                         } else null
 
-                    LaunchedEffect(Unit) {
-                        decksLoading.value = true
-                        val allDecks = mutableListOf(
-                            DeckNameId(
-                                requireActivity().getString(R.string.card_browser_all_decks),
-                                DeckSpinnerSelection.ALL_DECKS_ID,
-                            ),
-                        )
-                        allDecks.addAll(withCol { this.decks.allNamesAndIds(false) })
-                        decks.value = allDecks
+                    LaunchedEffect(showDeckSelector) {
+                        if (showDeckSelector) {
+                            decksLoading.value = true
+                            val allDecks = mutableListOf(
+                                DeckNameId(
+                                    requireActivity().getString(R.string.card_browser_all_decks),
+                                    DeckSpinnerSelection.ALL_DECKS_ID,
+                                ),
+                            )
+                            allDecks.addAll(withCol { this.decks.allNamesAndIds(false) })
+                            decks.value = allDecks
 
-                        val preselectedDeck = if (extraDid != null) {
-                            allDecks.find { it.id == extraDid } ?: allDecks.first()
+                            selectedDeck.value = allDecks.find { it.id == selectedDeckId.longValue }
+                                ?: allDecks.first()
+                            decksLoading.value = false
                         } else {
-                            allDecks.first()
+                            decksLoading.value = false
                         }
-                        selectedDeck.value = preselectedDeck
-                        decksLoading.value = false
                     }
 
                     ExportDialog(
@@ -130,7 +138,10 @@ class ExportDialogFragment : DialogFragment() {
                         },
                         decks = decks.value,
                         selectedDeck = selectedDeck.value,
-                        onDeckSelected = { deck -> selectedDeck.value = deck },
+                        onDeckSelected = { deck ->
+                            selectedDeck.value = deck
+                            selectedDeckId.longValue = deck.id
+                        },
                         decksLoading = decksLoading.value,
                         showDeckSelector = showDeckSelector,
                         selectedItemsLabelRes = selectedItemsLabelRes,
