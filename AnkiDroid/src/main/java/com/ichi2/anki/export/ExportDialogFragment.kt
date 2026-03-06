@@ -1,10 +1,6 @@
-/* **************************************************************************************
- * Copyright (c) 2009 Andrew Dubya <andrewdubya@gmail.com>                              *
- * Copyright (c) 2009 Nicolas Raoul <nicolas.raoul@gmail.com>                           *
- * Copyright (c) 2009 Edu Zamora <edu.zasu@gmail.com>                                   *
- * Copyright (c) 2009 Daniel Svard <daniel.svard@gmail.com>                             *
- * Copyright (c) 2010 Norbert Nagold <norbert.nagold@gmail.com>                         *
- * Copyright (c) 2014 Timothy Rae <perceptualchaos2@gmail.com>
+/****************************************************************************************
+ *                                                                                      *
+ * Copyright (c) 2012 Norbert Nagold <norbert.nagold@gmail.com>                         *
  *                                                                                      *
  * This program is free software; you can redistribute it and/or modify it under        *
  * the terms of the GNU General Public License as published by the Free Software        *
@@ -63,9 +59,7 @@ import java.io.File
 class ExportDialogFragment : DialogFragment() {
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         val extraDid = arguments?.getLong(ARG_DECK_ID, -1)
         val extraType: ExportType? = arguments?.getSerializableCompat(ARG_TYPE)
@@ -94,7 +88,8 @@ class ExportDialogFragment : DialogFragment() {
                     val cardsState = remember { mutableStateOf(CardsExportState()) }
 
                     val showDeckSelector = selectedFormatIndex.intValue != 0 && extraType == null
-                    val showSelectedNotesLabel = selectedFormatIndex.intValue != 0 && extraType != null
+                    val showSelectedNotesLabel =
+                        selectedFormatIndex.intValue != 0 && extraType != null
 
                     LaunchedEffect(Unit) {
                         decksLoading.value = true
@@ -139,24 +134,23 @@ class ExportDialogFragment : DialogFragment() {
                         onCardsStateChanged = { cardsState.value = it },
                         onDismissRequest = { dismiss() },
                         onConfirm = {
-                            if (selectedFormatIndex.intValue != 0 && decksLoading.value) return
-
-                            when (selectedFormatIndex.intValue) {
-                                0 -> handleCollectionExport(collectionState.value)
-                                1 -> handleAnkiPackageExport(apkgState.value, selectedDeck.value)
-                                2 -> handleNotesInPlainTextExport(
-                                    notesState.value,
-                                    selectedDeck.value
-                                )
-
-                                3 -> handleCardsInPlainTextExport(
-                                    cardsState.value,
-                                    selectedDeck.value
-                                )
+                            if (selectedFormatIndex.intValue == 0 || !decksLoading.value) {
+                                when (selectedFormatIndex.intValue) {
+                                    0 -> handleCollectionExport(collectionState.value)
+                                    1 -> handleAnkiPackageExport(
+                                        apkgState.value,
+                                        selectedDeck.value
+                                    )
+                                    2 -> handleNotesInPlainTextExport(
+                                        notesState.value, selectedDeck.value
+                                    )
+                                    3 -> handleCardsInPlainTextExport(
+                                        cardsState.value, selectedDeck.value
+                                    )
+                                }
+                                dismiss()
                             }
-                            dismiss()
-                        }
-                    )
+                        })
                 }
             }
         }
@@ -168,9 +162,7 @@ class ExportDialogFragment : DialogFragment() {
             "${CollectionManager.TR.exportingCollection()}-${getTimestamp(TimeManager.time)}.colpkg",
         ).path
         requireAnkiActivity().exportCollectionPackage(
-            exportPath,
-            state.includeMedia,
-            state.supportOlderVersions
+            exportPath, state.includeMedia, state.supportOlderVersions
         )
     }
 
