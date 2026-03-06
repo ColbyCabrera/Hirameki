@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -169,7 +170,8 @@ fun IntroductionScreen(
                                 onClick = onGetStarted,
                                 modifier = Modifier
                                     .fillMaxWidth(0.8f)
-                                    .height(56.dp),
+                                    .height(56.dp)
+                                    .testTag("get_started"),
                                 shapes = ButtonDefaults.shapes()
                                 ) {
                                 Text(
@@ -182,7 +184,8 @@ fun IntroductionScreen(
                                 onClick = onSync,
                                 modifier = Modifier
                                     .fillMaxWidth(0.8f)
-                                    .height(56.dp),
+                                    .height(56.dp)
+                                    .testTag("sync_button"),
                                 colors = ButtonDefaults.filledTonalButtonColors(),
                                 shapes = ButtonDefaults.shapes()
                             ) {

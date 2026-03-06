@@ -81,10 +81,10 @@ class BackupPromptDialog private constructor(
             .edit { putInt("backupPromptDismissedCount", value) }
 
     private var dialogPermanentlyDismissed: Boolean
-        get() = windowContext.sharedPrefs().getBoolean("backupPromptDisabled", false)
+        get() = windowContext.sharedPrefs().getBoolean(BACKUP_PROMPT_DISABLED, false)
         set(disablePermanently) {
             windowContext.sharedPrefs().edit {
-                putBoolean("backupPromptDisabled", disablePermanently)
+                putBoolean(BACKUP_PROMPT_DISABLED, disablePermanently)
                 if (disablePermanently) {
                     remove("backupPromptDismissedCount")
                     remove("timeToShowBackupDialog")
@@ -186,6 +186,7 @@ class BackupPromptDialog private constructor(
     }
 
     companion object {
+        const val BACKUP_PROMPT_DISABLED = "backupPromptDisabled"
         private const val ONE_DAY_IN_MS = 1000 * 60 * 60 * 24
 
         /** @return Whether the dialog was shown */

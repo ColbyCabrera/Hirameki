@@ -85,7 +85,7 @@
     <string name="note_type_name">Name</string>
     <string name="deck_name">Deck name</string>
     <string name="type_in_the_answer">Type in the answer</string>
-    <string-array name="account_redirect_urls">
+    <string-array name="account_redirect_urls" translatable="false">
         <item>https://ankiweb.net/account/login?afterAuth=1</item>
         <item>https://ankiweb.net/decks</item>
         <item>https://ankiweb.net/account/verify-email</item>
