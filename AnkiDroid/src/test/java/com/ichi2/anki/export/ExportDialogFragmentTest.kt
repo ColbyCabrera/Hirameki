@@ -15,11 +15,14 @@ import com.ichi2.anki.dialogs.compose.CollectionExportState
 import com.ichi2.anki.dialogs.compose.ExportDialog
 import com.ichi2.anki.dialogs.compose.NotesExportState
 import com.ichi2.anki.libanki.DeckNameId
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
+@Config(qualifiers = "w1280dp-h1280dp")
 class ExportDialogFragmentTest : RobolectricTest() {
 
     @get:Rule
@@ -33,27 +36,29 @@ class ExportDialogFragmentTest : RobolectricTest() {
         val legacyLabel = context.getString(R.string.exporting_support_older_anki_versions)
 
         composeTestRule.setContent {
-            ExportDialog(
-                exportFormats = exportFormats,
-                selectedFormat = selectedFormat.value,
-                onFormatSelected = { selectedFormat.value = it },
-                decks = listOf(DeckNameId("Default", 1)),
-                selectedDeck = DeckNameId("Default", 1),
-                onDeckSelected = {},
-                decksLoading = false,
-                showDeckSelector = true,
-                showSelectedNotesLabel = false,
-                collectionState = CollectionExportState(),
-                onCollectionStateChanged = {},
-                apkgState = ApkgExportState(),
-                onApkgStateChanged = {},
-                notesState = NotesExportState(),
-                onNotesStateChanged = {},
-                cardsState = CardsExportState(),
-                onCardsStateChanged = {},
-                onDismissRequest = {},
-                onConfirm = {},
-            )
+            AnkiDroidTheme {
+                ExportDialog(
+                    exportFormats = exportFormats,
+                    selectedFormat = selectedFormat.value,
+                    onFormatSelected = { selectedFormat.value = it },
+                    decks = listOf(DeckNameId("Default", 1)),
+                    selectedDeck = DeckNameId("Default", 1),
+                    onDeckSelected = {},
+                    decksLoading = false,
+                    showDeckSelector = true,
+                    showSelectedNotesLabel = false,
+                    collectionState = CollectionExportState(),
+                    onCollectionStateChanged = {},
+                    apkgState = ApkgExportState(),
+                    onApkgStateChanged = {},
+                    notesState = NotesExportState(),
+                    onNotesStateChanged = {},
+                    cardsState = CardsExportState(),
+                    onCardsStateChanged = {},
+                    onDismissRequest = {},
+                    onConfirm = {},
+                )
+            }
         }
 
         // Check Collection (default)
