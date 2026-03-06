@@ -120,7 +120,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
     }
 
     @Test
-    fun `empty filtered - refreshes deck list`() {
+    fun `empty filtered - does not hang when updating deck list`() {
         runTest {
             val filteredDeckId = moveAllCardsToFilteredDeck()
 
