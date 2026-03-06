@@ -38,8 +38,11 @@ import com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState
 import com.ichi2.anki.servicelayer.NoteService
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -183,6 +186,13 @@ class NoteEditorViewModel(
      * Null indicates no current error to display.
      */
     val errorState: StateFlow<String?> = _errorState.asStateFlow()
+    
+    private val _snackbarMessages = MutableSharedFlow<String>()
+
+    /**
+     * One-shot snackbar messages to be displayed in the UI.
+     */
+    val snackbarMessages: SharedFlow<String> = _snackbarMessages.asSharedFlow()
 
     private val _availableDecks = MutableStateFlow<List<String>>(emptyList())
 
@@ -1480,6 +1490,15 @@ class NoteEditorViewModel(
         } catch (e2: Exception) {
             Timber.e(e2, "Error getting default deck name")
             "Default"
+        }
+    }
+
+    /**
+     * Show a one-shot snackbar message in the UI.
+     */
+    fun showSnackbar(message: String) {
+        viewModelScope.launch {
+            _snackbarMessages.emit(message)
         }
     }
 }

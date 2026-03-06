@@ -38,6 +38,7 @@ import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +53,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
@@ -110,7 +110,6 @@ import com.ichi2.anki.previewer.TemplatePreviewerPage
 import com.ichi2.anki.servicelayer.NoteService
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
-import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.ext.sharedPrefs
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -126,6 +125,7 @@ import com.ichi2.utils.show
 import com.ichi2.utils.title
 import com.ichi2.widget.WidgetStatus
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.ankiweb.rsdroid.BackendException
@@ -162,7 +162,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         get() = CollectionManager.getColUnsafe()
 
     /**
-     * Flag which forces the calling activity to rebuild it's definition of current card from scratch
+     * Flag which forces the calling activity to rebuild its definition of current card from scratch
      */
     private var reloadRequired: Boolean
         get() = noteEditorViewModel.reloadRequired.value
@@ -257,15 +257,15 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                             Timber.d("Updated cards for note type: %s", notetype.name)
                         } else {
                             Timber.w("Note type not found for note")
-                            showSnackbar(R.string.something_wrong)
+                            noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
                         }
                     } else {
                         Timber.w("Current note is null after template edit")
-                        showSnackbar(R.string.something_wrong)
+                        noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
                     }
                 } catch (e: Exception) {
                     Timber.e(e, "Error updating editor after template edit")
-                    showSnackbar(R.string.something_wrong)
+                    noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
                 }
             }
         },
@@ -327,11 +327,11 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     private fun displayErrorSavingNote() {
         val errorMessage = snackbarErrorText
         // Anki allows to proceed in case we try to add non cloze text in cloze field with warning,
-        // this snackbar helps replicate similar behaviour
+        // this snackbar helps replicate similar behavior
         if (errorMessage == TR.addingYouHaveAClozeDeletionNote()) {
             noClozeDialog(errorMessage)
         } else {
-            showSnackbar(errorMessage)
+            noteEditorViewModel.showSnackbar(errorMessage)
         }
     }
 
@@ -413,7 +413,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     }
 
     /**
-     * Setup the Compose-based note editor
+     * Set up the Compose-based note editor
      */
     private fun setupComposeEditor(col: Collection) {
         Timber.d("NoteEditor() setupComposeEditor: caller: %s", caller)
@@ -551,7 +551,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     }
 
     /**
-     * Setup the Compose content for the note editor.
+     * Set up the Compose content for the note editor.
      */
     private fun setupComposeContent() {
         val composeView = view?.findViewById<ComposeView>(R.id.note_editor_compose)
@@ -584,6 +584,12 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     )
                 }
 
+                LaunchedEffect(Unit) {
+                    noteEditorViewModel.snackbarMessages.collectLatest { message ->
+                        snackbarHostState.showSnackbar(message)
+                    }
+                }
+
                 NoteEditorScreen(
                     state = noteEditorState,
                     availableDecks = availableDecks,
@@ -605,7 +611,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                             }
                             if (deck == null) {
                                 Timber.w("onDeckSelected: Deck not found for name '%s'", deckName)
-                                showSnackbar(getString(R.string.deck_not_found))
+                                noteEditorViewModel.showSnackbar(getString(R.string.deck_not_found))
                                 return@launchCatchingTask
                             }
                             deckId = deck.id
@@ -774,7 +780,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                             ioEditorLauncher.launch("image/*")
                         } catch (_: ActivityNotFoundException) {
                             Timber.w("No app found to handle image selection")
-                            requireActivity().showSnackbar(R.string.activity_start_failed)
+                            noteEditorViewModel.showSnackbar(getString(R.string.activity_start_failed))
                         }
                     },
                     onImageOcclusionPasteImage = {
@@ -790,7 +796,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                                 setupImageOcclusionEditor(path)
                             }
                         } else {
-                            showSnackbar(TR.editingNoImageFoundOnClipboard())
+                            noteEditorViewModel.showSnackbar(TR.editingNoImageFoundOnClipboard())
                         }
                     },
                     onImageOcclusionEdit = {
@@ -911,7 +917,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
     private fun handleClozeInsertion(mode: ClozeInsertionMode) {
         val isClozeType = noteEditorViewModel.noteEditorState.value.isClozeType
         if (!isClozeType) {
-            showSnackbar(R.string.note_editor_insert_cloze_no_cloze_note_type)
+            noteEditorViewModel.showSnackbar(getString(R.string.note_editor_insert_cloze_no_cloze_note_type))
             return
         }
         noteEditorViewModel.insertCloze(mode)
@@ -1048,12 +1054,12 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                             return false
                         }
                     }
-                    showSnackbar(resources.getString(R.string.intent_aedict_empty))
+                    noteEditorViewModel.showSnackbar(resources.getString(R.string.intent_aedict_empty))
                     return true
                 }
             }
         }
-        showSnackbar(resources.getString(R.string.intent_aedict_category))
+        noteEditorViewModel.showSnackbar(resources.getString(R.string.intent_aedict_category))
         return true
     }
 
@@ -1087,7 +1093,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         }
         changed = true
         sourceText = null
-        showSnackbar(TR.addingAdded(), Snackbar.LENGTH_SHORT)
+        noteEditorViewModel.showSnackbar(TR.addingAdded())
     }
 
     @VisibleForTesting
@@ -1101,7 +1107,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
 
                 if (addNote) {
                     sourceText = null
-                    showSnackbar(TR.addingAdded(), Snackbar.LENGTH_SHORT)
+                    noteEditorViewModel.showSnackbar(TR.addingAdded())
 
                     val shouldClose = when (caller) {
                         NoteEditorCaller.NOTEEDITOR,
@@ -1350,10 +1356,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
         if (noteTypeId == null) {
             Timber.w("showCardTemplateEditor(): noteTypeId is null")
             requireActivity().runOnUiThread {
-                showSnackbar(
-                    getString(R.string.note_type_not_found_for_template_editor),
-                    Snackbar.LENGTH_SHORT,
-                )
+                noteEditorViewModel.showSnackbar(getString(R.string.note_type_not_found_for_template_editor))
             }
             return
         }
