@@ -58,6 +58,11 @@ import java.io.File
 
 class ExportDialogFragment : DialogFragment() {
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_FRAME, 0)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -134,22 +139,20 @@ class ExportDialogFragment : DialogFragment() {
                         onCardsStateChanged = { cardsState.value = it },
                         onDismissRequest = { dismiss() },
                         onConfirm = {
-                            if (selectedFormatIndex.intValue == 0 || !decksLoading.value) {
-                                when (selectedFormatIndex.intValue) {
-                                    0 -> handleCollectionExport(collectionState.value)
-                                    1 -> handleAnkiPackageExport(
-                                        apkgState.value,
-                                        selectedDeck.value
-                                    )
-                                    2 -> handleNotesInPlainTextExport(
-                                        notesState.value, selectedDeck.value
-                                    )
-                                    3 -> handleCardsInPlainTextExport(
-                                        cardsState.value, selectedDeck.value
-                                    )
-                                }
-                                dismiss()
+                            when (selectedFormatIndex.intValue) {
+                                0 -> handleCollectionExport(collectionState.value)
+                                1 -> handleAnkiPackageExport(
+                                    apkgState.value,
+                                    selectedDeck.value
+                                )
+                                2 -> handleNotesInPlainTextExport(
+                                    notesState.value, selectedDeck.value
+                                )
+                                3 -> handleCardsInPlainTextExport(
+                                    cardsState.value, selectedDeck.value
+                                )
                             }
+                            dismiss()
                         })
                 }
             }
