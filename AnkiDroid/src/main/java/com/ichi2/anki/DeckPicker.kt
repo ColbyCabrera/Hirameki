@@ -511,10 +511,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
     @Suppress("UNUSED_PARAMETER")
     private fun setupFlows() {
-        fun onDeckCountsChanged(unit: Unit) {
-            updateDeckList()
-        }
-
         fun onDestinationChanged(destination: Destination) {
             startActivity(destination.toIntent(this))
         }
@@ -576,7 +572,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             }
         }
 
-        viewModel.flowOfDeckCountsChanged.launchCollectionInLifecycleScope(::onDeckCountsChanged)
         viewModel.flowOfDestination.launchCollectionInLifecycleScope(::onDestinationChanged)
         viewModel.flowOfPromptUserToUpdateScheduler.launchCollectionInLifecycleScope(::onPromptUserToUpdateScheduler)
         viewModel.flowOfUndoUpdated.launchCollectionInLifecycleScope(::onUndoUpdated)

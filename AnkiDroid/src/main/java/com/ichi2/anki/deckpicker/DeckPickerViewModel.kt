@@ -65,6 +65,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import net.ankiweb.rsdroid.RustCleanup
 import net.ankiweb.rsdroid.exceptions.BackendDeckIsFilteredException
@@ -171,12 +172,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val snackbarMessageResId = MutableSharedFlow<Int>()
 
     override val onError = MutableSharedFlow<String>()
-
-    /**
-     * A notification that the study counts have changed
-     */
-    // TODO: most of the recalculation should be moved inside the ViewModel
-    val flowOfDeckCountsChanged = MutableSharedFlow<Unit>()
 
     var loadDeckCounts: Job? = null
         private set
@@ -450,7 +445,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             decks.select(deckId)
         }
         undoableOp { sched.emptyFilteredDeck(decks.selected()) }
-        flowOfDeckCountsChanged.emit(Unit)
+        updateDeckList()
     }
 
 
@@ -519,22 +514,32 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             val (deckDueTree, collectionHasNoCards) = withCol {
                 Pair(sched.deckDueTree(), isEmpty)
             }
+
+            ensureActive()
+
             dueTree = deckDueTree
 
             flowOfCollectionHasNoCards.value = collectionHasNoCards
 
             // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
-            flowOfStudiedTodayStats.value = withCol { sched.studiedToday().replace("\n", " ") }
+            val studiedToday = withCol { sched.studiedToday().replace("\n", " ") }
 
-            _flowOfTimeUntilNextDay.value = withCol {
+            ensureActive()
+            flowOfStudiedTodayStats.value = studiedToday
+
+            val timeUntilNextDay = withCol {
                 calculateTimeUntilNextDay(sched)
             }
+            ensureActive()
+            _flowOfTimeUntilNextDay.value = timeUntilNextDay
 
             /**
              * Checks the current scheduler version and prompts the upgrade dialog if using the legacy version.
              * Ensures the dialog is only shown once per collection load, even if [updateDeckList()] is called multiple times.
              */
             val currentSchedulerVersion = withCol { config.get("schedVer") as? Long ?: 1L }
+
+            ensureActive()
 
             if (currentSchedulerVersion == 1L && schedulerUpgradeDialogShownForVersion != 1L) {
                 schedulerUpgradeDialogShownForVersion = 1L
@@ -545,7 +550,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
             // TODO: This is in the wrong place
             // current deck may have changed
-            focusedDeck = withCol { decks.current().id }
+            val currentDeckId = withCol { decks.current().id }
+            ensureActive()
+            focusedDeck = currentDeckId
+
             flowOfUndoUpdated.emit(Unit)
 
             flowOfDecksReloaded.emit(Unit)
