@@ -1,10 +1,6 @@
-/* **************************************************************************************
- * Copyright (c) 2009 Andrew Dubya <andrewdubya@gmail.com>                              *
- * Copyright (c) 2009 Nicolas Raoul <nicolas.raoul@gmail.com>                           *
- * Copyright (c) 2009 Edu Zamora <edu.zasu@gmail.com>                                   *
- * Copyright (c) 2009 Daniel Svard <daniel.svard@gmail.com>                             *
- * Copyright (c) 2010 Norbert Nagold <norbert.nagold@gmail.com>                         *
- * Copyright (c) 2014 Timothy Rae <perceptualchaos2@gmail.com>
+/****************************************************************************************
+ *                                                                                      *
+ * Copyright (c) 2012 Norbert Nagold <norbert.nagold@gmail.com>                         *
  *                                                                                      *
  * This program is free software; you can redistribute it and/or modify it under        *
  * the terms of the GNU General Public License as published by the Free Software        *
@@ -20,14 +16,18 @@
  ****************************************************************************************/
 package com.ichi2.anki.export
 
-import android.app.Dialog
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.os.BundleCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
@@ -54,12 +54,20 @@ import com.ichi2.anki.exportSelectedNotes
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.DeckNameId
 import com.ichi2.anki.requireAnkiActivity
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import java.io.File
 
 class ExportDialogFragment : DialogFragment() {
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val activity = requireActivity()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_FRAME, 0)
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
         val extraDid = arguments?.getLong(ARG_DECK_ID, -1)
         val extraType: ExportType? = arguments?.getSerializableCompat(ARG_TYPE)
 
@@ -70,42 +78,55 @@ class ExportDialogFragment : DialogFragment() {
             "${CollectionManager.TR.exportingCardsInPlainText()} (.txt)",
         )
 
-        return AlertDialog.Builder(activity).setView(
-            ComposeView(activity).apply {
-                setContent {
-                    val selectedFormatIndex = remember {
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                AnkiDroidTheme {
+                    val selectedFormatIndex = rememberSaveable {
                         mutableIntStateOf(if ((extraDid != null && extraDid != -1L) || extraType != null) 1 else 0)
                     }
                     val decks = remember { mutableStateOf<List<DeckNameId>>(emptyList()) }
                     val selectedDeck = remember { mutableStateOf<DeckNameId?>(null) }
-                    val decksLoading = remember { mutableStateOf(true) }
+                    val selectedDeckId = rememberSaveable {
+                        val initialId =
+                            extraDid?.takeIf { it != -1L } ?: DeckSpinnerSelection.ALL_DECKS_ID
+                        mutableLongStateOf(initialId)
+                    }
+                    val decksLoading = remember { mutableStateOf(false) }
 
-                    val collectionState = remember { mutableStateOf(CollectionExportState()) }
-                    val apkgState = remember { mutableStateOf(ApkgExportState()) }
-                    val notesState = remember { mutableStateOf(NotesExportState()) }
-                    val cardsState = remember { mutableStateOf(CardsExportState()) }
+                    val collectionState =
+                        rememberSaveable { mutableStateOf(CollectionExportState()) }
+                    val apkgState = rememberSaveable { mutableStateOf(ApkgExportState()) }
+                    val notesState = rememberSaveable { mutableStateOf(NotesExportState()) }
+                    val cardsState = rememberSaveable { mutableStateOf(CardsExportState()) }
 
                     val showDeckSelector = selectedFormatIndex.intValue != 0 && extraType == null
-                    val showSelectedNotesLabel = selectedFormatIndex.intValue != 0 && extraType != null
+                    val selectedItemsLabelRes =
+                        if (selectedFormatIndex.intValue != 0 && extraType != null) {
+                            when (extraType) {
+                                ExportType.Notes -> R.string.exporting_selected_notes
+                                ExportType.Cards -> R.string.exporting_selected_cards
+                            }
+                        } else null
 
-                    LaunchedEffect(Unit) {
-                        decksLoading.value = true
-                        val allDecks = mutableListOf(
-                            DeckNameId(
-                                requireActivity().getString(R.string.card_browser_all_decks),
-                                DeckSpinnerSelection.ALL_DECKS_ID,
-                            ),
-                        )
-                        allDecks.addAll(withCol { this.decks.allNamesAndIds(false) })
-                        decks.value = allDecks
+                    LaunchedEffect(showDeckSelector) {
+                        if (showDeckSelector) {
+                            decksLoading.value = true
+                            val allDecks = mutableListOf(
+                                DeckNameId(
+                                    requireActivity().getString(R.string.card_browser_all_decks),
+                                    DeckSpinnerSelection.ALL_DECKS_ID,
+                                ),
+                            )
+                            allDecks.addAll(withCol { this.decks.allNamesAndIds(false) })
+                            decks.value = allDecks
 
-                        val preselectedDeck = if (extraDid != null) {
-                            allDecks.find { it.id == extraDid } ?: allDecks.first()
+                            selectedDeck.value = allDecks.find { it.id == selectedDeckId.longValue }
+                                ?: allDecks.first()
+                            decksLoading.value = false
                         } else {
-                            allDecks.first()
+                            decksLoading.value = false
                         }
-                        selectedDeck.value = preselectedDeck
-                        decksLoading.value = false
                     }
 
                     ExportDialog(
@@ -117,10 +138,13 @@ class ExportDialogFragment : DialogFragment() {
                         },
                         decks = decks.value,
                         selectedDeck = selectedDeck.value,
-                        onDeckSelected = { deck -> selectedDeck.value = deck },
+                        onDeckSelected = { deck ->
+                            selectedDeck.value = deck
+                            selectedDeckId.longValue = deck.id
+                        },
                         decksLoading = decksLoading.value,
                         showDeckSelector = showDeckSelector,
-                        showSelectedNotesLabel = showSelectedNotesLabel,
+                        selectedItemsLabelRes = selectedItemsLabelRes,
                         collectionState = collectionState.value,
                         onCollectionStateChanged = { collectionState.value = it },
                         apkgState = apkgState.value,
@@ -129,35 +153,27 @@ class ExportDialogFragment : DialogFragment() {
                         onNotesStateChanged = { notesState.value = it },
                         cardsState = cardsState.value,
                         onCardsStateChanged = { cardsState.value = it },
-                    )
-
-                    // Set positive button action here, capturing the state
-                    val d = dialog as? AlertDialog
-                    LaunchedEffect(d) {
-                        d?.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
-                            if (selectedFormatIndex.intValue != 0 && decksLoading.value) return@setOnClickListener
-
+                        onDismissRequest = { dismiss() },
+                        onConfirm = {
                             when (selectedFormatIndex.intValue) {
                                 0 -> handleCollectionExport(collectionState.value)
-                                1 -> handleAnkiPackageExport(apkgState.value, selectedDeck.value)
+                                1 -> handleAnkiPackageExport(
+                                    apkgState.value, selectedDeck.value
+                                )
+
                                 2 -> handleNotesInPlainTextExport(
-                                    notesState.value,
-                                    selectedDeck.value
+                                    notesState.value, selectedDeck.value
                                 )
 
                                 3 -> handleCardsInPlainTextExport(
-                                    cardsState.value,
-                                    selectedDeck.value
+                                    cardsState.value, selectedDeck.value
                                 )
                             }
-                            d.dismiss()
-                        }
-                    }
+                            dismiss()
+                        })
                 }
-            },
-        ).setNegativeButton(R.string.dialog_cancel, null)
-            .setPositiveButton(R.string.dialog_ok, null) // Listener is set in Compose content
-            .create()
+            }
+        }
     }
 
     private fun handleCollectionExport(state: CollectionExportState) {
@@ -166,9 +182,7 @@ class ExportDialogFragment : DialogFragment() {
             "${CollectionManager.TR.exportingCollection()}-${getTimestamp(TimeManager.time)}.colpkg",
         ).path
         requireAnkiActivity().exportCollectionPackage(
-            exportPath,
-            state.includeMedia,
-            state.supportOlderVersions
+            exportPath, state.includeMedia, state.supportOlderVersions
         )
     }
 
@@ -195,7 +209,8 @@ class ExportDialogFragment : DialogFragment() {
 
     private fun getNonCollectionNamePrefix(selectedDeck: DeckNameId?): String =
         when (arguments?.getSerializableCompat<ExportType>(ARG_TYPE)) {
-            ExportType.Notes, ExportType.Cards -> CollectionManager.TR.exportingSelectedNotes()
+            ExportType.Notes -> getString(R.string.exporting_selected_notes)
+            ExportType.Cards -> getString(R.string.exporting_selected_cards)
             else -> selectedDeck?.name
                 ?: requireActivity().getString(R.string.card_browser_all_decks)
         }
