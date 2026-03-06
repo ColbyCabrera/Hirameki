@@ -209,7 +209,7 @@ class ExportDialogFragment : DialogFragment() {
 
     private fun getNonCollectionNamePrefix(selectedDeck: DeckNameId?): String =
         when (arguments?.getSerializableCompat<ExportType>(ARG_TYPE)) {
-            ExportType.Notes -> CollectionManager.TR.exportingSelectedNotes()
+            ExportType.Notes -> getString(R.string.exporting_selected_notes)
             ExportType.Cards -> getString(R.string.exporting_selected_cards)
             else -> selectedDeck?.name
                 ?: requireActivity().getString(R.string.card_browser_all_decks)
