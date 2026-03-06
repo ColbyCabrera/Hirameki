@@ -444,7 +444,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             decks.select(deckId)
         }
         undoableOp { sched.emptyFilteredDeck(decks.selected()) }
-        updateDeckList()?.join()
+        updateDeckList()
     }
 
 

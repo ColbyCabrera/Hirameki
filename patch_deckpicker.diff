@@ -1,27 +1,3 @@
---- AnkiDroid/src/main/java/com/ichi2/anki/deckpicker/DeckPickerViewModel.kt
-+++ AnkiDroid/src/main/java/com/ichi2/anki/deckpicker/DeckPickerViewModel.kt
-@@ -174,10 +174,6 @@
-
-     override val onError = MutableSharedFlow<String>()
-
--    /**
--     * A notification that the study counts have changed
--     */
--    // TODO: most of the recalculation should be moved inside the ViewModel
--    val flowOfDeckCountsChanged = MutableSharedFlow<Unit>()
--
-     var loadDeckCounts: Job? = null
-         private set
-
-@@ -450,7 +446,7 @@
-             decks.select(deckId)
-         }
-         undoableOp { sched.emptyFilteredDeck(decks.selected()) }
--        flowOfDeckCountsChanged.emit(Unit)
-+        updateDeckList()
-     }
-
-
 --- AnkiDroid/src/main/java/com/ichi2/anki/DeckPicker.kt
 +++ AnkiDroid/src/main/java/com/ichi2/anki/DeckPicker.kt
 @@ -511,10 +511,6 @@

@@ -1,0 +1,19 @@
+--- AnkiDroid/src/test/java/com/ichi2/anki/deckpicker/DeckPickerViewModelTest.kt
++++ AnkiDroid/src/test/java/com/ichi2/anki/deckpicker/DeckPickerViewModelTest.kt
+@@ -125,7 +125,7 @@
+             val filteredDeckId = moveAllCardsToFilteredDeck()
+
+             // Due tree should have a filtered deck with cards
+-            viewModel.updateDeckList()
++            viewModel.updateDeckList()?.join()
+             advanceUntilIdle()
+             val initialDueTree = viewModel.dueTree
+             val initialFilteredDeckNode = initialDueTree?.find(filteredDeckId)
+@@ -133,7 +133,7 @@
+
+             // Empty the filtered deck
+-            viewModel.emptyFilteredDeck(filteredDeckId)
++            viewModel.emptyFilteredDeck(filteredDeckId).join()
+             advanceUntilIdle()
+
+             val updatedDueTree = viewModel.dueTree

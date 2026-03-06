@@ -1,0 +1,97 @@
+--- AnkiDroid/src/main/java/com/ichi2/anki/deckpicker/DeckPickerViewModel.kt
++++ AnkiDroid/src/main/java/com/ichi2/anki/deckpicker/DeckPickerViewModel.kt
+@@ -174,10 +174,6 @@
+
+     override val onError = MutableSharedFlow<String>()
+
+-    /**
+-     * A notification that the study counts have changed
+-     */
+-    // TODO: most of the recalculation should be moved inside the ViewModel
+-    val flowOfDeckCountsChanged = MutableSharedFlow<Unit>()
+-
+     var loadDeckCounts: Job? = null
+         private set
+
+@@ -450,7 +446,7 @@
+             decks.select(deckId)
+         }
+         undoableOp { sched.emptyFilteredDeck(decks.selected()) }
+-        flowOfDeckCountsChanged.emit(Unit)
++        updateDeckList()
+     }
+
+
+--- AnkiDroid/src/main/java/com/ichi2/anki/DeckPicker.kt
++++ AnkiDroid/src/main/java/com/ichi2/anki/DeckPicker.kt
+@@ -511,10 +511,6 @@
+
+     @Suppress("UNUSED_PARAMETER")
+     private fun setupFlows() {
+-        fun onDeckCountsChanged(unit: Unit) {
+-            updateDeckList()
+-        }
+-
+         fun onDestinationChanged(destination: Destination) {
+             startActivity(destination.toIntent(this))
+         }
+@@ -576,7 +572,6 @@
+             }
+         }
+
+-        viewModel.flowOfDeckCountsChanged.launchCollectionInLifecycleScope(::onDeckCountsChanged)
+         viewModel.flowOfDestination.launchCollectionInLifecycleScope(::onDestinationChanged)
+         viewModel.flowOfPromptUserToUpdateScheduler.launchCollectionInLifecycleScope(::onPromptUserToUpdateScheduler)
+         viewModel.flowOfUndoUpdated.launchCollectionInLifecycleScope(::onUndoUpdated)
+--- AnkiDroid/src/test/java/com/ichi2/anki/deckpicker/DeckPickerViewModelTest.kt
++++ AnkiDroid/src/test/java/com/ichi2/anki/deckpicker/DeckPickerViewModelTest.kt
+@@ -111,7 +111,8 @@
+             val note = addBasicNote("To", "Filtered")
+             val filteredDeckId = moveAllCardsToFilteredDeck(assertOn = note)
+
+-            viewModel.emptyFilteredDeck(filteredDeckId).join()
++            viewModel.emptyFilteredDeck(filteredDeckId).join()
++            viewModel.loadDeckCounts?.join()
+
+             assertThat("deck was reset", note.firstCard().did, equalTo(Consts.DEFAULT_DECK_ID))
+         }
+@@ -116,19 +117,20 @@
+             assertThat("deck was reset", note.firstCard().did, equalTo(Consts.DEFAULT_DECK_ID))
+         }
+     }
+
+     @Test
+-    fun `empty filtered - flows`() {
++    fun `empty filtered - refreshes deck list`() {
+         runTest {
+-            viewModel.flowOfDeckCountsChanged.test {
+-                val filteredDeckId = moveAllCardsToFilteredDeck()
+-                expectNoEvents()
+-                viewModel.emptyFilteredDeck(filteredDeckId).join()
+-                awaitItem()
+-                expectNoEvents()
+-                viewModel.emptyFilteredDeck(filteredDeckId).join()
+-                awaitItem()
+-            }
++            val filteredDeckId = moveAllCardsToFilteredDeck()
++
++            // Empty the filtered deck
++            viewModel.emptyFilteredDeck(filteredDeckId).join()
++            viewModel.loadDeckCounts?.join()
++
++            val updatedDueTree = viewModel.dueTree
++            val updatedFilteredDeckNode = updatedDueTree?.find(filteredDeckId)
++            assertThat("filtered deck has no cards after", updatedFilteredDeckNode?.hasCardsReadyToStudy(), equalTo(false))
+         }
+     }
+
+@@ -126,7 +128,8 @@
+
+             // ChangeManager assert
+             ensureOpsExecuted(1) {
+-                viewModel.emptyFilteredDeck(filteredDeckId).join()
++                viewModel.emptyFilteredDeck(filteredDeckId).join()
++                viewModel.loadDeckCounts?.join()
+             }
+
+             // backend assert

@@ -1,0 +1,32 @@
+--- AnkiDroid/src/test/java/com/ichi2/anki/deckpicker/DeckPickerViewModelTest.kt
++++ AnkiDroid/src/test/java/com/ichi2/anki/deckpicker/DeckPickerViewModelTest.kt
+@@ -118,17 +118,20 @@
+     }
+
+     @Test
+-    fun `empty filtered - flows`() {
++    fun `empty filtered - refreshes deck list`() {
+         runTest {
+-            viewModel.flowOfDeckCountsChanged.test {
+-                val filteredDeckId = moveAllCardsToFilteredDeck()
+-                expectNoEvents()
+-                viewModel.emptyFilteredDeck(filteredDeckId).join()
+-                awaitItem()
+-                expectNoEvents()
+-                viewModel.emptyFilteredDeck(filteredDeckId).join()
+-                awaitItem()
+-            }
++            val filteredDeckId = moveAllCardsToFilteredDeck()
++
++            viewModel.updateDeckList()
++            viewModel.loadDeckCounts?.cancel() // prevent hang
++
++            val initialFilteredDeckNode = viewModel.dueTree?.find(filteredDeckId)
++
++            viewModel.emptyFilteredDeck(filteredDeckId).join()
++            viewModel.loadDeckCounts?.cancel() // prevent hang
++
++            val updatedFilteredDeckNode = viewModel.dueTree?.find(filteredDeckId)
++            assertThat("filtered deck has no cards after", updatedFilteredDeckNode?.hasCardsReadyToStudy(), not(equalTo(true)))
+         }
+     }

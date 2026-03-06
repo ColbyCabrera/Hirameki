@@ -125,16 +125,20 @@ class DeckPickerViewModelTest : RobolectricTest() {
         runTest {
             val filteredDeckId = moveAllCardsToFilteredDeck()
 
-            viewModel.updateDeckList()
-            viewModel.loadDeckCounts?.cancel() // prevent hang
+            // Due tree should have a filtered deck with cards
+            viewModel.updateDeckList()?.join()
+            advanceUntilIdle()
+            val initialDueTree = viewModel.dueTree
+            val initialFilteredDeckNode = initialDueTree?.find(filteredDeckId)
+            assertThat("filtered deck has cards before", initialFilteredDeckNode?.hasCardsReadyToStudy(), equalTo(true))
 
-            val initialFilteredDeckNode = viewModel.dueTree?.find(filteredDeckId)
-
+            // Empty the filtered deck
             viewModel.emptyFilteredDeck(filteredDeckId).join()
-            viewModel.loadDeckCounts?.cancel() // prevent hang
+            advanceUntilIdle()
 
-            val updatedFilteredDeckNode = viewModel.dueTree?.find(filteredDeckId)
-            assertThat("filtered deck has no cards after", updatedFilteredDeckNode?.hasCardsReadyToStudy(), not(equalTo(true)))
+            val updatedDueTree = viewModel.dueTree
+            val updatedFilteredDeckNode = updatedDueTree?.find(filteredDeckId)
+            assertThat("filtered deck has no cards after", updatedFilteredDeckNode?.hasCardsReadyToStudy(), equalTo(false))
         }
     }
 
