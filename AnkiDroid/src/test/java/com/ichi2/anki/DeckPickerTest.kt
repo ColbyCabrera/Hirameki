@@ -12,6 +12,7 @@ import app.cash.turbine.test
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
+import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.DeckPickerContextMenu
@@ -63,7 +64,7 @@ class DeckPickerTest : RobolectricTest() {
         // Prevent BackupPromptDialog Compose overlay from blocking tests.
         // In Robolectric, getFirstInstallTime() returns 0 (epoch), making
         // the user appear non-new, so the dialog would otherwise show.
-        targetContext.sharedPrefs().edit { putBoolean("backupPromptDisabled", true) }
+        targetContext.sharedPrefs().edit { putBoolean(BackupPromptDialog.BACKUP_PROMPT_DISABLED, true) }
     }
 
     @Test
@@ -114,6 +115,7 @@ class DeckPickerTest : RobolectricTest() {
         val previousVersion = deckPicker.getPreviousVersion(preferences, newVersion)
         assertEquals(prevVersion, previousVersion)
         assertTrue(preferences.contains(DeckPicker.UPGRADE_VERSION_KEY))
+        preferences.edit { remove(DeckPicker.UPGRADE_VERSION_KEY) }
     }
 
     // TODO: startActivityNormallyOpenCollectionWithIntent triggers full DeckPicker lifecycle
@@ -683,8 +685,11 @@ class DeckPickerTest : RobolectricTest() {
             Intent(),
         )
         ShadowLooper.idleMainLooper()
-        function(deckPicker)
-        ShadowLooper.idleMainLooper()
+        try {
+            function(deckPicker)
+        } finally {
+            ShadowLooper.idleMainLooper()
+        }
     }
 
     private fun setIntroductionSlidesShown(shown: Boolean) {
