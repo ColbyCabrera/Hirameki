@@ -93,8 +93,13 @@ class ExportDialogFragment : DialogFragment() {
                     val cardsState = remember { mutableStateOf(CardsExportState()) }
 
                     val showDeckSelector = selectedFormatIndex.intValue != 0 && extraType == null
-                    val showSelectedNotesLabel =
-                        selectedFormatIndex.intValue != 0 && extraType != null
+                    val selectedItemsLabelRes =
+                        if (selectedFormatIndex.intValue != 0 && extraType != null) {
+                            when (extraType) {
+                                ExportType.Notes -> R.string.exporting_selected_notes
+                                ExportType.Cards -> R.string.exporting_selected_cards
+                            }
+                        } else null
 
                     LaunchedEffect(Unit) {
                         decksLoading.value = true
@@ -128,7 +133,7 @@ class ExportDialogFragment : DialogFragment() {
                         onDeckSelected = { deck -> selectedDeck.value = deck },
                         decksLoading = decksLoading.value,
                         showDeckSelector = showDeckSelector,
-                        showSelectedNotesLabel = showSelectedNotesLabel,
+                        selectedItemsLabelRes = selectedItemsLabelRes,
                         collectionState = collectionState.value,
                         onCollectionStateChanged = { collectionState.value = it },
                         apkgState = apkgState.value,
@@ -142,12 +147,13 @@ class ExportDialogFragment : DialogFragment() {
                             when (selectedFormatIndex.intValue) {
                                 0 -> handleCollectionExport(collectionState.value)
                                 1 -> handleAnkiPackageExport(
-                                    apkgState.value,
-                                    selectedDeck.value
+                                    apkgState.value, selectedDeck.value
                                 )
+
                                 2 -> handleNotesInPlainTextExport(
                                     notesState.value, selectedDeck.value
                                 )
+
                                 3 -> handleCardsInPlainTextExport(
                                     cardsState.value, selectedDeck.value
                                 )
@@ -192,7 +198,8 @@ class ExportDialogFragment : DialogFragment() {
 
     private fun getNonCollectionNamePrefix(selectedDeck: DeckNameId?): String =
         when (arguments?.getSerializableCompat<ExportType>(ARG_TYPE)) {
-            ExportType.Notes, ExportType.Cards -> CollectionManager.TR.exportingSelectedNotes()
+            ExportType.Notes -> CollectionManager.TR.exportingSelectedNotes()
+            ExportType.Cards -> getString(R.string.exporting_selected_cards)
             else -> selectedDeck?.name
                 ?: requireActivity().getString(R.string.card_browser_all_decks)
         }

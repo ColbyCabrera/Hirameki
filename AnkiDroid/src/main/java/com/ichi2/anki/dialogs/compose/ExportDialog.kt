@@ -92,7 +92,7 @@ fun ExportDialog(
     onDeckSelected: (DeckNameId) -> Unit,
     decksLoading: Boolean,
     showDeckSelector: Boolean,
-    showSelectedNotesLabel: Boolean,
+    selectedItemsLabelRes: Int?,
     collectionState: CollectionExportState,
     onCollectionStateChanged: (CollectionExportState) -> Unit,
     apkgState: ApkgExportState,
@@ -104,7 +104,13 @@ fun ExportDialog(
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(onDismissRequest = onDismissRequest, confirmButton = {
+    AlertDialog(onDismissRequest = onDismissRequest, title = {
+        val titleRes = when (exportFormats.indexOf(selectedFormat)) {
+            0 -> R.string.export_collection
+            else -> R.string.export_deck
+        }
+        Text(text = stringResource(titleRes))
+    }, confirmButton = {
         TextButton(
             onClick = onConfirm,
             enabled = !decksLoading,
@@ -143,9 +149,9 @@ fun ExportDialog(
                 )
             }
 
-            if (showSelectedNotesLabel) {
+            selectedItemsLabelRes?.let { labelRes ->
                 Text(
-                    text = stringResource(R.string.exporting_selected_notes),
+                    text = stringResource(labelRes),
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
@@ -342,7 +348,7 @@ fun ExportDialogPreview() {
     var selectedDeck by remember { mutableStateOf(decks[0]) }
     var decksLoading by remember { mutableStateOf(false) }
     var showDeckSelector by remember { mutableStateOf(true) }
-    var showNotesLabel by remember { mutableStateOf(false) }
+    var selectedItemsLabelRes by remember { mutableStateOf<Int?>(null) }
 
     var collectionState by remember { mutableStateOf(CollectionExportState()) }
     var apkgState by remember { mutableStateOf(ApkgExportState()) }
@@ -359,7 +365,7 @@ fun ExportDialogPreview() {
         onDeckSelected = { selectedDeck = it },
         decksLoading = decksLoading,
         showDeckSelector = showDeckSelector,
-        showSelectedNotesLabel = showNotesLabel,
+        selectedItemsLabelRes = selectedItemsLabelRes,
         collectionState = collectionState,
         onCollectionStateChanged = { collectionState = it },
         apkgState = apkgState,
