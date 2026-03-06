@@ -20,11 +20,33 @@
  ****************************************************************************************/
 package com.ichi2.anki.dialogs.compose
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -82,74 +104,68 @@ fun ExportDialog(
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                enabled = !decksLoading,
-            ) {
-                Text(text = stringResource(R.string.dialog_ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(R.string.dialog_cancel))
-            }
-        },
-        text = {
-            Column(
-                modifier =
-                    Modifier
-                        .verticalScroll(rememberScrollState()),
-            ) {
-                // I'm not using HtmlCompat.fromHtml here because it's not directly supported in Compose.
-                // The strings will be plain text. If HTML is required, a more complex solution is needed.
-                Text(text = stringResource(R.string.exporting_export_format))
+    AlertDialog(onDismissRequest = onDismissRequest, confirmButton = {
+        TextButton(
+            onClick = onConfirm,
+            enabled = !decksLoading,
+        ) {
+            Text(text = stringResource(R.string.dialog_ok))
+        }
+    }, dismissButton = {
+        TextButton(onClick = onDismissRequest) {
+            Text(text = stringResource(R.string.dialog_cancel))
+        }
+    }, text = {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+        ) {
+            // I'm not using HtmlCompat.fromHtml here because it's not directly supported in Compose.
+            // The strings will be plain text. If HTML is required, a more complex solution is needed.
+            Text(text = stringResource(R.string.exporting_export_format))
+            DropdownSelector(
+                options = exportFormats,
+                selectedOption = selectedFormat,
+                onOptionSelected = onFormatSelected,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(text = stringResource(R.string.exporting_include))
+
+            if (showDeckSelector) {
                 DropdownSelector(
-                    options = exportFormats,
-                    selectedOption = selectedFormat,
-                    onOptionSelected = onFormatSelected,
+                    options = decks.map { it.name },
+                    selectedOption = selectedDeck?.name ?: "",
+                    onOptionSelected = { name ->
+                        decks.find { it.name == name }?.let { onDeckSelected(it) }
+                    },
+                    loading = decksLoading,
                 )
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
+            if (showSelectedNotesLabel) {
+                Text(
+                    text = stringResource(R.string.exporting_selected_notes),
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                )
+            }
 
-                Text(text = stringResource(R.string.exporting_include))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                if (showDeckSelector) {
-                    DropdownSelector(
-                        options = decks.map { it.name },
-                        selectedOption = selectedDeck?.name ?: "",
-                        onOptionSelected = { name -> decks.find { it.name == name }?.let { onDeckSelected(it) } },
-                        loading = decksLoading,
-                    )
-                }
-
-                if (showSelectedNotesLabel) {
-                    Text(
-                        text = stringResource(R.string.exporting_selected_notes),
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // This feels a bit clumsy, but it mirrors the logic of showing/hiding the layouts
-                // based on the selected export format index.
-                when (exportFormats.indexOf(selectedFormat)) {
-                    0 -> CollectionExportOptions(collectionState, onCollectionStateChanged)
-                    1 -> ApkgExportOptions(apkgState, onApkgStateChanged)
-                    2 -> NotesExportOptions(notesState, onNotesStateChanged)
-                    3 -> CardsExportOptions(cardsState, onCardsStateChanged)
-                }
+            // This feels a bit clumsy, but it mirrors the logic of showing/hiding the layouts
+            // based on the selected export format index.
+            when (exportFormats.indexOf(selectedFormat)) {
+                0 -> CollectionExportOptions(collectionState, onCollectionStateChanged)
+                1 -> ApkgExportOptions(apkgState, onApkgStateChanged)
+                2 -> NotesExportOptions(notesState, onNotesStateChanged)
+                3 -> CardsExportOptions(cardsState, onCardsStateChanged)
             }
         }
-    )
+    })
 }
 
 @Composable
@@ -282,10 +298,9 @@ fun DropdownSelector(
             onExpandedChange = { expanded = !expanded },
         ) {
             OutlinedTextField(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                 readOnly = true,
                 value = selectedOption,
                 onValueChange = {},
@@ -295,6 +310,7 @@ fun DropdownSelector(
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
+                shape = MaterialTheme.shapes.medium
             ) {
                 options.forEach { selectionOption ->
                     DropdownMenuItem(
@@ -317,8 +333,10 @@ fun DropdownSelector(
 @Preview(showBackground = true)
 @Composable
 fun ExportDialogPreview() {
-    val exportFormats = listOf("Collection (.colpkg)", "Deck (.apkg)", "Notes (.txt)", "Cards (.txt)")
-    val decks = listOf(DeckNameId("All Decks", 0), DeckNameId("Default", 1), DeckNameId("French", 2))
+    val exportFormats =
+        listOf("Collection (.colpkg)", "Deck (.apkg)", "Notes (.txt)", "Cards (.txt)")
+    val decks =
+        listOf(DeckNameId("All Decks", 0), DeckNameId("Default", 1), DeckNameId("French", 2))
 
     var selectedFormat by remember { mutableStateOf(exportFormats[1]) }
     var selectedDeck by remember { mutableStateOf(decks[0]) }
@@ -332,26 +350,26 @@ fun ExportDialogPreview() {
     var cardsState by remember { mutableStateOf(CardsExportState()) }
 
 
-        ExportDialog(
-            exportFormats = exportFormats,
-            selectedFormat = selectedFormat,
-            onFormatSelected = { selectedFormat = it },
-            decks = decks,
-            selectedDeck = selectedDeck,
-            onDeckSelected = { selectedDeck = it },
-            decksLoading = decksLoading,
-            showDeckSelector = showDeckSelector,
-            showSelectedNotesLabel = showNotesLabel,
-            collectionState = collectionState,
-            onCollectionStateChanged = { collectionState = it },
-            apkgState = apkgState,
-            onApkgStateChanged = { apkgState = it },
-            notesState = notesState,
-            onNotesStateChanged = { notesState = it },
-            cardsState = cardsState,
-            onCardsStateChanged = { cardsState = it },
-            onDismissRequest = {},
-            onConfirm = {},
-        )
+    ExportDialog(
+        exportFormats = exportFormats,
+        selectedFormat = selectedFormat,
+        onFormatSelected = { selectedFormat = it },
+        decks = decks,
+        selectedDeck = selectedDeck,
+        onDeckSelected = { selectedDeck = it },
+        decksLoading = decksLoading,
+        showDeckSelector = showDeckSelector,
+        showSelectedNotesLabel = showNotesLabel,
+        collectionState = collectionState,
+        onCollectionStateChanged = { collectionState = it },
+        apkgState = apkgState,
+        onApkgStateChanged = { apkgState = it },
+        notesState = notesState,
+        onNotesStateChanged = { notesState = it },
+        cardsState = cardsState,
+        onCardsStateChanged = { cardsState = it },
+        onDismissRequest = {},
+        onConfirm = {},
+    )
 
 }
