@@ -172,12 +172,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     override val onError = MutableSharedFlow<String>()
 
-    /**
-     * A notification that the study counts have changed
-     */
-    // TODO: most of the recalculation should be moved inside the ViewModel
-    val flowOfDeckCountsChanged = MutableSharedFlow<Unit>()
-
     var loadDeckCounts: Job? = null
         private set
 
@@ -450,7 +444,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             decks.select(deckId)
         }
         undoableOp { sched.emptyFilteredDeck(decks.selected()) }
-        flowOfDeckCountsChanged.emit(Unit)
+        updateDeckList()?.join()
     }
 
 

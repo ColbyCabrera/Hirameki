@@ -118,21 +118,6 @@ class DeckPickerViewModelTest : RobolectricTest() {
     }
 
     @Test
-    fun `empty filtered - flows`() {
-        runTest {
-            viewModel.flowOfDeckCountsChanged.test {
-                val filteredDeckId = moveAllCardsToFilteredDeck()
-                expectNoEvents()
-                viewModel.emptyFilteredDeck(filteredDeckId).join()
-                awaitItem()
-                expectNoEvents()
-                viewModel.emptyFilteredDeck(filteredDeckId).join()
-                awaitItem()
-            }
-        }
-    }
-
-    @Test
     fun `empty filtered - undoable`() {
         runTest {
             val filteredDeckId = moveAllCardsToFilteredDeck()
