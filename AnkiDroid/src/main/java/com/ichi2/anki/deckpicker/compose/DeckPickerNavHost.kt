@@ -101,7 +101,7 @@ import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 private data class DeckPickerDrawerState(
     val fragmented: Boolean,
     val deckList: DeckPickerViewModel.FlattenedDeckList,
-    val isRefreshing: Boolean,
+    val isSyncing: Boolean,
     val searchQuery: String,
     val studyOptionsData: StudyOptionsData?,
     val requestSearchFocus: Boolean,
@@ -291,7 +291,7 @@ private fun DeckPickerMainContent(
         initialValue = DeckPickerViewModel.FlattenedDeckList(emptyList(), false),
     )
     val isInInitialState by viewModel.flowOfDeckListInInitialState.collectAsStateWithLifecycle()
-    val isRefreshing by viewModel.isSyncing.collectAsStateWithLifecycle(initialValue = false)
+    val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val syncDialogState by viewModel.syncDialogState.collectAsStateWithLifecycle()
     val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
@@ -486,7 +486,7 @@ private fun DeckPickerMainContent(
     val deckPickerDrawerState = DeckPickerDrawerState(
         fragmented = fragmented,
         deckList = deckList,
-        isRefreshing = isRefreshing,
+        isSyncing = isSyncing,
         searchQuery = searchQuery,
         studyOptionsData = studyOptionsData,
         requestSearchFocus = requestSearchFocus,
@@ -592,7 +592,7 @@ private fun DeckPickerWithDrawer(
         AnkiDroidAppComposable(
             fragmented = state.fragmented,
             decks = state.deckList.data,
-            isRefreshing = state.isRefreshing,
+            isSyncing = state.isSyncing,
             onRefresh = actions.onSync,
             searchQuery = state.searchQuery,
             onSearchQueryChanged = actions.onSearchQueryChanged,
