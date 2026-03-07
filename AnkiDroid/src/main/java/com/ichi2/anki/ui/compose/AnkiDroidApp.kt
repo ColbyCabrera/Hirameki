@@ -8,7 +8,7 @@
  Foundation; either version 3 of the License, or (at your option) any later
  version.
 
- This program is distributed in the hope that it is useful, but WITHOUT ANY
+ This program is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
@@ -85,7 +85,7 @@ import com.ichi2.anki.ui.compose.components.SyncIcon
 fun AnkiDroidApp(
     fragmented: Boolean,
     decks: List<DisplayDeckNode>,
-    isRefreshing: Boolean,
+    isSyncing: Boolean,
     onRefresh: () -> Unit,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
@@ -179,49 +179,47 @@ fun AnkiDroidApp(
                                 style = MaterialTheme.typography.displayMediumEmphasized,
                                 modifier = Modifier.graphicsLayer {
                                     alpha = 1f - searchAnim
-                                }
-                            )
+                                })
                         },
                         actions = {
                             if (isSearchOpen) {
                                 SearchBar(
                                     inputField = {
-                                        SearchBarDefaults.InputField(
-                                            query = searchQuery,
-                                            onQueryChange = onSearchQueryChanged,
-                                            onSearch = { /* Search is performed as user types */ },
-                                            expanded = true,
-                                            onExpandedChange = { },
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .focusRequester(searchFocusRequester)
-                                                .graphicsLayer {
-                                                    alpha = searchAnim
-                                                    translationY =
-                                                        searchOffsetPx * (1f - searchAnim)
-                                                    scaleX = 0.98f + 0.02f * searchAnim
-                                                    scaleY = 0.98f + 0.02f * searchAnim
-                                                },
-                                            placeholder = { Text(stringResource(R.string.search_decks)) },
-                                            leadingIcon = {
+                                    SearchBarDefaults.InputField(
+                                        query = searchQuery,
+                                        onQueryChange = onSearchQueryChanged,
+                                        onSearch = { /* Search is performed as user types */ },
+                                        expanded = true,
+                                        onExpandedChange = { },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .focusRequester(searchFocusRequester)
+                                            .graphicsLayer {
+                                                alpha = searchAnim
+                                                translationY = searchOffsetPx * (1f - searchAnim)
+                                                scaleX = 0.98f + 0.02f * searchAnim
+                                                scaleY = 0.98f + 0.02f * searchAnim
+                                            },
+                                        placeholder = { Text(stringResource(R.string.search_decks)) },
+                                        leadingIcon = {
+                                            Icon(
+                                                painter = painterResource(R.drawable.search_24px),
+                                                contentDescription = stringResource(R.string.search_decks)
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            IconButton(onClick = {
+                                                onSearchQueryChanged("")
+                                                isSearchOpen = false
+                                            }) {
                                                 Icon(
-                                                    painter = painterResource(R.drawable.search_24px),
-                                                    contentDescription = stringResource(R.string.search_decks)
+                                                    Icons.Default.Close,
+                                                    contentDescription = stringResource(R.string.close),
                                                 )
-                                            },
-                                            trailingIcon = {
-                                                IconButton(onClick = {
-                                                    onSearchQueryChanged("")
-                                                    isSearchOpen = false
-                                                }) {
-                                                    Icon(
-                                                        Icons.Default.Close,
-                                                        contentDescription = stringResource(R.string.close),
-                                                    )
-                                                }
-                                            },
-                                        )
-                                    },
+                                            }
+                                        },
+                                    )
+                                },
                                     expanded = false,
                                     onExpandedChange = { },
                                     modifier = Modifier
@@ -231,13 +229,11 @@ fun AnkiDroidApp(
                                             alpha = searchAnim
                                         },
                                     shape = SearchBarDefaults.inputFieldShape,
-                                    content = { }
-                                )
+                                    content = { })
                             } else {
                                 FilledIconButton(
                                     onClick = { isSearchOpen = true },
-                                    modifier = Modifier
-                                        .graphicsLayer {
+                                    modifier = Modifier.graphicsLayer {
                                             alpha = 1f - searchAnim
                                         },
                                     colors = IconButtonDefaults.filledIconButtonColors(
@@ -251,7 +247,7 @@ fun AnkiDroidApp(
                                     )
                                 }
                                 SyncIcon(
-                                    isSyncing = isRefreshing,
+                                    isSyncing = isSyncing,
                                     syncState = syncState,
                                     onRefresh = onRefresh,
                                     modifier = Modifier
@@ -259,8 +255,7 @@ fun AnkiDroidApp(
                                         .width(48.dp)
                                         .graphicsLayer {
                                             alpha = 1f - searchAnim
-                                        }
-                                )
+                                        })
                             }
                             if (studyOptionsData != null) {
                                 FilledIconButton(
@@ -368,7 +363,6 @@ fun AnkiDroidApp(
                     Box(modifier = Modifier.weight(1f)) {
                         DeckPickerContent(
                             decks = decks,
-                            isRefreshing = isRefreshing,
                             onRefresh = onRefresh,
                             isInInitialState = isInInitialState,
                             onDeckClick = onDeckClick,
@@ -398,10 +392,10 @@ fun AnkiDroidApp(
         // Phone layout
         DeckPickerScreen(
             decks = decks,
-            isRefreshing = isRefreshing,
+            isSyncing = isSyncing,
+            onRefresh = onRefresh,
             searchFocusRequester = searchFocusRequester,
             snackbarHostState = snackbarHostState,
-            onRefresh = onRefresh,
             searchQuery = searchQuery,
             onSearchQueryChanged = onSearchQueryChanged,
             onDeckClick = onDeckClick,

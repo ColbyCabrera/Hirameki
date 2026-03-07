@@ -202,7 +202,6 @@ private fun RenderDeck(
 @Composable
 fun DeckPickerContent(
     decks: List<DisplayDeckNode>,
-    isRefreshing: Boolean,
     onRefresh: () -> Unit,
     listState: LazyListState,
     modifier: Modifier = Modifier,
@@ -259,11 +258,8 @@ fun DeckPickerContent(
     ) {
 
         PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
-            state = state,
-            modifier = Modifier.fillMaxSize(),
-            indicator = {
+            isRefreshing = false, // Always false to prevent pinning and allow immediate retraction animation
+            onRefresh = onRefresh, state = state, modifier = Modifier.fillMaxSize(), indicator = {
                 Box(
                     modifier = Modifier
                         .padding(top = contentPadding.calculateTopPadding() + 16.dp)
@@ -338,11 +334,10 @@ fun DeckPickerContent(
 @Composable
 fun DeckPickerScreen(
     decks: List<DisplayDeckNode>,
-    isRefreshing: Boolean,
+    isSyncing: Boolean,
     onRefresh: () -> Unit,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
-    modifier: Modifier = Modifier,
     onDeckClick: (DisplayDeckNode) -> Unit,
     onExpandClick: (DisplayDeckNode) -> Unit,
     onAddNote: () -> Unit,
@@ -359,10 +354,11 @@ fun DeckPickerScreen(
     onNavigationIconClick: () -> Unit,
     syncState: SyncIconState,
     isInInitialState: Boolean?,
+    fabMenuExpanded: Boolean,
+    onFabMenuExpandedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     searchFocusRequester: FocusRequester = FocusRequester(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    fabMenuExpanded: Boolean,
-    onFabMenuExpandedChange: (Boolean) -> Unit
 ) {
     var isSearchOpen by remember { mutableStateOf(false) }
     val searchAnim by animateFloatAsState(
@@ -399,8 +395,7 @@ fun DeckPickerScreen(
                             style = MaterialTheme.typography.displayMediumEmphasized,
                             modifier = Modifier.graphicsLayer {
                                 alpha = 1f - searchAnim
-                            }
-                        )
+                            })
                     },
                     navigationIcon = {
                         if (!isSearchOpen) {
@@ -423,41 +418,41 @@ fun DeckPickerScreen(
                         if (isSearchOpen) {
                             SearchBar(
                                 inputField = {
-                                    SearchBarDefaults.InputField(
-                                        query = searchQuery,
-                                        onQueryChange = onSearchQueryChanged,
-                                        onSearch = { /* Search is performed as user types */ },
-                                        expanded = true,
-                                        onExpandedChange = { },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .focusRequester(searchFocusRequester)
-                                            .graphicsLayer {
-                                                alpha = searchAnim
-                                                translationY = searchOffsetPx * (1f - searchAnim)
-                                                scaleX = 0.98f + 0.02f * searchAnim
-                                                scaleY = 0.98f + 0.02f * searchAnim
-                                            },
-                                        placeholder = { Text(stringResource(R.string.search_decks)) },
-                                        leadingIcon = {
+                                SearchBarDefaults.InputField(
+                                    query = searchQuery,
+                                    onQueryChange = onSearchQueryChanged,
+                                    onSearch = { /* Search is performed as user types */ },
+                                    expanded = true,
+                                    onExpandedChange = { },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .focusRequester(searchFocusRequester)
+                                        .graphicsLayer {
+                                            alpha = searchAnim
+                                            translationY = searchOffsetPx * (1f - searchAnim)
+                                            scaleX = 0.98f + 0.02f * searchAnim
+                                            scaleY = 0.98f + 0.02f * searchAnim
+                                        },
+                                    placeholder = { Text(stringResource(R.string.search_decks)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.search_24px),
+                                            contentDescription = stringResource(R.string.search_decks)
+                                        )
+                                    },
+                                    trailingIcon = {
+                                        IconButton(onClick = {
+                                            onSearchQueryChanged("")
+                                            isSearchOpen = false
+                                        }) {
                                             Icon(
-                                                painter = painterResource(R.drawable.search_24px),
-                                                contentDescription = stringResource(R.string.search_decks)
+                                                Icons.Default.Close,
+                                                contentDescription = stringResource(R.string.close)
                                             )
-                                        },
-                                        trailingIcon = {
-                                            IconButton(onClick = {
-                                                onSearchQueryChanged("")
-                                                isSearchOpen = false
-                                            }) {
-                                                Icon(
-                                                    Icons.Default.Close,
-                                                    contentDescription = stringResource(R.string.close)
-                                                )
-                                            }
-                                        },
-                                    )
-                                },
+                                        }
+                                    },
+                                )
+                            },
                                 expanded = false,
                                 onExpandedChange = { },
                                 modifier = Modifier
@@ -467,8 +462,7 @@ fun DeckPickerScreen(
                                         alpha = searchAnim
                                     },
                                 shape = SearchBarDefaults.inputFieldShape,
-                                content = { }
-                            )
+                                content = { })
                         } else {
                             FilledIconButton(
                                 onClick = { isSearchOpen = true },
@@ -488,7 +482,7 @@ fun DeckPickerScreen(
                                 )
                             }
                             SyncIcon(
-                                isSyncing = isRefreshing,
+                                isSyncing = isSyncing,
                                 syncState = syncState,
                                 onRefresh = onRefresh,
                                 modifier = Modifier
@@ -497,8 +491,7 @@ fun DeckPickerScreen(
                                     .padding(end = 8.dp)
                                     .graphicsLayer {
                                         alpha = 1f - searchAnim
-                                    }
-                            )
+                                    })
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -513,9 +506,7 @@ fun DeckPickerScreen(
         ) { paddingValues ->
             DeckPickerContent(
                 decks = decks,
-                isRefreshing = isRefreshing,
                 onRefresh = onRefresh,
-
                 onDeckClick = onDeckClick,
                 onExpandClick = onExpandClick,
                 onDeckOptions = onDeckOptions,
@@ -553,7 +544,6 @@ fun DeckPickerScreen(
 fun DeckPickerContentPreview() {
     DeckPickerContent(
         decks = emptyList(),
-        isRefreshing = false,
         onRefresh = {},
         onDeckClick = {},
         onExpandClick = {},
@@ -575,7 +565,7 @@ fun DeckPickerContentPreview() {
 fun DeckPickerScreenPreview() {
     DeckPickerScreen(
         decks = emptyList(),
-        isRefreshing = false,
+        isSyncing = false,
         onRefresh = {},
         searchQuery = "",
         onSearchQueryChanged = {},
