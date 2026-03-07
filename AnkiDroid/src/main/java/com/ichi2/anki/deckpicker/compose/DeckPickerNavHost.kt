@@ -291,7 +291,7 @@ private fun DeckPickerMainContent(
         initialValue = DeckPickerViewModel.FlattenedDeckList(emptyList(), false),
     )
     val isInInitialState by viewModel.flowOfDeckListInInitialState.collectAsStateWithLifecycle()
-    val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle(initialValue = false)
+    val isSyncing by viewModel.isSyncing.collectAsStateWithLifecycle()
     val syncState by viewModel.syncState.collectAsStateWithLifecycle()
     val syncDialogState by viewModel.syncDialogState.collectAsStateWithLifecycle()
     val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
