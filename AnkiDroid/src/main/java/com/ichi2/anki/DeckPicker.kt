@@ -1369,7 +1369,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             // For upgrades, we check if we are upgrading
             // to a version that contains additions to the database integrity check routine that we would
             // like to run on all collections. A missing version number is assumed to be a fresh
-            // installation of AnkiDroid and we don't run the check.
+            // installation of AnkiDroid, and we don't run the check.
             val current = VersionUtils.pkgVersionCode
             Timber.i("Current AnkiDroid version: %s", current)
             val previous: Long = if (preferences.contains(UPGRADE_VERSION_KEY)) {
@@ -1630,7 +1630,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      */
     @Suppress("DEPRECATION")
     override fun sync(conflict: ConflictResolution?) {
-        if (!viewModel.isSyncing.compareAndSet(false, true)) {
+        if (!viewModel.isSyncing.compareAndSet(expect = false, update = true)) {
             Timber.w("Sync already in progress")
             return
         }
@@ -1860,7 +1860,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         const val REQUEST_STORAGE_PERMISSION = 0
 
         // For automatic syncing
-        // 10 minutes in milliseconds..
+        // 10 minutes in milliseconds.
         private const val AUTOMATIC_SYNC_MINIMAL_INTERVAL_IN_MINUTES: Long = 10
     }
 
