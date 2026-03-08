@@ -20,12 +20,6 @@ package com.ichi2.anki.mediacheck
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import anki.media.CheckMediaResponse
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
@@ -33,6 +27,13 @@ import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.launchCatchingIO
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.async.deleteMedia
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import timber.log.Timber
 
 @NeedsTest("Test the media check process i.e. the buttons and views")
 class MediaCheckViewModel : ViewModel() {
@@ -74,7 +75,11 @@ class MediaCheckViewModel : ViewModel() {
     }
 
     private fun launchWithProgress(messageRes: Int, block: suspend CoroutineScope.() -> Unit): Job? {
-        if (_progressState.value != ProgressState.Idle) return null
+        if (_progressState.value != ProgressState.Idle) {
+            Timber.w("launchWithProgress: An operation is already running, dropping request.")
+            _uiEvent.trySend(UiEvent.ShowError("An operation is already running."))
+            return null
+        }
 
         return launchCatchingIO(
             errorMessageHandler = { _uiEvent.send(UiEvent.ShowError(it)) }

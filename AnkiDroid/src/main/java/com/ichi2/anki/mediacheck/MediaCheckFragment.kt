@@ -119,6 +119,10 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
 
                 launch {
                     viewModel.progressState.collectLatest { state ->
+                        val isIdle = state is MediaCheckViewModel.ProgressState.Idle
+                        deleteMediaButton.isEnabled = isIdle
+                        tagMissingButton.isEnabled = isIdle
+
                         when (state) {
                             is MediaCheckViewModel.ProgressState.ActiveRes -> {
                                 withProgress(state.messageRes) {
@@ -134,8 +138,10 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
 
         setupButtonListeners()
 
-        // Start checking media automatically on launch
-        viewModel.checkMedia()
+        // Start checking media automatically on launch if there is no prior result and no ongoing check
+        if (viewModel.mediaCheckResult.value == null && viewModel.progressState.value is MediaCheckViewModel.ProgressState.Idle) {
+            viewModel.checkMedia()
+        }
     }
 
     private fun setupMenu() {
