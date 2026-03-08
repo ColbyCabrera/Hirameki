@@ -32,7 +32,9 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.ichi2.anki.CollectionManager.TR
@@ -48,6 +50,7 @@ import com.ichi2.utils.show
 import com.ichi2.utils.title
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -59,8 +62,9 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
 
     private lateinit var deleteMediaButton: MaterialButton
     private lateinit var tagMissingButton: MaterialButton
-
     private lateinit var webView: WebView
+
+    private var previousMenuProvider: MenuProvider? = null
 
     override fun onViewCreated(
         view: View,
@@ -82,44 +86,48 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
         (requireActivity() as AppCompatActivity).setSupportActionBar(toolbar)
 
-        lifecycleScope.launch {
-            viewModel.mediaCheckResult.collectLatest { result ->
-                updateWebView(result?.report.orEmpty())
-                if (result != null) {
-                    tagMissingButton.visibility = if (result.missingCount != 0) View.VISIBLE else View.GONE
-                    deleteMediaButton.visibility = if (result.unusedCount != 0) View.VISIBLE else View.GONE
-                    if (result.haveTrash) setupMenu()
-                }
-            }
-        }
-
-        lifecycleScope.launch {
-            viewModel.uiEvent.collectLatest { event ->
-                when (event) {
-                    is MediaCheckViewModel.UiEvent.ShowResultDialog -> showResultDialog(event.titleRes, event.message)
-                    is MediaCheckViewModel.UiEvent.ShowTrashRestoredDialog -> showTrashRestoredDialog()
-                    is MediaCheckViewModel.UiEvent.ShowTrashDeletedDialog -> showTrashDeletedDialog()
-                    is MediaCheckViewModel.UiEvent.ShowDeletionResult -> showDeletionResult()
-                    is MediaCheckViewModel.UiEvent.ShowError -> {
-                        AlertDialog.Builder(requireContext()).show {
-                            title(R.string.vague_error)
-                            message(text = event.message)
-                            positiveButton(R.string.dialog_ok)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.mediaCheckResult.collectLatest { result ->
+                        updateWebView(result?.report.orEmpty())
+                        if (result != null) {
+                            tagMissingButton.visibility = if (result.missingCount != 0) View.VISIBLE else View.GONE
+                            deleteMediaButton.visibility = if (result.unusedCount != 0) View.VISIBLE else View.GONE
+                            if (result.haveTrash) setupMenu()
                         }
                     }
                 }
-            }
-        }
 
-        lifecycleScope.launch {
-            viewModel.progressState.collectLatest { state ->
-                when (state) {
-                    is MediaCheckViewModel.ProgressState.ActiveRes -> {
-                        withProgress(state.messageRes) {
-                            awaitCancellation()
+                launch {
+                    viewModel.uiEvent.collectLatest { event ->
+                        when (event) {
+                            is MediaCheckViewModel.UiEvent.ShowResultDialog -> showResultDialog(event.titleRes, event.message)
+                            is MediaCheckViewModel.UiEvent.ShowTrashRestoredDialog -> showTrashRestoredDialog()
+                            is MediaCheckViewModel.UiEvent.ShowTrashDeletedDialog -> showTrashDeletedDialog()
+                            is MediaCheckViewModel.UiEvent.ShowDeletionResult -> showDeletionResult()
+                            is MediaCheckViewModel.UiEvent.ShowError -> {
+                                AlertDialog.Builder(requireContext()).show {
+                                    title(R.string.vague_error)
+                                    message(text = event.message)
+                                    positiveButton(R.string.dialog_ok)
+                                }
+                            }
                         }
                     }
-                    MediaCheckViewModel.ProgressState.Idle -> {}
+                }
+
+                launch {
+                    viewModel.progressState.collectLatest { state ->
+                        when (state) {
+                            is MediaCheckViewModel.ProgressState.ActiveRes -> {
+                                withProgress(state.messageRes) {
+                                    awaitCancellation()
+                                }
+                            }
+                            MediaCheckViewModel.ProgressState.Idle -> {}
+                        }
+                    }
                 }
             }
         }
@@ -132,38 +140,40 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
 
     private fun setupMenu() {
         val menuHost: MenuHost = requireActivity()
-        menuHost.addMenuProvider(
-            object : MenuProvider {
-                override fun onCreateMenu(
-                    menu: Menu,
-                    menuInflater: MenuInflater,
-                ) {
-                    menuInflater.inflate(R.menu.media_check_menu, menu)
-                    menu.findItem(R.id.action_restore_trash).apply {
-                        isVisible = true
-                        title = TR.mediaCheckRestoreTrash().toSentenceCase(requireContext(), R.string.sentence_restore_deleted)
-                    }
-                    menu.findItem(R.id.action_empty_trash).apply {
-                        isVisible = true
-                        title = TR.mediaCheckEmptyTrash().toSentenceCase(requireContext(), R.string.sentence_empty_trash)
-                    }
-                }
+        previousMenuProvider?.let { menuHost.removeMenuProvider(it) }
 
-                override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
-                    when (menuItem.itemId) {
-                        R.id.action_restore_trash -> {
-                            confirmMediaRestore()
-                            true
-                        }
-                        R.id.action_empty_trash -> {
-                            deleteTrash()
-                            true
-                        }
-                        else -> false
+        val newProvider = object : MenuProvider {
+            override fun onCreateMenu(
+                menu: Menu,
+                menuInflater: MenuInflater,
+            ) {
+                menuInflater.inflate(R.menu.media_check_menu, menu)
+                menu.findItem(R.id.action_restore_trash).apply {
+                    isVisible = true
+                    title = TR.mediaCheckRestoreTrash().toSentenceCase(requireContext(), R.string.sentence_restore_deleted)
+                }
+                menu.findItem(R.id.action_empty_trash).apply {
+                    isVisible = true
+                    title = TR.mediaCheckEmptyTrash().toSentenceCase(requireContext(), R.string.sentence_empty_trash)
+                }
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
+                when (menuItem.itemId) {
+                    R.id.action_restore_trash -> {
+                        confirmMediaRestore()
+                        true
                     }
-            },
-            viewLifecycleOwner,
-        )
+                    R.id.action_empty_trash -> {
+                        deleteTrash()
+                        true
+                    }
+                    else -> false
+                }
+        }
+
+        menuHost.addMenuProvider(newProvider, viewLifecycleOwner)
+        previousMenuProvider = newProvider
     }
 
     private fun updateWebView(report: String) {
