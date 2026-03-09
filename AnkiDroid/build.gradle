@@ -306,7 +306,7 @@ tasks.register('assertNonzeroAndroidTests') {
     doLast {
         // androidTest currently creates one .xml file per emulator with aggregate results in this dir
         File folder = file("./build/outputs/androidTest-results/connected/flavors/play")
-        File[] listOfFiles = folder.listFiles({ d, f -> f =~ /.*.xml/ } as FilenameFilter)
+        File[] listOfFiles = folder.listFiles({ d, f -> f =~ /.*\.xml$/ } as FilenameFilter)
         for (File file : listOfFiles) {
             // The aggregate results file currently contains a line with this pattern holding test count
             String[] matches = file.readLines().findAll { it.contains('<testsuite') }
