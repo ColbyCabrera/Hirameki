@@ -24,7 +24,6 @@ import android.database.Cursor
 import android.database.SQLException
 import android.database.sqlite.SQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import timber.log.Timber
 
 /**
