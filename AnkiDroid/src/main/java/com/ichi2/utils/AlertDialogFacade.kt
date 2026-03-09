@@ -98,8 +98,8 @@ fun AlertDialog.Builder.message(
  */
 fun AlertDialog.Builder.iconAttr(
     @DrawableRes res: Int,
-) = apply {
-    return this.setIcon(Themes.getResFromAttr(this.context, res))
+): AlertDialog.Builder = apply {
+    setIcon(Themes.getResFromAttr(this.context, res))
 }
 
 fun AlertDialog.Builder.positiveButton(
@@ -307,7 +307,7 @@ fun AlertDialog.Builder.customListAdapterWithDecoration(
 }
 
 /**
- * Note: using [waitForPositiveButton] = true doesn't automatically close the dialog and it
+ * Note: using [waitForPositiveButton] = true doesn't automatically close the dialog, and it
  * requires a manual call to [android.app.Dialog.dismiss] inside the callback listening for text
  * input to replicate the standard dialog behavior.
  *
@@ -465,7 +465,7 @@ fun AlertDialog.Builder.titleWithHelpIcon(
     text: String? = null,
     block: View.OnClickListener,
 ) {
-    // setup the view for the dialog
+    // set up the view for the dialog
     val customTitleView =
         LayoutInflater.from(context).inflate(R.layout.alert_dialog_title_with_help, null, false)
     setCustomTitle(customTitleView)
