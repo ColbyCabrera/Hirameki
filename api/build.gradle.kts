@@ -63,8 +63,9 @@ extensions.configure<LibraryExtension> {
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
-        // Enable explicit API mode via compiler argument
-        freeCompilerArgs.add("-Xexplicit-api=strict")
+        if (!name.contains("test", ignoreCase = true)) {
+            freeCompilerArgs.add("-Xexplicit-api=strict")
+        }
     }
 }
 
