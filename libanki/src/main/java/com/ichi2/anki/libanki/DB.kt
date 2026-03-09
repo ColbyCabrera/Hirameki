@@ -135,7 +135,7 @@ class DB(
     }
 
     fun executeScript(sql: String) {
-        val queries = sql.split(";").dropLastWhile { it.isEmpty() }
+        val queries = sql.split(";").map { it.trim() }.filter { it.isNotBlank() }
         for (query in queries) {
             database.execSQL(query)
         }
