@@ -127,6 +127,7 @@ afterEvaluate {
 }
 
 val zipReleaseProvider = tasks.register<Zip>("zipRelease") {
+    dependsOn(tasks.named("publish"))
     from(layout.buildDirectory.dir("repos/releases"))
     destinationDirectory.set(layout.buildDirectory)
     archiveFileName.set("release-$version.zip")
