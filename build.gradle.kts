@@ -90,7 +90,7 @@ subprojects {
 
         https://kotlinlang.org/docs/java-to-kotlin-interop.html#default-methods-in-interfaces
 
-        and we used "all" because we don't have downstream consumers
+        and we used "no-compatibility" because we don't have downstream consumers
         https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
 
         Related to ExperimentalCoroutinesApi: this opt-in is added to enable usage of experimental
@@ -103,7 +103,7 @@ subprojects {
             compilerOptions {
                 allWarningsAsErrors.set(fatalWarnings)
                 val compilerArgs = mutableListOf(
-                    "-Xjvm-default=all",
+                    "-jvm-default=no-compatibility",
                     // https://youtrack.jetbrains.com/issue/KT-73255
                     // Apply @StringRes to both constructor params and generated properties
                     "-Xannotation-default-target=param-property"
