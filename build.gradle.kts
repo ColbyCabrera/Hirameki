@@ -25,7 +25,6 @@ import kotlin.time.Duration.Companion.milliseconds
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.parcelize) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
@@ -87,7 +86,7 @@ subprojects {
         /**
         Kotlin allows concrete function implementations inside interfaces.
         For those to work when Kotlin compilation targets the JVM backend, you have to enable the interoperability via
-        'freeCompilerArgs' in your Gradle file, and you have to choose one of the appropriate '-Xjvm-default' modes.
+        'freeCompilerArgs' in your Gradle file, and you have to choose one of the appropriate '-jvm-default' modes.
 
         https://kotlinlang.org/docs/java-to-kotlin-interop.html#default-methods-in-interfaces
 
