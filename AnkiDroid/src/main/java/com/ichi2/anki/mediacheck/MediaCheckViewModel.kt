@@ -17,25 +17,53 @@
 
 package com.ichi2.anki.mediacheck
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import anki.media.CheckMediaResponse
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.R
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.launchCatchingIO
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.async.deleteMedia
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.receiveAsFlow
+import timber.log.Timber
 
 @NeedsTest("Test the media check process i.e. the buttons and views")
 class MediaCheckViewModel : ViewModel() {
+
+    sealed class ProgressState {
+        data object Idle : ProgressState()
+        data class ActiveRes(@StringRes val messageRes: Int) : ProgressState()
+    }
+
+    sealed class UiEvent {
+        data class ShowResultDialog(@StringRes val titleRes: Int, val message: String) : UiEvent()
+        data object ShowTrashRestoredDialog : UiEvent()
+        data object ShowTrashDeletedDialog : UiEvent()
+        data object ShowDeletionResult : UiEvent()
+        data class ShowError(val message: String) : UiEvent()
+        data class ShowErrorRes(@StringRes val messageRes: Int) : UiEvent()
+    }
+
     private val _mediaCheckResult = MutableStateFlow<CheckMediaResponse?>(null)
     val mediaCheckResult: StateFlow<CheckMediaResponse?> = _mediaCheckResult
 
     private val deletedFilesCount: MutableStateFlow<Int> = MutableStateFlow(0)
     private val taggedFilesCount: MutableStateFlow<Int> = MutableStateFlow(0)
+
+    private val _progressState = MutableStateFlow<ProgressState>(ProgressState.Idle)
+    val progressState: StateFlow<ProgressState> = _progressState
+
+    private val _uiEvent = Channel<UiEvent>(Channel.BUFFERED)
+    val uiEvent = _uiEvent.receiveAsFlow()
 
     val deletedFiles: Int
         get() = deletedFilesCount.value
@@ -43,33 +71,65 @@ class MediaCheckViewModel : ViewModel() {
     val taggedFiles: Int
         get() = taggedFilesCount.value
 
-    // TODO: Move progress notifications here
-    fun tagMissing(tag: String): Job =
-        viewModelScope.launch {
-            val taggedNotes =
-                undoableOp {
-                    tags.bulkAdd(_mediaCheckResult.value?.missingMediaNotesList ?: listOf(), tag)
-                }
+    override fun onCleared() {
+        super.onCleared()
+        _uiEvent.close()
+    }
+
+    private fun launchWithProgress(@StringRes messageRes: Int, block: suspend CoroutineScope.() -> Unit): Job? {
+        if (_progressState.value != ProgressState.Idle) {
+            Timber.w("launchWithProgress: An operation is already running, dropping request.")
+            _uiEvent.trySend(UiEvent.ShowErrorRes(R.string.operation_already_running))
+            return null
+        }
+
+        return launchCatchingIO(
+            errorMessageHandler = { _uiEvent.send(UiEvent.ShowError(it)) }
+        ) {
+            _progressState.value = ProgressState.ActiveRes(messageRes)
+            try {
+                block()
+            } finally {
+                _progressState.value = ProgressState.Idle
+            }
+        }
+    }
+
+    fun tagMissing(tag: String): Job? {
+        val notes = _mediaCheckResult.value?.missingMediaNotesList
+        if (notes.isNullOrEmpty()) {
+            return null
+        }
+
+        return launchWithProgress(R.string.check_media_adding_missing_tag) {
+            val taggedNotes = undoableOp {
+                tags.bulkAdd(notes, tag)
+            }
             taggedFilesCount.value = taggedNotes.count
+            if (taggedNotes.count > 0) {
+                _uiEvent.send(UiEvent.ShowResultDialog(R.string.check_media_tags_added, TR.browsingNotesUpdated(taggedFilesCount.value)))
+            }
         }
+    }
 
-    fun checkMedia(): Job =
-        viewModelScope.launch {
-            val result = withCol { media.check() }
-            _mediaCheckResult.value = result
-        }
+    fun checkMedia(): Job? = launchWithProgress(R.string.check_media_message) {
+        val result = withCol { media.check() }
+        _mediaCheckResult.value = result
+    }
 
-    fun deleteTrash(): Job = viewModelScope.launch { withCol { media.emptyTrash() } }
+    fun deleteTrash(): Job? = launchWithProgress(R.string.dialog_processing) {
+        withCol { media.emptyTrash() }
+        _uiEvent.send(UiEvent.ShowTrashDeletedDialog)
+    }
 
-    fun restoreTrash(): Job =
-        viewModelScope.launch {
-            withCol { media.restoreTrash() }
-        }
+    fun restoreTrash(): Job? = launchWithProgress(R.string.dialog_processing) {
+        withCol { media.restoreTrash() }
+        _uiEvent.send(UiEvent.ShowTrashRestoredDialog)
+    }
 
-    // TODO: investigate: the underlying implementation exposes progress, which we do not yet handle.
-    fun deleteUnusedMedia(): Job =
-        viewModelScope.launch {
-            val deletedMedia = withCol { deleteMedia(this@withCol, _mediaCheckResult.value?.unusedList ?: listOf()) }
-            deletedFilesCount.value = deletedMedia
-        }
+    fun deleteUnusedMedia(): Job? = launchWithProgress(R.string.delete_media_message) {
+        val deletedMedia = withCol { deleteMedia(this@withCol, _mediaCheckResult.value?.unusedList ?: listOf()) }
+        deletedFilesCount.value = deletedMedia
+        _uiEvent.send(UiEvent.ShowDeletionResult)
+    }
 }
