@@ -1,10 +1,16 @@
-
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.extension.impl.AndroidComponentsExtensionImpl
+import com.android.build.api.dsl.TestedExtension
+import com.android.build.api.variant.AndroidComponentsExtension
 import com.slack.keeper.optInToKeeper
+import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.TestDescriptor
+import org.gradle.api.tasks.testing.TestResult
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.internal.jvm.Jvm
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.kotlin.dsl.KotlinClosure2
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -42,47 +48,38 @@ subprojects {
     }
 
     afterEvaluate {
-        plugins.withType<com.android.build.gradle.BasePlugin> {
-            val androidExtension = extensions.getByName("android") as CommonExtension<*, *, *, *, *, *>
-            androidExtension.testOptions.unitTests {
-                isIncludeAndroidResources = true
+        plugins.withId("com.android.application") {
+            configureAndroidModule(extensions.getByType<ApplicationExtension>())
+        }
+        plugins.withId("com.android.library") {
+            configureAndroidModule(extensions.getByType<LibraryExtension>())
+        }
+
+        tasks.withType<Test>().configureEach {
+            // tell backend to avoid rollover time, and disable interval fuzzing
+            environment("ANKI_TEST_MODE", "1")
+
+            maxHeapSize = "2g"
+            minHeapSize = "1g"
+
+            useJUnitPlatform()
+            testLogging {
+                events("failed", "skipped")
+                showStackTraces = true
+                exceptionFormat = TestExceptionFormat.FULL
             }
-            androidExtension.testOptions.unitTests.all {
-                // tell backend to avoid rollover time, and disable interval fuzzing
-                it.environment("ANKI_TEST_MODE", "1")
 
-                it.maxHeapSize = "2g"
-                it.minHeapSize = "1g"
-
-                it.useJUnitPlatform()
-                it.testLogging {
-                    events("failed", "skipped")
-                    showStackTraces = true
-                    exceptionFormat = TestExceptionFormat.FULL
-                }
-
-                // CI: Log the test results
-                it.afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
-                    if (desc.parent != null) {
-                        return@KotlinClosure2 // only log for the root suite
-                    }
+            // CI: Log the test results
+            afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
+                if (desc.parent == null) {
                     logTestResultsToGitHubActions(desc, result)
-                }))
-
-                it.maxParallelForks = gradleTestMaxParallelForks
-                it.forkEvery = 40
-                it.systemProperties["junit.jupiter.execution.parallel.enabled"] = true
-                it.systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
-            }
-
-            val androidComponentsExtension =
-                extensions.findByName("androidComponents") as AndroidComponentsExtensionImpl<*, *, *>
-            androidComponentsExtension.beforeVariants { builder ->
-                if (testReleaseBuild && builder.name == "playRelease")
-                {
-                    builder.optInToKeeper()
                 }
-            }
+            }))
+
+            maxParallelForks = gradleTestMaxParallelForks
+            forkEvery = 40
+            systemProperties["junit.jupiter.execution.parallel.enabled"] = true
+            systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
         }
 
         /**
@@ -103,7 +100,7 @@ subprojects {
          */
         tasks.withType(KotlinCompile::class.java).configureEach {
             compilerOptions {
-                allWarningsAsErrors = fatalWarnings
+                allWarningsAsErrors.set(fatalWarnings)
                 val compilerArgs = mutableListOf(
                     "-Xjvm-default=all",
                     // https://youtrack.jetbrains.com/issue/KT-73255
@@ -113,14 +110,27 @@ subprojects {
                 if (project.name != "api") {
                     compilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
                 }
-                freeCompilerArgs = compilerArgs
+                freeCompilerArgs.addAll(compilerArgs)
             }
         }
     }
 }
 
+fun Project.configureAndroidModule(androidExtension: CommonExtension) {
+    if (androidExtension is TestedExtension) {
+        androidExtension.testOptions.unitTests.isIncludeAndroidResources = true
+    }
+    
+    val androidComponentsExtension = extensions.findByName("androidComponents") as? AndroidComponentsExtension<*, *, *>
+    androidComponentsExtension?.beforeVariants { builder ->
+        if (testReleaseBuild && builder.name == "playRelease") {
+            builder.optInToKeeper()
+        }
+    }
+}
+
 val jvmVersion = Jvm.current().javaVersion?.majorVersion
-val minSdk = libs.versions.compileSdk.get()
+val compileSdkVersion = libs.versions.compileSdk.get()
 if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     println("\n\n\n")
     println("**************************************************************************************************************")
@@ -131,7 +141,7 @@ if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
         println("\n\n\n")
         println("  If you receive this error because you want to use a newer JDK, we may accept PRs to support new versions.")
         println("  Edit the main build.gradle file, find this message in the file, and add support for the new version.")
-        println("  Please make sure the `jacocoTestReport` target works on an emulator with our minSdk (currently $minSdk).")
+        println("  Please make sure the `jacocoTestReport` target works on an emulator with our minSdk (currently $compileSdkVersion).")
     }
     println("\n\n\n")
     println("**************************************************************************************************************")

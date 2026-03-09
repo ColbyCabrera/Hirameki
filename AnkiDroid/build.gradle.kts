@@ -67,7 +67,7 @@ android {
     }
 
     testOptions {
-        unitTests.isReturnDefaultValues = true
+        unitTests.returnDefaultValues = true
         unitTests.all {
             it.useJUnitPlatform()
         }

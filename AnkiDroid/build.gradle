@@ -67,16 +67,10 @@ android {
         buildConfigField "String", "GIT_COMMIT_HASH", "\"${gitCommitHash()}\""
         buildConfigField "long", "BUILD_TIME", System.currentTimeMillis().toString()
         resValue "string", "app_name", "Hirameki"
+        resourceConfigurations += ['af', 'am', 'ar', 'az', 'be', 'bg', 'bn', 'ca', 'ckb', 'cs', 'da', 'de', 'el', 'en', 'eo', 'es', 'es-rAR', 'es-rES', 'et', 'eu', 'fa', 'fi', 'fil', 'fr', 'fy', 'ga', 'gl', 'got', 'gu', 'he', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'iw', 'ja', 'ka', 'kk', 'km', 'kn', 'ko', 'ku', 'ky', 'lt', 'lv', 'mk', 'ml', 'mn', 'mr', 'ms', 'my', 'nl', 'nn', 'no', 'or', 'pa', 'pl', 'pt-rBR', 'pt-rPT', 'ro', 'ru', 'sat', 'sc', 'sk', 'sl', 'sq', 'sr', 'sv', 'ta', 'te', 'tl', 'th', 'ti', 'tr', 'tt', 'ug', 'uk', 'ur', 'uz', 'vi', 'zh-rCN', 'zh-rTW']
 
         // Filter language resources to exclude invalid legacy 3-letter codes (heb, ind, tgl)
         // that Google Play rejects. Only include valid 2-letter ISO 639-1 codes.
-        resConfigs "af", "am", "ar", "az", "be", "bg", "bn", "ca", "ckb", "cs", "da", "de", "el",
-                "en", "eo", "es", "es-rAR", "es-rES", "et", "eu", "fa", "fi", "fil", "fr", "fy",
-                "ga", "gl", "got", "gu", "he", "hi", "hr", "hu", "hy", "id", "it", "iw", "ja",
-                "ka", "kk", "km", "kn", "ko", "ku", "ky", "lt", "lv", "mk", "ml", "mn", "mr",
-                "ms", "my", "nl", "nn", "no", "or", "pa", "pl", "pt-rBR", "pt-rPT", "ro", "ru",
-                "sat", "sc", "sk", "sl", "sq", "sr", "sv", "ta", "te", "tl", "th", "ti", "tr",
-                "tt", "ug", "uk", "ur", "uz", "vi", "zh-rCN", "zh-rTW"
 
         // The version number is of the form:
         // <major>.<minor>.<maintenance>[dev|alpha<build>|beta<build>|]
