@@ -11,15 +11,17 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.internal.jvm.Jvm
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.kotlin.dsl.KotlinClosure2
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.util.Properties
 import kotlin.math.max
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+// Top-level build file where you can add configuration options common to all subprojects/modules.
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
@@ -31,19 +33,19 @@ plugins {
     alias(libs.plugins.keeper) apply false
 }
 
-val localProperties = java.util.Properties()
+val localProperties = Properties()
 if (project.rootProject.file("local.properties").exists()) {
     localProperties.load(project.rootProject.file("local.properties").inputStream())
 }
 val fatalWarnings = localProperties["fatal_warnings"] != "false"
 
 // can't be obtained inside 'subprojects'
-val ktlintVersion = libs.versions.ktlint.get()
+val ktlintVersion: String? = libs.versions.ktlint.get()
 
 // Here we extract per-module "best practices" settings to a single top-level evaluation
 subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    configure<KtlintExtension> {
         version.set(ktlintVersion)
     }
 
@@ -85,7 +87,7 @@ subprojects {
         /**
         Kotlin allows concrete function implementations inside interfaces.
         For those to work when Kotlin compilation targets the JVM backend, you have to enable the interoperability via
-        'freeCompilerArgs' in your gradle file, and you have to choose one of the appropriate '-Xjvm-default' modes.
+        'freeCompilerArgs' in your Gradle file, and you have to choose one of the appropriate '-Xjvm-default' modes.
 
         https://kotlinlang.org/docs/java-to-kotlin-interop.html#default-methods-in-interfaces
 
@@ -93,9 +95,9 @@ subprojects {
         https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
 
         Related to ExperimentalCoroutinesApi: this opt-in is added to enable usage of experimental
-        coroutines API, this targets all project modules with the exception of the "api" module,
+        coroutines API, this targets all project modules except the "api" module,
         which doesn't use coroutines so the annotation isn't not available. This would normally
-        result in a warning but we treat warnings as errors.
+        result in a warning, but we treat warnings as errors.
         (see https://youtrack.jetbrains.com/issue/KT-28777/Using-experimental-coroutines-api-causes-unresolved-dependency)
          */
         tasks.withType(KotlinCompile::class.java).configureEach {
@@ -130,7 +132,7 @@ fun Project.configureAndroidModule(androidExtension: CommonExtension) {
 }
 
 val jvmVersion = Jvm.current().javaVersion?.majorVersion
-val compileSdkVersion = libs.versions.compileSdk.get()
+val compileSdkVersion: String? = libs.versions.compileSdk.get()
 if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     println("\n\n\n")
     println("**************************************************************************************************************")
@@ -149,7 +151,7 @@ if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     exitProcess(1)
 }
 
-val ciBuild by extra(System.getenv("CI") == "true") // works for Travis CI or Github Actions
+val ciBuild by extra(System.getenv("CI") == "true") // works for Travis CI or GitHub Actions
 // allows for -Dpre-dex=false to be set
 val preDexEnabled by extra("true" == System.getProperty("pre-dex", "true"))
 // allows for universal APKs to be generated
