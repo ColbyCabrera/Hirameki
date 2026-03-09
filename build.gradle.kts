@@ -132,6 +132,7 @@ fun Project.configureAndroidModule(androidExtension: CommonExtension) {
 
 val jvmVersion = Jvm.current().javaVersion?.majorVersion
 val compileSdkVersion: String? = libs.versions.compileSdk.get()
+val minSdk: String? = libs.versions.minSdk.get()
 if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     println("\n\n\n")
     println("**************************************************************************************************************")
@@ -142,7 +143,7 @@ if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
         println("\n\n\n")
         println("  If you receive this error because you want to use a newer JDK, we may accept PRs to support new versions.")
         println("  Edit the main build.gradle file, find this message in the file, and add support for the new version.")
-        println("  Please make sure the `jacocoTestReport` target works on an emulator with our minSdk (currently $compileSdkVersion).")
+        println("  Please make sure the `jacocoTestReport` target works on an emulator with our minSdk (currently $minSdk).")
     }
     println("\n\n\n")
     println("**************************************************************************************************************")
