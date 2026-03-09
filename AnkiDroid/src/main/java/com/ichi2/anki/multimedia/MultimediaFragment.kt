@@ -82,22 +82,19 @@ abstract class MultimediaFragment(
 
         requireAnkiActivity().setToolbarTitle(title)
 
-        if (arguments != null) {
-            Timber.d("Getting MultimediaActivityExtra values from arguments")
-            val multimediaActivityExtra =
-                arguments?.getSerializableCompat<MultimediaActivityExtra>(
-                    MultimediaActivity.MULTIMEDIA_ARGS_EXTRA,
-                )
-
-            if (multimediaActivityExtra != null) {
-                indexValue = multimediaActivityExtra.index
-                field = multimediaActivityExtra.field
-                note = multimediaActivityExtra.note
-                if (multimediaActivityExtra.imageUri != null) {
-                    imageUri = multimediaActivityExtra.imageUri.toUri()
-                }
-            }
+        Timber.d("Getting MultimediaActivityExtra values from arguments")
+        val multimediaActivityExtra = requireNotNull(
+            arguments?.getSerializableCompat<MultimediaActivityExtra>(
+                MultimediaActivity.MULTIMEDIA_ARGS_EXTRA,
+            ),
+        ) {
+            "MultimediaFragment requires ${MultimediaActivity.MULTIMEDIA_ARGS_EXTRA} arguments"
         }
+
+        indexValue = multimediaActivityExtra.index
+        field = multimediaActivityExtra.field
+        note = multimediaActivityExtra.note
+        imageUri = multimediaActivityExtra.imageUri?.toUri()
 
         val backCallback =
             object : OnBackPressedCallback(
