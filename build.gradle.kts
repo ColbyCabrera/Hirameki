@@ -1,23 +1,28 @@
-
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.extension.impl.AndroidComponentsExtensionImpl
+import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.TestedExtension
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.slack.keeper.optInToKeeper
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.internal.jvm.Jvm
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.util.Properties
 import kotlin.math.max
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+// Top-level build file where you can add configuration options common to all subprojects/modules.
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.parcelize) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
@@ -25,102 +30,115 @@ plugins {
     alias(libs.plugins.keeper) apply false
 }
 
-val localProperties = java.util.Properties()
+val localProperties = Properties()
 if (project.rootProject.file("local.properties").exists()) {
     localProperties.load(project.rootProject.file("local.properties").inputStream())
 }
 val fatalWarnings = localProperties["fatal_warnings"] != "false"
 
 // can't be obtained inside 'subprojects'
-val ktlintVersion = libs.versions.ktlint.get()
+val ktlintVersion: String? = libs.versions.ktlint.get()
 
 // Here we extract per-module "best practices" settings to a single top-level evaluation
 subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    configure<KtlintExtension> {
         version.set(ktlintVersion)
     }
 
-    afterEvaluate {
-        plugins.withType<com.android.build.gradle.BasePlugin> {
-            val androidExtension = extensions.getByName("android") as CommonExtension<*, *, *, *, *, *>
-            androidExtension.testOptions.unitTests {
-                isIncludeAndroidResources = true
-            }
-            androidExtension.testOptions.unitTests.all {
-                // tell backend to avoid rollover time, and disable interval fuzzing
-                it.environment("ANKI_TEST_MODE", "1")
+    pluginManager.withPlugin("com.android.application") {
+        val androidComponents = extensions.getByType<ApplicationAndroidComponentsExtension>()
+        androidComponents.finalizeDsl { extension: ApplicationExtension ->
+            configureAndroidModule(extension)
+        }
+        configureAndroidVariants(androidComponents)
+    }
 
-                it.maxHeapSize = "2g"
-                it.minHeapSize = "1g"
+    pluginManager.withPlugin("com.android.library") {
+        val androidComponents = extensions.getByType<LibraryAndroidComponentsExtension>()
+        androidComponents.finalizeDsl { extension: LibraryExtension ->
+            configureAndroidModule(extension)
+        }
+        configureAndroidVariants(androidComponents)
+    }
 
-                it.useJUnitPlatform()
-                it.testLogging {
-                    events("failed", "skipped")
-                    showStackTraces = true
-                    exceptionFormat = TestExceptionFormat.FULL
-                }
+    tasks.withType<Test>().configureEach {
+        // tell backend to avoid rollover time, and disable interval fuzzing
+        environment("ANKI_TEST_MODE", "1")
 
-                // CI: Log the test results
-                it.afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
-                    if (desc.parent != null) {
-                        return@KotlinClosure2 // only log for the root suite
-                    }
-                    logTestResultsToGitHubActions(desc, result)
-                }))
+        maxHeapSize = "2g"
+        minHeapSize = "1g"
 
-                it.maxParallelForks = gradleTestMaxParallelForks
-                it.forkEvery = 40
-                it.systemProperties["junit.jupiter.execution.parallel.enabled"] = true
-                it.systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
-            }
-
-            val androidComponentsExtension =
-                extensions.findByName("androidComponents") as AndroidComponentsExtensionImpl<*, *, *>
-            androidComponentsExtension.beforeVariants { builder ->
-                if (testReleaseBuild && builder.name == "playRelease")
-                {
-                    builder.optInToKeeper()
-                }
-            }
+        useJUnitPlatform()
+        testLogging {
+            events("failed", "skipped")
+            showStackTraces = true
+            exceptionFormat = TestExceptionFormat.FULL
         }
 
-        /**
-        Kotlin allows concrete function implementations inside interfaces.
-        For those to work when Kotlin compilation targets the JVM backend, you have to enable the interoperability via
-        'freeCompilerArgs' in your gradle file, and you have to choose one of the appropriate '-Xjvm-default' modes.
-
-        https://kotlinlang.org/docs/java-to-kotlin-interop.html#default-methods-in-interfaces
-
-        and we used "all" because we don't have downstream consumers
-        https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
-
-        Related to ExperimentalCoroutinesApi: this opt-in is added to enable usage of experimental
-        coroutines API, this targets all project modules with the exception of the "api" module,
-        which doesn't use coroutines so the annotation isn't not available. This would normally
-        result in a warning but we treat warnings as errors.
-        (see https://youtrack.jetbrains.com/issue/KT-28777/Using-experimental-coroutines-api-causes-unresolved-dependency)
-         */
-        tasks.withType(KotlinCompile::class.java).configureEach {
-            compilerOptions {
-                allWarningsAsErrors = fatalWarnings
-                val compilerArgs = mutableListOf(
-                    "-Xjvm-default=all",
-                    // https://youtrack.jetbrains.com/issue/KT-73255
-                    // Apply @StringRes to both constructor params and generated properties
-                    "-Xannotation-default-target=param-property"
-                )
-                if (project.name != "api") {
-                    compilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-                }
-                freeCompilerArgs = compilerArgs
+        // CI: Log the test results
+        afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
+            if (desc.parent == null) {
+                logTestResultsToGitHubActions(desc, result)
             }
+        }))
+
+        maxParallelForks = gradleTestMaxParallelForks
+        forkEvery = 40
+        systemProperties["junit.jupiter.execution.parallel.enabled"] = true
+        systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
+    }
+
+    /**
+    Kotlin allows concrete function implementations inside interfaces.
+    For those to work when Kotlin compilation targets the JVM backend, you have to enable the interoperability via
+    'freeCompilerArgs' in your Gradle file, and you have to choose one of the appropriate '-jvm-default' modes.
+
+    https://kotlinlang.org/docs/java-to-kotlin-interop.html#default-methods-in-interfaces
+
+    and we used "no-compatibility" because we don't have downstream consumers
+    https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
+
+    Related to ExperimentalCoroutinesApi: this opt-in is added to enable usage of experimental
+    coroutines API, this targets all project modules except the "api" module,
+    which doesn't use coroutines so the annotation isn't not available. This would normally
+    result in a warning, but we treat warnings as errors.
+    (see https://youtrack.jetbrains.com/issue/KT-28777/Using-experimental-coroutines-api-causes-unresolved-dependency)
+     */
+    tasks.withType(KotlinCompile::class.java).configureEach {
+        compilerOptions {
+            allWarningsAsErrors.set(fatalWarnings)
+            val compilerArgs = mutableListOf(
+                "-jvm-default=no-compatibility",
+                // https://youtrack.jetbrains.com/issue/KT-73255
+                // Apply @StringRes to both constructor params and generated properties
+                "-Xannotation-default-target=param-property"
+            )
+            if (project.name != "api") {
+                compilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
+            }
+            freeCompilerArgs.addAll(compilerArgs)
+        }
+    }
+}
+
+fun configureAndroidModule(androidExtension: CommonExtension) {
+    if (androidExtension is TestedExtension) {
+        androidExtension.testOptions.unitTests.isIncludeAndroidResources = true
+    }
+}
+
+fun configureAndroidVariants(androidComponentsExtension: AndroidComponentsExtension<*, *, *>) {
+    androidComponentsExtension.beforeVariants { builder ->
+        if (testReleaseBuild && builder.name == "playRelease") {
+            builder.optInToKeeper()
         }
     }
 }
 
 val jvmVersion = Jvm.current().javaVersion?.majorVersion
-val minSdk = libs.versions.compileSdk.get()
+val compileSdkVersion: String? = libs.versions.compileSdk.get()
+val minSdk: String? = libs.versions.minSdk.get()
 if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     println("\n\n\n")
     println("**************************************************************************************************************")
@@ -139,7 +157,7 @@ if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     exitProcess(1)
 }
 
-val ciBuild by extra(System.getenv("CI") == "true") // works for Travis CI or Github Actions
+val ciBuild by extra(System.getenv("CI") == "true") // works for Travis CI or GitHub Actions
 // allows for -Dpre-dex=false to be set
 val preDexEnabled by extra("true" == System.getProperty("pre-dex", "true"))
 // allows for universal APKs to be generated
@@ -198,9 +216,6 @@ private fun appendToGitHubActionsSummary(message: String) {
     if (!ciBuild) return
     val summaryPath = System.getenv("GITHUB_STEP_SUMMARY") ?: return
     Files.writeString(
-        Paths.get(summaryPath),
-        message,
-        StandardOpenOption.CREATE,
-        StandardOpenOption.APPEND
+        Paths.get(summaryPath), message, StandardOpenOption.CREATE, StandardOpenOption.APPEND
     )
 }

@@ -67,7 +67,7 @@ android {
     }
 
     testOptions {
-        unitTests.isReturnDefaultValues = true
+        unitTests.returnDefaultValues = true
         unitTests.all {
             it.useJUnitPlatform()
         }
@@ -75,10 +75,6 @@ android {
 
     buildFeatures {
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
     }
 }
 

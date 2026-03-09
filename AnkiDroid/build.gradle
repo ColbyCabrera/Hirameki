@@ -4,7 +4,6 @@ plugins {
     // Gradle plugin portal
     alias(libs.plugins.tripletPlay)
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.keeper)
@@ -50,6 +49,7 @@ android {
         buildConfig = true
         aidl = true
         compose = true
+        resValues = true
     }
 
     if (rootProject.testReleaseBuild) {
@@ -67,16 +67,10 @@ android {
         buildConfigField "String", "GIT_COMMIT_HASH", "\"${gitCommitHash()}\""
         buildConfigField "long", "BUILD_TIME", System.currentTimeMillis().toString()
         resValue "string", "app_name", "Hirameki"
+        resourceConfigurations += ['af', 'am', 'ar', 'az', 'be', 'bg', 'bn', 'ca', 'ckb', 'cs', 'da', 'de', 'el', 'en', 'eo', 'es', 'es-rAR', 'es-rES', 'et', 'eu', 'fa', 'fi', 'fil', 'fr', 'fy', 'ga', 'gl', 'got', 'gu', 'he', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'iw', 'ja', 'ka', 'kk', 'km', 'kn', 'ko', 'ku', 'ky', 'lt', 'lv', 'mk', 'ml', 'mn', 'mr', 'ms', 'my', 'nl', 'nn', 'no', 'or', 'pa', 'pl', 'pt-rBR', 'pt-rPT', 'ro', 'ru', 'sat', 'sc', 'sk', 'sl', 'sq', 'sr', 'sv', 'ta', 'te', 'tl', 'th', 'ti', 'tr', 'tt', 'ug', 'uk', 'ur', 'uz', 'vi', 'zh-rCN', 'zh-rTW']
 
         // Filter language resources to exclude invalid legacy 3-letter codes (heb, ind, tgl)
         // that Google Play rejects. Only include valid 2-letter ISO 639-1 codes.
-        resConfigs "af", "am", "ar", "az", "be", "bg", "bn", "ca", "ckb", "cs", "da", "de", "el",
-                "en", "eo", "es", "es-rAR", "es-rES", "et", "eu", "fa", "fi", "fil", "fr", "fy",
-                "ga", "gl", "got", "gu", "he", "hi", "hr", "hu", "hy", "id", "it", "iw", "ja",
-                "ka", "kk", "km", "kn", "ko", "ku", "ky", "lt", "lv", "mk", "ml", "mn", "mr",
-                "ms", "my", "nl", "nn", "no", "or", "pa", "pl", "pt-rBR", "pt-rPT", "ro", "ru",
-                "sat", "sc", "sk", "sl", "sq", "sr", "sv", "ta", "te", "tl", "th", "ti", "tr",
-                "tt", "ug", "uk", "ur", "uz", "vi", "zh-rCN", "zh-rTW"
 
         // The version number is of the form:
         // <major>.<minor>.<maintenance>[dev|alpha<build>|beta<build>|]
@@ -141,7 +135,7 @@ android {
                 testCoverageEnabled = localProperties['enable_coverage'] != "false"
                 // not profiled: optimization for build times
                 if (localProperties['enable_languages'] == "false") {
-                    android.defaultConfig.resConfigs "en"
+                    android.defaultConfig.resourceConfigurations = ["en"]
                 }
                 // allow disabling leak canary
                 if (localProperties["enable_leak_canary"] != null) {
@@ -306,21 +300,20 @@ tasks.register('copyTestLibIntoAndroidTest', Copy) {
     }
 }
 tasks.named('preBuild').configure { dependsOn('copyTestLibIntoAndroidTest') }
-tasks.named('runKtlintCheckOverAndroidTestSourceSet').configure { mustRunAfter('copyTestLibIntoAndroidTest') }
 
 // Issue 11078 - some emulators run, but run zero tests, and still report success
 tasks.register('assertNonzeroAndroidTests') {
     doLast {
         // androidTest currently creates one .xml file per emulator with aggregate results in this dir
         File folder = file("./build/outputs/androidTest-results/connected/flavors/play")
-        File[] listOfFiles = folder.listFiles({ d, f -> f ==~ /.*.xml/ } as FilenameFilter)
+        File[] listOfFiles = folder.listFiles({ d, f -> f =~ /.*\.xml$/ } as FilenameFilter)
         for (File file : listOfFiles) {
             // The aggregate results file currently contains a line with this pattern holding test count
             String[] matches = file.readLines().findAll { it.contains('<testsuite') }
             if (matches.length != 1) {
                 throw new GradleScriptException("Unable to determine count of tests executed for " + file.name + ". Regex pattern out of date?", null)
             }
-            if (!(matches[0] ==~ /.* tests="\d+" .*/) || matches[0].contains('tests="0"')) {
+            if (!(matches[0] =~ /.* tests="\d+" .*/) || matches[0].contains('tests="0"')) {
                 throw new GradleScriptException("androidTest executed 0 tests for " + file.name + " - Probably a bug with the emulator. Try another image.", null)
             }
         }

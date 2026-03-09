@@ -18,7 +18,7 @@ ktlint = '1.5.0'
 #
 # Old changelogs - See 'Table of Contents' in sidebar
 # https://developer.android.com/build/releases/past-releases
-androidGradlePlugin = "8.13.2"
+androidGradlePlugin = "9.1.0"
 # https://developer.android.com/jetpack/androidx/releases/activity
 androidxActivity = "1.12.0"
 # https://developer.android.com/jetpack/androidx/releases/annotation
@@ -88,12 +88,12 @@ junitJupiter = "5.13.4"
 # https://github.com/junit-team/junit5/releases/ - version numbers differ; changelogs in bundle
 junitPlatformLauncher = "1.13.4"
 # https://github.com/JetBrains/kotlin/releases/
-kotlin = '2.2.21'
+kotlin = '2.3.10'
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxSerializationJson = "1.9.0"
 ktlintGradlePlugin = "13.1.0"
 leakcanaryAndroid = "2.14"
-lint = "31.13.2"
+lint = "32.1.0"
 material = "1.12.0"
 material3 = "1.5.0-alpha09"
 materialTapTargetPrompt = "3.3.2"
@@ -182,7 +182,7 @@ java-semver = { module = "com.github.zafarkhaja:java-semver", version.ref = "jav
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanaryAndroid" }
 google-material = { module = "com.google.android.material:material", version.ref = "material" }
 tapTargetPrompt = { module = "uk.co.samuelwall:material-tap-target-prompt", version.ref = "materialTapTargetPrompt" }
