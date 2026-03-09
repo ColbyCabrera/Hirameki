@@ -17,6 +17,7 @@
 
 package com.ichi2.anki.mediacheck
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import anki.media.CheckMediaResponse
@@ -40,15 +41,16 @@ class MediaCheckViewModel : ViewModel() {
 
     sealed class ProgressState {
         data object Idle : ProgressState()
-        data class ActiveRes(val messageRes: Int) : ProgressState()
+        data class ActiveRes(@StringRes val messageRes: Int) : ProgressState()
     }
 
     sealed class UiEvent {
-        data class ShowResultDialog(val titleRes: Int, val message: String) : UiEvent()
+        data class ShowResultDialog(@StringRes val titleRes: Int, val message: String) : UiEvent()
         data object ShowTrashRestoredDialog : UiEvent()
         data object ShowTrashDeletedDialog : UiEvent()
         data object ShowDeletionResult : UiEvent()
         data class ShowError(val message: String) : UiEvent()
+        data class ShowErrorRes(@StringRes val messageRes: Int) : UiEvent()
     }
 
     private val _mediaCheckResult = MutableStateFlow<CheckMediaResponse?>(null)
@@ -74,10 +76,10 @@ class MediaCheckViewModel : ViewModel() {
         _uiEvent.close()
     }
 
-    private fun launchWithProgress(messageRes: Int, block: suspend CoroutineScope.() -> Unit): Job? {
+    private fun launchWithProgress(@StringRes messageRes: Int, block: suspend CoroutineScope.() -> Unit): Job? {
         if (_progressState.value != ProgressState.Idle) {
             Timber.w("launchWithProgress: An operation is already running, dropping request.")
-            _uiEvent.trySend(UiEvent.ShowError("An operation is already running."))
+            _uiEvent.trySend(UiEvent.ShowErrorRes(R.string.operation_already_running))
             return null
         }
 
@@ -93,12 +95,21 @@ class MediaCheckViewModel : ViewModel() {
         }
     }
 
-    fun tagMissing(tag: String): Job? = launchWithProgress(R.string.check_media_adding_missing_tag) {
-        val taggedNotes = undoableOp {
-            tags.bulkAdd(_mediaCheckResult.value?.missingMediaNotesList ?: listOf(), tag)
+    fun tagMissing(tag: String): Job? {
+        val notes = _mediaCheckResult.value?.missingMediaNotesList
+        if (notes.isNullOrEmpty()) {
+            return null
         }
-        taggedFilesCount.value = taggedNotes.count
-        _uiEvent.send(UiEvent.ShowResultDialog(R.string.check_media_tags_added, TR.browsingNotesUpdated(taggedFilesCount.value)))
+
+        return launchWithProgress(R.string.check_media_adding_missing_tag) {
+            val taggedNotes = undoableOp {
+                tags.bulkAdd(notes, tag)
+            }
+            taggedFilesCount.value = taggedNotes.count
+            if (taggedNotes.count > 0) {
+                _uiEvent.send(UiEvent.ShowResultDialog(R.string.check_media_tags_added, TR.browsingNotesUpdated(taggedFilesCount.value)))
+            }
+        }
     }
 
     fun checkMedia(): Job? = launchWithProgress(R.string.check_media_message) {

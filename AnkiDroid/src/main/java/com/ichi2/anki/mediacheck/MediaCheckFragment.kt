@@ -50,7 +50,6 @@ import com.ichi2.utils.show
 import com.ichi2.utils.title
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -110,6 +109,13 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
                                 AlertDialog.Builder(requireContext()).show {
                                     title(R.string.vague_error)
                                     message(text = event.message)
+                                    positiveButton(R.string.dialog_ok)
+                                }
+                            }
+                            is MediaCheckViewModel.UiEvent.ShowErrorRes -> {
+                                AlertDialog.Builder(requireContext()).show {
+                                    title(R.string.vague_error)
+                                    message(text = getString(event.messageRes))
                                     positiveButton(R.string.dialog_ok)
                                 }
                             }

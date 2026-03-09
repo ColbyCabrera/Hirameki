@@ -18,6 +18,7 @@
 ~ You should have received a copy of the GNU General Public License along with
 ~ this program.  If not, see <http://www.gnu.org/licenses/>.
 --><resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="operation_already_running">An operation is already running.</string>
     <string name="check_db_title">Check database?</string>
     <string name="check_db_warning">This may take a long time</string>
     <string name="contextmenu_deckpicker_delete_deck" maxLength="28">Delete deck</string>
