@@ -135,7 +135,7 @@ android {
                 testCoverageEnabled = localProperties['enable_coverage'] != "false"
                 // not profiled: optimization for build times
                 if (localProperties['enable_languages'] == "false") {
-                    android.defaultConfig.resConfigs "en"
+                    android.defaultConfig.resourceConfigurations = ["en"]
                 }
                 // allow disabling leak canary
                 if (localProperties["enable_leak_canary"] != null) {
