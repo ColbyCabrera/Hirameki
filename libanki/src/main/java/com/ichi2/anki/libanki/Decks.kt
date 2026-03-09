@@ -109,7 +109,7 @@ class Decks(
     private fun addDeckLegacy(deck: Deck): OpChangesWithId {
         val changes =
             col.backend.addDeckLegacy(
-                json = BackendUtils.toJsonBytes(deck),
+                json = toJsonBytes(deck),
             )
         deck.id = changes.id
         return changes
@@ -230,7 +230,7 @@ class Decks(
 
     @RustCleanup("implement and make public")
     @Suppress("unused")
-    /** "All decks. Expensive; prefer [allNamesAndIds] */
+    /** All decks. Expensive; prefer [allNamesAndIds] */
     private fun all(): List<Deck> {
         TODO()
     }
@@ -306,14 +306,14 @@ class Decks(
     ) {
         deck.id =
             col.backend.addOrUpdateDeckLegacy(
-                deck = BackendUtils.toJsonBytes(deck),
+                deck = toJsonBytes(deck),
                 preserveUsnAndMtime = preserveUsn,
             )
     }
 
     @LibAnkiAlias("update_dict")
     @Suppress("unused")
-    fun updateDict(deck: Deck): OpChanges = col.backend.updateDeckLegacy(BackendUtils.toJsonBytes(deck))
+    fun updateDict(deck: Deck): OpChanges = col.backend.updateDeckLegacy(toJsonBytes(deck))
 
     /** Rename deck prefix to NAME if not exists. Updates children. */
     @RustCleanup("return OpChanges")
@@ -597,7 +597,7 @@ class Decks(
     @LibAnkiAlias("new_filtered")
     fun newFiltered(name: String): DeckId {
         val did = id(name, type = DEFAULT_DECK_CONF_ID)
-        select(did!!)
+        select(did)
         return did
     }
 
