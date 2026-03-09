@@ -1,16 +1,14 @@
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.slack.keeper.optInToKeeper
-import org.gradle.api.tasks.testing.Test
-import org.gradle.api.tasks.testing.TestDescriptor
-import org.gradle.api.tasks.testing.TestResult
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.internal.jvm.Jvm
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.gradle.kotlin.dsl.KotlinClosure2
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -48,82 +46,90 @@ subprojects {
         version.set(ktlintVersion)
     }
 
-    afterEvaluate {
-        plugins.withId("com.android.application") {
-            configureAndroidModule(extensions.getByType<ApplicationExtension>())
+    pluginManager.withPlugin("com.android.application") {
+        val androidComponents = extensions.getByType<ApplicationAndroidComponentsExtension>()
+        androidComponents.finalizeDsl { extension: ApplicationExtension ->
+            configureAndroidModule(extension)
         }
-        plugins.withId("com.android.library") {
-            configureAndroidModule(extensions.getByType<LibraryExtension>())
+        configureAndroidVariants(androidComponents)
+    }
+
+    pluginManager.withPlugin("com.android.library") {
+        val androidComponents = extensions.getByType<LibraryAndroidComponentsExtension>()
+        androidComponents.finalizeDsl { extension: LibraryExtension ->
+            configureAndroidModule(extension)
+        }
+        configureAndroidVariants(androidComponents)
+    }
+
+    tasks.withType<Test>().configureEach {
+        // tell backend to avoid rollover time, and disable interval fuzzing
+        environment("ANKI_TEST_MODE", "1")
+
+        maxHeapSize = "2g"
+        minHeapSize = "1g"
+
+        useJUnitPlatform()
+        testLogging {
+            events("failed", "skipped")
+            showStackTraces = true
+            exceptionFormat = TestExceptionFormat.FULL
         }
 
-        tasks.withType<Test>().configureEach {
-            // tell backend to avoid rollover time, and disable interval fuzzing
-            environment("ANKI_TEST_MODE", "1")
-
-            maxHeapSize = "2g"
-            minHeapSize = "1g"
-
-            useJUnitPlatform()
-            testLogging {
-                events("failed", "skipped")
-                showStackTraces = true
-                exceptionFormat = TestExceptionFormat.FULL
+        // CI: Log the test results
+        afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
+            if (desc.parent == null) {
+                logTestResultsToGitHubActions(desc, result)
             }
+        }))
 
-            // CI: Log the test results
-            afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
-                if (desc.parent == null) {
-                    logTestResultsToGitHubActions(desc, result)
-                }
-            }))
+        maxParallelForks = gradleTestMaxParallelForks
+        forkEvery = 40
+        systemProperties["junit.jupiter.execution.parallel.enabled"] = true
+        systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
+    }
 
-            maxParallelForks = gradleTestMaxParallelForks
-            forkEvery = 40
-            systemProperties["junit.jupiter.execution.parallel.enabled"] = true
-            systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
-        }
+    /**
+    Kotlin allows concrete function implementations inside interfaces.
+    For those to work when Kotlin compilation targets the JVM backend, you have to enable the interoperability via
+    'freeCompilerArgs' in your Gradle file, and you have to choose one of the appropriate '-jvm-default' modes.
 
-        /**
-        Kotlin allows concrete function implementations inside interfaces.
-        For those to work when Kotlin compilation targets the JVM backend, you have to enable the interoperability via
-        'freeCompilerArgs' in your Gradle file, and you have to choose one of the appropriate '-jvm-default' modes.
+    https://kotlinlang.org/docs/java-to-kotlin-interop.html#default-methods-in-interfaces
 
-        https://kotlinlang.org/docs/java-to-kotlin-interop.html#default-methods-in-interfaces
+    and we used "no-compatibility" because we don't have downstream consumers
+    https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
 
-        and we used "no-compatibility" because we don't have downstream consumers
-        https://docs.gradle.org/current/userguide/task_configuration_avoidance.html
-
-        Related to ExperimentalCoroutinesApi: this opt-in is added to enable usage of experimental
-        coroutines API, this targets all project modules except the "api" module,
-        which doesn't use coroutines so the annotation isn't not available. This would normally
-        result in a warning, but we treat warnings as errors.
-        (see https://youtrack.jetbrains.com/issue/KT-28777/Using-experimental-coroutines-api-causes-unresolved-dependency)
-         */
-        tasks.withType(KotlinCompile::class.java).configureEach {
-            compilerOptions {
-                allWarningsAsErrors.set(fatalWarnings)
-                val compilerArgs = mutableListOf(
-                    "-jvm-default=no-compatibility",
-                    // https://youtrack.jetbrains.com/issue/KT-73255
-                    // Apply @StringRes to both constructor params and generated properties
-                    "-Xannotation-default-target=param-property"
-                )
-                if (project.name != "api") {
-                    compilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-                }
-                freeCompilerArgs.addAll(compilerArgs)
+    Related to ExperimentalCoroutinesApi: this opt-in is added to enable usage of experimental
+    coroutines API, this targets all project modules except the "api" module,
+    which doesn't use coroutines so the annotation isn't not available. This would normally
+    result in a warning, but we treat warnings as errors.
+    (see https://youtrack.jetbrains.com/issue/KT-28777/Using-experimental-coroutines-api-causes-unresolved-dependency)
+     */
+    tasks.withType(KotlinCompile::class.java).configureEach {
+        compilerOptions {
+            allWarningsAsErrors.set(fatalWarnings)
+            val compilerArgs = mutableListOf(
+                "-jvm-default=no-compatibility",
+                // https://youtrack.jetbrains.com/issue/KT-73255
+                // Apply @StringRes to both constructor params and generated properties
+                "-Xannotation-default-target=param-property"
+            )
+            if (project.name != "api") {
+                compilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
             }
+            freeCompilerArgs.addAll(compilerArgs)
         }
     }
 }
 
-fun Project.configureAndroidModule(androidExtension: CommonExtension) {
+fun configureAndroidModule(androidExtension: CommonExtension) {
     if (androidExtension is TestedExtension) {
         androidExtension.testOptions.unitTests.isIncludeAndroidResources = true
     }
-    
-    val androidComponentsExtension = extensions.findByName("androidComponents") as? AndroidComponentsExtension<*, *, *>
-    androidComponentsExtension?.beforeVariants { builder ->
+}
+
+fun configureAndroidVariants(androidComponentsExtension: AndroidComponentsExtension<*, *, *>) {
+    androidComponentsExtension.beforeVariants { builder ->
         if (testReleaseBuild && builder.name == "playRelease") {
             builder.optInToKeeper()
         }
@@ -210,9 +216,6 @@ private fun appendToGitHubActionsSummary(message: String) {
     if (!ciBuild) return
     val summaryPath = System.getenv("GITHUB_STEP_SUMMARY") ?: return
     Files.writeString(
-        Paths.get(summaryPath),
-        message,
-        StandardOpenOption.CREATE,
-        StandardOpenOption.APPEND
+        Paths.get(summaryPath), message, StandardOpenOption.CREATE, StandardOpenOption.APPEND
     )
 }
