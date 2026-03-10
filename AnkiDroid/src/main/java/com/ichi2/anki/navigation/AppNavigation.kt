@@ -26,6 +26,9 @@ object DeckPickerScreen : NavKey
 object HelpScreen : NavKey
 
 @Serializable
+object ContributeScreen : NavKey
+
+@Serializable
 data class CongratsScreen(val deckId: Long) : NavKey
 
 @Serializable

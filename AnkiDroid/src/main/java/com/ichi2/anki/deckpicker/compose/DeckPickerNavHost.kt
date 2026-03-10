@@ -81,12 +81,14 @@ import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
+import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.ui.compose.help.HelpScreen
+import com.ichi2.anki.ui.compose.contribute.ContributeScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.Dispatchers
@@ -226,6 +228,10 @@ fun DeckPickerNavHost(
 
         entry<HelpScreen> {
             HelpScreen(onNavigateUp = { navigator.goBack() })
+        }
+
+        entry<ContributeScreen> {
+            ContributeScreen(onNavigateUp = { navigator.goBack() })
         }
 
         entry<CongratsScreen> { key ->
@@ -389,7 +395,7 @@ private fun DeckPickerMainContent(
             }
 
             AppNavigationItem.Support -> {
-                onLaunchUrl("https://github.com/ankidroid/Anki-Android/wiki/Contributing")
+                navigator.navigate(ContributeScreen)
             }
         }
     }
