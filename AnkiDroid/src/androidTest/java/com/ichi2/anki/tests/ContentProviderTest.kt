@@ -284,7 +284,6 @@ class ContentProviderTest : InstrumentedTest() {
     fun testInsertTemplate() {
         // Get required objects for test
         val cr = contentResolver
-        var col = col
         // Add a new basic note type that we use for testing purposes (existing note types could potentially be corrupted)
         var noteType: NotetypeJson? = createBasicNoteType()
         val noteTypeId = noteType!!.id
@@ -303,7 +302,7 @@ class ContentProviderTest : InstrumentedTest() {
             }
         val templatesUri = Uri.withAppendedPath(noteTypeUri, "templates")
         val templateUri = cr.insert(templatesUri, cv)
-        col = reopenCol() // test that the changes are physically saved to the DB
+        val col: com.ichi2.anki.libanki.Collection = reopenCol() // test that the changes are physically saved to the DB
         assertNotNull("Check template uri", templateUri)
         assertEquals(
             "Check template uri ord",
@@ -340,7 +339,6 @@ class ContentProviderTest : InstrumentedTest() {
     fun testInsertField() {
         // Get required objects for test
         val cr = contentResolver
-        var col = col
         var noteType: NotetypeJson? = createBasicNoteType()
         val noteTypeId = noteType!!.id
         val initialFieldsArr = noteType.fields
@@ -351,7 +349,7 @@ class ContentProviderTest : InstrumentedTest() {
         val fieldUri = cr.insert(Uri.withAppendedPath(noteTypeUri, "fields"), insertFieldValues)
         assertNotNull("Check field uri", fieldUri)
         // Ensure that the changes are physically saved to the DB
-        col = reopenCol()
+        val col:com.ichi2.anki.libanki.Collection = reopenCol()
         noteType = col.notetypes.get(noteTypeId)
         // Test the field is as expected
         val fieldId = ContentUris.parseId(fieldUri!!)
