@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU General Public License along with         *
  * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
  ****************************************************************************************/
+@file:Suppress("DEPRECATION")
+
 package com.ichi2.anki.tests
 
 import android.content.ContentResolver
@@ -647,7 +649,7 @@ class ContentProviderTest : InstrumentedTest() {
                 val noteType = col.notetypes.get(noteTypeId)
                 assertNotNull("Check note type", noteType)
                 col.notetypes.rem(noteType!!)
-            } catch (e: ConfirmModSchemaException) {
+            } catch (_: ConfirmModSchemaException) {
                 // This will never happen
             }
         }
@@ -1124,7 +1126,7 @@ class ContentProviderTest : InstrumentedTest() {
         assertEquals("Check if update returns 1", 1, updateCount)
         try {
             Thread.currentThread().join(500)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // do nothing
         }
         val newCard = col.sched.card
