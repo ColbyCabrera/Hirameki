@@ -85,6 +85,12 @@
     <string name="note_type_name">Name</string>
     <string name="deck_name">Deck name</string>
     <string name="type_in_the_answer">Type in the answer</string>
+    <string name="contribute_screen_title">Contribute</string>
+    <string name="contribute_hero_subtitle">Support the developers behind the app.</string>
+    <string name="contribute_donate_creator_title">Support Me</string>
+    <string name="contribute_donate_creator_subtitle">Buy me a coffee if you like the app &lt;3</string>
+    <string name="contribute_repo_title">Contribute Code</string>
+    <string name="contribute_repo_subtitle">Help improve the app with code or translations</string>
     <string-array name="account_redirect_urls" translatable="false">
         <item>https://ankiweb.net/account/login?afterAuth=1</item>
         <item>https://ankiweb.net/decks</item>

@@ -38,18 +38,15 @@ enum class AppNavigationItem(
     @DrawableRes val icon: Int, @StringRes val labelResId: Int
 ) {
     Decks(R.drawable.list_24px, R.string.decks), CardBrowser(
-        R.drawable.cards_stack_24px,
-        R.string.browser
+        R.drawable.cards_stack_24px, R.string.browser
     ),
     Statistics(R.drawable.bar_chart_24px, R.string.statistics), Settings(
-        R.drawable.settings_24px,
-        R.string.settings
+        R.drawable.settings_24px, R.string.settings
     ),
     Help(
-        R.drawable.help_filled_24px,
-        R.string.help
+        R.drawable.help_filled_24px, R.string.help
     ),
-    Support(R.drawable.volunteer_activism_filled_24px, R.string.donate)
+    Support(R.drawable.volunteer_activism_filled_24px, R.string.contribute_screen_title)
 }
 
 @Composable
@@ -62,8 +59,7 @@ fun AnkiNavigationRail(
                 .padding(horizontal = 8.dp)
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(
-                12.dp,
-                alignment = Alignment.CenterVertically
+                12.dp, alignment = Alignment.CenterVertically
             )
         ) {
             AppNavigationItem.entries.forEach { item ->
