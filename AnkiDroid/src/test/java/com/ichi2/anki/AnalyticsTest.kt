@@ -117,10 +117,10 @@ class AnalyticsTest {
 
                 // prepare analytics so we can inspect what happens
                 val spyHit = spy(ExceptionHit())
-                doReturn(spyHit).whenever(analytics)?.exception()
+                doReturn(spyHit).whenever(analytics).exception()
                 try {
                     UsageAnalytics.sendAnalyticsException(grandparentException, false)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // do nothing - this is expected because UsageAnalytics isn't fully initialized
                 }
                 verify(grandparentException).cause
