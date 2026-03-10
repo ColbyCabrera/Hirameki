@@ -19,7 +19,6 @@ package com.ichi2.anki.mediacheck
 
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import anki.media.CheckMediaResponse
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
@@ -35,6 +34,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
 @NeedsTest("Test the media check process i.e. the buttons and views")
 class MediaCheckViewModel : ViewModel() {
@@ -62,6 +62,8 @@ class MediaCheckViewModel : ViewModel() {
     private val _progressState = MutableStateFlow<ProgressState>(ProgressState.Idle)
     val progressState: StateFlow<ProgressState> = _progressState
 
+    private val inFlight = AtomicBoolean(false)
+
     private val _uiEvent = Channel<UiEvent>(Channel.BUFFERED)
     val uiEvent = _uiEvent.receiveAsFlow()
 
@@ -76,22 +78,30 @@ class MediaCheckViewModel : ViewModel() {
         _uiEvent.close()
     }
 
-    private fun launchWithProgress(@StringRes messageRes: Int, block: suspend CoroutineScope.() -> Unit): Job? {
-        if (_progressState.value != ProgressState.Idle) {
+    private fun launchWithProgress(
+        @StringRes messageRes: Int,
+        block: suspend CoroutineScope.() -> Unit
+    ): Job? {
+        if (!inFlight.compareAndSet(false, true)) {
             Timber.w("launchWithProgress: An operation is already running, dropping request.")
             _uiEvent.trySend(UiEvent.ShowErrorRes(R.string.operation_already_running))
             return null
         }
 
-        return launchCatchingIO(
-            errorMessageHandler = { _uiEvent.send(UiEvent.ShowError(it)) }
-        ) {
-            _progressState.value = ProgressState.ActiveRes(messageRes)
-            try {
-                block()
-            } finally {
-                _progressState.value = ProgressState.Idle
+        return try {
+            launchCatchingIO(
+                errorMessageHandler = { _uiEvent.send(UiEvent.ShowError(it)) }) {
+                _progressState.value = ProgressState.ActiveRes(messageRes)
+                try {
+                    block()
+                } finally {
+                    _progressState.value = ProgressState.Idle
+                    inFlight.set(false)
+                }
             }
+        } catch (exception: Exception) {
+            inFlight.set(false)
+            throw exception
         }
     }
 
@@ -107,7 +117,12 @@ class MediaCheckViewModel : ViewModel() {
             }
             taggedFilesCount.value = taggedNotes.count
             if (taggedNotes.count > 0) {
-                _uiEvent.send(UiEvent.ShowResultDialog(R.string.check_media_tags_added, TR.browsingNotesUpdated(taggedFilesCount.value)))
+                _uiEvent.send(
+                    UiEvent.ShowResultDialog(
+                        R.string.check_media_tags_added,
+                        TR.browsingNotesUpdated(taggedFilesCount.value)
+                    )
+                )
             }
         }
     }
@@ -128,7 +143,8 @@ class MediaCheckViewModel : ViewModel() {
     }
 
     fun deleteUnusedMedia(): Job? = launchWithProgress(R.string.delete_media_message) {
-        val deletedMedia = withCol { deleteMedia(this@withCol, _mediaCheckResult.value?.unusedList ?: listOf()) }
+        val deletedMedia =
+            withCol { deleteMedia(this@withCol, _mediaCheckResult.value?.unusedList ?: listOf()) }
         deletedFilesCount.value = deletedMedia
         _uiEvent.send(UiEvent.ShowDeletionResult)
     }
