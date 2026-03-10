@@ -54,6 +54,7 @@ apply(from = "../lint.gradle")
 
 dependencies {
     implementation(project(":AnkiDroid"))
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.jakewharton.timber)
     implementation(libs.hamcrest)
     implementation(libs.hamcrest.library)
