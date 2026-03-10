@@ -64,7 +64,7 @@ class IncludedExcludedTagsAdapter(
     /** Default background for a tag that is not selected. */
     private val selectableItemBackground: Int
 
-    /** Background color for a tag that is selected(references R.attr.colorPrimary). */
+    /** Background color for a selected tag. */
     // TODO implement a ripple effect or combine the two backgrounds into one background drawable
     @ColorRes
     private val selectedItemBackground: Int
@@ -72,7 +72,7 @@ class IncludedExcludedTagsAdapter(
     init {
         val ta =
             context.obtainStyledAttributes(
-                intArrayOf(android.R.attr.selectableItemBackground, com.google.android.material.R.attr.colorPrimary),
+                intArrayOf(android.R.attr.selectableItemBackground, R.attr.selectedColor),
             )
         selectableItemBackground = ta.getResourceId(0, 0)
         selectedItemBackground = ta.getColor(1, Color.BLUE)
@@ -120,7 +120,7 @@ class IncludedExcludedTagsAdapter(
         }
     }
 
-    inner class RequireExcludeTagsViewHolder(
+    class RequireExcludeTagsViewHolder(
         rowView: View,
     ) : RecyclerView.ViewHolder(rowView) {
         val tagView: TextView = findViewById(R.id.tag)
