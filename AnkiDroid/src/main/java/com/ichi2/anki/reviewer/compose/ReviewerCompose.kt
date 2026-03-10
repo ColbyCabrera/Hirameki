@@ -93,6 +93,7 @@ import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
+import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -374,6 +375,7 @@ fun ReviewerContent(
                             .padding(bottom = paddingValues.calculateBottomPadding())
                             .onSizeChanged { toolbarHeight = it.height },
                         isAnswerShown = state.isAnswerShown,
+                        showAnswerFeedback = Prefs.showAnswerButtonBadges,
                         showTypeInAnswer = state.showTypeInAnswer,
                         typedAnswer = state.typedAnswer,
                         onTypedAnswerChanged = { viewModel.onEvent(ReviewerEvent.OnTypedAnswerChanged(it)) },

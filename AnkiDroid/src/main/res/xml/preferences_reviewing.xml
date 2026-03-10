@@ -55,5 +55,10 @@
             android:key="@string/keep_screen_on_preference"
             android:summary="@string/pref_keep_screen_on_summ"
             android:title="@string/pref_keep_screen_on" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/show_answer_button_badges_key"
+            android:title="@string/show_answer_button_badges"
+            android:summary="@string/show_answer_button_badges_summ" />
     </PreferenceCategory>
 </PreferenceScreen>

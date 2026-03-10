@@ -75,6 +75,7 @@ val ratings = listOf(
 fun AnswerButtons(
     modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
+    showAnswerFeedback: Boolean,
     showTypeInAnswer: Boolean,
     typedAnswer: String,
     onTypedAnswerChanged: (String) -> Unit,
@@ -176,7 +177,12 @@ fun AnswerButtons(
                                                 modifier = Modifier
                                                     .height(56.dp)
                                                     .fillMaxWidth()
-                                                    .padding(bottom = 6.dp), // add slight padding so the badge doesn't overlap excessively
+                                                    .then(
+                                                        if (showAnswerFeedback) Modifier.padding(
+                                                            bottom = 6.dp
+                                                        )
+                                                        else Modifier
+                                                    ), // add slight padding so the badge doesn't overlap excessively
                                                 contentPadding = ButtonDefaults.ExtraSmallContentPadding,
                                                 shape = when (index) {
                                                     0 -> ButtonGroupDefaults.connectedLeadingButtonShape
@@ -196,15 +202,17 @@ fun AnswerButtons(
                                                 )
                                             }
 
-                                            Badge(
-                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            ) {
-                                                Text(
-                                                    modifier = Modifier.padding(1.dp),
-                                                    text = stringResource(labelResId),
-                                                    style = MaterialTheme.typography.labelSmall
-                                                )
+                                            if (showAnswerFeedback) {
+                                                Badge(
+                                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                ) {
+                                                    Text(
+                                                        modifier = Modifier.padding(1.dp),
+                                                        text = stringResource(labelResId),
+                                                        style = MaterialTheme.typography.labelSmall
+                                                    )
+                                                }
                                             }
                                         }
                                     },
@@ -225,6 +233,7 @@ fun AnswerButtonsShowAnswerPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = false,
+            showAnswerFeedback = true,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -241,6 +250,24 @@ fun AnswerButtonsRatingPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = true,
+            showAnswerFeedback = true,
+            showTypeInAnswer = false,
+            typedAnswer = "",
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = listOf("1m", "2d", "4d", "7d"),
+            onMoreOptionsClick = {})
+    }
+}
+
+@Preview(name = "Rating Buttons (No Feedback)", showBackground = true)
+@Composable
+fun AnswerButtonsNoFeedbackPreview() {
+    AnkiDroidTheme {
+        AnswerButtons(
+            isAnswerShown = true,
+            showAnswerFeedback = false,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -257,6 +284,7 @@ fun AnswerButtonsTypeInPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = false,
+            showAnswerFeedback = true,
             showTypeInAnswer = true,
             typedAnswer = "Typed Answer",
             onTypedAnswerChanged = {},
