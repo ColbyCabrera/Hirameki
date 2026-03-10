@@ -22,7 +22,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.annotation.ColorRes
+import androidx.annotation.ColorInt
 import androidx.recyclerview.widget.RecyclerView
 import anki.scheduler.CustomStudyDefaultsResponse
 import com.ichi2.anki.R
@@ -66,7 +66,7 @@ class IncludedExcludedTagsAdapter(
 
     /** Background color for a selected tag. */
     // TODO implement a ripple effect or combine the two backgrounds into one background drawable
-    @ColorRes
+    @ColorInt
     private val selectedItemBackground: Int
 
     init {
