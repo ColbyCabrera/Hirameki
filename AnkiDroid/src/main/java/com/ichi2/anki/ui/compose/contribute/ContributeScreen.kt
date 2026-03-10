@@ -92,7 +92,7 @@ private val contributeLinks = listOf(
         R.string.contribute_donate_creator_title,
         R.string.contribute_donate_creator_subtitle,
         R.drawable.volunteer_activism_24px,
-        "ko-fi.com/colbycabrera"
+        "https://ko-fi.com/colbycabrera"
     ),
     ContributeLink(
         R.string.contribute_repo_title,
