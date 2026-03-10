@@ -86,7 +86,7 @@ class ContentProviderTest : InstrumentedTest() {
     @get:Rule
     var runtimePermissionRule = grantPermissions(storagePermission, FlashCardsContract.READ_WRITE_PERMISSION)
 
-    // Whether tear down should be executed. I.e. if set up was not cancelled.
+    // Whether tear down should be executed. I.e. if set up was not canceled.
     private var tearDown = false
 
     private var numDecksBeforeTest = 0
@@ -996,6 +996,7 @@ class ContentProviderTest : InstrumentedTest() {
         val noteID =
             reviewInfoCursor.getLong(reviewInfoCursor.getColumnIndex(FlashCardsContract.ReviewInfo.NOTE_ID))
         var nextCard: Card? = null
+        @Suppress("unused")
         for (i in 0..9) { // minimizing fails, when sched.reset() randomly chooses between multiple cards
             nextCard = sched.card
             if (nextCard != null && nextCard.nid == noteID && nextCard.ord == cardOrd) break
@@ -1048,6 +1049,7 @@ class ContentProviderTest : InstrumentedTest() {
             )
             col.decks.select(deckToTest)
             var nextCard: Card? = null
+            @Suppress("unused")
             for (i in 0..9) { // minimizing fails, when sched.reset() randomly chooses between multiple cards
                 nextCard = sched.card
                 if (nextCard != null && nextCard.nid == noteID && nextCard.ord == cardOrd) break
