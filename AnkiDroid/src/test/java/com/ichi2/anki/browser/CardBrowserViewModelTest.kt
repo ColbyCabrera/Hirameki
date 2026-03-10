@@ -1180,7 +1180,8 @@ class CardBrowserViewModelTest : JvmTest() {
         testBody: suspend CardBrowserViewModel.() -> Unit,
     ) = runTest {
         CardsOrNotes.NOTES.saveToCollection(col)
-        for (i in 0..notes) {
+        @Suppress("EmptyRange")
+        for (i in 0 until notes) {
             // ensure 1 note = 2 cards
             addBasicAndReversedNote()
         }
@@ -1210,7 +1211,8 @@ class CardBrowserViewModelTest : JvmTest() {
         val originalDispatcher = ioDispatcher
         ioDispatcher = UnconfinedTestDispatcher(testScheduler)
         try {
-            for (i in 0..notes) {
+            @Suppress("EmptyRange")
+            for (i in 0 until notes) {
                 addBasicNote()
             }
             notes.ifNotZero { count -> Timber.d("added %d notes", count) }
