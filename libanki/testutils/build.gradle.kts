@@ -44,6 +44,13 @@ android {
             jvmTarget = JvmTarget.JVM_11
         }
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/LICENSE-notice.md"
+        }
+    }
 }
 
 dependencies {

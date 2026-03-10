@@ -42,6 +42,7 @@ import com.ichi2.anki.libanki.addNotetypeLegacy
 import com.ichi2.anki.libanki.backend.BackendUtils
 import com.ichi2.anki.libanki.exception.ConfirmModSchemaException
 import com.ichi2.anki.libanki.getStockNotetype
+import com.ichi2.anki.libanki.sched.Ease
 import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.anki.provider.pureAnswer
 import com.ichi2.anki.testutil.DatabaseUtils.cursorFillWindow
@@ -124,7 +125,7 @@ class ContentProviderTest : InstrumentedTest() {
                 /* If parent already exists, don't add the deck, so
                  * that we are sure it won't get deleted at
                  * set-down, */
-                val did = col.decks.byName(partialName!!)?.id ?: col.decks.id(partialName)
+                val did = col.decks.byName(partialName)?.id ?: col.decks.id(partialName)
                 testDeckIds.add(did)
                 createdNotes.add(setupNewNote(col, noteTypeId, did, dummyFields, TEST_TAG))
                 partialName += "::"
@@ -1112,7 +1113,7 @@ class ContentProviderTest : InstrumentedTest() {
         val cardOrd = card.ord
 
         @Suppress("DEPRECATION")
-        val earlyGraduatingEase = com.ichi2.anki.libanki.sched.Ease.EASY
+        val earlyGraduatingEase = Ease.EASY
         val values =
             ContentValues().apply {
                 val timeTaken: Long = 5000 // 5 seconds
@@ -1156,7 +1157,7 @@ class ContentProviderTest : InstrumentedTest() {
             card!!.queue,
         )
 
-        // retain the card id, we will lookup the card after the update
+        // retain the card id, we will look up the card after the update
         val cardId = card.id
 
         // bury it through the API
@@ -1206,7 +1207,7 @@ class ContentProviderTest : InstrumentedTest() {
             card!!.queue,
         )
 
-        // retain the card id, we will lookup the card after the update
+        // retain the card id, we will look up the card after the update
         val cardId = card.id
 
         // suspend it through the API
@@ -1514,7 +1515,7 @@ class ContentProviderTest : InstrumentedTest() {
         private val TEST_NOTE_TYPE_CARDS = arrayOf("cArD1", "caRD2")
         private val TEST_NOTE_TYPE_QFMT = arrayOf("{{FRONTS}}", "{{BACK}}")
         private val TEST_NOTE_TYPE_AFMT = arrayOf("{{BACK}}", "{{FRONTS}}")
-        private val TEST_NOTE_FIELDS = arrayOf("dis is za Fr0nt", "Te\$t")
+        private val TEST_NOTE_FIELDS = arrayOf("dis is za Fr0nt", $$"Te$t")
         private const val TEST_NOTE_TYPE_CSS = "styleeeee"
 
         @Suppress("SameParameterValue")
