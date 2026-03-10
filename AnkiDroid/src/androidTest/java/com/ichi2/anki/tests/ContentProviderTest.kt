@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU General Public License along with         *
  * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
  ****************************************************************************************/
+@file:Suppress("DEPRECATION")
+
 package com.ichi2.anki.tests
 
 import android.content.ContentResolver
@@ -42,6 +44,7 @@ import com.ichi2.anki.libanki.addNotetypeLegacy
 import com.ichi2.anki.libanki.backend.BackendUtils
 import com.ichi2.anki.libanki.exception.ConfirmModSchemaException
 import com.ichi2.anki.libanki.getStockNotetype
+import com.ichi2.anki.libanki.sched.Ease
 import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.anki.provider.pureAnswer
 import com.ichi2.anki.testutil.DatabaseUtils.cursorFillWindow
@@ -83,7 +86,7 @@ class ContentProviderTest : InstrumentedTest() {
     @get:Rule
     var runtimePermissionRule = grantPermissions(storagePermission, FlashCardsContract.READ_WRITE_PERMISSION)
 
-    // Whether tear down should be executed. I.e. if set up was not cancelled.
+    // Whether tear down should be executed. I.e. if set up was not canceled.
     private var tearDown = false
 
     private var numDecksBeforeTest = 0
@@ -124,7 +127,7 @@ class ContentProviderTest : InstrumentedTest() {
                 /* If parent already exists, don't add the deck, so
                  * that we are sure it won't get deleted at
                  * set-down, */
-                val did = col.decks.byName(partialName!!)?.id ?: col.decks.id(partialName)
+                val did = col.decks.byName(partialName)?.id ?: col.decks.id(partialName)
                 testDeckIds.add(did)
                 createdNotes.add(setupNewNote(col, noteTypeId, did, dummyFields, TEST_TAG))
                 partialName += "::"
@@ -283,7 +286,6 @@ class ContentProviderTest : InstrumentedTest() {
     fun testInsertTemplate() {
         // Get required objects for test
         val cr = contentResolver
-        var col = col
         // Add a new basic note type that we use for testing purposes (existing note types could potentially be corrupted)
         var noteType: NotetypeJson? = createBasicNoteType()
         val noteTypeId = noteType!!.id
@@ -302,7 +304,7 @@ class ContentProviderTest : InstrumentedTest() {
             }
         val templatesUri = Uri.withAppendedPath(noteTypeUri, "templates")
         val templateUri = cr.insert(templatesUri, cv)
-        col = reopenCol() // test that the changes are physically saved to the DB
+        val col: com.ichi2.anki.libanki.Collection = reopenCol() // test that the changes are physically saved to the DB
         assertNotNull("Check template uri", templateUri)
         assertEquals(
             "Check template uri ord",
@@ -339,7 +341,6 @@ class ContentProviderTest : InstrumentedTest() {
     fun testInsertField() {
         // Get required objects for test
         val cr = contentResolver
-        var col = col
         var noteType: NotetypeJson? = createBasicNoteType()
         val noteTypeId = noteType!!.id
         val initialFieldsArr = noteType.fields
@@ -350,7 +351,7 @@ class ContentProviderTest : InstrumentedTest() {
         val fieldUri = cr.insert(Uri.withAppendedPath(noteTypeUri, "fields"), insertFieldValues)
         assertNotNull("Check field uri", fieldUri)
         // Ensure that the changes are physically saved to the DB
-        col = reopenCol()
+        val col:com.ichi2.anki.libanki.Collection = reopenCol()
         noteType = col.notetypes.get(noteTypeId)
         // Test the field is as expected
         val fieldId = ContentUris.parseId(fieldUri!!)
@@ -648,7 +649,7 @@ class ContentProviderTest : InstrumentedTest() {
                 val noteType = col.notetypes.get(noteTypeId)
                 assertNotNull("Check note type", noteType)
                 col.notetypes.rem(noteType!!)
-            } catch (e: ConfirmModSchemaException) {
+            } catch (_: ConfirmModSchemaException) {
                 // This will never happen
             }
         }
@@ -995,6 +996,7 @@ class ContentProviderTest : InstrumentedTest() {
         val noteID =
             reviewInfoCursor.getLong(reviewInfoCursor.getColumnIndex(FlashCardsContract.ReviewInfo.NOTE_ID))
         var nextCard: Card? = null
+        @Suppress("unused")
         for (i in 0..9) { // minimizing fails, when sched.reset() randomly chooses between multiple cards
             nextCard = sched.card
             if (nextCard != null && nextCard.nid == noteID && nextCard.ord == cardOrd) break
@@ -1047,6 +1049,7 @@ class ContentProviderTest : InstrumentedTest() {
             )
             col.decks.select(deckToTest)
             var nextCard: Card? = null
+            @Suppress("unused")
             for (i in 0..9) { // minimizing fails, when sched.reset() randomly chooses between multiple cards
                 nextCard = sched.card
                 if (nextCard != null && nextCard.nid == noteID && nextCard.ord == cardOrd) break
@@ -1112,7 +1115,7 @@ class ContentProviderTest : InstrumentedTest() {
         val cardOrd = card.ord
 
         @Suppress("DEPRECATION")
-        val earlyGraduatingEase = com.ichi2.anki.libanki.sched.Ease.EASY
+        val earlyGraduatingEase = Ease.EASY
         val values =
             ContentValues().apply {
                 val timeTaken: Long = 5000 // 5 seconds
@@ -1125,7 +1128,7 @@ class ContentProviderTest : InstrumentedTest() {
         assertEquals("Check if update returns 1", 1, updateCount)
         try {
             Thread.currentThread().join(500)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // do nothing
         }
         val newCard = col.sched.card
@@ -1156,7 +1159,7 @@ class ContentProviderTest : InstrumentedTest() {
             card!!.queue,
         )
 
-        // retain the card id, we will lookup the card after the update
+        // retain the card id, we will look up the card after the update
         val cardId = card.id
 
         // bury it through the API
@@ -1206,7 +1209,7 @@ class ContentProviderTest : InstrumentedTest() {
             card!!.queue,
         )
 
-        // retain the card id, we will lookup the card after the update
+        // retain the card id, we will look up the card after the update
         val cardId = card.id
 
         // suspend it through the API
@@ -1514,7 +1517,7 @@ class ContentProviderTest : InstrumentedTest() {
         private val TEST_NOTE_TYPE_CARDS = arrayOf("cArD1", "caRD2")
         private val TEST_NOTE_TYPE_QFMT = arrayOf("{{FRONTS}}", "{{BACK}}")
         private val TEST_NOTE_TYPE_AFMT = arrayOf("{{BACK}}", "{{FRONTS}}")
-        private val TEST_NOTE_FIELDS = arrayOf("dis is za Fr0nt", "Te\$t")
+        private val TEST_NOTE_FIELDS = arrayOf("dis is za Fr0nt", $$"Te$t")
         private const val TEST_NOTE_TYPE_CSS = "styleeeee"
 
         @Suppress("SameParameterValue")

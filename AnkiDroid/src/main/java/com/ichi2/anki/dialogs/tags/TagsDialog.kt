@@ -171,7 +171,7 @@ class TagsDialog : AnalyticsDialogFragment {
 
     @NeedsTest(
         "In EDIT_TAGS dialog, long-clicking a tag should open the add tag dialog with the clicked tag" +
-            "filled as prefix properly. In other dialog types, long-clicking a tag behaves like a short click.",
+            " filled as prefix properly. In other dialog types, long-clicking a tag behaves like a short click.",
     )
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val view = layoutInflater.inflate(R.layout.tags_dialog, null)
@@ -334,7 +334,7 @@ class TagsDialog : AnalyticsDialogFragment {
         toolbarSearchItem = toolbar.menu.findItem(R.id.tags_dialog_action_filter)
         val toolbarSearchItem: MenuItem? = toolbarSearchItem
         toolbarSearchView = toolbarSearchItem?.actionView as AccessibleSearchView
-        val queryET = toolbarSearchView!!.findViewById<EditText>(com.google.android.material.R.id.search_src_text)
+        val queryET = toolbarSearchView!!.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
         queryET.filters = arrayOf(addTagFilter)
         toolbarSearchView!!.queryHint = getString(R.string.filter_tags)
         toolbarSearchView!!.setOnQueryTextListener(
@@ -372,7 +372,7 @@ class TagsDialog : AnalyticsDialogFragment {
     /**
      * Create an add tag dialog.
      *
-     * @param prefixTag: The tag to be prefilled into the EditText section. A trailing '::' will be appended.
+     * @param prefixTag The tag to be prefilled into the EditText section. A trailing '::' will be appended.
      */
     @NeedsTest("The prefixTag should be prefilled properly")
     private fun createAddTagDialog(prefixTag: String?) {

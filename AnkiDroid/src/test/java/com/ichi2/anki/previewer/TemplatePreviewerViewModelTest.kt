@@ -57,7 +57,7 @@ class TemplatePreviewerViewModelTest : JvmTest() {
         ) {
             onPageFinished(false)
             assertThat(this.cardsWithEmptyFronts!!.await()[0], equalTo(false))
-            assertThat(this.cardsWithEmptyFronts!!.await()[1], equalTo(true))
+            assertThat(this.cardsWithEmptyFronts.await()[1], equalTo(true))
         }
 
     private fun runClozeTest(

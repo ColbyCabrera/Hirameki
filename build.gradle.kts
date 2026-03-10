@@ -77,11 +77,17 @@ subprojects {
         }
 
         // CI: Log the test results
-        afterSuite(KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
-            if (desc.parent == null) {
-                logTestResultsToGitHubActions(desc, result)
+        addTestListener(object : TestListener {
+            override fun beforeSuite(suite: TestDescriptor) {}
+            override fun beforeTest(desc: TestDescriptor) {}
+            override fun afterTest(desc: TestDescriptor, result: TestResult) {}
+
+            override fun afterSuite(desc: TestDescriptor, result: TestResult) {
+                if (desc.parent == null) {
+                    logTestResultsToGitHubActions(desc, result)
+                }
             }
-        }))
+        })
 
         maxParallelForks = gradleTestMaxParallelForks
         forkEvery = 40

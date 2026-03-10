@@ -84,7 +84,7 @@ open class PageWebViewClient : WebViewClient() {
                 webView, com.google.android.material.R.attr.colorOnBackground
             ).toRGBHex()
             val primaryColor =
-                MaterialColors.getColor(webView, com.google.android.material.R.attr.colorPrimary)
+                MaterialColors.getColor(webView, androidx.appcompat.R.attr.colorPrimary)
                     .toRGBHex()
             val onPrimaryColor =
                 MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnPrimary)

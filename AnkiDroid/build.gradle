@@ -174,8 +174,8 @@ android {
 
             resValue 'color', 'anki_foreground_icon_color_0', "#FF29B6F6"
             resValue 'color', 'anki_foreground_icon_color_1', "#FF0288D1"
-            enableUnitTestCoverage testReleaseBuild
-            enableAndroidTestCoverage testReleaseBuild
+            enableUnitTestCoverage = testReleaseBuild
+            enableAndroidTestCoverage = testReleaseBuild
         }
     }
 
@@ -251,13 +251,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
         coreLibraryDesugaringEnabled = true
     }
     kotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 

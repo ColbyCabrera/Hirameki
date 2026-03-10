@@ -29,6 +29,7 @@ import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.Flag
 import com.ichi2.anki.NoteEditorActivity
 import com.ichi2.anki.NoteEditorFragment
+import com.ichi2.anki.R
 import com.ichi2.anki.browser.CardBrowserColumn.ANSWER
 import com.ichi2.anki.browser.CardBrowserColumn.CARD
 import com.ichi2.anki.browser.CardBrowserColumn.CHANGED
@@ -116,8 +117,12 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `undo with empty stack does not crash`() = runViewModelTest {
-        undo().join()
+    fun `undo with empty stack shows error message`() = runViewModelTest {
+        flowOfSnackbarMessage.test {
+            undo().join()
+            // Verify that snackbar event emitted corresponds to empty undo stack
+            assertThat(awaitItem(), equalTo(R.string.undo_empty))
+        }
     }
 
     @Test
@@ -581,7 +586,7 @@ class CardBrowserViewModelTest : JvmTest() {
     @Test
     fun `suspend - notes - some cards suspended`() = runViewModelNotesTest(notes = 2) {
         // this suspends o single cid from a nid
-        suspendCards(cards.first().toCardId(cardsOrNotes) as CardId)
+        suspendCards(cards.first().toCardId(cardsOrNotes))
         ensureOpsExecuted(1) {
             selectAll()
             toggleSuspendCards()
@@ -1175,6 +1180,7 @@ class CardBrowserViewModelTest : JvmTest() {
         testBody: suspend CardBrowserViewModel.() -> Unit,
     ) = runTest {
         CardsOrNotes.NOTES.saveToCollection(col)
+        @Suppress("EmptyRange")
         for (i in 0 until notes) {
             // ensure 1 note = 2 cards
             addBasicAndReversedNote()
@@ -1205,6 +1211,7 @@ class CardBrowserViewModelTest : JvmTest() {
         val originalDispatcher = ioDispatcher
         ioDispatcher = UnconfinedTestDispatcher(testScheduler)
         try {
+            @Suppress("EmptyRange")
             for (i in 0 until notes) {
                 addBasicNote()
             }
