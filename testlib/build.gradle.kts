@@ -1,21 +1,17 @@
+import com.android.build.api.dsl.LibraryExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.android.library)
 }
 
-android {
+extensions.configure<LibraryExtension> {
     namespace = "com.ichi2.anki.testlib"
-    compileSdk =
-        libs.versions.compileSdk
-            .get()
-            .toInt()
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk =
-            libs.versions.minSdk
-                .get()
-                .toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
     }
 
     flavorDimensions += "appStore"
@@ -29,24 +25,25 @@ android {
             dimension = "appStore"
         }
     }
-    kotlin {
-        compilerOptions {
-            freeCompilerArgs.add("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
-            jvmTarget = JvmTarget.JVM_17
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
 
-        packaging {
-            resources {
-                // testlib is not compiled into the public apk
-                excludes += "META-INF/DEPENDENCIES"
-                excludes += "META-INF/LICENSE.md"
-                excludes += "META-INF/LICENSE-notice.md"
-            }
+    packaging {
+        resources {
+            // testlib is not compiled into the public apk
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
         }
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
