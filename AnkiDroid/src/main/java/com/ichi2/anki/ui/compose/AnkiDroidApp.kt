@@ -60,6 +60,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -116,9 +117,7 @@ fun AnkiDroidApp(
     isInInitialState: Boolean?,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    val searchFocusRequester = remember {
-        androidx.compose.ui.focus.FocusRequester()
-    }
+    val searchFocusRequester = remember { FocusRequester() }
     var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(requestSearchFocus) {
@@ -234,8 +233,8 @@ fun AnkiDroidApp(
                                 FilledIconButton(
                                     onClick = { isSearchOpen = true },
                                     modifier = Modifier.graphicsLayer {
-                                            alpha = 1f - searchAnim
-                                        },
+                                        alpha = 1f - searchAnim
+                                    },
                                     colors = IconButtonDefaults.filledIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
                                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
