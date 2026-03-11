@@ -537,12 +537,9 @@ fun AnswerIndicator(
 ) {
     var lastFeedback by remember { mutableStateOf<AnswerFeedback?>(null) }
 
-    if (feedback != null) {
-        lastFeedback = feedback
-    }
-
     LaunchedEffect(feedback) {
         if (feedback != null) {
+            lastFeedback = feedback
             delay(AnswerIndicatorDuration)
             onDismissed()
         }
@@ -554,6 +551,7 @@ fun AnswerIndicator(
         exit = fadeOut(animationSpec = MaterialTheme.motionScheme.slowEffectsSpec()),
         modifier = modifier
     ) {
+        // Use the cached lastFeedback to avoid disappearing mid-animation
         lastFeedback?.let { current ->
             Surface(
                 shape = MaterialTheme.shapes.extraExtraLarge,
