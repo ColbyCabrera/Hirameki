@@ -91,9 +91,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
-import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
+import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.reviewer.ReviewerViewModel
@@ -184,8 +184,6 @@ fun ReviewerContent(
     val deckTags by viewModel.deckTags.collectAsStateWithLifecycle()
     val filterByDeck by viewModel.filterByDeck.collectAsStateWithLifecycle()
 
-    var answerIndicatorState by remember { mutableStateOf<Pair<CardAnswer.Rating, Long>?>(null) }
-
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
     val currentDarkMode = isSystemInDarkTheme()
@@ -214,11 +212,6 @@ fun ReviewerContent(
 
                 is ReviewerEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
-                }
-
-                is ReviewerEffect.ShowAnswerIndicator -> {
-                    val id = TimeManager.time.intTimeMS()
-                    answerIndicatorState = effect.rating to id
                 }
 
                 else -> {
@@ -405,9 +398,8 @@ fun ReviewerContent(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(end = 16.dp, top = 16.dp),
-                        answerIndicatorState = answerIndicatorState,
-                        onDismissed = { answerIndicatorState = null }
-                    )
+                        feedback = state.answerFeedback,
+                        onDismissed = { viewModel.onEvent(ReviewerEvent.AnswerFeedbackShown) })
                 }
             }
         }
@@ -540,45 +532,38 @@ fun ReviewerContent(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnswerIndicator(
-    modifier: Modifier = Modifier,
-    answerIndicatorState: Pair<CardAnswer.Rating, Long>?,
-    onDismissed: () -> Unit
+    modifier: Modifier = Modifier, feedback: AnswerFeedback?, onDismissed: () -> Unit
 ) {
-    var displayRating by remember { mutableStateOf<CardAnswer.Rating?>(null) }
-
-    LaunchedEffect(answerIndicatorState) {
-        if (answerIndicatorState != null) {
-            displayRating = answerIndicatorState.first
+    LaunchedEffect(feedback) {
+        if (feedback != null) {
             delay(1000)
             onDismissed()
         }
     }
 
     AnimatedVisibility(
-        visible = answerIndicatorState != null,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier
+        visible = feedback != null, enter = fadeIn(), exit = fadeOut(), modifier = modifier
     ) {
         Surface(
             shape = MaterialTheme.shapes.extraExtraLarge,
             color = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         ) {
-            val textRes = when (displayRating) {
-                CardAnswer.Rating.AGAIN -> R.string.ease_button_again
-                CardAnswer.Rating.HARD -> R.string.ease_button_hard
-                CardAnswer.Rating.GOOD -> R.string.ease_button_good
-                CardAnswer.Rating.EASY -> R.string.ease_button_easy
-                else -> null
-            }
-            if (textRes != null) {
+            if (feedback != null) {
                 Text(
-                    text = stringResource(id = textRes),
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    text = stringResource(feedback.rating.toResId()),
                     style = MaterialTheme.typography.labelSmall
                 )
             }
         }
     }
+}
+
+private fun CardAnswer.Rating.toResId(): Int = when (this) {
+    CardAnswer.Rating.AGAIN -> R.string.ease_button_again
+    CardAnswer.Rating.HARD -> R.string.ease_button_hard
+    CardAnswer.Rating.GOOD -> R.string.ease_button_good
+    CardAnswer.Rating.EASY -> R.string.ease_button_easy
+    else -> R.string.card_browser_unknown_deck_name
 }

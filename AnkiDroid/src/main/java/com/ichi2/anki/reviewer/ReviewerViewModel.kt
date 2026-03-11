@@ -52,6 +52,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
+import java.util.UUID
 
 sealed class MediaError(open val message: String) {
     data class PlaybackError(val uri: Uri, override val message: String) : MediaError(message)
@@ -64,6 +65,7 @@ data class ReviewerState(
     val learnCount: Int = 0,
     val reviewCount: Int = 0,
     val chosenAnswer: String = "",
+    val answerFeedback: AnswerFeedback? = null,
     val isAnswerShown: Boolean = false,
     val html: String = "<html><body></body></html>",
     val nextTimes: List<String> = List(4) { "" },
@@ -76,6 +78,11 @@ data class ReviewerState(
     val isWhiteboardEnabled: Boolean = false,
     val isVoicePlaybackEnabled: Boolean = false,
     val mediaError: MediaError? = null
+)
+
+data class AnswerFeedback(
+    val rating: CardAnswer.Rating,
+    val id: String = UUID.randomUUID().toString()
 )
 
 sealed class ReviewerEvent {
@@ -103,6 +110,7 @@ sealed class ReviewerEvent {
     data class OnVoicePlaybackStateChanged(val enabled: Boolean) : ReviewerEvent()
     object DeckOptions : ReviewerEvent()
     object MediaErrorHandled : ReviewerEvent()
+    object AnswerFeedbackShown : ReviewerEvent()
 }
 
 sealed class ReviewerEffect {
@@ -227,6 +235,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             is ReviewerEvent.OnVoicePlaybackStateChanged -> onVoicePlaybackStateChanged(event.enabled)
             is ReviewerEvent.DeckOptions -> deckOptions()
             is ReviewerEvent.MediaErrorHandled -> onMediaErrorHandled()
+            is ReviewerEvent.AnswerFeedbackShown -> onAnswerFeedbackShown()
         }
     }
 
@@ -526,9 +535,13 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             }
 
             _effect.emit(ReviewerEffect.ShowAnswerIndicator(rating))
-
+            _state.update { it.copy(answerFeedback = AnswerFeedback(rating)) }
             loadCardSuspend()
         }
+    }
+
+    private fun onAnswerFeedbackShown() {
+        _state.update { it.copy(answerFeedback = null) }
     }
 
     private fun unanswerCard() {
