@@ -219,12 +219,6 @@ fun ReviewerContent(
                 is ReviewerEffect.ShowAnswerIndicator -> {
                     val id = TimeManager.time.intTimeMS()
                     answerIndicatorState = effect.rating to id
-                    scope.launch {
-                        delay(1000)
-                        if (answerIndicatorState?.second == id) {
-                            answerIndicatorState = null
-                        }
-                    }
                 }
 
                 else -> {
@@ -412,6 +406,7 @@ fun ReviewerContent(
                             .align(Alignment.TopEnd)
                             .padding(end = 16.dp, top = 16.dp),
                         answerIndicatorState = answerIndicatorState,
+                        onDismissed = { answerIndicatorState = null }
                     )
                 }
             }
@@ -547,7 +542,18 @@ fun ReviewerContent(
 fun AnswerIndicator(
     modifier: Modifier = Modifier,
     answerIndicatorState: Pair<CardAnswer.Rating, Long>?,
+    onDismissed: () -> Unit
 ) {
+    var displayRating by remember { mutableStateOf<CardAnswer.Rating?>(null) }
+
+    LaunchedEffect(answerIndicatorState) {
+        if (answerIndicatorState != null) {
+            displayRating = answerIndicatorState.first
+            delay(1000)
+            onDismissed()
+        }
+    }
+
     AnimatedVisibility(
         visible = answerIndicatorState != null,
         enter = fadeIn(),
@@ -559,7 +565,7 @@ fun AnswerIndicator(
             color = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         ) {
-            val textRes = when (answerIndicatorState?.first) {
+            val textRes = when (displayRating) {
                 CardAnswer.Rating.AGAIN -> R.string.ease_button_again
                 CardAnswer.Rating.HARD -> R.string.ease_button_hard
                 CardAnswer.Rating.GOOD -> R.string.ease_button_good
