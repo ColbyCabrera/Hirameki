@@ -107,6 +107,7 @@ import kotlinx.coroutines.launch
 
 private val WhiteboardToolbarWidth = 56.dp
 private val WhiteboardBottomBarOffset = 48.dp
+private const val AnswerIndicatorDuration = 1000L
 
 // You can rename this class to be more descriptive
 class InvertedTopCornersShape(private val cornerRadius: Dp) : Shape {
@@ -535,14 +536,14 @@ fun AnswerIndicator(
     modifier: Modifier = Modifier, feedback: AnswerFeedback?, onDismissed: () -> Unit
 ) {
     var lastFeedback by remember { mutableStateOf<AnswerFeedback?>(null) }
-    
+
     if (feedback != null) {
         lastFeedback = feedback
     }
 
     LaunchedEffect(feedback) {
         if (feedback != null) {
-            delay(1000)
+            delay(AnswerIndicatorDuration)
             onDismissed()
         }
     }
