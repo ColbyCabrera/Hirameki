@@ -541,7 +541,9 @@ fun AnswerIndicator(
         if (feedback != null) {
             lastFeedback = feedback
             delay(AnswerIndicatorDuration)
-            onDismissed()
+            if (lastFeedback == feedback) {
+                onDismissed()
+            }
         }
     }
 
