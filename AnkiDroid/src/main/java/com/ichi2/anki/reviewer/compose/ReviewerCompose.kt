@@ -19,6 +19,9 @@ package com.ichi2.anki.reviewer.compose
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -85,8 +88,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
+import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.ReviewerEffect
@@ -96,6 +101,7 @@ import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -178,6 +184,8 @@ fun ReviewerContent(
     val deckTags by viewModel.deckTags.collectAsStateWithLifecycle()
     val filterByDeck by viewModel.filterByDeck.collectAsStateWithLifecycle()
 
+    var answerIndicatorState by remember { mutableStateOf<Pair<CardAnswer.Rating, Long>?>(null) }
+
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
     val currentDarkMode = isSystemInDarkTheme()
@@ -206,6 +214,17 @@ fun ReviewerContent(
 
                 is ReviewerEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
+                }
+
+                is ReviewerEffect.ShowAnswerIndicator -> {
+                    val id = TimeManager.time.intTimeMS()
+                    answerIndicatorState = effect.rating to id
+                    scope.launch {
+                        delay(1000)
+                        if (answerIndicatorState?.second == id) {
+                            answerIndicatorState = null
+                        }
+                    }
                 }
 
                 else -> {
@@ -378,11 +397,21 @@ fun ReviewerContent(
                         showAnswerFeedback = Prefs.showAnswerButtonBadges,
                         showTypeInAnswer = state.showTypeInAnswer,
                         typedAnswer = state.typedAnswer,
-                        onTypedAnswerChanged = { viewModel.onEvent(ReviewerEvent.OnTypedAnswerChanged(it)) },
+                        onTypedAnswerChanged = {
+                            viewModel.onEvent(
+                                ReviewerEvent.OnTypedAnswerChanged(it)
+                            )
+                        },
                         onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
                         onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
                         nextTimes = state.nextTimes,
-                        onMoreOptionsClick = { showBottomSheet = true }
+                        onMoreOptionsClick = { showBottomSheet = true })
+
+                    AnswerIndicator(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(end = 16.dp, top = 16.dp),
+                        answerIndicatorState = answerIndicatorState,
                     )
                 }
             }
@@ -509,6 +538,41 @@ fun ReviewerContent(
                 confirmButtonText = stringResource(R.string.dialog_ok),
                 showFilterByDeckToggle = true,
                 onAddTag = { viewModel.registerNewTag(it) })
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun AnswerIndicator(
+    modifier: Modifier = Modifier,
+    answerIndicatorState: Pair<CardAnswer.Rating, Long>?,
+) {
+    AnimatedVisibility(
+        visible = answerIndicatorState != null,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.extraExtraLarge,
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        ) {
+            val textRes = when (answerIndicatorState?.first) {
+                CardAnswer.Rating.AGAIN -> R.string.ease_button_again
+                CardAnswer.Rating.HARD -> R.string.ease_button_hard
+                CardAnswer.Rating.GOOD -> R.string.ease_button_good
+                CardAnswer.Rating.EASY -> R.string.ease_button_easy
+                else -> null
+            }
+            if (textRes != null) {
+                Text(
+                    text = stringResource(id = textRes),
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
     }
 }

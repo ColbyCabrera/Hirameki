@@ -109,6 +109,7 @@ sealed class ReviewerEffect {
     data class NavigateToEditCard(val cardId: CardId) : ReviewerEffect()
     object NavigateToDeckPicker : ReviewerEffect()
     data class ShowSnackbar(val message: String) : ReviewerEffect()
+    data class ShowAnswerIndicator(val rating: CardAnswer.Rating) : ReviewerEffect()
     object PerformRedo : ReviewerEffect()
     object ToggleWhiteboard : ReviewerEffect()
 
@@ -523,6 +524,8 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 _effect.emit(ReviewerEffect.ShowSnackbar(leechMessage))
             }
+
+            _effect.emit(ReviewerEffect.ShowAnswerIndicator(rating))
 
             loadCardSuspend()
         }
