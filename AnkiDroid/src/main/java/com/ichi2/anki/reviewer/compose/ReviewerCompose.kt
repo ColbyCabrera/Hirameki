@@ -534,6 +534,12 @@ fun ReviewerContent(
 fun AnswerIndicator(
     modifier: Modifier = Modifier, feedback: AnswerFeedback?, onDismissed: () -> Unit
 ) {
+    var lastFeedback by remember { mutableStateOf<AnswerFeedback?>(null) }
+    
+    if (feedback != null) {
+        lastFeedback = feedback
+    }
+
     LaunchedEffect(feedback) {
         if (feedback != null) {
             delay(1000)
@@ -542,17 +548,20 @@ fun AnswerIndicator(
     }
 
     AnimatedVisibility(
-        visible = feedback != null, enter = fadeIn(), exit = fadeOut(), modifier = modifier
+        visible = feedback != null,
+        enter = fadeIn(),
+        exit = fadeOut(animationSpec = MaterialTheme.motionScheme.slowEffectsSpec()),
+        modifier = modifier
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraExtraLarge,
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-        ) {
-            if (feedback != null) {
+        lastFeedback?.let { current ->
+            Surface(
+                shape = MaterialTheme.shapes.extraExtraLarge,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            ) {
                 Text(
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                    text = stringResource(feedback.rating.toResId()),
+                    text = stringResource(current.rating.toResId()),
                     style = MaterialTheme.typography.labelSmall
                 )
             }
