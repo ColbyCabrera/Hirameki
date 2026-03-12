@@ -117,11 +117,8 @@ sealed class ReviewerEffect {
     data class NavigateToEditCard(val cardId: CardId) : ReviewerEffect()
     object NavigateToDeckPicker : ReviewerEffect()
     data class ShowSnackbar(val message: String) : ReviewerEffect()
-    data class ShowAnswerIndicator(val rating: CardAnswer.Rating) : ReviewerEffect()
     object PerformRedo : ReviewerEffect()
     object ToggleWhiteboard : ReviewerEffect()
-
-    // ShowTagsDialog removed - now handled via ViewModel state in Compose
     data class ShowDeleteNoteDialog(val card: Card) : ReviewerEffect()
     data class ShowDueDateDialog(val card: Card) : ReviewerEffect()
     data class ReplayMedia(val card: Card) : ReviewerEffect()
@@ -534,7 +531,6 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
                 _effect.emit(ReviewerEffect.ShowSnackbar(leechMessage))
             }
 
-            _effect.emit(ReviewerEffect.ShowAnswerIndicator(rating))
             _state.update { it.copy(answerFeedback = AnswerFeedback(rating)) }
             loadCardSuspend()
         }

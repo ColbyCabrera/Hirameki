@@ -536,14 +536,13 @@ fun AnswerIndicator(
     modifier: Modifier = Modifier, feedback: AnswerFeedback?, onDismissed: () -> Unit
 ) {
     var lastFeedback by remember { mutableStateOf<AnswerFeedback?>(null) }
+    val currentOnDismissed by rememberUpdatedState(onDismissed)
 
     LaunchedEffect(feedback) {
         if (feedback != null) {
             lastFeedback = feedback
             delay(AnswerIndicatorDuration)
-            if (lastFeedback == feedback) {
-                onDismissed()
-            }
+            currentOnDismissed()
         }
     }
 
