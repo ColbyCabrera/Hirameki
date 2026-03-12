@@ -19,6 +19,9 @@ package com.ichi2.anki.reviewer.compose
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -85,10 +88,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
+import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.reviewer.ReviewerViewModel
@@ -96,11 +101,13 @@ import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 private val WhiteboardToolbarWidth = 56.dp
 private val WhiteboardBottomBarOffset = 48.dp
+private const val AnswerIndicatorDuration = 1000L
 
 // You can rename this class to be more descriptive
 class InvertedTopCornersShape(private val cornerRadius: Dp) : Shape {
@@ -378,12 +385,22 @@ fun ReviewerContent(
                         showAnswerFeedback = Prefs.showAnswerButtonBadges,
                         showTypeInAnswer = state.showTypeInAnswer,
                         typedAnswer = state.typedAnswer,
-                        onTypedAnswerChanged = { viewModel.onEvent(ReviewerEvent.OnTypedAnswerChanged(it)) },
+                        onTypedAnswerChanged = {
+                            viewModel.onEvent(
+                                ReviewerEvent.OnTypedAnswerChanged(it)
+                            )
+                        },
                         onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
                         onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
                         nextTimes = state.nextTimes,
-                        onMoreOptionsClick = { showBottomSheet = true }
-                    )
+                        onMoreOptionsClick = { showBottomSheet = true })
+
+                    AnswerIndicator(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(end = 16.dp, top = 16.dp),
+                        feedback = state.answerFeedback,
+                        onDismissed = { viewModel.onEvent(ReviewerEvent.AnswerFeedbackShown) })
                 }
             }
         }
@@ -511,4 +528,51 @@ fun ReviewerContent(
                 onAddTag = { viewModel.registerNewTag(it) })
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun AnswerIndicator(
+    modifier: Modifier = Modifier, feedback: AnswerFeedback?, onDismissed: () -> Unit
+) {
+    var lastFeedback by remember { mutableStateOf<AnswerFeedback?>(null) }
+    val currentOnDismissed by rememberUpdatedState(onDismissed)
+
+    LaunchedEffect(feedback) {
+        if (feedback != null) {
+            lastFeedback = feedback
+            delay(AnswerIndicatorDuration)
+            currentOnDismissed()
+        }
+    }
+
+    AnimatedVisibility(
+        visible = feedback != null,
+        enter = fadeIn(),
+        exit = fadeOut(animationSpec = MaterialTheme.motionScheme.slowEffectsSpec()),
+        modifier = modifier
+    ) {
+        // Use the cached lastFeedback to avoid disappearing mid-animation
+        lastFeedback?.let { current ->
+            Surface(
+                shape = MaterialTheme.shapes.extraExtraLarge,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            ) {
+                Text(
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    text = stringResource(current.rating.toResId()),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        }
+    }
+}
+
+private fun CardAnswer.Rating.toResId(): Int = when (this) {
+    CardAnswer.Rating.AGAIN -> R.string.ease_button_again
+    CardAnswer.Rating.HARD -> R.string.ease_button_hard
+    CardAnswer.Rating.GOOD -> R.string.ease_button_good
+    CardAnswer.Rating.EASY -> R.string.ease_button_easy
+    else -> R.string.card_browser_unknown_deck_name
 }
