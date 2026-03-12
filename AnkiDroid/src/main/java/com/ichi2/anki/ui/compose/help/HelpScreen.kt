@@ -65,8 +65,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -209,17 +212,35 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
                     animationSpec = tween(300),
                     label = "alpha"
                 )
+                
+                val entranceOffsetPx = with(LocalDensity.current) { 50.dp.toPx() }
                 val offsetY by animateFloatAsState(
-                    targetValue = if (visible) 0f else 50f,
+                    targetValue = if (visible) 0f else entranceOffsetPx,
                     animationSpec = spring(dampingRatio = 0.8f),
                     label = "offsetY"
                 )
 
                 Box(
-                    modifier = Modifier.graphicsLayer {
-                        this.alpha = alpha
-                        this.translationY = offsetY
-                    }) {
+                    modifier = Modifier
+                        .graphicsLayer {
+                            this.alpha = alpha
+                            this.translationY = offsetY
+                        }
+                        .then(
+                            if (!visible) {
+                            Modifier.pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        awaitPointerEvent(PointerEventPass.Initial).changes.forEach {
+                                            it.consume()
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Modifier
+                        })
+                ) {
                     HelpItem(
                         titleRes = helpLink.titleRes,
                         subtitleRes = helpLink.subtitleRes,
