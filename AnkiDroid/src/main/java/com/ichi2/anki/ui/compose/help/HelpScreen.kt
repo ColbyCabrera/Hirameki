@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025 AnkiDroid Open Source Team
+ *  Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free Software
@@ -17,17 +17,16 @@ package com.ichi2.anki.ui.compose.help
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.os.SystemClock
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,17 +67,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.ichi2.anki.R
 import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.delay
 import timber.log.Timber
-import androidx.core.net.toUri
 
 private data class HelpLink(
     @StringRes val titleRes: Int,
@@ -109,6 +109,16 @@ private val helpLinks = listOf(
         R.drawable.volunteer_activism_24px,
         "https://ankidroid.org/#donations"
     ), HelpLink(
+        R.string.help_hirameki_privacy_title,
+        R.string.help_hirameki_privacy_subtitle,
+        R.drawable.policy_24px,
+        "https://github.com/ColbyCabrera/Hirameki/wiki/Privacy-Policy"
+    ), HelpLink(
+        R.string.help_ankiweb_privacy_title,
+        R.string.help_ankiweb_privacy_subtitle,
+        R.drawable.policy_24px,
+        "https://ankiweb.net/account/privacy"
+    ), HelpLink(
         R.string.help_ankiweb_terms_title,
         R.string.help_ankiweb_terms_subtitle,
         R.drawable.info_24px,
@@ -116,16 +126,20 @@ private val helpLinks = listOf(
     )
 )
 
+// Changed top-level vals to `by lazy` to prevent NoClassDefFoundError during static initialization in Compose Previews.
+// Compose previews evaluate top-level variables at class load time, and Android graphic dependencies can crash.
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val HeroShape = RoundedPolygonShape(MaterialShapes.Cookie4Sided)
+private val HeroShape by lazy { RoundedPolygonShape(MaterialShapes.Cookie4Sided) }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val iconShapes = listOf(
-    RoundedPolygonShape(MaterialShapes.Clover4Leaf),
-    RoundedPolygonShape(MaterialShapes.SoftBoom),
-    RoundedPolygonShape(MaterialShapes.Sunny),
-    RoundedPolygonShape(MaterialShapes.VerySunny),
-)
+private val iconShapes by lazy {
+    listOf(
+        RoundedPolygonShape(MaterialShapes.Clover4Leaf),
+        RoundedPolygonShape(MaterialShapes.SoftBoom),
+        RoundedPolygonShape(MaterialShapes.Sunny),
+        RoundedPolygonShape(MaterialShapes.VerySunny),
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -133,6 +147,8 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val context = LocalContext.current
+    val isInspectionMode = LocalInspectionMode.current
+    val startTime = remember { SystemClock.elapsedRealtime() }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -168,7 +184,6 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Hero Section
             item {
                 HelpHeroSection()
             }
@@ -177,17 +192,34 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
             itemsIndexed(helpLinks) { index, helpLink ->
                 val iconShape = iconShapes[index % iconShapes.size]
 
-                var visible by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) {
-                    delay(index * 100L)
-                    visible = true
+                val timeSinceStart = SystemClock.elapsedRealtime() - startTime
+                val initialDelay = (index * 100L) - timeSinceStart
+
+                // Show items immediately in Preview, or if their staggered delay has already passed
+                var visible by remember { mutableStateOf(isInspectionMode || initialDelay <= 0) }
+                if (!visible) {
+                    LaunchedEffect(Unit) {
+                        delay(initialDelay)
+                        visible = true
+                    }
                 }
 
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
-                        animationSpec = spring(dampingRatio = 0.8f), initialOffsetY = { it / 2 })
-                ) {
+                val alpha by animateFloatAsState(
+                    targetValue = if (visible) 1f else 0f,
+                    animationSpec = tween(300),
+                    label = "alpha"
+                )
+                val offsetY by animateFloatAsState(
+                    targetValue = if (visible) 0f else 50f,
+                    animationSpec = spring(dampingRatio = 0.8f),
+                    label = "offsetY"
+                )
+
+                Box(
+                    modifier = Modifier.graphicsLayer {
+                        this.alpha = alpha
+                        this.translationY = offsetY
+                    }) {
                     HelpItem(
                         titleRes = helpLink.titleRes,
                         subtitleRes = helpLink.subtitleRes,
@@ -305,6 +337,7 @@ private fun HelpItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
+                    modifier = Modifier.padding(bottom = 1.dp),
                     text = stringResource(id = titleRes),
                     style = MaterialTheme.typography.titleLarge
                 )

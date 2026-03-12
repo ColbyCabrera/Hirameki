@@ -17,6 +17,7 @@
     <string name="new_dynamic_deck">Create filtered deck</string>
     <string name="add" comment="Generic add action. Duplicated in import_message_add for import context">Add</string>
     <string name="edit">Edit</string>
+    <string name="unknown_rating">Unknown rating</string>
     <string name="fab_menu_expanded">Expanded</string>
     <string name="fab_menu_collapsed">Collapsed</string>
     <string name="fab_menu_toggle">Toggle menu</string>
@@ -70,6 +71,10 @@
     <string name="help_issue_tracker_subtitle">Submit issues on our tracker</string>
     <string name="help_donate_title">Donate</string>
     <string name="help_donate_subtitle">Support AnkiDroid, which this app is based off of</string>
+    <string name="help_hirameki_privacy_title">Privacy Policy</string>
+    <string name="help_hirameki_privacy_subtitle">Hirameki Privacy Policy</string>
+    <string name="help_ankiweb_privacy_title">Privacy Policy</string>
+    <string name="help_ankiweb_privacy_subtitle">AnkiWeb Privacy Policy</string>
     <string name="help_ankiweb_terms_title">Terms and Conditions</string>
     <string name="help_ankiweb_terms_subtitle">AnkiWeb Terms and Conditions</string>
     <string name="help_hero_subtitle">Here are some helpful resources.</string>
