@@ -17,6 +17,7 @@
     <string name="new_dynamic_deck">Create filtered deck</string>
     <string name="add" comment="Generic add action. Duplicated in import_message_add for import context">Add</string>
     <string name="edit">Edit</string>
+    <string name="unknown_rating">Unknown rating</string>
     <string name="fab_menu_expanded">Expanded</string>
     <string name="fab_menu_collapsed">Collapsed</string>
     <string name="fab_menu_toggle">Toggle menu</string>

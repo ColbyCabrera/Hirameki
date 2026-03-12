@@ -574,5 +574,5 @@ private fun CardAnswer.Rating.toResId(): Int = when (this) {
     CardAnswer.Rating.HARD -> R.string.ease_button_hard
     CardAnswer.Rating.GOOD -> R.string.ease_button_good
     CardAnswer.Rating.EASY -> R.string.ease_button_easy
-    else -> R.string.card_browser_unknown_deck_name
+    else -> R.string.unknown_rating
 }
