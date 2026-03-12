@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -109,6 +110,16 @@ private val helpLinks = listOf(
         R.drawable.volunteer_activism_24px,
         "https://ankidroid.org/#donations"
     ), HelpLink(
+        R.string.help_hirameki_privacy_title,
+        R.string.help_hirameki_privacy_subtitle,
+        R.drawable.policy_24px,
+        "https://github.com/ColbyCabrera/Hirameki/wiki/Privacy-Policy"
+    ), HelpLink(
+        R.string.help_ankiweb_privacy_title,
+        R.string.help_ankiweb_privacy_subtitle,
+        R.drawable.policy_24px,
+        "https://ankiweb.net/account/privacy"
+    ), HelpLink(
         R.string.help_ankiweb_terms_title,
         R.string.help_ankiweb_terms_subtitle,
         R.drawable.info_24px,
@@ -116,16 +127,18 @@ private val helpLinks = listOf(
     )
 )
 
+// Changed top-level vals to `by lazy` to prevent NoClassDefFoundError during static initialization in Compose Previews.
+// Compose previews evaluate top-level variables at class load time, and Android graphic dependencies can crash.
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val HeroShape = RoundedPolygonShape(MaterialShapes.Cookie4Sided)
+private val HeroShape by lazy { RoundedPolygonShape(MaterialShapes.Cookie4Sided) }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val iconShapes = listOf(
+private val iconShapes by lazy { listOf(
     RoundedPolygonShape(MaterialShapes.Clover4Leaf),
     RoundedPolygonShape(MaterialShapes.SoftBoom),
     RoundedPolygonShape(MaterialShapes.Sunny),
     RoundedPolygonShape(MaterialShapes.VerySunny),
-)
+) }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -133,6 +146,7 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
     val scrollBehavior =
         TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
     val context = LocalContext.current
+    val isInspectionMode = LocalInspectionMode.current
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -168,7 +182,6 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Hero Section
             item {
                 HelpHeroSection()
             }
@@ -177,10 +190,13 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
             itemsIndexed(helpLinks) { index, helpLink ->
                 val iconShape = iconShapes[index % iconShapes.size]
 
-                var visible by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) {
-                    delay(index * 100L)
-                    visible = true
+                // Show items immediately in Preview, otherwise run animation.
+                var visible by remember { mutableStateOf(isInspectionMode) }
+                if (!isInspectionMode) {
+                    LaunchedEffect(Unit) {
+                        delay(index * 100L)
+                        visible = true
+                    }
                 }
 
                 AnimatedVisibility(
@@ -305,6 +321,7 @@ private fun HelpItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
+                    modifier = Modifier.padding(bottom = 1.dp),
                     text = stringResource(id = titleRes),
                     style = MaterialTheme.typography.titleLarge
                 )
