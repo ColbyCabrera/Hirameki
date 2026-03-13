@@ -122,7 +122,7 @@ fun DeckSelector(
                         leadingIcon = {
                             Icon(
                                 Icons.Default.Search,
-                                contentDescription = stringResource(R.string.card_browser_search_hint)
+                                contentDescription = null
                             )
                         },
                         trailingIcon = {
