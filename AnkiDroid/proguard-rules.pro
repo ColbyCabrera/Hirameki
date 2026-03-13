@@ -33,3 +33,4 @@
 # Ignore unused packages
 -dontwarn javax.naming.**
 -dontwarn org.ietf.jgss.**
+-dontwarn com.google.re2j.**
