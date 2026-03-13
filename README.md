@@ -22,7 +22,7 @@ This project is currently in **active development** and is not yet available for
 
 <div style="display:flex;">
 
-<a href="#">
+<a href="https://play.google.com/store/apps/details?id=com.hirameki.flashcards">
     <img alt="Coming soon to Google Play" height="80"
         src="docs/graphics/logos/google-badge.png" /></a>
 
