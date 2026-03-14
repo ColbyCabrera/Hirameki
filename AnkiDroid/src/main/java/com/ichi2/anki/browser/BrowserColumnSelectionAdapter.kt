@@ -144,10 +144,10 @@ class BrowserColumnSelectionAdapter(
             column.label.let { findViewById<TextView>(R.id.column_title).text = it }
             column.sampleValue.let { findViewById<TextView>(R.id.column_example).text = it }
 
-            findViewById<ImageView>(R.id.button_toggle_column).apply {
+            findViewById<com.google.android.material.button.MaterialButton>(R.id.button_toggle_column).apply {
                 // NICE_TO_HAVE: animate between + and -
                 val isExclude = absoluteAdapterPosition < positionOfAvailableHeading
-                setImageResource(if (isExclude) R.drawable.ic_remove else R.drawable.ic_add)
+                setIconResource(if (isExclude) R.drawable.remove_24px else R.drawable.add_24px)
 
                 val label = context.getString(if (isExclude) R.string.exclude_column else R.string.include_column)
                 contentDescription = label

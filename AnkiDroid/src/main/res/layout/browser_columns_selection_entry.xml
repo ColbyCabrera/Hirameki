@@ -64,13 +64,12 @@
             tools:text="Why did the chicken cross the road?"/>
     </LinearLayout>
 
-    <androidx.appcompat.widget.AppCompatImageButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/button_toggle_column"
-        android:layout_width="?minTouchTargetSize"
-        android:layout_height="?minTouchTargetSize"
-        style="@android:style/Widget.ActionButton"
-        android:padding="8dp"
-        tools:srcCompat="@drawable/ic_add"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+        tools:icon="@drawable/ic_add"
         />
 
     <androidx.appcompat.widget.AppCompatImageView
@@ -79,5 +78,6 @@
         android:padding="8dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
+        app:tint="?attr/colorOnSurfaceVariant"
         app:srcCompat="@drawable/ic_drag_indicator_24" />
 </LinearLayout>
