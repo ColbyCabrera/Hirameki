@@ -111,6 +111,8 @@ class AudioRecordingController(
     private var orientationEventListener: OrientationEventListener? = null
     private var lastOrientation = Configuration.ORIENTATION_UNDEFINED
 
+    private var activityLifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
+
     init {
         Timber.d("Initializing the audio recorder UI")
         if (linearLayout != null) {
@@ -273,45 +275,45 @@ class AudioRecordingController(
         }
 
         (context as? Activity)?.let { activity ->
-            activity.application.registerActivityLifecycleCallbacks(
-                object : Application.ActivityLifecycleCallbacks {
-                    override fun onActivityCreated(
-                        activity: Activity,
-                        savedInstanceState: Bundle?,
-                    ) {
-                        // Not needed
-                    }
+            val callbacks = object : Application.ActivityLifecycleCallbacks {
+                override fun onActivityCreated(
+                    activity: Activity,
+                    savedInstanceState: Bundle?,
+                ) {
+                    // Not needed
+                }
 
-                    override fun onActivityStarted(activity: Activity) {
-                        // Not needed
-                    }
+                override fun onActivityStarted(activity: Activity) {
+                    // Not needed
+                }
 
-                    override fun onActivityResumed(activity: Activity) {
-                        // not needed
-                    }
+                override fun onActivityResumed(activity: Activity) {
+                    // not needed
+                }
 
-                    override fun onActivityPaused(activity: Activity) {
-                        if (activity == context) {
-                            onViewFocusChanged()
-                        }
+                override fun onActivityPaused(activity: Activity) {
+                    if (activity == context) {
+                        onViewFocusChanged()
                     }
+                }
 
-                    override fun onActivityStopped(activity: Activity) {
-                        // Not needed
-                    }
+                override fun onActivityStopped(activity: Activity) {
+                    // Not needed
+                }
 
-                    override fun onActivitySaveInstanceState(
-                        activity: Activity,
-                        outState: Bundle,
-                    ) {
-                        // Not needed
-                    }
+                override fun onActivitySaveInstanceState(
+                    activity: Activity,
+                    outState: Bundle,
+                ) {
+                    // Not needed
+                }
 
-                    override fun onActivityDestroyed(activity: Activity) {
-                        // not needed
-                    }
-                },
-            )
+                override fun onActivityDestroyed(activity: Activity) {
+                    // not needed
+                }
+            }
+            activity.application.registerActivityLifecycleCallbacks(callbacks)
+            activityLifecycleCallbacks = callbacks
         }
     }
 
@@ -680,6 +682,10 @@ class AudioRecordingController(
 
     fun onDestroy() {
         audioRecorder.release()
+        activityLifecycleCallbacks?.let { callbacks ->
+            (context as? Activity)?.application?.unregisterActivityLifecycleCallbacks(callbacks)
+            activityLifecycleCallbacks = null
+        }
     }
 
     // when answer button is clicked in reviewer
