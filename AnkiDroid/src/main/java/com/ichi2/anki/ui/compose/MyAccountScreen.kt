@@ -47,10 +47,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -338,6 +338,17 @@ fun LoggedOutContent(
 ) {
     val passwordFocusRequester = remember { FocusRequester() }
     var passwordVisible by remember { mutableStateOf(false) }
+    val infiniteTransition = rememberInfiniteTransition(label = "LogInIconRotation")
+
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(9000, easing = LinearEasing),
+        ),
+        label = "LogInIconRotationAngle",
+    )
+
 
     Box(
         modifier = modifier
@@ -349,6 +360,31 @@ fun LoggedOutContent(
             modifier = Modifier.verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Box(
+                modifier = Modifier
+                    .padding(top = 24.dp, bottom = 64.dp)
+                    .size(124.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            rotationZ = rotation
+                        }
+                        .background(
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                            shape = SoftBurstShape,
+                        ),
+                )
+                Image(
+                    modifier = Modifier.size(60.dp),
+                    painter = painterResource(R.drawable.login_24px),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer),
+                )
+            }
+
             if (loginError != null) {
                 LoginErrorCard(
                     error = loginError,
@@ -391,11 +427,18 @@ fun LoggedOutContent(
                     )
                 },
                 trailingIcon = {
-                    val image = if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px
-                    val description = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
+                    val image =
+                        if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px
+                    val description =
+                        if (passwordVisible) stringResource(R.string.hide_password) else stringResource(
+                            R.string.show_password
+                        )
 
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(painter = painterResource(id = image), contentDescription = description)
+                        Icon(
+                            painter = painterResource(id = image),
+                            contentDescription = description
+                        )
                     }
                 },
                 modifier = Modifier
