@@ -31,6 +31,8 @@
     <string name="loading">Loading…</string>
     <string name="sync_starting">Sync starting…</string>
     <string name="syncing">Syncing…</string>
+    <string name="syncing_title">Syncing</string>
+    <string name="syncing_message">Syncing in progress…</string>
     <string name="filter" comment="Generic filter label. Duplicated in deck_conf_cram_filter for cram deck context">Filter</string>
     <string name="card_browser_deselect_all" comment="Deselect all in card browser. Duplicated in deselect_all for generic context">Deselect all</string>
     <string name="deselect_all" comment="Generic deselect all. Duplicated in card_browser_deselect_all for browser context">Deselect all</string>

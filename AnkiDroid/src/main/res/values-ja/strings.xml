@@ -1,8 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" ?>
 <resources>
-    <!-- Japanese translations for the introduction screen -->
     <string name="intro_title_before_continuing">続ける前に！</string>
     <string name="intro_fork_disclaimer_1">このアプリはAnkiDroidのフォークです。AnkiDroidチームの活動を支援するために寄付をご検討ください。Ankiの作者はAnkiWeb同期の使用を快く許可してくれました。作者を支援したい場合は、AnkiのiPhone版の購入をご検討ください。</string>
     <string name="intro_fork_disclaimer_2">このバージョンに問題がある場合は、AnkiDroidチームではなく私にご連絡ください。学習をお楽しみください！</string>
     <string name="donate">AnkiDroidに寄付する</string>
+    <string name="total_new">Total New</string>
+    <string name="syncing_title">Syncing</string>
+    <string name="syncing_message">Syncing in progress…</string>
+    <string name="get_shared">Get shared decks</string>
+    <string name="add_card">Add card</string>
 </resources>

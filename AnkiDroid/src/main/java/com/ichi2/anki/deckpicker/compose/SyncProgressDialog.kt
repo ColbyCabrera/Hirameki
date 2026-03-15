@@ -67,8 +67,8 @@ fun SyncProgressDialogPreview() {
 
     if (showDialog) {
         SyncProgressDialog(
-            title = "Syncing",
-            message = "Syncing in progress...",
+            title = stringResource(id = R.string.syncing_title),
+            message = stringResource(id = R.string.syncing_message),
             onCancel = { showDialog = false }
         )
     }

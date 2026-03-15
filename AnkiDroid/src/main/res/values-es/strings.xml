@@ -1,8 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" ?>
 <resources>
-    <!-- Spanish translations for the introduction screen -->
     <string name="intro_title_before_continuing">Antes de continuar</string>
     <string name="intro_fork_disclaimer_1">Esta aplicación es una fork (bifurcación) de AnkiDroid; por favor considera donar al equipo de AnkiDroid para apoyar su trabajo. El creador de Anki ha permitido amablemente el uso de la sincronización de AnkiWeb. Si deseas apoyarlo, considera comprar la versión para iPhone de Anki.</string>
     <string name="intro_fork_disclaimer_2">Si tienes algún problema con esta versión, por favor contáctame a mí y no al equipo de AnkiDroid. ¡Feliz memorización!</string>
     <string name="donate">Donar a AnkiDroid</string>
+    <string name="total_new">Total New</string>
+    <string name="syncing_title">Syncing</string>
+    <string name="syncing_message">Syncing in progress…</string>
+    <string name="check_db">Check database</string>
+    <string name="get_shared">Get shared decks</string>
+    <string name="new_dynamic_deck">Create filtered deck</string>
+    <string name="new_deck">Create deck</string>
+    <string name="add_card">Add card</string>
+    <string name="studyoptions_total_label">Total cards</string>
 </resources>

@@ -318,6 +318,6 @@ fun CardCountsContainer(
 @Composable
 fun CardCountsContainerPreview() {
     CardCountsContainer(
-        cardCount = 10, contentDescription = "New: 10", shape = CloverShape
+        cardCount = 10, contentDescription = "${stringResource(R.string.total_new)}: 10", shape = CloverShape
     )
 }
