@@ -679,7 +679,7 @@ fun LoggedInContent(
         ) {
             Box(
                 modifier = Modifier
-                    .padding(top = 24.dp, bottom = 64.dp)
+                    .padding(top = 64.dp, bottom = 64.dp)
                     .size(124.dp),
                 contentAlignment = Alignment.Center,
             ) {
