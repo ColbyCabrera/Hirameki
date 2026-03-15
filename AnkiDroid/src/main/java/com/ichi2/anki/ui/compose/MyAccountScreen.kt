@@ -34,11 +34,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -70,9 +74,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -81,6 +87,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -149,6 +157,7 @@ fun MyAccountScreen(
                         }
                     })
                 },
+                contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
             ) { padding ->
                 when (state.isLoggedIn) {
                     true -> LoggedInContent(
@@ -227,6 +236,7 @@ fun RemoveAccountContent(onBack: () -> Unit) {
                 }
             })
         },
+        contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
     ) { padding ->
         Box(
             modifier = Modifier
@@ -348,7 +358,8 @@ fun LoggedOutContent(
     loginError: LoginError? = null,
 ) {
     val passwordFocusRequester = remember { FocusRequester() }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    val isLoginEnabled = email.isNotEmpty() && password.isNotEmpty() && !isLoading
     val infiniteTransition = rememberInfiniteTransition(label = "LogInIconRotation")
 
     val rotation by infiniteTransition.animateFloat(
@@ -418,7 +429,9 @@ fun LoggedOutContent(
                             contentDescription = null,
                         )
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentType = ContentType.EmailAddress },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next,
@@ -443,26 +456,17 @@ fun LoggedOutContent(
                         )
                     },
                     trailingIcon = {
-                        val image =
-                            if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px
-                        val description = if (passwordVisible) {
-                            stringResource(R.string.hide_password)
-                        } else {
-                            stringResource(
-                                R.string.show_password,
-                            )
-                        }
-
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                painter = painterResource(id = image),
-                                contentDescription = description,
+                                painter = painterResource(if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px),
+                                contentDescription = stringResource(if (passwordVisible) R.string.hide_password else R.string.show_password),
                             )
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(passwordFocusRequester),
+                        .focusRequester(passwordFocusRequester)
+                        .semantics { contentType = ContentType.Password },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
@@ -470,7 +474,7 @@ fun LoggedOutContent(
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            if (email.isNotEmpty() && password.isNotEmpty() && !isLoading) {
+                            if (isLoginEnabled) {
                                 onLoginClick()
                             }
                         },
@@ -491,11 +495,11 @@ fun LoggedOutContent(
                         .height(loginButtonHeight),
                     shapes = ButtonDefaults.shapesFor(loginButtonHeight),
                     contentPadding = ButtonDefaults.contentPaddingFor(loginButtonHeight),
-                    enabled = email.isNotEmpty() && password.isNotEmpty() && !isLoading,
+                    enabled = isLoginEnabled,
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(loginButtonHeight)),
                             color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp,
                         )
@@ -540,47 +544,47 @@ fun LoggedOutContent(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
 
-                if (showNoAccountText) {
-                    Text(
-                        text = stringResource(R.string.sign_up_description),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (showNoAccountText) {
+                        Text(
+                            text = stringResource(R.string.sign_up_description),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
 
-                    Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.ankiweb_is_not_affiliated_with_this_app),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
 
-                    Text(
-                        text = stringResource(R.string.ankiweb_is_not_affiliated_with_this_app),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                        Spacer(Modifier.height(8.dp))
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                    }
 
-                    Spacer(Modifier.height(16.dp))
-                } else {
-                    Spacer(Modifier.height(8.dp))
-                }
+                    if (showSignUp) {
+                        AccountLinkItem(
+                            title = stringResource(R.string.sign_up),
+                            icon = R.drawable.add_24px,
+                            onClick = onSignUpClick,
+                        )
+                    }
 
-                if (showSignUp) {
                     AccountLinkItem(
-                        title = stringResource(R.string.sign_up),
-                        icon = R.drawable.add_24px,
-                        onClick = onSignUpClick,
+                        title = stringResource(R.string.help_title_privacy),
+                        icon = R.drawable.policy_24px,
+                        onClick = onPrivacyPolicyClick,
                     )
-                    Spacer(Modifier.height(4.dp))
+
+                    AccountLinkItem(
+                        title = stringResource(R.string.lost_mail_instructions),
+                        icon = R.drawable.mail_24px,
+                        onClick = onLostEmailClick,
+                    )
                 }
-
-                AccountLinkItem(
-                    title = stringResource(R.string.help_title_privacy),
-                    icon = R.drawable.policy_24px,
-                    onClick = onPrivacyPolicyClick,
-                )
-
-                Spacer(Modifier.height(4.dp))
-
-                AccountLinkItem(
-                    title = stringResource(R.string.lost_mail_instructions),
-                    icon = R.drawable.mail_24px,
-                    onClick = onLostEmailClick,
-                )
             }
         }
     }
