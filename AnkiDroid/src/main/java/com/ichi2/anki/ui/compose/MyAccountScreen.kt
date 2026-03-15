@@ -67,7 +67,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -648,6 +647,7 @@ private fun AccountLinkItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoggedInContent(
     modifier: Modifier = Modifier,
@@ -679,7 +679,7 @@ fun LoggedInContent(
         ) {
             Box(
                 modifier = Modifier
-                    .padding(top = 64.dp, bottom = 24.dp)
+                    .padding(top = 24.dp, bottom = 64.dp)
                     .size(124.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -690,7 +690,7 @@ fun LoggedInContent(
                             rotationZ = rotation
                         }
                         .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.tertiaryContainer,
                             shape = SoftBurstShape,
                         ),
                 )
@@ -698,47 +698,56 @@ fun LoggedInContent(
                     modifier = Modifier.size(60.dp),
                     painter = painterResource(R.drawable.link_24px),
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onTertiaryContainer),
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = stringResource(R.string.logged_as),
-                style = MaterialTheme.typography.titleMedium,
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = username,
-                style = MaterialTheme.typography.headlineSmall,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = onLogoutClick,
-                modifier = Modifier.fillMaxWidth(),
+            Column(
+                Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(horizontal = 32.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(stringResource(R.string.log_out))
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.logged_as),
+                    style = MaterialTheme.typography.titleMedium,
+                )
 
-            Button(
-                onClick = onRemoveAccountClick,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            ) {
-                Text(stringResource(R.string.remove_account))
-            }
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = username,
+                    style = MaterialTheme.typography.headlineSmall,
+                )
 
-            TextButton(onClick = onPrivacyPolicyClick) {
-                Text(stringResource(R.string.help_title_privacy))
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = onLogoutClick,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.log_out))
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onRemoveAccountClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(stringResource(R.string.remove_account))
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
+
+                AccountLinkItem(
+                    title = stringResource(R.string.help_title_privacy),
+                    icon = R.drawable.policy_24px,
+                    onClick = onPrivacyPolicyClick,
+                )
             }
         }
     }
