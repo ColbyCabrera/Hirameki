@@ -28,24 +28,30 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -319,6 +325,7 @@ private fun RemoveAccountWebView(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoggedOutContent(
     modifier: Modifier = Modifier,
@@ -348,7 +355,6 @@ fun LoggedOutContent(
         ),
         label = "LogInIconRotationAngle",
     )
-
 
     Box(
         modifier = modifier
@@ -429,15 +435,18 @@ fun LoggedOutContent(
                 trailingIcon = {
                     val image =
                         if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px
-                    val description =
-                        if (passwordVisible) stringResource(R.string.hide_password) else stringResource(
-                            R.string.show_password
+                    val description = if (passwordVisible) {
+                        stringResource(R.string.hide_password)
+                    } else {
+                        stringResource(
+                            R.string.show_password,
                         )
+                    }
 
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             painter = painterResource(id = image),
-                            contentDescription = description
+                            contentDescription = description,
                         )
                     }
                 },
@@ -461,9 +470,16 @@ fun LoggedOutContent(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            val loginButtonHeight = ButtonDefaults.LargeContainerHeight
+            val resetPasswordButtonHeight = ButtonDefaults.MediumContainerHeight
+
             Button(
                 onClick = onLoginClick,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(loginButtonHeight),
+                shapes = ButtonDefaults.shapesFor(loginButtonHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(loginButtonHeight),
                 enabled = email.isNotEmpty() && password.isNotEmpty() && !isLoading,
             ) {
                 if (isLoading) {
@@ -473,11 +489,35 @@ fun LoggedOutContent(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text(stringResource(R.string.log_in))
+                    Icon(
+                        painter = painterResource(R.drawable.login_24px),
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(loginButtonHeight)),
+                    )
+                    Spacer(modifier = Modifier.width(ButtonDefaults.iconSpacingFor(loginButtonHeight)))
+                    Text(
+                        stringResource(R.string.log_in),
+                        style = ButtonDefaults.textStyleFor(loginButtonHeight),
+                    )
                 }
             }
 
-            TextButton(onClick = onResetPasswordClick) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            FilledTonalButton(
+                onClick = onResetPasswordClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(resetPasswordButtonHeight),
+                shapes = ButtonDefaults.shapesFor(resetPasswordButtonHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(resetPasswordButtonHeight),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.lock_24px),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.reset_password))
             }
 
@@ -496,24 +536,94 @@ fun LoggedOutContent(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                Spacer(Modifier.height(16.dp))
+            } else {
+                Spacer(Modifier.height(8.dp))
             }
 
             if (showSignUp) {
+                AccountLinkItem(
+                    title = stringResource(R.string.sign_up),
+                    icon = R.drawable.add_24px,
+                    onClick = onSignUpClick,
+                )
                 Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onSignUpClick) {
-                    Text(stringResource(R.string.sign_up))
-                }
             }
 
-            Spacer(Modifier.height(24.dp))
+            AccountLinkItem(
+                title = stringResource(R.string.help_title_privacy),
+                icon = R.drawable.policy_24px,
+                onClick = onPrivacyPolicyClick,
+            )
 
-            TextButton(onClick = onPrivacyPolicyClick) {
-                Text(stringResource(R.string.help_title_privacy))
+            Spacer(Modifier.height(8.dp))
+
+            AccountLinkItem(
+                title = stringResource(R.string.lost_mail_instructions),
+                icon = R.drawable.mail_24px,
+                onClick = onLostEmailClick,
+            )
+
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun AccountLinkItem(
+    title: String,
+    @androidx.annotation.DrawableRes icon: Int,
+    onClick: () -> Unit,
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 2.dp,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = SoftBurstShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
             }
 
-            TextButton(onClick = onLostEmailClick) {
-                Text(stringResource(R.string.lost_mail_instructions))
-            }
+            Text(
+                modifier = Modifier.weight(1f),
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+            )
+
+            Icon(
+                painter = painterResource(R.drawable.arrow_outward_24px),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
