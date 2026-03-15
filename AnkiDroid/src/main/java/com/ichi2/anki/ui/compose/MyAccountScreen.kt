@@ -427,6 +427,7 @@ fun LoggedOutContent(
                         onNext = { passwordFocusRequester.requestFocus() },
                     ),
                     singleLine = true,
+                    shape = MaterialTheme.shapes.small,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -475,10 +476,10 @@ fun LoggedOutContent(
                         },
                     ),
                     singleLine = true,
-                    shape = MaterialTheme.shapes.large,
+                    shape = MaterialTheme.shapes.small,
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 val loginButtonHeight = ButtonDefaults.LargeContainerHeight
                 val resetPasswordButtonHeight = ButtonDefaults.MediumContainerHeight
