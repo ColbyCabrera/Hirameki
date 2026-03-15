@@ -312,6 +312,9 @@ class AudioRecordingController(
                     // not needed
                 }
             }
+            activityLifecycleCallbacks?.let {
+                activity.application.unregisterActivityLifecycleCallbacks(it)
+            }
             activity.application.registerActivityLifecycleCallbacks(callbacks)
             activityLifecycleCallbacks = callbacks
         }
@@ -683,7 +686,7 @@ class AudioRecordingController(
     fun onDestroy() {
         audioRecorder.release()
         activityLifecycleCallbacks?.let { callbacks ->
-            (context as? Activity)?.application?.unregisterActivityLifecycleCallbacks(callbacks)
+            (context.applicationContext as Application).unregisterActivityLifecycleCallbacks(callbacks)
             activityLifecycleCallbacks = null
         }
     }
