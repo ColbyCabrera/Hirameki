@@ -1,14 +1,8 @@
-<?xml version="1.0" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Top margin for action bar subtitles -->
     <dimen name="action_bar_subtitle_top_margin">-2dp</dimen>
+
+    <!-- Match 48dp default ActionBar height on landscape orientation -->
     <dimen name="nav_drawer_margin_offset">-16dp</dimen>
-    <string name="total_new">Total New</string>
-    <string name="syncing_title">Syncing</string>
-    <string name="syncing_message">Syncing in progress…</string>
-    <string name="check_db">Check database</string>
-    <string name="get_shared">Get shared decks</string>
-    <string name="new_dynamic_deck">Create filtered deck</string>
-    <string name="new_deck">Create deck</string>
-    <string name="add_card">Add card</string>
-    <string name="studyoptions_total_label">Total cards</string>
 </resources>

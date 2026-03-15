@@ -1,4 +1,4 @@
-<?xml version="1.0" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="keyline_1">24dp</dimen>
     <dimen name="study_options_padding">16dp</dimen>
@@ -8,13 +8,4 @@
     <dimen name="reviewer_side_margin">12dp</dimen>
     <dimen name="reviewer_answer_button_textSize">18sp</dimen>
     <dimen name="reviewer_mark_flag">24dp</dimen>
-    <string name="total_new">Total New</string>
-    <string name="syncing_title">Syncing</string>
-    <string name="syncing_message">Syncing in progress…</string>
-    <string name="check_db">Check database</string>
-    <string name="get_shared">Get shared decks</string>
-    <string name="new_dynamic_deck">Create filtered deck</string>
-    <string name="new_deck">Create deck</string>
-    <string name="add_card">Add card</string>
-    <string name="studyoptions_total_label">Total cards</string>
 </resources>
