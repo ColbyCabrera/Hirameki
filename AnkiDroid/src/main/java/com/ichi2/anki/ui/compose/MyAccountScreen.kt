@@ -21,6 +21,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -52,6 +53,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -59,6 +61,7 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -70,6 +73,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.ColorFilter
@@ -357,9 +361,7 @@ fun LoggedOutContent(
     )
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -391,181 +393,194 @@ fun LoggedOutContent(
                 )
             }
 
-            if (loginError != null) {
-                LoginErrorCard(
-                    error = loginError,
-                    onResetPasswordClick = onResetPasswordClick,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            Column(
+                Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(horizontal = 32.dp, vertical = 32.dp)
 
-            OutlinedTextField(
-                value = email,
-                onValueChange = onEmailChanged,
-                label = { Text(stringResource(R.string.username)) },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.mail_24px),
-                        contentDescription = null,
+            ) {
+                if (loginError != null) {
+                    LoginErrorCard(
+                        error = loginError,
+                        onResetPasswordClick = onResetPasswordClick,
                     )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next,
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { passwordFocusRequester.requestFocus() },
-                ),
-                singleLine = true,
-            )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = onEmailChanged,
+                    label = { Text(stringResource(R.string.username)) },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.mail_24px),
+                            contentDescription = null,
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next,
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocusRequester.requestFocus() },
+                    ),
+                    singleLine = true,
+                )
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = onPasswordChanged,
-                label = { Text(stringResource(R.string.password)) },
-                leadingIcon = {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = onPasswordChanged,
+                    label = { Text(stringResource(R.string.password)) },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.lock_24px),
+                            contentDescription = null,
+                        )
+                    },
+                    trailingIcon = {
+                        val image =
+                            if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px
+                        val description = if (passwordVisible) {
+                            stringResource(R.string.hide_password)
+                        } else {
+                            stringResource(
+                                R.string.show_password,
+                            )
+                        }
+
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                painter = painterResource(id = image),
+                                contentDescription = description,
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocusRequester),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (email.isNotEmpty() && password.isNotEmpty() && !isLoading) {
+                                onLoginClick()
+                            }
+                        },
+                    ),
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.large,
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                val loginButtonHeight = ButtonDefaults.LargeContainerHeight
+                val resetPasswordButtonHeight = ButtonDefaults.MediumContainerHeight
+
+                Button(
+                    onClick = onLoginClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(loginButtonHeight),
+                    shapes = ButtonDefaults.shapesFor(loginButtonHeight),
+                    contentPadding = ButtonDefaults.contentPaddingFor(loginButtonHeight),
+                    enabled = email.isNotEmpty() && password.isNotEmpty() && !isLoading,
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.login_24px),
+                            contentDescription = null,
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(loginButtonHeight)),
+                        )
+                        Spacer(
+                            modifier = Modifier.width(
+                                ButtonDefaults.iconSpacingFor(
+                                    loginButtonHeight
+                                )
+                            )
+                        )
+                        Text(
+                            stringResource(R.string.log_in),
+                            style = ButtonDefaults.textStyleFor(loginButtonHeight),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                FilledTonalButton(
+                    onClick = onResetPasswordClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(resetPasswordButtonHeight),
+                    shapes = ButtonDefaults.shapesFor(resetPasswordButtonHeight),
+                    contentPadding = ButtonDefaults.contentPaddingFor(resetPasswordButtonHeight),
+                ) {
                     Icon(
                         painter = painterResource(R.drawable.lock_24px),
                         contentDescription = null,
+                        modifier = Modifier.size(18.dp),
                     )
-                },
-                trailingIcon = {
-                    val image =
-                        if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px
-                    val description = if (passwordVisible) {
-                        stringResource(R.string.hide_password)
-                    } else {
-                        stringResource(
-                            R.string.show_password,
-                        )
-                    }
-
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            painter = painterResource(id = image),
-                            contentDescription = description,
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(passwordFocusRequester),
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        if (email.isNotEmpty() && password.isNotEmpty() && !isLoading) {
-                            onLoginClick()
-                        }
-                    },
-                ),
-                singleLine = true,
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            val loginButtonHeight = ButtonDefaults.LargeContainerHeight
-            val resetPasswordButtonHeight = ButtonDefaults.MediumContainerHeight
-
-            Button(
-                onClick = onLoginClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(loginButtonHeight),
-                shapes = ButtonDefaults.shapesFor(loginButtonHeight),
-                contentPadding = ButtonDefaults.contentPaddingFor(loginButtonHeight),
-                enabled = email.isNotEmpty() && password.isNotEmpty() && !isLoading,
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(R.drawable.login_24px),
-                        contentDescription = null,
-                        modifier = Modifier.size(ButtonDefaults.iconSizeFor(loginButtonHeight)),
-                    )
-                    Spacer(modifier = Modifier.width(ButtonDefaults.iconSpacingFor(loginButtonHeight)))
-                    Text(
-                        stringResource(R.string.log_in),
-                        style = ButtonDefaults.textStyleFor(loginButtonHeight),
-                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.reset_password))
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 24.dp))
 
-            FilledTonalButton(
-                onClick = onResetPasswordClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(resetPasswordButtonHeight),
-                shapes = ButtonDefaults.shapesFor(resetPasswordButtonHeight),
-                contentPadding = ButtonDefaults.contentPaddingFor(resetPasswordButtonHeight),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.lock_24px),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.reset_password))
-            }
+                if (showNoAccountText) {
+                    Text(
+                        text = stringResource(R.string.sign_up_description),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
 
-            Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(Modifier.height(8.dp))
 
-            if (showNoAccountText) {
-                Text(
-                    text = stringResource(R.string.sign_up_description),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                    Text(
+                        text = stringResource(R.string.ankiweb_is_not_affiliated_with_this_app),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
 
-                Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(16.dp))
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                }
 
-                Text(
-                    text = stringResource(R.string.ankiweb_is_not_affiliated_with_this_app),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (showSignUp) {
+                    AccountLinkItem(
+                        title = stringResource(R.string.sign_up),
+                        icon = R.drawable.add_24px,
+                        onClick = onSignUpClick,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
 
-                Spacer(Modifier.height(16.dp))
-            } else {
-                Spacer(Modifier.height(8.dp))
-            }
-
-            if (showSignUp) {
                 AccountLinkItem(
-                    title = stringResource(R.string.sign_up),
-                    icon = R.drawable.add_24px,
-                    onClick = onSignUpClick,
+                    title = stringResource(R.string.help_title_privacy),
+                    icon = R.drawable.policy_24px,
+                    onClick = onPrivacyPolicyClick,
                 )
-                Spacer(Modifier.height(8.dp))
+
+                Spacer(Modifier.height(4.dp))
+
+                AccountLinkItem(
+                    title = stringResource(R.string.lost_mail_instructions),
+                    icon = R.drawable.mail_24px,
+                    onClick = onLostEmailClick,
+                )
             }
-
-            AccountLinkItem(
-                title = stringResource(R.string.help_title_privacy),
-                icon = R.drawable.policy_24px,
-                onClick = onPrivacyPolicyClick,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            AccountLinkItem(
-                title = stringResource(R.string.lost_mail_instructions),
-                icon = R.drawable.mail_24px,
-                onClick = onLostEmailClick,
-            )
-
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -574,13 +589,13 @@ fun LoggedOutContent(
 @Composable
 private fun AccountLinkItem(
     title: String,
-    @androidx.annotation.DrawableRes icon: Int,
+    @DrawableRes icon: Int,
     onClick: () -> Unit,
 ) {
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.extraExtraLarge,
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -728,20 +743,22 @@ fun LoggedInContent(
 @Composable
 private fun LoggedOutContentPreview() {
     AnkiDroidTheme {
-        LoggedOutContent(
-            email = "test@example.com",
-            password = "password",
-            isLoading = false,
-            onEmailChanged = {},
-            onPasswordChanged = {},
-            onLoginClick = {},
-            onResetPasswordClick = {},
-            onSignUpClick = {},
-            onPrivacyPolicyClick = {},
-            onLostEmailClick = {},
-            showSignUp = true,
-            showNoAccountText = true,
-        )
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            LoggedOutContent(
+                email = "test@example.com",
+                password = "password",
+                isLoading = false,
+                onEmailChanged = {},
+                onPasswordChanged = {},
+                onLoginClick = {},
+                onResetPasswordClick = {},
+                onSignUpClick = {},
+                onPrivacyPolicyClick = {},
+                onLostEmailClick = {},
+                showSignUp = true,
+                showNoAccountText = true,
+            )
+        }
     }
 }
 
@@ -749,20 +766,22 @@ private fun LoggedOutContentPreview() {
 @Composable
 private fun LoggedOutContentLoadingPreview() {
     AnkiDroidTheme {
-        LoggedOutContent(
-            email = "test@example.com",
-            password = "password",
-            isLoading = true,
-            onEmailChanged = {},
-            onPasswordChanged = {},
-            onLoginClick = {},
-            onResetPasswordClick = {},
-            onSignUpClick = {},
-            onPrivacyPolicyClick = {},
-            onLostEmailClick = {},
-            showSignUp = true,
-            showNoAccountText = true,
-        )
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            LoggedOutContent(
+                email = "test@example.com",
+                password = "password",
+                isLoading = true,
+                onEmailChanged = {},
+                onPasswordChanged = {},
+                onLoginClick = {},
+                onResetPasswordClick = {},
+                onSignUpClick = {},
+                onPrivacyPolicyClick = {},
+                onLostEmailClick = {},
+                showSignUp = true,
+                showNoAccountText = true,
+            )
+        }
     }
 }
 
@@ -770,11 +789,13 @@ private fun LoggedOutContentLoadingPreview() {
 @Composable
 private fun LoggedInContentPreview() {
     AnkiDroidTheme {
-        LoggedInContent(
-            username = "test@example.com",
-            onLogoutClick = {},
-            onRemoveAccountClick = {},
-            onPrivacyPolicyClick = { },
-        )
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            LoggedInContent(
+                username = "test@example.com",
+                onLogoutClick = {},
+                onRemoveAccountClick = {},
+                onPrivacyPolicyClick = { },
+            )
+        }
     }
 }
