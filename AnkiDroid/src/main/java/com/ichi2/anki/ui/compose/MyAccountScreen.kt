@@ -457,7 +457,7 @@ fun LoggedOutContent(
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                painter = painterResource(if (passwordVisible) R.drawable.visibility_24px else R.drawable.visibility_off_24px),
+                                painter = painterResource(if (passwordVisible) R.drawable.visibility_off_24px else R.drawable.visibility_24px),
                                 contentDescription = stringResource(if (passwordVisible) R.string.hide_password else R.string.show_password),
                             )
                         }
