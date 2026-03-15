@@ -1,0 +1,3 @@
+## 2023-11-20 - [Add Show/Hide Password Toggle]
+**Learning:** Added a toggle button for password visibility on `MyAccountScreen`. It turns out Compose `OutlinedTextField` accepts `trailingIcon` and `visualTransformation` easily to achieve this without complex logic, providing a significant usability and accessibility win for login forms. Make sure to define `contentDescription` dynamically to announce the state change correctly for screen readers!
+**Action:** Always check password input fields for a visibility toggle in Compose apps. Use `PasswordVisualTransformation` and `VisualTransformation.None` along with a dynamic `contentDescription`.

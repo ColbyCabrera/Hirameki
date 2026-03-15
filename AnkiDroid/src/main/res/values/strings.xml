@@ -101,4 +101,7 @@
         <item>https://ankiweb.net/decks</item>
         <item>https://ankiweb.net/account/verify-email</item>
     </string-array>
+
+    <string name="show_password">Show password</string>
+    <string name="hide_password">Hide password</string>
 </resources>
