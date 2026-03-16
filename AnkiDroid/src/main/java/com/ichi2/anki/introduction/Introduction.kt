@@ -393,3 +393,14 @@ private fun ActionContent(
         }
     }
 }
+
+@Preview(name = "Action Content", showBackground = true)
+@Composable
+private fun ActionContentPreview() {
+    AnkiDroidTheme {
+        ActionContent(
+            onGetStarted = { },
+            onSync = { },
+        )
+    }
+}
