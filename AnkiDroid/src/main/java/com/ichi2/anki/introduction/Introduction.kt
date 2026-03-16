@@ -127,17 +127,15 @@ fun IntroductionScreen(
                             .size(124.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer {
-                                    rotationZ = rotation
-                                }
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = SoftBurstShape,
-                                )
-                        )
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                rotationZ = rotation
+                            }
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                shape = SoftBurstShape,
+                            ))
                         Image(
                             modifier = Modifier.size(60.dp),
                             painter = painterResource(R.drawable.cards_stack_24px),
@@ -149,17 +147,14 @@ fun IntroductionScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     AnimatedContent(
-                        targetState = acknowledged,
-                        transitionSpec = {
+                        targetState = acknowledged, transitionSpec = {
                             val upwardTransition =
                                 (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                    slideOutVertically { height -> -height } + fadeOut()
-                                )
+                                    slideOutVertically { height -> -height } + fadeOut())
 
                             val downwardTransition =
                                 (slideInVertically { height -> -height } + fadeIn()).togetherWith(
-                                    slideOutVertically { height -> height } + fadeOut()
-                                )
+                                    slideOutVertically { height -> height } + fadeOut())
 
                             if (targetState) {
                                 upwardTransition
@@ -168,8 +163,7 @@ fun IntroductionScreen(
                             }.using(
                                 SizeTransform(clip = false)
                             )
-                        },
-                        label = "IntroTransition"
+                        }, label = "IntroTransition"
                     ) { isAcknowledged ->
                         if (!isAcknowledged) {
                             // Disclaimer / Intro State
@@ -185,10 +179,9 @@ fun IntroductionScreen(
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.semantics {
                                         contentDescription = "intro_title"
-                                    }
-                                )
+                                    })
                                 Spacer(modifier = Modifier.height(32.dp))
-                                
+
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -210,21 +203,24 @@ fun IntroductionScreen(
                                 }
 
                                 Spacer(modifier = Modifier.height(32.dp))
-                                
+
                                 // Large buttons
                                 Button(
                                     onClick = { acknowledgedState.value = true },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(56.dp)
-                                        .semantics { contentDescription = "ok_button" },
+                                        .semantics { contentDescription = "continue_button" },
                                     shapes = ButtonDefaults.shapes()
                                 ) {
-                                    Text(stringResource(R.string.dialog_ok), style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        stringResource(R.string.intro_continue),
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
                                 }
-                                
+
                                 Spacer(modifier = Modifier.height(16.dp))
-                                
+
                                 Button(
                                     onClick = { uriHandler.openUri("https://opencollective.com/ankidroid") },
                                     modifier = Modifier
@@ -233,7 +229,10 @@ fun IntroductionScreen(
                                     colors = ButtonDefaults.filledTonalButtonColors(),
                                     shapes = ButtonDefaults.shapes()
                                 ) {
-                                    Text(stringResource(R.string.donate), style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        stringResource(R.string.donate),
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
                                 }
                             }
                         } else {

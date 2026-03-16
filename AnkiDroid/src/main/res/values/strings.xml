@@ -44,9 +44,9 @@
     <string name="card_browser_no_tags_found">No tags found.</string>
     <string name="card_browser_filter_tags_by_deck_on_description">Show only tags in deck</string>
     <string name="card_browser_filter_tags_by_deck_off_description">Show all tags</string>
-    <string name="intro_title_before_continuing">Before continuing!</string>
-    <string name="intro_fork_disclaimer_1">This app is a fork of AnkiDroid. Please consider donating to the AnkiDroid team to support their work. The creator of Anki has also kindly allowed the use of AnkiWeb sync. If you\'d like to support him, please consider buying the iPhone version of Anki.</string>
-    <string name="intro_fork_disclaimer_2">If you have any issues with this version, please contact me and not the AnkiDroid team. Happy memorizing!</string>
+    <string name="intro_title_before_continuing">Welcome to Hirameki!</string>
+    <string name="intro_fork_disclaimer_1">Hirameki is a customized, open-source version of AnkiDroid. If you love this app, please consider supporting the original AnkiDroid team and the creator of AnkiWeb, as this app is built on their incredible work.</string>
+    <string name="intro_fork_disclaimer_2">Please direct any bug reports or feedback about this version to us directly, rather than the AnkiDroid team. Happy memorizing!</string>
     <string name="donate" comment="Generic donate button. Duplicated in help_item_support_opencollective_donate for help menu context">Donate</string>
     <string name="ankiweb_is_not_affiliated_with_this_app">AnkiWeb is not affiliated with this app</string>
     <string name="undo_empty">Nothing to undo</string>
@@ -96,12 +96,12 @@
     <string name="contribute_donate_creator_subtitle">Buy me a coffee if you like the app &lt;3</string>
     <string name="contribute_repo_title">Contribute Code</string>
     <string name="contribute_repo_subtitle">Help improve the app with code or translations</string>
+    <string name="show_password">Show password</string>
+    <string name="hide_password">Hide password</string>
+    <string name="intro_continue">Continue</string>
     <string-array name="account_redirect_urls" translatable="false">
         <item>https://ankiweb.net/account/login?afterAuth=1</item>
         <item>https://ankiweb.net/decks</item>
         <item>https://ankiweb.net/account/verify-email</item>
     </string-array>
-
-    <string name="show_password">Show password</string>
-    <string name="hide_password">Hide password</string>
 </resources>
