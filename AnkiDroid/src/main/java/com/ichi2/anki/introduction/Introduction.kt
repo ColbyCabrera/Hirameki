@@ -52,7 +52,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,8 +63,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,15 +77,17 @@ private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun IntroductionScreen(
-    acknowledgedState: MutableState<Boolean>, onGetStarted: () -> Unit, onSync: () -> Unit
+    acknowledged: Boolean,
+    onAcknowledgedChange: (Boolean) -> Unit,
+    onGetStarted: () -> Unit,
+    onSync: () -> Unit,
 ) {
-    val acknowledged by acknowledgedState
     val uriHandler = LocalUriHandler.current
 
     // Reset acknowledged state if back is pressed
     if (acknowledged) {
         BackHandler {
-            acknowledgedState.value = false
+            onAcknowledgedChange(false)
         }
     }
 
@@ -146,23 +146,16 @@ fun IntroductionScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    val buttonModifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+
                     AnimatedContent(
                         targetState = acknowledged, transitionSpec = {
-                            val upwardTransition =
-                                (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                    slideOutVertically { height -> -height } + fadeOut())
-
-                            val downwardTransition =
-                                (slideInVertically { height -> -height } + fadeIn()).togetherWith(
-                                    slideOutVertically { height -> height } + fadeOut())
-
-                            if (targetState) {
-                                upwardTransition
-                            } else {
-                                downwardTransition
-                            }.using(
-                                SizeTransform(clip = false)
-                            )
+                            val direction = if (targetState) 1 else -1
+                            (slideInVertically { it * direction } + fadeIn()).togetherWith(
+                                    slideOutVertically { -it * direction } + fadeOut())
+                                .using(SizeTransform(clip = false))
                         }, label = "IntroTransition"
                     ) { isAcknowledged ->
                         if (!isAcknowledged) {
@@ -177,9 +170,8 @@ fun IntroductionScreen(
                                     text = stringResource(R.string.intro_title_before_continuing),
                                     style = MaterialTheme.typography.displayMediumEmphasized,
                                     textAlign = TextAlign.Center,
-                                    modifier = Modifier.semantics {
-                                        contentDescription = "intro_title"
-                                    })
+                                    modifier = Modifier.testTag("intro_title")
+                                )
                                 Spacer(modifier = Modifier.height(32.dp))
 
                                 Column(
@@ -204,14 +196,11 @@ fun IntroductionScreen(
 
                                 Spacer(modifier = Modifier.height(32.dp))
 
-                                // Large buttons
                                 Button(
-                                    onClick = { acknowledgedState.value = true },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(56.dp)
-                                        .semantics { contentDescription = "continue_button" },
+                                    onClick = { onAcknowledgedChange(true) },
+                                    modifier = buttonModifier.testTag("continue_button"),
                                     shapes = ButtonDefaults.shapes()
+
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_continue),
@@ -223,9 +212,7 @@ fun IntroductionScreen(
 
                                 Button(
                                     onClick = { uriHandler.openUri("https://opencollective.com/ankidroid") },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(56.dp),
+                                    modifier = buttonModifier,
                                     colors = ButtonDefaults.filledTonalButtonColors(),
                                     shapes = ButtonDefaults.shapes()
                                 ) {
@@ -246,10 +233,7 @@ fun IntroductionScreen(
                             ) {
                                 Button(
                                     onClick = onGetStarted,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(56.dp)
-                                        .testTag("get_started"),
+                                    modifier = buttonModifier.testTag("get_started"),
                                     shapes = ButtonDefaults.shapes()
                                 ) {
                                     Text(
@@ -260,10 +244,7 @@ fun IntroductionScreen(
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Button(
                                     onClick = onSync,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(56.dp)
-                                        .testTag("sync_button"),
+                                    modifier = buttonModifier.testTag("sync_button"),
                                     colors = ButtonDefaults.filledTonalButtonColors(),
                                     shapes = ButtonDefaults.shapes()
                                 ) {
@@ -285,9 +266,12 @@ fun IntroductionScreen(
 fun IntroductionScreen(
     onGetStarted: () -> Unit, onSync: () -> Unit
 ) {
-    val acknowledgedState = remember { mutableStateOf(false) }
+    val (acknowledged, onAcknowledgedChange) = remember { mutableStateOf(false) }
     IntroductionScreen(
-        acknowledgedState = acknowledgedState, onGetStarted = onGetStarted, onSync = onSync
+        acknowledged = acknowledged,
+        onAcknowledgedChange = onAcknowledgedChange,
+        onGetStarted = onGetStarted,
+        onSync = onSync,
     )
 }
 

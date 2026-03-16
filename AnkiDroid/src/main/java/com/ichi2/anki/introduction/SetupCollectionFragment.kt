@@ -38,9 +38,10 @@ import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
@@ -48,19 +49,18 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.parcelize.Parcelize
 
 class SetupCollectionFragment : Fragment() {
-    private val acknowledgedState: MutableState<Boolean> = mutableStateOf(false)
+    private var acknowledged by mutableStateOf(false)
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
                 AnkiDroidTheme {
                     IntroductionScreen(
-                        acknowledgedState = acknowledgedState,
+                        acknowledged = acknowledged,
+                        onAcknowledgedChange = { acknowledged = it },
                         onGetStarted = { setResult(CollectionSetupOption.DeckPickerWithNewCollection) },
-                        onSync = { setResult(CollectionSetupOption.SyncFromExistingAccount) }
+                        onSync = { setResult(CollectionSetupOption.SyncFromExistingAccount) },
                     )
                 }
             }
