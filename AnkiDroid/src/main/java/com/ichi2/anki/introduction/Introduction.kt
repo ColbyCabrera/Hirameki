@@ -81,7 +81,7 @@ private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
 /** Non-obvious layout and animation constants used throughout the introduction screen. */
 private object IntroConstants {
     const val ROTATION_DURATION_MS = 9000
-    val BurstSize = 300.dp
+    val BurstSize = 285.dp
     val BurstOffsetX = 20.dp
     val BurstOffsetY = 26.dp
     val HeroAreaHeight = 350.dp
