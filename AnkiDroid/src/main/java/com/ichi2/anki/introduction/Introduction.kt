@@ -30,7 +30,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +38,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -57,21 +57,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val BunShape = RoundedPolygonShape(MaterialShapes.Bun)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
@@ -110,7 +113,7 @@ fun IntroductionScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 32.dp),
+                    .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
                 Column(
@@ -120,35 +123,6 @@ fun IntroductionScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 64.dp, bottom = 24.dp)
-                            .size(124.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Box(modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                rotationZ = rotation
-                            }
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                shape = SoftBurstShape,
-                            ))
-                        Image(
-                            modifier = Modifier.size(60.dp),
-                            painter = painterResource(R.drawable.cards_stack_24px),
-                            contentDescription = null,
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary),
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    val buttonModifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-
                     AnimatedContent(
                         targetState = acknowledged, transitionSpec = {
                             val direction = if (targetState) 1 else -1
@@ -165,51 +139,131 @@ fun IntroductionScreen(
                                     .padding(bottom = 32.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = stringResource(R.string.intro_title_before_continuing),
-                                    style = MaterialTheme.typography.displayMediumEmphasized,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.testTag("intro_title")
-                                )
-                                Spacer(modifier = Modifier.height(32.dp))
 
-                                Column(
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .height(350.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(280.dp)
+                                            .offset(x = (-20).dp, y = (-10).dp)
+                                            .graphicsLayer { rotationZ = rotation }
+                                            .background(
+                                                MaterialTheme.colorScheme.tertiaryContainer,
+                                                shape = SoftBurstShape,
+                                            ))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(200.dp)
+                                            .offset(x = 50.dp, y = 60.dp)
+                                            .graphicsLayer { rotationZ = -rotation * 1.5f }
+                                            .background(
+                                                MaterialTheme.colorScheme.primaryContainer,
+                                                shape = BunShape,
+                                            ))
+                                    Text(
+                                        text = "Welcome to",
+                                        style = MaterialTheme.typography.displaySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .offset(x = (-40).dp, y = (-70).dp)
+                                            .rotate(-10f)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.app_name),
+                                        style = MaterialTheme.typography.displayLarge,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        fontSize = 64.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier
+                                            .offset(x = 20.dp, y = 20.dp)
+                                            .rotate(6f)
+                                            .testTag("app_name")
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Disclaimer 1
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .rotate(-2f)
                                         .background(
-                                            color = MaterialTheme.colorScheme.surfaceContainer,
-                                            shape = RoundedCornerShape(32.dp)
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            shape = RoundedCornerShape(
+                                                topStart = 40.dp,
+                                                bottomEnd = 40.dp,
+                                                topEnd = 12.dp,
+                                                bottomStart = 12.dp
+                                            )
                                         )
                                         .padding(24.dp),
                                 ) {
                                     Text(
                                         text = stringResource(R.string.intro_fork_disclaimer_1),
-                                        style = MaterialTheme.typography.bodyLarge
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        fontWeight = FontWeight.Medium
                                     )
-                                    Spacer(modifier = Modifier.height(24.dp))
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
+                                // Disclaimer 2
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp)
+                                        .rotate(3f)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.errorContainer,
+                                            shape = RoundedCornerShape(
+                                                topStart = 12.dp,
+                                                bottomEnd = 12.dp,
+                                                topEnd = 40.dp,
+                                                bottomStart = 40.dp
+                                            )
+                                        )
+                                        .padding(24.dp),
+                                ) {
                                     Text(
                                         text = stringResource(R.string.intro_fork_disclaimer_2),
-                                        style = MaterialTheme.typography.bodyLarge
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        fontWeight = FontWeight.Medium
                                     )
                                 }
 
                                 Spacer(modifier = Modifier.height(32.dp))
 
                                 val largeButtonHeight = ButtonDefaults.LargeContainerHeight
+
                                 Button(
                                     onClick = { onAcknowledgedChange(true) },
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(largeButtonHeight)
+                                        .align(Alignment.End)
+                                        .padding(end = 8.dp)
+                                        .rotate(-4f)
                                         .testTag("continue_button"),
                                     shapes = ButtonDefaults.shapesFor(largeButtonHeight),
                                     contentPadding = ButtonDefaults.contentPaddingFor(
                                         largeButtonHeight
+                                    ),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
                                     )
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_continue),
-                                        style = ButtonDefaults.textStyleFor(largeButtonHeight)
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 24.dp)
                                     )
                                 }
                             }
@@ -218,30 +272,78 @@ fun IntroductionScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 32.dp),
+                                    .padding(bottom = 32.dp, top = 64.dp),
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(180.dp)
+                                        .graphicsLayer { rotationZ = rotation }
+                                        .background(
+                                            MaterialTheme.colorScheme.tertiaryContainer,
+                                            shape = SoftBurstShape,
+                                        ), contentAlignment = Alignment.Center) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(100.dp)
+                                            .graphicsLayer { rotationZ = -rotation * 2f }
+                                            .background(
+                                                MaterialTheme.colorScheme.primaryContainer,
+                                                shape = BunShape,
+                                            ))
+                                }
+
+                                Spacer(modifier = Modifier.height(64.dp))
+
                                 Button(
                                     onClick = onGetStarted,
-                                    modifier = buttonModifier.testTag("get_started"),
-                                    shapes = ButtonDefaults.shapes()
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.95f)
+                                        .height(88.dp)
+                                        .rotate(-2f)
+                                        .testTag("get_started"),
+                                    shape = RoundedCornerShape(
+                                        topStart = 48.dp,
+                                        bottomEnd = 48.dp,
+                                        topEnd = 16.dp,
+                                        bottomStart = 16.dp
+                                    ),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_get_started),
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Black
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Spacer(modifier = Modifier.height(32.dp))
+
                                 Button(
                                     onClick = onSync,
-                                    modifier = buttonModifier.testTag("sync_button"),
-                                    colors = ButtonDefaults.filledTonalButtonColors(),
-                                    shapes = ButtonDefaults.shapes()
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.85f)
+                                        .height(72.dp)
+                                        .rotate(3f)
+                                        .testTag("sync_button"),
+                                    shape = RoundedCornerShape(
+                                        topStart = 16.dp,
+                                        bottomEnd = 16.dp,
+                                        topEnd = 48.dp,
+                                        bottomStart = 48.dp
+                                    ),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_sync_from_ankiweb),
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
