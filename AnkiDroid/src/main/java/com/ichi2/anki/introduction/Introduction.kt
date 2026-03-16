@@ -63,7 +63,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -82,7 +81,7 @@ fun IntroductionScreen(
     onGetStarted: () -> Unit,
     onSync: () -> Unit,
 ) {
-    val uriHandler = LocalUriHandler.current
+    LocalUriHandler.current
 
     // Reset acknowledged state if back is pressed
     if (acknowledged) {
@@ -154,7 +153,7 @@ fun IntroductionScreen(
                         targetState = acknowledged, transitionSpec = {
                             val direction = if (targetState) 1 else -1
                             (slideInVertically { it * direction } + fadeIn()).togetherWith(
-                                    slideOutVertically { -it * direction } + fadeOut())
+                                slideOutVertically { -it * direction } + fadeOut())
                                 .using(SizeTransform(clip = false))
                         }, label = "IntroTransition"
                     ) { isAcknowledged ->
@@ -196,29 +195,21 @@ fun IntroductionScreen(
 
                                 Spacer(modifier = Modifier.height(32.dp))
 
+                                val largeButtonHeight = ButtonDefaults.LargeContainerHeight
                                 Button(
                                     onClick = { onAcknowledgedChange(true) },
-                                    modifier = buttonModifier.testTag("continue_button"),
-                                    shapes = ButtonDefaults.shapes()
-
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(largeButtonHeight)
+                                        .testTag("continue_button"),
+                                    shapes = ButtonDefaults.shapesFor(largeButtonHeight),
+                                    contentPadding = ButtonDefaults.contentPaddingFor(
+                                        largeButtonHeight
+                                    )
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_continue),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Button(
-                                    onClick = { uriHandler.openUri("https://opencollective.com/ankidroid") },
-                                    modifier = buttonModifier,
-                                    colors = ButtonDefaults.filledTonalButtonColors(),
-                                    shapes = ButtonDefaults.shapes()
-                                ) {
-                                    Text(
-                                        stringResource(R.string.donate),
-                                        style = MaterialTheme.typography.titleMedium
+                                        style = ButtonDefaults.textStyleFor(largeButtonHeight)
                                     )
                                 }
                             }
