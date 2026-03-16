@@ -78,6 +78,24 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
 
+/** Non-obvious layout and animation constants used throughout the introduction screen. */
+private object IntroConstants {
+    const val ROTATION_DURATION_MS = 9000
+    val BurstSize = 300.dp
+    val BurstOffsetX = 20.dp
+    val BurstOffsetY = 26.dp
+    val HeroAreaHeight = 350.dp
+    val TitleFontSize = 64.sp
+    const val TITLE_ROTATION = 6f
+    val WelcomeBannerHeight = 110.dp
+    val WelcomeBannerWidth = 280.dp
+    val WelcomeBannerOffsetX = (-40).dp
+    val WelcomeBannerOffsetY = (-66).dp
+    const val WELCOME_BANNER_ROTATION = -10f
+    val GetStartedButtonHeight = 88.dp
+    val SyncButtonHeight = 72.dp
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun IntroductionScreen(
@@ -100,7 +118,7 @@ fun IntroductionScreen(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(9000, easing = LinearEasing),
+            animation = tween(IntroConstants.ROTATION_DURATION_MS, easing = LinearEasing),
         ),
         label = "IntroIconRotationAngle",
     )
@@ -137,202 +155,15 @@ fun IntroductionScreen(
                         label = "IntroTransition",
                     ) { isAcknowledged ->
                         if (!isAcknowledged) {
-                            // Disclaimer / Intro State
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 32.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(350.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(300.dp)
-                                            .offset(x = (20).dp, y = (26).dp)
-                                            .graphicsLayer { rotationZ = rotation }
-                                            .background(
-                                                MaterialTheme.colorScheme.tertiaryContainer,
-                                                shape = SoftBurstShape,
-                                            ),
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.app_name),
-                                        style = MaterialTheme.typography.displayLargeEmphasized,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        fontSize = 64.sp,
-                                        fontWeight = FontWeight.Black,
-                                        modifier = Modifier
-                                            .offset(x = (20).dp, y = (26).dp)
-                                            .rotate(6f)
-                                            .testTag("app_name"),
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .height(110.dp)
-                                            .width(280.dp)
-                                            .offset(x = (-40).dp, y = (-66).dp)
-                                            .rotate(-10f)
-                                            .background(
-                                                MaterialTheme.colorScheme.primaryContainer,
-                                                shape = MaterialTheme.shapes.extraExtraLarge,
-                                            ),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(
-                                            text = "Welcome to",
-                                            style = MaterialTheme.typography.displaySmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // Disclaimer 1
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .rotate(-2f)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.secondaryContainer,
-                                            shape = RoundedCornerShape(
-                                                topStart = 40.dp,
-                                                bottomEnd = 40.dp,
-                                                topEnd = 12.dp,
-                                                bottomStart = 12.dp,
-                                            ),
-                                        )
-                                        .padding(24.dp),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.intro_fork_disclaimer_1),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontWeight = FontWeight.Medium,
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(24.dp))
-
-                                // Disclaimer 2
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp)
-                                        .rotate(3f)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.errorContainer,
-                                            shape = RoundedCornerShape(
-                                                topStart = 12.dp,
-                                                bottomEnd = 12.dp,
-                                                topEnd = 40.dp,
-                                                bottomStart = 40.dp,
-                                            ),
-                                        )
-                                        .padding(24.dp),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.intro_fork_disclaimer_2),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onErrorContainer,
-                                        fontWeight = FontWeight.Medium,
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(32.dp))
-
-                                val largeButtonHeight = ButtonDefaults.LargeContainerHeight
-
-                                Button(
-                                    onClick = { onAcknowledgedChange(true) },
-                                    modifier = Modifier
-                                        .align(Alignment.End)
-                                        .padding(end = 8.dp)
-                                        .rotate(-4f)
-                                        .testTag("continue_button"),
-                                    shapes = ButtonDefaults.shapesFor(largeButtonHeight),
-                                    contentPadding = ButtonDefaults.contentPaddingFor(
-                                        largeButtonHeight,
-                                    ),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    ),
-                                ) {
-                                    Text(
-                                        stringResource(R.string.intro_continue),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 24.dp),
-                                    )
-                                }
-                            }
+                            DisclaimerContent(
+                                rotation = rotation,
+                                onContinue = { onAcknowledgedChange(true) },
+                            )
                         } else {
-                            // Action State (Get Started / Sync)
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 32.dp, top = 64.dp),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Button(
-                                    onClick = onGetStarted,
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.95f)
-                                        .height(88.dp)
-                                        .rotate(-2f)
-                                        .testTag("get_started"),
-                                    shape = RoundedCornerShape(
-                                        topStart = 48.dp,
-                                        bottomEnd = 48.dp,
-                                        topEnd = 16.dp,
-                                        bottomStart = 16.dp,
-                                    ),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary,
-                                    ),
-                                ) {
-                                    Text(
-                                        stringResource(R.string.intro_get_started),
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.Black,
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(32.dp))
-
-                                Button(
-                                    onClick = onSync,
-                                    modifier = Modifier
-                                        .fillMaxWidth(0.85f)
-                                        .height(72.dp)
-                                        .rotate(3f)
-                                        .testTag("sync_button"),
-                                    shape = RoundedCornerShape(
-                                        topStart = 16.dp,
-                                        bottomEnd = 16.dp,
-                                        topEnd = 48.dp,
-                                        bottomStart = 48.dp,
-                                    ),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    ),
-                                ) {
-                                    Text(
-                                        stringResource(R.string.intro_sync_from_ankiweb),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                }
-                            }
+                            ActionContent(
+                                onGetStarted = onGetStarted,
+                                onSync = onSync,
+                            )
                         }
                     }
                 }
@@ -359,4 +190,217 @@ fun IntroductionScreen(
 @Composable
 fun IntroductionScreenPreview() {
     IntroductionScreen(onGetStarted = { }, onSync = { })
+}
+
+// region Extracted Composables
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun DisclaimerContent(
+    rotation: Float,
+    onContinue: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntroConstants.HeroAreaHeight),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(IntroConstants.BurstSize)
+                    .offset(x = IntroConstants.BurstOffsetX, y = IntroConstants.BurstOffsetY)
+                    .graphicsLayer { rotationZ = rotation }
+                    .background(
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = SoftBurstShape,
+                    ),
+            )
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displayLargeEmphasized,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                fontSize = IntroConstants.TitleFontSize,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier
+                    .offset(
+                        x = IntroConstants.BurstOffsetX, y = IntroConstants.BurstOffsetY
+                    )
+                    .rotate(IntroConstants.TITLE_ROTATION)
+                    .testTag("app_name"),
+            )
+            Box(
+                modifier = Modifier
+                    .height(IntroConstants.WelcomeBannerHeight)
+                    .width(IntroConstants.WelcomeBannerWidth)
+                    .offset(
+                        x = IntroConstants.WelcomeBannerOffsetX,
+                        y = IntroConstants.WelcomeBannerOffsetY,
+                    )
+                    .rotate(IntroConstants.WELCOME_BANNER_ROTATION)
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.extraExtraLarge,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Welcome to",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Disclaimer 1
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .rotate(-2f)
+                .background(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(
+                        topStart = 40.dp,
+                        bottomEnd = 40.dp,
+                        topEnd = 12.dp,
+                        bottomStart = 12.dp,
+                    ),
+                )
+                .padding(24.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.intro_fork_disclaimer_1),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Disclaimer 2
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .rotate(3f)
+                .background(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(
+                        topStart = 12.dp,
+                        bottomEnd = 12.dp,
+                        topEnd = 40.dp,
+                        bottomStart = 40.dp,
+                    ),
+                )
+                .padding(24.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.intro_fork_disclaimer_2),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        val largeButtonHeight = ButtonDefaults.LargeContainerHeight
+
+        Button(
+            onClick = onContinue,
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(end = 8.dp)
+                .rotate(-4f)
+                .testTag("continue_button"),
+            shapes = ButtonDefaults.shapesFor(largeButtonHeight),
+            contentPadding = ButtonDefaults.contentPaddingFor(largeButtonHeight),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            Text(
+                stringResource(R.string.intro_continue),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 24.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionContent(
+    onGetStarted: () -> Unit,
+    onSync: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp, top = 64.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Button(
+            onClick = onGetStarted,
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .height(IntroConstants.GetStartedButtonHeight)
+                .rotate(-2f)
+                .testTag("get_started"),
+            shape = RoundedCornerShape(
+                topStart = 48.dp,
+                bottomEnd = 48.dp,
+                topEnd = 16.dp,
+                bottomStart = 16.dp,
+            ),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+            ),
+        ) {
+            Text(
+                stringResource(R.string.intro_get_started),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Black,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onSync,
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .height(IntroConstants.SyncButtonHeight)
+                .rotate(3f)
+                .testTag("sync_button"),
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                bottomEnd = 16.dp,
+                topEnd = 48.dp,
+                bottomStart = 48.dp,
+            ),
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ),
+        ) {
+            Text(
+                stringResource(R.string.intro_sync_from_ankiweb),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
 }
