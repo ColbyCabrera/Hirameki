@@ -130,42 +130,30 @@ fun IntroductionScreen(
             contentColor = MaterialTheme.colorScheme.onBackground,
             contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
         ) { padding ->
-            Box(
+            AnimatedContent(
+                targetState = acknowledged,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
                     .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.TopCenter,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top,
-                ) {
-                    AnimatedContent(
-                        targetState = acknowledged,
-                        transitionSpec = {
-                            val direction = if (targetState) 1 else -1
-                            (slideInVertically { it * direction } + fadeIn()).togetherWith(
-                                slideOutVertically { -it * direction } + fadeOut(),
-                            ).using(SizeTransform(clip = false))
-                        },
-                        label = "IntroTransition",
-                    ) { isAcknowledged ->
-                        if (!isAcknowledged) {
-                            DisclaimerContent(
-                                rotation = rotation,
-                                onContinue = { onAcknowledgedChange(true) },
-                            )
-                        } else {
-                            ActionContent(
-                                onGetStarted = onGetStarted,
-                                onSync = onSync,
-                            )
-                        }
-                    }
+                transitionSpec = {
+                    val direction = if (targetState) 1 else -1
+                    (slideInVertically { it * direction } + fadeIn()).togetherWith(
+                        slideOutVertically { -it * direction } + fadeOut(),
+                    ).using(SizeTransform(clip = false))
+                },
+                label = "IntroTransition",
+            ) { isAcknowledged ->
+                if (!isAcknowledged) {
+                    DisclaimerContent(
+                        rotation = rotation,
+                        onContinue = { onAcknowledgedChange(true) },
+                    )
+                } else {
+                    ActionContent(
+                        onGetStarted = onGetStarted,
+                        onSync = onSync,
+                    )
                 }
             }
         }
@@ -203,6 +191,7 @@ private fun DisclaimerContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -347,8 +336,8 @@ private fun ActionContent(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 32.dp, top = 64.dp),
+            .fillMaxSize()
+            .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
