@@ -78,9 +78,6 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val BunShape = RoundedPolygonShape(MaterialShapes.Bun)
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun IntroductionScreen(
@@ -134,8 +131,8 @@ fun IntroductionScreen(
                         transitionSpec = {
                             val direction = if (targetState) 1 else -1
                             (slideInVertically { it * direction } + fadeIn()).togetherWith(
-                                    slideOutVertically { -it * direction } + fadeOut(),
-                                ).using(SizeTransform(clip = false))
+                                slideOutVertically { -it * direction } + fadeOut(),
+                            ).using(SizeTransform(clip = false))
                         },
                         label = "IntroTransition",
                     ) { isAcknowledged ->
@@ -285,29 +282,6 @@ fun IntroductionScreen(
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(180.dp)
-                                        .graphicsLayer { rotationZ = rotation }
-                                        .background(
-                                            MaterialTheme.colorScheme.tertiaryContainer,
-                                            shape = SoftBurstShape,
-                                        ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(100.dp)
-                                            .graphicsLayer { rotationZ = -rotation * 2f }
-                                            .background(
-                                                MaterialTheme.colorScheme.primaryContainer,
-                                                shape = BunShape,
-                                            ),
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(64.dp))
-
                                 Button(
                                     onClick = onGetStarted,
                                     modifier = Modifier
