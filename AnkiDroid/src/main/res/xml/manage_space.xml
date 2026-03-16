@@ -37,5 +37,6 @@
     <!-- Title and summary are set programmatically -->
     <Preference
         android:key="@string/pref_delete_everything_key"
+        android:title="@string/pref__delete_everything__title"
         />
 </PreferenceScreen>
