@@ -71,7 +71,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -121,22 +120,24 @@ fun IntroductionScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.TopCenter
+                contentAlignment = Alignment.TopCenter,
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
+                    verticalArrangement = Arrangement.Top,
                 ) {
                     AnimatedContent(
-                        targetState = acknowledged, transitionSpec = {
+                        targetState = acknowledged,
+                        transitionSpec = {
                             val direction = if (targetState) 1 else -1
                             (slideInVertically { it * direction } + fadeIn()).togetherWith(
-                                slideOutVertically { -it * direction } + fadeOut())
-                                .using(SizeTransform(clip = false))
-                        }, label = "IntroTransition"
+                                    slideOutVertically { -it * direction } + fadeOut(),
+                                ).using(SizeTransform(clip = false))
+                        },
+                        label = "IntroTransition",
                     ) { isAcknowledged ->
                         if (!isAcknowledged) {
                             // Disclaimer / Intro State
@@ -144,9 +145,8 @@ fun IntroductionScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 32.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -161,20 +161,19 @@ fun IntroductionScreen(
                                             .background(
                                                 MaterialTheme.colorScheme.tertiaryContainer,
                                                 shape = SoftBurstShape,
-                                            ), contentAlignment = Alignment.Center) {
-                                        Text(
-                                            text = stringResource(R.string.app_name),
-                                            style = MaterialTheme.typography.displayLargeEmphasized,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                            fontSize = 64.sp,
-                                            fontWeight = FontWeight.Black,
-                                            modifier = Modifier
-                                                .rotate(6f)
-                                                .zIndex(1000f)
-                                                .testTag("app_name")
-
-                                        )
-                                    }
+                                            ),
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.app_name),
+                                        style = MaterialTheme.typography.displayLargeEmphasized,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        fontSize = 64.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier
+                                            .offset(x = (20).dp, y = (26).dp)
+                                            .rotate(6f)
+                                            .testTag("app_name"),
+                                    )
                                     Box(
                                         modifier = Modifier
                                             .height(110.dp)
@@ -184,7 +183,8 @@ fun IntroductionScreen(
                                             .background(
                                                 MaterialTheme.colorScheme.primaryContainer,
                                                 shape = MaterialTheme.shapes.extraExtraLarge,
-                                            ), contentAlignment = Alignment.Center
+                                            ),
+                                        contentAlignment = Alignment.Center,
                                     ) {
                                         Text(
                                             text = "Welcome to",
@@ -193,8 +193,6 @@ fun IntroductionScreen(
                                             fontWeight = FontWeight.Bold,
                                         )
                                     }
-
-
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -210,8 +208,8 @@ fun IntroductionScreen(
                                                 topStart = 40.dp,
                                                 bottomEnd = 40.dp,
                                                 topEnd = 12.dp,
-                                                bottomStart = 12.dp
-                                            )
+                                                bottomStart = 12.dp,
+                                            ),
                                         )
                                         .padding(24.dp),
                                 ) {
@@ -219,7 +217,7 @@ fun IntroductionScreen(
                                         text = stringResource(R.string.intro_fork_disclaimer_1),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Medium,
                                     )
                                 }
 
@@ -237,8 +235,8 @@ fun IntroductionScreen(
                                                 topStart = 12.dp,
                                                 bottomEnd = 12.dp,
                                                 topEnd = 40.dp,
-                                                bottomStart = 40.dp
-                                            )
+                                                bottomStart = 40.dp,
+                                            ),
                                         )
                                         .padding(24.dp),
                                 ) {
@@ -246,7 +244,7 @@ fun IntroductionScreen(
                                         text = stringResource(R.string.intro_fork_disclaimer_2),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onErrorContainer,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Medium,
                                     )
                                 }
 
@@ -263,18 +261,18 @@ fun IntroductionScreen(
                                         .testTag("continue_button"),
                                     shapes = ButtonDefaults.shapesFor(largeButtonHeight),
                                     contentPadding = ButtonDefaults.contentPaddingFor(
-                                        largeButtonHeight
+                                        largeButtonHeight,
                                     ),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary
-                                    )
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_continue),
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 24.dp)
+                                        modifier = Modifier.padding(horizontal = 24.dp),
                                     )
                                 }
                             }
@@ -285,7 +283,7 @@ fun IntroductionScreen(
                                     .fillMaxWidth()
                                     .padding(bottom = 32.dp, top = 64.dp),
                                 verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -294,7 +292,9 @@ fun IntroductionScreen(
                                         .background(
                                             MaterialTheme.colorScheme.tertiaryContainer,
                                             shape = SoftBurstShape,
-                                        ), contentAlignment = Alignment.Center) {
+                                        ),
+                                    contentAlignment = Alignment.Center,
+                                ) {
                                     Box(
                                         modifier = Modifier
                                             .size(100.dp)
@@ -302,7 +302,8 @@ fun IntroductionScreen(
                                             .background(
                                                 MaterialTheme.colorScheme.primaryContainer,
                                                 shape = BunShape,
-                                            ))
+                                            ),
+                                    )
                                 }
 
                                 Spacer(modifier = Modifier.height(64.dp))
@@ -318,16 +319,16 @@ fun IntroductionScreen(
                                         topStart = 48.dp,
                                         bottomEnd = 48.dp,
                                         topEnd = 16.dp,
-                                        bottomStart = 16.dp
+                                        bottomStart = 16.dp,
                                     ),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primary
-                                    )
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                    ),
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_get_started),
                                         style = MaterialTheme.typography.headlineMedium,
-                                        fontWeight = FontWeight.Black
+                                        fontWeight = FontWeight.Black,
                                     )
                                 }
 
@@ -344,17 +345,17 @@ fun IntroductionScreen(
                                         topStart = 16.dp,
                                         bottomEnd = 16.dp,
                                         topEnd = 48.dp,
-                                        bottomStart = 48.dp
+                                        bottomStart = 48.dp,
                                     ),
                                     colors = ButtonDefaults.filledTonalButtonColors(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    ),
                                 ) {
                                     Text(
                                         stringResource(R.string.intro_sync_from_ankiweb),
                                         style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
                                     )
                                 }
                             }
@@ -368,7 +369,8 @@ fun IntroductionScreen(
 
 @Composable
 fun IntroductionScreen(
-    onGetStarted: () -> Unit, onSync: () -> Unit
+    onGetStarted: () -> Unit,
+    onSync: () -> Unit,
 ) {
     val (acknowledged, onAcknowledgedChange) = remember { mutableStateOf(false) }
     IntroductionScreen(
