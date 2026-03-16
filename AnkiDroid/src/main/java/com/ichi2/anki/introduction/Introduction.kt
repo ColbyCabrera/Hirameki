@@ -35,12 +35,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -66,6 +71,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -107,7 +113,8 @@ fun IntroductionScreen(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
         ) { padding ->
             Box(
                 modifier = Modifier
@@ -148,42 +155,46 @@ fun IntroductionScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(280.dp)
-                                            .offset(x = (-20).dp, y = (-10).dp)
+                                            .size(300.dp)
+                                            .offset(x = (20).dp, y = (26).dp)
                                             .graphicsLayer { rotationZ = rotation }
                                             .background(
                                                 MaterialTheme.colorScheme.tertiaryContainer,
                                                 shape = SoftBurstShape,
-                                            ))
+                                            ), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = stringResource(R.string.app_name),
+                                            style = MaterialTheme.typography.displayLargeEmphasized,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            fontSize = 64.sp,
+                                            fontWeight = FontWeight.Black,
+                                            modifier = Modifier
+                                                .rotate(6f)
+                                                .zIndex(1000f)
+                                                .testTag("app_name")
+
+                                        )
+                                    }
                                     Box(
                                         modifier = Modifier
-                                            .size(200.dp)
-                                            .offset(x = 50.dp, y = 60.dp)
-                                            .graphicsLayer { rotationZ = -rotation * 1.5f }
+                                            .height(110.dp)
+                                            .width(280.dp)
+                                            .offset(x = (-40).dp, y = (-66).dp)
+                                            .rotate(-10f)
                                             .background(
                                                 MaterialTheme.colorScheme.primaryContainer,
-                                                shape = BunShape,
-                                            ))
-                                    Text(
-                                        text = "Welcome to",
-                                        style = MaterialTheme.typography.displaySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier
-                                            .offset(x = (-40).dp, y = (-70).dp)
-                                            .rotate(-10f)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.app_name),
-                                        style = MaterialTheme.typography.displayLarge,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontSize = 64.sp,
-                                        fontWeight = FontWeight.Black,
-                                        modifier = Modifier
-                                            .offset(x = 20.dp, y = 20.dp)
-                                            .rotate(6f)
-                                            .testTag("app_name")
-                                    )
+                                                shape = MaterialTheme.shapes.extraExtraLarge,
+                                            ), contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "Welcome to",
+                                            style = MaterialTheme.typography.displaySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    }
+
+
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
