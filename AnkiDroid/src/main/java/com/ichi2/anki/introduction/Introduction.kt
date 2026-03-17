@@ -137,8 +137,7 @@ fun IntroductionScreen(
                 targetState = acknowledged,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp),
+                    .padding(padding),
                 transitionSpec = {
                     val direction = if (targetState) 1 else -1
                     (slideInVertically { it * direction } + fadeIn()).togetherWith(
@@ -154,6 +153,7 @@ fun IntroductionScreen(
                     )
                 } else {
                     ActionContent(
+                        rotation = rotation,
                         onGetStarted = onGetStarted,
                         onSync = onSync,
                     )
@@ -193,6 +193,7 @@ private fun DisclaimerContent(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
             .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -331,6 +332,7 @@ private fun DisclaimerContent(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ActionContent(
+    rotation: Float,
     onGetStarted: () -> Unit,
     onSync: () -> Unit,
 ) {
@@ -341,6 +343,7 @@ private fun ActionContent(
         Box(
             modifier = Modifier
                 .requiredSize(IntroConstants.ActionBackgroundSize)
+                .graphicsLayer { rotationZ = rotation / 2 }
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     shape = CookieShape,
@@ -402,6 +405,7 @@ private fun ActionContent(
 private fun ActionContentPreview() {
     AnkiDroidTheme {
         ActionContent(
+            rotation = 0f,
             onGetStarted = { },
             onSync = { },
         )
