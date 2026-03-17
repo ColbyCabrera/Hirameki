@@ -78,6 +78,9 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val CookieShape = RoundedPolygonShape(MaterialShapes.Cookie12Sided)
+
 /** Non-obvious layout and animation constants used throughout the introduction screen. */
 private object IntroConstants {
     const val ROTATION_DURATION_MS = 9000
@@ -179,8 +182,6 @@ fun IntroductionScreen(
 fun IntroductionScreenPreview() {
     IntroductionScreen(onGetStarted = { }, onSync = { })
 }
-
-// region Extracted Composables
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -321,77 +322,76 @@ private fun DisclaimerContent(
         ) {
             Text(
                 stringResource(R.string.intro_continue),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 24.dp),
+                style = ButtonDefaults.textStyleFor(largeButtonHeight),
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ActionContent(
     onGetStarted: () -> Unit,
     onSync: () -> Unit,
 ) {
-    Column(
+    Box(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .size(400.dp)
+            .background(
+            MaterialTheme.colorScheme.onTertiaryContainer,
+            shape = CookieShape,
+        ),
     ) {
-        Button(
-            onClick = onGetStarted,
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .height(IntroConstants.GetStartedButtonHeight)
-                .rotate(-2f)
-                .testTag("get_started"),
-            shape = RoundedCornerShape(
-                topStart = 48.dp,
-                bottomEnd = 48.dp,
-                topEnd = 16.dp,
-                bottomStart = 16.dp,
-            ),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-            ),
+                .fillMaxSize()
+                .padding(vertical = 32.dp, horizontal = 32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                stringResource(R.string.intro_get_started),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black,
-            )
-        }
+            val mediumButtonHeight = ButtonDefaults.MediumContainerHeight
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = onGetStarted,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(mediumButtonHeight)
+                    .testTag("get_started"),
+                shapes = ButtonDefaults.shapesFor(mediumButtonHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(mediumButtonHeight),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ),
+            ) {
+                Text(
+                    stringResource(R.string.intro_get_started),
+                    style = ButtonDefaults.textStyleFor(mediumButtonHeight),
+                )
+            }
 
-        Button(
-            onClick = onSync,
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .height(IntroConstants.SyncButtonHeight)
-                .rotate(3f)
-                .testTag("sync_button"),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                bottomEnd = 16.dp,
-                topEnd = 48.dp,
-                bottomStart = 48.dp,
-            ),
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            ),
-        ) {
-            Text(
-                stringResource(R.string.intro_sync_from_ankiweb),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onSync,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(mediumButtonHeight)
+                    .testTag("sync_button"),
+                shapes = ButtonDefaults.shapesFor(mediumButtonHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(mediumButtonHeight),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
+            ) {
+                Text(
+                    stringResource(R.string.intro_sync_from_ankiweb),
+                    style = ButtonDefaults.textStyleFor(mediumButtonHeight),
+                )
+            }
         }
     }
+
 }
 
 @Preview(name = "Action Content", showBackground = true)
