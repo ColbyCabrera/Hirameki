@@ -42,7 +42,10 @@ class RoundedPolygonShape(
         val matrix = Matrix()
         val bounds = polygon.getBounds()
         val maxDimension = max(bounds.width, bounds.height)
-        matrix.postTranslate(-bounds.left, -bounds.top)
+
+        val leftOffset = (maxDimension - bounds.width) / 2f
+        val topOffset = (maxDimension - bounds.height) / 2f
+        matrix.postTranslate(-bounds.left + leftOffset, -bounds.top + topOffset)
         matrix.postScale(size.width / maxDimension, size.height / maxDimension)
 
         graphicsPath.transform(matrix)
