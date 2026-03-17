@@ -42,8 +42,16 @@ class RoundedPolygonShape(
         val matrix = Matrix()
         val bounds = polygon.getBounds()
         val maxDimension = max(bounds.width, bounds.height)
-        matrix.postTranslate(-bounds.left, -bounds.top)
+
+        // Center the polygon around its own logical center
+        matrix.postTranslate(-polygon.centerX, -polygon.centerY)
+        
+        // Scale to fit the target size. If the target size isn't square, 
+        // this preserves the original behavior of potentially stretching.
         matrix.postScale(size.width / maxDimension, size.height / maxDimension)
+        
+        // Move the center of the scaled polygon to the center of the Composable
+        matrix.postTranslate(size.width / 2f, size.height / 2f)
 
         graphicsPath.transform(matrix)
         return Outline.Generic(graphicsPath.asComposePath())

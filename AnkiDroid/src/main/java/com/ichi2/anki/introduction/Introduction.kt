@@ -16,11 +16,15 @@
 
 package com.ichi2.anki.introduction
 
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -30,172 +34,130 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val CookieShape = RoundedPolygonShape(MaterialShapes.Cookie12Sided)
+
+/** Non-obvious layout and animation constants used throughout the introduction screen. */
+private object IntroConstants {
+    const val ROTATION_DURATION_MS = 9000
+    val BurstSize = 285.dp
+    val BurstOffsetX = 20.dp
+    val BurstOffsetY = 26.dp
+    val HeroAreaHeight = 350.dp
+    val TitleFontSize = 64.sp
+    const val TITLE_ROTATION = 6f
+    val WelcomeBannerHeight = 110.dp
+    val WelcomeBannerWidth = 280.dp
+    val WelcomeBannerOffsetX = (-40).dp
+    val WelcomeBannerOffsetY = (-66).dp
+    const val WELCOME_BANNER_ROTATION = -10f
+    val ActionBackgroundSize = 600.dp
+}
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun IntroductionScreen(
-    acknowledgedState: MutableState<Boolean>, onGetStarted: () -> Unit, onSync: () -> Unit
+    acknowledged: Boolean,
+    onAcknowledgedChange: (Boolean) -> Unit,
+    onGetStarted: () -> Unit,
+    onSync: () -> Unit,
 ) {
-    val acknowledged by acknowledgedState
-    val uriHandler = LocalUriHandler.current
+    LocalUriHandler.current
 
     // Reset acknowledged state if back is pressed
     if (acknowledged) {
         BackHandler {
-            acknowledgedState.value = false
+            onAcknowledgedChange(false)
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "IntroIconRotation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(IntroConstants.ROTATION_DURATION_MS, easing = LinearEasing),
+        ),
+        label = "IntroIconRotationAngle",
+    )
+
     AnkiDroidTheme {
-        Surface(
+        Scaffold(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground
-        ) {
-            Box(
+            containerColor = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
+        ) { padding ->
+            AnimatedContent(
+                targetState = acknowledged,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                AnimatedContent(
-                    targetState = acknowledged, transitionSpec = {
-                        val upwardTransition =
-                            (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                slideOutVertically { height -> -height } + fadeOut()
-                            )
-
-                        val downwardTransition =
-                            (slideInVertically { height -> -height } + fadeIn()).togetherWith(
-                                slideOutVertically { height -> height } + fadeOut()
-                            )
-
-                        if (targetState) {
-                            upwardTransition
-                        } else {
-                            downwardTransition
-                        }.using(
-                            SizeTransform(clip = false)
-                        )
-                    }, label = "IntroTransition"
-                ) { isAcknowledged ->
-                    if (!isAcknowledged) {
-                        // Disclaimer / Intro State
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceContainer,
-                                    shape = RoundedCornerShape(32.dp)
-                                )
-                                .padding(24.dp), verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = stringResource(R.string.intro_title_before_continuing),
-                                style = MaterialTheme.typography.displayMediumEmphasized,
-                                modifier = Modifier.semantics {
-                                    contentDescription = "intro_title"
-                                })
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Text(
-                                text = stringResource(R.string.intro_fork_disclaimer_1),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Text(
-                                text = stringResource(R.string.intro_fork_disclaimer_2),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(modifier = Modifier.height(32.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Button(
-                                    onClick = { uriHandler.openUri("https://opencollective.com/ankidroid") },
-                                    modifier = Modifier.weight(1F),
-                                    colors = ButtonDefaults.filledTonalButtonColors(),
-                                    shapes = ButtonDefaults.shapes()
-                                ) {
-                                    Text(stringResource(R.string.donate))
-                                }
-                                Button(
-                                    onClick = { acknowledgedState.value = true },
-                                    modifier = Modifier
-                                        .weight(1F)
-                                        .semantics { contentDescription = "ok_button" },
-                                    shapes = ButtonDefaults.shapes()
-                                ) {
-                                    Text(stringResource(R.string.dialog_ok))
-                                }
-                            }
-                        }
-                    } else {
-                        // Action State (Get Started / Sync)
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Button(
-                                onClick = onGetStarted,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .height(56.dp)
-                                    .testTag("get_started"),
-                                shapes = ButtonDefaults.shapes()
-                                ) {
-                                Text(
-                                    stringResource(R.string.intro_get_started),
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = onSync,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .height(56.dp)
-                                    .testTag("sync_button"),
-                                colors = ButtonDefaults.filledTonalButtonColors(),
-                                shapes = ButtonDefaults.shapes()
-                            ) {
-                                Text(
-                                    stringResource(R.string.intro_sync_from_ankiweb),
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                        }
-                    }
+                    .padding(padding),
+                transitionSpec = {
+                    val direction = if (targetState) 1 else -1
+                    (slideInVertically { it * direction } + fadeIn()).togetherWith(
+                        slideOutVertically { -it * direction } + fadeOut(),
+                    ).using(SizeTransform(clip = false))
+                },
+                label = "IntroTransition",
+            ) { isAcknowledged ->
+                if (!isAcknowledged) {
+                    DisclaimerContent(
+                        rotation = rotation,
+                        onContinue = { onAcknowledgedChange(true) },
+                    )
+                } else {
+                    ActionContent(
+                        rotation = rotation,
+                        onGetStarted = onGetStarted,
+                        onSync = onSync,
+                    )
                 }
             }
         }
@@ -204,11 +166,15 @@ fun IntroductionScreen(
 
 @Composable
 fun IntroductionScreen(
-    onGetStarted: () -> Unit, onSync: () -> Unit
+    onGetStarted: () -> Unit,
+    onSync: () -> Unit,
 ) {
-    val acknowledgedState = remember { mutableStateOf(false) }
+    val (acknowledged, onAcknowledgedChange) = remember { mutableStateOf(false) }
     IntroductionScreen(
-        acknowledgedState = acknowledgedState, onGetStarted = onGetStarted, onSync = onSync
+        acknowledged = acknowledged,
+        onAcknowledgedChange = onAcknowledgedChange,
+        onGetStarted = onGetStarted,
+        onSync = onSync,
     )
 }
 
@@ -216,4 +182,233 @@ fun IntroductionScreen(
 @Composable
 fun IntroductionScreenPreview() {
     IntroductionScreen(onGetStarted = { }, onSync = { })
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun DisclaimerContent(
+    rotation: Float,
+    onContinue: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntroConstants.HeroAreaHeight),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(IntroConstants.BurstSize)
+                    .offset(x = IntroConstants.BurstOffsetX, y = IntroConstants.BurstOffsetY)
+                    .graphicsLayer { rotationZ = rotation }
+                    .background(
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        shape = SoftBurstShape,
+                    ),
+            )
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displayLargeEmphasized,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                fontSize = IntroConstants.TitleFontSize,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier
+                    .offset(
+                        x = IntroConstants.BurstOffsetX, y = IntroConstants.BurstOffsetY
+                    )
+                    .rotate(IntroConstants.TITLE_ROTATION)
+                    .testTag("app_name"),
+            )
+            Box(
+                modifier = Modifier
+                    .height(IntroConstants.WelcomeBannerHeight)
+                    .width(IntroConstants.WelcomeBannerWidth)
+                    .offset(
+                        x = IntroConstants.WelcomeBannerOffsetX,
+                        y = IntroConstants.WelcomeBannerOffsetY,
+                    )
+                    .rotate(IntroConstants.WELCOME_BANNER_ROTATION)
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        shape = MaterialTheme.shapes.extraExtraLarge,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.welcome_to),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Disclaimer 1
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .rotate(-2f)
+                .background(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(
+                        topStart = 40.dp,
+                        bottomEnd = 40.dp,
+                        topEnd = 12.dp,
+                        bottomStart = 12.dp,
+                    ),
+                )
+                .padding(24.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.intro_fork_disclaimer_1),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Disclaimer 2
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .rotate(3f)
+                .background(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(
+                        topStart = 12.dp,
+                        bottomEnd = 12.dp,
+                        topEnd = 40.dp,
+                        bottomStart = 40.dp,
+                    ),
+                )
+                .padding(24.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.intro_fork_disclaimer_2),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        val largeButtonHeight = ButtonDefaults.LargeContainerHeight
+
+        Button(
+            onClick = onContinue,
+            modifier = Modifier
+                .align(Alignment.End)
+                .navigationBarsPadding()
+                .rotate(-4f)
+                .testTag("continue_button"),
+            shapes = ButtonDefaults.shapesFor(largeButtonHeight),
+            contentPadding = ButtonDefaults.contentPaddingFor(largeButtonHeight),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            Text(
+                stringResource(R.string.intro_continue),
+                style = ButtonDefaults.textStyleFor(largeButtonHeight),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ActionContent(
+    rotation: Float,
+    onGetStarted: () -> Unit,
+    onSync: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .requiredSize(IntroConstants.ActionBackgroundSize)
+                .graphicsLayer { rotationZ = rotation / 2 }
+                .background(
+                    MaterialTheme.colorScheme.surfaceContainer,
+                    shape = CookieShape,
+                ),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            val mediumButtonHeight = ButtonDefaults.MediumContainerHeight
+
+            Button(
+                onClick = onGetStarted,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(mediumButtonHeight)
+                    .testTag("get_started"),
+                shapes = ButtonDefaults.shapesFor(mediumButtonHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(mediumButtonHeight),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ),
+            ) {
+                Text(
+                    stringResource(R.string.intro_get_started),
+                    style = ButtonDefaults.textStyleFor(mediumButtonHeight),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onSync,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(mediumButtonHeight)
+                    .testTag("sync_button"),
+                shapes = ButtonDefaults.shapesFor(mediumButtonHeight),
+                contentPadding = ButtonDefaults.contentPaddingFor(mediumButtonHeight),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
+            ) {
+                Text(
+                    stringResource(R.string.intro_sync_from_ankiweb),
+                    style = ButtonDefaults.textStyleFor(mediumButtonHeight),
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "Action Content", showBackground = true)
+@Composable
+private fun ActionContentPreview() {
+    AnkiDroidTheme {
+        ActionContent(
+            rotation = 0f,
+            onGetStarted = { },
+            onSync = { },
+        )
+    }
 }
