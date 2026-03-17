@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -311,7 +312,7 @@ private fun DisclaimerContent(
             onClick = onContinue,
             modifier = Modifier
                 .align(Alignment.End)
-                .padding(end = 16.dp)
+                .navigationBarsPadding()
                 .rotate(-4f)
                 .testTag("continue_button"),
             shapes = ButtonDefaults.shapesFor(largeButtonHeight),
