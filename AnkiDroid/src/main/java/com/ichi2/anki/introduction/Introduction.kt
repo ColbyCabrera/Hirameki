@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
@@ -95,8 +96,7 @@ private object IntroConstants {
     val WelcomeBannerOffsetX = (-40).dp
     val WelcomeBannerOffsetY = (-66).dp
     const val WELCOME_BANNER_ROTATION = -10f
-    val GetStartedButtonHeight = 88.dp
-    val SyncButtonHeight = 72.dp
+    val ActionBackgroundSize = 600.dp
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
@@ -335,17 +335,21 @@ private fun ActionContent(
     onSync: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .size(400.dp)
-            .background(
-            MaterialTheme.colorScheme.onTertiaryContainer,
-            shape = CookieShape,
-        ),
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
     ) {
+        Box(
+            modifier = Modifier
+                .requiredSize(IntroConstants.ActionBackgroundSize)
+                .background(
+                    MaterialTheme.colorScheme.surfaceContainer,
+                    shape = CookieShape,
+                ),
+        )
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 32.dp, horizontal = 32.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -391,7 +395,6 @@ private fun ActionContent(
             }
         }
     }
-
 }
 
 @Preview(name = "Action Content", showBackground = true)
