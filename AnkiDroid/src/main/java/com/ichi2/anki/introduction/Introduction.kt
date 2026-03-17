@@ -242,7 +242,7 @@ private fun DisclaimerContent(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Welcome to",
+                    text = stringResource(R.string.welcome_to),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Bold,
@@ -311,7 +311,7 @@ private fun DisclaimerContent(
             onClick = onContinue,
             modifier = Modifier
                 .align(Alignment.End)
-                .padding(end = 8.dp)
+                .padding(end = 16.dp)
                 .rotate(-4f)
                 .testTag("continue_button"),
             shapes = ButtonDefaults.shapesFor(largeButtonHeight),

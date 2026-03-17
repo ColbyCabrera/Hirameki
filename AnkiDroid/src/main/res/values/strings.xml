@@ -98,6 +98,7 @@
     <string name="contribute_repo_subtitle">Help improve the app with code or translations</string>
     <string name="show_password">Show password</string>
     <string name="hide_password">Hide password</string>
+    <string name="welcome_to">Welcome to</string>
     <string name="intro_continue">Continue</string>
     <string-array name="account_redirect_urls" translatable="false">
         <item>https://ankiweb.net/account/login?afterAuth=1</item>

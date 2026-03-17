@@ -29,9 +29,11 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
     @Test
     fun backFromDeckPickerReshowsFirstThingsFirst() {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val continueText = InstrumentationRegistry.getInstrumentation()
+            .targetContext.getString(R.string.intro_continue)
 
-        // Wait for and click the "Continue" button by its visible text
-        val continueButton = device.wait(Until.findObject(By.text("Continue")), 5000)
+        // Wait for and click the "Continue" button by its localized text
+        val continueButton = device.wait(Until.findObject(By.text(continueText)), 5000)
         assertNotNull("Continue button should be visible", continueButton)
         continueButton.click()
 
@@ -42,7 +44,7 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
         device.pressBack()
 
         // The "Continue" button should be visible again after pressing back
-        val continueButtonAgain = device.wait(Until.findObject(By.text("Continue")), 5000)
+        val continueButtonAgain = device.wait(Until.findObject(By.text(continueText)), 5000)
         assertNotNull("Continue button should be visible after pressing back", continueButtonAgain)
     }
 }
