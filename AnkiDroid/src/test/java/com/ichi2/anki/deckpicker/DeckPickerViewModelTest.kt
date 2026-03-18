@@ -468,6 +468,4 @@ class DeckPickerViewModelTest : RobolectricTest() {
     }
 
     // endregion
-
-    companion object
 }
