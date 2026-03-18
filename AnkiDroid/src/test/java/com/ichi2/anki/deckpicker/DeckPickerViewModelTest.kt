@@ -169,9 +169,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
         }
         return withCol { getEmptyCards() }.also { report ->
             assertThat(
-                "there are empty cards",
-                report.emptyCids(),
-                not(report.emptyCids().isEmpty())
+                "there are empty cards", report.emptyCids(), not(report.emptyCids().isEmpty())
             )
             Timber.d("created %d empty cards: [%s]", report.emptyCids().size, report.emptyCids())
         }
@@ -189,8 +187,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
      */
     private fun moveAllCardsToFilteredDeck(
         assertOn: Note = addBasicNote(
-            "To",
-            "Filtered"
+            "To", "Filtered"
         )
     ): DeckId = addDynamicDeck("Filtered", "").also { did ->
         assertThat("filter - did", assertOn.firstCard().did, equalTo(did))
@@ -221,9 +218,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
         )
         val result = viewModel.validateDeckName("Existing Deck", state)
         assertThat(
-            "existing deck name",
-            result,
-            equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS)
+            "existing deck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS)
         )
     }
 
@@ -345,9 +340,8 @@ class DeckPickerViewModelTest : RobolectricTest() {
             viewModel.focusedDeck = deckId
             advanceUntilIdle()
 
-            val data = awaitItem()
-            assertThat("data should not be null after focusing", data != null, equalTo(true))
-            assertThat("deck id matches", data!!.deckId, equalTo(deckId))
+            val data = requireNotNull(awaitItem())
+            assertThat("deck id matches", data.deckId, equalTo(deckId))
             assertThat("has 1 new card", data.newCount, equalTo(1))
             assertThat("total cards", data.totalCards, equalTo(1))
 
@@ -391,9 +385,8 @@ class DeckPickerViewModelTest : RobolectricTest() {
             viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
             advanceUntilIdle()
 
-            val data = awaitItem()
-            assertThat("data loaded", data != null, equalTo(true))
-            assertThat("no new cards", data!!.newCount, equalTo(0))
+            val data = requireNotNull(awaitItem())
+            assertThat("no new cards", data.newCount, equalTo(0))
             assertThat("no learning cards", data.lrnCount, equalTo(0))
             assertThat("no review cards", data.revCount, equalTo(0))
             assertThat("no total cards", data.totalCards, equalTo(0))
@@ -437,9 +430,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
             val effect = awaitItem()
             assertThat(
-                "is ShowUndoSnackbar",
-                effect is DeckPickerEffect.ShowUndoSnackbar,
-                equalTo(true)
+                "is ShowUndoSnackbar", effect is DeckPickerEffect.ShowUndoSnackbar, equalTo(true)
             )
 
             cancelAndIgnoreRemainingEvents()
