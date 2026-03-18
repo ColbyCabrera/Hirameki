@@ -69,6 +69,7 @@ import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.browser.CardBrowserViewModel
+import com.ichi2.anki.deckpicker.DeckPickerEffect
 import com.ichi2.anki.deckpicker.DeckPickerViewModel
 import com.ichi2.anki.deckpicker.DeckSelectionResult
 import com.ichi2.anki.deckpicker.DeckSelectionType
@@ -78,16 +79,16 @@ import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
 import com.ichi2.anki.navigation.CongratsScreen
+import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
-import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
-import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.contribute.ContributeScreen
+import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.launch
@@ -588,67 +589,57 @@ private fun SetupFlows(
     val applicationContext = LocalContext.current.applicationContext
 
     LaunchedEffect(Unit) {
-        viewModel.deckDeletedNotification.flowWithLifecycle(lifecycle).collect {
-            showUndoSnackbar(
-                snackbarHostState,
-                it.toHumanReadableString(),
-                applicationContext.getString(R.string.undo),
-                onUndo
-            )
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.emptyCardsNotification.flowWithLifecycle(lifecycle).collect {
-            showUndoSnackbar(
-                snackbarHostState,
-                it.toHumanReadableString(),
-                applicationContext.getString(R.string.undo),
-                onUndo
-            )
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.deckSelectionResult.flowWithLifecycle(lifecycle).collect { result ->
-            when (result) {
-                is DeckSelectionResult.HasCardsToStudy -> {
-                    when (result.selectionType) {
-                        DeckSelectionType.DEFAULT -> onOpenReviewer()
-                        DeckSelectionType.SHOW_STUDY_OPTIONS -> onOpenStudyOptions()
-                        DeckSelectionType.SKIP_STUDY_OPTIONS -> onOpenReviewer()
-                    }
-                }
-
-                is DeckSelectionResult.Empty -> {
-                    val snackbarResult = snackbarHostState.showSnackbar(
-                        message = applicationContext.getString(R.string.empty_deck),
-                        actionLabel = applicationContext.getString(R.string.menu_add),
-                        duration = SnackbarDuration.Short,
+        viewModel.effects.flowWithLifecycle(lifecycle).collect { effect ->
+            when (effect) {
+                is DeckPickerEffect.ShowUndoSnackbar -> {
+                    showUndoSnackbar(
+                        snackbarHostState,
+                        effect.message,
+                        applicationContext.getString(R.string.undo),
+                        onUndo
                     )
-                    if (snackbarResult == SnackbarResult.ActionPerformed) {
-                        viewModel.addNote(result.deckId, true)
-                    }
                 }
 
-                is DeckSelectionResult.NoCardsToStudy -> {
-                    navigator.navigate(CongratsScreen(result.deckId))
+                is DeckPickerEffect.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        applicationContext.getString(effect.messageResId),
+                        duration = SnackbarDuration.Short
+                    )
+                }
+
+                is DeckPickerEffect.ShowSnackbarMessage -> {
+                    snackbarHostState.showSnackbar(
+                        effect.message, duration = SnackbarDuration.Short
+                    )
+                }
+
+                is DeckPickerEffect.HandleDeckSelection -> {
+                    when (val result = effect.result) {
+                        is DeckSelectionResult.HasCardsToStudy -> {
+                            when (result.selectionType) {
+                                DeckSelectionType.DEFAULT -> onOpenReviewer()
+                                DeckSelectionType.SHOW_STUDY_OPTIONS -> onOpenStudyOptions()
+                                DeckSelectionType.SKIP_STUDY_OPTIONS -> onOpenReviewer()
+                            }
+                        }
+
+                        is DeckSelectionResult.Empty -> {
+                            val snackbarResult = snackbarHostState.showSnackbar(
+                                message = applicationContext.getString(R.string.empty_deck),
+                                actionLabel = applicationContext.getString(R.string.menu_add),
+                                duration = SnackbarDuration.Short,
+                            )
+                            if (snackbarResult == SnackbarResult.ActionPerformed) {
+                                viewModel.addNote(result.deckId, true)
+                            }
+                        }
+
+                        is DeckSelectionResult.NoCardsToStudy -> {
+                            navigator.navigate(CongratsScreen(result.deckId))
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.snackbarMessage.flowWithLifecycle(lifecycle).collect { message ->
-            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.snackbarMessageResId.flowWithLifecycle(lifecycle).collect { messageResId ->
-            snackbarHostState.showSnackbar(
-                applicationContext.getString(messageResId), duration = SnackbarDuration.Short
-            )
         }
     }
 

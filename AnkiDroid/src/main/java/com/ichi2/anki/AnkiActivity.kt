@@ -236,7 +236,7 @@ open class AnkiActivity :
 
     /**
      * Maps from intent name action to function to run when this action is received by [broadcastReceiver].
-     * By default it handles [SdCardReceiver.MEDIA_EJECT], and shows/dismisses dialogs when an SD
+     * By default, it handles [SdCardReceiver.MEDIA_EJECT], and shows/dismisses dialogs when an SD
      * card is ejected/remounted (collection is saved beforehand by [SdCardReceiver])
      */
     protected open val broadcastsActions =
@@ -263,7 +263,7 @@ open class AnkiActivity :
                 }
             }.also {
                 val iFilter = IntentFilter()
-                broadcastsActions.keys.map(iFilter::addAction)
+                broadcastsActions.keys.forEach(iFilter::addAction)
                 registerReceiverCompat(it, iFilter, ContextCompat.RECEIVER_EXPORTED)
             }
     }
@@ -908,11 +908,15 @@ open class AnkiActivity :
     }
 
     private fun postSnackbar(@StringRes text: Int) {
-        (this as? DeckPicker)?.viewModel?.snackbarMessage?.tryEmit(getString(text))
+        (this as? DeckPicker)?.let { dp ->
+            dp.lifecycleScope.launch { dp.viewModel.showSnackbar(getString(text)) }
+        }
     }
 
     private fun postSnackbar(text: String) {
-        (this as? DeckPicker)?.viewModel?.snackbarMessage?.tryEmit(text)
+        (this as? DeckPicker)?.let { dp ->
+            dp.lifecycleScope.launch { dp.viewModel.showSnackbar(text) }
+        }
     }
 
     companion object {

@@ -1466,7 +1466,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
     private fun postSnackbar(text: String) {
         lifecycleScope.launch {
-            viewModel.snackbarMessage.emit(text)
+            viewModel.showSnackbar(text)
         }
     }
 

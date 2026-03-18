@@ -47,28 +47,25 @@ class DeckPickerViewModelTest : RobolectricTest() {
         runTest {
             val cardsToEmpty = createEmptyCards()
 
-            viewModel.emptyCardsNotification.test {
+            viewModel.effects.test {
                 // test a 'normal' deletion
                 viewModel.deleteEmptyCards(cardsToEmpty).join()
 
-                expectMostRecentItem().also {
-                    assertThat("cards deleted", it.cardsDeleted, equalTo(EXPECTED_CARDS))
-                }
+                val item = expectMostRecentItem()
+                assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
 
                 // ensure a duplicate output is displayed to the user
                 val newCardsToEmpty = createEmptyCards()
                 viewModel.deleteEmptyCards(newCardsToEmpty).join()
 
-                expectMostRecentItem().also {
-                    assertThat("cards deleted: duplicate output", it.cardsDeleted, equalTo(EXPECTED_CARDS))
-                }
+                val item2 = expectMostRecentItem()
+                assertThat("duplicate is undo snackbar", item2 is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
 
                 // test an empty list: a no-op should inform the user, rather than do nothing
                 viewModel.deleteEmptyCards(emptyCardsReport { }).join()
 
-                expectMostRecentItem().also {
-                    assertThat("'no cards deleted' is notified", it.cardsDeleted, equalTo(0))
-                }
+                val item3 = expectMostRecentItem()
+                assertThat("'no cards deleted' is notified", item3 is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
             }
         }
 
@@ -91,18 +88,16 @@ class DeckPickerViewModelTest : RobolectricTest() {
         runTest {
             val emptyCardsReport = createEmptyCards()
 
-            viewModel.emptyCardsNotification.test {
+            viewModel.effects.test {
                 viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = true).join()
 
-                expectMostRecentItem().also {
-                    assertThat("note is retained", it.cardsDeleted, equalTo(EXPECTED_CARDS - 1))
-                }
+                val item = expectMostRecentItem()
+                assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
 
                 viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = false).join()
 
-                expectMostRecentItem().also {
-                    assertThat("note is deleted", it.cardsDeleted, equalTo(1))
-                }
+                val item2 = expectMostRecentItem()
+                assertThat("is undo snackbar after delete", item2 is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
             }
         }
 
