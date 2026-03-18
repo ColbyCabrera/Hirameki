@@ -35,6 +35,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.configureRenderingMode
+import com.ichi2.anki.deckpicker.compose.StudyOptionsData
 import com.ichi2.anki.dialogs.compose.DeckDialogType
 import com.ichi2.anki.launchCatchingIO
 import com.ichi2.anki.libanki.CardId
@@ -56,16 +57,17 @@ import com.ichi2.anki.utils.Destination
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import net.ankiweb.rsdroid.RustCleanup
 import net.ankiweb.rsdroid.exceptions.BackendDeckIsFilteredException
@@ -86,6 +88,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     private val _syncDialogState = MutableStateFlow<SyncDialogState?>(null)
     val syncDialogState: StateFlow<SyncDialogState?> = _syncDialogState.asStateFlow()
+
+    private val _studyOptionsData = MutableStateFlow<StudyOptionsData?>(null)
+    val studyOptionsData: StateFlow<StudyOptionsData?> = _studyOptionsData.asStateFlow()
 
     private val _showLoginToAnkiWebDialog = MutableStateFlow(false)
     val showLoginToAnkiWebDialog: StateFlow<Boolean> = _showLoginToAnkiWebDialog.asStateFlow()
@@ -137,6 +142,60 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         set(value) {
             flowOfFocusedDeck.value = value
         }
+
+    init {
+        viewModelScope.launch {
+            flowOfFocusedDeck.collectLatest { deckId ->
+                _studyOptionsData.value = if (deckId != null) {
+                    loadStudyOptions(deckId)
+                } else {
+                    null
+                }
+            }
+        }
+    }
+
+    private suspend fun loadStudyOptions(deckId: DeckId): StudyOptionsData? {
+        return try {
+            withCol {
+                decks.select(deckId)
+                val deck = decks.current()
+                val counts = sched.counts()
+                var buriedNew = 0
+                var buriedLearning = 0
+                var buriedReview = 0
+                val tree = sched.deckDueTree(deckId)
+                if (tree != null) {
+                    buriedNew = tree.newCount - counts.new
+                    buriedLearning = tree.learnCount - counts.lrn
+                    buriedReview = tree.reviewCount - counts.rev
+                }
+                StudyOptionsData(
+                    deckId = deckId,
+                    deckName = deck.getString("name"),
+                    deckDescription = deck.description,
+                    newCount = counts.new,
+                    lrnCount = counts.lrn,
+                    revCount = counts.rev,
+                    buriedNew = buriedNew,
+                    buriedLrn = buriedLearning,
+                    buriedRev = buriedReview,
+                    totalNewCards = sched.totalNewForCurrentDeck(),
+                    totalCards = decks.cardCount(
+                        deckId,
+                        includeSubdecks = true,
+                    ),
+                    isFiltered = deck.isFiltered,
+                    haveBuried = sched.haveBuried(),
+                )
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to load study options for deck %d", deckId)
+            null
+        }
+    }
 
     /**
      * Used if the Deck Due Tree is mutated

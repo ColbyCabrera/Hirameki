@@ -66,7 +66,6 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.ichi2.anki.CardBrowser
-import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.browser.CardBrowserViewModel
@@ -91,11 +90,7 @@ import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.contribute.ContributeScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import timber.log.Timber
-import kotlin.coroutines.cancellation.CancellationException
 import com.ichi2.anki.ui.compose.AnkiDroidApp as AnkiDroidAppComposable
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
@@ -353,12 +348,7 @@ private fun DeckPickerMainContent(
 
     var searchQuery by remember { mutableStateOf("") }
     var requestSearchFocus by remember { mutableStateOf(false) }
-    val focusedDeckId by viewModel.flowOfFocusedDeck.collectAsStateWithLifecycle()
-    var studyOptionsData by remember {
-        mutableStateOf<StudyOptionsData?>(
-            null,
-        )
-    }
+    val studyOptionsData by viewModel.studyOptionsData.collectAsStateWithLifecycle()
     var selectedNavigationItem by remember {
         mutableStateOf(
             AppNavigationItem.Decks
@@ -397,55 +387,6 @@ private fun DeckPickerMainContent(
             AppNavigationItem.Support -> {
                 navigator.navigate(ContributeScreen)
             }
-        }
-    }
-
-    LaunchedEffect(focusedDeckId) {
-        val currentFocusedDeck = focusedDeckId
-        if (currentFocusedDeck != null) {
-            try {
-                studyOptionsData = withContext(Dispatchers.IO) {
-                    CollectionManager.withCol {
-                        decks.select(currentFocusedDeck)
-                        val deck = decks.current()
-                        val counts = sched.counts()
-                        var buriedNew = 0
-                        var buriedLearning = 0
-                        var buriedReview = 0
-                        val tree = sched.deckDueTree(currentFocusedDeck)
-                        if (tree != null) {
-                            buriedNew = tree.newCount - counts.new
-                            buriedLearning = tree.learnCount - counts.lrn
-                            buriedReview = tree.reviewCount - counts.rev
-                        }
-                        StudyOptionsData(
-                            deckId = currentFocusedDeck,
-                            deckName = deck.getString("name"),
-                            deckDescription = deck.description,
-                            newCount = counts.new,
-                            lrnCount = counts.lrn,
-                            revCount = counts.rev,
-                            buriedNew = buriedNew,
-                            buriedLrn = buriedLearning,
-                            buriedRev = buriedReview,
-                            totalNewCards = sched.totalNewForCurrentDeck(),
-                            totalCards = decks.cardCount(
-                                currentFocusedDeck,
-                                includeSubdecks = true,
-                            ),
-                            isFiltered = deck.isFiltered,
-                            haveBuried = sched.haveBuried(),
-                        )
-                    }
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to load study options for deck %d", currentFocusedDeck)
-                studyOptionsData = null
-            }
-        } else {
-            studyOptionsData = null
         }
     }
 

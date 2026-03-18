@@ -305,6 +305,85 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
     // endregion
 
+    // region StudyOptionsData Tests
+
+    @Test
+    fun `studyOptionsData - loads when focusedDeck is set`() = runTest {
+        // Create a deck with a card so we have meaningful data
+        val note = addBasicNote("Front", "Back")
+        val deckId = Consts.DEFAULT_DECK_ID
+
+        // Ensure the deck list is loaded (sets up dueTree)
+        viewModel.updateDeckList()
+        advanceUntilIdle()
+
+        viewModel.studyOptionsData.test {
+            // Initial state should be null (no deck focused yet)
+            assertThat("initial state", awaitItem(), equalTo(null))
+
+            // Focus on a deck
+            viewModel.focusedDeck = deckId
+            advanceUntilIdle()
+
+            val data = awaitItem()
+            assertThat("data should not be null after focusing", data != null, equalTo(true))
+            assertThat("deck id matches", data!!.deckId, equalTo(deckId))
+            assertThat("has 1 new card", data.newCount, equalTo(1))
+            assertThat("total cards", data.totalCards, equalTo(1))
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `studyOptionsData - clears when focusedDeck is null`() = runTest {
+        viewModel.updateDeckList()
+        advanceUntilIdle()
+
+        viewModel.studyOptionsData.test {
+            // Initial null
+            assertThat("initial state", awaitItem(), equalTo(null))
+
+            // Focus on default deck
+            viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
+            advanceUntilIdle()
+            skipItems(1) // skip the loaded data emission
+
+            // Clear focus
+            viewModel.focusedDeck = null
+            advanceUntilIdle()
+
+            assertThat("should be null after clearing focus", awaitItem(), equalTo(null))
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `studyOptionsData - reflects correct counts for empty deck`() = runTest {
+        // Default deck with no cards
+        viewModel.updateDeckList()
+        advanceUntilIdle()
+
+        viewModel.studyOptionsData.test {
+            assertThat("initial state", awaitItem(), equalTo(null))
+
+            viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
+            advanceUntilIdle()
+
+            val data = awaitItem()
+            assertThat("data loaded", data != null, equalTo(true))
+            assertThat("no new cards", data!!.newCount, equalTo(0))
+            assertThat("no learning cards", data.lrnCount, equalTo(0))
+            assertThat("no review cards", data.revCount, equalTo(0))
+            assertThat("no total cards", data.totalCards, equalTo(0))
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // endregion
+
     companion object {
         private const val EXPECTED_CARDS: Int = 3
     }
