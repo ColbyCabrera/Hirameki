@@ -30,6 +30,7 @@ import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.emptyCids
 import com.ichi2.testutils.ensureOpsExecuted
 import kotlinx.coroutines.test.advanceUntilIdle
+import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
@@ -51,7 +52,9 @@ class DeckPickerViewModelTest : RobolectricTest() {
             viewModel.deleteEmptyCards(cardsToEmpty).join()
 
             val item = expectMostRecentItem()
-            assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
+            assertThat(
+                "is undo snackbar", item, instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+            )
 
             // ensure a duplicate output is displayed to the user
             val newCardsToEmpty = createEmptyCards()
@@ -60,8 +63,8 @@ class DeckPickerViewModelTest : RobolectricTest() {
             val item2 = expectMostRecentItem()
             assertThat(
                 "duplicate is undo snackbar",
-                item2 is DeckPickerEffect.ShowUndoSnackbar,
-                equalTo(true)
+                item2,
+                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
             )
 
             // test an empty list: a no-op should inform the user, rather than do nothing
@@ -70,8 +73,8 @@ class DeckPickerViewModelTest : RobolectricTest() {
             val item3 = expectMostRecentItem()
             assertThat(
                 "'no cards deleted' is notified",
-                item3 is DeckPickerEffect.ShowUndoSnackbar,
-                equalTo(true)
+                item3,
+                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
             )
         }
     }
@@ -97,15 +100,17 @@ class DeckPickerViewModelTest : RobolectricTest() {
             viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = true).join()
 
             val item = expectMostRecentItem()
-            assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
+            assertThat(
+                "is undo snackbar", item, instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+            )
 
             viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = false).join()
 
             val item2 = expectMostRecentItem()
             assertThat(
                 "is undo snackbar after delete",
-                item2 is DeckPickerEffect.ShowUndoSnackbar,
-                equalTo(true)
+                item2,
+                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
             )
         }
     }
@@ -407,8 +412,8 @@ class DeckPickerViewModelTest : RobolectricTest() {
             val effect = awaitItem()
             assertThat(
                 "is ShowSnackbarMessage",
-                effect is DeckPickerEffect.ShowSnackbarMessage,
-                equalTo(true)
+                effect,
+                instanceOf(DeckPickerEffect.ShowSnackbarMessage::class.java)
             )
             assertThat(
                 "message matches",
@@ -430,7 +435,9 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
             val effect = awaitItem()
             assertThat(
-                "is ShowUndoSnackbar", effect is DeckPickerEffect.ShowUndoSnackbar, equalTo(true)
+                "is ShowUndoSnackbar",
+                effect,
+                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
             )
 
             cancelAndIgnoreRemainingEvents()
@@ -450,11 +457,11 @@ class DeckPickerViewModelTest : RobolectricTest() {
             val effect = awaitItem()
             assertThat(
                 "is HandleDeckSelection",
-                effect is DeckPickerEffect.HandleDeckSelection,
-                equalTo(true)
+                effect,
+                instanceOf(DeckPickerEffect.HandleDeckSelection::class.java)
             )
             val result = (effect as DeckPickerEffect.HandleDeckSelection).result
-            assertThat("is Empty result", result is DeckSelectionResult.Empty, equalTo(true))
+            assertThat("is Empty result", result, instanceOf(DeckSelectionResult.Empty::class.java))
 
             cancelAndIgnoreRemainingEvents()
         }
