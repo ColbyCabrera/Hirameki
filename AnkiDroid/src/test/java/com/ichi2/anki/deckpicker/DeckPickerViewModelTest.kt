@@ -29,13 +29,13 @@ import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.emptyCids
 import com.ichi2.testutils.ensureOpsExecuted
+import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
 import timber.log.Timber
-import kotlinx.coroutines.test.advanceUntilIdle
 
 /** Test of [DeckPickerViewModel] */
 @RunWith(AndroidJUnit4::class)
@@ -43,63 +43,72 @@ class DeckPickerViewModelTest : RobolectricTest() {
     private val viewModel = DeckPickerViewModel()
 
     @Test
-    fun `empty cards - flow`() =
-        runTest {
-            val cardsToEmpty = createEmptyCards()
+    fun `empty cards - flow`() = runTest {
+        val cardsToEmpty = createEmptyCards()
 
-            viewModel.effects.test {
-                // test a 'normal' deletion
-                viewModel.deleteEmptyCards(cardsToEmpty).join()
+        viewModel.effects.test {
+            // test a 'normal' deletion
+            viewModel.deleteEmptyCards(cardsToEmpty).join()
 
-                val item = expectMostRecentItem()
-                assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
+            val item = expectMostRecentItem()
+            assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
 
-                // ensure a duplicate output is displayed to the user
-                val newCardsToEmpty = createEmptyCards()
-                viewModel.deleteEmptyCards(newCardsToEmpty).join()
+            // ensure a duplicate output is displayed to the user
+            val newCardsToEmpty = createEmptyCards()
+            viewModel.deleteEmptyCards(newCardsToEmpty).join()
 
-                val item2 = expectMostRecentItem()
-                assertThat("duplicate is undo snackbar", item2 is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
+            val item2 = expectMostRecentItem()
+            assertThat(
+                "duplicate is undo snackbar",
+                item2 is DeckPickerEffect.ShowUndoSnackbar,
+                equalTo(true)
+            )
 
-                // test an empty list: a no-op should inform the user, rather than do nothing
-                viewModel.deleteEmptyCards(emptyCardsReport { }).join()
+            // test an empty list: a no-op should inform the user, rather than do nothing
+            viewModel.deleteEmptyCards(emptyCardsReport { }).join()
 
-                val item3 = expectMostRecentItem()
-                assertThat("'no cards deleted' is notified", item3 is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
-            }
+            val item3 = expectMostRecentItem()
+            assertThat(
+                "'no cards deleted' is notified",
+                item3 is DeckPickerEffect.ShowUndoSnackbar,
+                equalTo(true)
+            )
         }
+    }
 
     @Test
-    fun `empty cards - undoable`() =
-        runTest {
-            val cardsToEmpty = createEmptyCards()
+    fun `empty cards - undoable`() = runTest {
+        val cardsToEmpty = createEmptyCards()
 
-            // ChangeManager assert
-            ensureOpsExecuted(1) {
-                viewModel.deleteEmptyCards(cardsToEmpty).join()
-            }
-
-            // backend assert
-            assertThat("col undo status", col.undoStatus().undo, equalTo("Empty Cards"))
+        // ChangeManager assert
+        ensureOpsExecuted(1) {
+            viewModel.deleteEmptyCards(cardsToEmpty).join()
         }
+
+        // backend assert
+        assertThat("col undo status", col.undoStatus().undo, equalTo("Empty Cards"))
+    }
 
     @Test
-    fun `empty cards - keep notes`() =
-        runTest {
-            val emptyCardsReport = createEmptyCards()
+    fun `empty cards - keep notes`() = runTest {
+        val emptyCardsReport = createEmptyCards()
 
-            viewModel.effects.test {
-                viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = true).join()
+        viewModel.effects.test {
+            viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = true).join()
 
-                val item = expectMostRecentItem()
-                assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
+            val item = expectMostRecentItem()
+            assertThat("is undo snackbar", item is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
 
-                viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = false).join()
+            viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = false).join()
 
-                val item2 = expectMostRecentItem()
-                assertThat("is undo snackbar after delete", item2 is DeckPickerEffect.ShowUndoSnackbar, equalTo(true))
-            }
+            val item2 = expectMostRecentItem()
+            assertThat(
+                "is undo snackbar after delete",
+                item2 is DeckPickerEffect.ShowUndoSnackbar,
+                equalTo(true)
+            )
         }
+    }
 
     @Test
     fun `empty filtered - functionality`() {
@@ -159,13 +168,18 @@ class DeckPickerViewModelTest : RobolectricTest() {
             col.updateNote(this)
         }
         return withCol { getEmptyCards() }.also { report ->
-            assertThat("there are empty cards", report.emptyCids(), not(report.emptyCids().isEmpty()))
+            assertThat(
+                "there are empty cards",
+                report.emptyCids(),
+                not(report.emptyCids().isEmpty())
+            )
             Timber.d("created %d empty cards: [%s]", report.emptyCids().size, report.emptyCids())
         }
     }
 
     /** test helper to use [deleteEmptyCards] with the original test `preserveNotes` value */
-    private fun DeckPickerViewModel.deleteEmptyCards(report: EmptyCardsReport) = deleteEmptyCards(report, preserveNotes = false)
+    private fun DeckPickerViewModel.deleteEmptyCards(report: EmptyCardsReport) =
+        deleteEmptyCards(report, preserveNotes = false)
 
     /**
      * Moves all cards to a deck named "Filtered"
@@ -173,19 +187,22 @@ class DeckPickerViewModelTest : RobolectricTest() {
      * If there are no notes, one is created
      * @return The [DeckId] of the filtered deck
      */
-    private fun moveAllCardsToFilteredDeck(assertOn: Note = addBasicNote("To", "Filtered")): DeckId =
-        addDynamicDeck("Filtered", "").also { did ->
-            assertThat("filter - did", assertOn.firstCard().did, equalTo(did))
-            assertThat("filter - odid", assertOn.firstCard().oDid, equalTo(Consts.DEFAULT_DECK_ID))
-        }
+    private fun moveAllCardsToFilteredDeck(
+        assertOn: Note = addBasicNote(
+            "To",
+            "Filtered"
+        )
+    ): DeckId = addDynamicDeck("Filtered", "").also { did ->
+        assertThat("filter - did", assertOn.firstCard().did, equalTo(did))
+        assertThat("filter - odid", assertOn.firstCard().oDid, equalTo(Consts.DEFAULT_DECK_ID))
+    }
 
     // region Deck Name Validation Tests
 
     @Test
     fun `validateDeckName - blank name returns null`() = runTest {
         val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
-            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK,
-            titleResId = 0
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK, titleResId = 0
         )
         val result = viewModel.validateDeckName("", state)
         assertThat("blank name should be null (no error)", result, equalTo(null))
@@ -200,18 +217,20 @@ class DeckPickerViewModelTest : RobolectricTest() {
         col.decks.id("Existing Deck")
 
         val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
-            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK,
-            titleResId = 0
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK, titleResId = 0
         )
         val result = viewModel.validateDeckName("Existing Deck", state)
-        assertThat("existing deck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS))
+        assertThat(
+            "existing deck name",
+            result,
+            equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS)
+        )
     }
 
     @Test
     fun `validateDeckName - new valid name returns null`() = runTest {
         val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
-            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK,
-            titleResId = 0
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.DECK, titleResId = 0
         )
         val result = viewModel.validateDeckName("Brand New Deck", state)
         assertThat("new valid deck name", result, equalTo(null))
@@ -247,7 +266,11 @@ class DeckPickerViewModelTest : RobolectricTest() {
         )
         // Trying to rename Deck B to Deck A (which exists) should fail
         val result = viewModel.validateDeckName("Deck A", state)
-        assertThat("rename to existing deck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS))
+        assertThat(
+            "rename to existing deck name",
+            result,
+            equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS)
+        )
     }
 
     @Test
@@ -276,21 +299,23 @@ class DeckPickerViewModelTest : RobolectricTest() {
             parentId = parentId
         )
         val result = viewModel.validateDeckName("Existing Child", state)
-        assertThat("existing subdeck name", result, equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS))
+        assertThat(
+            "existing subdeck name",
+            result,
+            equalTo(DeckPickerViewModel.DeckNameError.ALREADY_EXISTS)
+        )
     }
 
     @Test
     fun `validateDeckName - subdeck rename to same name is allowed`() = runTest {
         // Create parent deck and subdeck
-        val parentId = col.decks.id("Parent")
+        col.decks.id("Parent")
         val subdeckId = col.decks.id("Parent::Child")
 
         val state = DeckPickerViewModel.CreateDeckDialogState.Visible(
-            type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK,
-            titleResId = 0,
+            type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK, titleResId = 0,
             // The dialog shows "Child" as initial name, but full path is "Parent::Child"
-            initialName = "Parent::Child",
-            deckIdToRename = subdeckId
+            initialName = "Parent::Child", deckIdToRename = subdeckId
         )
         // User enters "Child" (short name) - this should be allowed since it's the same deck
         // This tests the deckIdToRename-based comparison, not name string comparison
@@ -305,7 +330,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
     @Test
     fun `studyOptionsData - loads when focusedDeck is set`() = runTest {
         // Create a deck with a card so we have meaningful data
-        val note = addBasicNote("Front", "Back")
+        addBasicNote("Front", "Back")
         val deckId = Consts.DEFAULT_DECK_ID
 
         // Ensure the deck list is loaded (sets up dueTree)
@@ -379,7 +404,72 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
     // endregion
 
-    companion object {
-        private const val EXPECTED_CARDS: Int = 3
+    // region Effect Channel Snackbar Tests
+
+    @Test
+    fun `effects - showSnackbar routes through channel`() = runTest {
+        viewModel.effects.test {
+            viewModel.showSnackbar("Test message")
+
+            val effect = awaitItem()
+            assertThat(
+                "is ShowSnackbarMessage",
+                effect is DeckPickerEffect.ShowSnackbarMessage,
+                equalTo(true)
+            )
+            assertThat(
+                "message matches",
+                (effect as DeckPickerEffect.ShowSnackbarMessage).message,
+                equalTo("Test message")
+            )
+
+            cancelAndIgnoreRemainingEvents()
+        }
     }
+
+    @Test
+    fun `effects - deck deletion emits ShowUndoSnackbar`() = runTest {
+        // Create a deck to delete
+        val deckId = col.decks.id("Deck To Delete")
+
+        viewModel.effects.test {
+            viewModel.deleteDeck(deckId).join()
+
+            val effect = awaitItem()
+            assertThat(
+                "is ShowUndoSnackbar",
+                effect is DeckPickerEffect.ShowUndoSnackbar,
+                equalTo(true)
+            )
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `effects - selecting empty deck emits HandleDeckSelection`() = runTest {
+        // Default deck with no cards
+        viewModel.updateDeckList()
+        advanceUntilIdle()
+
+        viewModel.effects.test {
+            viewModel.onDeckSelected(Consts.DEFAULT_DECK_ID, DeckSelectionType.DEFAULT)
+            advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertThat(
+                "is HandleDeckSelection",
+                effect is DeckPickerEffect.HandleDeckSelection,
+                equalTo(true)
+            )
+            val result = (effect as DeckPickerEffect.HandleDeckSelection).result
+            assertThat("is Empty result", result is DeckSelectionResult.Empty, equalTo(true))
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // endregion
+
+    companion object
 }
