@@ -98,9 +98,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
+import anki.decks.deckTreeNode
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.deckpicker.DisplayDeckNode
+import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.ui.compose.SnackbarPaddingBottom
 import com.ichi2.anki.ui.compose.components.ExpandableFab
 import com.ichi2.anki.ui.compose.components.ExpandableFabContainer
@@ -848,33 +850,30 @@ fun DeckPickerTopBarSearchOpenPreview() {
 @Composable
 fun RenderDeckPreview() {
     AnkiDroidTheme {
-        val rootDeck = DisplayDeckNode.from(
-            node = com.ichi2.anki.libanki.sched.DeckNode(
-                node = anki.decks.deckTreeNode {
-                    name = "Japanese"
-                    deckId = 1
-                    level = 1
-                    collapsed = false
-                    reviewCount = 10
-                    newCount = 5
-                    learnCount = 2
-                    filtered = false
-                }, fullDeckName = "Japanese"
-            ), matchesSearchOrChild = true, selectedDeckId = 1L
-        )
-        val childDeck = DisplayDeckNode.from(
-            node = com.ichi2.anki.libanki.sched.DeckNode(
-                node = anki.decks.deckTreeNode {
+        val rootDeckNode = DeckNode(
+            node = deckTreeNode {
+                name = "Japanese"
+                deckId = 1
+                level = 1
+                collapsed = false
+                reviewCount = 10
+                newCount = 5
+                learnCount = 2
+                filtered = false
+                // Add a child node to the underlying DeckTreeNode to ensure canCollapse is true
+                children.add(deckTreeNode {
                     name = "Kanji"
                     deckId = 2
                     level = 2
-                    collapsed = false
-                    reviewCount = 5
-                    newCount = 2
-                    learnCount = 1
-                    filtered = false
-                }, fullDeckName = "Japanese::Kanji"
-            ), matchesSearchOrChild = true, selectedDeckId = 0L
+                })
+            }, fullDeckName = "Japanese"
+        )
+        val rootDeck = DisplayDeckNode.from(
+            node = rootDeckNode, matchesSearchOrChild = true, selectedDeckId = 1L
+        )
+
+        val childDeck = DisplayDeckNode.from(
+            node = rootDeckNode.children[0], matchesSearchOrChild = true, selectedDeckId = 0L
         )
         RenderDeck(
             deck = rootDeck,
