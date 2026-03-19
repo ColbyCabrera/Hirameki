@@ -19,6 +19,8 @@ package com.ichi2.widget
 import android.content.Context
 import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -34,6 +36,8 @@ import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.PreviewSizeMode
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -65,6 +69,14 @@ import timber.log.Timber
 import java.util.Calendar
 
 class HeatmapWidget : GlanceAppWidget() {
+    override val previewSizeMode: PreviewSizeMode = SizeMode.Responsive(
+        setOf(
+            DpSize(200.dp, 100.dp), // min size
+            DpSize(300.dp, 150.dp), // medium
+            DpSize(400.dp, 170.dp), // large
+        ),
+    )
+
     override suspend fun provideGlance(
         context: Context,
         id: GlanceId,
@@ -371,8 +383,8 @@ fun HeatmapWidgetPreview() {
     val context = androidx.glance.LocalContext.current
     val dummyData = HeatmapWidget.getDummyHeatmapData()
 
-    androidx.compose.runtime.CompositionLocalProvider(
-        LocalSize provides androidx.compose.ui.unit.DpSize(300.dp, 400.dp),
+    CompositionLocalProvider(
+        LocalSize provides DpSize(300.dp, 400.dp),
     ) {
         HeatmapWidget().HeatmapContent(dummyData, context)
     }
