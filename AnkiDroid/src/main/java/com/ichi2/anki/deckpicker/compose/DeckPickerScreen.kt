@@ -700,6 +700,7 @@ fun DeckPickerScreen(
                             onCheckDatabase = onCheckDatabase,
                         )
                     }
+                    BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
                 }
             }) { paddingValues ->
             if (fragmented) {
