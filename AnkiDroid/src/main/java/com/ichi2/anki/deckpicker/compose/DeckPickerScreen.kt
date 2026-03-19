@@ -121,14 +121,7 @@ private fun RenderDeck(
     deck: DisplayDeckNode,
     children: List<DisplayDeckNode>,
     deckToChildrenMap: Map<DisplayDeckNode, List<DisplayDeckNode>>,
-    onDeckClick: (DisplayDeckNode) -> Unit,
-    onExpandClick: (DisplayDeckNode) -> Unit,
-    onDeckOptions: (DisplayDeckNode) -> Unit,
-    onRename: (DisplayDeckNode) -> Unit,
-    onExport: (DisplayDeckNode) -> Unit,
-    onDelete: (DisplayDeckNode) -> Unit,
-    onRebuild: (DisplayDeckNode) -> Unit,
-    onEmpty: (DisplayDeckNode) -> Unit,
+    deckRowActions: DeckRowActions,
 ) {
     val cornerRadius by animateDpAsState(
         targetValue = if (!deck.collapsed && deck.canCollapse) expandedDeckCardRadius else collapsedDeckCardRadius,
@@ -143,14 +136,16 @@ private fun RenderDeck(
     val content = @Composable {
         DeckItem(
             deck = deck,
-            onDeckClick = { onDeckClick(deck) },
-            onExpandClick = { onExpandClick(deck) },
-            onDeckOptions = { onDeckOptions(deck) },
-            onRename = { onRename(deck) },
-            onExport = { onExport(deck) },
-            onDelete = { onDelete(deck) },
-            onRebuild = { onRebuild(deck) },
-            onEmpty = { onEmpty(deck) },
+            actions = DeckItemActions(
+                onDeckClick = { deckRowActions.onDeckClick(deck) },
+                onExpandClick = { deckRowActions.onExpandClick(deck) },
+                onDeckOptions = { deckRowActions.onDeckOptions(deck) },
+                onRename = { deckRowActions.onRename(deck) },
+                onExport = { deckRowActions.onExport(deck) },
+                onDelete = { deckRowActions.onDelete(deck) },
+                onRebuild = { deckRowActions.onRebuild(deck) },
+                onEmpty = { deckRowActions.onEmpty(deck) },
+            ),
         )
         AnimatedVisibility(
             visible = !deck.collapsed,
@@ -171,14 +166,7 @@ private fun RenderDeck(
                             deck = child,
                             children = grandChildren,
                             deckToChildrenMap = deckToChildrenMap,
-                            onDeckClick = onDeckClick,
-                            onExpandClick = onExpandClick,
-                            onDeckOptions = onDeckOptions,
-                            onRename = onRename,
-                            onExport = onExport,
-                            onDelete = onDelete,
-                            onRebuild = onRebuild,
-                            onEmpty = onEmpty,
+                            deckRowActions = deckRowActions,
                         )
                     }
                 }
@@ -218,16 +206,9 @@ fun DeckPickerContent(
     decks: List<DisplayDeckNode>,
     onRefresh: () -> Unit,
     listState: LazyListState,
+    deckRowActions: DeckRowActions,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    onDeckClick: (DisplayDeckNode) -> Unit,
-    onExpandClick: (DisplayDeckNode) -> Unit,
-    onDeckOptions: (DisplayDeckNode) -> Unit,
-    onRename: (DisplayDeckNode) -> Unit,
-    onExport: (DisplayDeckNode) -> Unit,
-    onDelete: (DisplayDeckNode) -> Unit,
-    onRebuild: (DisplayDeckNode) -> Unit,
-    onEmpty: (DisplayDeckNode) -> Unit,
     onAddDeck: () -> Unit,
     onAddSharedDeck: () -> Unit,
     isInInitialState: Boolean?,
@@ -337,14 +318,7 @@ fun DeckPickerContent(
                             deck = rootDeck,
                             children = children,
                             deckToChildrenMap = deckToChildrenMap,
-                            onDeckClick = onDeckClick,
-                            onExpandClick = onExpandClick,
-                            onDeckOptions = onDeckOptions,
-                            onRename = onRename,
-                            onExport = onExport,
-                            onDelete = onDelete,
-                            onRebuild = onRebuild,
-                            onEmpty = onEmpty,
+                            deckRowActions = deckRowActions,
                         )
                     }
                 }
@@ -602,27 +576,11 @@ fun DeckPickerScreen(
     onRefresh: () -> Unit,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
-    onDeckClick: (DisplayDeckNode) -> Unit,
-    onExpandClick: (DisplayDeckNode) -> Unit,
-    onAddNote: () -> Unit,
-    onAddDeck: () -> Unit,
-    onAddSharedDeck: () -> Unit,
-    onAddFilteredDeck: () -> Unit,
-    onCheckDatabase: () -> Unit,
-    onDeckOptions: (DisplayDeckNode) -> Unit,
-    onRename: (DisplayDeckNode) -> Unit,
-    onExport: (DisplayDeckNode) -> Unit,
-    onDelete: (DisplayDeckNode) -> Unit,
-    onRebuild: (DisplayDeckNode) -> Unit,
-    onEmpty: (DisplayDeckNode) -> Unit,
+    deckRowActions: DeckRowActions,
+    fabActions: FabActions,
+    studyOptionsPanelActions: StudyOptionsPanelActions,
     onNavigationIconClick: () -> Unit,
     studyOptionsData: StudyOptionsData?,
-    onStartStudy: () -> Unit,
-    onRebuildDeck: (Long) -> Unit,
-    onEmptyDeck: (Long) -> Unit,
-    onCustomStudy: (Long) -> Unit,
-    onDeckOptionsItemSelected: (Long) -> Unit,
-    onUnbury: (Long) -> Unit,
     requestSearchFocus: Boolean,
     onSearchFocusRequested: () -> Unit,
     syncState: SyncIconState,
@@ -670,11 +628,11 @@ fun DeckPickerScreen(
                     onRefresh = onRefresh,
                     onNavigationIconClick = if (!fragmented) onNavigationIconClick else null,
                     studyOptionsData = if (fragmented) studyOptionsData else null,
-                    onRebuildDeck = onRebuildDeck,
-                    onEmptyDeck = onEmptyDeck,
-                    onCustomStudy = onCustomStudy,
-                    onDeckOptionsItemSelected = onDeckOptionsItemSelected,
-                    onUnbury = onUnbury,
+                    onRebuildDeck = studyOptionsPanelActions.onRebuildDeck,
+                    onEmptyDeck = studyOptionsPanelActions.onEmptyDeck,
+                    onCustomStudy = studyOptionsPanelActions.onCustomStudy,
+                    onDeckOptionsItemSelected = studyOptionsPanelActions.onDeckOptionsItemSelected,
+                    onUnbury = studyOptionsPanelActions.onUnbury,
                     scrollBehavior = scrollBehavior
                 )
             },
@@ -689,11 +647,11 @@ fun DeckPickerScreen(
                         ExpandableFab(
                             expanded = fabMenuExpanded,
                             onExpandedChange = { fabMenuExpanded = it },
-                            onAddNote = onAddNote,
-                            onAddDeck = onAddDeck,
-                            onAddSharedDeck = onAddSharedDeck,
-                            onAddFilteredDeck = onAddFilteredDeck,
-                            onCheckDatabase = onCheckDatabase,
+                            onAddNote = fabActions.onAddNote,
+                            onAddDeck = fabActions.onAddDeck,
+                            onAddSharedDeck = fabActions.onAddSharedDeck,
+                            onAddFilteredDeck = fabActions.onAddFilteredDeck,
+                            onCheckDatabase = fabActions.onCheckDatabase,
                         )
                     }
                     BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
@@ -709,25 +667,18 @@ fun DeckPickerScreen(
                         DeckPickerContent(
                             decks = decks,
                             onRefresh = onRefresh,
-                            onDeckClick = onDeckClick,
-                            onExpandClick = onExpandClick,
-                            onDeckOptions = onDeckOptions,
-                            onRename = onRename,
-                            onExport = onExport,
-                            onDelete = onDelete,
-                            onRebuild = onRebuild,
-                            onEmpty = onEmpty,
+                            deckRowActions = deckRowActions,
                             listState = listState,
-                            onAddDeck = onAddDeck,
-                            onAddSharedDeck = onAddSharedDeck,
+                            onAddDeck = fabActions.onAddDeck,
+                            onAddSharedDeck = fabActions.onAddSharedDeck,
                             isInInitialState = isInInitialState,
                         )
                     }
                     Box(modifier = Modifier.weight(1f)) {
                         StudyOptionsScreen(
                             studyOptionsData = studyOptionsData,
-                            onStartStudy = onStartStudy,
-                            onCustomStudy = onCustomStudy,
+                            onStartStudy = studyOptionsPanelActions.onStartStudy,
+                            onCustomStudy = studyOptionsPanelActions.onCustomStudy,
                         )
                     }
                 }
@@ -735,18 +686,11 @@ fun DeckPickerScreen(
                 DeckPickerContent(
                     decks = decks,
                     onRefresh = onRefresh,
-                    onDeckClick = onDeckClick,
-                    onExpandClick = onExpandClick,
-                    onDeckOptions = onDeckOptions,
-                    onRename = onRename,
-                    onExport = onExport,
-                    onDelete = onDelete,
-                    onRebuild = onRebuild,
-                    onEmpty = onEmpty,
+                    deckRowActions = deckRowActions,
                     listState = listState,
                     contentPadding = paddingValues,
-                    onAddDeck = onAddDeck,
-                    onAddSharedDeck = onAddSharedDeck,
+                    onAddDeck = fabActions.onAddDeck,
+                    onAddSharedDeck = fabActions.onAddSharedDeck,
                     isInInitialState = isInInitialState,
                 )
             }
@@ -760,11 +704,11 @@ fun DeckPickerScreen(
                 ExpandableFab(
                     expanded = fabMenuExpanded,
                     onExpandedChange = { fabMenuExpanded = it },
-                    onAddNote = onAddNote,
-                    onAddDeck = onAddDeck,
-                    onAddSharedDeck = onAddSharedDeck,
-                    onAddFilteredDeck = onAddFilteredDeck,
-                    onCheckDatabase = onCheckDatabase,
+                    onAddNote = fabActions.onAddNote,
+                    onAddDeck = fabActions.onAddDeck,
+                    onAddSharedDeck = fabActions.onAddSharedDeck,
+                    onAddFilteredDeck = fabActions.onAddFilteredDeck,
+                    onCheckDatabase = fabActions.onCheckDatabase,
                 )
             }
             BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
@@ -870,13 +814,16 @@ fun RenderDeckPreview() {
             deck = rootDeck,
             children = listOf(childDeck),
             deckToChildrenMap = mapOf(rootDeck to listOf(childDeck)),
-            onDeckClick = {},
-            onExpandClick = {},
-            onDeckOptions = {},
-            onRename = {},
-            onExport = {},
-            onDelete = {},
-            onRebuild = {},
-            onEmpty = {})
+            deckRowActions = DeckRowActions(
+                onDeckClick = {},
+                onExpandClick = {},
+                onDeckOptions = {},
+                onRename = {},
+                onExport = {},
+                onDelete = {},
+                onRebuild = {},
+                onEmpty = {},
+            ),
+        )
     }
 }

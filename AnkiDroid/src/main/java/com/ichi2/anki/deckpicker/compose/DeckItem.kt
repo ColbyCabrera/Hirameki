@@ -76,21 +76,28 @@ private val CloverShape = RoundedPolygonShape(MaterialShapes.Clover4Leaf)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val GhostishShape = RoundedPolygonShape(MaterialShapes.Ghostish)
 
+/**
+ * Actions for a single deck item, already bound to a specific deck.
+ */
+data class DeckItemActions(
+    val onDeckClick: () -> Unit,
+    val onExpandClick: () -> Unit,
+    val onDeckOptions: () -> Unit,
+    val onRename: () -> Unit,
+    val onExport: () -> Unit,
+    val onDelete: () -> Unit,
+    val onRebuild: () -> Unit,
+    val onEmpty: () -> Unit,
+)
+
 @OptIn(
     ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class
 )
 @Composable
 fun DeckItem(
     deck: DisplayDeckNode,
+    actions: DeckItemActions,
     modifier: Modifier = Modifier,
-    onDeckClick: () -> Unit,
-    onExpandClick: () -> Unit,
-    onDeckOptions: () -> Unit,
-    onRename: () -> Unit,
-    onExport: () -> Unit,
-    onDelete: () -> Unit,
-    onRebuild: () -> Unit,
-    onEmpty: () -> Unit,
 ) {
     var isContextMenuOpen by remember { mutableStateOf(false) }
 
@@ -110,12 +117,10 @@ fun DeckItem(
                         Modifier
                     }
                 )
-                .combinedClickable(
-                    onClick = {
-                        isContextMenuOpen = false
-                        onDeckClick()
-                    },
-                    onLongClick = { isContextMenuOpen = true })
+                .combinedClickable(onClick = {
+                    isContextMenuOpen = false
+                    actions.onDeckClick()
+                }, onLongClick = { isContextMenuOpen = true })
                 .padding(horizontal = 8.dp, vertical = if (deck.depth > 0) 4.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -154,10 +159,9 @@ fun DeckItem(
                 )
             }
 
-
             if (deck.canCollapse) {
                 IconButton(
-                    onClick = { onExpandClick() },
+                    onClick = { actions.onExpandClick() },
                     modifier = Modifier
                         .padding(start = 6.dp)
                         .size(36.dp)
@@ -185,7 +189,7 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.rebuild_cram_label)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onRebuild()
+                            actions.onRebuild()
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Refresh, contentDescription = null)
@@ -194,7 +198,7 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.empty_cram_label)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onEmpty()
+                            actions.onEmpty()
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Close, contentDescription = null)
@@ -204,7 +208,7 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.rename_deck)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onRename()
+                            actions.onRename()
                         },
                         leadingIcon = {
                             Icon(
@@ -216,7 +220,7 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.export_deck)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onExport()
+                            actions.onExport()
                         },
                         leadingIcon = {
                             Icon(
@@ -227,7 +231,7 @@ fun DeckItem(
                 }
                 DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
                     isContextMenuOpen = false
-                    onDeckOptions()
+                    actions.onDeckOptions()
                 }, leadingIcon = {
                     Icon(painter = painterResource(R.drawable.tune_24px), contentDescription = null)
                 })
@@ -235,7 +239,7 @@ fun DeckItem(
                     text = { Text(stringResource(R.string.contextmenu_deckpicker_delete_deck)) },
                     onClick = {
                         isContextMenuOpen = false
-                        onDelete()
+                        actions.onDelete()
                     },
                     leadingIcon = {
                         Icon(
