@@ -447,7 +447,7 @@ private fun DeckPickerTopBar(
                     onExpandedChange = { },
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 16.dp, end = 12.dp, bottom = 16.dp)
+                        .padding(start = 16.dp, end = 12.dp)
                         .graphicsLayer {
                             alpha = searchAnim
                         },
@@ -456,7 +456,7 @@ private fun DeckPickerTopBar(
                 )
             } else {
                 Row(
-                    modifier = Modifier.padding(end = 0.dp),
+                    modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim },
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -480,9 +480,6 @@ private fun DeckPickerTopBar(
                         modifier = Modifier
                             .height(40.dp)
                             .width(48.dp)
-                            .graphicsLayer {
-                                alpha = 1f - searchAnim
-                            },
                     )
                     if (studyOptionsData != null) {
                         FilledIconButton(
@@ -843,5 +840,53 @@ fun DeckPickerTopBarSearchOpenPreview() {
             onUnbury = {},
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(showBackground = true)
+@Composable
+fun RenderDeckPreview() {
+    AnkiDroidTheme {
+        val rootDeck = DisplayDeckNode.from(
+            node = com.ichi2.anki.libanki.sched.DeckNode(
+                node = anki.decks.deckTreeNode {
+                    name = "Japanese"
+                    deckId = 1
+                    level = 1
+                    collapsed = false
+                    reviewCount = 10
+                    newCount = 5
+                    learnCount = 2
+                    filtered = false
+                }, fullDeckName = "Japanese"
+            ), matchesSearchOrChild = true, selectedDeckId = 1L
+        )
+        val childDeck = DisplayDeckNode.from(
+            node = com.ichi2.anki.libanki.sched.DeckNode(
+                node = anki.decks.deckTreeNode {
+                    name = "Kanji"
+                    deckId = 2
+                    level = 2
+                    collapsed = false
+                    reviewCount = 5
+                    newCount = 2
+                    learnCount = 1
+                    filtered = false
+                }, fullDeckName = "Japanese::Kanji"
+            ), matchesSearchOrChild = true, selectedDeckId = 0L
+        )
+        RenderDeck(
+            deck = rootDeck,
+            children = listOf(childDeck),
+            deckToChildrenMap = mapOf(rootDeck to listOf(childDeck)),
+            onDeckClick = {},
+            onExpandClick = {},
+            onDeckOptions = {},
+            onRename = {},
+            onExport = {},
+            onDelete = {},
+            onRebuild = {},
+            onEmpty = {})
     }
 }
