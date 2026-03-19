@@ -434,9 +434,7 @@ Migrating the remaining 34+ view-based dialogs to Compose is a good source of sm
 
 ### 4. Code Quality TODOs
 
-| File                   | Issue                                           | Suggested Fix                                                                                   |
-|------------------------|-------------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `DeckPickerNavHost.kt` | 24 parameters on `DeckPickerNavHost()` function | Group related callbacks into configuration objects (e.g., `DeckActions`, `NavigationCallbacks`) |
+- All recognized Code Quality TODOs in DeckPicker have been resolved.
 
 ---
 
