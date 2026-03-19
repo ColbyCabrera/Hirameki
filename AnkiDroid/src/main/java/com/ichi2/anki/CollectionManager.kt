@@ -42,6 +42,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import net.ankiweb.rsdroid.Backend
 import net.ankiweb.rsdroid.BackendException
 import net.ankiweb.rsdroid.BackendFactory
@@ -92,6 +95,9 @@ object CollectionManager {
     private val testMutex = ReentrantLock()
 
     private var currentSyncCertificate: String = ""
+
+    private val _isCollectionOpenFlow = MutableStateFlow(false)
+    val isCollectionOpenFlow: StateFlow<Boolean> = _isCollectionOpenFlow.asStateFlow()
 
     /**
      * Execute the provided block on a serial background queue, to ensure
@@ -251,6 +257,7 @@ object CollectionManager {
             Timber.e("swallowing error on close: $exc")
         }
         collection = null
+        _isCollectionOpenFlow.value = false
     }
 
     /**
@@ -277,6 +284,7 @@ object CollectionManager {
                     databaseBuilder = { backend -> createDatabaseUsingRustBackend(backend) },
                     backend = backend,
                 )
+            _isCollectionOpenFlow.value = true
         }
     }
 

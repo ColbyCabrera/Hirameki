@@ -50,7 +50,9 @@ import androidx.activity.viewModels
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.edit
@@ -464,7 +466,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         setupFlows()
 
         setContent {
-            val isOpen = remember { CollectionManager.isOpenUnsafe() }
+            val isOpen by CollectionManager.isCollectionOpenFlow.collectAsStateWithLifecycle()
             if (!isOpen) return@setContent
 
             AnkiDroidTheme {
