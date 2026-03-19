@@ -16,8 +16,6 @@
 
 package com.ichi2.widget
 
-import android.appwidget.AppWidgetManager
-import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
@@ -38,6 +36,7 @@ import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.PreviewSizeMode
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.composeForPreview
@@ -365,16 +364,10 @@ class HeatmapWidget : GlanceAppWidget() {
         suspend fun updateHeatmapWidgetPreview(context: Context) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                    val remoteViews = HeatmapWidget().composeForPreview(
-                        context,
-                        AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN,
-                    )
-                    
-                    val appWidgetManager = context.getSystemService(Context.APPWIDGET_SERVICE) as AppWidgetManager
-                    appWidgetManager.setWidgetPreview(
-                        ComponentName(context, HeatmapWidgetReceiver::class.java),
-                        AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN,
-                        remoteViews
+                    val manager = GlanceAppWidgetManager(context)
+                    @Suppress("UNUSED_VARIABLE")
+                    val ignored = manager.setWidgetPreviews(
+                        HeatmapWidgetReceiver::class,
                     )
                 }
             } catch (e: Exception) {
