@@ -775,65 +775,6 @@ fun DeckPickerScreen(
     }
 }
 
-@Preview
-@Composable
-fun DeckPickerContentPreview() {
-    DeckPickerContent(
-        decks = emptyList(),
-        onRefresh = {},
-        onDeckClick = {},
-        onExpandClick = {},
-        onDeckOptions = {},
-        onRename = {},
-        onExport = {},
-        onDelete = {},
-        onRebuild = {},
-        onEmpty = {},
-        listState = rememberLazyListState(),
-        onAddDeck = {},
-        onAddSharedDeck = {},
-        isInInitialState = false,
-    )
-}
-
-@Preview
-@Composable
-fun DeckPickerScreenPreview() {
-    DeckPickerScreen(
-        fragmented = false,
-        decks = emptyList(),
-        isSyncing = false,
-        onRefresh = {},
-        searchQuery = "",
-        onSearchQueryChanged = {},
-        onDeckClick = {},
-        onExpandClick = {},
-        onAddNote = {},
-        onAddDeck = {},
-        onAddSharedDeck = {},
-        onAddFilteredDeck = {},
-        onCheckDatabase = {},
-        onDeckOptions = {},
-        onRename = {},
-        onExport = {},
-        onDelete = {},
-        onRebuild = {},
-        onEmpty = {},
-        onNavigationIconClick = {},
-        studyOptionsData = null,
-        onStartStudy = {},
-        onRebuildDeck = {},
-        onEmptyDeck = {},
-        onCustomStudy = {},
-        onDeckOptionsItemSelected = {},
-        onUnbury = {},
-        requestSearchFocus = false,
-        onSearchFocusRequested = {},
-        syncState = SyncIconState.Normal,
-        isInInitialState = false,
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
