@@ -45,7 +45,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -69,6 +68,7 @@ import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SearchBarDefaults.InputField
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -408,7 +408,7 @@ private fun DeckPickerTopBar(
             if (isSearchOpen) {
                 SearchBar(
                     inputField = {
-                        SearchBarDefaults.InputField(
+                        InputField(
                             query = searchQuery,
                             onQueryChange = onSearchQueryChanged,
                             onSearch = { /* Search is performed as user types */ },
@@ -436,7 +436,7 @@ private fun DeckPickerTopBar(
                                     onSearchOpenChange(false)
                                 }) {
                                     Icon(
-                                        Icons.Default.Close,
+                                        painter = painterResource(R.drawable.close_24px),
                                         contentDescription = stringResource(R.string.close),
                                     )
                                 }
@@ -447,7 +447,7 @@ private fun DeckPickerTopBar(
                     onExpandedChange = { },
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                        .padding(start = 16.dp, end = 12.dp, bottom = 16.dp)
                         .graphicsLayer {
                             alpha = searchAnim
                         },
@@ -807,6 +807,34 @@ fun DeckPickerTopBarPreview() {
                 isFiltered = false,
                 haveBuried = true
             ),
+            onRebuildDeck = {},
+            onEmptyDeck = {},
+            onCustomStudy = {},
+            onDeckOptionsItemSelected = {},
+            onUnbury = {},
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Composable
+fun DeckPickerTopBarSearchOpenPreview() {
+    AnkiDroidTheme {
+        DeckPickerTopBar(
+            isSearchOpen = true,
+            onSearchOpenChange = {},
+            searchAnim = 1f,
+            searchQuery = "Japanese",
+            onSearchQueryChanged = {},
+            searchFocusRequester = remember { FocusRequester() },
+            searchOffsetPx = 0f,
+            isSyncing = false,
+            syncState = SyncIconState.Normal,
+            onRefresh = {},
+            onNavigationIconClick = {},
+            studyOptionsData = null,
             onRebuildDeck = {},
             onEmptyDeck = {},
             onCustomStudy = {},
