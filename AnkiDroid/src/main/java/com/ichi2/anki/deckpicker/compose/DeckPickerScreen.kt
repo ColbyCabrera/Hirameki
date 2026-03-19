@@ -358,11 +358,8 @@ fun DeckPickerContent(
 private fun DeckPickerTopBar(
     isSearchOpen: Boolean,
     onSearchOpenChange: (Boolean) -> Unit,
-    searchAnim: Float,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
-    searchFocusRequester: FocusRequester,
-    searchOffsetPx: Float,
     isSyncing: Boolean,
     syncState: SyncIconState,
     onRefresh: () -> Unit,
@@ -376,6 +373,13 @@ private fun DeckPickerTopBar(
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
     var isStudyOptionsMenuOpen by remember { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
+    val searchAnim by animateFloatAsState(
+        targetValue = if (isSearchOpen) 1f else 0f,
+        animationSpec = motionScheme.defaultEffectsSpec(),
+    )
+    val density = LocalDensity.current
+    val searchOffsetPx = with(density) { (-8).dp.toPx() }
 
     LargeFlexibleTopAppBar(
         title = {
@@ -624,17 +628,10 @@ fun DeckPickerScreen(
     syncState: SyncIconState,
     isInInitialState: Boolean?,
     modifier: Modifier = Modifier,
-    searchFocusRequester: FocusRequester = FocusRequester(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     var isSearchOpen by remember { mutableStateOf(false) }
     var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
-    val searchAnim by animateFloatAsState(
-        targetValue = if (isSearchOpen) 1f else 0f,
-        animationSpec = motionScheme.defaultEffectsSpec(),
-    )
-    val density = LocalDensity.current
-    val searchOffsetPx = with(density) { (-8).dp.toPx() }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val listState = rememberLazyListState()
 
@@ -666,16 +663,13 @@ fun DeckPickerScreen(
                 DeckPickerTopBar(
                     isSearchOpen = isSearchOpen,
                     onSearchOpenChange = { isSearchOpen = it },
-                    searchAnim = searchAnim,
                     searchQuery = searchQuery,
                     onSearchQueryChanged = onSearchQueryChanged,
-                    searchFocusRequester = searchFocusRequester,
-                    searchOffsetPx = searchOffsetPx,
                     isSyncing = isSyncing,
                     syncState = syncState,
                     onRefresh = onRefresh,
                     onNavigationIconClick = if (!fragmented) onNavigationIconClick else null,
-                    studyOptionsData = studyOptionsData,
+                    studyOptionsData = if (fragmented) studyOptionsData else null,
                     onRebuildDeck = onRebuildDeck,
                     onEmptyDeck = onEmptyDeck,
                     onCustomStudy = onCustomStudy,
@@ -786,11 +780,8 @@ fun DeckPickerTopBarPreview() {
         DeckPickerTopBar(
             isSearchOpen = false,
             onSearchOpenChange = {},
-            searchAnim = 0f,
             searchQuery = "",
             onSearchQueryChanged = {},
-            searchFocusRequester = remember { FocusRequester() },
-            searchOffsetPx = 0f,
             isSyncing = false,
             syncState = SyncIconState.Normal,
             onRefresh = {},
@@ -828,11 +819,8 @@ fun DeckPickerTopBarSearchOpenPreview() {
         DeckPickerTopBar(
             isSearchOpen = true,
             onSearchOpenChange = {},
-            searchAnim = 1f,
             searchQuery = "Japanese",
             onSearchQueryChanged = {},
-            searchFocusRequester = remember { FocusRequester() },
-            searchOffsetPx = 0f,
             isSyncing = false,
             syncState = SyncIconState.Normal,
             onRefresh = {},
