@@ -29,6 +29,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -105,6 +106,7 @@ import com.ichi2.anki.ui.compose.components.ExpandableFab
 import com.ichi2.anki.ui.compose.components.ExpandableFabContainer
 import com.ichi2.anki.ui.compose.components.Scrim
 import com.ichi2.anki.ui.compose.components.SyncIcon
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.MorphShape
 
 private val expandedDeckCardRadius = 24.dp
@@ -453,122 +455,124 @@ private fun DeckPickerTopBar(
                     content = { },
                 )
             } else {
-                FilledIconButton(
-                    onClick = { onSearchOpenChange(true) },
-                    modifier = Modifier
-                        .graphicsLayer {
-                            alpha = 1f - searchAnim
-                        }
-                        .padding(end = 4.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
+                Row(
+                    modifier = Modifier.padding(end = 0.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.search_24px),
-                        contentDescription = stringResource(R.string.search_decks),
-                    )
-                }
-                SyncIcon(
-                    isSyncing = isSyncing,
-                    syncState = syncState,
-                    onRefresh = onRefresh,
-                    modifier = Modifier
-                        .height(40.dp)
-                        .width(48.dp)
-                        .padding(end = 8.dp)
-                        .graphicsLayer {
-                            alpha = 1f - searchAnim
-                        },
-                )
-            }
-            if (studyOptionsData != null) {
-                FilledIconButton(
-                    onClick = { isStudyOptionsMenuOpen = true },
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                ) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = stringResource(R.string.more_options),
-                    )
-                }
-                DropdownMenu(
-                    expanded = isStudyOptionsMenuOpen,
-                    onDismissRequest = { isStudyOptionsMenuOpen = false },
-                ) {
-                    if (studyOptionsData.isFiltered) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.rebuild)) },
-                            onClick = {
-                                isStudyOptionsMenuOpen = false
-                                onRebuildDeck(studyOptionsData.deckId)
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Refresh,
-                                    contentDescription = null,
-                                )
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.empty_cards_action)) },
-                            onClick = {
-                                isStudyOptionsMenuOpen = false
-                                onEmptyDeck(studyOptionsData.deckId)
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Delete,
-                                    contentDescription = null,
-                                )
-                            },
-                        )
-                    } else {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.custom_study)) },
-                            onClick = {
-                                isStudyOptionsMenuOpen = false
-                                onCustomStudy(studyOptionsData.deckId)
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Star,
-                                    contentDescription = null,
-                                )
-                            },
+                    FilledIconButton(
+                        onClick = { onSearchOpenChange(true) },
+                        modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.search_24px),
+                            contentDescription = stringResource(R.string.search_decks),
                         )
                     }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.deck_options)) },
-                        onClick = {
-                            isStudyOptionsMenuOpen = false
-                            onDeckOptionsItemSelected(studyOptionsData.deckId)
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Settings,
-                                contentDescription = null,
-                            )
-                        },
+                    SyncIcon(
+                        isSyncing = isSyncing,
+                        syncState = syncState,
+                        onRefresh = onRefresh,
+                        modifier = Modifier
+                            .height(40.dp)
+                            .width(48.dp)
+                            .graphicsLayer {
+                                alpha = 1f - searchAnim
+                            },
                     )
-                    if (studyOptionsData.haveBuried) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.unbury)) },
-                            onClick = {
-                                isStudyOptionsMenuOpen = false
-                                onUnbury(studyOptionsData.deckId)
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.undo_24px),
-                                    contentDescription = null,
+                    if (studyOptionsData != null) {
+                        FilledIconButton(
+                            onClick = { isStudyOptionsMenuOpen = true },
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.more_options),
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = isStudyOptionsMenuOpen,
+                            onDismissRequest = { isStudyOptionsMenuOpen = false },
+                            shape = MaterialTheme.shapes.large,
+                        ) {
+                            if (studyOptionsData.isFiltered) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.rebuild)) },
+                                    onClick = {
+                                        isStudyOptionsMenuOpen = false
+                                        onRebuildDeck(studyOptionsData.deckId)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Refresh,
+                                            contentDescription = null,
+                                        )
+                                    },
                                 )
-                            },
-                        )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.empty_cards_action)) },
+                                    onClick = {
+                                        isStudyOptionsMenuOpen = false
+                                        onEmptyDeck(studyOptionsData.deckId)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.Delete,
+                                            contentDescription = null,
+                                        )
+                                    },
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.custom_study)) },
+                                    onClick = {
+                                        isStudyOptionsMenuOpen = false
+                                        onCustomStudy(studyOptionsData.deckId)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Star,
+                                            contentDescription = null,
+                                        )
+                                    },
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.deck_options)) },
+                                onClick = {
+                                    isStudyOptionsMenuOpen = false
+                                    onDeckOptionsItemSelected(studyOptionsData.deckId)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Settings,
+                                        contentDescription = null,
+                                    )
+                                },
+                            )
+                            if (studyOptionsData.haveBuried) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.unbury)) },
+                                    onClick = {
+                                        isStudyOptionsMenuOpen = false
+                                        onUnbury(studyOptionsData.deckId)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.undo_24px),
+                                            contentDescription = null,
+                                        )
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -828,4 +832,46 @@ fun DeckPickerScreenPreview() {
         syncState = SyncIconState.Normal,
         isInInitialState = false,
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Composable
+fun DeckPickerTopBarPreview() {
+    AnkiDroidTheme {
+        DeckPickerTopBar(
+            isSearchOpen = false,
+            onSearchOpenChange = {},
+            searchAnim = 0f,
+            searchQuery = "",
+            onSearchQueryChanged = {},
+            searchFocusRequester = remember { FocusRequester() },
+            searchOffsetPx = 0f,
+            isSyncing = false,
+            syncState = SyncIconState.Normal,
+            onRefresh = {},
+            onNavigationIconClick = {},
+            studyOptionsData = StudyOptionsData(
+                deckId = 1,
+                deckName = "Default",
+                deckDescription = "This is a great deck for learning Compose.",
+                newCount = 10,
+                lrnCount = 5,
+                revCount = 20,
+                buriedNew = 2,
+                buriedLrn = 1,
+                buriedRev = 3,
+                totalNewCards = 50,
+                totalCards = 200,
+                isFiltered = false,
+                haveBuried = true
+            ),
+            onRebuildDeck = {},
+            onEmptyDeck = {},
+            onCustomStudy = {},
+            onDeckOptionsItemSelected = {},
+            onUnbury = {},
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+        )
+    }
 }
