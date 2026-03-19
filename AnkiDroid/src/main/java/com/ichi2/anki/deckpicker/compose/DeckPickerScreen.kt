@@ -410,6 +410,9 @@ private fun DeckPickerTopBar(
             if (isSearchOpen) {
                 SearchBar(
                     inputField = {
+                        LaunchedEffect(Unit) {
+                            searchFocusRequester.requestFocus()
+                        }
                         InputField(
                             query = searchQuery,
                             onQueryChange = onSearchQueryChanged,
@@ -637,7 +640,7 @@ fun DeckPickerScreen(
 
     LaunchedEffect(requestSearchFocus) {
         if (requestSearchFocus) {
-            searchFocusRequester.requestFocus()
+            isSearchOpen = true
             onSearchFocusRequested()
         }
     }
