@@ -32,6 +32,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,8 +45,15 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
@@ -65,13 +73,16 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -340,7 +351,242 @@ fun DeckPickerContent(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
+private fun DeckPickerTopBar(
+    isSearchOpen: Boolean,
+    onSearchOpenChange: (Boolean) -> Unit,
+    searchAnim: Float,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    searchFocusRequester: FocusRequester,
+    searchOffsetPx: Float,
+    isSyncing: Boolean,
+    syncState: SyncIconState,
+    onRefresh: () -> Unit,
+    onNavigationIconClick: (() -> Unit)?,
+    studyOptionsData: StudyOptionsData?,
+    onRebuildDeck: (Long) -> Unit,
+    onEmptyDeck: (Long) -> Unit,
+    onCustomStudy: (Long) -> Unit,
+    onDeckOptionsItemSelected: (Long) -> Unit,
+    onUnbury: (Long) -> Unit,
+    scrollBehavior: TopAppBarScrollBehavior,
+) {
+    var isStudyOptionsMenuOpen by remember { mutableStateOf(false) }
+
+    LargeFlexibleTopAppBar(
+        title = {
+            if (!isSearchOpen) {
+                Text(
+                    stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.displayMediumEmphasized,
+                    modifier = Modifier.graphicsLayer {
+                        alpha = 1f - searchAnim
+                    },
+                )
+            }
+        },
+        navigationIcon = {
+            if (!isSearchOpen && onNavigationIconClick != null) {
+                FilledIconButton(
+                    modifier = Modifier.padding(end = 8.dp),
+                    onClick = onNavigationIconClick,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.menu_24px),
+                        contentDescription = stringResource(R.string.navigation_drawer_open),
+                    )
+                }
+            }
+        },
+        actions = {
+            if (isSearchOpen) {
+                SearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = searchQuery,
+                            onQueryChange = onSearchQueryChanged,
+                            onSearch = { /* Search is performed as user types */ },
+                            expanded = true,
+                            onExpandedChange = { },
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(searchFocusRequester)
+                                .graphicsLayer {
+                                    alpha = searchAnim
+                                    translationY = searchOffsetPx * (1f - searchAnim)
+                                    scaleX = 0.98f + 0.02f * searchAnim
+                                    scaleY = 0.98f + 0.02f * searchAnim
+                                },
+                            placeholder = { Text(stringResource(R.string.search_decks)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.search_24px),
+                                    contentDescription = stringResource(R.string.search_decks),
+                                )
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = {
+                                    onSearchQueryChanged("")
+                                    onSearchOpenChange(false)
+                                }) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.close),
+                                    )
+                                }
+                            },
+                        )
+                    },
+                    expanded = false,
+                    onExpandedChange = { },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                        .graphicsLayer {
+                            alpha = searchAnim
+                        },
+                    shape = SearchBarDefaults.inputFieldShape,
+                    content = { },
+                )
+            } else {
+                FilledIconButton(
+                    onClick = { onSearchOpenChange(true) },
+                    modifier = Modifier
+                        .graphicsLayer {
+                            alpha = 1f - searchAnim
+                        }
+                        .padding(end = 4.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.search_24px),
+                        contentDescription = stringResource(R.string.search_decks),
+                    )
+                }
+                SyncIcon(
+                    isSyncing = isSyncing,
+                    syncState = syncState,
+                    onRefresh = onRefresh,
+                    modifier = Modifier
+                        .height(40.dp)
+                        .width(48.dp)
+                        .padding(end = 8.dp)
+                        .graphicsLayer {
+                            alpha = 1f - searchAnim
+                        },
+                )
+            }
+            if (studyOptionsData != null) {
+                FilledIconButton(
+                    onClick = { isStudyOptionsMenuOpen = true },
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.more_options),
+                    )
+                }
+                DropdownMenu(
+                    expanded = isStudyOptionsMenuOpen,
+                    onDismissRequest = { isStudyOptionsMenuOpen = false },
+                ) {
+                    if (studyOptionsData.isFiltered) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.rebuild)) },
+                            onClick = {
+                                isStudyOptionsMenuOpen = false
+                                onRebuildDeck(studyOptionsData.deckId)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = null,
+                                )
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.empty_cards_action)) },
+                            onClick = {
+                                isStudyOptionsMenuOpen = false
+                                onEmptyDeck(studyOptionsData.deckId)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Delete,
+                                    contentDescription = null,
+                                )
+                            },
+                        )
+                    } else {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.custom_study)) },
+                            onClick = {
+                                isStudyOptionsMenuOpen = false
+                                onCustomStudy(studyOptionsData.deckId)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                )
+                            },
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.deck_options)) },
+                        onClick = {
+                            isStudyOptionsMenuOpen = false
+                            onDeckOptionsItemSelected(studyOptionsData.deckId)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = null,
+                            )
+                        },
+                    )
+                    if (studyOptionsData.haveBuried) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.unbury)) },
+                            onClick = {
+                                isStudyOptionsMenuOpen = false
+                                onUnbury(studyOptionsData.deckId)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.undo_24px),
+                                    contentDescription = null,
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrolledContainerColor = MaterialTheme.colorScheme.surface,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        scrollBehavior = scrollBehavior,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
 fun DeckPickerScreen(
+    fragmented: Boolean,
     decks: List<DisplayDeckNode>,
     isSyncing: Boolean,
     onRefresh: () -> Unit,
@@ -360,15 +606,23 @@ fun DeckPickerScreen(
     onRebuild: (DisplayDeckNode) -> Unit,
     onEmpty: (DisplayDeckNode) -> Unit,
     onNavigationIconClick: () -> Unit,
+    studyOptionsData: StudyOptionsData?,
+    onStartStudy: () -> Unit,
+    onRebuildDeck: (Long) -> Unit,
+    onEmptyDeck: (Long) -> Unit,
+    onCustomStudy: (Long) -> Unit,
+    onDeckOptionsItemSelected: (Long) -> Unit,
+    onUnbury: (Long) -> Unit,
+    requestSearchFocus: Boolean,
+    onSearchFocusRequested: () -> Unit,
     syncState: SyncIconState,
     isInInitialState: Boolean?,
-    fabMenuExpanded: Boolean,
-    onFabMenuExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     searchFocusRequester: FocusRequester = FocusRequester(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     var isSearchOpen by remember { mutableStateOf(false) }
+    var fabMenuExpanded by rememberSaveable { mutableStateOf(false) }
     val searchAnim by animateFloatAsState(
         targetValue = if (isSearchOpen) 1f else 0f,
         animationSpec = motionScheme.defaultEffectsSpec(),
@@ -377,6 +631,13 @@ fun DeckPickerScreen(
     val searchOffsetPx = with(density) { (-8).dp.toPx() }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val listState = rememberLazyListState()
+
+    LaunchedEffect(requestSearchFocus) {
+        if (requestSearchFocus) {
+            searchFocusRequester.requestFocus()
+            onSearchFocusRequested()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -396,161 +657,117 @@ fun DeckPickerScreen(
                 }
             },
             topBar = {
-                LargeFlexibleTopAppBar(
-                    title = {
-                        if (!isSearchOpen) {
-                            Text(
-                                stringResource(R.string.app_name),
-                                style = MaterialTheme.typography.displayMediumEmphasized,
-                                modifier = Modifier.graphicsLayer {
-                                    alpha = 1f - searchAnim
-                                },
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        if (!isSearchOpen) {
-                            FilledIconButton(
-                                modifier = Modifier.padding(end = 8.dp),
-                                onClick = onNavigationIconClick,
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.menu_24px),
-                                    contentDescription = stringResource(R.string.navigation_drawer_open),
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        if (isSearchOpen) {
-                            SearchBar(
-                                inputField = {
-                                    SearchBarDefaults.InputField(
-                                        query = searchQuery,
-                                        onQueryChange = onSearchQueryChanged,
-                                        onSearch = { /* Search is performed as user types */ },
-                                        expanded = true,
-                                        onExpandedChange = { },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .focusRequester(searchFocusRequester)
-                                            .graphicsLayer {
-                                                alpha = searchAnim
-                                                translationY = searchOffsetPx * (1f - searchAnim)
-                                                scaleX = 0.98f + 0.02f * searchAnim
-                                                scaleY = 0.98f + 0.02f * searchAnim
-                                            },
-                                        placeholder = { Text(stringResource(R.string.search_decks)) },
-                                        leadingIcon = {
-                                            Icon(
-                                                painter = painterResource(R.drawable.search_24px),
-                                                contentDescription = stringResource(R.string.search_decks),
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            IconButton(onClick = {
-                                                onSearchQueryChanged("")
-                                                isSearchOpen = false
-                                            }) {
-                                                Icon(
-                                                    Icons.Default.Close,
-                                                    contentDescription = stringResource(R.string.close),
-                                                )
-                                            }
-                                        },
-                                    )
-                                },
-                                expanded = false,
-                                onExpandedChange = { },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                                    .graphicsLayer {
-                                        alpha = searchAnim
-                                    },
-                                shape = SearchBarDefaults.inputFieldShape,
-                                content = { },
-                            )
-                        } else {
-                            FilledIconButton(
-                                onClick = { isSearchOpen = true },
-                                modifier = Modifier
-                                    .graphicsLayer {
-                                        alpha = 1f - searchAnim
-                                    }
-                                    .padding(end = 4.dp),
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.search_24px),
-                                    contentDescription = stringResource(R.string.search_decks),
-                                )
-                            }
-                            SyncIcon(
-                                isSyncing = isSyncing,
-                                syncState = syncState,
-                                onRefresh = onRefresh,
-                                modifier = Modifier
-                                    .height(40.dp)
-                                    .width(48.dp)
-                                    .padding(end = 8.dp)
-                                    .graphicsLayer {
-                                        alpha = 1f - searchAnim
-                                    },
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surface,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                    scrollBehavior = scrollBehavior,
+                DeckPickerTopBar(
+                    isSearchOpen = isSearchOpen,
+                    onSearchOpenChange = { isSearchOpen = it },
+                    searchAnim = searchAnim,
+                    searchQuery = searchQuery,
+                    onSearchQueryChanged = onSearchQueryChanged,
+                    searchFocusRequester = searchFocusRequester,
+                    searchOffsetPx = searchOffsetPx,
+                    isSyncing = isSyncing,
+                    syncState = syncState,
+                    onRefresh = onRefresh,
+                    onNavigationIconClick = if (!fragmented) onNavigationIconClick else null,
+                    studyOptionsData = studyOptionsData,
+                    onRebuildDeck = onRebuildDeck,
+                    onEmptyDeck = onEmptyDeck,
+                    onCustomStudy = onCustomStudy,
+                    onDeckOptionsItemSelected = onDeckOptionsItemSelected,
+                    onUnbury = onUnbury,
+                    scrollBehavior = scrollBehavior
                 )
             },
-        ) { paddingValues ->
-            DeckPickerContent(
-                decks = decks,
-                onRefresh = onRefresh,
-                onDeckClick = onDeckClick,
-                onExpandClick = onExpandClick,
-                onDeckOptions = onDeckOptions,
-                onRename = onRename,
-                onExport = onExport,
-                onDelete = onDelete,
-                onRebuild = onRebuild,
-                onEmpty = onEmpty,
-                listState = listState,
-                contentPadding = paddingValues,
-                onAddDeck = onAddDeck,
-                onAddSharedDeck = onAddSharedDeck,
-                isInInitialState = isInInitialState,
-            )
+            floatingActionButton = {
+                if (fragmented) {
+                    Scrim(
+                        opacity = 0F,
+                        visible = fabMenuExpanded,
+                        onDismiss = { fabMenuExpanded = false },
+                    )
+                    ExpandableFabContainer {
+                        ExpandableFab(
+                            expanded = fabMenuExpanded,
+                            onExpandedChange = { fabMenuExpanded = it },
+                            onAddNote = onAddNote,
+                            onAddDeck = onAddDeck,
+                            onAddSharedDeck = onAddSharedDeck,
+                            onAddFilteredDeck = onAddFilteredDeck,
+                            onCheckDatabase = onCheckDatabase,
+                        )
+                    }
+                }
+            }) { paddingValues ->
+            if (fragmented) {
+                Row(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        DeckPickerContent(
+                            decks = decks,
+                            onRefresh = onRefresh,
+                            onDeckClick = onDeckClick,
+                            onExpandClick = onExpandClick,
+                            onDeckOptions = onDeckOptions,
+                            onRename = onRename,
+                            onExport = onExport,
+                            onDelete = onDelete,
+                            onRebuild = onRebuild,
+                            onEmpty = onEmpty,
+                            listState = listState,
+                            onAddDeck = onAddDeck,
+                            onAddSharedDeck = onAddSharedDeck,
+                            isInInitialState = isInInitialState,
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        StudyOptionsScreen(
+                            studyOptionsData = studyOptionsData,
+                            onStartStudy = onStartStudy,
+                            onCustomStudy = onCustomStudy,
+                        )
+                    }
+                }
+            } else {
+                DeckPickerContent(
+                    decks = decks,
+                    onRefresh = onRefresh,
+                    onDeckClick = onDeckClick,
+                    onExpandClick = onExpandClick,
+                    onDeckOptions = onDeckOptions,
+                    onRename = onRename,
+                    onExport = onExport,
+                    onDelete = onDelete,
+                    onRebuild = onRebuild,
+                    onEmpty = onEmpty,
+                    listState = listState,
+                    contentPadding = paddingValues,
+                    onAddDeck = onAddDeck,
+                    onAddSharedDeck = onAddSharedDeck,
+                    isInInitialState = isInInitialState,
+                )
+            }
         }
-        Scrim(
-            visible = fabMenuExpanded,
-            onDismiss = { onFabMenuExpandedChange(false) },
-        )
-        ExpandableFabContainer {
-            ExpandableFab(
-                expanded = fabMenuExpanded,
-                onExpandedChange = onFabMenuExpandedChange,
-                onAddNote = onAddNote,
-                onAddDeck = onAddDeck,
-                onAddSharedDeck = onAddSharedDeck,
-                onAddFilteredDeck = onAddFilteredDeck,
-                onCheckDatabase = onCheckDatabase,
+        if (!fragmented) {
+            Scrim(
+                visible = fabMenuExpanded,
+                onDismiss = { fabMenuExpanded = false },
             )
+            ExpandableFabContainer {
+                ExpandableFab(
+                    expanded = fabMenuExpanded,
+                    onExpandedChange = { fabMenuExpanded = it },
+                    onAddNote = onAddNote,
+                    onAddDeck = onAddDeck,
+                    onAddSharedDeck = onAddSharedDeck,
+                    onAddFilteredDeck = onAddFilteredDeck,
+                    onCheckDatabase = onCheckDatabase,
+                )
+            }
+            BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
         }
-        BackHandler(fabMenuExpanded) { onFabMenuExpandedChange(false) }
     }
 }
 
@@ -579,6 +796,7 @@ fun DeckPickerContentPreview() {
 @Composable
 fun DeckPickerScreenPreview() {
     DeckPickerScreen(
+        fragmented = false,
         decks = emptyList(),
         isSyncing = false,
         onRefresh = {},
@@ -598,9 +816,16 @@ fun DeckPickerScreenPreview() {
         onRebuild = {},
         onEmpty = {},
         onNavigationIconClick = {},
+        studyOptionsData = null,
+        onStartStudy = {},
+        onRebuildDeck = {},
+        onEmptyDeck = {},
+        onCustomStudy = {},
+        onDeckOptionsItemSelected = {},
+        onUnbury = {},
+        requestSearchFocus = false,
+        onSearchFocusRequested = {},
         syncState = SyncIconState.Normal,
         isInInitialState = false,
-        fabMenuExpanded = false,
-        onFabMenuExpandedChange = {},
     )
 }

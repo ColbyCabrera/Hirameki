@@ -92,7 +92,6 @@ import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.launch
-import com.ichi2.anki.ui.compose.AnkiDroidApp as AnkiDroidAppComposable
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -537,7 +536,7 @@ private fun DeckPickerWithDrawer(
             }
         },
     ) {
-        AnkiDroidAppComposable(
+        DeckPickerScreen(
             fragmented = state.fragmented,
             decks = state.deckList.data,
             isSyncing = state.isSyncing,
