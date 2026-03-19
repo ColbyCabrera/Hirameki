@@ -464,6 +464,9 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         setupFlows()
 
         setContent {
+            val isOpen = remember { CollectionManager.isOpenUnsafe() }
+            if (!isOpen) return@setContent
+
             AnkiDroidTheme {
                 val navigationState = rememberNavigationState(
                     startRoute = DeckPickerScreen, topLevelRoutes = setOf(DeckPickerScreen)

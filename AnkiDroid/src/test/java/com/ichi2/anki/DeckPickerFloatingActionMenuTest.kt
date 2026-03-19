@@ -16,41 +16,68 @@
 
 package com.ichi2.anki
 
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.core.content.edit
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.ichi2.anki.DeckPicker
-import com.ichi2.anki.R
+import com.ichi2.anki.dialogs.BackupPromptDialog
+import com.ichi2.anki.preferences.sharedPrefs
+import com.ichi2.testutils.BackupManagerTestUtilities
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.LooperMode
 
 @RunWith(AndroidJUnit4::class)
 @LooperMode(LooperMode.Mode.PAUSED)
-class DeckPickerFloatingActionMenuTest {
+class DeckPickerFloatingActionMenuTest : RobolectricTest() {
+
+    @get:Rule
+    val composeTestRule = createEmptyComposeRule()
+
+    @Before
+    fun bypassIntro() {
+        getPreferences().edit {
+            putBoolean(IntroductionActivity.INTRODUCTION_SLIDES_SHOWN, true)
+        }
+        BackupManagerTestUtilities.setupSpaceForBackup(targetContext)
+        targetContext.sharedPrefs().edit { putBoolean(BackupPromptDialog.BACKUP_PROMPT_DISABLED, true) }
+    }
 
     @Test
     fun fabMenuIsDisplayed() {
-        ActivityScenario.launch(DeckPicker::class.java).use {
-            // R.id.fab_main is the standard ID for the FloatingActionMenu in AnkiDroid
-            onView(withId(R.id.fab_main)).check(matches(isDisplayed()))
+        ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
+            var fabToggleDesc = ""
+            scenario.onActivity { activity ->
+                fabToggleDesc = activity.getString(R.string.fab_menu_toggle)
+            }
+            composeTestRule.onNodeWithContentDescription(fabToggleDesc).assertIsDisplayed()
         }
     }
 
     @Test
     fun fabMenuExpandsOnClick() {
-        ActivityScenario.launch(DeckPicker::class.java).use {
+        ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
+            var fabToggleDesc = ""
+            var expandedDesc = ""
+            scenario.onActivity { activity ->
+                fabToggleDesc = activity.getString(R.string.fab_menu_toggle)
+                expandedDesc = activity.getString(R.string.fab_menu_expanded)
+            }
+            
             // Click the main FAB to expand the menu
-            onView(withId(R.id.fab_main)).perform(click())
+            composeTestRule.onNodeWithContentDescription(fabToggleDesc).performClick()
 
-            // Fixed: Use 'fab_add_deck' and 'fab_add_note' instead of 'add_deck_fab'
-            // These are the standard resource IDs used in AnkiDroid's deck_picker.xml
-            onView(withId(R.id.fab_main)).check(matches(isDisplayed()))
-            onView(withId(R.id.fab_main)).check(matches(isDisplayed()))
+            // Check if the state description is updated to "expanded"
+            composeTestRule.onNode(
+                androidx.compose.ui.test.hasContentDescription(fabToggleDesc) and 
+                androidx.compose.ui.test.hasStateDescription(expandedDesc)
+            ).assertIsDisplayed()
         }
     }
 }
