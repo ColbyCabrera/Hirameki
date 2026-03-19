@@ -445,7 +445,6 @@ private fun DeckPickerTopBar(
                 ) {
                     FilledIconButton(
                         onClick = { onSearchOpenChange(true) },
-                        modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim },
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainer,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
