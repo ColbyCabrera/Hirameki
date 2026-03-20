@@ -23,6 +23,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -908,14 +909,16 @@ open class AnkiActivity :
     }
 
     private fun postSnackbar(@StringRes text: Int) {
-        (this as? DeckPicker)?.let { dp ->
-            dp.lifecycleScope.launch { dp.viewModel.showSnackbar(getString(text)) }
-        }
+        postSnackbar(getString(text))
     }
 
     private fun postSnackbar(text: String) {
-        (this as? DeckPicker)?.let { dp ->
+        val dp = this as? DeckPicker
+        if (dp != null) {
             dp.lifecycleScope.launch { dp.viewModel.showSnackbar(text) }
+        } else {
+            Timber.w("postSnackbar called from non-DeckPicker activity (%s): %s", this::class.simpleName, text)
+            Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
         }
     }
 
