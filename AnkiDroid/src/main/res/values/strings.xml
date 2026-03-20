@@ -100,6 +100,9 @@
     <string name="hide_password">Hide password</string>
     <string name="welcome_to">Welcome to</string>
     <string name="intro_continue">Continue</string>
+    <string name="review_heatmap">Review Heatmap</string>
+    <string name="widget_heatmap_preview_icon_description">Review Heatmap icon</string>
+    <string name="loading_preview">Loading preview...</string>
     <string-array name="account_redirect_urls" translatable="false">
         <item>https://ankiweb.net/account/login?afterAuth=1</item>
         <item>https://ankiweb.net/decks</item>
