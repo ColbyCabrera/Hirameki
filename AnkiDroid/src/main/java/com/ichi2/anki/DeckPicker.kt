@@ -54,7 +54,6 @@ import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import androidx.core.util.component1
 import androidx.core.util.component2
 import androidx.core.view.MenuItemCompat
@@ -480,7 +479,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     cardBrowserViewModel = cardBrowserViewModel,
                     fragmented = fragmented,
                     onLaunchIntent = { startActivity(it) },
-                    onLaunchUrl = { startActivity(Intent(Intent.ACTION_VIEW, it.toUri())) },
                     onOpenNoteEditor = { actionHandler.openNoteEditorForCard(it) },
                     onAddNote = { addNote() },
                     onAddSharedDeck = { openAnkiWebSharedDecks() },
@@ -1738,9 +1736,11 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * Deletes the provided deck, child decks, and all cards inside.
      * @param did ID of the deck to delete
      */
-    fun deleteDeck(did: DeckId) = launchCatchingTask {
-        withProgress {
-            viewModel.deleteDeck(did).join()
+    fun deleteDeck(did: DeckId) {
+        launchCatchingTask {
+            withProgress {
+                viewModel.deleteDeck(did).join()
+            }
         }
     }
 

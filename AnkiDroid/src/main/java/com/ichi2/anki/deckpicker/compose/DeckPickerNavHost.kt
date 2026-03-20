@@ -164,7 +164,6 @@ fun DeckPickerNavHost(
     cardBrowserViewModel: CardBrowserViewModel,
     fragmented: Boolean,
     onLaunchIntent: (Intent) -> Unit,
-    onLaunchUrl: (String) -> Unit,
     onOpenNoteEditor: (Long) -> Unit,
     onAddNote: () -> Unit,
     onAddSharedDeck: () -> Unit,
@@ -185,7 +184,6 @@ fun DeckPickerNavHost(
                 cardBrowserViewModel = cardBrowserViewModel,
                 fragmented = fragmented,
                 onLaunchIntent = onLaunchIntent,
-                onLaunchUrl = onLaunchUrl,
                 onOpenNoteEditor = onOpenNoteEditor,
                 onAddNote = onAddNote,
                 onAddSharedDeck = onAddSharedDeck,
@@ -239,7 +237,6 @@ private fun DeckPickerMainContent(
     cardBrowserViewModel: CardBrowserViewModel,
     fragmented: Boolean,
     onLaunchIntent: (Intent) -> Unit,
-    onLaunchUrl: (String) -> Unit,
     onOpenNoteEditor: (Long) -> Unit,
     onAddNote: () -> Unit,
     onAddSharedDeck: () -> Unit,
@@ -375,7 +372,10 @@ private fun DeckPickerMainContent(
         onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
         onRename = { viewModel.showRenameDeckDialog(it) },
         onExport = { viewModel.exportDeck(it) },
-        onDelete = { viewModel.deleteDeck(it) },
+        onDelete = { deckId ->
+            @Suppress("CheckResult")
+            viewModel.deleteDeck(deckId)
+        },
         onRebuild = { viewModel.rebuildFilteredDeck(it) },
         onEmpty = { viewModel.emptyFilteredDeck(it) },
         onStartStudy = { viewModel.openReviewer() },
@@ -447,7 +447,6 @@ private fun DeckPickerMainContent(
         viewModel = viewModel,
         cardBrowserViewModel = cardBrowserViewModel,
         snackbarHostState = snackbarHostState,
-        onLaunchIntent = onLaunchIntent,
         lifecycle = lifecycle
     )
 }
@@ -549,7 +548,6 @@ private fun SetupFlows(
     viewModel: DeckPickerViewModel,
     cardBrowserViewModel: CardBrowserViewModel,
     snackbarHostState: SnackbarHostState,
-    onLaunchIntent: (Intent) -> Unit,
     lifecycle: Lifecycle
 ) {
     val applicationContext = LocalContext.current.applicationContext
