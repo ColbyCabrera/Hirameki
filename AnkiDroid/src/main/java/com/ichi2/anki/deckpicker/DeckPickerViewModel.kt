@@ -84,6 +84,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val isSyncing = MutableStateFlow(false)
     val flowOfStartupResponse = MutableStateFlow<StartupResponse?>(null)
 
+    private val _isDeletingDeck = MutableStateFlow(false)
+    val isDeletingDeck: StateFlow<Boolean> = _isDeletingDeck.asStateFlow()
+
     private val flowOfDeckDueTree = MutableStateFlow<DeckNode?>(null)
 
     private val _syncState = MutableStateFlow(SyncIconState.Normal)
@@ -478,22 +481,36 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     /**
-     * Deletes the provided deck, child decks. and all cards inside.
+     * Deletes the provided deck, child decks, and all cards inside.
      *
-     * This is a slow operation and should be inside `withProgress`
+     * This is a slow operation. Progress is indicated via [isDeletingDeck].
      *
      * @param did ID of the deck to delete
      */
-    @CheckResult // This is a slow operation and should be inside `withProgress`
     fun deleteDeck(did: DeckId) = viewModelScope.launch {
-        val deckName = withCol { decks.getLegacy(did)!!.name }
-        val changes = undoableOp { decks.remove(listOf(did)) }
-        // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
-        // to match and avoid unnecessary scrolls in `renderPage()`.
-        focusedDeck = Consts.DEFAULT_DECK_ID
+        _isDeletingDeck.value = true
+        try {
+            val deckName = withCol { decks.getLegacy(did)?.name }
+                ?: run {
+                    Timber.w("Deck %d not found for deletion", did)
+                    _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
+                    return@launch
+                }
+            val changes = undoableOp { decks.remove(listOf(did)) }
+            // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
+            // to match and avoid unnecessary scrolls in `renderPage()`.
+            focusedDeck = Consts.DEFAULT_DECK_ID
 
-        val deletionResult = DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
-        _effects.send(DeckPickerEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString()))
+            val deletionResult = DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
+            _effects.send(DeckPickerEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString()))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to delete deck %d", did)
+            _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
+        } finally {
+            _isDeletingDeck.value = false
+        }
     }
 
     /**

@@ -445,6 +445,49 @@ class DeckPickerViewModelTest : RobolectricTest() {
     }
 
     @Test
+    fun `effects - deleting non-existent deck emits error snackbar`() = runTest {
+        val nonExistentDeckId = 999999L
+
+        viewModel.effects.test {
+            viewModel.deleteDeck(nonExistentDeckId).join()
+
+            val effect = awaitItem()
+            assertThat(
+                "is ShowSnackbar (error)",
+                effect,
+                instanceOf(DeckPickerEffect.ShowSnackbar::class.java)
+            )
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `isDeletingDeck - false after successful deletion`() = runTest {
+        val deckId = col.decks.id("Deck To Delete")
+
+        viewModel.deleteDeck(deckId).join()
+
+        assertThat("isDeletingDeck should be false after completion",
+            viewModel.isDeletingDeck.value, equalTo(false))
+    }
+
+    @Test
+    fun `isDeletingDeck - false after failed deletion`() = runTest {
+        val nonExistentDeckId = 999999L
+
+        viewModel.effects.test {
+            viewModel.deleteDeck(nonExistentDeckId).join()
+            // Consume the error effect
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertThat("isDeletingDeck should be false after error",
+            viewModel.isDeletingDeck.value, equalTo(false))
+    }
+
+    @Test
     fun `effects - selecting empty deck emits HandleDeckSelection`() = runTest {
         // Default deck with no cards
         viewModel.updateDeckList()

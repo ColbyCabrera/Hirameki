@@ -260,6 +260,15 @@ private fun DeckPickerMainContent(
     val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
     val showNetworkErrorDialog by viewModel.showNetworkErrorDialog.collectAsStateWithLifecycle()
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
+    val isDeletingDeck by viewModel.isDeletingDeck.collectAsStateWithLifecycle()
+
+    if (isDeletingDeck) {
+        SyncProgressDialog(
+            title = stringResource(R.string.delete_deck),
+            message = "",
+            onCancel = { } // Deletion cannot be canceled
+        )
+    }
 
     val errorMessageState = viewModel.onError.collectAsStateWithLifecycle(initialValue = null)
     var errorMessage by remember(errorMessageState.value) { mutableStateOf(errorMessageState.value) }
@@ -372,10 +381,7 @@ private fun DeckPickerMainContent(
         onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
         onRename = { viewModel.showRenameDeckDialog(it) },
         onExport = { viewModel.exportDeck(it) },
-        onDelete = { deckId ->
-            @Suppress("CheckResult")
-            viewModel.deleteDeck(deckId)
-        },
+        onDelete = { deckId -> viewModel.deleteDeck(deckId) },
         onRebuild = { viewModel.rebuildFilteredDeck(it) },
         onEmpty = { viewModel.emptyFilteredDeck(it) },
         onStartStudy = { viewModel.openReviewer() },
