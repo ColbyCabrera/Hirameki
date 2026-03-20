@@ -467,7 +467,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
         }
     }
 
-    // region Migrated Activity Side-Effects
+    // region Migrated Activity Side Effects
 
     @Test
     fun `migrated effects - emit correctly`() = runTest {
