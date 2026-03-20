@@ -487,7 +487,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     onAddNote = { addNote() },
                     onAddDeck = { showCreateDeckDialog() },
                     onAddSharedDeck = { openAnkiWebSharedDecks() },
-                    onAddFilteredDeck = { showCreateFilteredDeckDialog() },
+                    onAddFilteredDeck = { viewModel.showCreateFilteredDeckDialog() },
                     onCheckDatabase = {
                         showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
                     },

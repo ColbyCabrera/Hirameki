@@ -295,7 +295,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     fun showCreateFilteredDeckDialog() {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.FILTERED_DECK, titleResId = R.string.new_deck
+            type = DeckDialogType.FILTERED_DECK, titleResId = R.string.new_dynamic_deck
         )
     }
 

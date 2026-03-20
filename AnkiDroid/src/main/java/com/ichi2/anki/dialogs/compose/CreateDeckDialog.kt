@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import com.ichi2.anki.R
 import com.ichi2.anki.deckpicker.DeckPickerViewModel.DeckNameError
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.delay
 
 enum class DeckDialogType {
@@ -102,12 +103,16 @@ fun CreateDeckDialog(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onDone = { if (error == null && deckName.isNotBlank() && !isValidating) onConfirm(deckName) })
+                    onDone = {
+                        if (error == null && deckName.isNotBlank() && !isValidating) onConfirm(
+                            deckName
+                        )
+                    })
             )
         }
     }, confirmButton = {
         TextButton(
-            onClick = { onConfirm(deckName) }, 
+            onClick = { onConfirm(deckName) },
             enabled = error == null && deckName.isNotBlank() && !isValidating
         ) {
             Text(stringResource(R.string.dialog_ok))
@@ -122,50 +127,54 @@ fun CreateDeckDialog(
 @Preview
 @Composable
 private fun CreateDeckDialogPreview() {
-    CreateDeckDialog(
-        onDismissRequest = {},
-        onConfirm = {},
-        dialogType = DeckDialogType.DECK,
-        title = "Create Deck",
-        validateDeckName = { null }
-    )
+    AnkiDroidTheme {
+        CreateDeckDialog(
+            onDismissRequest = {},
+            onConfirm = {},
+            dialogType = DeckDialogType.DECK,
+            title = "Create Deck",
+            validateDeckName = { null })
+    }
 }
 
 @Preview
 @Composable
 private fun CreateDeckDialogErrorPreview() {
-    CreateDeckDialog(
-        onDismissRequest = {},
-        onConfirm = {},
-        dialogType = DeckDialogType.DECK,
-        title = "Create Deck",
-        initialDeckName = "Existing Deck",
-        validateDeckName = { DeckNameError.ALREADY_EXISTS }
-    )
+    AnkiDroidTheme {
+        CreateDeckDialog(
+            onDismissRequest = {},
+            onConfirm = {},
+            dialogType = DeckDialogType.DECK,
+            title = "Create Deck",
+            initialDeckName = "Existing Deck",
+            validateDeckName = { DeckNameError.ALREADY_EXISTS })
+    }
 }
 
 @Preview
 @Composable
 private fun CreateDeckDialogRenamePreview() {
-    CreateDeckDialog(
-        onDismissRequest = {},
-        onConfirm = {},
-        dialogType = DeckDialogType.RENAME_DECK,
-        title = "Rename Deck",
-        initialDeckName = "My Study Deck",
-        validateDeckName = { null }
-    )
+    AnkiDroidTheme {
+        CreateDeckDialog(
+            onDismissRequest = {},
+            onConfirm = {},
+            dialogType = DeckDialogType.RENAME_DECK,
+            title = "Rename Deck",
+            initialDeckName = "My Study Deck",
+            validateDeckName = { null })
+    }
 }
 
 @Preview
 @Composable
 private fun CreateDeckDialogNumericHintPreview() {
-    CreateDeckDialog(
-        onDismissRequest = {},
-        onConfirm = {},
-        dialogType = DeckDialogType.DECK,
-        title = "Create Deck",
-        initialDeckName = "10. Chemistry",
-        validateDeckName = { null }
-    )
+    AnkiDroidTheme {
+        CreateDeckDialog(
+            onDismissRequest = {},
+            onConfirm = {},
+            dialogType = DeckDialogType.DECK,
+            title = "Create Deck",
+            initialDeckName = "10. Chemistry",
+            validateDeckName = { null })
+    }
 }
