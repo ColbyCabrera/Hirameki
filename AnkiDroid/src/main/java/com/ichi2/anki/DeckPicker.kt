@@ -89,6 +89,7 @@ import com.ichi2.anki.browser.MySearchesContract
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
+import com.ichi2.anki.deckpicker.DeckPickerEffect
 import com.ichi2.anki.deckpicker.DeckPickerViewModel
 import com.ichi2.anki.deckpicker.DeckPickerViewModel.AnkiDroidEnvironment
 import com.ichi2.anki.deckpicker.DeckPickerViewModel.FlattenedDeckList
@@ -480,23 +481,10 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     fragmented = fragmented,
                     onLaunchIntent = { startActivity(it) },
                     onLaunchUrl = { startActivity(Intent(Intent.ACTION_VIEW, it.toUri())) },
-                    onUndo = { undo() },
-                    onOpenReviewer = { openReviewer() },
-                    onOpenStudyOptions = { openStudyOptionsActivity() },
                     onOpenNoteEditor = { actionHandler.openNoteEditorForCard(it) },
                     onAddNote = { addNote() },
-                    onAddDeck = { showCreateDeckDialog() },
                     onAddSharedDeck = { openAnkiWebSharedDecks() },
                     onAddFilteredDeck = { viewModel.showCreateFilteredDeckDialog() },
-                    onCheckDatabase = {
-                        showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
-                    },
-                    onRenameDeck = { renameDeckDialog(it) },
-                    onExportDeck = { exportDeck(it) },
-                    onDeleteDeck = { deleteDeck(it) },
-                    onRebuildFiltered = { rebuildFiltered(it) },
-                    onEmptyFiltered = { emptyFiltered(it) },
-                    onCustomStudy = { showCustomStudyDialog(it) },
                     onOpenCardInfo = { cardId ->
                         val destination = CardInfoDestination(
                             cardId, getString(R.string.card_info_title)
@@ -505,7 +493,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     },
                     onShowDialogFragment = { it.show(supportFragmentManager, null) },
                     onInvalidateOptionsMenu = { invalidateOptionsMenu() },
-                    onSync = { sync() },
                     onLoginToAnkiWeb = { loginToSyncServer() })
             }
         }
@@ -574,6 +561,24 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 is StartupResponse.FatalError -> handleStartupFailure(response.failure)
             }
         }
+
+        fun onDeckPickerEffect(effect: DeckPickerEffect) {
+            when (effect) {
+                is DeckPickerEffect.Sync -> sync()
+                is DeckPickerEffect.Undo -> undo()
+                is DeckPickerEffect.NavigateToReviewer -> openReviewer()
+                is DeckPickerEffect.NavigateToStudyOptions -> openStudyOptionsActivity()
+                is DeckPickerEffect.ShowExportDialog -> exportDeck(effect.deckId)
+                is DeckPickerEffect.ShowCustomStudyDialog -> showCustomStudyDialog(effect.deckId)
+                is DeckPickerEffect.CheckDatabase -> {
+                    showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
+                }
+
+                else -> {} // Navigation UI events are handled by Compose
+            }
+        }
+
+        viewModel.effects.launchCollectionInLifecycleScope(::onDeckPickerEffect)
 
         viewModel.flowOfDestination.launchCollectionInLifecycleScope(::onDestinationChanged)
         viewModel.flowOfPromptUserToUpdateScheduler.launchCollectionInLifecycleScope(::onPromptUserToUpdateScheduler)
@@ -1717,8 +1722,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
     fun renameDeckDialog(did: DeckId) {
-        val currentName = getColUnsafe.decks.name(did)
-        viewModel.showRenameDeckDialog(did, currentName)
+        viewModel.showRenameDeckDialog(did)
     }
 
     /**

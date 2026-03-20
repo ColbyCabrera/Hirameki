@@ -295,7 +295,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     fun showCreateSubdeckDialog(parentId: DeckId) {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.SUB_DECK, titleResId = R.string.create_subdeck, parentId = parentId
+            type = DeckDialogType.SUB_DECK,
+            titleResId = R.string.create_subdeck,
+            parentId = parentId
         )
     }
 
@@ -305,7 +307,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         )
     }
 
-    fun showRenameDeckDialog(deckId: DeckId, currentName: String) {
+    fun showRenameDeckDialog(deckId: DeckId) = viewModelScope.launch {
+        val currentName = withCol { decks.name(deckId) }
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
             type = DeckDialogType.RENAME_DECK,
             titleResId = R.string.rename_deck,
@@ -539,6 +542,43 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         }
         undoableOp { sched.emptyFilteredDeck(decks.selected()) }
         updateDeckList()
+    }
+
+    fun rebuildFilteredDeck(deckId: DeckId): Job = viewModelScope.launch {
+        Timber.i("rebuild filtered deck %s", deckId)
+        withCol {
+            decks.select(deckId)
+            sched.rebuildFilteredDeck(decks.selected())
+        }
+        updateDeckList()
+    }
+
+    fun sync() = launchCatchingIO {
+        _effects.send(DeckPickerEffect.Sync)
+    }
+
+    fun undo() = launchCatchingIO {
+        _effects.send(DeckPickerEffect.Undo)
+    }
+
+    fun openReviewer() = launchCatchingIO {
+        _effects.send(DeckPickerEffect.NavigateToReviewer)
+    }
+
+    fun openStudyOptionsActivity() = launchCatchingIO {
+        _effects.send(DeckPickerEffect.NavigateToStudyOptions)
+    }
+
+    fun exportDeck(deckId: DeckId) = launchCatchingIO {
+        _effects.send(DeckPickerEffect.ShowExportDialog(deckId))
+    }
+
+    fun showCustomStudyDialog(deckId: DeckId) = launchCatchingIO {
+        _effects.send(DeckPickerEffect.ShowCustomStudyDialog(deckId))
+    }
+
+    fun checkDatabase() = launchCatchingIO {
+        _effects.send(DeckPickerEffect.CheckDatabase)
     }
 
 
@@ -835,4 +875,25 @@ sealed class DeckPickerEffect {
 
     /** Handle the result of a deck selection (study, empty, congrats) */
     data class HandleDeckSelection(val result: DeckSelectionResult) : DeckPickerEffect()
+
+    /** Trigger a sync operation */
+    data object Sync : DeckPickerEffect()
+
+    /** Trigger an undo operation (Activity handles database undo) */
+    data object Undo : DeckPickerEffect()
+
+    /** Open the reviewer for the current/selected deck */
+    data object NavigateToReviewer : DeckPickerEffect()
+
+    /** Open the study options activity */
+    data object NavigateToStudyOptions : DeckPickerEffect()
+
+    /** Show the export options dialog for the given deck */
+    data class ShowExportDialog(val deckId: DeckId) : DeckPickerEffect()
+
+    /** Show custom study dialog */
+    data class ShowCustomStudyDialog(val deckId: DeckId) : DeckPickerEffect()
+
+    /** Check database */
+    data object CheckDatabase : DeckPickerEffect()
 }

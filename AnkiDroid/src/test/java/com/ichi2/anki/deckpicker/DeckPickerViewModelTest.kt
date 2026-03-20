@@ -467,5 +467,55 @@ class DeckPickerViewModelTest : RobolectricTest() {
         }
     }
 
-    // endregion
+    // region Migrated Activity Side-Effects
+
+    @Test
+    fun `migrated effects - emit correctly`() = runTest {
+        viewModel.effects.test {
+            viewModel.sync()
+            assertThat("is Sync", awaitItem(), instanceOf(DeckPickerEffect.Sync::class.java))
+
+            viewModel.undo()
+            assertThat("is Undo", awaitItem(), instanceOf(DeckPickerEffect.Undo::class.java))
+
+            viewModel.openReviewer()
+            assertThat(
+                "is NavigateToReviewer",
+                awaitItem(),
+                instanceOf(DeckPickerEffect.NavigateToReviewer::class.java)
+            )
+
+            viewModel.openStudyOptionsActivity()
+            assertThat(
+                "is NavigateToStudyOptions",
+                awaitItem(),
+                instanceOf(DeckPickerEffect.NavigateToStudyOptions::class.java)
+            )
+
+            viewModel.exportDeck(Consts.DEFAULT_DECK_ID)
+            val exportEffect = awaitItem() as DeckPickerEffect.ShowExportDialog
+            assertThat(
+                "export deck id matches",
+                exportEffect.deckId,
+                equalTo(Consts.DEFAULT_DECK_ID)
+            )
+
+            viewModel.showCustomStudyDialog(Consts.DEFAULT_DECK_ID)
+            val customStudyEffect = awaitItem() as DeckPickerEffect.ShowCustomStudyDialog
+            assertThat(
+                "custom study deck id matches",
+                customStudyEffect.deckId,
+                equalTo(Consts.DEFAULT_DECK_ID)
+            )
+
+            viewModel.checkDatabase()
+            assertThat(
+                "is CheckDatabase",
+                awaitItem(),
+                instanceOf(DeckPickerEffect.CheckDatabase::class.java)
+            )
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

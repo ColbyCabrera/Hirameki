@@ -165,25 +165,13 @@ fun DeckPickerNavHost(
     fragmented: Boolean,
     onLaunchIntent: (Intent) -> Unit,
     onLaunchUrl: (String) -> Unit,
-    onUndo: () -> Unit,
-    onOpenReviewer: () -> Unit,
-    onOpenStudyOptions: () -> Unit,
     onOpenNoteEditor: (Long) -> Unit,
     onAddNote: () -> Unit,
-    onAddDeck: () -> Unit,
     onAddSharedDeck: () -> Unit,
     onAddFilteredDeck: () -> Unit,
-    onCheckDatabase: () -> Unit,
-    onRenameDeck: (Long) -> Unit,
-    onExportDeck: (Long) -> Unit,
-    onDeleteDeck: (Long) -> Unit,
-    onRebuildFiltered: (Long) -> Unit,
-    onEmptyFiltered: (Long) -> Unit,
-    onCustomStudy: (Long) -> Unit,
     onOpenCardInfo: (Long) -> Unit,
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
-    onSync: () -> Unit,
     onLoginToAnkiWeb: () -> Unit,
 ) {
     val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
@@ -198,25 +186,13 @@ fun DeckPickerNavHost(
                 fragmented = fragmented,
                 onLaunchIntent = onLaunchIntent,
                 onLaunchUrl = onLaunchUrl,
-                onUndo = onUndo,
-                onOpenReviewer = onOpenReviewer,
-                onOpenStudyOptions = onOpenStudyOptions,
                 onOpenNoteEditor = onOpenNoteEditor,
                 onAddNote = onAddNote,
-                onAddDeck = onAddDeck,
                 onAddSharedDeck = onAddSharedDeck,
                 onAddFilteredDeck = onAddFilteredDeck,
-                onCheckDatabase = onCheckDatabase,
-                onRenameDeck = onRenameDeck,
-                onExportDeck = onExportDeck,
-                onDeleteDeck = onDeleteDeck,
-                onRebuildFiltered = onRebuildFiltered,
-                onEmptyFiltered = onEmptyFiltered,
-                onCustomStudy = onCustomStudy,
                 onOpenCardInfo = onOpenCardInfo,
                 onShowDialogFragment = onShowDialogFragment,
                 onInvalidateOptionsMenu = onInvalidateOptionsMenu,
-                onSync = onSync,
                 onLoginToAnkiWeb = onLoginToAnkiWeb,
                 lifecycle = lifecycle
             )
@@ -264,25 +240,13 @@ private fun DeckPickerMainContent(
     fragmented: Boolean,
     onLaunchIntent: (Intent) -> Unit,
     onLaunchUrl: (String) -> Unit,
-    onUndo: () -> Unit,
-    onOpenReviewer: () -> Unit,
-    onOpenStudyOptions: () -> Unit,
     onOpenNoteEditor: (Long) -> Unit,
     onAddNote: () -> Unit,
-    onAddDeck: () -> Unit,
     onAddSharedDeck: () -> Unit,
     onAddFilteredDeck: () -> Unit,
-    onCheckDatabase: () -> Unit,
-    onRenameDeck: (Long) -> Unit,
-    onExportDeck: (Long) -> Unit,
-    onDeleteDeck: (Long) -> Unit,
-    onRebuildFiltered: (Long) -> Unit,
-    onEmptyFiltered: (Long) -> Unit,
-    onCustomStudy: (Long) -> Unit,
     onOpenCardInfo: (Long) -> Unit,
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
-    onSync: () -> Unit,
     onLoginToAnkiWeb: () -> Unit,
     lifecycle: Lifecycle
 ) {
@@ -321,7 +285,7 @@ private fun DeckPickerMainContent(
             onDismissRequest = { viewModel.setShowNetworkErrorDialog(false) },
             onRetry = {
                 viewModel.setShowNetworkErrorDialog(false)
-                onSync()
+                viewModel.sync()
             })
     }
 
@@ -392,7 +356,7 @@ private fun DeckPickerMainContent(
     }
 
     val deckPickerDrawerActions = DeckPickerDrawerActions(
-        onSync = onSync,
+        onSync = { viewModel.sync() },
         onSearchQueryChanged = {
             searchQuery = it
             viewModel.updateDeckFilter(it)
@@ -402,22 +366,22 @@ private fun DeckPickerMainContent(
         },
         onExpandClick = { deck -> viewModel.toggleDeckExpand(deck.did) },
         onAddNote = onAddNote,
-        onAddDeck = onAddDeck,
+        onAddDeck = { viewModel.showCreateDeckDialog() },
         onAddSharedDeck = onAddSharedDeck,
         onAddFilteredDeck = onAddFilteredDeck,
-        onCheckDatabase = onCheckDatabase,
+        onCheckDatabase = { viewModel.checkDatabase() },
         onCreateSubdeck = { viewModel.showCreateSubdeckDialog(it) },
         onDeckOptions = { viewModel.openDeckOptions(it) },
         onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
-        onRename = onRenameDeck,
-        onExport = onExportDeck,
-        onDelete = onDeleteDeck,
-        onRebuild = onRebuildFiltered,
-        onEmpty = onEmptyFiltered,
-        onStartStudy = onOpenReviewer,
-        onRebuildDeck = onRebuildFiltered,
-        onEmptyDeck = onEmptyFiltered,
-        onCustomStudy = onCustomStudy,
+        onRename = { viewModel.showRenameDeckDialog(it) },
+        onExport = { viewModel.exportDeck(it) },
+        onDelete = { viewModel.deleteDeck(it) },
+        onRebuild = { viewModel.rebuildFilteredDeck(it) },
+        onEmpty = { viewModel.emptyFilteredDeck(it) },
+        onStartStudy = { viewModel.openReviewer() },
+        onRebuildDeck = { viewModel.rebuildFilteredDeck(it) },
+        onEmptyDeck = { viewModel.emptyFilteredDeck(it) },
+        onCustomStudy = { viewModel.showCustomStudyDialog(it) },
         onUnbury = { viewModel.unburyDeck(it) },
         onSearchFocusRequested = { requestSearchFocus = false },
         onNavigationItemClick = { item ->
@@ -483,10 +447,7 @@ private fun DeckPickerMainContent(
         viewModel = viewModel,
         cardBrowserViewModel = cardBrowserViewModel,
         snackbarHostState = snackbarHostState,
-        onUndo = onUndo,
         onLaunchIntent = onLaunchIntent,
-        onOpenReviewer = onOpenReviewer,
-        onOpenStudyOptions = onOpenStudyOptions,
         lifecycle = lifecycle
     )
 }
@@ -588,10 +549,7 @@ private fun SetupFlows(
     viewModel: DeckPickerViewModel,
     cardBrowserViewModel: CardBrowserViewModel,
     snackbarHostState: SnackbarHostState,
-    onUndo: () -> Unit,
     onLaunchIntent: (Intent) -> Unit,
-    onOpenReviewer: () -> Unit,
-    onOpenStudyOptions: () -> Unit,
     lifecycle: Lifecycle
 ) {
     val applicationContext = LocalContext.current.applicationContext
@@ -603,9 +561,8 @@ private fun SetupFlows(
                     showUndoSnackbar(
                         snackbarHostState,
                         effect.message,
-                        applicationContext.getString(R.string.undo),
-                        onUndo
-                    )
+                        applicationContext.getString(R.string.undo)
+                    ) { viewModel.undo() }
                 }
 
                 is DeckPickerEffect.ShowSnackbar -> {
@@ -625,9 +582,9 @@ private fun SetupFlows(
                     when (val result = effect.result) {
                         is DeckSelectionResult.HasCardsToStudy -> {
                             when (result.selectionType) {
-                                DeckSelectionType.DEFAULT -> onOpenReviewer()
-                                DeckSelectionType.SHOW_STUDY_OPTIONS -> onOpenStudyOptions()
-                                DeckSelectionType.SKIP_STUDY_OPTIONS -> onOpenReviewer()
+                                DeckSelectionType.DEFAULT -> viewModel.openReviewer()
+                                DeckSelectionType.SHOW_STUDY_OPTIONS -> viewModel.openStudyOptionsActivity()
+                                DeckSelectionType.SKIP_STUDY_OPTIONS -> viewModel.openReviewer()
                             }
                         }
 
@@ -647,6 +604,8 @@ private fun SetupFlows(
                         }
                     }
                 }
+
+                else -> {}
             }
         }
     }
