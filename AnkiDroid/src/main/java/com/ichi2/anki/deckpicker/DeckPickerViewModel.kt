@@ -293,6 +293,12 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         )
     }
 
+    fun showCreateSubdeckDialog(parentId: DeckId) {
+        _createDeckDialogState.value = CreateDeckDialogState.Visible(
+            type = DeckDialogType.SUB_DECK, titleResId = R.string.create_subdeck, parentId = parentId
+        )
+    }
+
     fun showCreateFilteredDeckDialog() {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
             type = DeckDialogType.FILTERED_DECK, titleResId = R.string.new_dynamic_deck

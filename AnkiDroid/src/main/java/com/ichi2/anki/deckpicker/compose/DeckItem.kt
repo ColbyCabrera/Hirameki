@@ -91,6 +91,7 @@ data class DeckItemActions(
     val onDelete: () -> Unit,
     val onRebuild: () -> Unit,
     val onEmpty: () -> Unit,
+    val onCreateSubdeck: () -> Unit,
 )
 
 @OptIn(
@@ -207,6 +208,18 @@ fun DeckItem(
                             Icon(Icons.Filled.Close, contentDescription = null)
                         })
                 } else {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.create_subdeck)) },
+                        onClick = {
+                            isContextMenuOpen = false
+                            actions.onCreateSubdeck()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_add_deck_filled),
+                                contentDescription = null
+                            )
+                        })
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.rename_deck)) },
                         onClick = {
@@ -351,7 +364,7 @@ private fun DeckItemPreview() {
         )
         val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
         DeckItem(
-            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {})
+            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {})
         )
     }
 }
@@ -372,7 +385,7 @@ private fun DeckItemSubdeckPreview() {
         )
         val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
         DeckItem(
-            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {})
+            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {})
         )
     }
 }

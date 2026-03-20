@@ -138,6 +138,7 @@ private data class DeckPickerDrawerActions(
     val onAddSharedDeck: () -> Unit,
     val onAddFilteredDeck: () -> Unit,
     val onCheckDatabase: () -> Unit,
+    val onCreateSubdeck: (Long) -> Unit,
     val onDeckOptions: (Long) -> Unit,
     val onDeckOptionsItemSelected: (Long) -> Unit,
     val onRename: (Long) -> Unit,
@@ -405,6 +406,7 @@ private fun DeckPickerMainContent(
         onAddSharedDeck = onAddSharedDeck,
         onAddFilteredDeck = onAddFilteredDeck,
         onCheckDatabase = onCheckDatabase,
+        onCreateSubdeck = { viewModel.showCreateSubdeckDialog(it) },
         onDeckOptions = { viewModel.openDeckOptions(it) },
         onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
         onRename = onRenameDeck,
@@ -552,6 +554,7 @@ private fun DeckPickerWithDrawer(
                 onDelete = { deck -> actions.onDelete(deck.did) },
                 onRebuild = { deck -> actions.onRebuild(deck.did) },
                 onEmpty = { deck -> actions.onEmpty(deck.did) },
+                onCreateSubdeck = { deck -> actions.onCreateSubdeck(deck.did) },
             ),
             fabActions = FabActions(
                 onAddNote = actions.onAddNote,

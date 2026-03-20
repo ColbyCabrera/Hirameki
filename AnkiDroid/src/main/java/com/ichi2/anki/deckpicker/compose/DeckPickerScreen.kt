@@ -145,6 +145,7 @@ private fun RenderDeck(
                 onDelete = { deckRowActions.onDelete(deck) },
                 onRebuild = { deckRowActions.onRebuild(deck) },
                 onEmpty = { deckRowActions.onEmpty(deck) },
+                onCreateSubdeck = { deckRowActions.onCreateSubdeck(deck) },
             ),
         )
         AnimatedVisibility(
@@ -822,6 +823,7 @@ fun RenderDeckPreview() {
                 onDelete = {},
                 onRebuild = {},
                 onEmpty = {},
+                onCreateSubdeck = {},
             ),
         )
     }

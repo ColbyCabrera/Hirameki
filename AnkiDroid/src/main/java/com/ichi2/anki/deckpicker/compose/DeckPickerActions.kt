@@ -30,6 +30,7 @@ data class DeckRowActions(
     val onDelete: (DisplayDeckNode) -> Unit,
     val onRebuild: (DisplayDeckNode) -> Unit,
     val onEmpty: (DisplayDeckNode) -> Unit,
+    val onCreateSubdeck: (DisplayDeckNode) -> Unit,
 )
 
 /**
