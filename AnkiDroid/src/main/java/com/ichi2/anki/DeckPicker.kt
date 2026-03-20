@@ -23,8 +23,7 @@
 // should be OK as this is only non-final for tests
 @file:Suppress(
     "LeakingThis",
-    "DEPRECATION"
-) // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
+)
 
 package com.ichi2.anki
 
@@ -52,7 +51,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.edit
@@ -63,6 +61,7 @@ import androidx.core.view.MenuItemCompat
 import androidx.core.view.OnReceiveContentListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkInfo
@@ -98,7 +97,6 @@ import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.compose.DeckPickerNavHost
 import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.ConfirmationDialog
-import com.ichi2.anki.dialogs.CreateDeckDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.CustomExceptionData
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.DeckPickerAnalyticsOptInDialog
@@ -974,21 +972,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
     fun showCreateFilteredDeckDialog() {
-        val createFilteredDeckDialog = CreateDeckDialog(
-            this@DeckPicker,
-            R.string.new_deck,
-            CreateDeckDialog.DeckDialogType.FILTERED_DECK,
-            null,
-        )
-        createFilteredDeckDialog.onNewDeckCreated = { deckId ->
-            // a filtered deck was created
-            viewModel.openDeckOptions(deckId, isFiltered = true)
-        }
-        launchCatchingTask {
-            withProgress {
-                createFilteredDeckDialog.showFilteredDeckDialog()
-            }
-        }
+        viewModel.showCreateFilteredDeckDialog()
     }
 
     fun exportCollection() {

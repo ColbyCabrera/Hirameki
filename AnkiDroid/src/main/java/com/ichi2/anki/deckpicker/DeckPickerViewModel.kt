@@ -293,6 +293,12 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         )
     }
 
+    fun showCreateFilteredDeckDialog() {
+        _createDeckDialogState.value = CreateDeckDialogState.Visible(
+            type = DeckDialogType.FILTERED_DECK, titleResId = R.string.new_deck
+        )
+    }
+
     fun showRenameDeckDialog(deckId: DeckId, currentName: String) {
         _createDeckDialogState.value = CreateDeckDialogState.Visible(
             type = DeckDialogType.RENAME_DECK,
@@ -357,6 +363,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         viewModelScope.launch {
             try {
                 var operationSucceeded = true
+                var newFilteredDeckId: DeckId? = null
                 withCol {
                     when (state.type) {
                         DeckDialogType.DECK -> decks.id(name)
@@ -395,19 +402,23 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                         }
 
                         DeckDialogType.FILTERED_DECK -> {
-                            decks.newFiltered(name)
+                            newFilteredDeckId = decks.newFiltered(name)
                         }
                     }
                 }
 
                 if (operationSucceeded) {
                     _createDeckDialogState.value = CreateDeckDialogState.Hidden
-                    updateDeckList()
-                    val messageResId = when (state.type) {
-                        DeckDialogType.RENAME_DECK -> R.string.deck_renamed
-                        else -> R.string.deck_created
+                    if (newFilteredDeckId != null) {
+                        openDeckOptions(newFilteredDeckId, isFiltered = true)
+                    } else {
+                        updateDeckList()
+                        val messageResId = when (state.type) {
+                            DeckDialogType.RENAME_DECK -> R.string.deck_renamed
+                            else -> R.string.deck_created
+                        }
+                        _effects.send(DeckPickerEffect.ShowSnackbar(messageResId))
                     }
-                    _effects.send(DeckPickerEffect.ShowSnackbar(messageResId))
                 } else {
                     // Keep dialog open and show error
                     _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
