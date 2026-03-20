@@ -156,7 +156,7 @@ object CollectionManager {
      * Execute the provided block if the collection is already open. See [withCol] for more.
      * Since the block may return a null value, and a null value will also be returned in the
      * case of the collection being closed, if the calling code needs to distinguish between
-     * these two cases, it should wrap the return value of the block in a class (eg Optional),
+     * these two cases, it should wrap the return value of the block in a class (e.g. Optional),
      * instead of returning a nullable object.
      */
     suspend fun <T> withOpenColOrNull(
@@ -405,6 +405,7 @@ object CollectionManager {
                 ensureClosedInner()
             }
             collection = col
+            _isCollectionOpenFlow.value = col != null
         }
     }
 

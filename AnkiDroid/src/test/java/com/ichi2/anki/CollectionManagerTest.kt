@@ -11,12 +11,25 @@ class CollectionManagerTest : RobolectricTest() {
 
     @Test
     fun isCollectionOpenFlow_updatesWhenCollectionStateChanges() = runTest {
-        // Assume RobolectricTest opens the collection by default, or we can explicitly open it
         CollectionManager.ensureOpen()
         assertTrue(CollectionManager.isCollectionOpenFlow.value)
 
-        // Close the collection
         CollectionManager.ensureClosed()
+        assertFalse(CollectionManager.isCollectionOpenFlow.value)
+    }
+
+    @Test
+    fun isCollectionOpenFlow_updatesWhenSetColForTestsIsCalled() = runTest {
+        CollectionManager.ensureOpen()
+        val col = CollectionManager.getColUnsafe()
+
+        CollectionManager.ensureClosed()
+        assertFalse(CollectionManager.isCollectionOpenFlow.value)
+
+        CollectionManager.setColForTests(col)
+        assertTrue(CollectionManager.isCollectionOpenFlow.value)
+
+        CollectionManager.setColForTests(null)
         assertFalse(CollectionManager.isCollectionOpenFlow.value)
     }
 }
