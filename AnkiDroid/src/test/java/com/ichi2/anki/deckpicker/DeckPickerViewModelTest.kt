@@ -366,7 +366,11 @@ class DeckPickerViewModelTest : RobolectricTest() {
             // Focus on default deck
             viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
             advanceUntilIdle()
-            skipItems(1) // skip the loaded data emission
+            
+            // Consume emission(s) deterministically instead of skipItems(1)
+            while (awaitItem()?.deckId != Consts.DEFAULT_DECK_ID) {
+                // Skip transient states like null
+            }
 
             // Clear focus
             viewModel.focusedDeck = null
