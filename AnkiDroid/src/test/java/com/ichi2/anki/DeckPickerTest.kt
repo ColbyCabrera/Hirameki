@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.FragmentManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +20,7 @@ import app.cash.turbine.test
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
+import com.ichi2.anki.deckpicker.DeckPickerViewModel.FlattenedDeckList
 import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
@@ -38,6 +40,8 @@ import com.ichi2.testutils.ext.addBasicNoteWithOp
 import com.ichi2.testutils.ext.menu
 import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsInAnyOrder
@@ -57,6 +61,7 @@ import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import timber.log.Timber
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
@@ -160,7 +165,7 @@ class DeckPickerTest : RobolectricTest() {
         assertThat("Deck was added", col.decks.count(), equalTo(2))
         ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
             composeTestRule.waitForIdle()
-            var job: kotlinx.coroutines.Job? = null
+            var job: Job? = null
             scenario.onActivity {
                 job = it.viewModel.deleteDeck(did)
             }
@@ -179,7 +184,7 @@ class DeckPickerTest : RobolectricTest() {
                 val dialogFragment =
                     deckPicker.supportFragmentManager.fragments.firstOrNull { it is DatabaseErrorDialog } as? DatabaseErrorDialog
                 assertNotNull(dialogFragment)
-                val dialogType = androidx.core.os.BundleCompat.getParcelable(
+                val dialogType = BundleCompat.getParcelable(
                     dialogFragment.requireArguments(), "dialog", DatabaseErrorDialogType::class.java
                 )
                 assertEquals(DatabaseErrorDialogType.DIALOG_DB_LOCKED, dialogType)
@@ -199,7 +204,7 @@ class DeckPickerTest : RobolectricTest() {
                     val dialogFragment =
                         d.supportFragmentManager.fragments.firstOrNull { it is DatabaseErrorDialog } as? DatabaseErrorDialog
                     assertNotNull(dialogFragment)
-                    val dialogType = androidx.core.os.BundleCompat.getParcelable(
+                    val dialogType = BundleCompat.getParcelable(
                         dialogFragment.requireArguments(),
                         "dialog",
                         DatabaseErrorDialogType::class.java
@@ -469,7 +474,7 @@ class DeckPickerTest : RobolectricTest() {
             supportFragmentManager.selectContextMenuOption(
                 DeckPickerContextMenuOption.UNBURY, deckId
             )
-            kotlin.test.assertFalse(getColUnsafe.sched.haveBuried())
+            assertFalse(getColUnsafe.sched.haveBuried())
         }
     }
 
@@ -509,8 +514,7 @@ class DeckPickerTest : RobolectricTest() {
         assertThat("Deck added", col.decks.count(), equalTo(2))
         ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
             composeTestRule.waitForIdle()
-            var stateFlow: kotlinx.coroutines.flow.Flow<com.ichi2.anki.deckpicker.DeckPickerViewModel.FlattenedDeckList>? =
-                null
+            var stateFlow: Flow<FlattenedDeckList>? = null
             scenario.onActivity { stateFlow = it.viewModel.flowOfDeckList }
             assertThat(
                 "Deck is being displayed",
@@ -527,8 +531,7 @@ class DeckPickerTest : RobolectricTest() {
         assertThat("Contains only default deck", col.decks.count(), equalTo(1))
         ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
             composeTestRule.waitForIdle()
-            var stateFlow: kotlinx.coroutines.flow.Flow<com.ichi2.anki.deckpicker.DeckPickerViewModel.FlattenedDeckList>? =
-                null
+            var stateFlow: Flow<FlattenedDeckList>? = null
             scenario.onActivity { stateFlow = it.viewModel.flowOfDeckList }
             assertThat(
                 "No deck is being displayed",
