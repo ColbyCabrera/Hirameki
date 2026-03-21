@@ -92,6 +92,7 @@ import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -609,7 +610,15 @@ private fun SetupFlows(
                     }
                 }
 
-                else -> {}
+                DeckPickerEffect.CheckDatabase,
+                DeckPickerEffect.NavigateToReviewer,
+                DeckPickerEffect.NavigateToStudyOptions,
+                is DeckPickerEffect.ShowCustomStudyDialog,
+                is DeckPickerEffect.ShowExportDialog,
+                DeckPickerEffect.Sync,
+                DeckPickerEffect.Undo -> {
+                    Timber.w("Unhandled effect in Compose: $effect")
+                }
             }
         }
     }
