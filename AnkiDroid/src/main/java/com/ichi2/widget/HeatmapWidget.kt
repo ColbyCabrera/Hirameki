@@ -358,7 +358,10 @@ class HeatmapWidget : GlanceAppWidget() {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                     val manager = GlanceAppWidgetManager(context)
-                    @Suppress("CheckResult") manager.setWidgetPreviews(HeatmapWidgetReceiver::class)
+                    val result = manager.setWidgetPreviews(HeatmapWidgetReceiver::class)
+                    if (result != GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS) {
+                        Timber.w("Failed to update heatmap widget preview: %d", result)
+                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update heatmap widget preview")
