@@ -37,7 +37,7 @@ import com.ichi2.anki.R
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SyncProgressDialog(
+fun DeckPickerProgressDialog(
     title: String,
     message: String,
     onCancel: () -> Unit
@@ -62,11 +62,11 @@ fun SyncProgressDialog(
 
 @Preview
 @Composable
-fun SyncProgressDialogPreview() {
+fun DeckPickerProgressDialogPreview() {
     var showDialog by remember { mutableStateOf(true) }
 
     if (showDialog) {
-        SyncProgressDialog(
+        DeckPickerProgressDialog(
             title = "Syncing",
             message = "Syncing in progress...",
             onCancel = { showDialog = false }

@@ -263,7 +263,7 @@ private fun DeckPickerMainContent(
     val isDeletingDeck by viewModel.isDeletingDeck.collectAsStateWithLifecycle()
 
     if (isDeletingDeck) {
-        SyncProgressDialog(
+        DeckPickerProgressDialog(
             title = stringResource(R.string.delete_deck),
             message = "",
             onCancel = { } // Deletion cannot be canceled
@@ -296,7 +296,7 @@ private fun DeckPickerMainContent(
     }
 
     syncDialogState?.let {
-        SyncProgressDialog(
+        DeckPickerProgressDialog(
             title = it.title,
             message = it.message,
             onCancel = it.onCancel,
