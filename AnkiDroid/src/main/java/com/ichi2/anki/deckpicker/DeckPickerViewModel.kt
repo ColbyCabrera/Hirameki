@@ -582,11 +582,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     fun rebuildFilteredDeck(deckId: DeckId): Job = viewModelScope.launch {
         Timber.i("rebuild filtered deck %s", deckId)
-        withCol {
-            decks.select(deckId)
-            sched.rebuildFilteredDeck(decks.selected())
-        }
-        updateDeckList()
+        _effects.send(DeckPickerEffect.RebuildFilteredDeck(deckId))
     }
 
     fun sync() = launchCatchingIO {
@@ -935,6 +931,9 @@ sealed class DeckPickerEffect {
 
     /** Show custom study dialog */
     data class ShowCustomStudyDialog(val deckId: DeckId) : DeckPickerEffect()
+
+    /** Rebuild a filtered deck */
+    data class RebuildFilteredDeck(val deckId: DeckId) : DeckPickerEffect()
 
     /** Check database */
     data object CheckDatabase : DeckPickerEffect()

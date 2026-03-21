@@ -568,6 +568,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 is DeckPickerEffect.NavigateToStudyOptions -> openStudyOptionsActivity()
                 is DeckPickerEffect.ShowExportDialog -> exportDeck(effect.deckId)
                 is DeckPickerEffect.ShowCustomStudyDialog -> showCustomStudyDialog(effect.deckId)
+                is DeckPickerEffect.RebuildFilteredDeck -> rebuildFiltered(effect.deckId)
                 is DeckPickerEffect.CheckDatabase -> {
                     showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
                 }
