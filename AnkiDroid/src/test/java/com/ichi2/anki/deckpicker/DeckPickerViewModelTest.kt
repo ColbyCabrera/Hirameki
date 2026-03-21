@@ -468,8 +468,11 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
         viewModel.deleteDeck(deckId).join()
 
-        assertThat("isDeletingDeck should be false after completion",
-            viewModel.isDeletingDeck.value, equalTo(false))
+        assertThat(
+            "isDeletingDeck should be false after completion",
+            viewModel.isDeletingDeck.value,
+            equalTo(false)
+        )
     }
 
     @Test
@@ -483,8 +486,11 @@ class DeckPickerViewModelTest : RobolectricTest() {
             cancelAndIgnoreRemainingEvents()
         }
 
-        assertThat("isDeletingDeck should be false after error",
-            viewModel.isDeletingDeck.value, equalTo(false))
+        assertThat(
+            "isDeletingDeck should be false after error",
+            viewModel.isDeletingDeck.value,
+            equalTo(false)
+        )
     }
 
     @Test
@@ -536,18 +542,28 @@ class DeckPickerViewModelTest : RobolectricTest() {
             )
 
             viewModel.exportDeck(Consts.DEFAULT_DECK_ID)
-            val exportEffect = awaitItem() as DeckPickerEffect.ShowExportDialog
+            val exportEffect = awaitItem()
             assertThat(
                 "export deck id matches",
-                exportEffect.deckId,
+                exportEffect,
+                instanceOf(DeckPickerEffect.ShowExportDialog::class.java)
+            )
+            assertThat(
+                "export deck id matches",
+                (exportEffect as DeckPickerEffect.ShowExportDialog).deckId,
                 equalTo(Consts.DEFAULT_DECK_ID)
             )
 
             viewModel.showCustomStudyDialog(Consts.DEFAULT_DECK_ID)
-            val customStudyEffect = awaitItem() as DeckPickerEffect.ShowCustomStudyDialog
+            val customStudyEffect = awaitItem()
             assertThat(
                 "custom study deck id matches",
-                customStudyEffect.deckId,
+                customStudyEffect,
+                instanceOf(DeckPickerEffect.ShowCustomStudyDialog::class.java)
+            )
+            assertThat(
+                "custom study deck id matches",
+                (customStudyEffect as DeckPickerEffect.ShowCustomStudyDialog).deckId,
                 equalTo(Consts.DEFAULT_DECK_ID)
             )
 
