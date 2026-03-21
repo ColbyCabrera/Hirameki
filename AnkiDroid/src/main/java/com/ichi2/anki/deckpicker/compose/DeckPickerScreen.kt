@@ -387,6 +387,10 @@ private fun DeckPickerTopBar(
         },
         actions = {
             if (isSearchOpen) {
+                BackHandler {
+                    onSearchQueryChanged("")
+                    onSearchOpenChange(false)
+                }
                 SearchBar(
                     inputField = {
                         LaunchedEffect(Unit) {
