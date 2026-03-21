@@ -23,6 +23,7 @@ import anki.card_rendering.EmptyCardsReport
 import anki.card_rendering.emptyCardsReport
 import app.cash.turbine.test
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.libanki.DeckId
@@ -321,6 +322,40 @@ class DeckPickerViewModelTest : RobolectricTest() {
         // This tests the deckIdToRename-based comparison, not name string comparison
         val result = viewModel.validateDeckName("Child", state)
         assertThat("subdeck rename to same short name should be allowed", result, equalTo(null))
+    }
+
+    @Test
+    fun `showRenameDeckDialog - existing deck shows rename dialog`() = runTest {
+        val deckId = col.decks.id("Rename Me")
+
+        viewModel.showRenameDeckDialog(deckId).join()
+
+        assertThat(
+            "rename dialog state",
+            viewModel.createDeckDialogState.value,
+            equalTo(
+                DeckPickerViewModel.CreateDeckDialogState.Visible(
+                    type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK,
+                    titleResId = R.string.rename_deck,
+                    initialName = "Rename Me",
+                    deckIdToRename = deckId
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `showRenameDeckDialog - missing deck keeps dialog hidden`() = runTest {
+        val deckId = col.decks.id("Delete Me")
+        col.decks.remove(listOf(deckId))
+
+        viewModel.showRenameDeckDialog(deckId).join()
+
+        assertThat(
+            "rename dialog state",
+            viewModel.createDeckDialogState.value,
+            equalTo(DeckPickerViewModel.CreateDeckDialogState.Hidden)
+        )
     }
 
     // endregion

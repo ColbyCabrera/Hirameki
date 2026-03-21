@@ -311,13 +311,24 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     fun showRenameDeckDialog(deckId: DeckId) = viewModelScope.launch {
-        val currentName = withCol { decks.name(deckId) }
-        _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.RENAME_DECK,
-            titleResId = R.string.rename_deck,
-            initialName = currentName,
-            deckIdToRename = deckId
-        )
+        try {
+            val currentName = withCol { decks.getLegacy(deckId)?.name }
+            if (currentName.isNullOrBlank()) {
+                Timber.w("Deck not found for rename dialog: %d", deckId)
+                return@launch
+            }
+
+            _createDeckDialogState.value = CreateDeckDialogState.Visible(
+                type = DeckDialogType.RENAME_DECK,
+                titleResId = R.string.rename_deck,
+                initialName = currentName,
+                deckIdToRename = deckId
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to load deck %d for rename dialog", deckId)
+        }
     }
 
 
@@ -490,18 +501,18 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     fun deleteDeck(did: DeckId) = viewModelScope.launch {
         _isDeletingDeck.value = true
         try {
-            val deckName = withCol { decks.getLegacy(did)?.name }
-                ?: run {
-                    Timber.w("Deck %d not found for deletion", did)
-                    _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
-                    return@launch
-                }
+            val deckName = withCol { decks.getLegacy(did)?.name } ?: run {
+                Timber.w("Deck %d not found for deletion", did)
+                _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
+                return@launch
+            }
             val changes = undoableOp { decks.remove(listOf(did)) }
             // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
             // to match and avoid unnecessary scrolls in `renderPage()`.
             focusedDeck = Consts.DEFAULT_DECK_ID
 
-            val deletionResult = DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
+            val deletionResult =
+                DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
             _effects.send(DeckPickerEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString()))
         } catch (e: CancellationException) {
             throw e
