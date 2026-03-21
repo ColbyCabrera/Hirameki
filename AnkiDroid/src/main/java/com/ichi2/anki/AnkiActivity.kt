@@ -23,7 +23,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
 import android.widget.ProgressBar
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -898,7 +897,7 @@ open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivity
                 this::class.simpleName,
                 text
             )
-            Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+            showThemedToast(this, text, false)
         }
     }
 
