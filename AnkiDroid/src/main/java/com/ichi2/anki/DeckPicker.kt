@@ -572,7 +572,9 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
                 }
 
-                else -> {} // Navigation UI events are handled by Compose
+                is DeckPickerEffect.HandleDeckSelection, is DeckPickerEffect.ShowSnackbar, is DeckPickerEffect.ShowSnackbarMessage, is DeckPickerEffect.ShowUndoSnackbar -> {
+                    // Navigation UI events and snackbars are handled by Compose
+                }
             }
         }
 
