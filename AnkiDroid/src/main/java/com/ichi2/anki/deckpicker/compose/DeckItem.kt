@@ -100,8 +100,8 @@ data class DeckItemActions(
 @Composable
 fun DeckItem(
     deck: DisplayDeckNode,
-    actions: DeckItemActions,
     modifier: Modifier = Modifier,
+    actions: DeckItemActions,
 ) {
     var isContextMenuOpen by remember { mutableStateOf(false) }
 
