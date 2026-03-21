@@ -112,6 +112,12 @@ class DeckPickerTest : InstrumentedTest() {
         composeTestRule.onNodeWithText(testContext.getString(R.string.contextmenu_deckpicker_delete_deck))
             .performClick()
 
+        val deletingDeckText = testContext.getString(R.string.delete_deck)
+
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText(deletingDeckText).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(deletingDeckText).assertIsDisplayed()
 
         // Assert that the deck is no longer displayed after completion
         composeTestRule.waitUntil(timeoutMillis = 10000) {
