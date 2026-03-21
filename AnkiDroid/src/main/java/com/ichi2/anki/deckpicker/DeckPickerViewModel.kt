@@ -229,21 +229,29 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val flowOfDestination = MutableSharedFlow<Destination>()
 
     /**
-     * Unified channel for one-shot UI effects consumed by Compose.
+     * One-shot UI effects handled by [DeckPicker].
      *
-     * Uses [Channel.BUFFERED] instead of [MutableSharedFlow] to guarantee
-     * event delivery — events are buffered and wait for a consumer, whereas
-     * `MutableSharedFlow(replay=0)` silently drops events when no collector
-     * is active (e.g., during Activity recreation).
+     * Uses [Channel.BUFFERED] so events wait for the Activity collector instead of being dropped
+     * when there is a brief gap in collection, such as during recreation.
      *
-     * @see DeckPickerEffect for all possible effects
+     * @see DeckPickerEffect for all possible Activity effects
      */
     private val _effects = Channel<DeckPickerEffect>(Channel.BUFFERED)
     val effects: Flow<DeckPickerEffect> = _effects.receiveAsFlow()
 
-    /** Public API for external callers to show a snackbar via the unified effects channel */
+    /**
+     * One-shot UI effects handled by Compose.
+     *
+     * Kept separate from [effects] so Compose and the Activity do not compete for the same event.
+     *
+     * @see DeckPickerComposeEffect for all possible Compose effects
+     */
+    private val _composeEffects = Channel<DeckPickerComposeEffect>(Channel.BUFFERED)
+    val composeEffects: Flow<DeckPickerComposeEffect> = _composeEffects.receiveAsFlow()
+
+    /** Public API for external callers to show a snackbar via the Compose effects channel */
     suspend fun showSnackbar(message: String) {
-        _effects.send(DeckPickerEffect.ShowSnackbarMessage(message))
+        _composeEffects.send(DeckPickerComposeEffect.ShowSnackbarMessage(message))
     }
 
     override val onError = MutableSharedFlow<String>()
@@ -440,23 +448,23 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                             DeckDialogType.RENAME_DECK -> R.string.deck_renamed
                             else -> R.string.deck_created
                         }
-                        _effects.send(DeckPickerEffect.ShowSnackbar(messageResId))
+                        _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(messageResId))
                     }
                 } else {
                     // Keep dialog open and show error
-                    _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
+                    _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong))
                 }
             } catch (e: CancellationException) {
                 throw e // Don't catch coroutine cancellation
             } catch (e: BackendDeckIsFilteredException) {
-                _effects.send(
-                    DeckPickerEffect.ShowSnackbarMessage(
+                _composeEffects.send(
+                    DeckPickerComposeEffect.ShowSnackbarMessage(
                         e.localizedMessage ?: e.message.orEmpty()
                     )
                 )
             } catch (e: Exception) {
                 Timber.w(e, "Failed to create/rename deck")
-                _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
+                _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong))
             }
         }
     }
@@ -488,7 +496,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 }
             }
         }
-        _effects.send(DeckPickerEffect.HandleDeckSelection(result))
+        _composeEffects.send(DeckPickerComposeEffect.HandleDeckSelection(result))
     }
 
     /**
@@ -503,7 +511,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         try {
             val deckName = withCol { decks.getLegacy(did)?.name } ?: run {
                 Timber.w("Deck %d not found for deletion", did)
-                _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
+                _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong))
                 return@launch
             }
             val changes = undoableOp { decks.remove(listOf(did)) }
@@ -513,12 +521,12 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
             val deletionResult =
                 DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
-            _effects.send(DeckPickerEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString()))
+            _composeEffects.send(DeckPickerComposeEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString()))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Timber.w(e, "Failed to delete deck %d", did)
-            _effects.send(DeckPickerEffect.ShowSnackbar(R.string.something_wrong))
+            _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong))
         } finally {
             _isDeletingDeck.value = false
         }
@@ -559,7 +567,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         }
         val result = undoableOp { removeCardsAndOrphanedNotes(toDelete) }
         val emptyResult = EmptyCardsResult(cardsDeleted = result.count)
-        _effects.send(DeckPickerEffect.ShowUndoSnackbar(emptyResult.toHumanReadableString()))
+        _composeEffects.send(DeckPickerComposeEffect.ShowUndoSnackbar(emptyResult.toHumanReadableString()))
     }
 
     // TODO: move withProgress to the ViewModel, so we don't return 'Job'
@@ -888,21 +896,27 @@ data class EmptyCardsResult(
 /**
  * A one-shot side effect emitted by [DeckPickerViewModel] and consumed by Compose.
  *
- * All possible Compose-side effects are defined here, making them 
- * easy to audit, test, and collect via a single [Channel].
+ * Keeping Compose-only effects separate avoids competing collectors on the Activity effect stream.
  */
-sealed class DeckPickerEffect {
+sealed class DeckPickerComposeEffect {
     /** Show a snackbar with an undo action */
-    data class ShowUndoSnackbar(val message: String) : DeckPickerEffect()
+    data class ShowUndoSnackbar(val message: String) : DeckPickerComposeEffect()
 
     /** Show a simple snackbar from a string resource ID */
-    data class ShowSnackbar(val messageResId: Int) : DeckPickerEffect()
+    data class ShowSnackbar(val messageResId: Int) : DeckPickerComposeEffect()
 
     /** Show a simple snackbar from a string message */
-    data class ShowSnackbarMessage(val message: String) : DeckPickerEffect()
+    data class ShowSnackbarMessage(val message: String) : DeckPickerComposeEffect()
 
     /** Handle the result of a deck selection (study, empty, congrats) */
-    data class HandleDeckSelection(val result: DeckSelectionResult) : DeckPickerEffect()
+    data class HandleDeckSelection(val result: DeckSelectionResult) : DeckPickerComposeEffect()
+
+}
+
+/**
+ * A one-shot side effect emitted by [DeckPickerViewModel] and consumed by [DeckPicker].
+ */
+sealed class DeckPickerEffect {
 
     /** Trigger a sync operation */
     data object Sync : DeckPickerEffect()

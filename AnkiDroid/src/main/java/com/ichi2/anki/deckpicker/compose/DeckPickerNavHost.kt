@@ -69,7 +69,7 @@ import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.browser.CardBrowserViewModel
-import com.ichi2.anki.deckpicker.DeckPickerEffect
+import com.ichi2.anki.deckpicker.DeckPickerComposeEffect
 import com.ichi2.anki.deckpicker.DeckPickerViewModel
 import com.ichi2.anki.deckpicker.DeckSelectionResult
 import com.ichi2.anki.deckpicker.DeckSelectionType
@@ -92,7 +92,6 @@ import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -560,9 +559,9 @@ private fun SetupFlows(
     val applicationContext = LocalContext.current.applicationContext
 
     LaunchedEffect(Unit) {
-        viewModel.effects.flowWithLifecycle(lifecycle).collect { effect ->
-            when (effect) {
-                is DeckPickerEffect.ShowUndoSnackbar -> {
+        viewModel.composeEffects.flowWithLifecycle(lifecycle).collect { effect ->
+            return@collect when (effect) {
+                is DeckPickerComposeEffect.ShowUndoSnackbar -> {
                     showUndoSnackbar(
                         snackbarHostState,
                         effect.message,
@@ -570,20 +569,20 @@ private fun SetupFlows(
                     ) { viewModel.undo() }
                 }
 
-                is DeckPickerEffect.ShowSnackbar -> {
+                is DeckPickerComposeEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(
                         applicationContext.getString(effect.messageResId),
                         duration = SnackbarDuration.Short
                     )
                 }
 
-                is DeckPickerEffect.ShowSnackbarMessage -> {
+                is DeckPickerComposeEffect.ShowSnackbarMessage -> {
                     snackbarHostState.showSnackbar(
                         effect.message, duration = SnackbarDuration.Short
                     )
                 }
 
-                is DeckPickerEffect.HandleDeckSelection -> {
+                is DeckPickerComposeEffect.HandleDeckSelection -> {
                     when (val result = effect.result) {
                         is DeckSelectionResult.HasCardsToStudy -> {
                             when (result.selectionType) {
@@ -608,10 +607,6 @@ private fun SetupFlows(
                             navigator.navigate(CongratsScreen(result.deckId))
                         }
                     }
-                }
-
-                DeckPickerEffect.CheckDatabase, DeckPickerEffect.NavigateToReviewer, DeckPickerEffect.NavigateToStudyOptions, is DeckPickerEffect.ShowCustomStudyDialog, is DeckPickerEffect.ShowExportDialog, DeckPickerEffect.Sync, DeckPickerEffect.Undo -> {
-                    Timber.w("Unhandled effect in Compose: $effect")
                 }
             }
         }
