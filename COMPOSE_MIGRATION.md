@@ -1,454 +1,414 @@
-# AnkiDroid Compose & Nav3 Migration Status
+# AnkiDroid Compose, Nav3, and Single-Activity Migration Plan
 
-**Last Updated**: January 7, 2026
+Last updated: March 21, 2026
 
----
+## Goal
 
-## Executive Summary
+Incrementally migrate AnkiDroid toward this target architecture:
 
-| Metric                         | Status                 |
-|--------------------------------|------------------------|
-| **Activities**                 | 20 (0% Compose-only)   |
-| **Fragments**                  | 57+ (few migrated)     |
-| **Compose Screen Files**       | 12                     |
-| **Files with @Composable**     | 55+                    |
-| **XML Layouts**                | 150+                   |
-| **Estimated Compose Adoption** | ~40-45% of UI          |
-| **Nav3 Integration**           | ✅ Started (DeckPicker) |
-
----
-
-## 🎯 Architectural Goal: Single Activity, No Fragments
-
-Modern Android best practices recommend **single-activity architecture** with Compose navigation.
-
-### Current State
-```
-Activity → Fragment → ComposeView → Screen Composable
+```text
+Single app shell activity
+    -> Compose app/root host
+    -> Nav3-backed destination model for Compose-only flows
+    -> Route composables that collect state and perform UI-only behavior
+    -> Screen ViewModels that handle business events and expose UiState
+    -> Data/domain operations below the ViewModel
 ```
 
-### Target State (Nav3 + Compose)
+This document is intentionally opinionated. It is not a status scrapbook. It is a migration plan for getting from the current hybrid app to a single-activity, Compose-first, MVI-leaning architecture without a risky rewrite.
+
+## External Guidance We Are Following
+
+Android's current guidance is consistent on four points that matter here:
+
+1. Compose favors unidirectional data flow: state flows down, events flow up.
+2. Business logic belongs in the ViewModel or lower layers; UI behavior logic such as navigation calls, permission requests, and transient UI wiring remains in the UI layer.
+3. Navigation Compose or Nav3 can only own a graph when all destinations in that graph are composables.
+4. Navigation should pass stable identifiers, not complex objects.
+
+Primary references:
+
+- Compose architecture: https://developer.android.com/develop/ui/compose/architecture
+- UI events and state guidance: https://developer.android.com/topic/architecture/ui-layer/events
+- Navigation with Compose: https://developer.android.com/develop/ui/compose/navigation
+- Migration from fragment navigation: https://developer.android.com/develop/ui/compose/migrate/migration-scenarios/navigation
+- Navigation 3 overview: https://developer.android.com/guide/navigation/navigation-3
+
+## Current Codebase Snapshot
+
+The repository already contains real progress, but the app is still hybrid.
+
+### What is already working
+
+- `DeckPicker.kt` hosts Compose directly via `setContent`.
+- `deckpicker/compose/DeckPickerNavHost.kt` already uses `NavDisplay` and typed Nav3 entries.
+- `navigation/Navigator.kt` and `navigation/NavigationState.kt` provide a working Nav3 state model with per-stack state retention.
+- Multiple major features already have Compose UI and ViewModel state holders:
+    - DeckPicker
+    - CardBrowser
+    - Reviewer
+    - NoteEditor
+    - Drawing
+    - Page/WebView-backed screens
+
+### What is still preventing the target architecture
+
+1. Major screens are still hosted by activities or fragments.
+     - `NoteEditorActivity.kt` still hosts `NoteEditorFragment.kt`, which then hosts Compose.
+     - `CardBrowser.kt` is still a standalone activity even though tablet mode already embeds browser content.
+     - `Reviewer.kt` is Compose-hosted, but the activity still owns significant workflow and framework behavior.
+
+2. Nav3 is currently an island, not the app shell.
+     - `DeckPickerNavHost.kt` is real Nav3 usage.
+     - But it still depends on activity callbacks such as `onLaunchIntent`, `onShowDialogFragment`, and other bridges back into `DeckPicker.kt`.
+
+3. `AnkiActivity.kt` still centralizes a large amount of framework behavior.
+     - Theme setup
+     - dialog plumbing
+     - export listeners
+     - activity result launching
+     - lifecycle helpers
+     - fragment-result wiring
+
+4. DialogFragment usage is still widespread.
+     - `DeckPicker.kt`, `CardBrowser.kt`, preferences, export, confirmation flows, and several custom dialogs still depend on `supportFragmentManager`.
+
+5. ViewModel contracts are not yet uniform.
+     - Many screens already expose `StateFlow`.
+     - Several still rely on `MutableSharedFlow` or `Channel` event buses for transient work.
+     - Some business operations still live in activities instead of ViewModels/use cases.
+
+## Architectural Rules For The Migration
+
+These rules should guide all new work.
+
+### 1. No new fragment wrappers for Compose screens
+
+If a feature is already Compose-first, do not add a new `Fragment -> ComposeView` container around it.
+
+### 2. New Compose screens should use Route + Screen separation
+
+For each screen, prefer:
+
+```text
+Route composable
+    - obtains ViewModel
+    - collects UiState
+    - collects effects if needed
+    - performs navigation, permission, launcher, dialog bridge work
+
+Screen composable
+    - pure UI
+    - receives immutable state and callbacks
 ```
-Single Activity → NavDisplay → Screen Composables
+
+This keeps navigation APIs and Android framework details out of reusable screen composables.
+
+### 3. Business events go to the ViewModel
+
+Examples:
+
+- rebuilding a filtered deck
+- refreshing data
+- deleting content
+- loading reviewer state
+
+These should not stay in activities long term.
+
+### 4. UI behavior stays in the UI layer
+
+Examples:
+
+- calling `navigator.navigate(...)`
+- launching an activity result contract
+- requesting permissions
+- opening a file picker
+- showing a platform dialog while legacy code still exists
+
+These remain in route/app-shell code until the underlying framework dependency is abstracted away.
+
+### 5. Pass IDs, not domain objects, through navigation
+
+Nav3 destinations should carry small, stable route data such as deck IDs, card IDs, and mode flags. Destination data should be loaded from a single source of truth after navigation.
+
+### 6. Prefer state over one-off ViewModel events for durable UI outcomes
+
+Android guidance has become stricter here: navigation decisions and transient user messages should be modeled as UI state when they must survive recomposition, lifecycle restarts, or back stack retention.
+
+During migration, limited effect streams are acceptable for bridging legacy platform work, but the end state should be:
+
+- `UiState` for what the UI should represent
+- intent handlers in the ViewModel for business events
+- narrow effect APIs only where the UI must perform one-time framework work
+
+## Target Architecture For This Repo
+
+This is the intended steady state.
+
+```text
+AppActivity (single shell, likely evolving from AnkiActivity rather than replacing it immediately)
+    -> setContent { AnkiApp() }
+    -> AppNavigationState / Navigator / NavDisplay
+    -> Route composables per destination
+    -> Screen ViewModels per feature
+    -> domain/data operations behind repositories/use cases/helpers
 ```
 
-### Benefits
-- **Simpler navigation** - Nav3 handles backstack, deep links, animations
-- **Less boilerplate** - No Fragment lifecycle, no FragmentManager
-- **Better testability** - Pure composables are easier to test
-- **Type-safe navigation** - Serializable destination objects
+### MVI shape we should aim for
 
-### Migration Path
-1. **Current**: Fragments host ComposeViews (hybrid)
-2. **Next**: Make screens Nav3 destinations, keep Fragment as thin wrapper
-3. **Final**: Eliminate Fragments, screens are pure composables in NavDisplay
+At the screen level, prefer this contract:
 
----
-
-## 🆕 Recent Progress
-
-### PageWebView Compose Wrapper (Completed)
-**Location**: `pages/`
-
-Created reusable Compose wrapper for displaying Anki HTML pages via WebView:
-
-| File                      | Description                         |
-|---------------------------|-------------------------------------|
-| `PageWebViewViewModel.kt` | Manages AnkiServer lifecycle        |
-| `PageWebView.kt`          | Composable with AndroidView wrapper |
-| `StatisticsScreen.kt`     | Graphs page wrapper                 |
-| `DeckOptionsScreen.kt`    | Deck options wrapper                |
-| `CardInfoScreen.kt`       | Card info wrapper                   |
-
-### Nav3 Destinations Active
 ```kotlin
-@Serializable object DeckPickerScreen
-@Serializable object HelpScreen
-@Serializable object StudyOptionsScreen
-@Serializable object CongratsScreen
-@Serializable object StatisticsDestination
-@Serializable data class DeckOptionsDestination(val deckId: Long)
-@Serializable data class CardInfoDestination(val cardId: Long)
+data class SomeUiState(...)
+
+sealed interface SomeIntent
+sealed interface SomeEffect
+
+class SomeViewModel : ViewModel() {
+        val uiState: StateFlow<SomeUiState>
+        fun onIntent(intent: SomeIntent)
+}
 ```
 
-### Bug Fixes & Code Quality
-- `statistics.xml`: Removed duplicate `fitsSystemWindows` causing edge-to-edge issues
-- `CongratsActivity.kt`: Added missing `onNavigateUp` parameter
-- `DeckPickerNavHost.kt`: Fixed CongratsScreen NavEntry parameters, added error handling for `withCol` operations
-- `NoteEditorFragment.kt`: Refactored `setupComposeEditor` (375→20 lines), simplified card info extraction
-- `NoteEditorViewModel.kt`: Fixed threading issues, consolidated duplicate `ToolbarDialogState` class
-- `NoteEditorTest.kt`: Resolved all test failures, added proper dispatcher restoration in tearDown
-- `PageWebView.kt`: Fixed stale error UI bug when loading new URLs
-- `PageWebViewClient.kt`: Added defensive try-catch to callback loops
-- `DeckPickerViewModel.kt`: Extracted `calculateTimeUntilNextDay` helper function
-- `NoteEditorDialogs.kt`: Added input validation and trimming for toolbar customization
-- `PageWebViewViewModel.kt`: Converted `ServerState` to sealed interface
-- `DeckPicker.kt`: Added user-visible error feedback for failed drag-and-drop imports
-
-### Legacy Reviewer XML Cleanup (January 3, 2026)
-Deleted legacy reviewer XML layouts that are now dead code since `Reviewer.kt` uses `ComposeView`:
-
-**Deleted Files:**
-- `reviewer2.xml`
-- `reviewer_fullscreen.xml`
-- `reviewer_fullscreen_noanswers.xml`
-- `reviewer_topbar.xml`
-- `reviewer_flashcard.xml`
-- `reviewer_flashcard_fullscreen.xml`
-- `reviewer_flashcard_fullscreen_noanswers.xml`
-- `reviewer_mic_tool_bar.xml`
-
-### DrawingActivity Compose Migration (January 3, 2026)
-Migrated the drawing screen to Jetpack Compose.
-
-**New Components:**
-- `DrawingActivity.kt`: Migrated to use `setContent` with `DrawingScreen`
-- `DrawingScreen.kt`: New proper Compose screen
-- `DrawingViewModel.kt`: ViewModel for drawing logic, undo, and saving
-
-**Deleted Legacy Files:**
-- `activity_drawing.xml`
-- `reviewer_whiteboard_editor.xml`
-- `Whiteboard.kt` (Legacy View implementation)
-- `reviewer/compose/Whiteboard.kt` (Unused wrapper)
-
-**Code Changes:**
-- `Reviewer.kt`: Removed dead `getContentViewAttr()` override
-- `LayoutValidationTest.kt`: Removed `reviewer2` from ignored layouts
-- `02-strings.xml`: Removed duplicate `whiteboard_stroke_width` string
-
-**Files Kept (still in use):**
-- `reviewer_menu_*.xml` - Used by Reviewer Menu Settings preferences
-- `reviewer.xml` - Minimal stub (see Technical Debt below)
-
-### CreateDeckDialog Compose Migration (January 7, 2026)
-Migrated the deck creation dialog to Jetpack Compose with ViewModel-based state management.
-
-**New Components:**
-- `dialogs/compose/CreateDeckDialog.kt` - Compose dialog supporting DECK, SUB_DECK, RENAME_DECK, FILTERED_DECK types
-- `DeckPickerViewModel.kt` - Added `CreateDeckDialogState`, `validateDeckName()`, `createDeck()`, and show/dismiss functions
-- `dialogs/compose/CreateDeckDialogTest.kt` - Unit tests for helper functions
-
-**Architecture Pattern:**
-- ViewModel exposes `createDeckDialogState: StateFlow<CreateDeckDialogState>` (sealed class: Hidden/Visible)
-- Validation returns enum (`DeckNameError.INVALID_NAME`, `ALREADY_EXISTS`) instead of strings to avoid Context dependency in ViewModel
-- Composable maps enum to localized strings via `stringResource()`
-- `DeckSelectionDialog.kt` and `DeckSpinnerSelection.kt` updated with callback properties for gradual migration
-- Fallback to legacy dialog when callbacks not set (backwards compatible)
-
-**Files Modified:**
-- `dialogs/CreateDeckDialog.kt` - Marked `@Deprecated` with ReplaceWith hint
-- `dialogs/DeckSelectionDialog.kt` - Added `onShowCreateDeckDialog`, `onShowCreateSubDeckDialog` callbacks with fallback
-- `DeckSpinnerSelection.kt` - Added matching callbacks, wired to dialog
-- `DeckPicker.kt` - Added `@file:Suppress("DEPRECATION")` for legacy usage
-- `dialogs/CreateDeckDialogTest.kt` - Added `@Suppress("DEPRECATION")`
-
-**Remaining Work:**
-- Wire up callbacks in call sites to use Compose dialog (DeckPicker, NoteEditor, CardBrowser)
-- Remove legacy `CreateDeckDialog.kt` once all call sites migrated
-
-### Compose Popup Leak Fix Pattern
-Fixed memory leaks in `DropdownMenu` components by ensuring menus are dismissed **before** executing action callbacks:
-
-```kotlin
-// ❌ WRONG - causes PopupLayout memory leak
-DropdownMenuItem(onClick = {
-    onAction()                    // Action first
-    expanded = false              // Dismiss after
-})
-
-// ✅ CORRECT - prevents leak
-DropdownMenuItem(onClick = {
-    expanded = false              // Dismiss first
-    onAction()                    // Action after
-})
-```
-
-**Files Fixed:**
-- `AnkiDroidApp.kt` (StudyOptionsScreen menu items)
-- `ReviewerTopBar.kt` (flag selection)
-- `WhiteboardToolbar.kt` (overflow menu)
-- `ManageNoteTypesComposable.kt` (note type menu)
-- `NoteEditor.kt` (type and deck selectors)
-- `DeckSelector.kt` (deck selection)
-
----
+Guidance for using these types:
 
-## 🔧 Technical Debt
+- `UiState`: everything the screen can render right now
+- `Intent`: user or system input into the screen
+- `Effect`: temporary bridge for UI-only work that cannot be modeled as durable state yet
 
-### CreateDeckDialog Call Site Migration
-**Issue**: `CreateDeckDialog.kt` (legacy) has been deprecated in favor of `com.ichi2.anki.dialogs.compose.CreateDeckDialog`. 
+Strict MVI is not the immediate prerequisite. Consistent UDF is.
 
-**Architecture**: The Compose dialog uses a callback-based integration pattern:
-1. `DeckSelectionDialog` and `DeckSpinnerSelection` expose optional callbacks (`onShowCreateDeckDialog`, `onShowCreateSubDeckDialog`)
-2. Parent activities wire callbacks to their ViewModel
-3. Fallback to legacy dialog when callbacks are null (backwards compatible)
+## What Nav3 Should Mean In This Project
 
-**TODO**: Wire up callbacks in remaining call sites:
-- `DeckPicker.kt` - `showCreateFilteredDeckDialog()` (uses legacy directly)
-- `NoteEditorFragment.kt` - via `DeckSpinnerSelection`
-- `CardBrowser.kt` - via `DeckSpinnerSelection`
-- `CardTemplateEditor.kt`
-- Call sites using `DeckSelectionDialog` without setting callbacks
+Nav3 is the right target, but only where its prerequisites are met.
 
-### CreateDeckDialog ViewModel Duplication
-**Issue**: `CardBrowserViewModel` and `DeckPickerViewModel` both contain nearly identical code for managing the CreateDeckDialog state, validation, and creation logic.
+### Use Nav3 when
 
-**Current State**: This duplication was introduced during the Compose migration to enable both ViewModels to independently manage their dialog state. The implementations are similar but have context-specific post-creation behaviors.
+- every destination in that flow is already a composable
+- the flow benefits from explicit back stack ownership
+- adaptive layouts need to show more than one destination at once
 
-**Future Consideration**: Once the pattern stabilizes across all call sites, consider extracting shared logic into a helper class (NOT a base ViewModel, which creates tight coupling). However, this is low priority because:
-1. The duplication is intentional for now to allow independent evolution
-2. Each ViewModel may need unique post-creation behavior
-3. Premature abstraction adds complexity without proven benefit
+### Do not force Nav3 when
 
-### AbstractFlashcardViewer Layout Dependency
-**Issue**: `AbstractFlashcardViewer.onCreate()` calls `setContentView(getContentViewAttr())` which requires a valid XML layout. While `Reviewer.kt` immediately overrides this with `ComposeView`, the base class still needs the layout to exist.
+- a flow still depends on fragment destinations
+- an activity still owns the lifecycle-critical behavior of the feature
+- the feature still relies on `DialogFragment` or fragment results for essential work
 
-**Current Workaround**: `reviewer.xml` is maintained as a minimal stub containing only the essential view IDs (`root_layout`, `flashcard`, `touch_layer`, `chosen_answer`, `mic_tool_bar_layer`, `top_bar`) needed by `AbstractFlashcardViewer`.
+### Practical implication
 
-**Future Fix**: Refactor `AbstractFlashcardViewer` to not require XML layouts, or split it so only subclasses that need XML extend a different base class.
+Keep using local Nav3 islands while the app is hybrid. Do not pretend the whole app has a single Nav3 graph until the major destinations in that graph are Compose-only.
 
-### DrawingActivity Not Yet Migrated
-**Issue**: `DrawingActivity.kt` still uses `activity_drawing.xml` which includes `reviewer_whiteboard_editor.xml`. This is a standalone activity for creating drawings to add to notes.
+## Feature Assessment
 
-**Future Fix**: Migrate `DrawingActivity` to Compose, which would allow deleting `reviewer_whiteboard_editor.xml` and the associated style `reviewer_whiteboard_editor_button_style`.
+### DeckPicker
 
-### FileProvider Authority Magic String
-**Issue**: The string `".apkgfileprovider"` is duplicated across 8+ files for constructing FileProvider authorities:
-- `AndroidManifest.xml`
-- `AnkiActivity.kt`
-- `DrawingViewModel.kt`
-- `IntentHandler.kt`
-- `MultimediaFragment.kt`
-- `MultimediaImageFragment.kt`
-- `SharedDecksDownloadFragment.kt`
+Current strengths:
 
-**Future Fix**: Create a centralized constant (e.g., `FileProviderUtil.AUTHORITY_SUFFIX`) and update all usages to prevent maintenance issues and typos.
+- already Compose-hosted
+- already using `NavDisplay`
+- already has typed route objects and a custom navigation state model
 
-### PageWebViewViewModel AndroidViewModel Usage
-**Issue**: `PageWebViewViewModel` extends `AndroidViewModel`, holding an `Application` context. This couples the ViewModel to the Android framework and reduces testability (can't use standard JUnit tests without Robolectric/AndroidX Test).
+Current blockers:
 
-**Current State**: The ViewModel needs `Application` context to manage `AnkiServer` lifecycle. This is functional but not ideal for unit testing.
+- `DeckPickerNavHost.kt` still depends on activity callbacks for launching intents and showing `DialogFragment`s
+- `DeckPicker.kt` still owns startup, result handling, and several business-adjacent operations
+- tablet mode still embeds other legacy constructs
 
-**Future Fix**: Refactor to use constructor injection via a factory. Create `PageWebViewViewModelFactory` that injects a `ServerProvider` interface, allowing test doubles to be used in unit tests.
+Migration role:
 
-### Generic Exception Catching Audit
-**Issue**: ~220 usages of `catch (e: Exception)` or `catch (e: Throwable)` were found in the codebase. In coroutine contexts, this can accidentally swallow `CancellationException`, causing structured concurrency issues.
+- this is the current reference implementation for Nav3
+- this should be the first feature converted from "Nav3 island inside an activity" to "route-first screen hosted by a real app shell"
 
-**Current State**: These require manual triage on a case-by-case basis. Some are intentional (framework callbacks), others may need to rethrow `CancellationException`.
+### CardBrowser
 
-**Future Fix**: Audit each usage incrementally. For coroutine contexts, ensure either:
-1. `CancellationException` is rethrown: `catch (e: Exception) { if (e is CancellationException) throw e; ... }`
-2. Or use `runCatching` with explicit handling
-3. Or catch specific exception types instead of generic `Exception`
+Current strengths:
 
----
+- mature Compose UI and ViewModel state
+- already appears inside DeckPicker on tablets, which proves it can participate in a Compose-first flow
 
-## ✅ Compose Adoption by Feature
+Current blockers:
 
-### 1. Deck Picker (DeckPicker.kt) — 🟢 95% Compose
-**Location**: `deckpicker/compose/`
+- still has a standalone activity entry point
+- still uses dialog fragments and activity-owned actions
 
-| File                     | Size | Status     |
-|--------------------------|------|------------|
-| `DeckPickerNavHost.kt`   | 33KB | ✅ NEW      |
-| `DeckPickerScreen.kt`    | 26KB | ✅ Complete |
-| `DeckItem.kt`            | 13KB | ✅ Complete |
-| `StudyOptionsScreen.kt`  | 18KB | ✅ Complete |
-| `NoDecks.kt`             | 11KB | ✅ Complete |
-| `SyncProgressDialog.kt`  | 3KB  | ✅ Complete |
-| `DeckPickerViewModel.kt` | 20KB | ✅ Complete |
+Migration role:
 
-**Navigation Integration**:
-- ✅ Nav3 `NavDisplay` with `DeckPickerScreen` and `HelpScreen`
-- ✅ Navigator class with type-safe backstack
-- ✅ Drawer + NavigationRail for tablet layout
-- ✅ CardBrowser embedded on tablets (fragmented mode)
+- best candidate for the next major route extraction after DeckPicker stabilization
 
-**Still View-Based**:
-- `DeckPicker.kt` Activity container (hybrid - hosts Compose via `setContent`)
+### Reviewer
 
----
+Current strengths:
 
-### 2. Card Browser — 🟢 85% Compose
-**Location**: `browser/compose/`
+- Compose UI exists
+- `ReviewerViewModel` already has recognizable state, event, and effect types
 
-| File                      | Size | Status     |
-|---------------------------|------|------------|
-| `CardBrowserScreen.kt`    | 45KB | ✅ Complete |
-| `CardBrowserLayout.kt`    | 24KB | ✅ Complete |
-| `FilterByTagsDialog.kt`   | 3KB  | ✅ Complete |
-| `CardBrowserViewModel.kt` | 62KB | ✅ Complete |
+Current blockers:
 
-**Still View-Based**:
-- `CardBrowser.kt` Activity container
-- `BrowserColumnSelectionFragment.kt` - Uses `fitsSystemWindows` workaround for edge-to-edge status bar overlap
-- `ColumnSelectionDialogFragment.kt`
-- `RepositionCardFragment.kt`
-- `FindAndReplaceDialogFragment.kt`
+- activity still owns substantial reviewer workflow
+- `AbstractFlashcardViewer` and media/webview dependencies keep XML-era assumptions alive
+- activity-level menu and launcher work is still significant
 
----
+Migration role:
 
-### 3. Reviewer — 🟢 80% Compose
-**Location**: `reviewer/compose/`
+- likely the hardest high-value migration
+- should move only after DeckPicker/CardBrowser and NoteEditor patterns are proven
 
-| File                         | Size | Status     |
-|------------------------------|------|------------|
-| `ReviewerCompose.kt`         | 30KB | ✅ Complete |
-| `ReviewerTopBar.kt`          | 9KB  | ✅ Complete |
-| `AnswerButtons.kt`           | 6KB  | ✅ Complete |
-| `Flashcard.kt`               | 6KB  | ✅ Complete |
-| `WhiteboardToolbar.kt`       | 11KB | ✅ Complete |
-| `WhiteboardOptionsDialog.kt` | 12KB | ✅ Complete |
-| `ColorPickerDialog.kt`       | 8KB  | ✅ Complete |
-| `Whiteboard.kt`              | 1KB  | ✅ Complete |
-| `WhiteboardCanvas.kt`        | 3KB  | ✅ Complete |
-| `ReviewerViewModel.kt`       | 20KB | ✅ Complete |
+### NoteEditor
 
-**Still View-Based**:
-- `Reviewer.kt` - Activity host (1373 lines, hybrid)
-- `AbstractFlashcardViewer.kt` - Base class with WebView logic
-- Audio recording toolbar
+Current strengths:
 
----
+- Compose UI already exists
+- ViewModel is already substantial
 
-### 4. Note Editor — 🟢 75% Compose
-**Location**: `noteeditor/compose/`
+Current blockers:
 
-| File                     | Size | Status     |
-|--------------------------|------|------------|
-| `NoteEditor.kt`          | 28KB | ✅ Complete |
-| `NoteEditorToolbar.kt`   | 15KB | ✅ Complete |
-| `NoteEditorTopBar.kt`    | 10KB | ✅ Complete |
-| `NoteEditorDialogs.kt`   | 7KB  | ✅ Complete |
-| `NoteEditorViewModel.kt` | 57KB | ✅ Complete |
+- `NoteEditorActivity -> NoteEditorFragment -> ComposeView` layering remains
+- toolbar, launcher, and fragment scoping still complicate the feature
 
-> **Note**: See `noteeditor/COMPOSE_MIGRATION_STATUS.md` for detailed tracking.
+Migration role:
 
-**Recent Work**:
-- [x] Refactor `NoteEditorFragment.kt` - extracted helper methods
-- [x] Fix unit test threading issues (injectable `ioDispatcher`)
-- [x] Consolidate duplicate state classes
-- [x] Add input validation to toolbar customization dialog
-- [ ] Tab order/accessibility
-- [ ] CardBrowser split-view integration
+- the best immediate win for removing a fragment wrapper without requiring app-wide navigation changes
 
+## Incremental Migration Plan
 
-> **Note**: Unit tests are now passing after resolving lifecycle scope threading issues.
+### Phase 0: Stabilize The Rules
 
-### 5. Note Editor Test Migration
-**Location**: `src/test/java/com/ichi2/anki/NoteEditorTest.kt`
+This phase is about preventing new debt while migration continues.
 
-The following tests are `@Ignore`d and require rewriting for Compose APIs:
+Required rules for new feature work:
 
-| Scope          | Test Name                                                   | Issue & Goal                                                                                          |
-|----------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| **Clipboard**  | `pasteHtmlAsPlainTextTest` (L389)                           | **Issue**: Tests XML `FieldEditText` behavior.<br>**Goal**: Verify Compose clipboard semantics.       |
+1. New Compose screens must expose immutable state and callbacks.
+2. New internal navigation code must use typed route data, not raw intent extras unless leaving the Compose island.
+3. No new feature should add business logic to an activity if the ViewModel can own it.
+4. New dialogs for Compose-first screens should be written in Compose unless blocked by a framework dependency.
 
----
+### Phase 1: Standardize Screen Contracts
 
-### 6. Help Screen — 🟢 100% Compose + Nav3
-**Location**: `ui/compose/help/HelpScreen.kt`
+Introduce a repeatable pattern across Compose screens.
 
-| Status    | Description                                      |
-|-----------|--------------------------------------------------|
-| ✅ Compose | Full UI in Compose                               |
-| ✅ Nav3    | Integrated as destination in `DeckPickerNavHost` |
-| ✅ Works   | Accessible from drawer navigation                |
+Deliverables:
 
----
+1. Each major Compose feature has a route composable and a pure screen composable.
+2. Each major screen ViewModel exposes a clearly named `UiState`.
+3. New work prefers `onIntent(...)` or small verb handlers over activity callbacks.
+4. Navigation callbacks are passed as lambdas rather than exposing navigator/controller objects deep in the tree.
 
-### 7. Dialogs — 🟡 22% Migrated
+Why this phase matters:
 
-**Compose Dialogs**:
-| Dialog                        | Status                      |
-|-------------------------------|-----------------------------|
-| `TagsDialog.kt`               | ✅ Complete                  |
-| `ExportDialog.kt`             | ✅ Complete                  |
-| `FlagRenameDialog.kt`         | ✅ Complete                  |
-| `DeleteConfirmationDialog.kt` | ✅ Complete                  |
-| `DiscardChangesDialog.kt`     | ✅ Complete                  |
-| `BrowserOptionsComposable.kt` | ✅ Complete                  |
-| `NoteEditorDialogs.kt`        | ✅ Complete                  |
-| `OnErrorCallback.kt`          | ✅ Complete                  |
-| `CreateDeckDialog.kt`         | ✅ Complete (Legacy deprecated, call sites pending) |
+- It enables migration without needing the final app shell first.
+- It reduces coupling before we move destinations into a shared Nav3 root.
 
-**Still View-Based** (34+ dialogs)
+### Phase 2: Remove Fragment Wrappers From Compose-First Features
 
----
+Priority order:
 
-### 8. Preferences/Settings — 🔴 5% Compose
-> **Important**: Settings uses AndroidX Preference with XML. Full migration requires custom Compose preference components.
+1. NoteEditor
+2. Remaining Compose-first dialog flows
+3. Any other `Fragment -> ComposeView` containers used only as wrappers
 
----
+Deliverables:
 
-### 9. Pages (WebView Screens) — 🟢 100% Compose Wrapper
-Created `PageWebView` composable wrapper for all Anki HTML/JS content:
-- `StatisticsScreen.kt` - Nav3 destination
-- `DeckOptionsScreen.kt` - Nav3 destination
-- `CardInfoScreen.kt` - Nav3 destination
+- `NoteEditorActivity` becomes a direct Compose host
+- `NoteEditorFragment` goes away
+- related XML container layouts become removable
 
----
+This phase is intentionally local. It improves architecture without depending on a full single-activity rewrite.
 
-## 📋 Nav3 Migration Status
+### Phase 3: Move Business Workflow Out Of Activities
 
-### Current State
-| Component                      | Status                                    |
-|--------------------------------|-------------------------------------------|
-| Nav3 Dependencies              | ✅ Added                                   |
-| `Navigator` class              | ✅ Created (`navigation/AppNavigation.kt`) |
-| `NavDisplay`                   | ✅ Integrated in `DeckPickerNavHost`       |
-| `DeckPickerScreen` destination | ✅ Working                                 |
-| `HelpScreen` destination       | ✅ Working                                 |
+Priority features:
 
-### Next Nav3 Destinations to Add
-| Priority | Screen       | Current           | Effort |
-|----------|--------------|-------------------|--------|
-| 1        | StudyOptions | ✅ NavEntry        | Done   |
-| 2        | Congrats     | ✅ NavEntry        | Done   |
-| 3        | Statistics   | ✅ NavEntry        | Done   |
-| 4        | DeckOptions  | ✅ NavEntry        | Done   |
-| 5        | CardBrowser  | Separate Activity | High   |
-| 6        | Reviewer     | Separate Activity | High   |
+1. DeckPicker
+2. CardBrowser
+3. Reviewer
 
----
+Deliverables:
 
-## ⚡ Recommended Next Steps (Priority Order)
+- activity methods that perform collection, scheduler, or repository work are moved into ViewModels or lower layers
+- activities keep only UI-shell responsibilities such as launchers, permission bridges, and top-level lifecycle wiring
+- business workflows become testable without an activity host
 
-### 1. Complete NoteEditor Fragment Cleanup
-**Effort**: High | **Impact**: High
+Examples of the desired direction:
 
-Remove legacy code from `NoteEditorFragment.kt` now that the ViewModel handles state. This is a crucial step to fully modernize the Note Editor.
+- rebuild or empty filtered deck logic should not stay in an activity
+- loading reviewer state should not depend on activity-owned orchestration
+- browser actions should stop routing through `supportFragmentManager` where a Compose dialog or route can own the interaction
 
-### 2. Consolidate CardBrowser Navigation
-**Effort**: High | **Impact**: High
+### Phase 4: Replace DialogFragment Dependencies In Compose Flows
 
-The CardBrowser already renders inside the DeckPicker on tablets. To create a consistent user experience, it should be migrated to a proper Nav3 destination, removing its dependency on a separate Activity.
+This is a major unlock for a real app shell.
 
-### 3. Migrate Simple Dialogs to Compose
-**Effort**: Low per dialog | **Impact**: Medium
+Deliverables:
 
-Migrating the remaining 34+ view-based dialogs to Compose is a good source of small, incremental tasks. Quick wins include:
-- Simple confirmation dialogs
-- `IntegerDialog`
+1. Compose dialogs/bottom sheets replace `DialogFragment` for Compose-first features.
+2. Route composables own dialog visibility state.
+3. `onShowDialogFragment` style callbacks disappear from Nav3 route APIs.
 
-### 4. Code Quality TODOs
+This phase should focus first on the most common dialogs in:
 
-- All recognized Code Quality TODOs in DeckPicker have been resolved.
+- DeckPicker
+- CardBrowser
+- NoteEditor
 
-#### Resolved (January 2026)
-- **Reduced parameters on `DeckPickerNavHost()`** and `DeckPickerWithDrawer()`: Encapsulated excessive parameters (previously ~24) into `DeckPickerDrawerState` and `DeckPickerDrawerActions` data classes (Commit `12b11dd5d2`).
-- **CongratsScreen wiring**: Resolved TODOs for `onDeckOptions` navigation and passing `timeUntilNextDay` from the ViewModel to `CongratsComposable` in `DeckPickerNavHost.kt` (Commits `80876b6d3c`, `ad9cdaff95`).
+### Phase 5: Expand Nav3 From DeckPicker To App-Level Navigation
 
----
+This phase begins only after a meaningful set of destinations are Compose-only.
 
-## 📊 Effort Estimates (Updated)
+Deliverables:
 
-| Phase                            | Effort | Status     |
-|----------------------------------|--------|------------|
-| Phase 1.1: DeckPicker Nav3       | Done   | ✅ Complete |
-| Phase 1.2: StudyOptions/Congrats | Done   | ✅ Complete |
-| Phase 1.3: Statistics Nav3       | Done   | ✅ Complete |
-| Phase 1.4: DeckOptions Nav3      | Done   | ✅ Complete |
-| Phase 2: Complete Compose        | Large  | 🟡 Ongoing |
-| Phase 3: Full Nav3               | Medium | ⬜ Future   |
+1. Create an app-level Compose root hosted by a single shell activity.
+2. Move top-level navigation into a shared `NavDisplay` and typed destination model.
+3. Keep local adaptive layouts where Nav3's explicit back stack ownership is beneficial.
+4. Convert internal activity-to-activity navigation into route navigation for migrated features.
+
+Important constraint:
+
+Do not try to create a single Nav3 graph that still depends on fragment destinations. Android's migration guidance explicitly warns against mixed destination graphs.
+
+### Phase 6: Converge On A Single Activity
+
+This is the endgame, not the starting point.
+
+Deliverables:
+
+1. One app shell activity hosts the main app experience.
+2. Former feature activities become composable destinations or external workflow launchers.
+3. `AnkiActivity` is either reduced to reusable shell behavior or split into smaller platform services/helpers.
+4. Intra-app navigation stops depending on intents for migrated features.
+
+This phase may still keep separate activities for isolated platform-heavy flows if they remain simpler that way. "Single activity" is the goal for the main app experience, not a reason to force every platform entry point into one class prematurely.
+
+## Recommended Near-Term Work
+
+If we want the migration to move materially toward the target architecture, the highest-value sequence is:
+
+1. Make NoteEditor direct-Compose and remove its fragment wrapper.
+2. Standardize DeckPicker and CardBrowser around Route + Screen + ViewModel contracts.
+3. Replace the most common DeckPicker and CardBrowser dialog fragments with Compose dialogs.
+4. Move remaining business operations out of `DeckPicker.kt` and `CardBrowser.kt`.
+5. Start an app-level Compose shell only after those feature seams are in place.
+
+## Definition Of Done For The Architecture
+
+We should consider the migration complete only when all the following are true:
+
+1. The main app experience is hosted by one shell activity.
+2. Internal screen-to-screen navigation for migrated features is route-based, not intent-based.
+3. Compose-first features no longer depend on fragment wrappers.
+4. Compose-first features no longer require `supportFragmentManager` for routine dialogs.
+5. Screen business logic is testable in ViewModels or lower layers.
+6. Nav3 owns the back stack for the Compose-only app shell.
+
+## Anti-Goals
+
+This migration should avoid these mistakes:
+
+1. Big-bang rewrites.
+2. Declaring Nav3 "done" while the app still depends on fragment destinations.
+3. Moving every activity method into the ViewModel without separating business logic from UI behavior.
+4. Passing full domain objects through navigation.
+5. Building new Compose screens that still reach directly into activities for business actions.
+
+## Tracking Notes
+
+Keep this document focused on architecture and sequencing. Do not turn it back into a running changelog of every Compose cleanup or bug fix. Feature-specific migration details can live in feature-local documents when needed.
