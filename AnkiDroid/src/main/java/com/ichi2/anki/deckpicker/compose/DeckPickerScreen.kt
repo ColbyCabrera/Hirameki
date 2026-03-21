@@ -344,11 +344,7 @@ private fun DeckPickerTopBar(
     onRefresh: () -> Unit,
     onNavigationIconClick: (() -> Unit)?,
     studyOptionsData: StudyOptionsData?,
-    onRebuildDeck: (Long) -> Unit,
-    onEmptyDeck: (Long) -> Unit,
-    onCustomStudy: (Long) -> Unit,
-    onDeckOptionsItemSelected: (Long) -> Unit,
-    onUnbury: (Long) -> Unit,
+    studyOptionsActions: StudyOptionsPanelActions,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
     var isStudyOptionsMenuOpen by remember { mutableStateOf(false) }
@@ -495,7 +491,7 @@ private fun DeckPickerTopBar(
                                     text = { Text(stringResource(R.string.rebuild)) },
                                     onClick = {
                                         isStudyOptionsMenuOpen = false
-                                        onRebuildDeck(studyOptionsData.deckId)
+                                        studyOptionsActions.onRebuildDeck(studyOptionsData.deckId)
                                     },
                                     leadingIcon = {
                                         Icon(
@@ -508,7 +504,7 @@ private fun DeckPickerTopBar(
                                     text = { Text(stringResource(R.string.empty_cards_action)) },
                                     onClick = {
                                         isStudyOptionsMenuOpen = false
-                                        onEmptyDeck(studyOptionsData.deckId)
+                                        studyOptionsActions.onEmptyDeck(studyOptionsData.deckId)
                                     },
                                     leadingIcon = {
                                         Icon(
@@ -522,7 +518,7 @@ private fun DeckPickerTopBar(
                                     text = { Text(stringResource(R.string.custom_study)) },
                                     onClick = {
                                         isStudyOptionsMenuOpen = false
-                                        onCustomStudy(studyOptionsData.deckId)
+                                        studyOptionsActions.onCustomStudy(studyOptionsData.deckId)
                                     },
                                     leadingIcon = {
                                         Icon(
@@ -536,7 +532,7 @@ private fun DeckPickerTopBar(
                                 text = { Text(stringResource(R.string.deck_options)) },
                                 onClick = {
                                     isStudyOptionsMenuOpen = false
-                                    onDeckOptionsItemSelected(studyOptionsData.deckId)
+                                    studyOptionsActions.onDeckOptionsItemSelected(studyOptionsData.deckId)
                                 },
                                 leadingIcon = {
                                     Icon(
@@ -550,7 +546,7 @@ private fun DeckPickerTopBar(
                                     text = { Text(stringResource(R.string.unbury)) },
                                     onClick = {
                                         isStudyOptionsMenuOpen = false
-                                        onUnbury(studyOptionsData.deckId)
+                                        studyOptionsActions.onUnbury(studyOptionsData.deckId)
                                     },
                                     leadingIcon = {
                                         Icon(
@@ -636,11 +632,7 @@ fun DeckPickerScreen(
                     onRefresh = onRefresh,
                     onNavigationIconClick = if (!fragmented) onNavigationIconClick else null,
                     studyOptionsData = if (fragmented) studyOptionsData else null,
-                    onRebuildDeck = studyOptionsPanelActions.onRebuildDeck,
-                    onEmptyDeck = studyOptionsPanelActions.onEmptyDeck,
-                    onCustomStudy = studyOptionsPanelActions.onCustomStudy,
-                    onDeckOptionsItemSelected = studyOptionsPanelActions.onDeckOptionsItemSelected,
-                    onUnbury = studyOptionsPanelActions.onUnbury,
+                    studyOptionsActions = studyOptionsPanelActions,
                     scrollBehavior = scrollBehavior
                 )
             },
@@ -753,13 +745,14 @@ fun DeckPickerTopBarPreview() {
                 isFiltered = false,
                 haveBuried = true
             ),
-            onRebuildDeck = {},
-            onEmptyDeck = {},
-            onCustomStudy = {},
-            onDeckOptionsItemSelected = {},
-            onUnbury = {},
-            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-        )
+            studyOptionsActions = StudyOptionsPanelActions(
+                onStartStudy = {},
+                onRebuildDeck = {},
+                onEmptyDeck = {},
+                onCustomStudy = {},
+                onDeckOptionsItemSelected = {},
+                onUnbury = {}),
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior())
     }
 }
 
@@ -778,13 +771,14 @@ fun DeckPickerTopBarSearchOpenPreview() {
             onRefresh = {},
             onNavigationIconClick = {},
             studyOptionsData = null,
-            onRebuildDeck = {},
-            onEmptyDeck = {},
-            onCustomStudy = {},
-            onDeckOptionsItemSelected = {},
-            onUnbury = {},
-            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-        )
+            studyOptionsActions = StudyOptionsPanelActions(
+                onStartStudy = {},
+                onRebuildDeck = {},
+                onEmptyDeck = {},
+                onCustomStudy = {},
+                onDeckOptionsItemSelected = {},
+                onUnbury = {}),
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior())
     }
 }
 
