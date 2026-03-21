@@ -379,7 +379,7 @@ fun HeatmapWidgetPreview() {
     val dummyData = HeatmapWidget.getDummyHeatmapData()
 
     CompositionLocalProvider(
-        LocalSize provides DpSize(300.dp, 400.dp),
+        LocalSize provides DpSize(300.dp, 180.dp),
     ) {
         HeatmapWidget().HeatmapContent(dummyData, context)
     }
