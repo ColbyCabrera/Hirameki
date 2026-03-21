@@ -19,8 +19,12 @@ package com.ichi2.anki
 
 import android.annotation.SuppressLint
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission.storagePermission
 import com.ichi2.anki.testutil.disableIntroductionSlide
@@ -69,14 +73,50 @@ class DeckPickerTest : InstrumentedTest() {
 
     @Test
     fun checkIfStudyOptionsIsDisplayedOnTablet() {
-        // Run the test only on emulator.
-        assumeTrue(isEmulator())
-
         // For tablet. If it is not a tablet, then test will be ignored.
         assumeTrue(TestUtils.isTablet)
 
         // Check if study options are displayed
         // In the new Compose UI, we check for the presence of the "Study" button text.
-        composeTestRule.onNodeWithText(testContext.getString(R.string.studyoptions_start)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(testContext.getString(R.string.studyoptions_start))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun checkIfDeckCanBeDeleted() {
+        val deckName = "Deck to Delete UI Test"
+        val deckId = col.decks.id(deckName)
+
+        // Add dummy cards to make the deletion slow enough to show the progress dialog
+        val noteType = col.notetypes.basic.apply { did = deckId }
+        col.notetypes.save(noteType)
+        for (i in 1..200) {
+            addNoteUsingBasicNoteType("Front $i", "Back $i")
+        }
+
+        // Recreate the activity to force the ViewModel to reload the deck list from the database
+        composeTestRule.activityRule.scenario.recreate()
+
+        // Wait for the deck to appear in the UI
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText(deckName).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Assert the deck is displayed
+        composeTestRule.onNodeWithText(deckName).assertIsDisplayed()
+
+        // Perform a long-click on the deck to open the Compose context menu
+        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
+
+        // Click on the "Delete" option in the context menu
+        composeTestRule.onNodeWithText(testContext.getString(R.string.contextmenu_deckpicker_delete_deck))
+            .performClick()
+
+
+        // Assert that the deck is no longer displayed after completion
+        composeTestRule.waitUntil(timeoutMillis = 10000) {
+            composeTestRule.onAllNodesWithText(deckName).fetchSemanticsNodes().isEmpty()
+        }
+        composeTestRule.onNodeWithText(deckName).assertDoesNotExist()
     }
 }
