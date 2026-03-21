@@ -133,20 +133,24 @@ private fun RenderDeck(
         rememberedChildren = children
     }
 
+    val actions = remember(deck, deckRowActions) {
+        DeckItemActions(
+            onDeckClick = { deckRowActions.onDeckClick(deck) },
+            onExpandClick = { deckRowActions.onExpandClick(deck) },
+            onDeckOptions = { deckRowActions.onDeckOptions(deck) },
+            onRename = { deckRowActions.onRename(deck) },
+            onExport = { deckRowActions.onExport(deck) },
+            onDelete = { deckRowActions.onDelete(deck) },
+            onRebuild = { deckRowActions.onRebuild(deck) },
+            onEmpty = { deckRowActions.onEmpty(deck) },
+            onCreateSubdeck = { deckRowActions.onCreateSubdeck(deck) },
+        )
+    }
+
     val content = @Composable {
         DeckItem(
             deck = deck,
-            actions = DeckItemActions(
-                onDeckClick = { deckRowActions.onDeckClick(deck) },
-                onExpandClick = { deckRowActions.onExpandClick(deck) },
-                onDeckOptions = { deckRowActions.onDeckOptions(deck) },
-                onRename = { deckRowActions.onRename(deck) },
-                onExport = { deckRowActions.onExport(deck) },
-                onDelete = { deckRowActions.onDelete(deck) },
-                onRebuild = { deckRowActions.onRebuild(deck) },
-                onEmpty = { deckRowActions.onEmpty(deck) },
-                onCreateSubdeck = { deckRowActions.onCreateSubdeck(deck) },
-            ),
+            actions = actions,
         )
         AnimatedVisibility(
             visible = !deck.collapsed,
