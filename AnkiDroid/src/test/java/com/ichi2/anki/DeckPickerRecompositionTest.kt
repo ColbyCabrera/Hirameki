@@ -1,7 +1,8 @@
 package com.ichi2.anki
 
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -11,22 +12,29 @@ import org.junit.runner.RunWith
 class DeckPickerRecompositionTest : RobolectricTest() {
 
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<DeckPicker>()
+    val composeTestRule = createEmptyComposeRule()
+
+    @org.junit.Before
+    fun setUpTest() = kotlinx.coroutines.runBlocking {
+        editPreferences { putBoolean(IntroductionActivity.INTRODUCTION_SLIDES_SHOWN, true) }
+        CollectionManager.ensureOpen()
+    }
 
     @Test
     fun deckPickerNavHost_disappearsWhenCollectionClosed() = runTest {
-        // Wait for Compose to render the default UI with the collection fully open
-        composeTestRule.waitForIdle()
+        ActivityScenario.launch(DeckPicker::class.java).use {
+            // Wait for Compose to render the default UI with the collection fully open
+            composeTestRule.waitForIdle()
 
-        // Verify the NavHost actually rendered (e.g. by checking if it shows 'Decks')
-        // In this case, "Decks" or another known string from the top app bar 
-        // will be present if the collection is open. But if it's not, we just check that 
-        // the Compose tree is evaluating. Let's just check for 'Collection closed' state.
+            // Verify the open state
+            composeTestRule.onNodeWithText("Decks").assertExists()
 
-        CollectionManager.ensureClosed()
-        composeTestRule.waitForIdle()
+            // Trigger closure
+            CollectionManager.ensureClosed()
+            composeTestRule.waitForIdle()
 
-        // Since if (!isOpen) return@setContent is triggered, the NavHost and all nested components disappear
-        composeTestRule.onNodeWithText("Decks").assertDoesNotExist()
+            // Verify disappearance
+            composeTestRule.onNodeWithText("Decks").assertDoesNotExist()
+        }
     }
 }
