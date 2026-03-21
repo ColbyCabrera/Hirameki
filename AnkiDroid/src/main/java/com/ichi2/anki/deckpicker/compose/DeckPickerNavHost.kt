@@ -610,13 +610,7 @@ private fun SetupFlows(
                     }
                 }
 
-                DeckPickerEffect.CheckDatabase,
-                DeckPickerEffect.NavigateToReviewer,
-                DeckPickerEffect.NavigateToStudyOptions,
-                is DeckPickerEffect.ShowCustomStudyDialog,
-                is DeckPickerEffect.ShowExportDialog,
-                DeckPickerEffect.Sync,
-                DeckPickerEffect.Undo -> {
+                DeckPickerEffect.CheckDatabase, DeckPickerEffect.NavigateToReviewer, DeckPickerEffect.NavigateToStudyOptions, is DeckPickerEffect.ShowCustomStudyDialog, is DeckPickerEffect.ShowExportDialog, DeckPickerEffect.Sync, DeckPickerEffect.Undo -> {
                     Timber.w("Unhandled effect in Compose: $effect")
                 }
             }
