@@ -34,6 +34,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,13 +49,15 @@ class DeckPickerViewModelTest : RobolectricTest() {
     fun `empty cards - flow`() = runTest {
         val cardsToEmpty = createEmptyCards()
 
-        viewModel.effects.test {
+        viewModel.composeEffects.test {
             // test a 'normal' deletion
             viewModel.deleteEmptyCards(cardsToEmpty).join()
 
             val item = expectMostRecentItem()
             assertThat(
-                "is undo snackbar", item, instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+                "is undo snackbar",
+                item,
+                instanceOf(DeckPickerComposeEffect.ShowUndoSnackbar::class.java)
             )
 
             // ensure a duplicate output is displayed to the user
@@ -65,7 +68,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
             assertThat(
                 "duplicate is undo snackbar",
                 item2,
-                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+                instanceOf(DeckPickerComposeEffect.ShowUndoSnackbar::class.java)
             )
 
             // test an empty list: a no-op should inform the user, rather than do nothing
@@ -75,7 +78,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
             assertThat(
                 "'no cards deleted' is notified",
                 item3,
-                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+                instanceOf(DeckPickerComposeEffect.ShowUndoSnackbar::class.java)
             )
         }
     }
@@ -97,12 +100,14 @@ class DeckPickerViewModelTest : RobolectricTest() {
     fun `empty cards - keep notes`() = runTest {
         val emptyCardsReport = createEmptyCards()
 
-        viewModel.effects.test {
+        viewModel.composeEffects.test {
             viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = true).join()
 
             val item = expectMostRecentItem()
             assertThat(
-                "is undo snackbar", item, instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+                "is undo snackbar",
+                item,
+                instanceOf(DeckPickerComposeEffect.ShowUndoSnackbar::class.java)
             )
 
             viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = false).join()
@@ -111,7 +116,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
             assertThat(
                 "is undo snackbar after delete",
                 item2,
-                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+                instanceOf(DeckPickerComposeEffect.ShowUndoSnackbar::class.java)
             )
         }
     }
@@ -175,7 +180,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
         }
         return withCol { getEmptyCards() }.also { report ->
             assertThat(
-                "there are empty cards", report.emptyCids(), not(report.emptyCids().isEmpty())
+                "there are empty cards", report.emptyCids(), not(empty())
             )
             Timber.d("created %d empty cards: [%s]", report.emptyCids().size, report.emptyCids())
         }
@@ -331,9 +336,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
         viewModel.showRenameDeckDialog(deckId).join()
 
         assertThat(
-            "rename dialog state",
-            viewModel.createDeckDialogState.value,
-            equalTo(
+            "rename dialog state", viewModel.createDeckDialogState.value, equalTo(
                 DeckPickerViewModel.CreateDeckDialogState.Visible(
                     type = com.ichi2.anki.dialogs.compose.DeckDialogType.RENAME_DECK,
                     titleResId = R.string.rename_deck,
@@ -401,7 +404,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
             // Focus on default deck
             viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
             advanceUntilIdle()
-            
+
             // Consume emission(s) deterministically instead of skipItems(1)
             while (awaitItem()?.deckId != Consts.DEFAULT_DECK_ID) {
                 // Skip transient states like null
@@ -445,18 +448,18 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
     @Test
     fun `effects - showSnackbar routes through channel`() = runTest {
-        viewModel.effects.test {
+        viewModel.composeEffects.test {
             viewModel.showSnackbar("Test message")
 
             val effect = awaitItem()
             assertThat(
                 "is ShowSnackbarMessage",
                 effect,
-                instanceOf(DeckPickerEffect.ShowSnackbarMessage::class.java)
+                instanceOf(DeckPickerComposeEffect.ShowSnackbarMessage::class.java)
             )
             assertThat(
                 "message matches",
-                (effect as DeckPickerEffect.ShowSnackbarMessage).message,
+                (effect as DeckPickerComposeEffect.ShowSnackbarMessage).message,
                 equalTo("Test message")
             )
 
@@ -469,14 +472,14 @@ class DeckPickerViewModelTest : RobolectricTest() {
         // Create a deck to delete
         val deckId = col.decks.id("Deck To Delete")
 
-        viewModel.effects.test {
+        viewModel.composeEffects.test {
             viewModel.deleteDeck(deckId).join()
 
             val effect = awaitItem()
             assertThat(
                 "is ShowUndoSnackbar",
                 effect,
-                instanceOf(DeckPickerEffect.ShowUndoSnackbar::class.java)
+                instanceOf(DeckPickerComposeEffect.ShowUndoSnackbar::class.java)
             )
 
             cancelAndIgnoreRemainingEvents()
@@ -487,14 +490,14 @@ class DeckPickerViewModelTest : RobolectricTest() {
     fun `effects - deleting non-existent deck emits error snackbar`() = runTest {
         val nonExistentDeckId = 999999L
 
-        viewModel.effects.test {
+        viewModel.composeEffects.test {
             viewModel.deleteDeck(nonExistentDeckId).join()
 
             val effect = awaitItem()
             assertThat(
                 "is ShowSnackbar (error)",
                 effect,
-                instanceOf(DeckPickerEffect.ShowSnackbar::class.java)
+                instanceOf(DeckPickerComposeEffect.ShowSnackbar::class.java)
             )
 
             cancelAndIgnoreRemainingEvents()
@@ -518,7 +521,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
     fun `isDeletingDeck - false after failed deletion`() = runTest {
         val nonExistentDeckId = 999999L
 
-        viewModel.effects.test {
+        viewModel.composeEffects.test {
             viewModel.deleteDeck(nonExistentDeckId).join()
             // Consume the error effect
             awaitItem()
@@ -538,7 +541,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
         viewModel.updateDeckList()
         advanceUntilIdle()
 
-        viewModel.effects.test {
+        viewModel.composeEffects.test {
             viewModel.onDeckSelected(Consts.DEFAULT_DECK_ID, DeckSelectionType.DEFAULT)
             advanceUntilIdle()
 
@@ -546,9 +549,9 @@ class DeckPickerViewModelTest : RobolectricTest() {
             assertThat(
                 "is HandleDeckSelection",
                 effect,
-                instanceOf(DeckPickerEffect.HandleDeckSelection::class.java)
+                instanceOf(DeckPickerComposeEffect.HandleDeckSelection::class.java)
             )
-            val result = (effect as DeckPickerEffect.HandleDeckSelection).result
+            val result = (effect as DeckPickerComposeEffect.HandleDeckSelection).result
             assertThat("is Empty result", result, instanceOf(DeckSelectionResult.Empty::class.java))
 
             cancelAndIgnoreRemainingEvents()
