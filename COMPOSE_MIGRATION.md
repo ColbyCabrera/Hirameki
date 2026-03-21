@@ -436,6 +436,10 @@ Migrating the remaining 34+ view-based dialogs to Compose is a good source of sm
 
 - All recognized Code Quality TODOs in DeckPicker have been resolved.
 
+#### Resolved (January 2026)
+- **Reduced parameters on `DeckPickerNavHost()`** and `DeckPickerWithDrawer()`: Encapsulated excessive parameters (previously ~24) into `DeckPickerDrawerState` and `DeckPickerDrawerActions` data classes (Commit `12b11dd5d2`).
+- **CongratsScreen wiring**: Resolved TODOs for `onDeckOptions` navigation and passing `timeUntilNextDay` from the ViewModel to `CongratsComposable` in `DeckPickerNavHost.kt` (Commits `80876b6d3c`, `ad9cdaff95`).
+
 ---
 
 ## 📊 Effort Estimates (Updated)
