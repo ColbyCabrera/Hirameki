@@ -579,9 +579,9 @@ open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivity
         }
         // Build basic notification
         val builder = NotificationCompat.Builder(
-                this,
-                channel.id,
-            ).setSmallIcon(R.drawable.ic_star_notify).setContentTitle(title).setContentText(message)
+            this,
+            channel.id,
+        ).setSmallIcon(R.drawable.ic_star_notify).setContentTitle(title).setContentText(message)
             .setColor(getColor(R.color.material_light_blue_500))
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setTicker(ticker)
@@ -828,8 +828,15 @@ open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivity
     private fun saveFileCallback(result: ActivityResult) {
         launchCatchingTask {
             withProgress(getString(R.string.export_saving_exported_collection)) {
+                val intent = result.data
+                if (intent == null) {
+                    Timber.w("saveFileCallback() missing export destination intent")
+                    postSnackbar(R.string.export_save_apkg_unsuccessful)
+                    return@withProgress
+                }
+
                 val isSuccessful = withContext(Dispatchers.IO) {
-                    exportToProvider(result.data!!)
+                    exportToProvider(intent)
                 }
 
                 if (isSuccessful) {
@@ -851,9 +858,7 @@ open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivity
         }
         val uri = intent.data
         Timber.d(
-            "Exporting from file to ContentProvider URI: %s/%s",
-            fileExportPath,
-            uri.toString()
+            "Exporting from file to ContentProvider URI: %s/%s", fileExportPath, uri.toString()
         )
         try {
             contentResolver.openFileDescriptor(uri!!, "w").use { pfd ->
