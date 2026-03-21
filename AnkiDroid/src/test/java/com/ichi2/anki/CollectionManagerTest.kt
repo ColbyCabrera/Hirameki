@@ -11,6 +11,9 @@ class CollectionManagerTest : RobolectricTest() {
 
     @Test
     fun isCollectionOpenFlow_updatesWhenCollectionStateChanges() = runTest {
+        CollectionManager.ensureClosed()
+        assertFalse(CollectionManager.isCollectionOpenFlow.value)
+
         CollectionManager.ensureOpen()
         assertTrue(CollectionManager.isCollectionOpenFlow.value)
 
