@@ -356,6 +356,11 @@ private fun DeckPickerTopBar(
     val density = LocalDensity.current
     val searchOffsetPx = with(density) { (-8).dp.toPx() }
 
+    BackHandler(isSearchOpen) {
+        onSearchQueryChanged("")
+        onSearchOpenChange(false)
+    }
+
     LargeFlexibleTopAppBar(
         title = {
             if (!isSearchOpen) {
@@ -387,10 +392,6 @@ private fun DeckPickerTopBar(
         },
         actions = {
             if (isSearchOpen) {
-                BackHandler {
-                    onSearchQueryChanged("")
-                    onSearchOpenChange(false)
-                }
                 SearchBar(
                     inputField = {
                         LaunchedEffect(Unit) {
@@ -638,23 +639,12 @@ fun DeckPickerScreen(
             },
             floatingActionButton = {
                 if (fragmented) {
-                    Scrim(
-                        opacity = 0F,
-                        visible = fabMenuExpanded,
-                        onDismiss = { fabMenuExpanded = false },
+                    DeckPickerFab(
+                        expanded = fabMenuExpanded,
+                        onExpandedChange = { fabMenuExpanded = it },
+                        fabActions = fabActions,
+                        scrimOpacity = 0F,
                     )
-                    ExpandableFabContainer {
-                        ExpandableFab(
-                            expanded = fabMenuExpanded,
-                            onExpandedChange = { fabMenuExpanded = it },
-                            onAddNote = fabActions.onAddNote,
-                            onAddDeck = fabActions.onAddDeck,
-                            onAddSharedDeck = fabActions.onAddSharedDeck,
-                            onAddFilteredDeck = fabActions.onAddFilteredDeck,
-                            onCheckDatabase = fabActions.onCheckDatabase,
-                        )
-                    }
-                    BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
                 }
             }) { paddingValues ->
             if (fragmented) {
@@ -696,24 +686,39 @@ fun DeckPickerScreen(
             }
         }
         if (!fragmented) {
-            Scrim(
-                visible = fabMenuExpanded,
-                onDismiss = { fabMenuExpanded = false },
+            DeckPickerFab(
+                expanded = fabMenuExpanded,
+                onExpandedChange = { fabMenuExpanded = it },
+                fabActions = fabActions,
             )
-            ExpandableFabContainer {
-                ExpandableFab(
-                    expanded = fabMenuExpanded,
-                    onExpandedChange = { fabMenuExpanded = it },
-                    onAddNote = fabActions.onAddNote,
-                    onAddDeck = fabActions.onAddDeck,
-                    onAddSharedDeck = fabActions.onAddSharedDeck,
-                    onAddFilteredDeck = fabActions.onAddFilteredDeck,
-                    onCheckDatabase = fabActions.onCheckDatabase,
-                )
-            }
-            BackHandler(fabMenuExpanded) { fabMenuExpanded = false }
         }
     }
+}
+
+@Composable
+private fun DeckPickerFab(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    fabActions: FabActions,
+    scrimOpacity: Float = 0.5f,
+) {
+    Scrim(
+        opacity = scrimOpacity,
+        visible = expanded,
+        onDismiss = { onExpandedChange(false) },
+    )
+    ExpandableFabContainer {
+        ExpandableFab(
+            expanded = expanded,
+            onExpandedChange = onExpandedChange,
+            onAddNote = fabActions.onAddNote,
+            onAddDeck = fabActions.onAddDeck,
+            onAddSharedDeck = fabActions.onAddSharedDeck,
+            onAddFilteredDeck = fabActions.onAddFilteredDeck,
+            onCheckDatabase = fabActions.onCheckDatabase,
+        )
+    }
+    BackHandler(expanded) { onExpandedChange(false) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -752,7 +757,8 @@ fun DeckPickerTopBarPreview() {
                 onCustomStudy = {},
                 onDeckOptionsItemSelected = {},
                 onUnbury = {}),
-            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior())
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+        )
     }
 }
 
@@ -778,7 +784,8 @@ fun DeckPickerTopBarSearchOpenPreview() {
                 onCustomStudy = {},
                 onDeckOptionsItemSelected = {},
                 onUnbury = {}),
-            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior())
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+        )
     }
 }
 
