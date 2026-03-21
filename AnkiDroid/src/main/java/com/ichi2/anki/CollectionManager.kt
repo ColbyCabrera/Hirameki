@@ -174,7 +174,7 @@ object CollectionManager {
      * Return a handle to the backend, creating if necessary. This should only be used
      * for routines that don't depend on an open or closed collection, such as checking
      * the current progress state when importing a colpkg file. While the backend is
-     * thread safe and can be accessed concurrently, if another thread closes the collection
+     * thread safe and can be accessed concurrently, if another thread closes the collection,
      * and you call a routine that expects an open collection, it will result in an error.
      */
     fun getBackend(): Backend {
@@ -405,7 +405,9 @@ object CollectionManager {
                 ensureClosedInner()
             }
             collection = col
-            _isCollectionOpenFlow.value = col != null
+            if (col != null) {
+                _isCollectionOpenFlow.value = true
+            }
         }
     }
 
