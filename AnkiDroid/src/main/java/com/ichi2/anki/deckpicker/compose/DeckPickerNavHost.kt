@@ -560,7 +560,7 @@ private fun SetupFlows(
 
     LaunchedEffect(Unit) {
         viewModel.composeEffects.flowWithLifecycle(lifecycle).collect { effect ->
-            return@collect when (effect) {
+            when (effect) {
                 is DeckPickerComposeEffect.ShowUndoSnackbar -> {
                     showUndoSnackbar(
                         snackbarHostState,
