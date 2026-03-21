@@ -151,7 +151,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     init {
         viewModelScope.launch {
-            flowOfFocusedDeck.collectLatest { deckId ->
+            combine(
+                flowOfFocusedDeck,
+                flowOfDecksReloaded.onStart { emit(Unit) },
+            ) { deckId, _ -> deckId }.collectLatest { deckId ->
                 _studyOptionsData.value = if (deckId != null) {
                     loadStudyOptions(deckId)
                 } else {
