@@ -33,7 +33,6 @@ import com.ichi2.anki.OnErrorListener
 import com.ichi2.anki.PermissionSet
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
-import com.ichi2.anki.undoAndGetSnackbarMessage
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.configureRenderingMode
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
@@ -54,6 +53,7 @@ import com.ichi2.anki.pages.DeckOptionsDestination
 import com.ichi2.anki.performBackupInBackground
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.syncAuth
+import com.ichi2.anki.undoAndGetSnackbarMessage
 import com.ichi2.anki.utils.Destination
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -472,6 +472,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             }
         }
     }
+
     fun onDeckSelected(
         deckId: DeckId,
         selectionType: DeckSelectionType,
@@ -502,32 +503,30 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      * @param did ID of the deck to delete
      */
     fun deleteDeck(did: DeckId) = viewModelScope.launch {
-        var followUpEffect: DeckPickerComposeEffect?
+        var followUpEffect: DeckPickerComposeEffect
         try {
             val deckName = withCol { decks.getLegacy(did)?.name }
             if (deckName == null) {
                 Timber.w("Deck %d not found for deletion", did)
                 followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
-                return@launch
-            }
-            val changes = undoableOp { decks.remove(listOf(did)) }
-            // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
-            // to match and avoid unnecessary scrolls in `renderPage()`.
-            focusedDeck = Consts.DEFAULT_DECK_ID
+            } else {
+                val changes = undoableOp { decks.remove(listOf(did)) }
+                // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
+                // to match and avoid unnecessary scrolls in `renderPage()`.
+                focusedDeck = Consts.DEFAULT_DECK_ID
 
-            val deletionResult =
-                DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
-            followUpEffect =
-                DeckPickerComposeEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString())
+                val deletionResult =
+                    DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
+                followUpEffect =
+                    DeckPickerComposeEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString())
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Timber.w(e, "Failed to delete deck %d", did)
             followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
         }
-        followUpEffect.let { effect ->
-            _composeEffects.send(effect)
-        }
+        _composeEffects.send(followUpEffect)
     }
 
     /**
