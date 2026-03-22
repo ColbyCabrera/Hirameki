@@ -502,7 +502,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      * @param did ID of the deck to delete
      */
     fun deleteDeck(did: DeckId) = viewModelScope.launch {
-        var followUpEffect: DeckPickerComposeEffect? = null
+        var followUpEffect: DeckPickerComposeEffect?
         try {
             val deckName = withCol { decks.getLegacy(did)?.name }
             if (deckName == null) {
@@ -525,7 +525,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             Timber.w(e, "Failed to delete deck %d", did)
             followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
         }
-        followUpEffect?.let { effect ->
+        followUpEffect.let { effect ->
             _composeEffects.send(effect)
         }
     }
