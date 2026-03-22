@@ -563,7 +563,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         fun onDeckPickerEffect(effect: DeckPickerEffect) {
             when (effect) {
                 is DeckPickerEffect.Sync -> sync()
-                is DeckPickerEffect.Undo -> undo()
                 is DeckPickerEffect.NavigateToReviewer -> openReviewer()
                 is DeckPickerEffect.NavigateToStudyOptions -> openStudyOptionsActivity()
                 is DeckPickerEffect.ShowExportDialog -> exportDeck(effect.deckId)
@@ -943,9 +942,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
             R.id.action_deck_delete -> {
                 launchCatchingTask {
-                    withProgress(resources.getString(R.string.delete_deck)) {
-                        viewModel.deleteSelectedDeck().join()
-                    }
+                    viewModel.deleteSelectedDeck().join()
                 }
                 return true
             }
@@ -1500,9 +1497,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
     private fun undo() {
-        launchCatchingTask {
-            undoAndShowSnackbar()
-        }
+        viewModel.undo()
     }
 
     /**
@@ -1737,9 +1732,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      */
     fun deleteDeck(did: DeckId) {
         launchCatchingTask {
-            withProgress {
-                viewModel.deleteDeck(did).join()
-            }
+            viewModel.deleteDeck(did).join()
         }
     }
 

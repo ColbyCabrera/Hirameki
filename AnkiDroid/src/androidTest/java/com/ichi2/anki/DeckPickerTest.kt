@@ -86,6 +86,7 @@ class DeckPickerTest : InstrumentedTest() {
     fun checkIfDeckCanBeDeleted() {
         val deckName = "Deck to Delete UI Test"
         val deckId = col.decks.id(deckName)
+        val undoText = testContext.getString(R.string.undo)
 
         // Add dummy cards to make the deletion slow enough to show the progress dialog
         val noteType = col.notetypes.basic.apply { did = deckId }
@@ -119,10 +120,22 @@ class DeckPickerTest : InstrumentedTest() {
         }
         composeTestRule.onNodeWithText(deletingDeckText).assertIsDisplayed()
 
-        // Assert that the deck is no longer displayed after completion
+        composeTestRule.waitUntil(timeoutMillis = 10000) {
+            composeTestRule.onAllNodesWithText(undoText).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(undoText).assertIsDisplayed()
+
+        // Assert that the deck is no longer displayed after deletion completes
         composeTestRule.waitUntil(timeoutMillis = 10000) {
             composeTestRule.onAllNodesWithText(deckName).fetchSemanticsNodes().isEmpty()
         }
         composeTestRule.onNodeWithText(deckName).assertDoesNotExist()
+
+        composeTestRule.onNodeWithText(undoText).performClick()
+
+        composeTestRule.waitUntil(timeoutMillis = 10000) {
+            composeTestRule.onAllNodesWithText(deckName).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(deckName).assertIsDisplayed()
     }
 }

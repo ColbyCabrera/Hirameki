@@ -33,6 +33,7 @@ import com.ichi2.anki.OnErrorListener
 import com.ichi2.anki.PermissionSet
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
+import com.ichi2.anki.undoAndGetSnackbarMessage
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.configureRenderingMode
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
@@ -507,10 +508,11 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      */
     fun deleteDeck(did: DeckId) = viewModelScope.launch {
         _isDeletingDeck.value = true
+        var followUpEffect: DeckPickerComposeEffect? = null
         try {
             val deckName = withCol { decks.getLegacy(did)?.name } ?: run {
                 Timber.w("Deck %d not found for deletion", did)
-                _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong))
+                followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
                 return@launch
             }
             val changes = undoableOp { decks.remove(listOf(did)) }
@@ -520,14 +522,18 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
             val deletionResult =
                 DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
-            _composeEffects.send(DeckPickerComposeEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString()))
+            followUpEffect =
+                DeckPickerComposeEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString())
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Timber.w(e, "Failed to delete deck %d", did)
-            _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong))
+            followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
         } finally {
             _isDeletingDeck.value = false
+        }
+        followUpEffect?.let { effect ->
+            _composeEffects.send(effect)
         }
     }
 
@@ -589,7 +595,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     fun undo() = launchCatchingIO {
-        _effects.send(DeckPickerEffect.Undo)
+        val message = undoAndGetSnackbarMessage()
+        _composeEffects.send(DeckPickerComposeEffect.ShowSnackbarMessage(message))
     }
 
     fun openReviewer() = launchCatchingIO {
@@ -915,9 +922,6 @@ sealed class DeckPickerEffect {
 
     /** Trigger a sync operation */
     data object Sync : DeckPickerEffect()
-
-    /** Trigger an undo operation (Activity handles database undo) */
-    data object Undo : DeckPickerEffect()
 
     /** Open the reviewer for the current/selected deck */
     data object NavigateToReviewer : DeckPickerEffect()
