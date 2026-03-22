@@ -99,6 +99,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
     @Test
     fun `empty cards - keep notes`() = runTest {
         val emptyCardsReport = createEmptyCards()
+        val deleteNotesReport = createEmptyCards()
 
         viewModel.composeEffects.test {
             viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = true).join()
@@ -110,7 +111,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
                 instanceOf(DeckPickerComposeEffect.ShowUndoSnackbar::class.java)
             )
 
-            viewModel.deleteEmptyCards(emptyCardsReport, preserveNotes = false).join()
+            viewModel.deleteEmptyCards(deleteNotesReport, preserveNotes = false).join()
 
             val item2 = expectMostRecentItem()
             assertThat(
