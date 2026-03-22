@@ -628,7 +628,7 @@ private suspend fun showUndoSnackbar(
     val result = snackbarHostState.showSnackbar(
         message = message,
         actionLabel = undoLabel,
-        duration = SnackbarDuration.Short,
+        duration = SnackbarDuration.Long,
     )
     if (result == SnackbarResult.ActionPerformed) {
         onUndo()
