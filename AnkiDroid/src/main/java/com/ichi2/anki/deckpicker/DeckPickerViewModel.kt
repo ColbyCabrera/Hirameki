@@ -85,9 +85,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val isSyncing = MutableStateFlow(false)
     val flowOfStartupResponse = MutableStateFlow<StartupResponse?>(null)
 
-    private val _isDeletingDeck = MutableStateFlow(false)
-    val isDeletingDeck: StateFlow<Boolean> = _isDeletingDeck.asStateFlow()
-
     private val flowOfDeckDueTree = MutableStateFlow<DeckNode?>(null)
 
     private val _syncState = MutableStateFlow(SyncIconState.Normal)
@@ -502,15 +499,13 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     /**
      * Deletes the provided deck, child decks, and all cards inside.
      *
-     * This is a slow operation. Progress is indicated via [isDeletingDeck].
-     *
      * @param did ID of the deck to delete
      */
     fun deleteDeck(did: DeckId) = viewModelScope.launch {
-        _isDeletingDeck.value = true
         var followUpEffect: DeckPickerComposeEffect? = null
         try {
-            val deckName = withCol { decks.getLegacy(did)?.name } ?: run {
+            val deckName = withCol { decks.getLegacy(did)?.name }
+            if (deckName == null) {
                 Timber.w("Deck %d not found for deletion", did)
                 followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
                 return@launch
@@ -529,8 +524,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         } catch (e: Exception) {
             Timber.w(e, "Failed to delete deck %d", did)
             followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
-        } finally {
-            _isDeletingDeck.value = false
         }
         followUpEffect?.let { effect ->
             _composeEffects.send(effect)
