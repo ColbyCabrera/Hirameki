@@ -136,6 +136,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     /** User filter of the deck list. Shown as a search in the UI */
     private val flowOfCurrentDeckFilter = MutableStateFlow("")
 
+    // Declared before init because it is used by the startup collector during object construction.
+    val flowOfDecksReloaded = MutableSharedFlow<Unit>()
+
     /**
      * Keep track of which deck was last given focus in the deck list. If we find that this value
      * has changed between deck list refreshes, we need to recenter the deck list to the new current
@@ -471,13 +474,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             }
         }
     }
-
-
-    // HACK: dismiss a legacy progress bar
-    // TODO: Replace with better progress handling for first load/corrupt collections
-    val flowOfDecksReloaded = MutableSharedFlow<Unit>()
-
-
     fun onDeckSelected(
         deckId: DeckId,
         selectionType: DeckSelectionType,
