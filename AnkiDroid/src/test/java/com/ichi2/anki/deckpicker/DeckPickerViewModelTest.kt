@@ -30,6 +30,7 @@ import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.emptyCids
 import com.ichi2.testutils.ensureOpsExecuted
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.CoreMatchers.not
@@ -372,75 +373,66 @@ class DeckPickerViewModelTest : RobolectricTest() {
         addBasicNote("Front", "Back")
         val deckId = Consts.DEFAULT_DECK_ID
 
-        viewModel.studyOptionsData.test {
-            // Ensure the deck list is loaded (sets up dueTree)
-            viewModel.updateDeckList()
-            advanceUntilIdle()
+        assertThat("initial state", viewModel.studyOptionsData.value, equalTo(null))
 
-            // Initial state should be null (no deck focused yet)
-            assertThat("initial state", awaitItem(), equalTo(null))
+        // Ensure the deck list is loaded (sets up dueTree)
+        viewModel.updateDeckList()
+        flushViewModelUpdates()
 
-            // Focus on a deck
-            viewModel.focusedDeck = deckId
-            advanceUntilIdle()
+        // Focus on a deck
+        viewModel.focusedDeck = deckId
+        flushViewModelUpdates()
 
-            val data = requireNotNull(awaitItem())
-            assertThat("deck id matches", data.deckId, equalTo(deckId))
-            assertThat("has 1 new card", data.newCount, equalTo(1))
-            assertThat("total cards", data.totalCards, equalTo(1))
-
-            cancelAndIgnoreRemainingEvents()
-        }
+        val data = requireNotNull(viewModel.studyOptionsData.value)
+        assertThat("deck id matches", data.deckId, equalTo(deckId))
+        assertThat("has 1 new card", data.newCount, equalTo(1))
+        assertThat("total cards", data.totalCards, equalTo(1))
     }
 
     @Test
     fun `studyOptionsData - clears when focusedDeck is null`() = runTest {
-        viewModel.studyOptionsData.test {
-            viewModel.updateDeckList()
-            advanceUntilIdle()
+        assertThat("initial state", viewModel.studyOptionsData.value, equalTo(null))
 
-            // Initial null
-            assertThat("initial state", awaitItem(), equalTo(null))
+        viewModel.updateDeckList()
+        flushViewModelUpdates()
 
-            // Focus on default deck
-            viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
-            advanceUntilIdle()
+        // Focus on default deck
+        viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
+        flushViewModelUpdates()
 
-            // Consume emission(s) deterministically instead of skipItems(1)
-            while (awaitItem()?.deckId != Consts.DEFAULT_DECK_ID) {
-                // Skip transient states like null
-            }
+        assertThat(
+            "deck is focused",
+            viewModel.studyOptionsData.value?.deckId,
+            equalTo(Consts.DEFAULT_DECK_ID)
+        )
 
-            // Clear focus
-            viewModel.focusedDeck = null
-            advanceUntilIdle()
+        // Clear focus
+        viewModel.focusedDeck = null
+        flushViewModelUpdates()
 
-            assertThat("should be null after clearing focus", awaitItem(), equalTo(null))
-
-            cancelAndIgnoreRemainingEvents()
-        }
+        assertThat(
+            "should be null after clearing focus",
+            viewModel.studyOptionsData.value,
+            equalTo(null)
+        )
     }
 
     @Test
     fun `studyOptionsData - reflects correct counts for empty deck`() = runTest {
         // Default deck with no cards
-        viewModel.studyOptionsData.test {
-            viewModel.updateDeckList()
-            advanceUntilIdle()
+        assertThat("initial state", viewModel.studyOptionsData.value, equalTo(null))
 
-            assertThat("initial state", awaitItem(), equalTo(null))
+        viewModel.updateDeckList()
+        flushViewModelUpdates()
 
-            viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
-            advanceUntilIdle()
+        viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
+        flushViewModelUpdates()
 
-            val data = requireNotNull(awaitItem())
-            assertThat("no new cards", data.newCount, equalTo(0))
-            assertThat("no learning cards", data.lrnCount, equalTo(0))
-            assertThat("no review cards", data.revCount, equalTo(0))
-            assertThat("no total cards", data.totalCards, equalTo(0))
-
-            cancelAndIgnoreRemainingEvents()
-        }
+        val data = requireNotNull(viewModel.studyOptionsData.value)
+        assertThat("no new cards", data.newCount, equalTo(0))
+        assertThat("no learning cards", data.lrnCount, equalTo(0))
+        assertThat("no review cards", data.revCount, equalTo(0))
+        assertThat("no total cards", data.totalCards, equalTo(0))
     }
 
     // endregion
@@ -627,5 +619,11 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    private fun TestScope.flushViewModelUpdates() {
+        advanceUntilIdle()
+        advanceRobolectricLooper()
+        advanceUntilIdle()
     }
 }
