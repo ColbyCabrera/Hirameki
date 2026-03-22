@@ -514,6 +514,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
                 // to match and avoid unnecessary scrolls in `renderPage()`.
                 focusedDeck = Consts.DEFAULT_DECK_ID
+                    updateDeckList()
 
                 val deletionResult =
                     DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
@@ -563,6 +564,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             }
         }
         val result = undoableOp { removeCardsAndOrphanedNotes(toDelete) }
+        updateDeckList()
         val emptyResult = EmptyCardsResult(cardsDeleted = result.count)
         _composeEffects.send(DeckPickerComposeEffect.ShowUndoSnackbar(emptyResult.toHumanReadableString()))
     }
@@ -645,6 +647,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     fun unburyDeck(deckId: DeckId) = launchCatchingIO {
         undoableOp { sched.unburyDeck(deckId) }
+        updateDeckList()
     }
 
 

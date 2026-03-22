@@ -371,11 +371,11 @@ class DeckPickerViewModelTest : RobolectricTest() {
         addBasicNote("Front", "Back")
         val deckId = Consts.DEFAULT_DECK_ID
 
-        // Ensure the deck list is loaded (sets up dueTree)
-        viewModel.updateDeckList()
-        advanceUntilIdle()
-
         viewModel.studyOptionsData.test {
+            // Ensure the deck list is loaded (sets up dueTree)
+            viewModel.updateDeckList()
+            advanceUntilIdle()
+
             // Initial state should be null (no deck focused yet)
             assertThat("initial state", awaitItem(), equalTo(null))
 
@@ -394,10 +394,10 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
     @Test
     fun `studyOptionsData - clears when focusedDeck is null`() = runTest {
-        viewModel.updateDeckList()
-        advanceUntilIdle()
-
         viewModel.studyOptionsData.test {
+            viewModel.updateDeckList()
+            advanceUntilIdle()
+
             // Initial null
             assertThat("initial state", awaitItem(), equalTo(null))
 
@@ -423,10 +423,10 @@ class DeckPickerViewModelTest : RobolectricTest() {
     @Test
     fun `studyOptionsData - reflects correct counts for empty deck`() = runTest {
         // Default deck with no cards
-        viewModel.updateDeckList()
-        advanceUntilIdle()
-
         viewModel.studyOptionsData.test {
+            viewModel.updateDeckList()
+            advanceUntilIdle()
+
             assertThat("initial state", awaitItem(), equalTo(null))
 
             viewModel.focusedDeck = Consts.DEFAULT_DECK_ID
