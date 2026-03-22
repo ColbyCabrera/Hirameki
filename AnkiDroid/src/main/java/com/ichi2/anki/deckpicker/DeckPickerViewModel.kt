@@ -157,7 +157,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 flowOfDecksReloaded.onStart { emit(Unit) },
             ) { deckId, _ -> deckId }.collectLatest { deckId ->
                 _studyOptionsData.value = if (deckId != null) {
-                    loadStudyOptions(deckId)
+                    selectAndLoadStudyOptions(deckId)
                 } else {
                     null
                 }
@@ -165,7 +165,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         }
     }
 
-    private suspend fun loadStudyOptions(deckId: DeckId): StudyOptionsData? {
+    private suspend fun selectAndLoadStudyOptions(deckId: DeckId): StudyOptionsData? {
         return try {
             withCol {
                 decks.select(deckId)
