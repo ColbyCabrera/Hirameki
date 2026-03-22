@@ -505,34 +505,34 @@ class DeckPickerViewModelTest : RobolectricTest() {
     }
 
     @Test
-    fun `isDeletingDeck - false after successful deletion`() = runTest {
+    fun `deleteDeck - completes successfully without deletion state tracking`() = runTest {
         val deckId = col.decks.id("Deck To Delete")
 
         viewModel.deleteDeck(deckId).join()
 
         assertThat(
-            "isDeletingDeck should be false after completion",
-            viewModel.isDeletingDeck.value,
-            equalTo(false)
+            "deck should be deleted after completion",
+            withCol { col.decks.getLegacy(deckId) },
+            equalTo(null)
         )
     }
 
     @Test
-    fun `isDeletingDeck - false after failed deletion`() = runTest {
+    fun `deleteDeck - failed deletion emits error without deletion state tracking`() = runTest {
         val nonExistentDeckId = 999999L
 
         viewModel.composeEffects.test {
             viewModel.deleteDeck(nonExistentDeckId).join()
-            // Consume the error effect
-            awaitItem()
+
+            val effect = awaitItem()
+            assertThat(
+                "is ShowSnackbar after failed deletion",
+                effect,
+                instanceOf(DeckPickerComposeEffect.ShowSnackbar::class.java)
+            )
+
             cancelAndIgnoreRemainingEvents()
         }
-
-        assertThat(
-            "isDeletingDeck should be false after error",
-            viewModel.isDeletingDeck.value,
-            equalTo(false)
-        )
     }
 
     @Test
@@ -565,9 +565,6 @@ class DeckPickerViewModelTest : RobolectricTest() {
         viewModel.effects.test {
             viewModel.sync()
             assertThat("is Sync", awaitItem(), instanceOf(DeckPickerEffect.Sync::class.java))
-
-            viewModel.undo()
-            assertThat("is Undo", awaitItem(), instanceOf(DeckPickerEffect.Undo::class.java))
 
             viewModel.openReviewer()
             assertThat(
@@ -614,6 +611,17 @@ class DeckPickerViewModelTest : RobolectricTest() {
                 "is CheckDatabase",
                 awaitItem(),
                 instanceOf(DeckPickerEffect.CheckDatabase::class.java)
+            )
+
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        viewModel.composeEffects.test {
+            viewModel.undo()
+            assertThat(
+                "undo emits compose snackbar message",
+                awaitItem(),
+                instanceOf(DeckPickerComposeEffect.ShowSnackbarMessage::class.java)
             )
 
             cancelAndIgnoreRemainingEvents()
