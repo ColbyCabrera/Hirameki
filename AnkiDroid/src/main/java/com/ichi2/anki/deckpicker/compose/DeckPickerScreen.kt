@@ -636,16 +636,6 @@ fun DeckPickerScreen(
                     studyOptionsActions = studyOptionsPanelActions,
                     scrollBehavior = scrollBehavior
                 )
-            },
-            floatingActionButton = {
-                if (fragmented) {
-                    DeckPickerFab(
-                        expanded = fabMenuExpanded,
-                        onExpandedChange = { fabMenuExpanded = it },
-                        fabActions = fabActions,
-                        scrimOpacity = 0F,
-                    )
-                }
             }) { paddingValues ->
             if (fragmented) {
                 Row(
@@ -685,13 +675,12 @@ fun DeckPickerScreen(
                 )
             }
         }
-        if (!fragmented) {
-            DeckPickerFab(
-                expanded = fabMenuExpanded,
-                onExpandedChange = { fabMenuExpanded = it },
-                fabActions = fabActions,
-            )
-        }
+        DeckPickerFab(
+            expanded = fabMenuExpanded,
+            onExpandedChange = { fabMenuExpanded = it },
+            fabActions = fabActions,
+            scrimOpacity = if (fragmented) 0F else 0.5f,
+        )
     }
 }
 
