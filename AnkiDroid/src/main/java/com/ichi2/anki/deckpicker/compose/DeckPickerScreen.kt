@@ -617,7 +617,7 @@ fun DeckPickerScreen(
                         snackbarData = data,
                         containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = MaterialTheme.colorScheme.onSecondary,
-                        actionColor = MaterialTheme.colorScheme.primary,
+                        actionColor = MaterialTheme.colorScheme.onSecondary,
                         dismissActionContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                 }
