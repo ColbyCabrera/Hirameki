@@ -42,6 +42,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import net.ankiweb.rsdroid.Backend
 import net.ankiweb.rsdroid.BackendException
 import net.ankiweb.rsdroid.BackendFactory
@@ -92,6 +95,9 @@ object CollectionManager {
     private val testMutex = ReentrantLock()
 
     private var currentSyncCertificate: String = ""
+
+    private val _isCollectionOpenFlow = MutableStateFlow(false)
+    val isCollectionOpenFlow: StateFlow<Boolean> = _isCollectionOpenFlow.asStateFlow()
 
     /**
      * Execute the provided block on a serial background queue, to ensure
@@ -150,7 +156,7 @@ object CollectionManager {
      * Execute the provided block if the collection is already open. See [withCol] for more.
      * Since the block may return a null value, and a null value will also be returned in the
      * case of the collection being closed, if the calling code needs to distinguish between
-     * these two cases, it should wrap the return value of the block in a class (eg Optional),
+     * these two cases, it should wrap the return value of the block in a class (e.g. Optional),
      * instead of returning a nullable object.
      */
     suspend fun <T> withOpenColOrNull(
@@ -168,7 +174,7 @@ object CollectionManager {
      * Return a handle to the backend, creating if necessary. This should only be used
      * for routines that don't depend on an open or closed collection, such as checking
      * the current progress state when importing a colpkg file. While the backend is
-     * thread safe and can be accessed concurrently, if another thread closes the collection
+     * thread safe and can be accessed concurrently, if another thread closes the collection,
      * and you call a routine that expects an open collection, it will result in an error.
      */
     fun getBackend(): Backend {
@@ -251,6 +257,7 @@ object CollectionManager {
             Timber.e("swallowing error on close: $exc")
         }
         collection = null
+        _isCollectionOpenFlow.value = false
     }
 
     /**
@@ -277,6 +284,7 @@ object CollectionManager {
                     databaseBuilder = { backend -> createDatabaseUsingRustBackend(backend) },
                     backend = backend,
                 )
+            _isCollectionOpenFlow.value = true
         }
     }
 
@@ -397,6 +405,9 @@ object CollectionManager {
                 ensureClosedInner()
             }
             collection = col
+            if (col != null) {
+                _isCollectionOpenFlow.value = true
+            }
         }
     }
 

@@ -47,9 +47,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,7 +97,6 @@ private val transparentTextFieldColors: @Composable () -> TextFieldColors = {
 }
 
 @OptIn(
-    ExperimentalMaterial3WindowSizeClassApi::class,
     ExperimentalMaterial3Api::class,
     ExperimentalMaterial3ExpressiveApi::class,
 )
@@ -127,12 +123,6 @@ fun CardBrowserLayout(
     onFilterByTag: () -> Unit,
 ) {
     val activity = LocalActivity.current
-    val isTablet = if (activity != null) {
-        val windowSizeClass = calculateWindowSizeClass(activity)
-        windowSizeClass.widthSizeClass > WindowWidthSizeClass.Compact
-    } else {
-        false
-    }
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isSearchOpen by viewModel.flowOfSearchQueryExpanded.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
@@ -226,8 +216,8 @@ fun CardBrowserLayout(
                     ) {
                         DeckSelector(
                             selectedDeck = viewModel.flowOfDeckSelection.collectAsStateWithLifecycle(
-                                    null,
-                                ).value,
+                                null,
+                            ).value,
                             availableDecks = availableDecks,
                             onDeckSelected = { deck ->
                                 coroutineScope.launch {
@@ -361,14 +351,6 @@ fun CardBrowserLayout(
                 onExportCard = onExportCard,
                 onFilterByTag = onFilterByTag,
             )
-            if (isTablet) {
-                // TODO: Re-enable NoteEditor split view after migration is complete
-                // NoteEditor(
-                //     modifier = Modifier.weight(1f)
-                // )
-            }
         }
     }
 }
-
-// buildDeckHierarchy and DeckHierarchyMenu removed in favor of shared DeckSelector.kt

@@ -365,7 +365,7 @@ suspend fun monitorMediaSync(deckPicker: DeckPicker) {
         cancelMediaSync(backend)
     }
 
-    suspend fun showMessage(msg: String) = viewModel.snackbarMessage.emit(msg)
+    suspend fun showMessage(msg: String) = viewModel.showSnackbar(msg)
 
     withContext(Dispatchers.IO) {
         try {
@@ -409,7 +409,7 @@ suspend fun DeckPicker.showSyncLogMessage(
         )
     } else {
         if (syncMessage.isNullOrEmpty()) {
-            viewModel.snackbarMessage.emit(getString(messageResource))
+            viewModel.showSnackbar(getString(messageResource))
         } else {
             val res = AnkiDroidApp.appResources
             showSimpleMessageDialog(title = res.getString(messageResource), message = syncMessage)

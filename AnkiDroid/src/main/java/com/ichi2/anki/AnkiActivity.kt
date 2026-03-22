@@ -99,10 +99,7 @@ import androidx.browser.customtabs.CustomTabsIntent.Builder as CustomTabsIntentB
 
 @UiThread
 @KotlinCleanup("set activityName")
-open class AnkiActivity :
-    AppCompatActivity,
-    ShortcutGroupProvider,
-    AnkiActivityProvider {
+open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivityProvider {
     /**
      * Receiver that informs us when a broadcast listen in [broadcastsActions] is received.
      *
@@ -150,8 +147,7 @@ open class AnkiActivity :
         enableEdgeToEdge()
         // Disable the notifications bar if running under the test monkey.
         if (AdaptionUtil.isUserATestClient) {
-            val controller =
-                WindowInsetsControllerCompat(window, window.decorView)
+            val controller = WindowInsetsControllerCompat(window, window.decorView)
             controller.hide(WindowInsetsCompat.Type.statusBars())
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -236,13 +232,12 @@ open class AnkiActivity :
 
     /**
      * Maps from intent name action to function to run when this action is received by [broadcastReceiver].
-     * By default it handles [SdCardReceiver.MEDIA_EJECT], and shows/dismisses dialogs when an SD
+     * By default, it handles [SdCardReceiver.MEDIA_EJECT], and shows/dismisses dialogs when an SD
      * card is ejected/remounted (collection is saved beforehand by [SdCardReceiver])
      */
-    protected open val broadcastsActions =
-        mapOf(
-            SdCardReceiver.MEDIA_EJECT to { onSdCardNotMounted() },
-        )
+    protected open val broadcastsActions = mapOf(
+        SdCardReceiver.MEDIA_EJECT to { onSdCardNotMounted() },
+    )
 
     /**
      * Register a broadcast receiver, associating an intent to an action as in [broadcastsActions].
@@ -253,19 +248,18 @@ open class AnkiActivity :
             // Receiver already registered
             return
         }
-        broadcastReceiver =
-            object : BroadcastReceiver() {
-                override fun onReceive(
-                    context: Context,
-                    intent: Intent,
-                ) {
-                    broadcastsActions[intent.action]?.invoke()
-                }
-            }.also {
-                val iFilter = IntentFilter()
-                broadcastsActions.keys.map(iFilter::addAction)
-                registerReceiverCompat(it, iFilter, ContextCompat.RECEIVER_EXPORTED)
+        broadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                broadcastsActions[intent.action]?.invoke()
             }
+        }.also {
+            val iFilter = IntentFilter()
+            broadcastsActions.keys.forEach(iFilter::addAction)
+            registerReceiverCompat(it, iFilter, ContextCompat.RECEIVER_EXPORTED)
+        }
     }
 
     protected fun onSdCardNotMounted() {
@@ -483,24 +477,17 @@ open class AnkiActivity :
         }
         val toolbarColor = MaterialColors.getColor(this, R.attr.appBarColor, 0)
         val navBarColor = MaterialColors.getColor(this, R.attr.customTabNavBarColor, 0)
-        val colorSchemeParams =
-            CustomTabColorSchemeParams
-                .Builder()
-                .setToolbarColor(toolbarColor)
-                .setNavigationBarColor(navBarColor)
-                .build()
-        val builder =
-            CustomTabsIntentBuilder(customTabActivityHelper.session)
-                .setShowTitle(true)
-                .setStartAnimations(this, R.anim.slide_right_in, R.anim.slide_left_out)
-                .setExitAnimations(this, R.anim.slide_left_in, R.anim.slide_right_out)
-                .setCloseButtonIcon(
-                    BitmapFactory.decodeResource(
-                        this.resources,
-                        R.drawable.ic_back_arrow_custom_tab,
-                    ),
-                ).setColorScheme(customTabsColorScheme)
-                .setDefaultColorSchemeParams(colorSchemeParams)
+        val colorSchemeParams = CustomTabColorSchemeParams.Builder().setToolbarColor(toolbarColor)
+            .setNavigationBarColor(navBarColor).build()
+        val builder = CustomTabsIntentBuilder(customTabActivityHelper.session).setShowTitle(true)
+            .setStartAnimations(this, R.anim.slide_right_in, R.anim.slide_left_out)
+            .setExitAnimations(this, R.anim.slide_left_in, R.anim.slide_right_out)
+            .setCloseButtonIcon(
+                BitmapFactory.decodeResource(
+                    this.resources,
+                    R.drawable.ic_back_arrow_custom_tab,
+                ),
+            ).setColorScheme(customTabsColorScheme).setDefaultColorSchemeParams(colorSchemeParams)
         val customTabsIntent = builder.build()
         CustomTabsHelper.addKeepAliveExtra(this, customTabsIntent.intent)
         CustomTabActivityHelper.openCustomTab(this, customTabsIntent, url, CustomTabsFallback())
@@ -517,14 +504,13 @@ open class AnkiActivity :
     }
 
     private val customTabsColorScheme: Int
-        get() =
-            if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
-                COLOR_SCHEME_SYSTEM
-            } else if (Themes.currentTheme.isNightMode) {
-                COLOR_SCHEME_DARK
-            } else {
-                COLOR_SCHEME_LIGHT
-            }
+        get() = if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM) {
+            COLOR_SCHEME_SYSTEM
+        } else if (Themes.currentTheme.isNightMode) {
+            COLOR_SCHEME_DARK
+        } else {
+            COLOR_SCHEME_LIGHT
+        }
 
     /**
      * Calls [.showAsyncDialogFragment] internally, using the channel
@@ -585,37 +571,30 @@ open class AnkiActivity :
         channel: Channel,
     ) {
         // Use the title as the ticker unless the title is simply "AnkiDroid"
-        val ticker: String? =
-            if (title == resources.getString(R.string.app_name)) {
-                message
-            } else {
-                title
-            }
+        val ticker: String? = if (title == resources.getString(R.string.app_name)) {
+            message
+        } else {
+            title
+        }
         // Build basic notification
-        val builder =
-            NotificationCompat
-                .Builder(
-                    this,
-                    channel.id,
-                ).setSmallIcon(R.drawable.ic_star_notify)
-                .setContentTitle(title)
-                .setContentText(message)
-                .setColor(getColor(R.color.material_light_blue_500))
-                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setTicker(ticker)
+        val builder = NotificationCompat.Builder(
+            this,
+            channel.id,
+        ).setSmallIcon(R.drawable.ic_star_notify).setContentTitle(title).setContentText(message)
+            .setColor(getColor(R.color.material_light_blue_500))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC).setTicker(ticker)
         configureLegacyNotificationSettings(builder)
         // Creates an explicit intent for an Activity in your app
         val resultIntent = Intent(this, DeckPicker::class.java)
         resultIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        val resultPendingIntent =
-            PendingIntentCompat.getActivity(
-                this,
-                0,
-                resultIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT,
-                false,
-            )
+        val resultPendingIntent = PendingIntentCompat.getActivity(
+            this,
+            0,
+            resultIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT,
+            false,
+        )
         builder.setContentIntent(resultPendingIntent)
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         // mId allows you to update the notification later on.
@@ -642,7 +621,8 @@ open class AnkiActivity :
         errorDialogType: DatabaseErrorDialogType,
         exceptionData: CustomExceptionData? = null,
     ) {
-        val newFragment: AsyncDialogFragment = DatabaseErrorDialog.newInstance(errorDialogType, exceptionData)
+        val newFragment: AsyncDialogFragment =
+            DatabaseErrorDialog.newInstance(errorDialogType, exceptionData)
         showAsyncDialogFragment(newFragment)
     }
 
@@ -652,10 +632,9 @@ open class AnkiActivity :
      * @throws IllegalStateException if the bar could not be enabled
      */
     protected fun enableToolbar(): ActionBar {
-        val toolbar =
-            findViewById<Toolbar>(R.id.toolbar)
-                ?: // likely missing "<include layout="@layout/toolbar" />"
-                throw IllegalStateException("Unable to find toolbar")
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+            ?: // likely missing "<include layout="@layout/toolbar" />"
+            throw IllegalStateException("Unable to find toolbar")
         setSupportActionBar(toolbar)
         return supportActionBar!!
     }
@@ -667,10 +646,9 @@ open class AnkiActivity :
      * @throws IllegalStateException if the bar could not be enabled
      */
     protected fun enableToolbar(view: View): ActionBar {
-        val toolbar =
-            view.findViewById<Toolbar>(R.id.toolbar)
-                ?: // likely missing "<include layout="@layout/toolbar" />"
-                throw IllegalStateException("Unable to find toolbar: $view")
+        val toolbar = view.findViewById<Toolbar>(R.id.toolbar)
+            ?: // likely missing "<include layout="@layout/toolbar" />"
+            throw IllegalStateException("Unable to find toolbar: $view")
         setSupportActionBar(toolbar)
         return supportActionBar!!
     }
@@ -702,13 +680,12 @@ open class AnkiActivity :
      * Get current activity keyboard shortcuts
      */
     private fun getShortcuts(): List<KeyboardShortcutGroup> {
-        val generalShortcutGroup =
-            ShortcutGroup(
-                listOf(
-                    shortcut("Ctrl+Z", R.string.undo),
-                ),
-                R.string.pref_cat_general,
-            ).toShortcutGroup(this)
+        val generalShortcutGroup = ShortcutGroup(
+            listOf(
+                shortcut("Ctrl+Z", R.string.undo),
+            ),
+            R.string.pref_cat_general,
+        ).toShortcutGroup(this)
 
         return listOfNotNull(shortcuts?.toShortcutGroup(this), generalShortcutGroup)
     }
@@ -788,36 +765,28 @@ open class AnkiActivity :
         val authority = "${this.packageName}.apkgfileprovider"
 
         // Get a URI for the file to be shared via the FileProvider API
-        val uri: Uri =
-            try {
-                FileProvider.getUriForFile(this, authority, attachment)
-            } catch (e: IllegalArgumentException) {
-                Timber.e("Could not generate a valid URI for the apkg file")
-                showThemedToast(this, resources.getString(R.string.apk_share_error), false)
-                return
+        val uri: Uri = try {
+            FileProvider.getUriForFile(this, authority, attachment)
+        } catch (e: IllegalArgumentException) {
+            Timber.e("Could not generate a valid URI for the apkg file")
+            showThemedToast(this, resources.getString(R.string.apk_share_error), false)
+            return
+        }
+        val sendIntent = ShareCompat.IntentBuilder(this).setType("application/apkg").setStream(uri)
+            .setSubject(getString(R.string.export_email_subject, attachment.name)).setHtmlText(
+                getString(
+                    R.string.export_email_text,
+                    getString(R.string.link_manual),
+                    getString(R.string.link_distributions),
+                ),
+            ).intent.apply {
+                clipData = ClipData.newUri(contentResolver, attachment.name, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             }
-        val sendIntent =
-            ShareCompat
-                .IntentBuilder(this)
-                .setType("application/apkg")
-                .setStream(uri)
-                .setSubject(getString(R.string.export_email_subject, attachment.name))
-                .setHtmlText(
-                    getString(
-                        R.string.export_email_text,
-                        getString(R.string.link_manual),
-                        getString(R.string.link_distributions),
-                    ),
-                ).intent
-                .apply {
-                    clipData = ClipData.newUri(contentResolver, attachment.name, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                }
-        val shareFileIntent =
-            Intent.createChooser(
-                sendIntent,
-                getString(R.string.export_share_title),
-            )
+        val shareFileIntent = Intent.createChooser(
+            sendIntent,
+            getString(R.string.export_share_title),
+        )
         if (shareFileIntent.resolveActivity(packageManager) != null) {
             startActivity(shareFileIntent)
         } else {
@@ -839,15 +808,14 @@ open class AnkiActivity :
         fileExportPath = exportPath
 
         // Send the user to the standard Android file picker via Intent
-        val saveIntent =
-            Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/apkg"
-                putExtra(Intent.EXTRA_TITLE, attachment.name)
-                putExtra("android.content.extra.SHOW_ADVANCED", true)
-                putExtra("android.content.extra.FANCY", true)
-                putExtra("android.content.extra.SHOW_FILESIZE", true)
-            }
+        val saveIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/apkg"
+            putExtra(Intent.EXTRA_TITLE, attachment.name)
+            putExtra("android.content.extra.SHOW_ADVANCED", true)
+            putExtra("android.content.extra.FANCY", true)
+            putExtra("android.content.extra.SHOW_FILESIZE", true)
+        }
         try {
             saveFileLauncher.launch(saveIntent)
         } catch (ex: ActivityNotFoundException) {
@@ -859,10 +827,16 @@ open class AnkiActivity :
     private fun saveFileCallback(result: ActivityResult) {
         launchCatchingTask {
             withProgress(getString(R.string.export_saving_exported_collection)) {
-                val isSuccessful =
-                    withContext(Dispatchers.IO) {
-                        exportToProvider(result.data!!)
-                    }
+                val intent = result.data
+                if (intent == null) {
+                    Timber.w("saveFileCallback() missing export destination intent")
+                    postSnackbar(R.string.export_save_apkg_unsuccessful)
+                    return@withProgress
+                }
+
+                val isSuccessful = withContext(Dispatchers.IO) {
+                    exportToProvider(intent)
+                }
 
                 if (isSuccessful) {
                     postSnackbar(R.string.export_save_apkg_successful)
@@ -882,7 +856,9 @@ open class AnkiActivity :
             return false
         }
         val uri = intent.data
-        Timber.d("Exporting from file to ContentProvider URI: %s/%s", fileExportPath, uri.toString())
+        Timber.d(
+            "Exporting from file to ContentProvider URI: %s/%s", fileExportPath, uri.toString()
+        )
         try {
             contentResolver.openFileDescriptor(uri!!, "w").use { pfd ->
                 if (pfd != null) {
@@ -908,11 +884,21 @@ open class AnkiActivity :
     }
 
     private fun postSnackbar(@StringRes text: Int) {
-        (this as? DeckPicker)?.viewModel?.snackbarMessage?.tryEmit(getString(text))
+        postSnackbar(getString(text))
     }
 
     private fun postSnackbar(text: String) {
-        (this as? DeckPicker)?.viewModel?.snackbarMessage?.tryEmit(text)
+        val dp = this as? DeckPicker
+        if (dp != null) {
+            dp.lifecycleScope.launch { dp.viewModel.showSnackbar(text) }
+        } else {
+            Timber.w(
+                "postSnackbar called from non-DeckPicker activity (%s): %s",
+                this::class.simpleName,
+                text
+            )
+            showThemedToast(this, text, false)
+        }
     }
 
     companion object {
@@ -924,9 +910,8 @@ open class AnkiActivity :
     }
 }
 
-fun Fragment.requireAnkiActivity(): AnkiActivity =
-    ankiActivity
-        ?: throw java.lang.IllegalStateException("Fragment $this not attached to an AnkiActivity.")
+fun Fragment.requireAnkiActivity(): AnkiActivity = ankiActivity
+    ?: throw java.lang.IllegalStateException("Fragment $this not attached to an AnkiActivity.")
 
 val Fragment.ankiActivity: AnkiActivity?
     get() = this.requireActivity() as? AnkiActivity?

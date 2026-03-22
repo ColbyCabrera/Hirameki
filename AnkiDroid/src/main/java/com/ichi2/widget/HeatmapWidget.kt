@@ -19,6 +19,8 @@ package com.ichi2.widget
 import android.content.Context
 import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -34,6 +36,8 @@ import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.PreviewSizeMode
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -65,6 +69,14 @@ import timber.log.Timber
 import java.util.Calendar
 
 class HeatmapWidget : GlanceAppWidget() {
+    override val previewSizeMode: PreviewSizeMode = SizeMode.Responsive(
+        setOf(
+            DpSize(200.dp, 100.dp), // min size
+            DpSize(300.dp, 150.dp), // medium
+            DpSize(400.dp, 170.dp), // large
+        ),
+    )
+
     override suspend fun provideGlance(
         context: Context,
         id: GlanceId,
@@ -272,7 +284,7 @@ class HeatmapWidget : GlanceAppWidget() {
     companion object {
         private val RESERVED_WIDTH_FOR_LABELS_AND_PANEL = 180.dp
         private const val WEEK_COLUMN_WIDTH = 16
-        const val DAY_IN_MILLIS = 86400000L
+        const val DAY_IN_MILLIS = 86_400_000L
 
         private const val HEATMAP_LEVEL_1_MAX_COUNT = 5
         private const val HEATMAP_LEVEL_2_MAX_COUNT = 20
@@ -302,7 +314,6 @@ class HeatmapWidget : GlanceAppWidget() {
 
         suspend fun fetchHeatmapData(): Map<Long, Int> = try {
             CollectionManager.withCol {
-                val data = mutableMapOf<Long, Int>()
                 // Limit query to recent history for performance.
                 // revlog.id is the primary key (timestamp in ms), so the WHERE clause
                 // enables an efficient index range scan instead of a full table scan.
@@ -313,48 +324,44 @@ class HeatmapWidget : GlanceAppWidget() {
                 val query =
                     "SELECT CAST(id/$DAY_IN_MILLIS AS INTEGER) as day, count() FROM revlog WHERE id >= $cutoffMillis GROUP BY day"
 
-                val cursor = this.db.query(query)
-                cursor.use { c ->
-                    while (c.moveToNext()) {
-                        val day = c.getLong(0)
-                        val count = c.getInt(1)
-                        data[day] = count
+                buildMap {
+                    this@withCol.db.query(query).use { c ->
+                        while (c.moveToNext()) {
+                            put(c.getLong(0), c.getInt(1))
+                        }
                     }
                 }
-                data
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch heatmap data")
             emptyMap()
         }
 
-        fun getDummyHeatmapData(): Map<Long, Int> {
+        fun getDummyHeatmapData(): Map<Long, Int> = buildMap {
             @Suppress("DirectSystemCurrentTimeMillisUsage") val today =
                 System.currentTimeMillis() / DAY_IN_MILLIS
-            val dummyData = mutableMapOf<Long, Int>()
             // Fill some days
             for (i in 0..100) {
                 // Use when to explicitly define precedence (first matching condition wins)
                 when {
-                    i % 11 == 0 -> dummyData[today - i] = 21
-                    i % 5 == 0 -> dummyData[today - i] = 11
-                    i % 13 == 0 -> dummyData[today - i] = 6
-                    i % 2 == 0 -> dummyData[today - i] = 1
-                    i % 3 == 0 -> dummyData[today - i] = 0
+                    i % 11 == 0 -> put(today - i, 21)
+                    i % 5 == 0 -> put(today - i, 11)
+                    i % 13 == 0 -> put(today - i, 6)
+                    i % 2 == 0 -> put(today - i, 1)
+                    i % 3 == 0 -> put(today - i, 0)
                 }
             }
-            dummyData[today] = 294
-            return dummyData
+            put(today, 294)
         }
 
         suspend fun updateHeatmapWidgetPreview(context: Context) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                     val manager = GlanceAppWidgetManager(context)
-                    @Suppress("UNUSED_VARIABLE")
-                    val ignored = manager.setWidgetPreviews(
-                        HeatmapWidgetReceiver::class,
-                    )
+                    val result = manager.setWidgetPreviews(HeatmapWidgetReceiver::class)
+                    if (result != GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_SUCCESS) {
+                        Timber.w("Failed to update heatmap widget preview: %d", result)
+                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update heatmap widget preview")
@@ -371,8 +378,8 @@ fun HeatmapWidgetPreview() {
     val context = androidx.glance.LocalContext.current
     val dummyData = HeatmapWidget.getDummyHeatmapData()
 
-    androidx.compose.runtime.CompositionLocalProvider(
-        LocalSize provides androidx.compose.ui.unit.DpSize(300.dp, 400.dp),
+    CompositionLocalProvider(
+        LocalSize provides DpSize(300.dp, 180.dp),
     ) {
         HeatmapWidget().HeatmapContent(dummyData, context)
     }

@@ -63,9 +63,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import anki.decks.deckTreeNode
 import com.ichi2.anki.R
 import com.ichi2.anki.deckpicker.DisplayDeckNode
+import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 private val expandedDeckCardRadius = 14.dp
 private val collapsedDeckCardRadius = 70.dp
@@ -76,6 +79,21 @@ private val CloverShape = RoundedPolygonShape(MaterialShapes.Clover4Leaf)
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val GhostishShape = RoundedPolygonShape(MaterialShapes.Ghostish)
 
+/**
+ * Actions for a single deck item, already bound to a specific deck.
+ */
+data class DeckItemActions(
+    val onDeckClick: () -> Unit,
+    val onExpandClick: () -> Unit,
+    val onDeckOptions: () -> Unit,
+    val onRename: () -> Unit,
+    val onExport: () -> Unit,
+    val onDelete: () -> Unit,
+    val onRebuild: () -> Unit,
+    val onEmpty: () -> Unit,
+    val onCreateSubdeck: () -> Unit,
+)
+
 @OptIn(
     ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class
 )
@@ -83,14 +101,7 @@ private val GhostishShape = RoundedPolygonShape(MaterialShapes.Ghostish)
 fun DeckItem(
     deck: DisplayDeckNode,
     modifier: Modifier = Modifier,
-    onDeckClick: () -> Unit,
-    onExpandClick: () -> Unit,
-    onDeckOptions: () -> Unit,
-    onRename: () -> Unit,
-    onExport: () -> Unit,
-    onDelete: () -> Unit,
-    onRebuild: () -> Unit,
-    onEmpty: () -> Unit,
+    actions: DeckItemActions,
 ) {
     var isContextMenuOpen by remember { mutableStateOf(false) }
 
@@ -110,12 +121,10 @@ fun DeckItem(
                         Modifier
                     }
                 )
-                .combinedClickable(
-                    onClick = {
-                        isContextMenuOpen = false
-                        onDeckClick()
-                    },
-                    onLongClick = { isContextMenuOpen = true })
+                .combinedClickable(onClick = {
+                    isContextMenuOpen = false
+                    actions.onDeckClick()
+                }, onLongClick = { isContextMenuOpen = true })
                 .padding(horizontal = 8.dp, vertical = if (deck.depth > 0) 4.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -154,10 +163,9 @@ fun DeckItem(
                 )
             }
 
-
             if (deck.canCollapse) {
                 IconButton(
-                    onClick = { onExpandClick() },
+                    onClick = { actions.onExpandClick() },
                     modifier = Modifier
                         .padding(start = 6.dp)
                         .size(36.dp)
@@ -185,7 +193,7 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.rebuild_cram_label)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onRebuild()
+                            actions.onRebuild()
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Refresh, contentDescription = null)
@@ -194,17 +202,29 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.empty_cram_label)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onEmpty()
+                            actions.onEmpty()
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Close, contentDescription = null)
                         })
                 } else {
                     DropdownMenuItem(
+                        text = { Text(stringResource(R.string.create_subdeck)) },
+                        onClick = {
+                            isContextMenuOpen = false
+                            actions.onCreateSubdeck()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_add_deck_filled),
+                                contentDescription = null
+                            )
+                        })
+                    DropdownMenuItem(
                         text = { Text(stringResource(R.string.rename_deck)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onRename()
+                            actions.onRename()
                         },
                         leadingIcon = {
                             Icon(
@@ -216,7 +236,7 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.export_deck)) },
                         onClick = {
                             isContextMenuOpen = false
-                            onExport()
+                            actions.onExport()
                         },
                         leadingIcon = {
                             Icon(
@@ -227,7 +247,7 @@ fun DeckItem(
                 }
                 DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
                     isContextMenuOpen = false
-                    onDeckOptions()
+                    actions.onDeckOptions()
                 }, leadingIcon = {
                     Icon(painter = painterResource(R.drawable.tune_24px), contentDescription = null)
                 })
@@ -235,7 +255,7 @@ fun DeckItem(
                     text = { Text(stringResource(R.string.contextmenu_deckpicker_delete_deck)) },
                     onClick = {
                         isContextMenuOpen = false
-                        onDelete()
+                        actions.onDelete()
                     },
                     leadingIcon = {
                         Icon(
@@ -320,4 +340,52 @@ fun CardCountsContainerPreview() {
     CardCountsContainer(
         cardCount = 10, contentDescription = "New: 10", shape = CloverShape
     )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(name = "Deck Item", showBackground = true)
+@Composable
+private fun DeckItemPreview() {
+    AnkiDroidTheme {
+        val node = DeckNode(
+            node = deckTreeNode {
+                name = "Japanese"
+                deckId = 1L
+                level = 1
+                reviewCount = 10
+                newCount = 5
+                learnCount = 2
+                children.add(deckTreeNode {
+                    name = "Kanji"
+                    deckId = 2L
+                    level = 2
+                })
+            }, fullDeckName = "Japanese"
+        )
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        DeckItem(
+            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {})
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(name = "Deck Item Subdeck", showBackground = true)
+@Composable
+private fun DeckItemSubdeckPreview() {
+    AnkiDroidTheme {
+        val node = DeckNode(
+            node = deckTreeNode {
+                name = "Kanji"
+                deckId = 2L
+                level = 2
+                reviewCount = 5
+                newCount = 3
+            }, fullDeckName = "Japanese::Kanji"
+        )
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        DeckItem(
+            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {})
+        )
+    }
 }

@@ -23,8 +23,7 @@
 // should be OK as this is only non-final for tests
 @file:Suppress(
     "LeakingThis",
-    "DEPRECATION"
-) // DEPRECATION: Uses legacy CreateDeckDialog - TODO: migrate to Compose
+)
 
 package com.ichi2.anki
 
@@ -50,17 +49,18 @@ import androidx.activity.viewModels
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.edit
-import androidx.core.net.toUri
 import androidx.core.util.component1
 import androidx.core.util.component2
 import androidx.core.view.MenuItemCompat
 import androidx.core.view.OnReceiveContentListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.work.WorkInfo
@@ -88,6 +88,7 @@ import com.ichi2.anki.browser.MySearchesContract
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
+import com.ichi2.anki.deckpicker.DeckPickerEffect
 import com.ichi2.anki.deckpicker.DeckPickerViewModel
 import com.ichi2.anki.deckpicker.DeckPickerViewModel.AnkiDroidEnvironment
 import com.ichi2.anki.deckpicker.DeckPickerViewModel.FlattenedDeckList
@@ -96,7 +97,6 @@ import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.compose.DeckPickerNavHost
 import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.ConfirmationDialog
-import com.ichi2.anki.dialogs.CreateDeckDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.CustomExceptionData
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.DeckPickerAnalyticsOptInDialog
@@ -464,6 +464,9 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         setupFlows()
 
         setContent {
+            val isOpen by CollectionManager.isCollectionOpenFlow.collectAsStateWithLifecycle()
+            if (!isOpen) return@setContent
+
             AnkiDroidTheme {
                 val navigationState = rememberNavigationState(
                     startRoute = DeckPickerScreen, topLevelRoutes = setOf(DeckPickerScreen)
@@ -476,24 +479,10 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     cardBrowserViewModel = cardBrowserViewModel,
                     fragmented = fragmented,
                     onLaunchIntent = { startActivity(it) },
-                    onLaunchUrl = { startActivity(Intent(Intent.ACTION_VIEW, it.toUri())) },
-                    onUndo = { undo() },
-                    onOpenReviewer = { openReviewer() },
-                    onOpenStudyOptions = { openStudyOptionsActivity() },
                     onOpenNoteEditor = { actionHandler.openNoteEditorForCard(it) },
                     onAddNote = { addNote() },
-                    onAddDeck = { showCreateDeckDialog() },
                     onAddSharedDeck = { openAnkiWebSharedDecks() },
-                    onAddFilteredDeck = { showCreateFilteredDeckDialog() },
-                    onCheckDatabase = {
-                        showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
-                    },
-                    onRenameDeck = { renameDeckDialog(it) },
-                    onExportDeck = { exportDeck(it) },
-                    onDeleteDeck = { deleteDeck(it) },
-                    onRebuildFiltered = { rebuildFiltered(it) },
-                    onEmptyFiltered = { emptyFiltered(it) },
-                    onCustomStudy = { showCustomStudyDialog(it) },
+                    onAddFilteredDeck = { viewModel.showCreateFilteredDeckDialog() },
                     onOpenCardInfo = { cardId ->
                         val destination = CardInfoDestination(
                             cardId, getString(R.string.card_info_title)
@@ -502,7 +491,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     },
                     onShowDialogFragment = { it.show(supportFragmentManager, null) },
                     onInvalidateOptionsMenu = { invalidateOptionsMenu() },
-                    onSync = { sync() },
                     onLoginToAnkiWeb = { loginToSyncServer() })
             }
         }
@@ -571,6 +559,22 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 is StartupResponse.FatalError -> handleStartupFailure(response.failure)
             }
         }
+
+        fun onDeckPickerEffect(effect: DeckPickerEffect) {
+            when (effect) {
+                is DeckPickerEffect.Sync -> sync()
+                is DeckPickerEffect.NavigateToReviewer -> openReviewer()
+                is DeckPickerEffect.NavigateToStudyOptions -> openStudyOptionsActivity()
+                is DeckPickerEffect.ShowExportDialog -> exportDeck(effect.deckId)
+                is DeckPickerEffect.ShowCustomStudyDialog -> showCustomStudyDialog(effect.deckId)
+                is DeckPickerEffect.RebuildFilteredDeck -> rebuildFiltered(effect.deckId)
+                is DeckPickerEffect.CheckDatabase -> {
+                    showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
+                }
+            }
+        }
+
+        viewModel.effects.launchCollectionInLifecycleScope(::onDeckPickerEffect)
 
         viewModel.flowOfDestination.launchCollectionInLifecycleScope(::onDestinationChanged)
         viewModel.flowOfPromptUserToUpdateScheduler.launchCollectionInLifecycleScope(::onPromptUserToUpdateScheduler)
@@ -938,9 +942,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
             R.id.action_deck_delete -> {
                 launchCatchingTask {
-                    withProgress(resources.getString(R.string.delete_deck)) {
-                        viewModel.deleteSelectedDeck().join()
-                    }
+                    viewModel.deleteSelectedDeck().join()
                 }
                 return true
             }
@@ -969,21 +971,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
     fun showCreateFilteredDeckDialog() {
-        val createFilteredDeckDialog = CreateDeckDialog(
-            this@DeckPicker,
-            R.string.new_deck,
-            CreateDeckDialog.DeckDialogType.FILTERED_DECK,
-            null,
-        )
-        createFilteredDeckDialog.onNewDeckCreated = { deckId ->
-            // a filtered deck was created
-            viewModel.openDeckOptions(deckId, isFiltered = true)
-        }
-        launchCatchingTask {
-            withProgress {
-                createFilteredDeckDialog.showFilteredDeckDialog()
-            }
-        }
+        viewModel.showCreateFilteredDeckDialog()
     }
 
     fun exportCollection() {
@@ -1466,7 +1454,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
     private fun postSnackbar(text: String) {
         lifecycleScope.launch {
-            viewModel.snackbarMessage.emit(text)
+            viewModel.showSnackbar(text)
         }
     }
 
@@ -1509,9 +1497,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
     private fun undo() {
-        launchCatchingTask {
-            undoAndShowSnackbar()
-        }
+        viewModel.undo()
     }
 
     /**
@@ -1728,8 +1714,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
     fun renameDeckDialog(did: DeckId) {
-        val currentName = getColUnsafe.decks.name(did)
-        viewModel.showRenameDeckDialog(did, currentName)
+        viewModel.showRenameDeckDialog(did)
     }
 
     /**
@@ -1745,8 +1730,8 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
      * Deletes the provided deck, child decks, and all cards inside.
      * @param did ID of the deck to delete
      */
-    fun deleteDeck(did: DeckId) = launchCatchingTask {
-        withProgress {
+    fun deleteDeck(did: DeckId) {
+        launchCatchingTask {
             viewModel.deleteDeck(did).join()
         }
     }
