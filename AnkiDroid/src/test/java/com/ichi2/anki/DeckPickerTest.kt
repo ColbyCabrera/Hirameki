@@ -34,8 +34,8 @@ import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
+import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.containsString
@@ -239,7 +239,7 @@ class DeckPickerTest : RobolectricTest() {
             enableNullCollection()
             ActivityScenario.launch(DeckPicker::class.java).use {
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithContentDescription(targetContext.getString(R.string.sync_now))
+                composeTestRule.onNodeWithContentDescription(targetContext.getString(R.string.button_sync))
                     .assertDoesNotExist()
             }
         } finally {
@@ -254,7 +254,7 @@ class DeckPickerTest : RobolectricTest() {
             grantWritePermissions()
             ActivityScenario.launch(DeckPicker::class.java).use {
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithContentDescription("Sync", substring = true)
+                composeTestRule.onNodeWithContentDescription(targetContext.getString(R.string.button_sync))
                     .assertExists()
             }
         } finally {
@@ -271,7 +271,7 @@ class DeckPickerTest : RobolectricTest() {
             ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
                 composeTestRule.waitForIdle()
                 scenario.onActivity { d ->
-                    assertFailsWith<Exception> { d.getColUnsafe }
+                    assertFailsWith<BackendDbLockedException> { d.getColUnsafe }
                 }
             }
         } finally {
@@ -594,11 +594,11 @@ class DeckPickerTest : RobolectricTest() {
     private fun deckPicker(function: suspend DeckPicker.() -> Unit) = runTest {
         ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
             composeTestRule.waitForIdle()
-            scenario.onActivity { deckPicker ->
-                runBlocking {
-                    deckPicker.function()
-                }
+            var deckPicker: DeckPicker? = null
+            scenario.onActivity { activity ->
+                deckPicker = activity
             }
+            assertNotNull(deckPicker).function()
             composeTestRule.waitForIdle()
         }
     }
