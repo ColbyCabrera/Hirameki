@@ -19,7 +19,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -249,7 +254,12 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onAllNodesWithText(getSharedLabel)[1].performClick()
+        composeTestRule.onNode(
+                hasText(getSharedLabel) and hasClickAction() and SemanticsMatcher.expectValue(
+                    SemanticsProperties.Role,
+                    Role.Button
+                ),
+            ).assertExists().performClick()
         composeTestRule.waitForIdle()
 
         assertEquals(true, callbackInvoked)
@@ -335,7 +345,12 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onAllNodesWithText(newDeckLabel)[1].performClick()
+        composeTestRule.onNode(
+                hasText(newDeckLabel) and hasClickAction() and SemanticsMatcher.expectValue(
+                    SemanticsProperties.Role,
+                    Role.Button
+                ),
+            ).assertExists().performClick()
         composeTestRule.waitForIdle()
 
         assertEquals(true, callbackInvoked)
