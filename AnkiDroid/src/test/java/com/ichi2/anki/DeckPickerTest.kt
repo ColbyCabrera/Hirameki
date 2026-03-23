@@ -4,8 +4,9 @@ package com.ichi2.anki
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.view.menu.MenuBuilder
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.core.content.edit
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.FragmentManager
@@ -56,6 +57,7 @@ import timber.log.Timber
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @KotlinCleanup("SPMockBuilder")
@@ -237,10 +239,13 @@ class DeckPickerTest : RobolectricTest() {
     fun doNotShowOptionsMenuWhenCollectionInaccessible() = runTest {
         try {
             enableNullCollection()
-            ActivityScenario.launch(DeckPicker::class.java).use {
+            ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithContentDescription(targetContext.getString(R.string.button_sync))
-                    .assertDoesNotExist()
+                advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                var optionsMenuState: DeckPicker.OptionsMenuState? = null
+                scenario.onActivity { optionsMenuState = it.optionsMenuState }
+                assertNull(optionsMenuState)
             }
         } finally {
             disableNullCollection()
@@ -252,10 +257,38 @@ class DeckPickerTest : RobolectricTest() {
     fun showOptionsMenuWhenCollectionAccessible() = runTest {
         try {
             grantWritePermissions()
-            ActivityScenario.launch(DeckPicker::class.java).use {
+            ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
                 composeTestRule.waitForIdle()
-                composeTestRule.onNodeWithContentDescription(targetContext.getString(R.string.button_sync))
-                    .assertExists()
+                advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                var deckPicker: DeckPicker? = null
+                scenario.onActivity { deckPicker = it }
+                assertNotNull(deckPicker)
+                deckPicker.updateMenuState()
+
+                scenario.onActivity { activity ->
+                    val menu = MenuBuilder(activity)
+                    activity.menuInflater.inflate(R.menu.deck_picker, menu)
+                    menu.findItem(R.id.action_sync).actionView
+                    activity.updateMenuFromState(menu)
+
+                    val expectedSyncLabel = when (activity.optionsMenuState?.syncIcon) {
+                        SyncIconState.OneWay -> targetContext.getString(R.string.sync_menu_title_one_way_sync)
+                        SyncIconState.NotLoggedIn -> targetContext.getString(R.string.sync_menu_title_no_account)
+                        SyncIconState.PendingChanges,
+                        SyncIconState.Normal,
+                        null,
+                            -> targetContext.getString(R.string.button_sync)
+                    }
+
+                    val syncButton =
+                        menu.findItem(R.id.action_sync).actionView?.findViewById<AppCompatImageButton>(
+                            R.id.button
+                        )
+
+                    assertNotNull(syncButton)
+                    assertEquals(expectedSyncLabel, syncButton.contentDescription)
+                }
             }
         } finally {
             revokeWritePermissions()
