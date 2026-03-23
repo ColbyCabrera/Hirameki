@@ -15,11 +15,17 @@
  */
 package com.ichi2.anki.deckpicker.compose
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.R
@@ -121,6 +127,263 @@ class DeckPickerScreenTest : RobolectricTest() {
         composeTestRule.onNodeWithText(unburyLabel).assertDoesNotExist()
     }
 
+    @Test
+    fun searchOpenInputAndCloseRoutesQueryChanges() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val searchDecksLabel = context.getString(R.string.search_decks)
+        val closeLabel = context.getString(R.string.close)
+        val queryEvents = mutableListOf<String>()
+
+        composeTestRule.setContent {
+            var searchQuery by remember { mutableStateOf("") }
+
+            AnkiDroidTheme {
+                DeckPickerScreen(
+                    fragmented = false,
+                    decks = emptyList(),
+                    isSyncing = false,
+                    onRefresh = {},
+                    searchQuery = searchQuery,
+                    onSearchQueryChanged = {
+                        queryEvents += it
+                        searchQuery = it
+                    },
+                    deckRowActions = emptyDeckRowActions(),
+                    fabActions = emptyFabActions(),
+                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    onNavigationIconClick = {},
+                    studyOptionsData = null,
+                    requestSearchFocus = false,
+                    onSearchFocusRequested = {},
+                    syncState = SyncIconState.Normal,
+                    isInInitialState = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(searchDecksLabel).performClick()
+        composeTestRule.onNodeWithText(searchDecksLabel).performTextInput("spanish")
+        composeTestRule.onNodeWithText("spanish").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(closeLabel).performClick()
+
+        assertEquals(listOf("spanish", ""), queryEvents)
+    }
+
+    @Test
+    fun fabMenuInvokesCheckDatabaseCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
+        val checkDatabaseLabel = context.getString(R.string.check_db)
+        var callbackInvoked = false
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                DeckPickerScreen(
+                    fragmented = false,
+                    decks = emptyList(),
+                    isSyncing = false,
+                    onRefresh = {},
+                    searchQuery = "",
+                    onSearchQueryChanged = {},
+                    deckRowActions = emptyDeckRowActions(),
+                    fabActions = FabActions(
+                        onAddNote = {},
+                        onAddDeck = {},
+                        onAddSharedDeck = {},
+                        onAddFilteredDeck = {},
+                        onCheckDatabase = { callbackInvoked = true },
+                    ),
+                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    onNavigationIconClick = {},
+                    studyOptionsData = null,
+                    requestSearchFocus = false,
+                    onSearchFocusRequested = {},
+                    syncState = SyncIconState.Normal,
+                    isInInitialState = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithText(checkDatabaseLabel)[0].performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, callbackInvoked)
+    }
+
+    @Test
+    fun fabMenuInvokesGetSharedCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
+        val getSharedLabel = context.getString(R.string.get_shared)
+        var callbackInvoked = false
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                DeckPickerScreen(
+                    fragmented = false,
+                    decks = emptyList(),
+                    isSyncing = false,
+                    onRefresh = {},
+                    searchQuery = "",
+                    onSearchQueryChanged = {},
+                    deckRowActions = emptyDeckRowActions(),
+                    fabActions = FabActions(
+                        onAddNote = {},
+                        onAddDeck = {},
+                        onAddSharedDeck = { callbackInvoked = true },
+                        onAddFilteredDeck = {},
+                        onCheckDatabase = {},
+                    ),
+                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    onNavigationIconClick = {},
+                    studyOptionsData = null,
+                    requestSearchFocus = false,
+                    onSearchFocusRequested = {},
+                    syncState = SyncIconState.Normal,
+                    isInInitialState = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithText(getSharedLabel)[1].performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, callbackInvoked)
+    }
+
+    @Test
+    fun fabMenuInvokesAddFilteredDeckCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
+        val newDynamicDeckLabel = context.getString(R.string.new_dynamic_deck)
+        var callbackInvoked = false
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                DeckPickerScreen(
+                    fragmented = false,
+                    decks = emptyList(),
+                    isSyncing = false,
+                    onRefresh = {},
+                    searchQuery = "",
+                    onSearchQueryChanged = {},
+                    deckRowActions = emptyDeckRowActions(),
+                    fabActions = FabActions(
+                        onAddNote = {},
+                        onAddDeck = {},
+                        onAddSharedDeck = {},
+                        onAddFilteredDeck = { callbackInvoked = true },
+                        onCheckDatabase = {},
+                    ),
+                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    onNavigationIconClick = {},
+                    studyOptionsData = null,
+                    requestSearchFocus = false,
+                    onSearchFocusRequested = {},
+                    syncState = SyncIconState.Normal,
+                    isInInitialState = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithText(newDynamicDeckLabel)[0].performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, callbackInvoked)
+    }
+
+    @Test
+    fun fabMenuInvokesAddDeckCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
+        val newDeckLabel = context.getString(R.string.new_deck)
+        var callbackInvoked = false
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                DeckPickerScreen(
+                    fragmented = false,
+                    decks = emptyList(),
+                    isSyncing = false,
+                    onRefresh = {},
+                    searchQuery = "",
+                    onSearchQueryChanged = {},
+                    deckRowActions = emptyDeckRowActions(),
+                    fabActions = FabActions(
+                        onAddNote = {},
+                        onAddDeck = { callbackInvoked = true },
+                        onAddSharedDeck = {},
+                        onAddFilteredDeck = {},
+                        onCheckDatabase = {},
+                    ),
+                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    onNavigationIconClick = {},
+                    studyOptionsData = null,
+                    requestSearchFocus = false,
+                    onSearchFocusRequested = {},
+                    syncState = SyncIconState.Normal,
+                    isInInitialState = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithText(newDeckLabel)[1].performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, callbackInvoked)
+    }
+
+    @Test
+    fun fabMenuInvokesAddNoteCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
+        val addCardLabel = context.getString(R.string.add_card)
+        var callbackInvoked = false
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                DeckPickerScreen(
+                    fragmented = false,
+                    decks = emptyList(),
+                    isSyncing = false,
+                    onRefresh = {},
+                    searchQuery = "",
+                    onSearchQueryChanged = {},
+                    deckRowActions = emptyDeckRowActions(),
+                    fabActions = FabActions(
+                        onAddNote = { callbackInvoked = true },
+                        onAddDeck = {},
+                        onAddSharedDeck = {},
+                        onAddFilteredDeck = {},
+                        onCheckDatabase = {},
+                    ),
+                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    onNavigationIconClick = {},
+                    studyOptionsData = null,
+                    requestSearchFocus = false,
+                    onSearchFocusRequested = {},
+                    syncState = SyncIconState.Normal,
+                    isInInitialState = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithText(addCardLabel)[0].performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, callbackInvoked)
+    }
+
     private fun emptyDeckRowActions() = DeckRowActions(
         onDeckClick = {},
         onExpandClick = {},
@@ -139,6 +402,15 @@ class DeckPickerScreenTest : RobolectricTest() {
         onAddSharedDeck = {},
         onAddFilteredDeck = {},
         onCheckDatabase = {},
+    )
+
+    private fun emptyStudyOptionsActions() = StudyOptionsPanelActions(
+        onStartStudy = {},
+        onRebuildDeck = {},
+        onEmptyDeck = {},
+        onCustomStudy = {},
+        onDeckOptionsItemSelected = {},
+        onUnbury = {},
     )
 
     private fun studyOptionsData(haveBuried: Boolean) = StudyOptionsData(
