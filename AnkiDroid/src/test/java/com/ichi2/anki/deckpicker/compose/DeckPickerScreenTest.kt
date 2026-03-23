@@ -19,15 +19,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -36,6 +32,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.SyncIconState
+import com.ichi2.anki.ui.compose.components.ADD_DECK_FAB_TAG
+import com.ichi2.anki.ui.compose.components.GET_SHARED_FAB_TAG
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -221,7 +219,6 @@ class DeckPickerScreenTest : RobolectricTest() {
     fun fabMenuInvokesGetSharedCallback() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
-        val getSharedLabel = context.getString(R.string.get_shared)
         var callbackInvoked = false
 
         composeTestRule.setContent {
@@ -254,12 +251,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNode(
-                hasText(getSharedLabel) and hasClickAction() and SemanticsMatcher.expectValue(
-                    SemanticsProperties.Role,
-                    Role.Button
-                ),
-            ).assertExists().performClick()
+        composeTestRule.onNodeWithTag(GET_SHARED_FAB_TAG).assertExists().performClick()
         composeTestRule.waitForIdle()
 
         assertEquals(true, callbackInvoked)
@@ -312,7 +304,6 @@ class DeckPickerScreenTest : RobolectricTest() {
     fun fabMenuInvokesAddDeckCallback() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
-        val newDeckLabel = context.getString(R.string.new_deck)
         var callbackInvoked = false
 
         composeTestRule.setContent {
@@ -345,12 +336,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNode(
-                hasText(newDeckLabel) and hasClickAction() and SemanticsMatcher.expectValue(
-                    SemanticsProperties.Role,
-                    Role.Button
-                ),
-            ).assertExists().performClick()
+        composeTestRule.onNodeWithTag(ADD_DECK_FAB_TAG).assertExists().performClick()
         composeTestRule.waitForIdle()
 
         assertEquals(true, callbackInvoked)

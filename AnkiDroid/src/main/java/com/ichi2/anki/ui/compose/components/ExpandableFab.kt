@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -42,6 +43,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import com.ichi2.anki.R
+
+const val CHECK_DATABASE_FAB_TAG = "expandable_fab_check_database"
+const val GET_SHARED_FAB_TAG = "expandable_fab_get_shared"
+const val ADD_FILTERED_DECK_FAB_TAG = "expandable_fab_add_filtered_deck"
+const val ADD_DECK_FAB_TAG = "expandable_fab_add_deck"
+const val ADD_NOTE_FAB_TAG = "expandable_fab_add_note"
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -93,16 +100,19 @@ fun ExpandableFab(
         },
     ) {
         FloatingActionButtonMenuItem(
+            modifier = Modifier.testTag(CHECK_DATABASE_FAB_TAG),
             onClick = onMenuItemClick(onCheckDatabase),
             icon = { Icon(Icons.Filled.Checklist, contentDescription = null) },
             text = { Text(text = stringResource(R.string.check_db)) },
         )
         FloatingActionButtonMenuItem(
+            modifier = Modifier.testTag(GET_SHARED_FAB_TAG),
             onClick = onMenuItemClick(onAddSharedDeck),
             icon = { Icon(Icons.Filled.Download, contentDescription = null) },
             text = { Text(text = stringResource(R.string.get_shared)) },
         )
         FloatingActionButtonMenuItem(
+            modifier = Modifier.testTag(ADD_FILTERED_DECK_FAB_TAG),
             onClick = onMenuItemClick(onAddFilteredDeck),
             icon = {
                 Icon(
@@ -112,6 +122,7 @@ fun ExpandableFab(
             text = { Text(text = stringResource(R.string.new_dynamic_deck)) },
         )
         FloatingActionButtonMenuItem(
+            modifier = Modifier.testTag(ADD_DECK_FAB_TAG),
             onClick = onMenuItemClick(onAddDeck),
             icon = {
                 Icon(
@@ -121,6 +132,7 @@ fun ExpandableFab(
             text = { Text(text = stringResource(R.string.new_deck)) },
         )
         FloatingActionButtonMenuItem(
+            modifier = Modifier.testTag(ADD_NOTE_FAB_TAG),
             onClick = onMenuItemClick(onAddNote),
             icon = {
                 Icon(
