@@ -6,8 +6,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.core.content.edit
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.FragmentManager
@@ -36,6 +34,7 @@ import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsInAnyOrder
@@ -349,24 +348,6 @@ class DeckPickerTest : RobolectricTest() {
         assertEquals(expectedTitle, actualTitle)
     }
 
-    private fun DeckPicker.clickDeckContextMenuItem(labelResId: Int) {
-        composeTestRule.onNodeWithText(getString(labelResId)).performClick()
-        composeTestRule.waitForIdle()
-        ShadowLooper.idleMainLooper()
-    }
-
-    @Ignore("Legacy fragment-result context menu path has been superseded by Compose deck row actions")
-    @Test
-    fun `ContextMenu starts AddCard relative activity`() = deckPicker {
-        error("Obsolete test body")
-    }
-
-    @Ignore("Legacy fragment-result context menu path has been superseded by Compose deck row actions")
-    @Test
-    fun `ContextMenu starts CardBrowser activity`() = deckPicker {
-        error("Obsolete test body")
-    }
-
     @Test
     fun `ContextMenu starts deck options for normal deck`() = deckPicker {
         val didA = addDeck("Deck 1")
@@ -473,7 +454,6 @@ class DeckPickerTest : RobolectricTest() {
             composeTestRule.waitForIdle()
             advanceUntilIdle()
             ShadowLooper.idleMainLooper()
-            advanceUntilIdle()
             var inInitialState: Boolean? = null
             scenario.onActivity { inInitialState = it.viewModel.flowOfDeckListInInitialState.value }
             assertThat(
@@ -493,7 +473,6 @@ class DeckPickerTest : RobolectricTest() {
             composeTestRule.waitForIdle()
             advanceUntilIdle()
             ShadowLooper.idleMainLooper()
-            advanceUntilIdle()
             var inInitialState: Boolean? = null
             scenario.onActivity { inInitialState = it.viewModel.flowOfDeckListInInitialState.value }
             assertThat(
@@ -615,9 +594,11 @@ class DeckPickerTest : RobolectricTest() {
     private fun deckPicker(function: suspend DeckPicker.() -> Unit) = runTest {
         ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
             composeTestRule.waitForIdle()
-            var deckPickerResult: DeckPicker? = null
-            scenario.onActivity { deckPickerResult = it }
-            function(deckPickerResult!!)
+            scenario.onActivity { deckPicker ->
+                runBlocking {
+                    deckPicker.function()
+                }
+            }
             composeTestRule.waitForIdle()
         }
     }
