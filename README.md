@@ -18,7 +18,7 @@ Because this fork introduces significant UI and UX changes, the official [AnkiDr
 ---
 
 ### Status & Availability
-This project is currently in **active development** and is not yet available for public download or on any app stores.
+This project is currently in **active development** and is available on Google Play, with plans to expand to other android app stores!
 
 <div style="display:flex;">
 
