@@ -104,9 +104,13 @@ class DeckItemTest : RobolectricTest() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val deckOptionsLabel = context.getString(R.string.deck_options)
         val deleteLabel = context.getString(R.string.contextmenu_deckpicker_delete_deck)
+        val renameLabel = context.getString(R.string.rename_deck)
+        val exportLabel = context.getString(R.string.export_deck)
 
         var deckOptionsClicked = false
         var deleteClicked = false
+        var renameClicked = false
+        var exportClicked = false
 
         val node = DeckNode(
             node = deckTreeNode {
@@ -125,8 +129,8 @@ class DeckItemTest : RobolectricTest() {
             onDeckClick = {},
             onExpandClick = {},
             onDeckOptions = { deckOptionsClicked = true },
-            onRename = {},
-            onExport = {},
+            onRename = { renameClicked = true },
+            onExport = { exportClicked = true },
             onDelete = { deleteClicked = true },
             onRebuild = {},
             onEmpty = {},
@@ -143,10 +147,24 @@ class DeckItemTest : RobolectricTest() {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText(deckOptionsLabel).assertIsDisplayed()
+        composeTestRule.onNodeWithText(renameLabel).assertIsDisplayed()
+        composeTestRule.onNodeWithText(exportLabel).assertIsDisplayed()
         composeTestRule.onNodeWithText(deleteLabel).assertIsDisplayed()
 
         composeTestRule.onNodeWithText(deckOptionsLabel).performClick()
         assertTrue(deckOptionsClicked)
+
+        composeTestRule.onNodeWithText("Spanish")
+            .performSemanticsAction(SemanticsActions.OnLongClick)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(renameLabel).performClick()
+        assertTrue(renameClicked)
+
+        composeTestRule.onNodeWithText("Spanish")
+            .performSemanticsAction(SemanticsActions.OnLongClick)
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(exportLabel).performClick()
+        assertTrue(exportClicked)
 
         composeTestRule.onNodeWithText("Spanish")
             .performSemanticsAction(SemanticsActions.OnLongClick)
@@ -158,6 +176,9 @@ class DeckItemTest : RobolectricTest() {
     @Test
     fun showsFilteredDeckActionsAndInvokesCallbacks() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val createSubdeckLabel = context.getString(R.string.create_subdeck)
+        val renameLabel = context.getString(R.string.rename_deck)
+        val exportLabel = context.getString(R.string.export_deck)
         val rebuildLabel = context.getString(R.string.rebuild_cram_label)
         val emptyLabel = context.getString(R.string.empty_cram_label)
 
@@ -198,6 +219,9 @@ class DeckItemTest : RobolectricTest() {
             .performSemanticsAction(SemanticsActions.OnLongClick)
         composeTestRule.waitForIdle()
 
+        composeTestRule.onNodeWithText(createSubdeckLabel).assertDoesNotExist()
+        composeTestRule.onNodeWithText(renameLabel).assertDoesNotExist()
+        composeTestRule.onNodeWithText(exportLabel).assertDoesNotExist()
         composeTestRule.onNodeWithText(rebuildLabel).assertIsDisplayed()
         composeTestRule.onNodeWithText(emptyLabel).assertIsDisplayed()
 
