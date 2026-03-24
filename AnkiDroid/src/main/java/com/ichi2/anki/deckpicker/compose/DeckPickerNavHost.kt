@@ -551,51 +551,53 @@ private fun SetupFlows(
 
     LaunchedEffect(Unit) {
         viewModel.composeEffects.flowWithLifecycle(lifecycle).collect { effect ->
-            when (effect) {
-                is DeckPickerComposeEffect.ShowUndoSnackbar -> {
-                    showUndoSnackbar(
-                        snackbarHostState,
-                        effect.message,
-                        applicationContext.getString(R.string.undo)
-                    ) { viewModel.undo() }
-                }
+            launch {
+                when (effect) {
+                    is DeckPickerComposeEffect.ShowUndoSnackbar -> {
+                        showUndoSnackbar(
+                            snackbarHostState,
+                            effect.message,
+                            applicationContext.getString(R.string.undo)
+                        ) { viewModel.undo() }
+                    }
 
-                is DeckPickerComposeEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(
-                        applicationContext.getString(effect.messageResId),
-                        duration = SnackbarDuration.Short
-                    )
-                }
+                    is DeckPickerComposeEffect.ShowSnackbar -> {
+                        snackbarHostState.showSnackbar(
+                            applicationContext.getString(effect.messageResId),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
 
-                is DeckPickerComposeEffect.ShowSnackbarMessage -> {
-                    snackbarHostState.showSnackbar(
-                        effect.message, duration = SnackbarDuration.Short
-                    )
-                }
+                    is DeckPickerComposeEffect.ShowSnackbarMessage -> {
+                        snackbarHostState.showSnackbar(
+                            effect.message, duration = SnackbarDuration.Short
+                        )
+                    }
 
-                is DeckPickerComposeEffect.HandleDeckSelection -> {
-                    when (val result = effect.result) {
-                        is DeckSelectionResult.HasCardsToStudy -> {
-                            when (result.selectionType) {
-                                DeckSelectionType.DEFAULT -> viewModel.openReviewer()
-                                DeckSelectionType.SHOW_STUDY_OPTIONS -> viewModel.openStudyOptionsActivity()
-                                DeckSelectionType.SKIP_STUDY_OPTIONS -> viewModel.openReviewer()
+                    is DeckPickerComposeEffect.HandleDeckSelection -> {
+                        when (val result = effect.result) {
+                            is DeckSelectionResult.HasCardsToStudy -> {
+                                when (result.selectionType) {
+                                    DeckSelectionType.DEFAULT -> viewModel.openReviewer()
+                                    DeckSelectionType.SHOW_STUDY_OPTIONS -> viewModel.openStudyOptionsActivity()
+                                    DeckSelectionType.SKIP_STUDY_OPTIONS -> viewModel.openReviewer()
+                                }
                             }
-                        }
 
-                        is DeckSelectionResult.Empty -> {
-                            val snackbarResult = snackbarHostState.showSnackbar(
-                                message = applicationContext.getString(R.string.empty_deck),
-                                actionLabel = applicationContext.getString(R.string.menu_add),
-                                duration = SnackbarDuration.Short,
-                            )
-                            if (snackbarResult == SnackbarResult.ActionPerformed) {
-                                viewModel.addNote(result.deckId, true)
+                            is DeckSelectionResult.Empty -> {
+                                val snackbarResult = snackbarHostState.showSnackbar(
+                                    message = applicationContext.getString(R.string.empty_deck),
+                                    actionLabel = applicationContext.getString(R.string.menu_add),
+                                    duration = SnackbarDuration.Short,
+                                )
+                                if (snackbarResult == SnackbarResult.ActionPerformed) {
+                                    viewModel.addNote(result.deckId, true)
+                                }
                             }
-                        }
 
-                        is DeckSelectionResult.NoCardsToStudy -> {
-                            navigator.navigate(CongratsScreen(result.deckId))
+                            is DeckSelectionResult.NoCardsToStudy -> {
+                                navigator.navigate(CongratsScreen(result.deckId))
+                            }
                         }
                     }
                 }
@@ -606,9 +608,11 @@ private fun SetupFlows(
     LaunchedEffect(Unit) {
         cardBrowserViewModel.flowOfSnackbarMessage.flowWithLifecycle(lifecycle)
             .collect { messageRes ->
-                snackbarHostState.showSnackbar(
-                    applicationContext.getString(messageRes), duration = SnackbarDuration.Short
-                )
+                launch {
+                    snackbarHostState.showSnackbar(
+                        applicationContext.getString(messageRes), duration = SnackbarDuration.Short
+                    )
+                }
             }
     }
 }
