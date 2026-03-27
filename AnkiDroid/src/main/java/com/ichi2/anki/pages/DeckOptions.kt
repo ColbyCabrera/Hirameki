@@ -28,8 +28,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.view.isVisible
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
 import anki.collection.OpChanges
 import anki.collection.Progress
@@ -61,42 +61,40 @@ class DeckOptions : PageFragment() {
      * Callback enabled when the manual is opened in the deck options.
      * It requests the webview to go back to the Deck Options.
      */
-    private val onBackFromManual =
-        object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                Timber.v("webView: navigating back")
-                webView.goBack()
-            }
+    private val onBackFromManual = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            Timber.v("webView: navigating back")
+            webView.goBack()
         }
+    }
 
     /**
      * Callback used when nothing is on top of the deck options, neither manual nor modal.
      * It sends the webview a request to deal with the closing request, requesting confirmation if
      * that would lose the local changes and otherwise close the webview.
      */
-    private val onBackFromDeckOptions =
-        object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Timber.v("DeckOptions: requesting the webview to handle the user close request.")
-                if (webViewIsReady) {
-                    webView.evaluateJavascript("anki.deckOptionsPendingChanges()") {
-                        // Callback is handled in the WebView:
-                        //  * A 'discard changes' dialog may be shown, using confirm()
-                        //  * if no changes, or changes discarded, `deckOptionsRequireClose` is called
-                        //    which PostRequestHandler handles and calls on this fragment
+    private val onBackFromDeckOptions = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            Timber.v("DeckOptions: requesting the webview to handle the user close request.")
+            if (webViewIsReady) {
+                webView.evaluateJavascript("anki.deckOptionsPendingChanges()") {
+                    // Callback is handled in the WebView:
+                    //  * A 'discard changes' dialog may be shown, using confirm()
+                    //  * if no changes, or changes discarded, `deckOptionsRequireClose` is called
+                    //    which PostRequestHandler handles and calls on this fragment
 
-                        // Used to handle an edge-case when the page could not be fully loaded and therefore the anki-call is unavailable
+                    // Used to handle an edge-case when the page could not be fully loaded and therefore the anki-call is unavailable
                         value ->
-                        if (value == "null") {
-                            actuallyClose()
-                        }
+                    if (value == "null") {
+                        actuallyClose()
                     }
-                } else {
-                    // The webview is not yet loaded, no change could have occurred, we can safely close it.
-                    actuallyClose()
                 }
+            } else {
+                // The webview is not yet loaded, no change could have occurred, we can safely close it.
+                actuallyClose()
             }
         }
+    }
 
     /**
      * Close the view, discarding change if needed.
@@ -118,25 +116,27 @@ class DeckOptions : PageFragment() {
     @NeedsTest("disabled if a modal is hidden")
     @NeedsTest("disabled if back button is pressed: no error")
     @NeedsTest("disabled if back button is pressed: with error closing modal")
-    private val onBackFromModal =
-        object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                Timber.i("back button: closing displayed modal")
-                try {
-                    webView.evaluateJavascript(
-                        """
+    private val onBackFromModal = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            Timber.i("back button: closing displayed modal")
+            try {
+                webView.evaluateJavascript(
+                    """
                         document.getElementsByClassName("modal show")[0]
                         .getElementsByClassName("btn-close")[0].click()
                         """.trimIndent(),
-                    ) {}
-                } catch (e: Exception) {
-                    CrashReportService.sendExceptionReport(e, "DeckOptions:onCloseBootstrapModalCallback")
-                } finally {
-                    // Even if we fail, disable the callback so the next call succeeds
-                    this.isEnabled = false
-                }
+                ) {}
+            } catch (e: Exception) {
+                CrashReportService.sendExceptionReport(
+                    e,
+                    "DeckOptions:onCloseBootstrapModalCallback"
+                )
+            } finally {
+                // Even if we fail, disable the callback so the next call succeeds
+                this.isEnabled = false
             }
         }
+    }
 
     /**
      * Listens to bootstrap open and close events
@@ -149,10 +149,12 @@ class DeckOptions : PageFragment() {
                     Timber.d("WebVew modal opened")
                     onBackFromModal.isEnabled = true
                 }
+
                 "close" -> {
                     Timber.d("WebView modal closed")
                     onBackFromModal.isEnabled = false
                 }
+
                 else -> Timber.w("Unknown command: $request")
             }
         }
@@ -165,7 +167,9 @@ class DeckOptions : PageFragment() {
     ) {
         pageLoadingIndicator.isVisible = true
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<MaterialToolbar>(R.id.toolbar).applyExpressiveStyle()
+        requireNotNull(view.findViewById<MaterialToolbar>(R.id.toolbar)) {
+            "DeckOptions requires a toolbar in its content view"
+        }.applyExpressiveStyle()
     }
 
     override fun onWebViewCreated(webView: WebView) {
@@ -223,8 +227,7 @@ class DeckOptions : PageFragment() {
         fun getListenerJs(
             event: String,
             command: String,
-        ): String =
-            """
+        ): String = """
             if (!document.added$command) {
                 console.log("listening to '$command'");
                 document.added$command = true
@@ -262,8 +265,10 @@ private fun MaterialToolbar.applyExpressiveStyle() {
     val navigationButtonSize = dp(40)
     val navigationIconInset = dp(8)
 
-    val surfaceColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface)
-    val onSurfaceColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface)
+    val surfaceColor =
+        MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface)
+    val onSurfaceColor =
+        MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface)
     val surfaceContainerHighestColor = MaterialColors.getColor(
         this,
         com.google.android.material.R.attr.colorSurfaceContainerHighest,
@@ -282,7 +287,8 @@ private fun MaterialToolbar.applyExpressiveStyle() {
     setTitleTextAppearance(context, R.style.TextAppearance_Anki_PageToolbar_Expressive)
     setTitleTextColor(onSurfaceColor)
 
-    val arrowDrawable = checkNotNull(AppCompatResources.getDrawable(context, R.drawable.arrow_back_24px))
+    val arrowDrawable =
+        checkNotNull(AppCompatResources.getDrawable(context, R.drawable.arrow_back_24px))
     val tintedArrow = DrawableCompat.wrap(arrowDrawable.mutate())
     DrawableCompat.setTint(tintedArrow, onSurfaceVariantColor)
 
@@ -301,26 +307,24 @@ private fun MaterialToolbar.applyExpressiveStyle() {
     )
 }
 
-private fun View.dp(value: Int): Int =
-    TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP,
-        value.toFloat(),
-        resources.displayMetrics,
-    ).toInt()
+private fun View.dp(value: Int): Int = TypedValue.applyDimension(
+    TypedValue.COMPLEX_UNIT_DIP,
+    value.toFloat(),
+    resources.displayMetrics,
+).toInt()
 
 suspend fun FragmentActivity.updateDeckConfigsRaw(input: ByteArray): ByteArray {
-    val output =
-        withContext(Dispatchers.Main) {
-            withProgress(
-                extractProgress = {
-                    text = this.toOptimizingPresetString() ?: getString(R.string.dialog_processing)
-                },
-            ) {
-                withContext(Dispatchers.IO) {
-                    withCol { updateDeckConfigsRaw(input) }
-                }
+    val output = withContext(Dispatchers.Main) {
+        withProgress(
+            extractProgress = {
+                text = this.toOptimizingPresetString() ?: getString(R.string.dialog_processing)
+            },
+        ) {
+            withContext(Dispatchers.IO) {
+                withCol { updateDeckConfigsRaw(input) }
             }
         }
+    }
     undoableOp { OpChanges.parseFrom(output) }
     withContext(Dispatchers.Main) { finish() }
     return output
@@ -339,17 +343,16 @@ private fun ProgressContext.toOptimizingPresetString(): String? {
     if (!progress.hasComputeParams()) return null
 
     val value = progress.computeParams
-    val label =
-        TR.deckConfigOptimizingPreset(
-            currentCount = value.currentPreset,
-            totalCount = value.totalPresets,
-        )
-    val pct = if (value.total > 0) (value.current.toDouble() / value.total.toDouble() * 100.0) else 0.0
-    val reviewsLabel =
-        TR.deckConfigPercentOfReviews(
-            pct = "%.1f".format(pct),
-            reviews = value.reviews,
-        )
+    val label = TR.deckConfigOptimizingPreset(
+        currentCount = value.currentPreset,
+        totalCount = value.totalPresets,
+    )
+    val pct =
+        if (value.total > 0) (value.current.toDouble() / value.total.toDouble() * 100.0) else 0.0
+    val reviewsLabel = TR.deckConfigPercentOfReviews(
+        pct = "%.1f".format(pct),
+        reviews = value.reviews,
+    )
     return label + "\n" + reviewsLabel
 }
 
