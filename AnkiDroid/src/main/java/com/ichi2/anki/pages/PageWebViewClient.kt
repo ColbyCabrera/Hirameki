@@ -355,6 +355,41 @@ open class PageWebViewClient : WebViewClient() {
                             background-image: none !important;
                         }
 
+                        .deck-options-page .btn-primary {
+                            --bs-btn-color: $onPrimaryColor !important;
+                            --bs-btn-hover-color: $onPrimaryColor !important;
+                            --bs-btn-active-color: $onPrimaryColor !important;
+                            --bs-btn-disabled-color: $onPrimaryColor !important;
+                            --bs-btn-bg: $primaryColor;
+                            --bs-btn-hover-bg: $primaryColor;
+                            --bs-btn-active-bg: $primaryColor;
+                            --bs-btn-disabled-bg: $primaryColor;
+                            --bs-btn-border-color: transparent;
+                            --bs-btn-hover-border-color: transparent;
+                            --bs-btn-active-border-color: transparent;
+                            --bs-btn-disabled-border-color: transparent;
+                            color: $onPrimaryColor !important;
+                        }
+
+                        .deck-options-page .btn-primary,
+                        .deck-options-page .btn-primary:hover,
+                        .deck-options-page .btn-primary:focus-visible,
+                        .deck-options-page .btn-primary:active,
+                        .deck-options-page .btn-primary:disabled,
+                        .deck-options-page .btn-primary * {
+                            color: $onPrimaryColor !important;
+                        }
+
+                        .label-button.primary,
+                        .label-button.primary:hover,
+                        .label-button.primary:focus,
+                        .label-button.primary:focus-visible,
+                        .label-button.primary:active,
+                        .label-button.primary:disabled,
+                        .label-button.primary * {
+                            color: $onPrimaryColor !important;
+                        }
+
                         .deck-options-page .revert .badge,
                         .deck-options-page .revert .badge:hover,
                         .deck-options-page .revert .badge:focus,
