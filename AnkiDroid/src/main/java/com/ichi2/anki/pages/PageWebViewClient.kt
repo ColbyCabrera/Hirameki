@@ -115,7 +115,7 @@ open class PageWebViewClient : WebViewClient() {
             val surfaceContainerHighColor = MaterialColors.getColor(
                 webView, com.google.android.material.R.attr.colorSurfaceContainerHigh
             ).toRGBHex()
-            val errorColor = MaterialColors.getColor(
+                val errorContainerColor = MaterialColors.getColor(
                 webView, com.google.android.material.R.attr.colorErrorContainer
             ).toRGBHex()
 
@@ -161,7 +161,7 @@ open class PageWebViewClient : WebViewClient() {
                             /* Accents */
                             --accent-card: $primaryColor;
                             --accent-note: $secondaryColor;
-                            --accent-danger: $errorColor;
+                            --accent-danger: $errorContainerColor;
                             /* Bootstrap body / text */
                             --bs-body-bg: $bgColor;
                             --bs-body-color: $textColor;
