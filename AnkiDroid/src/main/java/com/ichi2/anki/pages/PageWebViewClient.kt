@@ -448,27 +448,6 @@ open class PageWebViewClient : WebViewClient() {
                             border: 1px solid $outlineColor !important;
                             border-radius: 16px !important;
                         }
-
-                        .deck-options-page .radio-group {
-                            display: flex !important;
-                            flex-wrap: wrap !important;
-                            gap: 8px !important;
-                            padding: 8px !important;
-                        }
-
-                        .deck-options-page .radio-group label {
-                            display: inline-flex !important;
-                            align-items: center !important;
-                            gap: 8px !important;
-                            background-color: $surfaceContainerColor !important;
-                            border-radius: 20px !important;
-                            padding: 8px 12px !important;
-                        }
-
-                        .deck-options-page .radio-group label:has(input[type="radio"]:checked) {
-                            background-color: $tertiaryContainerColor !important;
-                            color: $onTertiaryContainerColor !important;
-                        }
                         
                         .graphs-container {
                             background-color: $bgColor !important;
