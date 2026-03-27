@@ -84,8 +84,7 @@ open class PageWebViewClient : WebViewClient() {
                 webView, com.google.android.material.R.attr.colorOnBackground
             ).toRGBHex()
             val primaryColor =
-                MaterialColors.getColor(webView, androidx.appcompat.R.attr.colorPrimary)
-                    .toRGBHex()
+                MaterialColors.getColor(webView, androidx.appcompat.R.attr.colorPrimary).toRGBHex()
             val onPrimaryColor =
                 MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnPrimary)
                     .toRGBHex()
@@ -110,40 +109,103 @@ open class PageWebViewClient : WebViewClient() {
             val onTertiaryContainerColor = MaterialColors.getColor(
                 webView, com.google.android.material.R.attr.colorOnTertiaryContainer
             ).toRGBHex()
+            val onSurfaceVariantColor = MaterialColors.getColor(
+                webView, com.google.android.material.R.attr.colorOnSurfaceVariant
+            ).toRGBHex()
+            val surfaceContainerHighColor = MaterialColors.getColor(
+                webView, com.google.android.material.R.attr.colorSurfaceContainerHigh
+            ).toRGBHex()
+            val errorColor = MaterialColors.getColor(
+                webView, com.google.android.material.R.attr.colorErrorContainer
+            ).toRGBHex()
 
             // Inject comprehensive Material 3 theming CSS
             webView.evaluateAfterDOMContentLoaded(
                 """
                 (function() {
                     var css = `
-                        /* CSS Variables for Material 3 */
-                        :root {
-                            --m3-background: $bgColor;
-                            --m3-on-background: $textColor;
-                            --m3-primary: $primaryColor;
-                            --m3-on-primary: $onPrimaryColor;
-                            --m3-surface: $surfaceColor;
-                            --m3-on-surface: $onSurfaceColor;
-                            --m3-surface-container: $surfaceContainerColor;
-                            --m3-outline: $outlineColor;
-                            --m3-secondary: $secondaryColor;
-                            --m3-tertiary-container: $tertiaryContainerColor;
-                            --m3-on-tertiary-container: $onTertiaryContainerColor;
-                            /* Override Anki's CSS variables */
+                        /* Override ALL Anki + Bootstrap CSS variables with Material 3 */
+                        :root, :root.night-mode {
+                            /* Foreground */
                             --fg: $textColor;
+                            --fg-subtle: $onSurfaceVariantColor;
+                            --fg-disabled: $outlineColor;
+                            --fg-faint: $outlineColor;
+                            --fg-link: $primaryColor;
+                            /* Canvas / Background */
                             --canvas: $bgColor;
+                            --canvas-elevated: $surfaceColor;
+                            --canvas-inset: $surfaceContainerColor;
+                            --canvas-overlay: $surfaceContainerHighColor;
+                            --canvas-code: $surfaceContainerColor;
+                            /* Borders */
                             --border: $outlineColor;
+                            --border-subtle: $surfaceContainerHighColor;
+                            --border-strong: $outlineColor;
+                            --border-focus: $primaryColor;
+                            /* Buttons */
+                            --button-bg: $surfaceContainerColor;
+                            --button-gradient-start: $surfaceContainerColor;
+                            --button-gradient-end: $surfaceContainerColor;
+                            --button-hover-border: $outlineColor;
+                            --button-disabled: $surfaceContainerColor;
+                            --button-primary-bg: $primaryColor;
+                            --button-primary-gradient-start: $primaryColor;
+                            --button-primary-gradient-end: $primaryColor;
+                            --button-primary-disabled: $primaryColor;
+                            /* Shadows */
+                            --shadow: transparent;
+                            --shadow-inset: transparent;
+                            --shadow-subtle: transparent;
+                            --shadow-focus: $primaryColor;
+                            /* Accents */
+                            --accent-card: $primaryColor;
+                            --accent-note: $secondaryColor;
+                            --accent-danger: $errorColor;
+                            /* Bootstrap body / text */
+                            --bs-body-bg: $bgColor;
+                            --bs-body-color: $textColor;
+                            --bs-emphasis-color: $textColor;
+                            --bs-secondary-color: $onSurfaceVariantColor;
+                            --bs-tertiary-color: $outlineColor;
+                            --bs-secondary-bg: $surfaceContainerColor;
+                            --bs-tertiary-bg: $surfaceContainerColor;
+                            /* Bootstrap brand */
+                            --bs-primary: $primaryColor;
+                            --bs-secondary: $secondaryColor;
+                            --bs-link-color: $primaryColor;
+                            --bs-link-hover-color: $primaryColor;
+                            /* Bootstrap borders */
+                            --bs-border-color: $outlineColor;
+                            --bs-border-color-translucent: $outlineColor;
                         }
                         
-                        /* Base styling - colors only */
                         body {
                             background-color: $bgColor !important;
                             color: $textColor !important;
                         }
                         
-                        /* Links - colors only */
                         a, a:link, a:visited {
                             color: $primaryColor !important;
+                        }
+                        
+                        /* Bootstrap component-scoped variable overrides */
+                        .form-control, .form-select {
+                            background-color: $surfaceContainerColor !important;
+                            color: $onSurfaceColor !important;
+                            border-color: $outlineColor !important;
+                        }
+                        
+                        .form-control:focus, .form-select:focus {
+                            border-color: $primaryColor !important;
+                            box-shadow: 0 0 0 1px $primaryColor !important;
+                        }
+                        
+                        .modal-content {
+                            --bs-modal-bg: $surfaceColor;
+                            --bs-modal-color: $onSurfaceColor;
+                            --bs-modal-border-color: $outlineColor;
+                            background-color: $surfaceColor !important;
                         }
                         
                         /* Range box header - improved layout */
@@ -228,6 +290,10 @@ open class PageWebViewClient : WebViewClient() {
                         input[type="checkbox"] {
                             accent-color: $primaryColor !important;
                         }
+
+                        input[type="range"] {
+                            accent-color: $primaryColor !important;
+                        }
                         
                         /* Text inputs - colors only */
                         input[type="text"], input[type="search"], select, textarea {
@@ -239,6 +305,142 @@ open class PageWebViewClient : WebViewClient() {
                         /* Labels - color only */
                         label {
                             color: $textColor !important;
+                        }
+
+                        /* Deck options page layout */
+                        .deck-options-page,
+                        .deck-options-page .container-columns,
+                        .deck-options-page .row-columns {
+                            background-color: $bgColor !important;
+                            color: $textColor !important;
+                            box-shadow: none !important;
+                        }
+
+                        /* Deck options sections and dialogs */
+                        .deck-options-page details,
+                        .deck-options-page .modal-content,
+                        .deck-options-page .radio-group,
+                        .deck-options-page .button-bar {
+                            background-color: $surfaceColor !important;
+                            color: $onSurfaceColor !important;
+                            border: 1px solid $surfaceContainerColor !important;
+                            box-shadow: none !important;
+                        }
+
+                        .deck-options-page details {
+                            padding: 16px !important;
+                        }
+
+                        .deck-options-page details > summary {
+                            color: $textColor !important;
+                            cursor: pointer !important;
+                            font-weight: 600 !important;
+                        }
+
+                        .deck-options-page details[open] > summary {
+                            margin-bottom: 12px !important;
+                        }
+
+                        .deck-options-page .modal-header,
+                        .deck-options-page .modal-footer {
+                            border-color: $outlineColor !important;
+                        }
+
+                        .deck-options-page .btn {
+                            background-color: $primaryColor !important;
+                            color: $onPrimaryColor !important;
+                            border: none !important;
+                            border-radius: 20px !important;
+                            box-shadow: none !important;
+                            background-image: none !important;
+                        }
+
+                        .deck-options-page .revert .badge,
+                        .deck-options-page .revert .badge:hover,
+                        .deck-options-page .revert .badge:focus,
+                        .deck-options-page .revert .badge:focus-visible,
+                        .deck-options-page .revert .badge:active {
+                            background-color: transparent !important;
+                            border: 0 !important;
+                            outline: 0 !important;
+                            box-shadow: none !important;
+                            color: $onSurfaceVariantColor !important;
+                        }
+
+                        .deck-options-page .revert .badge:hover,
+                        .deck-options-page .revert .badge:focus-visible {
+                            color: $onSurfaceColor !important;
+                        }
+
+                        .deck-options-page .btn-close {
+                            background-color: $surfaceContainerColor !important;
+                            color: $onSurfaceColor !important;
+                            border: 1px solid $outlineColor !important;
+                            border-radius: 999px !important;
+                            opacity: 0.85 !important;
+                        }
+
+                        .deck-options-page .form-control,
+                        .deck-options-page .form-select,
+                        .deck-options-page input[type="text"],
+                        .deck-options-page input[type="number"],
+                        .deck-options-page input[type="date"],
+                        .deck-options-page textarea {
+                            background-color: $surfaceContainerColor !important;
+                            color: $onSurfaceColor !important;
+                            border-color: $outlineColor !important;
+                            box-shadow: none !important;
+                        }
+
+                        .deck-options-page .form-control:focus,
+                        .deck-options-page .form-select:focus,
+                        .deck-options-page input[type="text"]:focus,
+                        .deck-options-page input[type="number"]:focus,
+                        .deck-options-page input[type="date"]:focus,
+                        .deck-options-page textarea:focus {
+                            border-color: $primaryColor !important;
+                            box-shadow: 0 0 0 1px $primaryColor !important;
+                        }
+
+                        .deck-options-page .col-form-label,
+                        .deck-options-page .form-label,
+                        .deck-options-page .header,
+                        .deck-options-page summary,
+                        .deck-options-page .day {
+                            color: $textColor !important;
+                        }
+
+                        .deck-options-page .dropdown-divider {
+                            border-color: $outlineColor !important;
+                            opacity: 1 !important;
+                        }
+
+                        .deck-options-page .alert {
+                            background-color: $surfaceContainerColor !important;
+                            color: $onSurfaceColor !important;
+                            border: 1px solid $outlineColor !important;
+                            border-radius: 16px !important;
+                        }
+
+                        .deck-options-page .radio-group {
+                            display: flex !important;
+                            flex-wrap: wrap !important;
+                            gap: 8px !important;
+                            padding: 8px !important;
+                        }
+
+                        .deck-options-page .radio-group label {
+                            display: inline-flex !important;
+                            align-items: center !important;
+                            gap: 8px !important;
+                            background-color: $surfaceContainerColor !important;
+                            border-radius: 20px !important;
+                            padding: 8px 12px !important;
+                        }
+
+                        .deck-options-page .radio-group label:has(input[type="radio"]:checked) {
+                            background-color: $tertiaryContainerColor !important;
+                            color: $onTertiaryContainerColor !important;
                         }
                         
                         .graphs-container {

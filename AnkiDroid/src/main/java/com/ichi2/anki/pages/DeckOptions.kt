@@ -17,16 +17,24 @@ package com.ichi2.anki.pages
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.fragment.app.FragmentActivity
 import anki.collection.OpChanges
 import anki.collection.Progress
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CrashReportService
@@ -120,8 +128,7 @@ class DeckOptions : PageFragment() {
                         document.getElementsByClassName("modal show")[0]
                         .getElementsByClassName("btn-close")[0].click()
                         """.trimIndent(),
-                        {},
-                    )
+                    ) {}
                 } catch (e: Exception) {
                     CrashReportService.sendExceptionReport(e, "DeckOptions:onCloseBootstrapModalCallback")
                 } finally {
@@ -158,6 +165,7 @@ class DeckOptions : PageFragment() {
     ) {
         pageLoadingIndicator.isVisible = true
         super.onViewCreated(view, savedInstanceState)
+        view.findViewById<MaterialToolbar>(R.id.toolbar).applyExpressiveStyle()
     }
 
     override fun onWebViewCreated(webView: WebView) {
@@ -174,7 +182,7 @@ class DeckOptions : PageFragment() {
         requireActivity().onBackPressedDispatcher.addCallback(this, onBackFromManual)
 
         return object : PageWebViewClient() {
-            private val ankiManualHostRegex = Regex("^docs\\.ankiweb\\.net\$")
+            private val ankiManualHostRegex = Regex("^docs\\.ankiweb\\.net$")
 
             /** @see onWebViewReady */
             override fun onShowWebView(webView: WebView) {
@@ -228,8 +236,8 @@ class DeckOptions : PageFragment() {
         val openJs = getListenerJs("shown.bs.modal", "open")
         val closeJs = getListenerJs("hidden.bs.modal", "close")
 
-        webView.evaluateJavascript(openJs, {})
-        webView.evaluateJavascript(closeJs, {})
+        webView.evaluateJavascript(openJs) {}
+        webView.evaluateJavascript(closeJs) {}
     }
 
     fun onWebViewReady() {
@@ -249,6 +257,56 @@ class DeckOptions : PageFragment() {
         }
     }
 }
+
+private fun MaterialToolbar.applyExpressiveStyle() {
+    val navigationButtonSize = dp(40)
+    val navigationIconInset = dp(8)
+
+    val surfaceColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface)
+    val onSurfaceColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface)
+    val surfaceContainerHighestColor = MaterialColors.getColor(
+        this,
+        com.google.android.material.R.attr.colorSurfaceContainerHighest,
+    )
+    val onSurfaceVariantColor = MaterialColors.getColor(
+        this,
+        com.google.android.material.R.attr.colorOnSurfaceVariant,
+    )
+
+    setBackgroundColor(surfaceColor)
+    elevation = 0f
+    minimumHeight = dp(72)
+    contentInsetStartWithNavigation = 0
+    titleMarginStart = dp(8)
+    titleMarginEnd = 0
+    setTitleTextAppearance(context, R.style.TextAppearance_Anki_PageToolbar_Expressive)
+    setTitleTextColor(onSurfaceColor)
+
+    val arrowDrawable = checkNotNull(AppCompatResources.getDrawable(context, R.drawable.arrow_back_24px))
+    val tintedArrow = DrawableCompat.wrap(arrowDrawable.mutate())
+    DrawableCompat.setTint(tintedArrow, onSurfaceVariantColor)
+
+    val backgroundDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = navigationButtonSize / 2f
+        setColor(surfaceContainerHighestColor)
+        setSize(navigationButtonSize, navigationButtonSize)
+    }
+
+    navigationIcon = LayerDrawable(
+        arrayOf(
+            backgroundDrawable,
+            InsetDrawable(tintedArrow, navigationIconInset),
+        ),
+    )
+}
+
+private fun View.dp(value: Int): Int =
+    TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        value.toFloat(),
+        resources.displayMetrics,
+    ).toInt()
 
 suspend fun FragmentActivity.updateDeckConfigsRaw(input: ByteArray): ByteArray {
     val output =
