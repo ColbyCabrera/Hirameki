@@ -372,14 +372,6 @@ open class PageWebViewClient : WebViewClient() {
                             color: $onSurfaceColor !important;
                         }
 
-                        .deck-options-page .btn-close {
-                            background-color: $surfaceContainerColor !important;
-                            color: $onSurfaceColor !important;
-                            border: 1px solid $outlineColor !important;
-                            border-radius: 999px !important;
-                            opacity: 0.85 !important;
-                        }
-
                         .deck-options-page .form-control,
                         .deck-options-page .form-select,
                         .deck-options-page input[type="text"],
