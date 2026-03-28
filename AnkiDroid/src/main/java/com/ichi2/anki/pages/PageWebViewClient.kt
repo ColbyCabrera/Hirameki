@@ -38,6 +38,14 @@ open class PageWebViewClient : WebViewClient() {
     val onPageFinishedCallbacks: MutableList<OnPageFinishedCallback> = mutableListOf()
     val onErrorCallbacks: MutableList<OnErrorCallback> = mutableListOf()
 
+    private fun loadDeckOptionsCss(webView: WebView): String =
+        try {
+            webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() }
+        } catch (e: IOException) {
+            Timber.w(e, "Unable to load CSS asset %s", DECK_OPTIONS_CSS_ASSET)
+            ""
+        }
+
     override fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest,
@@ -115,9 +123,10 @@ open class PageWebViewClient : WebViewClient() {
             val surfaceContainerHighColor = MaterialColors.getColor(
                 webView, com.google.android.material.R.attr.colorSurfaceContainerHigh
             ).toRGBHex()
-                val errorContainerColor = MaterialColors.getColor(
+            val errorContainerColor = MaterialColors.getColor(
                 webView, com.google.android.material.R.attr.colorErrorContainer
             ).toRGBHex()
+            val deckOptionsCss = loadDeckOptionsCss(webView)
 
             // Inject comprehensive Material 3 theming CSS
             webView.evaluateAfterDOMContentLoaded(
@@ -178,6 +187,18 @@ open class PageWebViewClient : WebViewClient() {
                             /* Bootstrap borders */
                             --bs-border-color: $outlineColor;
                             --bs-border-color-translucent: $outlineColor;
+                            /* Deck options */
+                            --deck-options-bg: $bgColor;
+                            --deck-options-text: $textColor;
+                            --deck-options-surface: $surfaceColor;
+                            --deck-options-on-surface: $onSurfaceColor;
+                            --deck-options-surface-container: $surfaceContainerColor;
+                            --deck-options-outline: $outlineColor;
+                            --deck-options-primary: $primaryColor;
+                            --deck-options-on-primary: $onPrimaryColor;
+                            --deck-options-tertiary-container: $tertiaryContainerColor;
+                            --deck-options-on-tertiary-container: $onTertiaryContainerColor;
+                            --deck-options-on-surface-variant: $onSurfaceVariantColor;
                         }
                         
                         body {
@@ -307,147 +328,7 @@ open class PageWebViewClient : WebViewClient() {
                             color: $textColor !important;
                         }
 
-                        /* Deck options page layout */
-                        .deck-options-page,
-                        .deck-options-page .container-columns,
-                        .deck-options-page .row-columns {
-                            background-color: $bgColor !important;
-                            color: $textColor !important;
-                            box-shadow: none !important;
-                        }
-
-                        /* Deck options sections and dialogs */
-                        .deck-options-page details,
-                        .deck-options-page .modal-content,
-                        .deck-options-page .radio-group,
-                        .deck-options-page .button-bar {
-                            background-color: $surfaceColor !important;
-                            color: $onSurfaceColor !important;
-                            border: 1px solid $surfaceContainerColor !important;
-                            box-shadow: none !important;
-                        }
-
-                        .deck-options-page details {
-                            padding: 16px !important;
-                        }
-
-                        .deck-options-page details > summary {
-                            color: $textColor !important;
-                            cursor: pointer !important;
-                            font-weight: 600 !important;
-                        }
-
-                        .deck-options-page details[open] > summary {
-                            margin-bottom: 12px !important;
-                        }
-
-                        .deck-options-page .modal-header,
-                        .deck-options-page .modal-footer {
-                            border-color: $outlineColor !important;
-                        }
-
-                        .deck-options-page .btn {
-                            background-color: $primaryColor !important;
-                            color: $onPrimaryColor !important;
-                            border: none !important;
-                            border-radius: 20px !important;
-                            box-shadow: none !important;
-                            background-image: none !important;
-                        }
-
-                        .deck-options-page .btn-primary {
-                            --bs-btn-color: $onPrimaryColor !important;
-                            --bs-btn-hover-color: $onPrimaryColor !important;
-                            --bs-btn-active-color: $onPrimaryColor !important;
-                            --bs-btn-disabled-color: $onPrimaryColor !important;
-                            --bs-btn-bg: $primaryColor;
-                            --bs-btn-hover-bg: $primaryColor;
-                            --bs-btn-active-bg: $primaryColor;
-                            --bs-btn-disabled-bg: $primaryColor;
-                            --bs-btn-border-color: transparent;
-                            --bs-btn-hover-border-color: transparent;
-                            --bs-btn-active-border-color: transparent;
-                            --bs-btn-disabled-border-color: transparent;
-                            color: $onPrimaryColor !important;
-                        }
-
-                        .deck-options-page .btn-primary,
-                        .deck-options-page .btn-primary:hover,
-                        .deck-options-page .btn-primary:focus-visible,
-                        .deck-options-page .btn-primary:active,
-                        .deck-options-page .btn-primary:disabled,
-                        .deck-options-page .btn-primary * {
-                            color: $onPrimaryColor !important;
-                        }
-
-                        .label-button.primary,
-                        .label-button.primary:hover,
-                        .label-button.primary:focus,
-                        .label-button.primary:focus-visible,
-                        .label-button.primary:active,
-                        .label-button.primary:disabled,
-                        .label-button.primary * {
-                            color: $onPrimaryColor !important;
-                        }
-
-                        .deck-options-page .revert .badge,
-                        .deck-options-page .revert .badge:hover,
-                        .deck-options-page .revert .badge:focus,
-                        .deck-options-page .revert .badge:focus-visible,
-                        .deck-options-page .revert .badge:active {
-                            background-color: transparent !important;
-                            border: 0 !important;
-                            outline: 0 !important;
-                            box-shadow: none !important;
-                            color: $onSurfaceVariantColor !important;
-                        }
-
-                        .deck-options-page .revert .badge:hover,
-                        .deck-options-page .revert .badge:focus-visible {
-                            color: $onSurfaceColor !important;
-                        }
-
-                        .deck-options-page .form-control,
-                        .deck-options-page .form-select,
-                        .deck-options-page input[type="text"],
-                        .deck-options-page input[type="number"],
-                        .deck-options-page input[type="date"],
-                        .deck-options-page textarea {
-                            background-color: $surfaceContainerColor !important;
-                            color: $onSurfaceColor !important;
-                            border-color: $outlineColor !important;
-                            box-shadow: none !important;
-                        }
-
-                        .deck-options-page .form-control:focus,
-                        .deck-options-page .form-select:focus,
-                        .deck-options-page input[type="text"]:focus,
-                        .deck-options-page input[type="number"]:focus,
-                        .deck-options-page input[type="date"]:focus,
-                        .deck-options-page textarea:focus {
-                            border-color: $primaryColor !important;
-                            box-shadow: 0 0 0 1px $primaryColor !important;
-                        }
-
-                        .deck-options-page .col-form-label,
-                        .deck-options-page .form-label,
-                        .deck-options-page .header,
-                        .deck-options-page summary,
-                        .deck-options-page .day {
-                            color: $textColor !important;
-                        }
-
-                        .deck-options-page .dropdown-divider {
-                            border-color: $outlineColor !important;
-                            opacity: 1 !important;
-                        }
-
-                        .deck-options-page .alert {
-                            background-color: $surfaceContainerColor !important;
-                            color: $onSurfaceColor !important;
-                            border: 1px solid $outlineColor !important;
-                            border-radius: 16px !important;
-                        }
+                        $deckOptionsCss
                         
                         .graphs-container {
                             background-color: $bgColor !important;
@@ -537,6 +418,10 @@ open class PageWebViewClient : WebViewClient() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val DECK_OPTIONS_CSS_ASSET = "anki_deck_options.css"
     }
 }
 

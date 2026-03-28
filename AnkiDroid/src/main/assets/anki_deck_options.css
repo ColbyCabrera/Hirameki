@@ -1,0 +1,139 @@
+.deck-options-page,
+.deck-options-page .container-columns,
+.deck-options-page .row-columns {
+    background-color: var(--deck-options-bg) !important;
+    color: var(--deck-options-text) !important;
+    box-shadow: none !important;
+}
+
+.deck-options-page details,
+.deck-options-page .modal-content,
+.deck-options-page .radio-group,
+.deck-options-page .button-bar {
+    background-color: var(--deck-options-surface) !important;
+    color: var(--deck-options-on-surface) !important;
+    border: 1px solid var(--deck-options-surface-container) !important;
+    box-shadow: none !important;
+}
+
+.deck-options-page details {
+    padding: 16px !important;
+}
+
+.deck-options-page details > summary {
+    color: var(--deck-options-text) !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+}
+
+.deck-options-page details[open] > summary {
+    margin-bottom: 12px !important;
+}
+
+.deck-options-page .modal-header,
+.deck-options-page .modal-footer {
+    border-color: var(--deck-options-outline) !important;
+}
+
+.deck-options-page .btn {
+    background-color: var(--deck-options-primary) !important;
+    color: var(--deck-options-on-primary) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    box-shadow: none !important;
+    background-image: none !important;
+}
+
+.deck-options-page .btn-primary {
+    --bs-btn-color: var(--deck-options-on-primary) !important;
+    --bs-btn-hover-color: var(--deck-options-on-primary) !important;
+    --bs-btn-active-color: var(--deck-options-on-primary) !important;
+    --bs-btn-disabled-color: var(--deck-options-on-primary) !important;
+    --bs-btn-bg: var(--deck-options-primary);
+    --bs-btn-hover-bg: var(--deck-options-primary);
+    --bs-btn-active-bg: var(--deck-options-primary);
+    --bs-btn-disabled-bg: var(--deck-options-primary);
+    --bs-btn-border-color: transparent;
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-active-border-color: transparent;
+    --bs-btn-disabled-border-color: transparent;
+    color: var(--deck-options-on-primary) !important;
+}
+
+.deck-options-page .btn-primary,
+.deck-options-page .btn-primary:hover,
+.deck-options-page .btn-primary:focus-visible,
+.deck-options-page .btn-primary:active,
+.deck-options-page .btn-primary:disabled,
+.deck-options-page .btn-primary * {
+    color: var(--deck-options-on-primary) !important;
+}
+
+.label-button.primary,
+.label-button.primary:hover,
+.label-button.primary:focus,
+.label-button.primary:focus-visible,
+.label-button.primary:active,
+.label-button.primary:disabled,
+.label-button.primary * {
+    color: var(--deck-options-on-primary) !important;
+}
+
+.deck-options-page .revert .badge,
+.deck-options-page .revert .badge:hover,
+.deck-options-page .revert .badge:focus,
+.deck-options-page .revert .badge:focus-visible,
+.deck-options-page .revert .badge:active {
+    background-color: transparent !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    color: var(--deck-options-on-surface-variant) !important;
+}
+
+.deck-options-page .revert .badge:hover,
+.deck-options-page .revert .badge:focus-visible {
+    color: var(--deck-options-on-surface) !important;
+}
+
+.deck-options-page .form-control,
+.deck-options-page .form-select,
+.deck-options-page input[type="text"],
+.deck-options-page input[type="number"],
+.deck-options-page input[type="date"],
+.deck-options-page textarea {
+    background-color: var(--deck-options-surface-container) !important;
+    color: var(--deck-options-on-surface) !important;
+    border-color: var(--deck-options-outline) !important;
+    box-shadow: none !important;
+}
+
+.deck-options-page .form-control:focus,
+.deck-options-page .form-select:focus,
+.deck-options-page input[type="text"]:focus,
+.deck-options-page input[type="number"]:focus,
+.deck-options-page input[type="date"]:focus,
+.deck-options-page textarea:focus {
+    border-color: var(--deck-options-primary) !important;
+    box-shadow: 0 0 0 1px var(--deck-options-primary) !important;
+}
+
+.deck-options-page .col-form-label,
+.deck-options-page .form-label,
+.deck-options-page .header,
+.deck-options-page summary,
+.deck-options-page .day {
+    color: var(--deck-options-text) !important;
+}
+
+.deck-options-page .dropdown-divider {
+    border-color: var(--deck-options-outline) !important;
+    opacity: 1 !important;
+}
+
+.deck-options-page .alert {
+    background-color: var(--deck-options-surface-container) !important;
+    color: var(--deck-options-on-surface) !important;
+    border: 1px solid var(--deck-options-outline) !important;
+    border-radius: 16px !important;
+}
