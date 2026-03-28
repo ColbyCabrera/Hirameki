@@ -27,6 +27,7 @@ import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.OnPageFinishedCallback
 import com.ichi2.utils.AssetHelper.guessMimeType
 import com.ichi2.utils.toRGBHex
+import org.json.JSONObject
 import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -37,6 +38,16 @@ import java.io.IOException
 open class PageWebViewClient : WebViewClient() {
     val onPageFinishedCallbacks: MutableList<OnPageFinishedCallback> = mutableListOf()
     val onErrorCallbacks: MutableList<OnErrorCallback> = mutableListOf()
+
+    private fun loadDeckOptionsCss(webView: WebView): String =
+        try {
+            JSONObject.quote(
+                webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() },
+            )
+        } catch (e: IOException) {
+            Timber.w(e, "Unable to load CSS asset %s", DECK_OPTIONS_CSS_ASSET)
+            JSONObject.quote("")
+        }
 
     override fun shouldInterceptRequest(
         view: WebView,
@@ -84,8 +95,7 @@ open class PageWebViewClient : WebViewClient() {
                 webView, com.google.android.material.R.attr.colorOnBackground
             ).toRGBHex()
             val primaryColor =
-                MaterialColors.getColor(webView, androidx.appcompat.R.attr.colorPrimary)
-                    .toRGBHex()
+                MaterialColors.getColor(webView, androidx.appcompat.R.attr.colorPrimary).toRGBHex()
             val onPrimaryColor =
                 MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnPrimary)
                     .toRGBHex()
@@ -110,40 +120,116 @@ open class PageWebViewClient : WebViewClient() {
             val onTertiaryContainerColor = MaterialColors.getColor(
                 webView, com.google.android.material.R.attr.colorOnTertiaryContainer
             ).toRGBHex()
+            val onSurfaceVariantColor = MaterialColors.getColor(
+                webView, com.google.android.material.R.attr.colorOnSurfaceVariant
+            ).toRGBHex()
+            val surfaceContainerHighColor = MaterialColors.getColor(
+                webView, com.google.android.material.R.attr.colorSurfaceContainerHigh
+            ).toRGBHex()
+            val errorContainerColor = MaterialColors.getColor(
+                webView, com.google.android.material.R.attr.colorErrorContainer
+            ).toRGBHex()
+            val deckOptionsCss = loadDeckOptionsCss(webView)
 
             // Inject comprehensive Material 3 theming CSS
             webView.evaluateAfterDOMContentLoaded(
                 """
                 (function() {
                     var css = `
-                        /* CSS Variables for Material 3 */
-                        :root {
-                            --m3-background: $bgColor;
-                            --m3-on-background: $textColor;
-                            --m3-primary: $primaryColor;
-                            --m3-on-primary: $onPrimaryColor;
-                            --m3-surface: $surfaceColor;
-                            --m3-on-surface: $onSurfaceColor;
-                            --m3-surface-container: $surfaceContainerColor;
-                            --m3-outline: $outlineColor;
-                            --m3-secondary: $secondaryColor;
-                            --m3-tertiary-container: $tertiaryContainerColor;
-                            --m3-on-tertiary-container: $onTertiaryContainerColor;
-                            /* Override Anki's CSS variables */
+                        /* Override ALL Anki + Bootstrap CSS variables with Material 3 */
+                        :root, :root.night-mode {
+                            /* Foreground */
                             --fg: $textColor;
+                            --fg-subtle: $onSurfaceVariantColor;
+                            --fg-disabled: $outlineColor;
+                            --fg-faint: $outlineColor;
+                            --fg-link: $primaryColor;
+                            /* Canvas / Background */
                             --canvas: $bgColor;
+                            --canvas-elevated: $surfaceColor;
+                            --canvas-inset: $surfaceContainerColor;
+                            --canvas-overlay: $surfaceContainerHighColor;
+                            --canvas-code: $surfaceContainerColor;
+                            /* Borders */
                             --border: $outlineColor;
+                            --border-subtle: $surfaceContainerHighColor;
+                            --border-strong: $outlineColor;
+                            --border-focus: $primaryColor;
+                            /* Buttons */
+                            --button-bg: $surfaceContainerColor;
+                            --button-gradient-start: $surfaceContainerColor;
+                            --button-gradient-end: $surfaceContainerColor;
+                            --button-hover-border: $outlineColor;
+                            --button-disabled: $surfaceContainerColor;
+                            --button-primary-bg: $primaryColor;
+                            --button-primary-gradient-start: $primaryColor;
+                            --button-primary-gradient-end: $primaryColor;
+                            --button-primary-disabled: $primaryColor;
+                            /* Shadows */
+                            --shadow: transparent;
+                            --shadow-inset: transparent;
+                            --shadow-subtle: transparent;
+                            --shadow-focus: $primaryColor;
+                            /* Accents */
+                            --accent-card: $primaryColor;
+                            --accent-note: $secondaryColor;
+                            --accent-danger: $errorContainerColor;
+                            /* Bootstrap body / text */
+                            --bs-body-bg: $bgColor;
+                            --bs-body-color: $textColor;
+                            --bs-emphasis-color: $textColor;
+                            --bs-secondary-color: $onSurfaceVariantColor;
+                            --bs-tertiary-color: $outlineColor;
+                            --bs-secondary-bg: $surfaceContainerColor;
+                            --bs-tertiary-bg: $surfaceContainerColor;
+                            /* Bootstrap brand */
+                            --bs-primary: $primaryColor;
+                            --bs-secondary: $secondaryColor;
+                            --bs-link-color: $primaryColor;
+                            --bs-link-hover-color: $primaryColor;
+                            /* Bootstrap borders */
+                            --bs-border-color: $outlineColor;
+                            --bs-border-color-translucent: $outlineColor;
+                            /* Deck options */
+                            --deck-options-bg: $bgColor;
+                            --deck-options-text: $textColor;
+                            --deck-options-surface: $surfaceColor;
+                            --deck-options-on-surface: $onSurfaceColor;
+                            --deck-options-surface-container: $surfaceContainerColor;
+                            --deck-options-outline: $outlineColor;
+                            --deck-options-primary: $primaryColor;
+                            --deck-options-on-primary: $onPrimaryColor;
+                            --deck-options-tertiary-container: $tertiaryContainerColor;
+                            --deck-options-on-tertiary-container: $onTertiaryContainerColor;
+                            --deck-options-on-surface-variant: $onSurfaceVariantColor;
                         }
                         
-                        /* Base styling - colors only */
                         body {
                             background-color: $bgColor !important;
                             color: $textColor !important;
                         }
                         
-                        /* Links - colors only */
                         a, a:link, a:visited {
                             color: $primaryColor !important;
+                        }
+                        
+                        /* Bootstrap component-scoped variable overrides */
+                        .deck-options-page .form-control, .deck-options-page .form-select {
+                            background-color: $surfaceContainerColor !important;
+                            color: $onSurfaceColor !important;
+                            border-color: $outlineColor !important;
+                        }
+                        
+                        .deck-options-page .form-control:focus, .deck-options-page .form-select:focus {
+                            border-color: $primaryColor !important;
+                            box-shadow: 0 0 0 1px $primaryColor !important;
+                        }
+                        
+                        .deck-options-page .modal-content {
+                            --bs-modal-bg: $surfaceColor;
+                            --bs-modal-color: $onSurfaceColor;
+                            --bs-modal-border-color: $outlineColor;
+                            background-color: $surfaceColor !important;
                         }
                         
                         /* Range box header - improved layout */
@@ -220,26 +306,32 @@ open class PageWebViewClient : WebViewClient() {
                         }
                         
                         /* Radio buttons - accent color only */
-                        input[type="radio"] {
+                        .deck-options-page input[type="radio"] {
                             accent-color: $primaryColor !important;
                         }
                         
                         /* Checkboxes - accent color only */
-                        input[type="checkbox"] {
+                        .deck-options-page input[type="checkbox"] {
+                            accent-color: $primaryColor !important;
+                        }
+
+                        .deck-options-page input[type="range"] {
                             accent-color: $primaryColor !important;
                         }
                         
                         /* Text inputs - colors only */
-                        input[type="text"], input[type="search"], select, textarea {
+                        .deck-options-page input[type="text"], .deck-options-page input[type="search"], .deck-options-page select, .deck-options-page textarea {
                             background-color: $surfaceContainerColor !important;
                             color: $onSurfaceColor !important;
                             border-color: $outlineColor !important;
                         }
                         
                         /* Labels - color only */
-                        label {
+                        .deck-options-page label {
                             color: $textColor !important;
                         }
+
+                        ` + $deckOptionsCss + `
                         
                         .graphs-container {
                             background-color: $bgColor !important;
@@ -329,6 +421,10 @@ open class PageWebViewClient : WebViewClient() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val DECK_OPTIONS_CSS_ASSET = "anki_deck_options.css"
     }
 }
 

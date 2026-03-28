@@ -110,7 +110,7 @@
         <item name="android:textColor">?attr/easyButtonTextColor</item>
     </style>
 
-    <!-- Action bar. Currently all action bar text is white in every theme. -->
+    <!-- Action bar. Currently, all action bar text is white in every theme. -->
     <style name="ActionBarStyle" parent="Base.ThemeOverlay.AppCompat.ActionBar">
         <!-- Colors: hamburger, title text, overflow icon -->
         <item name="android:textColorPrimary">@color/white</item>
@@ -151,6 +151,12 @@
         <item name="colorOnSurfaceVariant">?attr/colorPrimary</item> <!-- Inactive icon & label -->
         <item name="textAppearanceTitleSmall">@style/TextAppearance.Material3.TitleSmall</item>
         <item name="textAppearanceLabelLarge">@style/TextAppearance.Material3.LabelLarge</item>
+    </style>
+
+    <style name="TextAppearance.Anki.PageToolbar.Expressive" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@string/font_fontFamily_medium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textStyle">normal</item>
     </style>
 
     <!-- padding is hardcoded in Toolbar.java (32) to allow for fixing the scrollview -->
