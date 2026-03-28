@@ -57,6 +57,7 @@
     --bs-btn-hover-border-color: transparent;
     --bs-btn-active-border-color: transparent;
     --bs-btn-disabled-border-color: transparent;
+
     color: var(--deck-options-on-primary) !important;
 }
 
