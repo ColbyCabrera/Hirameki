@@ -214,18 +214,18 @@ open class PageWebViewClient : WebViewClient() {
                         }
                         
                         /* Bootstrap component-scoped variable overrides */
-                        .form-control, .form-select {
+                        .deck-options-page .form-control, .deck-options-page .form-select {
                             background-color: $surfaceContainerColor !important;
                             color: $onSurfaceColor !important;
                             border-color: $outlineColor !important;
                         }
                         
-                        .form-control:focus, .form-select:focus {
+                        .deck-options-page .form-control:focus, .deck-options-page .form-select:focus {
                             border-color: $primaryColor !important;
                             box-shadow: 0 0 0 1px $primaryColor !important;
                         }
                         
-                        .modal-content {
+                        .deck-options-page .modal-content {
                             --bs-modal-bg: $surfaceColor;
                             --bs-modal-color: $onSurfaceColor;
                             --bs-modal-border-color: $outlineColor;
@@ -306,28 +306,28 @@ open class PageWebViewClient : WebViewClient() {
                         }
                         
                         /* Radio buttons - accent color only */
-                        input[type="radio"] {
+                        .deck-options-page input[type="radio"] {
                             accent-color: $primaryColor !important;
                         }
                         
                         /* Checkboxes - accent color only */
-                        input[type="checkbox"] {
+                        .deck-options-page input[type="checkbox"] {
                             accent-color: $primaryColor !important;
                         }
 
-                        input[type="range"] {
+                        .deck-options-page input[type="range"] {
                             accent-color: $primaryColor !important;
                         }
                         
                         /* Text inputs - colors only */
-                        input[type="text"], input[type="search"], select, textarea {
+                        .deck-options-page input[type="text"], .deck-options-page input[type="search"], .deck-options-page select, .deck-options-page textarea {
                             background-color: $surfaceContainerColor !important;
                             color: $onSurfaceColor !important;
                             border-color: $outlineColor !important;
                         }
                         
                         /* Labels - color only */
-                        label {
+                        .deck-options-page label {
                             color: $textColor !important;
                         }
 
