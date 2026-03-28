@@ -27,6 +27,7 @@ import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.OnPageFinishedCallback
 import com.ichi2.utils.AssetHelper.guessMimeType
 import com.ichi2.utils.toRGBHex
+import org.json.JSONObject
 import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -40,10 +41,12 @@ open class PageWebViewClient : WebViewClient() {
 
     private fun loadDeckOptionsCss(webView: WebView): String =
         try {
-            webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() }
+            JSONObject.quote(
+                webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() },
+            )
         } catch (e: IOException) {
             Timber.w(e, "Unable to load CSS asset %s", DECK_OPTIONS_CSS_ASSET)
-            ""
+            JSONObject.quote("")
         }
 
     override fun shouldInterceptRequest(
@@ -328,7 +331,7 @@ open class PageWebViewClient : WebViewClient() {
                             color: $textColor !important;
                         }
 
-                        $deckOptionsCss
+                        ` + $deckOptionsCss + `
                         
                         .graphs-container {
                             background-color: $bgColor !important;
