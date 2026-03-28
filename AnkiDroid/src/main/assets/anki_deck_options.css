@@ -69,13 +69,13 @@
     color: var(--deck-options-on-primary) !important;
 }
 
-.label-button.primary,
-.label-button.primary:hover,
-.label-button.primary:focus,
-.label-button.primary:focus-visible,
-.label-button.primary:active,
-.label-button.primary:disabled,
-.label-button.primary * {
+.deck-options-page .label-button.primary,
+.deck-options-page .label-button.primary:hover,
+.deck-options-page .label-button.primary:focus,
+.deck-options-page .label-button.primary:focus-visible,
+.deck-options-page .label-button.primary:active,
+.deck-options-page .label-button.primary:disabled,
+.deck-options-page .label-button.primary * {
     color: var(--deck-options-on-primary) !important;
 }
 
