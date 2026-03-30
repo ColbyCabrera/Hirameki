@@ -19,6 +19,8 @@ import android.annotation.SuppressLint
 import android.graphics.Color
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.webkit.ConsoleMessage
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -66,61 +68,76 @@ fun Flashcard(
     ) { (shown, currentHtml) ->
         val currentStyle = if (shown) bodyLargeStyle else displayLargeStyle
         val currentPadding = if (shown) 40 else 36
-        
+
         AndroidView(
             factory = { context ->
-                WebView(context).apply {
-                    settings.javaScriptEnabled = true
-                    settings.allowFileAccess = true
-                    settings.domStorageEnabled = true
-                    
-                    webViewClient = object : WebViewClient() {
-                        val resourceHandler = ViewerResourceHandler(context)
+            WebView(context).apply {
+                settings.javaScriptEnabled = true
+                settings.allowFileAccess = true
+                settings.domStorageEnabled = true
 
-                        override fun shouldInterceptRequest(
-                            view: WebView,
-                            request: WebResourceRequest
-                        ): WebResourceResponse? {
-                            return resourceHandler.shouldInterceptRequest(request)
-                        }
-
-                        override fun shouldOverrideUrlLoading(
-                            view: WebView,
-                            request: WebResourceRequest
-                        ): Boolean {
-                            onLinkClick(request.url.toString())
-                            return true
-                        }
-
-                        override fun onPageFinished(view: WebView, url: String) {
-                            val payload = view.tag as? FlashcardPayload ?: return
-                            if (payload.scriptExecuted) return
-                            payload.scriptExecuted = true
-                            view.evaluateJavascript(payload.evalScript, null)
-                        }
+                webChromeClient = object : WebChromeClient() {
+                    override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                        Timber.tag("FlashcardJS")
+                            .d("${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}")
+                        return true
                     }
-                    
-                    val gestureDetector = GestureDetector(
-                        context,
-                        object : GestureDetector.SimpleOnGestureListener() {
-                            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                                onTap()
-                                return true
+                }
+
+                webViewClient = object : WebViewClient() {
+                    val resourceHandler = ViewerResourceHandler(context)
+
+                    override fun shouldInterceptRequest(
+                        view: WebView, request: WebResourceRequest
+                    ): WebResourceResponse? {
+                        return resourceHandler.shouldInterceptRequest(request)
+                    }
+
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView, request: WebResourceRequest
+                    ): Boolean {
+                        val url = request.url.toString()
+                        if (url.startsWith("file") || url.startsWith("data:") || url.startsWith(
+                                "javascript:"
+                            ) || url.startsWith("blob:")
+                        ) {
+                            return false
+                        }
+                        if (url.startsWith(baseUrl)) {
+                            val path = url.substringAfter(baseUrl)
+                            if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
+                                return false
                             }
                         }
-                    )
-                    
-                    @SuppressLint("ClickableViewAccessibility")
-                    setOnTouchListener { _, event ->
-                        gestureDetector.onTouchEvent(event)
-                        false
+                        onLinkClick(url)
+                        return true
                     }
-                    
-                    setBackgroundColor(Color.TRANSPARENT)
+
+                    override fun onPageFinished(view: WebView, url: String) {
+                        val payload = view.tag as? FlashcardPayload ?: return
+                        if (payload.scriptExecuted) return
+                        payload.scriptExecuted = true
+                        view.evaluateJavascript(payload.evalScript, null)
+                    }
                 }
-            },
-            update = { webView ->
-                val composeStyle = """
+
+                val gestureDetector = GestureDetector(
+                    context, object : GestureDetector.SimpleOnGestureListener() {
+                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                            onTap()
+                            return true
+                        }
+                    })
+
+                @SuppressLint("ClickableViewAccessibility") setOnTouchListener { _, event ->
+                    gestureDetector.onTouchEvent(event)
+                    false
+                }
+
+                setBackgroundColor(Color.TRANSPARENT)
+            }
+        }, update = { webView ->
+            val composeStyle = """
                     <style id="compose-styles">
                         @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
                         html {
@@ -149,41 +166,49 @@ fun Flashcard(
                     </style>
                 """.trimIndent()
 
-                val extraAssets = listOf("backend/js/reviewer_extras_bundle.js")
-                val shell = stdHtml(webView.context, extraAssets, isNightMode)
+            val extraAssets = listOf("backend/js/reviewer_extras_bundle.js")
+            val shell = stdHtml(webView.context, extraAssets, isNightMode)
 
-                // Build the JS call to evaluate AFTER page loads via evaluateJavascript().
-                // IMPORTANT: We must NOT embed _showQuestion/_showAnswer in <script> tags
-                // in the HTML because IO card HTML contains </script> which prematurely
-                // terminates the script tag, causing raw text to be displayed.
-                val showCardScript = if (shown) {
-                    "_showAnswer(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(bodyClass)});"
-                } else {
-                    "_showQuestion(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(answerHtml)}, ${Json.encodeToString(bodyClass)});"
-                }
+            // Build the JS call to evaluate AFTER page loads via evaluateJavascript().
+            // IMPORTANT: We must NOT embed _showQuestion/_showAnswer in <script> tags
+            // in the HTML because IO card HTML contains </script> which prematurely
+            // terminates the script tag, causing raw text to be displayed.
+            val showCardScript = if (shown) {
+                "_showAnswer(${Json.encodeToString(currentHtml)}, ${
+                    Json.encodeToString(
+                        bodyClass
+                    )
+                });"
+            } else {
+                "_showQuestion(${Json.encodeToString(currentHtml)}, ${
+                    Json.encodeToString(
+                        answerHtml
+                    )
+                }, ${Json.encodeToString(bodyClass)});"
+            }
 
-                val evalScript = showCardScript + "\n" + IO_POST_LOAD_SCRIPT
+            val evalScript = IO_SETUP_INTERCEPT + "\n" + showCardScript + "\n" + IO_POST_LOAD_SCRIPT
 
-                val reviewerExtrasCss = """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
-                val styledHtml = shell.replace("</head>", "$reviewerExtrasCss\n$composeStyle\n</head>")
+            val reviewerExtrasCss =
+                """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
+            val styledHtml = shell.replace("</head>", "$reviewerExtrasCss\n$composeStyle\n</head>")
 
-                Timber.tag("Flashcard").d("styledHtml generated")
-                
-                val payload = FlashcardPayload(currentHtml, evalScript)
-                val currentPayload = webView.tag as? FlashcardPayload
-                
-                if (currentPayload?.contentKey != currentHtml) {
-                    webView.tag = payload
-                    webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
-                }
-            },
-            onRelease = { webView ->
-                webView.stopLoading()
-                webView.webViewClient = WebViewClient()
-                webView.setOnTouchListener(null)
-                webView.destroy()
-            },
-            modifier = modifier
+            Timber.tag("Flashcard").d("styledHtml generated")
+
+            val payload = FlashcardPayload(currentHtml, evalScript)
+            val currentPayload = webView.tag as? FlashcardPayload
+
+            if (currentPayload?.contentKey != currentHtml) {
+                webView.tag = payload
+                webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
+            }
+        }, onRelease = { webView ->
+            webView.stopLoading()
+            webView.webViewClient = WebViewClient()
+            webView.webChromeClient = null
+            webView.setOnTouchListener(null)
+            webView.destroy()
+        }, modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
         )
@@ -200,12 +225,33 @@ private data class FlashcardPayload(
 )
 
 /**
+ * Intercepts anki.imageOcclusion.setup() with a no-op BEFORE _showQuestion runs.
+ *
+ * Why: _showQuestion is async (queued via a Promise chain). When the queued work
+ * resolves, it sets innerHTML and then executes the card's inline scripts, including
+ * `<script>anki.imageOcclusion.setup()</script>`. setup() waits for the image to load,
+ * then uses requestAnimationFrame to size the canvas and draw masks. But if the image
+ * is cached, setup() completes (~16ms) before our layout poll (50ms) fires, resulting
+ * in a 0x0 canvas — masks invisible 95% of the time.
+ *
+ * By intercepting setup() here (before _showQuestion queues), the card's inline script
+ * becomes a no-op. Our [IO_POST_LOAD_SCRIPT] then applies layout dimensions and calls
+ * the original setup() exactly once, guaranteeing correct canvas sizing.
+ */
+private const val IO_SETUP_INTERCEPT: String = """
+if (globalThis.anki && globalThis.anki.imageOcclusion && typeof globalThis.anki.imageOcclusion.setup === 'function') {
+    globalThis.__ioOriginalSetup = globalThis.anki.imageOcclusion.setup;
+    globalThis.anki.imageOcclusion.setup = function() { return Promise.resolve(); };
+}
+"""
+
+/**
  * Post-load JavaScript for Image Occlusion layout and setup.
  *
  * IMPORTANT: _showQuestion/_showAnswer are ASYNC (queued via a Promise chain in reviewer.js).
  * When this script runs, the card HTML has NOT yet been injected into #qa.
  * We must poll for the image-occlusion-container to appear, THEN wait for the image to load,
- * THEN apply the layout and run setup.
+ * THEN apply layout dimensions, THEN call the original setup() exactly once.
  */
 private val IO_POST_LOAD_SCRIPT: String = """
 (function() {
@@ -262,13 +308,16 @@ private val IO_POST_LOAD_SCRIPT: String = """
             canvas.style.height = height + 'px';
         }
 
-        // Force layout reflow
+        // Force layout reflow so canvas gets correct clientWidth/clientHeight
         void container.offsetHeight;
 
-        // Run anki.imageOcclusion.setup() if available and not already run by
-        // the inline script from the card template.
-        if (globalThis.anki && globalThis.anki.imageOcclusion &&
-            typeof globalThis.anki.imageOcclusion.setup === 'function') {
+        // Call the original setup() exactly once. The card's inline script was
+        // intercepted (no-op) by IO_SETUP_INTERCEPT, so this is the only real call.
+        // setup() uses requestAnimationFrame internally, and now the container/canvas
+        // have correct CSS dimensions for it to read.
+        if (globalThis.__ioOriginalSetup) {
+            globalThis.anki.imageOcclusion.setup = globalThis.__ioOriginalSetup;
+            delete globalThis.__ioOriginalSetup;
             try {
                 globalThis.anki.imageOcclusion.setup();
             } catch(e) {
@@ -286,7 +335,7 @@ private val IO_POST_LOAD_SCRIPT: String = """
 @Composable
 fun FlashcardPreview() {
     Flashcard(
-        baseUrl = "http://localhost",
+        baseUrl = "http://localhost/",
         questionHtml = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
         answerHtml = "<html><body><p>This is the answer.</p></body></html>",
         bodyClass = "card card1",
@@ -300,7 +349,7 @@ fun FlashcardPreview() {
 @Composable
 fun FlashcardPreviewAnswerShown() {
     Flashcard(
-        baseUrl = "http://localhost",
+        baseUrl = "http://localhost/",
         questionHtml = "<html><body><h1>Hello, World!</h1></body></html>",
         answerHtml = "<html><body><p>This is the answer.</p></body></html>",
         bodyClass = "card card1",
