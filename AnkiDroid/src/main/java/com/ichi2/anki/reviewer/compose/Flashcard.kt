@@ -76,8 +76,7 @@ fun Flashcard(
                     }
 
                     override fun shouldOverrideUrlLoading(
-                        view: WebView,
-                        request: WebResourceRequest
+                        view: WebView, request: WebResourceRequest
                     ): Boolean {
                         onLinkClick(request.url.toString())
                         return true
@@ -141,14 +140,23 @@ fun Flashcard(
             // in the HTML because IO card HTML contains </script> which prematurely
             // terminates the script tag, causing raw text to be displayed.
             val showCardScript = if (shown) {
-                "_showAnswer(${kotlinx.serialization.json.Json.encodeToString(currentHtml)}, ${kotlinx.serialization.json.Json.encodeToString(bodyClass)});"
+                "_showAnswer(${kotlinx.serialization.json.Json.encodeToString(currentHtml)}, ${
+                    kotlinx.serialization.json.Json.encodeToString(
+                        bodyClass
+                    )
+                });"
             } else {
-                "_showQuestion(${kotlinx.serialization.json.Json.encodeToString(currentHtml)}, ${kotlinx.serialization.json.Json.encodeToString(answerHtml)}, ${kotlinx.serialization.json.Json.encodeToString(bodyClass)});"
+                "_showQuestion(${kotlinx.serialization.json.Json.encodeToString(currentHtml)}, ${
+                    kotlinx.serialization.json.Json.encodeToString(
+                        answerHtml
+                    )
+                }, ${kotlinx.serialization.json.Json.encodeToString(bodyClass)});"
             }
 
             val evalScript = showCardScript + "\n" + IO_POST_LOAD_SCRIPT
 
-            val reviewerExtrasCss = """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
+            val reviewerExtrasCss =
+                """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
             val styledHtml = shell.replace("</head>", "$reviewerExtrasCss\n$composeStyle\n</head>")
 
             Timber.tag("Flashcard").d("styledHtml generated")
