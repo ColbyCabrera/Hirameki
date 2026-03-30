@@ -68,6 +68,7 @@ fun Flashcard(
                 settings.domStorageEnabled = true
                 webViewClient = object : WebViewClient() {
                     val resourceHandler = com.ichi2.anki.ViewerResourceHandler(context)
+
                     override fun shouldInterceptRequest(
                         view: WebView, request: WebResourceRequest
                     ): android.webkit.WebResourceResponse? {
@@ -80,6 +81,13 @@ fun Flashcard(
                     ): Boolean {
                         onLinkClick(request.url.toString())
                         return true
+                    }
+
+                    override fun onPageFinished(view: WebView, url: String) {
+                        val payload = view.tag as? FlashcardPayload ?: return
+                        if (payload.scriptExecuted) return
+                        payload.scriptExecuted = true
+                        view.evaluateJavascript(payload.evalScript, null)
                     }
                 }
                 val gestureDetector = GestureDetector(
@@ -125,28 +133,29 @@ fun Flashcard(
                 </style>
                 """.trimIndent()
 
-            val shell = com.ichi2.anki.previewer.stdHtml(webView.context, emptyList(), isNightMode)
+            val extraAssets = listOf("backend/js/reviewer_extras_bundle.js")
+            val shell = com.ichi2.anki.previewer.stdHtml(webView.context, extraAssets, isNightMode)
 
-            val script = if (shown) {
-                "<script>_showAnswer(${
-                    kotlinx.serialization.json.Json.encodeToString(
-                        currentHtml
-                    )
-                }, '$bodyClass');</script>"
+            // Build the JS call to evaluate AFTER page loads via evaluateJavascript().
+            // IMPORTANT: We must NOT embed _showQuestion/_showAnswer in <script> tags
+            // in the HTML because IO card HTML contains </script> which prematurely
+            // terminates the script tag, causing raw text to be displayed.
+            val showCardScript = if (shown) {
+                "_showAnswer(${kotlinx.serialization.json.Json.encodeToString(currentHtml)}, ${kotlinx.serialization.json.Json.encodeToString(bodyClass)});"
             } else {
-                "<script>_showQuestion(${
-                    kotlinx.serialization.json.Json.encodeToString(
-                        currentHtml
-                    )
-                }, ${kotlinx.serialization.json.Json.encodeToString(answerHtml)}, '$bodyClass');</script>"
+                "_showQuestion(${kotlinx.serialization.json.Json.encodeToString(currentHtml)}, ${kotlinx.serialization.json.Json.encodeToString(answerHtml)}, ${kotlinx.serialization.json.Json.encodeToString(bodyClass)});"
             }
 
-            val styledHtml = shell.replace("</head>", "$composeStyle\n</head>")
-                .replace("</body>", "$script\n</body>")
+            val evalScript = showCardScript + "\n" + IO_POST_LOAD_SCRIPT
+
+            val reviewerExtrasCss = """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
+            val styledHtml = shell.replace("</head>", "$reviewerExtrasCss\n$composeStyle\n</head>")
 
             Timber.tag("Flashcard").d("styledHtml generated")
-            if (webView.tag != currentHtml) {
-                webView.tag = currentHtml
+            val payload = FlashcardPayload(currentHtml, evalScript)
+            val currentPayload = webView.tag as? FlashcardPayload
+            if (currentPayload?.contentKey != currentHtml) {
+                webView.tag = payload
                 webView.loadDataWithBaseURL(
                     baseUrl, styledHtml, "text/html", "UTF-8", null
                 )
@@ -163,13 +172,105 @@ fun Flashcard(
     }
 }
 
+/**
+ * Payload stored in the WebView tag for communication between [update] and [onPageFinished].
+ */
+private data class FlashcardPayload(
+    val contentKey: String,
+    val evalScript: String,
+    var scriptExecuted: Boolean = false,
+)
+
+/**
+ * Post-load JavaScript for Image Occlusion layout and setup.
+ *
+ * IMPORTANT: _showQuestion/_showAnswer are ASYNC (queued via a Promise chain in reviewer.js).
+ * When this script runs, the card HTML has NOT yet been injected into #qa.
+ * We must poll for the image-occlusion-container to appear, THEN wait for the image to load,
+ * THEN apply the layout and run setup.
+ */
+private val IO_POST_LOAD_SCRIPT: String = """
+(function() {
+    var maxWaitAttempts = 80;
+    var waitAttempts = 0;
+
+    function waitForContainer() {
+        var container = document.getElementById('image-occlusion-container');
+        if (!container) {
+            if (waitAttempts < maxWaitAttempts) {
+                waitAttempts++;
+                setTimeout(waitForContainer, 50);
+            }
+            return;
+        }
+        var image = container.querySelector('img');
+        if (!image) return;
+
+        if (image.complete && image.naturalWidth > 0) {
+            applyLayout(container, image);
+        } else {
+            image.addEventListener('load', function() {
+                applyLayout(container, image);
+            });
+            image.addEventListener('error', function() {
+                applyLayout(container, image);
+            });
+        }
+    }
+
+    function applyLayout(container, image) {
+        if (image.naturalWidth <= 0 || image.naturalHeight <= 0) return;
+
+        var parentWidth = container.parentElement ? container.parentElement.clientWidth : 0;
+        var viewportWidth = document.documentElement.clientWidth;
+        var bodyWidth = document.body ? document.body.clientWidth : 0;
+        var availableWidth = Math.max(parentWidth, viewportWidth, bodyWidth);
+        var width = Math.max(1, availableWidth);
+        var height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
+
+        container.style.display = 'block';
+        container.style.width = width + 'px';
+        container.style.height = height + 'px';
+        container.style.minHeight = height + 'px';
+        container.style.maxWidth = '100%';
+        container.style.aspectRatio = image.naturalWidth + ' / ' + image.naturalHeight;
+
+        image.style.width = width + 'px';
+        image.style.height = height + 'px';
+
+        var canvas = document.getElementById('image-occlusion-canvas');
+        if (canvas) {
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+        }
+
+        // Force layout reflow
+        void container.offsetHeight;
+
+        // Run anki.imageOcclusion.setup() if available and not already run by
+        // the inline script from the card template.
+        if (globalThis.anki && globalThis.anki.imageOcclusion &&
+            typeof globalThis.anki.imageOcclusion.setup === 'function') {
+            try {
+                globalThis.anki.imageOcclusion.setup();
+            } catch(e) {
+                var err = document.getElementById('err');
+                if (err && !err.innerText) err.innerText = String(e);
+            }
+        }
+    }
+
+    waitForContainer();
+})();
+""".trimIndent()
+
 @Preview(showBackground = true)
 @Composable
 fun FlashcardPreview() {
     Flashcard(
         baseUrl = "http://localhost",
         questionHtml = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
-        answerHtml = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
+        answerHtml = "<html><body><p>This is the answer.</p></body></html>",
         bodyClass = "card card1",
         onTap = {},
         onLinkClick = {},
@@ -182,8 +283,8 @@ fun FlashcardPreview() {
 fun FlashcardPreviewAnswerShown() {
     Flashcard(
         baseUrl = "http://localhost",
-        questionHtml = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
-        answerHtml = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
+        questionHtml = "<html><body><h1>Hello, World!</h1></body></html>",
+        answerHtml = "<html><body><p>This is the answer.</p></body></html>",
         bodyClass = "card card1",
         onTap = {},
         onLinkClick = {},
