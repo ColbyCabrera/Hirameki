@@ -167,6 +167,9 @@ fun Flashcard(
                         opacity: 0.1;
                         margin-bottom: 12px;
                     }
+                    img {
+                        border-radius: 16px;
+                    }
                     .replay-button {
                         color: ${onSurfaceColorHex}EF;
                         display: inline-block;
@@ -305,7 +308,13 @@ private val IO_POST_LOAD_SCRIPT: String = """
         var parentWidth = container.parentElement ? container.parentElement.clientWidth : 0;
         var viewportWidth = document.documentElement.clientWidth;
         var bodyWidth = document.body ? document.body.clientWidth : 0;
-        var availableWidth = Math.max(parentWidth, viewportWidth, bodyWidth);
+        var availableWidth = parentWidth > 0 ? parentWidth : 0;
+        if (availableWidth <= 0 && bodyWidth > 0) {
+            availableWidth = bodyWidth;
+        }
+        if (availableWidth <= 0 && viewportWidth > 0) {
+            availableWidth = viewportWidth;
+        }
         var width = Math.max(1, availableWidth);
         var height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
 
