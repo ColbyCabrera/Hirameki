@@ -55,6 +55,7 @@ fun Flashcard(
     toolbarHeight: Int = 0
 ) {
     val isNightMode = isSystemInDarkTheme()
+    val surfaceColorHex = MaterialTheme.colorScheme.surface
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceColorHex = String.format("#%06X", (0xFFFFFF and onSurfaceColor.toArgb()))
     val typography = MaterialTheme.typography
@@ -138,33 +139,48 @@ fun Flashcard(
             }
         }, update = { webView ->
             val composeStyle = """
-                    <style id="compose-styles">
-                        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-                        html {
-                            color: ${onSurfaceColorHex}EF;
-                            text-align: center;
-                            font-family: 'Roboto', sans-serif;
-                            font-size: ${currentStyle.fontSize.value}px;
-                            font-weight: ${currentStyle.fontWeight?.weight ?: 400};
-                            line-height: ${currentStyle.lineHeight.value}px;
-                            letter-spacing: ${currentStyle.letterSpacing.value}px;
-                            padding-top: ${currentPadding}px;
-                            padding-bottom: ${toolbarHeight}px;
-                        }
-                        hr {
-                            opacity: 0.1;
-                            margin-bottom: 12px;
-                        }
-                        .replay-button {
-                            display: inline-block;
-                            height: 48px;
-                            width: 48px;
-                        }
-                        .play-action {
-                            fill: ${onSurfaceColorHex}EF;
-                        }
-                    </style>
-                """.trimIndent()
+                <style id="compose-styles">
+                    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+                    html {
+                        color: ${onSurfaceColorHex}EF;
+                        background-color: $surfaceColorHex;
+                    }
+                    body.card {
+                        text-align: center;
+                        font-family: 'Roboto', sans-serif;
+                        font-size: ${currentStyle.fontSize.value}px;
+                        font-weight: ${currentStyle.fontWeight?.weight ?: 400};
+                        line-height: ${currentStyle.lineHeight.value}px;
+                        letter-spacing: ${currentStyle.letterSpacing.value}px;
+                        text-wrap: pretty;
+                        padding-top: ${currentPadding}px;
+                        padding-bottom: ${toolbarHeight}px;
+                        background-color: $surfaceColorHex;
+                        color: ${onSurfaceColorHex}EF;
+                    }
+                    body.card.nightMode, body.card.night_mode {
+                        background-color: $surfaceColorHex;
+                        color: ${onSurfaceColorHex}EF;
+                    }
+                    hr {
+                        opacity: 0.1;
+                        margin-bottom: 12px;
+                    }
+                    .replay-button {
+                        color: ${onSurfaceColorHex}EF;
+                        display: inline-block;
+                        height: 72px;
+                        width: 72px;
+                    }
+                    .replay-button .playImage {
+                        display: block;
+                        width: 100%;
+                        height: 100%;
+                        fill: currentColor;
+                        color: inherit;
+                    }
+                </style>
+            """.trimIndent()
 
             val extraAssets = listOf("backend/js/reviewer_extras_bundle.js")
             val shell = stdHtml(webView.context, extraAssets, isNightMode)
@@ -336,8 +352,21 @@ private val IO_POST_LOAD_SCRIPT: String = """
 fun FlashcardPreview() {
     Flashcard(
         baseUrl = "http://localhost/",
-        questionHtml = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
-        answerHtml = "<html><body><p>This is the answer.</p></body></html>",
+        questionHtml = """
+            <html>
+                <body>
+                    <h1>Hello, World!</h1>
+                    <a href="https://example.com">A link</a>
+                </body>
+            </html>
+        """.trimIndent(),
+        answerHtml = """
+            <html>
+                <body>
+                    <p>This is the answer.</p>
+                </body>
+            </html>
+        """.trimIndent(),
         bodyClass = "card card1",
         onTap = {},
         onLinkClick = {},
@@ -350,8 +379,20 @@ fun FlashcardPreview() {
 fun FlashcardPreviewAnswerShown() {
     Flashcard(
         baseUrl = "http://localhost/",
-        questionHtml = "<html><body><h1>Hello, World!</h1></body></html>",
-        answerHtml = "<html><body><p>This is the answer.</p></body></html>",
+        questionHtml = """
+            <html>
+                <body>
+                    <h1>Hello, World!</h1>
+                </body>
+            </html>
+        """.trimIndent(),
+        answerHtml = """
+            <html>
+                <body>
+                    <p>This is the answer.</p>
+                </body>
+            </html>
+        """.trimIndent(),
         bodyClass = "card card1",
         onTap = {},
         onLinkClick = {},
