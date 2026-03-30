@@ -55,7 +55,8 @@ fun Flashcard(
     toolbarHeight: Int = 0
 ) {
     val isNightMode = isSystemInDarkTheme()
-    val surfaceColorHex = MaterialTheme.colorScheme.surface
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val surfaceColorHex = String.format("#%06X", (0xFFFFFF and surfaceColor.toArgb()))
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceColorHex = String.format("#%06X", (0xFFFFFF and onSurfaceColor.toArgb()))
     val typography = MaterialTheme.typography
