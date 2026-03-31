@@ -73,9 +73,6 @@ fun Flashcard(
     val displayLargeStyle = typography.displayMedium
     val bodyLargeStyle = typography.titleLarge
 
-    val hasImageOcclusion = remember(questionHtml, answerHtml) {
-        questionHtml.contains("image-occlusion-container") || answerHtml.contains("image-occlusion-container")
-    }
     val contentKey = remember(questionHtml, answerHtml) {
         FlashcardContentKey(questionHtml.hashCode(), answerHtml.hashCode())
     }
@@ -191,9 +188,16 @@ fun Flashcard(
         val styledHtml = remember(context, isNightMode, composeStyle) {
             buildStyledHtml(context, isNightMode, composeStyle)
         }
-        val evalScript = remember(shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion) {
-            buildCardScript(shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion)
+        val hasImageOcclusion = currentHtml.contains("image-occlusion-container")
+        val sideToken = remember(contentKey, shown) {
+            "${contentKey.hashCode()}_${shown}".hashCode().toString(16)
         }
+        val evalScript =
+            remember(shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion, sideToken) {
+                buildCardScript(
+                    shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion, sideToken
+                )
+            }
 
         AndroidView(
             factory = { context ->
@@ -365,6 +369,7 @@ private fun buildCardScript(
     answerHtml: String,
     bodyClass: String,
     hasImageOcclusion: Boolean,
+    sideToken: String,
 ): String {
     val showCardScript = if (isAnswer) {
         "_showAnswer(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(bodyClass)});"
@@ -376,7 +381,9 @@ private fun buildCardScript(
         });"
     }
     return if (hasImageOcclusion) {
-        "$IO_SETUP_INTERCEPT\n$showCardScript\n$IO_POST_LOAD_SCRIPT"
+        val intercept = IO_SETUP_INTERCEPT.replace($$"${sideToken}", sideToken)
+        val postLoad = IO_POST_LOAD_SCRIPT.replace($$"${sideToken}", sideToken)
+        "$intercept\n$showCardScript\n$postLoad"
     } else {
         showCardScript
     }
@@ -423,11 +430,26 @@ private fun buildShellUpdateScript(
  * becomes a no-op. Our [IO_POST_LOAD_SCRIPT] then applies layout dimensions and calls
  * the original setup() exactly once, guaranteeing correct canvas sizing.
  */
-private const val IO_SETUP_INTERCEPT: String = """
-if (globalThis.anki && globalThis.anki.imageOcclusion && typeof globalThis.anki.imageOcclusion.setup === 'function') {
-    globalThis.__ioOriginalSetup = globalThis.anki.imageOcclusion.setup;
-    globalThis.anki.imageOcclusion.setup = function() { return Promise.resolve(); };
-}
+private const val IO_SETUP_INTERCEPT: String = $$"""
+(function() {
+    var sideToken = '${sideToken}';
+    globalThis.__ioCurrentSide = sideToken;
+    if (globalThis.anki && globalThis.anki.imageOcclusion && typeof globalThis.anki.imageOcclusion.setup === 'function') {
+        // Guard: preserve original ONLY once to prevent overwriting with our mock
+        if (!globalThis.__ioOriginalSetup) {
+            globalThis.__ioOriginalSetup = globalThis.anki.imageOcclusion.setup;
+        }
+        // Intercept: only return resolved promise if it's the current active side
+        globalThis.anki.imageOcclusion.setup = function() {
+            if (globalThis.__ioCurrentSide === sideToken) {
+                return Promise.resolve();
+            } else if (typeof globalThis.__ioOriginalSetup === 'function') {
+                return globalThis.__ioOriginalSetup.apply(this, arguments);
+            }
+            return Promise.resolve(); // Fallback for stale/missing setups
+        };
+    }
+})();
 """
 
 /**
@@ -438,83 +460,99 @@ if (globalThis.anki && globalThis.anki.imageOcclusion && typeof globalThis.anki.
  * We must poll for the image-occlusion-container to appear, THEN wait for the image to load,
  * THEN apply layout dimensions, THEN call the original setup() exactly once.
  */
-private val IO_POST_LOAD_SCRIPT: String = """
+private val IO_POST_LOAD_SCRIPT: String = $$"""
 (function() {
+    var sideToken = '${sideToken}';
     var maxWaitAttempts = 80;
     var waitAttempts = 0;
 
+    function cleanup() {
+        if (globalThis.__ioCurrentSide === sideToken) {
+            if (globalThis.__ioOriginalSetup) {
+                globalThis.anki.imageOcclusion.setup = globalThis.__ioOriginalSetup;
+                delete globalThis.__ioOriginalSetup;
+            }
+            delete globalThis.__ioCurrentSide;
+        }
+    }
+
     function waitForContainer() {
+        if (globalThis.__ioCurrentSide !== sideToken) return;
+
         var container = document.getElementById('image-occlusion-container');
         if (!container) {
             if (waitAttempts < maxWaitAttempts) {
                 waitAttempts++;
                 setTimeout(waitForContainer, 50);
+            } else {
+                cleanup(); // Unconditional restoration on timeout
             }
             return;
         }
         var image = container.querySelector('img');
-        if (!image) return;
+        if (!image) {
+            cleanup(); // Unconditional restoration if no image
+            return;
+        }
 
         if (image.complete && image.naturalWidth > 0) {
             applyLayout(container, image);
         } else {
-            image.addEventListener('load', function() {
-                applyLayout(container, image);
-            });
-            image.addEventListener('error', function() {
-                applyLayout(container, image);
-            });
+            image.addEventListener('load', function() { applyLayout(container, image); });
+            image.addEventListener('error', function() { cleanup(); });
         }
     }
 
     function applyLayout(container, image) {
-        if (image.naturalWidth <= 0 || image.naturalHeight <= 0) return;
+        if (globalThis.__ioCurrentSide !== sideToken) return;
 
-        var parentWidth = container.parentElement ? container.parentElement.clientWidth : 0;
-        var viewportWidth = document.documentElement.clientWidth;
-        var bodyWidth = document.body ? document.body.clientWidth : 0;
-        var availableWidth = parentWidth > 0 ? parentWidth : 0;
-        if (availableWidth <= 0 && bodyWidth > 0) {
-            availableWidth = bodyWidth;
-        }
-        if (availableWidth <= 0 && viewportWidth > 0) {
-            availableWidth = viewportWidth;
-        }
-        var width = Math.max(1, availableWidth);
-        var height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
-
-        container.style.display = 'block';
-        container.style.width = width + 'px';
-        container.style.height = height + 'px';
-        container.style.minHeight = height + 'px';
-        container.style.maxWidth = '100%';
-        container.style.aspectRatio = image.naturalWidth + ' / ' + image.naturalHeight;
-
-        image.style.width = width + 'px';
-        image.style.height = height + 'px';
-
-        var canvas = document.getElementById('image-occlusion-canvas');
-        if (canvas) {
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-        }
-
-        // Force layout reflow so canvas gets correct clientWidth/clientHeight
-        void container.offsetHeight;
-
-        // Call the original setup() exactly once. The card's inline script was
-        // intercepted (no-op) by IO_SETUP_INTERCEPT, so this is the only real call.
-        // setup() uses requestAnimationFrame internally, and now the container/canvas
-        // have correct CSS dimensions for it to read.
-        if (globalThis.__ioOriginalSetup) {
-            globalThis.anki.imageOcclusion.setup = globalThis.__ioOriginalSetup;
-            delete globalThis.__ioOriginalSetup;
-            try {
-                globalThis.anki.imageOcclusion.setup();
-            } catch(e) {
-                var err = document.getElementById('err');
-                if (err && !err.innerText) err.innerText = String(e);
+        try {
+            if (image.naturalWidth <= 0 || image.naturalHeight <= 0) {
+                cleanup();
+                return;
             }
+
+            var parentWidth = container.parentElement ? container.parentElement.clientWidth : 0;
+            var viewportWidth = document.documentElement.clientWidth;
+            var bodyWidth = document.body ? document.body.clientWidth : 0;
+            var availableWidth = parentWidth > 0 ? parentWidth : 0;
+            if (availableWidth <= 0 && bodyWidth > 0) {
+                availableWidth = bodyWidth;
+            }
+            if (availableWidth <= 0 && viewportWidth > 0) {
+                availableWidth = viewportWidth;
+            }
+            var width = Math.max(1, availableWidth);
+            var height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
+
+            container.style.display = 'block';
+            container.style.width = width + 'px';
+            container.style.height = height + 'px';
+            container.style.minHeight = height + 'px';
+            container.style.maxWidth = '100%';
+            container.style.aspectRatio = image.naturalWidth + ' / ' + image.naturalHeight;
+
+            image.style.width = width + 'px';
+            image.style.height = height + 'px';
+
+            var canvas = document.getElementById('image-occlusion-canvas');
+            if (canvas) {
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+            }
+
+            // Force layout reflow so canvas gets correct clientWidth/clientHeight
+            void container.offsetHeight;
+
+            // Call the original setup() exactly once for this side
+            if (globalThis.__ioOriginalSetup) {
+                var original = globalThis.__ioOriginalSetup;
+                cleanup(); // Restore original setup before invocation so its internal logic can run correctly
+                original.call(globalThis.anki.imageOcclusion);
+            }
+        } catch(e) {
+            console.error(e);
+            cleanup(); // Unconditional restoration on error
         }
     }
 
