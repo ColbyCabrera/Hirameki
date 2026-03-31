@@ -148,14 +148,13 @@ fun Flashcard(
         }, update = { webView ->
             val composeStyle = """
                 <style id="compose-styles">
-                    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
                     html {
                         color: ${onSurfaceColorHex}EF;
                         background-color: $surfaceColorHex;
                     }
                     body.card {
                         text-align: center;
-                        font-family: 'Roboto', sans-serif;
+                        font-family: Roboto, system-ui, sans-serif;
                         font-size: ${currentStyle.fontSize.value}px;
                         font-weight: ${currentStyle.fontWeight?.weight ?: 400};
                         line-height: ${currentStyle.lineHeight.value}px;
@@ -172,7 +171,7 @@ fun Flashcard(
                     }
                     hr {
                         opacity: 0.1;
-                        margin-bottom: 12px;
+                        margin: 12px 0px;
                     }
                     img {
                         border-radius: 16px;
