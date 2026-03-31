@@ -29,6 +29,9 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.themes.Themes
@@ -127,6 +130,11 @@ open class PageFragment(
         webView.loadUrl(url.toString())
 
         view.findViewById<MaterialToolbar>(R.id.toolbar).apply {
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.updatePadding(top = systemBars.top)
+                insets
+            }
             if (title != null) {
                 setTitle(title)
             }
@@ -167,7 +175,9 @@ open class PageFragment(
             clazz: KClass<out PageFragment> = PageFragment::class,
         ): Intent {
             val arguments = bundleOf(PATH_ARG_KEY to path, TITLE_ARG_KEY to title)
-            return SingleFragmentActivity.getIntent(context, clazz, arguments)
+            return SingleFragmentActivity.getIntent(context, clazz, arguments).apply {
+                putExtra(SingleFragmentActivity.EXTRA_APPLY_INSETS_PADDING, false)
+            }
         }
     }
 }
