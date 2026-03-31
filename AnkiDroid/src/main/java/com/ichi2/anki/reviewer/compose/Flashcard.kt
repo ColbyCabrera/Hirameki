@@ -244,9 +244,17 @@ fun Flashcard(
                     override fun onPageFinished(view: WebView, url: String) {
                         val payload = view.tag as? FlashcardPayload ?: return
                         payload.shellLoaded = true
-                        if (payload.scriptExecuted) return
-                        payload.scriptExecuted = true
-                        view.evaluateJavascript(payload.evalScript, null)
+
+                        val pendingScript = payload.pendingShellScript
+
+                        if (pendingScript != null) {
+                            view.evaluateJavascript(pendingScript, null)
+                            payload.pendingShellScript = null
+                            payload.scriptExecuted = true
+                        } else if (!payload.scriptExecuted) {
+                            payload.scriptExecuted = true
+                            view.evaluateJavascript(payload.evalScript, null)
+                        }
                     }
                 }
 
@@ -269,8 +277,7 @@ fun Flashcard(
             val currentPayload = webView.tag as? FlashcardPayload
             val shellChanged =
                 currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle
-            val shouldReload =
-                currentPayload == null || currentPayload.contentKey != contentKey || (shellChanged && !currentPayload.shellLoaded)
+            val shouldReload = currentPayload == null || currentPayload.contentKey != contentKey
 
             when {
                 shouldReload -> {
@@ -285,7 +292,13 @@ fun Flashcard(
                     currentPayload.evalScript = evalScript
                     val shellScript =
                         buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
-                    webView.evaluateJavascript(shellScript, null)
+
+                    if (currentPayload.shellLoaded) {
+                        webView.evaluateJavascript(shellScript, null)
+                    } else {
+                        // Queue it up for when the page finishes loading
+                        currentPayload.pendingShellScript = shellScript
+                    }
                 }
 
                 currentPayload.shellLoaded -> {
@@ -327,6 +340,7 @@ private data class FlashcardPayload(
     var evalScript: String,
     var scriptExecuted: Boolean = false,
     var shellLoaded: Boolean = false,
+    var pendingShellScript: String? = null
 )
 
 private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js")
