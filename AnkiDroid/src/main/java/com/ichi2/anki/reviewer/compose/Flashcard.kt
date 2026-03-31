@@ -123,6 +123,7 @@ fun Flashcard(
 
                     override fun onPageFinished(view: WebView, url: String) {
                         val payload = view.tag as? FlashcardPayload ?: return
+                        payload.shellLoaded = true
                         if (payload.scriptExecuted) return
                         payload.scriptExecuted = true
                         view.evaluateJavascript(payload.evalScript, null)
@@ -258,12 +259,17 @@ fun Flashcard(
 
             Timber.tag("Flashcard").d("styledHtml generated")
 
-            val payload = FlashcardPayload(currentHtml, evalScript)
+            val contentKey = "${questionHtml.hashCode()}_${answerHtml.hashCode()}"
             val currentPayload = webView.tag as? FlashcardPayload
 
-            if (currentPayload?.contentKey != currentHtml) {
+            if (currentPayload?.contentKey != contentKey || !currentPayload.shellLoaded) {
+                val payload = FlashcardPayload(contentKey, evalScript)
                 webView.tag = payload
                 webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
+            } else {
+                currentPayload.evalScript = evalScript
+                currentPayload.scriptExecuted = true
+                webView.evaluateJavascript(evalScript, null)
             }
         }, onRelease = { webView ->
             webView.stopLoading()
@@ -283,8 +289,9 @@ fun Flashcard(
  */
 private data class FlashcardPayload(
     val contentKey: String,
-    val evalScript: String,
+    var evalScript: String,
     var scriptExecuted: Boolean = false,
+    var shellLoaded: Boolean = false,
 )
 
 /**
