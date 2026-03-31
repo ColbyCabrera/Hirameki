@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
+import com.ichi2.utils.toRGBHex
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
@@ -55,16 +56,15 @@ fun Flashcard(
 ) {
     val isNightMode = isSystemInDarkTheme()
     val surfaceColor = MaterialTheme.colorScheme.surface
-    val surfaceColorHex = String.format("#%06X", (0xFFFFFF and surfaceColor.toArgb()))
+    val surfaceColorHex = surfaceColor.toArgb().toRGBHex()
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    val onSurfaceColorHex = String.format("#%06X", (0xFFFFFF and onSurfaceColor.toArgb()))
+    val onSurfaceColorHex = onSurfaceColor.toArgb().toRGBHex()
     val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
-    val surfaceContainerColorHex =
-        String.format("#%06X", (0xFFFFFF and surfaceContainerColor.toArgb()))
+    val surfaceContainerColorHex = surfaceContainerColor.toArgb().toRGBHex()
     val primaryColor = MaterialTheme.colorScheme.primary
-    val primaryColorHex = String.format("#%06X", (0xFFFFFF and primaryColor.toArgb()))
+    val primaryColorHex = primaryColor.toArgb().toRGBHex()
     val outlineColor = MaterialTheme.colorScheme.outline
-    val outlineColorHex = String.format("#%06X", (0xFFFFFF and outlineColor.toArgb()))
+    val outlineColorHex = outlineColor.toArgb().toRGBHex()
     val typography = MaterialTheme.typography
     val displayLargeStyle = typography.displayMedium
     val bodyLargeStyle = typography.titleLarge
@@ -252,7 +252,8 @@ fun Flashcard(
                 }, ${Json.encodeToString(bodyClass)});"
             }
 
-            val hasImageOcclusion = questionHtml.contains("image-occlusion-container") || answerHtml.contains("image-occlusion-container")
+            val hasImageOcclusion =
+                questionHtml.contains("image-occlusion-container") || answerHtml.contains("image-occlusion-container")
             val evalScript = if (hasImageOcclusion) {
                 IO_SETUP_INTERCEPT + "\n" + showCardScript + "\n" + IO_POST_LOAD_SCRIPT
             } else {
@@ -412,4 +413,3 @@ private val IO_POST_LOAD_SCRIPT: String = """
     waitForContainer();
 })();
 """.trimIndent()
-
