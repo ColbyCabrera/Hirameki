@@ -34,7 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
@@ -60,7 +59,8 @@ fun Flashcard(
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceColorHex = String.format("#%06X", (0xFFFFFF and onSurfaceColor.toArgb()))
     val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
-    val surfaceContainerColorHex = String.format("#%06X", (0xFFFFFF and surfaceContainerColor.toArgb()))
+    val surfaceContainerColorHex =
+        String.format("#%06X", (0xFFFFFF and surfaceContainerColor.toArgb()))
     val primaryColor = MaterialTheme.colorScheme.primary
     val primaryColorHex = String.format("#%06X", (0xFFFFFF and primaryColor.toArgb()))
     val outlineColor = MaterialTheme.colorScheme.outline
@@ -400,55 +400,3 @@ private val IO_POST_LOAD_SCRIPT: String = """
 })();
 """.trimIndent()
 
-@Preview(showBackground = true)
-@Composable
-fun FlashcardPreview() {
-    Flashcard(
-        baseUrl = "http://localhost/",
-        questionHtml = """
-            <html>
-                <body>
-                    <h1>Hello, World!</h1>
-                    <a href="https://example.com">A link</a>
-                </body>
-            </html>
-        """.trimIndent(),
-        answerHtml = """
-            <html>
-                <body>
-                    <p>This is the answer.</p>
-                </body>
-            </html>
-        """.trimIndent(),
-        bodyClass = "card card1",
-        onTap = {},
-        onLinkClick = {},
-        isAnswerShown = false
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun FlashcardPreviewAnswerShown() {
-    Flashcard(
-        baseUrl = "http://localhost/",
-        questionHtml = """
-            <html>
-                <body>
-                    <h1>Hello, World!</h1>
-                </body>
-            </html>
-        """.trimIndent(),
-        answerHtml = """
-            <html>
-                <body>
-                    <p>This is the answer.</p>
-                </body>
-            </html>
-        """.trimIndent(),
-        bodyClass = "card card1",
-        onTap = {},
-        onLinkClick = {},
-        isAnswerShown = true
-    )
-}
