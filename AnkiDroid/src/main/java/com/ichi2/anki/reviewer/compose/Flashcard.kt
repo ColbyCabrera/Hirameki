@@ -520,12 +520,7 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
         try {
             if (image.naturalWidth <= 0 || image.naturalHeight <= 0) return cleanup();
 
-            const parentWidth = container.parentElement?.clientWidth || 0;
-            const bodyWidth = document.body?.clientWidth || 0;
-            const viewportWidth = document.documentElement.clientWidth || 0;
-            
-            const availableWidth = parentWidth > 0 ? parentWidth : (bodyWidth > 0 ? bodyWidth : viewportWidth);
-            const width = Math.max(1, availableWidth);
+            const width = Math.max(1, container.parentElement?.clientWidth || window.innerWidth || 0);
             const height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
 
             Object.assign(container.style, {
