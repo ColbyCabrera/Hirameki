@@ -410,7 +410,7 @@ private fun buildShellUpdateScript(
         document.documentElement.className = '$docClass';
         document.documentElement.setAttribute('data-bs-theme', '$baseTheme');
         document.body.className = '$bodyClass';
-        var s = document.getElementById('compose-styles');
+        const s = document.getElementById('compose-styles');
         if (s) s.outerHTML = `$escapedCss`;
         $evalScript
     """.trimIndent()
@@ -431,22 +431,21 @@ private fun buildShellUpdateScript(
  * the original setup() exactly once, guaranteeing correct canvas sizing.
  */
 private const val IO_SETUP_INTERCEPT: String = $$"""
-(function() {
-    var sideToken = '${sideToken}';
+(() => {
+    const sideToken = '${sideToken}';
     globalThis.__ioCurrentSide = sideToken;
-    if (globalThis.anki && globalThis.anki.imageOcclusion && typeof globalThis.anki.imageOcclusion.setup === 'function') {
-        // Guard: preserve original ONLY once to prevent overwriting with our mock
-        if (!globalThis.__ioOriginalSetup) {
-            globalThis.__ioOriginalSetup = globalThis.anki.imageOcclusion.setup;
-        }
-        // Intercept: only return resolved promise if it's the current active side
-        globalThis.anki.imageOcclusion.setup = function() {
-            if (globalThis.__ioCurrentSide === sideToken) {
-                return Promise.resolve();
-            } else if (typeof globalThis.__ioOriginalSetup === 'function') {
-                return globalThis.__ioOriginalSetup.apply(this, arguments);
+
+    if (typeof globalThis.anki?.imageOcclusion?.setup === 'function') {
+        // Guard: preserve original ONLY once
+        globalThis.__ioOriginalSetup ??= globalThis.anki.imageOcclusion.setup;
+        
+        // Intercept: return resolved promise if active side, else fallback
+        globalThis.anki.imageOcclusion.setup = function(...args) {
+            if (globalThis.__ioCurrentSide === sideToken) return Promise.resolve();
+            if (typeof globalThis.__ioOriginalSetup === 'function') {
+                return globalThis.__ioOriginalSetup.apply(this, args);
             }
-            return Promise.resolve(); // Fallback for stale/missing setups
+            return Promise.resolve();
         };
     }
 })();
@@ -461,15 +460,14 @@ private const val IO_SETUP_INTERCEPT: String = $$"""
  * THEN apply layout dimensions, THEN call the original setup() exactly once.
  */
 private val IO_POST_LOAD_SCRIPT: String = $$"""
-(function() {
-    var sideToken = '${sideToken}';
-    var observer = null;
+(() => {
+    const sideToken = '${sideToken}';
+    let observer = null;
 
-    function cleanup() {
-        if (observer) {
-            observer.disconnect();
-            observer = null;
-        }
+    const cleanup = () => {
+        observer?.disconnect();
+        observer = null;
+        
         if (globalThis.__ioCurrentSide === sideToken) {
             if (globalThis.__ioOriginalSetup) {
                 globalThis.anki.imageOcclusion.setup = globalThis.__ioOriginalSetup;
@@ -477,23 +475,18 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
             }
             delete globalThis.__ioCurrentSide;
         }
-    }
+    };
 
-    function waitForContainer() {
+    const waitForContainer = () => {
         if (globalThis.__ioCurrentSide !== sideToken) return;
 
-        var container = document.getElementById('image-occlusion-container');
-        if (container) {
-            processContainer(container);
-            return;
-        }
+        const container = document.getElementById('image-occlusion-container');
+        if (container) return processContainer(container);
 
-        observer = new MutationObserver(function(mutations, obs) {
-            if (globalThis.__ioCurrentSide !== sideToken) {
-                cleanup();
-                return;
-            }
-            var target = document.getElementById('image-occlusion-container');
+        observer = new MutationObserver((mutations, obs) => {
+            if (globalThis.__ioCurrentSide !== sideToken) return cleanup();
+            
+            const target = document.getElementById('image-occlusion-container');
             if (target) {
                 obs.disconnect();
                 observer = null;
@@ -501,85 +494,76 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
             }
         });
 
-        var targetNode = document.getElementById('qa') || document.body;
-        observer.observe(targetNode, { childList: true, subtree: true });
+        observer.observe(document.getElementById('qa') || document.body, { childList: true, subtree: true });
 
         // Safety timeout: restore state if container doesn't appear within 1s
-        setTimeout(function() {
-            if (observer) {
-                cleanup();
-            }
-        }, 1000);
-    }
+        setTimeout(() => observer && cleanup(), 1000);
+    };
 
-    function processContainer(container) {
+    const processContainer = (container) => {
         if (globalThis.__ioCurrentSide !== sideToken) return;
-        var image = container.querySelector('img');
-        if (!image) {
-            cleanup();
-            return;
-        }
+        
+        const image = container.querySelector('img');
+        if (!image) return cleanup();
 
         if (image.complete && image.naturalWidth > 0) {
             applyLayout(container, image);
         } else {
-            image.addEventListener('load', function() { applyLayout(container, image); });
-            image.addEventListener('error', function() { cleanup(); });
+            image.addEventListener('load', () => applyLayout(container, image));
+            image.addEventListener('error', cleanup);
         }
-    }
+    };
 
-    function applyLayout(container, image) {
+    const applyLayout = (container, image) => {
         if (globalThis.__ioCurrentSide !== sideToken) return;
 
         try {
-            if (image.naturalWidth <= 0 || image.naturalHeight <= 0) {
-                cleanup();
-                return;
-            }
+            if (image.naturalWidth <= 0 || image.naturalHeight <= 0) return cleanup();
 
-            var parentWidth = container.parentElement ? container.parentElement.clientWidth : 0;
-            var viewportWidth = document.documentElement.clientWidth;
-            var bodyWidth = document.body ? document.body.clientWidth : 0;
-            var availableWidth = parentWidth > 0 ? parentWidth : 0;
-            if (availableWidth <= 0 && bodyWidth > 0) {
-                availableWidth = bodyWidth;
-            }
-            if (availableWidth <= 0 && viewportWidth > 0) {
-                availableWidth = viewportWidth;
-            }
-            var width = Math.max(1, availableWidth);
-            var height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
+            const parentWidth = container.parentElement?.clientWidth || 0;
+            const bodyWidth = document.body?.clientWidth || 0;
+            const viewportWidth = document.documentElement.clientWidth || 0;
+            
+            const availableWidth = parentWidth > 0 ? parentWidth : (bodyWidth > 0 ? bodyWidth : viewportWidth);
+            const width = Math.max(1, availableWidth);
+            const height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
 
-            container.style.display = 'block';
-            container.style.width = width + 'px';
-            container.style.height = height + 'px';
-            container.style.minHeight = height + 'px';
-            container.style.maxWidth = '100%';
-            container.style.aspectRatio = image.naturalWidth + ' / ' + image.naturalHeight;
+            Object.assign(container.style, {
+                display: 'block',
+                width: width + 'px',
+                height: height + 'px',
+                minHeight: height + 'px',
+                maxWidth: '100%',
+                aspectRatio: image.naturalWidth + ' / ' + image.naturalHeight
+            });
 
-            image.style.width = width + 'px';
-            image.style.height = height + 'px';
+            Object.assign(image.style, {
+                width: width + 'px',
+                height: height + 'px'
+            });
 
-            var canvas = document.getElementById('image-occlusion-canvas');
+            const canvas = document.getElementById('image-occlusion-canvas');
             if (canvas) {
-                canvas.style.width = width + 'px';
-                canvas.style.height = height + 'px';
+                Object.assign(canvas.style, {
+                    width: width + 'px',
+                    height: height + 'px'
+                });
             }
 
-            // Force layout reflow so canvas gets correct clientWidth/clientHeight
+            // Force layout reflow
             void container.offsetHeight;
 
             // Call the original setup() exactly once for this side
             if (globalThis.__ioOriginalSetup) {
-                var original = globalThis.__ioOriginalSetup;
-                cleanup(); // Restore original setup before invocation so its internal logic can run correctly
+                const original = globalThis.__ioOriginalSetup;
+                cleanup(); // Restore original setup before invocation
                 original.call(globalThis.anki.imageOcclusion);
             }
         } catch(e) {
             console.error(e);
             cleanup(); // Unconditional restoration on error
         }
-    }
+    };
 
     waitForContainer();
 })();
