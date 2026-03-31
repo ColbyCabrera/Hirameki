@@ -59,6 +59,12 @@ fun Flashcard(
     val surfaceColorHex = String.format("#%06X", (0xFFFFFF and surfaceColor.toArgb()))
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceColorHex = String.format("#%06X", (0xFFFFFF and onSurfaceColor.toArgb()))
+    val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
+    val surfaceContainerColorHex = String.format("#%06X", (0xFFFFFF and surfaceContainerColor.toArgb()))
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val primaryColorHex = String.format("#%06X", (0xFFFFFF and primaryColor.toArgb()))
+    val outlineColor = MaterialTheme.colorScheme.outline
+    val outlineColorHex = String.format("#%06X", (0xFFFFFF and outlineColor.toArgb()))
     val typography = MaterialTheme.typography
     val displayLargeStyle = typography.displayMedium
     val bodyLargeStyle = typography.titleLarge
@@ -170,11 +176,48 @@ fun Flashcard(
                     img {
                         border-radius: 16px;
                     }
-                    .replay-button {
+                    button {
+                        font-family: inherit;
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: ${onSurfaceColorHex};
+                        background-color: ${surfaceContainerColorHex};
+                        border: 1px solid ${outlineColorHex}40;
+                        border-radius: 12px;
+                        padding: 2px
+                        cursor: pointer;
+                        transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 48px;
+                        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                    }
+                    button:hover {
+                        background-color: ${surfaceContainerColorHex}D9;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    }
+                    button:active {
+                        background-color: ${surfaceContainerColorHex}B3;
+                        transform: scale(0.97);
+                    }
+                    button:focus {
+                        outline: 2px solid ${primaryColorHex};
+                        outline-offset: 2px;
+                    }
+                    button:disabled {
+                        opacity: 0.45;
+                        cursor: not-allowed;
+                        transform: none;
+                    }
+
+                    .replay-button svg {
                         color: ${onSurfaceColorHex}EF;
                         display: inline-block;
-                        height: 72px;
-                        width: 72px;
+                        height: 64px;
+                        width: 64px;
+                    }
+                    .replay-button svg path {
+                        fill: ${onSurfaceColorHex}EF;
                     }
                     .replay-button .playImage {
                         display: block;
