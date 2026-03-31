@@ -105,7 +105,7 @@ fun Flashcard(
                         view: WebView, request: WebResourceRequest
                     ): Boolean {
                         val url = request.url.toString()
-                        if (url.startsWith("file") || url.startsWith("data:") || url.startsWith(
+                        if (url.startsWith("file:") || url.startsWith("data:") || url.startsWith(
                                 "javascript:"
                             ) || url.startsWith("blob:")
                         ) {
