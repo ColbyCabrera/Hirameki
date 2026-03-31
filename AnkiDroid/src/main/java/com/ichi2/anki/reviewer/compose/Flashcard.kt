@@ -423,7 +423,7 @@ private fun buildShellUpdateScript(
  * resolves, it sets innerHTML and then executes the card's inline scripts, including
  * `<script>anki.imageOcclusion.setup()</script>`. setup() waits for the image to load,
  * then uses requestAnimationFrame to size the canvas and draw masks. But if the image
- * is cached, setup() completes (~16ms) before our layout poll (50ms) fires, resulting
+ * is cached, setup() completes (~16ms) before our layout poll fires, resulting
  * in a 0x0 canvas — masks invisible 95% of the time.
  *
  * By intercepting setup() here (before _showQuestion queues), the card's inline script
@@ -483,7 +483,7 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
         if (!container) {
             if (waitAttempts < maxWaitAttempts) {
                 waitAttempts++;
-                setTimeout(waitForContainer, 50);
+                setTimeout(waitForContainer, 3);
             } else {
                 cleanup(); // Unconditional restoration on timeout
             }
