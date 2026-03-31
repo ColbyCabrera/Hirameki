@@ -134,6 +134,7 @@ sealed class ReviewerEffect {
 class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHandler {
 
     private val server = AnkiServer(this)
+    var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
 
     private val _state = MutableStateFlow(ReviewerState())
     val state: StateFlow<ReviewerState> = _state.asStateFlow()
@@ -217,8 +218,12 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     override suspend fun handlePostRequest(uri: String, bytes: ByteArray): ByteArray =
         if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-            when (uri.substring(AnkiServer.ANKI_PREFIX.length)) {
-                "i18nResources" -> CollectionManager.withCol { i18nResourcesRaw(bytes) }
+            val path = uri.substring(AnkiServer.ANKI_PREFIX.length)
+            when {
+                path.startsWith("jsapi/") -> {
+                    jsApi?.handleJsApiRequest(path.substring("jsapi/".length), bytes, returnDefaultValues = false) ?: ByteArray(0)
+                }
+                path == "i18nResources" -> CollectionManager.withCol { i18nResourcesRaw(bytes) }
                 else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
             }
         } else {
