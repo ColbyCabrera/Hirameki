@@ -463,10 +463,13 @@ private const val IO_SETUP_INTERCEPT: String = $$"""
 private val IO_POST_LOAD_SCRIPT: String = $$"""
 (function() {
     var sideToken = '${sideToken}';
-    var maxWaitAttempts = 80;
-    var waitAttempts = 0;
+    var observer = null;
 
     function cleanup() {
+        if (observer) {
+            observer.disconnect();
+            observer = null;
+        }
         if (globalThis.__ioCurrentSide === sideToken) {
             if (globalThis.__ioOriginalSetup) {
                 globalThis.anki.imageOcclusion.setup = globalThis.__ioOriginalSetup;
@@ -480,18 +483,40 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
         if (globalThis.__ioCurrentSide !== sideToken) return;
 
         var container = document.getElementById('image-occlusion-container');
-        if (!container) {
-            if (waitAttempts < maxWaitAttempts) {
-                waitAttempts++;
-                setTimeout(waitForContainer, 3);
-            } else {
-                cleanup(); // Unconditional restoration on timeout
-            }
+        if (container) {
+            processContainer(container);
             return;
         }
+
+        observer = new MutationObserver(function(mutations, obs) {
+            if (globalThis.__ioCurrentSide !== sideToken) {
+                cleanup();
+                return;
+            }
+            var target = document.getElementById('image-occlusion-container');
+            if (target) {
+                obs.disconnect();
+                observer = null;
+                processContainer(target);
+            }
+        });
+
+        var targetNode = document.getElementById('qa') || document.body;
+        observer.observe(targetNode, { childList: true, subtree: true });
+
+        // Safety timeout: restore state if container doesn't appear within 1s
+        setTimeout(function() {
+            if (observer) {
+                cleanup();
+            }
+        }, 1000);
+    }
+
+    function processContainer(container) {
+        if (globalThis.__ioCurrentSide !== sideToken) return;
         var image = container.querySelector('img');
         if (!image) {
-            cleanup(); // Unconditional restoration if no image
+            cleanup();
             return;
         }
 
