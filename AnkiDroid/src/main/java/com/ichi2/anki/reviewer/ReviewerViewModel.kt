@@ -221,8 +221,13 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val path = uri.substring(AnkiServer.ANKI_PREFIX.length)
             when {
                 path.startsWith("jsapi/") -> {
-                    jsApi?.handleJsApiRequest(path.substring("jsapi/".length), bytes, returnDefaultValues = false) ?: ByteArray(0)
+                    jsApi?.handleJsApiRequest(
+                        path.substring("jsapi/".length),
+                        bytes,
+                        returnDefaultValues = false
+                    ) ?: ByteArray(0)
                 }
+
                 path == "i18nResources" -> CollectionManager.withCol { i18nResourcesRaw(bytes) }
                 else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
             }
@@ -575,12 +580,10 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun unanswerCard() {
         currentCard ?: return
         viewModelScope.launch {
-            CollectionManager.withCol {
-                _state.update {
-                    it.copy(
-                        isAnswerShown = false, nextTimes = List(4) { "" }, chosenAnswer = ""
-                    )
-                }
+            _state.update {
+                it.copy(
+                    isAnswerShown = false, nextTimes = List(4) { "" }, chosenAnswer = ""
+                )
             }
         }
     }
