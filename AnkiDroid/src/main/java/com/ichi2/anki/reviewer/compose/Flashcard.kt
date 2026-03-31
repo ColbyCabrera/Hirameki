@@ -28,15 +28,16 @@ import android.webkit.WebViewClient
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
+import com.ichi2.themes.Themes
 import com.ichi2.utils.toRGBHex
 import kotlinx.serialization.json.Json
 import timber.log.Timber
@@ -54,7 +55,7 @@ fun Flashcard(
     isAnswerShown: Boolean,
     toolbarHeight: Int = 0
 ) {
-    val isNightMode = isSystemInDarkTheme()
+    val isNightMode = Themes.currentTheme.isNightMode
     val surfaceColor = MaterialTheme.colorScheme.surface
     val surfaceColorHex = surfaceColor.toArgb().toRGBHex()
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
@@ -77,78 +78,17 @@ fun Flashcard(
         val currentStyle = if (shown) bodyLargeStyle else displayLargeStyle
         val currentPadding = if (shown) 40 else 36
 
-        AndroidView(
-            factory = { context ->
-            WebView(context).apply {
-                settings.javaScriptEnabled = true
-                settings.allowFileAccess = true
-                settings.domStorageEnabled = true
-
-                webChromeClient = object : WebChromeClient() {
-                    override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                        Timber.tag("FlashcardJS")
-                            .d("${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}")
-                        return true
-                    }
-                }
-
-                webViewClient = object : WebViewClient() {
-                    val resourceHandler = ViewerResourceHandler(context)
-
-                    override fun shouldInterceptRequest(
-                        view: WebView, request: WebResourceRequest
-                    ): WebResourceResponse? {
-                        return resourceHandler.shouldInterceptRequest(request)
-                    }
-
-                    override fun shouldOverrideUrlLoading(
-                        view: WebView, request: WebResourceRequest
-                    ): Boolean {
-                        val uri = request.url
-                        val scheme = uri.scheme
-                        val ignoredSchemes = setOf("file", "data", "javascript", "blob")
-                        if (scheme in ignoredSchemes) {
-                            return false
-                        }
-
-                        val urlString = uri.toString()
-                        if (urlString.startsWith(baseUrl)) {
-                            val path = urlString.removePrefix(baseUrl)
-                            if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
-                                return false
-                            }
-                        }
-
-                        onLinkClick(urlString)
-                        return true
-                    }
-
-                    override fun onPageFinished(view: WebView, url: String) {
-                        val payload = view.tag as? FlashcardPayload ?: return
-                        payload.shellLoaded = true
-                        if (payload.scriptExecuted) return
-                        payload.scriptExecuted = true
-                        view.evaluateJavascript(payload.evalScript, null)
-                    }
-                }
-
-                val gestureDetector = GestureDetector(
-                    context, object : GestureDetector.SimpleOnGestureListener() {
-                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                            onTap()
-                            return true
-                        }
-                    })
-
-                @SuppressLint("ClickableViewAccessibility") setOnTouchListener { _, event ->
-                    gestureDetector.onTouchEvent(event)
-                    false
-                }
-
-                setBackgroundColor(Color.TRANSPARENT)
-            }
-        }, update = { webView ->
-            val composeStyle = """
+        val composeStyle = remember(
+            onSurfaceColorHex,
+            surfaceColorHex,
+            surfaceContainerColorHex,
+            primaryColorHex,
+            outlineColorHex,
+            currentStyle,
+            currentPadding,
+            toolbarHeight
+        ) {
+            """
                 <style id="compose-styles">
                     html {
                         color: ${onSurfaceColorHex}EF;
@@ -230,7 +170,79 @@ fun Flashcard(
                     }
                 </style>
             """.trimIndent()
+        }
 
+        AndroidView(
+            factory = { context ->
+            WebView(context).apply {
+                settings.javaScriptEnabled = true
+                settings.allowFileAccess = true
+                settings.domStorageEnabled = true
+
+                webChromeClient = object : WebChromeClient() {
+                    override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                        Timber.tag("FlashcardJS")
+                            .d("${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}")
+                        return true
+                    }
+                }
+
+                webViewClient = object : WebViewClient() {
+                    val resourceHandler = ViewerResourceHandler(context)
+
+                    override fun shouldInterceptRequest(
+                        view: WebView, request: WebResourceRequest
+                    ): WebResourceResponse? {
+                        return resourceHandler.shouldInterceptRequest(request)
+                    }
+
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView, request: WebResourceRequest
+                    ): Boolean {
+                        val uri = request.url
+                        val scheme = uri.scheme
+                        val ignoredSchemes = setOf("file", "data", "javascript", "blob")
+                        if (scheme in ignoredSchemes) {
+                            return false
+                        }
+
+                        val urlString = uri.toString()
+                        if (urlString.startsWith(baseUrl)) {
+                            val path = urlString.removePrefix(baseUrl)
+                            if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
+                                return false
+                            }
+                        }
+
+                        onLinkClick(urlString)
+                        return true
+                    }
+
+                    override fun onPageFinished(view: WebView, url: String) {
+                        val payload = view.tag as? FlashcardPayload ?: return
+                        payload.shellLoaded = true
+                        if (payload.scriptExecuted) return
+                        payload.scriptExecuted = true
+                        view.evaluateJavascript(payload.evalScript, null)
+                    }
+                }
+
+                val gestureDetector = GestureDetector(
+                    context, object : GestureDetector.SimpleOnGestureListener() {
+                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                            onTap()
+                            return true
+                        }
+                    })
+
+                @SuppressLint("ClickableViewAccessibility") setOnTouchListener { _, event ->
+                    gestureDetector.onTouchEvent(event)
+                    false
+                }
+
+                setBackgroundColor(Color.TRANSPARENT)
+            }
+        }, update = { webView ->
             val extraAssets = listOf("backend/js/reviewer_extras_bundle.js")
             val shell = stdHtml(webView.context, extraAssets, isNightMode)
 
