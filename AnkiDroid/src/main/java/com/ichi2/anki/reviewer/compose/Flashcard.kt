@@ -251,7 +251,12 @@ fun Flashcard(
                 }, ${Json.encodeToString(bodyClass)});"
             }
 
-            val evalScript = IO_SETUP_INTERCEPT + "\n" + showCardScript + "\n" + IO_POST_LOAD_SCRIPT
+            val hasImageOcclusion = questionHtml.contains("image-occlusion-container") || answerHtml.contains("image-occlusion-container")
+            val evalScript = if (hasImageOcclusion) {
+                IO_SETUP_INTERCEPT + "\n" + showCardScript + "\n" + IO_POST_LOAD_SCRIPT
+            } else {
+                showCardScript
+            }
 
             val reviewerExtrasCss =
                 """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
