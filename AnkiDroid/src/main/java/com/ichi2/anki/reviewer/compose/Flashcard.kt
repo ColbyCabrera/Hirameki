@@ -184,7 +184,7 @@ fun Flashcard(
                         background-color: ${surfaceContainerColorHex};
                         border: 1px solid ${outlineColorHex}40;
                         border-radius: 12px;
-                        padding: 2px
+                        padding: 2px;
                         cursor: pointer;
                         transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
                         align-items: center;
