@@ -70,6 +70,10 @@ fun Flashcard(
     val displayLargeStyle = typography.displayMedium
     val bodyLargeStyle = typography.titleLarge
 
+    val hasImageOcclusion = remember(questionHtml, answerHtml) {
+        questionHtml.contains("image-occlusion-container") || answerHtml.contains("image-occlusion-container")
+    }
+
     Crossfade(
         targetState = Pair(isAnswerShown, if (isAnswerShown) answerHtml else questionHtml),
         animationSpec = tween(300),
@@ -264,8 +268,6 @@ fun Flashcard(
                 }, ${Json.encodeToString(bodyClass)});"
             }
 
-            val hasImageOcclusion =
-                questionHtml.contains("image-occlusion-container") || answerHtml.contains("image-occlusion-container")
             val evalScript = if (hasImageOcclusion) {
                 IO_SETUP_INTERCEPT + "\n" + showCardScript + "\n" + IO_POST_LOAD_SCRIPT
             } else {
