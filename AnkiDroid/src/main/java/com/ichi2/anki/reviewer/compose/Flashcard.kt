@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Brayan Oliveira <brayandso.dev@gmail.com>
+ * Copyright (c) 2024 Brayan Oliveira <brayandso.dev@gmail.com> 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -100,13 +100,14 @@ fun Flashcard(
         ) {
             """
                 <style id="compose-styles">
+                    @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
                     html {
                         color: ${onSurfaceColorHex}EF;
                         background-color: $surfaceColorHex;
                     }
                     body.card {
                         text-align: center;
-                        font-family: Roboto, system-ui, sans-serif;
+                        font-family: "Roboto", sans-serif;
                         font-size: ${currentStyle.fontSize.value}px;
                         font-weight: ${currentStyle.fontWeight?.weight ?: 400};
                         line-height: ${currentStyle.lineHeight.value}px;
@@ -114,8 +115,14 @@ fun Flashcard(
                         text-wrap: pretty;
                         padding-top: ${currentPadding}px;
                         padding-bottom: ${toolbarHeight}px;
+                        margin-left: 12px;
+                        margin-right: 12px;
                         background-color: $surfaceColorHex;
                         color: ${onSurfaceColorHex}EF;
+                    }
+                    body.card .back {
+                        font-weight: 400;
+                        line-height: 1.4;
                     }
                     body.card.nightMode, body.card.night_mode {
                         background-color: $surfaceColorHex;
