@@ -404,7 +404,7 @@ private fun buildShellUpdateScript(
         document.documentElement.setAttribute('data-bs-theme', '$baseTheme');
         document.body.className = '$bodyClass';
         var s = document.getElementById('compose-styles');
-        if (s) s.textContent = `$escapedCss`;
+        if (s) s.outerHTML = `$escapedCss`;
         $evalScript
     """.trimIndent()
 }
