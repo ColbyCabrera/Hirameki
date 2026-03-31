@@ -26,12 +26,12 @@ import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.fragment.app.Fragment
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.themes.Themes
@@ -43,8 +43,7 @@ import kotlin.reflect.KClass
  */
 open class PageFragment(
     @LayoutRes contentLayoutId: Int = R.layout.page_fragment,
-) : Fragment(contentLayoutId),
-    PostRequestHandler {
+) : Fragment(contentLayoutId), PostRequestHandler {
     lateinit var webView: WebView
     private lateinit var server: AnkiServer
 
@@ -66,7 +65,7 @@ open class PageFragment(
      */
     protected open fun onCreateWebViewClient(savedInstanceState: Bundle?) = PageWebViewClient()
 
-    protected open fun onWebViewCreated(webView: WebView) { }
+    protected open fun onWebViewCreated(webView: WebView) {}
 
     /**
      * When the webview calls `BridgeCommand("foo")`, the PageFragment execute `bridgeCommands["foo"]`.
@@ -106,17 +105,16 @@ open class PageFragment(
     ) {
         val pageWebViewClient = onCreateWebViewClient(savedInstanceState)
         server = AnkiServer(this).also { it.start() }
-        webView =
-            view.findViewById<WebView>(R.id.webview).apply {
-                with(settings) {
-                    javaScriptEnabled = true
-                    displayZoomControls = false
-                    builtInZoomControls = true
-                    setSupportZoom(true)
-                }
-                webViewClient = pageWebViewClient
-                webChromeClient = PageChromeClient()
+        webView = view.findViewById<WebView>(R.id.webview).apply {
+            with(settings) {
+                javaScriptEnabled = true
+                displayZoomControls = false
+                builtInZoomControls = true
+                setSupportZoom(true)
             }
+            webViewClient = pageWebViewClient
+            webChromeClient = PageChromeClient()
+        }
         setupBridgeCommand(pageWebViewClient)
         onWebViewCreated(webView)
 
@@ -129,12 +127,13 @@ open class PageFragment(
         Timber.i("Loading $url")
         webView.loadUrl(url.toString())
 
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(top = systemBars.top)
+            insets
+        }
+
         view.findViewById<MaterialToolbar>(R.id.toolbar).apply {
-            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.updatePadding(top = systemBars.top)
-                insets
-            }
             if (title != null) {
                 setTitle(title)
             }
@@ -148,15 +147,15 @@ open class PageFragment(
         uri: String,
         bytes: ByteArray,
     ): ByteArray {
-        val methodName =
-            if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-                uri.substring(AnkiServer.ANKI_PREFIX.length)
-            } else {
-                throw IllegalArgumentException("unhandled request: $uri")
-            }
-        return activity.handleUiPostRequest(methodName, bytes)
-            ?: handleCollectionPostRequest(methodName, bytes)
-            ?: throw IllegalArgumentException("unhandled method: $methodName")
+        val methodName = if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
+            uri.substring(AnkiServer.ANKI_PREFIX.length)
+        } else {
+            throw IllegalArgumentException("unhandled request: $uri")
+        }
+        return activity.handleUiPostRequest(methodName, bytes) ?: handleCollectionPostRequest(
+            methodName,
+            bytes
+        ) ?: throw IllegalArgumentException("unhandled method: $methodName")
     }
 
     override fun onDestroyView() {
