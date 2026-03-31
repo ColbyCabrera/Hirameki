@@ -175,6 +175,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             return
         }
 
+        viewModel.jsApi = jsApi
         composeView.setContent {
             AnkiDroidTheme {
                 com.ichi2.anki.reviewer.compose.ReviewerContent(

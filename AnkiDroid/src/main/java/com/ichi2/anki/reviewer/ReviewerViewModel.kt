@@ -221,11 +221,12 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val path = uri.substring(AnkiServer.ANKI_PREFIX.length)
             when {
                 path.startsWith("jsapi/") -> {
-                    jsApi?.handleJsApiRequest(
+                    val api = checkNotNull(jsApi) { "jsApi must be set before handling jsapi/ requests" }
+                    api.handleJsApiRequest(
                         path.substring("jsapi/".length),
                         bytes,
                         returnDefaultValues = false
-                    ) ?: ByteArray(0)
+                    )
                 }
 
                 path == "i18nResources" -> CollectionManager.withCol { i18nResourcesRaw(bytes) }
