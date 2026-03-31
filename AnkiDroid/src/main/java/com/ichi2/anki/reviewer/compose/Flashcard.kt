@@ -104,20 +104,22 @@ fun Flashcard(
                     override fun shouldOverrideUrlLoading(
                         view: WebView, request: WebResourceRequest
                     ): Boolean {
-                        val url = request.url.toString()
-                        if (url.startsWith("file:") || url.startsWith("data:") || url.startsWith(
-                                "javascript:"
-                            ) || url.startsWith("blob:")
-                        ) {
+                        val uri = request.url
+                        val scheme = uri.scheme
+                        val ignoredSchemes = setOf("file", "data", "javascript", "blob")
+                        if (scheme in ignoredSchemes) {
                             return false
                         }
-                        if (url.startsWith(baseUrl)) {
-                            val path = url.substringAfter(baseUrl)
+
+                        val urlString = uri.toString()
+                        if (urlString.startsWith(baseUrl)) {
+                            val path = urlString.removePrefix(baseUrl)
                             if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
                                 return false
                             }
                         }
-                        onLinkClick(url)
+
+                        onLinkClick(urlString)
                         return true
                     }
 
@@ -184,7 +186,7 @@ fun Flashcard(
                         background-color: ${surfaceContainerColorHex};
                         border: 1px solid ${outlineColorHex}40;
                         border-radius: 12px;
-                        padding: 2px;
+                        padding: 2px 6px;
                         cursor: pointer;
                         transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
                         align-items: center;
