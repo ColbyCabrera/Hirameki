@@ -16,6 +16,7 @@
 package com.ichi2.anki.reviewer.compose
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Color
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -34,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
@@ -55,6 +57,7 @@ fun Flashcard(
     isAnswerShown: Boolean,
     toolbarHeight: Int = 0
 ) {
+    val context = LocalContext.current
     val isNightMode = Themes.currentTheme.isNightMode
     val surfaceColor = MaterialTheme.colorScheme.surface
     val surfaceColorHex = surfaceColor.toArgb().toRGBHex()
@@ -72,6 +75,9 @@ fun Flashcard(
 
     val hasImageOcclusion = remember(questionHtml, answerHtml) {
         questionHtml.contains("image-occlusion-container") || answerHtml.contains("image-occlusion-container")
+    }
+    val contentKey = remember(questionHtml, answerHtml) {
+        FlashcardContentKey(questionHtml.hashCode(), answerHtml.hashCode())
     }
 
     Crossfade(
@@ -175,6 +181,12 @@ fun Flashcard(
                 </style>
             """.trimIndent()
         }
+        val styledHtml = remember(context, isNightMode, composeStyle) {
+            buildStyledHtml(context, isNightMode, composeStyle)
+        }
+        val evalScript = remember(shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion) {
+            buildCardScript(shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion)
+        }
 
         AndroidView(
             factory = { context ->
@@ -247,50 +259,40 @@ fun Flashcard(
                 setBackgroundColor(Color.TRANSPARENT)
             }
         }, update = { webView ->
-            val extraAssets = listOf("backend/js/reviewer_extras_bundle.js")
-            val shell = stdHtml(webView.context, extraAssets, isNightMode)
-
-            // Build the JS call to evaluate AFTER page loads via evaluateJavascript().
-            // IMPORTANT: We must NOT embed _showQuestion/_showAnswer in <script> tags
-            // in the HTML because IO card HTML contains </script> which prematurely
-            // terminates the script tag, causing raw text to be displayed.
-            val showCardScript = if (shown) {
-                "_showAnswer(${Json.encodeToString(currentHtml)}, ${
-                    Json.encodeToString(
-                        bodyClass
-                    )
-                });"
-            } else {
-                "_showQuestion(${Json.encodeToString(currentHtml)}, ${
-                    Json.encodeToString(
-                        answerHtml
-                    )
-                }, ${Json.encodeToString(bodyClass)});"
-            }
-
-            val evalScript = if (hasImageOcclusion) {
-                IO_SETUP_INTERCEPT + "\n" + showCardScript + "\n" + IO_POST_LOAD_SCRIPT
-            } else {
-                showCardScript
-            }
-
-            val reviewerExtrasCss =
-                """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
-            val styledHtml = shell.replace("</head>", "$reviewerExtrasCss\n$composeStyle\n</head>")
-
-            Timber.tag("Flashcard").d("styledHtml generated")
-
-            val contentKey = "${questionHtml.hashCode()}_${answerHtml.hashCode()}"
             val currentPayload = webView.tag as? FlashcardPayload
+            val shellChanged =
+                currentPayload == null ||
+                    currentPayload.isNightMode != isNightMode ||
+                    currentPayload.composeStyle != composeStyle
+            val shouldReload =
+                currentPayload == null || currentPayload.contentKey != contentKey || (shellChanged && !currentPayload.shellLoaded)
 
-            if (currentPayload?.contentKey != contentKey || !currentPayload.shellLoaded) {
-                val payload = FlashcardPayload(contentKey, evalScript)
-                webView.tag = payload
-                webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
-            } else {
-                currentPayload.evalScript = evalScript
-                currentPayload.scriptExecuted = true
-                webView.evaluateJavascript(evalScript, null)
+            when {
+                shouldReload -> {
+                    webView.tag =
+                        FlashcardPayload(contentKey, isNightMode, composeStyle, evalScript)
+                    webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
+                }
+
+                shellChanged -> {
+                    currentPayload.isNightMode = isNightMode
+                    currentPayload.composeStyle = composeStyle
+                    currentPayload.evalScript = evalScript
+                    val shellScript =
+                        buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
+                    webView.evaluateJavascript(shellScript, null)
+                }
+
+                currentPayload.shellLoaded -> {
+                    if (currentPayload.evalScript != evalScript) {
+                        currentPayload.evalScript = evalScript
+                        webView.evaluateJavascript(evalScript, null)
+                    }
+                }
+
+                else -> {
+                    currentPayload.evalScript = evalScript
+                }
             }
         }, onRelease = { webView ->
             webView.stopLoading()
@@ -308,12 +310,85 @@ fun Flashcard(
 /**
  * Payload stored in the WebView tag for communication between the update callback and onPageFinished.
  */
+private data class FlashcardContentKey(
+    val questionHash: Int,
+    val answerHash: Int,
+)
+
 private data class FlashcardPayload(
-    val contentKey: String,
+    val contentKey: FlashcardContentKey,
+    var isNightMode: Boolean,
+    var composeStyle: String,
     var evalScript: String,
     var scriptExecuted: Boolean = false,
     var shellLoaded: Boolean = false,
 )
+
+private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js")
+private const val REVIEWER_EXTRAS_CSS_LINK =
+    """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
+
+private fun buildStyledHtml(context: Context, isNightMode: Boolean, composeStyle: String): String {
+    val shell = stdHtml(context, EXTRA_JS_ASSETS, isNightMode)
+    return shell.replace("</head>", "$REVIEWER_EXTRAS_CSS_LINK\n$composeStyle\n</head>")
+}
+
+/**
+ * Builds the JavaScript to show the question or answer side of a card.
+ *
+ * IMPORTANT: We must NOT embed _showQuestion/_showAnswer in `<script>` tags
+ * in the HTML because IO card HTML contains `</script>` which prematurely
+ * terminates the script tag, causing raw text to be displayed.
+ */
+private fun buildCardScript(
+    isAnswer: Boolean,
+    currentHtml: String,
+    answerHtml: String,
+    bodyClass: String,
+    hasImageOcclusion: Boolean,
+): String {
+    val showCardScript = if (isAnswer) {
+        "_showAnswer(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(bodyClass)});"
+    } else {
+        "_showQuestion(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(answerHtml)}, ${
+            Json.encodeToString(
+                bodyClass
+            )
+        });"
+    }
+    return if (hasImageOcclusion) {
+        "$IO_SETUP_INTERCEPT\n$showCardScript\n$IO_POST_LOAD_SCRIPT"
+    } else {
+        showCardScript
+    }
+}
+
+/**
+ * Builds JavaScript that patches the DOM in-place for a theme change,
+ * avoiding a full WebView reload (which causes a blank flash).
+ *
+ * Updates the root element classes/attributes, replaces the compose-styles
+ * CSS content, and re-runs the card display script with the new body class.
+ */
+private fun buildShellUpdateScript(
+    isNightMode: Boolean,
+    bodyClass: String,
+    composeCssContent: String,
+    evalScript: String,
+): String {
+    val docClass = if (isNightMode) "night-mode" else ""
+    val baseTheme = if (isNightMode) "dark" else "light"
+    // Escape backticks and backslashes for safe embedding in a JS template literal
+    val escapedCss = composeCssContent.replace("\\", "\\\\").replace("`", "\\`")
+    return """
+        document.documentElement.className = '$docClass';
+        document.documentElement.setAttribute('data-bs-theme', '$baseTheme');
+        document.body.className = '$bodyClass';
+        var s = document.getElementById('compose-styles');
+        if (s) s.textContent = `$escapedCss`;
+        $evalScript
+    """.trimIndent()
+}
 
 /**
  * Intercepts anki.imageOcclusion.setup() with a no-op BEFORE _showQuestion runs.
