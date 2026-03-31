@@ -261,9 +261,7 @@ fun Flashcard(
         }, update = { webView ->
             val currentPayload = webView.tag as? FlashcardPayload
             val shellChanged =
-                currentPayload == null ||
-                    currentPayload.isNightMode != isNightMode ||
-                    currentPayload.composeStyle != composeStyle
+                currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle
             val shouldReload =
                 currentPayload == null || currentPayload.contentKey != contentKey || (shellChanged && !currentPayload.shellLoaded)
 
