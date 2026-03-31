@@ -463,10 +463,18 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
 (() => {
     const sideToken = '${sideToken}';
     let observer = null;
+    let timeoutId = null;
 
     const cleanup = () => {
-        observer?.disconnect();
-        observer = null;
+        if (observer) {
+            observer.disconnect();
+            observer = null;
+        }
+        
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
         
         if (globalThis.__ioCurrentSide === sideToken) {
             if (globalThis.__ioOriginalSetup) {
@@ -488,16 +496,18 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
             
             const target = document.getElementById('image-occlusion-container');
             if (target) {
-                obs.disconnect();
-                observer = null;
+                cleanup(); 
                 processContainer(target);
             }
         });
 
-        observer.observe(document.getElementById('qa') || document.body, { childList: true, subtree: true });
+        const targetNode = document.getElementById('qa') || document.body;
+        observer.observe(targetNode, { childList: true, subtree: true });
 
-        // Safety timeout: restore state if container doesn't appear within 1s
-        setTimeout(() => observer && cleanup(), 1000);
+        timeoutId = setTimeout(() => {
+            console.warn("AnkiDroid IO: Container wait timed out.");
+            cleanup();
+        }, 1000);
     };
 
     const processContainer = (container) => {
