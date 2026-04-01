@@ -48,6 +48,8 @@ open class PageWebViewClient : WebViewClient() {
     private var shownNavigationId = -1
     private var isReleased = false
     private var pendingVisualStateCallback: PendingVisualStateCallback? = null
+    private var cachedMaterial3Colors: Material3Colors? = null
+    private var cachedMaterial3ThemeCss: String? = null
 
     private fun loadDeckOptionsCss(webView: WebView): String = try {
         webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() }
@@ -104,48 +106,13 @@ open class PageWebViewClient : WebViewClient() {
     }
 
     private fun buildMaterial3ThemeCss(webView: WebView): String {
-        val bgColor = MaterialColors.getColor(webView, android.R.attr.colorBackground).toRGBHex()
-        val textColor = MaterialColors.getColor(
-            webView, com.google.android.material.R.attr.colorOnBackground
-        ).toRGBHex()
-        val primaryColor =
-            MaterialColors.getColor(webView, androidx.appcompat.R.attr.colorPrimary).toRGBHex()
-        val onPrimaryColor =
-            MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnPrimary)
-                .toRGBHex()
-        val surfaceColor =
-            MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSurface)
-                .toRGBHex()
-        val onSurfaceColor =
-            MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOnSurface)
-                .toRGBHex()
-        val surfaceContainerColor = MaterialColors.getColor(
-            webView, com.google.android.material.R.attr.colorSurfaceContainer
-        ).toRGBHex()
-        val outlineColor =
-            MaterialColors.getColor(webView, com.google.android.material.R.attr.colorOutline)
-                .toRGBHex()
-        val secondaryColor =
-            MaterialColors.getColor(webView, com.google.android.material.R.attr.colorSecondary)
-                .toRGBHex()
-        val tertiaryContainerColor = MaterialColors.getColor(
-            webView, com.google.android.material.R.attr.colorTertiaryContainer
-        ).toRGBHex()
-        val onTertiaryContainerColor = MaterialColors.getColor(
-            webView, com.google.android.material.R.attr.colorOnTertiaryContainer
-        ).toRGBHex()
-        val onSurfaceVariantColor = MaterialColors.getColor(
-            webView, com.google.android.material.R.attr.colorOnSurfaceVariant
-        ).toRGBHex()
-        val surfaceContainerHighColor = MaterialColors.getColor(
-            webView, com.google.android.material.R.attr.colorSurfaceContainerHigh
-        ).toRGBHex()
-        val errorContainerColor = MaterialColors.getColor(
-            webView, com.google.android.material.R.attr.colorErrorContainer
-        ).toRGBHex()
+        val colors = Material3Colors.from(webView)
+        cachedMaterial3ThemeCss?.takeIf { colors == cachedMaterial3Colors }?.let { return it }
+
         val deckOptionsCss = loadDeckOptionsCss(webView)
 
-        return """
+        val css = with(colors) {
+            """
             /* Override ALL Anki + Bootstrap CSS variables with Material 3 */
             :root, :root.night-mode {
                 /* Foreground */
@@ -373,6 +340,11 @@ open class PageWebViewClient : WebViewClient() {
                 stroke: $outlineColor !important;
             }
         """.trimIndent()
+        }
+
+        cachedMaterial3Colors = colors
+        cachedMaterial3ThemeCss = css
+        return css
     }
 
     private fun applyMaterial3Theme(
@@ -506,6 +478,74 @@ open class PageWebViewClient : WebViewClient() {
         val navigationId: Int,
         val action: (WebView) -> Unit,
     )
+
+    private data class Material3Colors(
+        val bgColor: String,
+        val textColor: String,
+        val primaryColor: String,
+        val onPrimaryColor: String,
+        val surfaceColor: String,
+        val onSurfaceColor: String,
+        val surfaceContainerColor: String,
+        val outlineColor: String,
+        val secondaryColor: String,
+        val tertiaryContainerColor: String,
+        val onTertiaryContainerColor: String,
+        val onSurfaceVariantColor: String,
+        val surfaceContainerHighColor: String,
+        val errorContainerColor: String,
+    ) {
+        companion object {
+            fun from(webView: WebView): Material3Colors = Material3Colors(
+                bgColor = colorHex(webView, android.R.attr.colorBackground),
+                textColor = colorHex(webView, com.google.android.material.R.attr.colorOnBackground),
+                primaryColor = colorHex(webView, androidx.appcompat.R.attr.colorPrimary),
+                onPrimaryColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorOnPrimary
+                ),
+                surfaceColor = colorHex(webView, com.google.android.material.R.attr.colorSurface),
+                onSurfaceColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorOnSurface
+                ),
+                surfaceContainerColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorSurfaceContainer
+                ),
+                outlineColor = colorHex(webView, com.google.android.material.R.attr.colorOutline),
+                secondaryColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorSecondary
+                ),
+                tertiaryContainerColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorTertiaryContainer,
+                ),
+                onTertiaryContainerColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorOnTertiaryContainer,
+                ),
+                onSurfaceVariantColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant,
+                ),
+                surfaceContainerHighColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorSurfaceContainerHigh,
+                ),
+                errorContainerColor = colorHex(
+                    webView,
+                    com.google.android.material.R.attr.colorErrorContainer,
+                ),
+            )
+
+            private fun colorHex(
+                webView: WebView,
+                colorAttribute: Int,
+            ): String = MaterialColors.getColor(webView, colorAttribute).toRGBHex()
+        }
+    }
 
     private data class PendingVisualStateCallback(
         val requestId: Long,
