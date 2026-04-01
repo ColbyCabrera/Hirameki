@@ -334,6 +334,8 @@ class NoteEditorViewModel(
         savedStateHandle?.set(KEY_AEDICT_INTENT, value)
     }
 
+    private var isInitialized = false
+
     /**
      * Initialize the editor with a new or existing note
      */
@@ -345,6 +347,10 @@ class NoteEditorViewModel(
         initialFieldText: String? = null,
         onComplete: ((success: Boolean, error: String?) -> Unit)? = null,
     ) {
+        if (isInitialized) {
+            onComplete?.invoke(true, null)
+            return
+        }
         viewModelScope.launch {
             try {
                 // Attempt to restore draft state from SavedStateHandle
@@ -446,6 +452,7 @@ class NoteEditorViewModel(
                 // Load tags
                 loadTags(col)
 
+                isInitialized = true
                 onComplete?.invoke(true, null)
             } catch (e: Exception) {
                 val errorMessage = "Failed to initialize editor: ${e.message ?: "Unknown error"}"
