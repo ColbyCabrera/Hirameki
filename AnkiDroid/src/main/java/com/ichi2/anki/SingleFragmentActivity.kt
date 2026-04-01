@@ -39,7 +39,7 @@ import kotlin.reflect.jvm.jvmName
  * Activity aimed to host a fragment on the entire screen.
  * For that, it uses [R.layout.single_fragment_activity], which has only a [FragmentContainerView]
  *
- * Useful to avoid creating a Activity for every new screen
+ * Useful to avoid creating an Activity for every new screen
  * while being able to reuse the fragment on other places.
  *
  * [getIntent] can be used as an easy way to build a [SingleFragmentActivity]
@@ -49,7 +49,8 @@ open class SingleFragmentActivity : AnkiActivity() {
      * Whether to apply system bar insets as padding to the fragment container.
      * Set to false for edge-to-edge layouts where the fragment handles insets.
      */
-    protected open val applyInsetsPadding: Boolean = true
+    protected open val applyInsetsPadding: Boolean
+        get() = intent.getBooleanExtra(EXTRA_APPLY_INSETS_PADDING, true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (showedActivityFailedScreen(savedInstanceState)) {
@@ -127,6 +128,7 @@ open class SingleFragmentActivity : AnkiActivity() {
         get() = (fragment as? ShortcutGroupProvider)?.shortcuts
 
     companion object {
+        const val EXTRA_APPLY_INSETS_PADDING = "applyInsetsPadding"
         const val FRAGMENT_NAME_EXTRA = "fragmentName"
         const val FRAGMENT_ARGS_EXTRA = "fragmentArgs"
         const val FRAGMENT_TAG = "SingleFragmentActivityTag"

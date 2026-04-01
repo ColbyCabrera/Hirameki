@@ -282,12 +282,14 @@ fun ReviewerContent(
                     ) {}
 
                     Flashcard(
-                        html = state.html,
+                        baseUrl = state.baseUrl,
+                        questionHtml = state.questionHtml,
+                        answerHtml = state.answerHtml,
+                        bodyClass = state.bodyClass,
                         onTap = { },
                         onLinkClick = {
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))
                         },
-                        mediaDirectory = state.mediaDirectory,
                         isAnswerShown = state.isAnswerShown,
                         toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt()
                     )

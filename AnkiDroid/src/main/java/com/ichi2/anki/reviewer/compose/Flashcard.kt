@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Brayan Oliveira <brayandso.dev@gmail.com>
+ * Copyright (c) 2024 Brayan Oliveira <brayandso.dev@gmail.com> 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -16,10 +16,14 @@
 package com.ichi2.anki.reviewer.compose
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Color
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.webkit.ConsoleMessage
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.animation.Crossfade
@@ -28,138 +32,565 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import com.ichi2.anki.ViewerResourceHandler
+import com.ichi2.anki.previewer.stdHtml
+import com.ichi2.themes.Themes
+import com.ichi2.utils.toRGBHex
+import kotlinx.serialization.json.Json
 import timber.log.Timber
-import java.io.File
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun Flashcard(
-    html: String,
+    baseUrl: String,
+    questionHtml: String,
+    answerHtml: String,
+    bodyClass: String,
     onTap: () -> Unit,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    mediaDirectory: File?,
     isAnswerShown: Boolean,
     toolbarHeight: Int = 0
 ) {
+    val currentBaseUrl by rememberUpdatedState(baseUrl)
+    val currentOnLinkClick by rememberUpdatedState(onLinkClick)
+    val currentOnTap by rememberUpdatedState(onTap)
+
+    val context = LocalContext.current
+    val isNightMode = Themes.currentTheme.isNightMode
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val surfaceColorHex = surfaceColor.toArgb().toRGBHex()
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
-    val onSurfaceColorHex = String.format("#%06X", (0xFFFFFF and onSurfaceColor.toArgb()))
+    val onSurfaceColorHex = onSurfaceColor.toArgb().toRGBHex()
+    val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
+    val surfaceContainerColorHex = surfaceContainerColor.toArgb().toRGBHex()
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val primaryColorHex = primaryColor.toArgb().toRGBHex()
+    val outlineColor = MaterialTheme.colorScheme.outline
+    val outlineColorHex = outlineColor.toArgb().toRGBHex()
     val typography = MaterialTheme.typography
     val displayLargeStyle = typography.displayMedium
     val bodyLargeStyle = typography.titleLarge
 
+    val contentKey = remember(questionHtml, answerHtml) {
+        FlashcardContentKey(questionHtml.hashCode(), answerHtml.hashCode())
+    }
+
     Crossfade(
-        targetState = Pair(isAnswerShown, html),
-        animationSpec = tween(300)
+        targetState = Pair(isAnswerShown, if (isAnswerShown) answerHtml else questionHtml),
+        animationSpec = tween(300),
+        label = "FlashcardCrossfade"
     ) { (shown, currentHtml) ->
         val currentStyle = if (shown) bodyLargeStyle else displayLargeStyle
         val currentPadding = if (shown) 40 else 36
-        AndroidView(
-            factory = { context ->
-                WebView(context).apply {
-                    settings.javaScriptEnabled = true
-                    settings.allowFileAccess = true
-                    webViewClient = object : WebViewClient() {
-                        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                            onLinkClick(request.url.toString())
-                            return true
-                        }
-                    }
-                    val gestureDetector = GestureDetector(
-                        context,
-                        object : GestureDetector.SimpleOnGestureListener() {
-                            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                                onTap()
-                                return true
-                            }
-                        }
-                    )
-                    setOnTouchListener { _, event ->
-                        gestureDetector.onTouchEvent(event)
-                        false
-                    }
-                    setBackgroundColor(Color.TRANSPARENT)
-                }
-            },
-            update = { webView ->
-                val styledHtml = """
-                <style>
-                    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+        val composeStyle = remember(
+            onSurfaceColorHex,
+            surfaceColorHex,
+            surfaceContainerColorHex,
+            primaryColorHex,
+            outlineColorHex,
+            currentStyle,
+            currentPadding,
+            toolbarHeight
+        ) {
+            """
+                <style id="compose-styles">
+                    @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
                     html {
                         color: ${onSurfaceColorHex}EF;
+                        background-color: $surfaceColorHex;
+                    }
+                    body.card {
                         text-align: center;
-                        font-family: 'Roboto', sans-serif;
+                        font-family: "Roboto", sans-serif;
                         font-size: ${currentStyle.fontSize.value}px;
                         font-weight: ${currentStyle.fontWeight?.weight ?: 400};
                         line-height: ${currentStyle.lineHeight.value}px;
                         letter-spacing: ${currentStyle.letterSpacing.value}px;
+                        text-wrap: pretty;
                         padding-top: ${currentPadding}px;
                         padding-bottom: ${toolbarHeight}px;
+                        margin-left: 10px;
+                        margin-right: 10px;
+                        background-color: $surfaceColorHex;
+                        color: ${onSurfaceColorHex}EF;
+                    }
+                    body.card .back {
+                        font-weight: 400;
+                        line-height: 1.4;
+                    }
+                    body.card.nightMode, body.card.night_mode {
+                        background-color: $surfaceColorHex;
+                        color: ${onSurfaceColorHex}EF;
                     }
                     hr {
                         opacity: 0.1;
-                        margin-bottom: 12px;
+                        margin: 12px 0px;
                     }
-                    .replay-button {
+                    img {
+                        border-radius: 16px;
+                    }
+                    button {
+                        font-family: inherit;
+                        font-size: 14px;
+                        font-weight: 500;
+                        color: ${onSurfaceColorHex};
+                        background-color: ${surfaceContainerColorHex};
+                        border: 1px solid ${outlineColorHex}40;
+                        border-radius: 12px;
+                        padding: 2px 6px;
+                        cursor: pointer;
+                        transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 48px;
+                        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                    }
+                    button:hover {
+                        background-color: ${surfaceContainerColorHex}D9;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    }
+                    button:active {
+                        background-color: ${surfaceContainerColorHex}B3;
+                        transform: scale(0.97);
+                    }
+                    button:focus {
+                        outline: 2px solid ${primaryColorHex};
+                        outline-offset: 2px;
+                    }
+                    button:disabled {
+                        opacity: 0.45;
+                        cursor: not-allowed;
+                        transform: none;
+                    }
+
+                    .replay-button svg {
+                        color: ${onSurfaceColorHex}EF;
                         display: inline-block;
-                        height: 48px;
-                        width: 48px;
+                        height: 64px;
+                        width: 64px;
                     }
-                    .play-action {
+                    .replay-button svg path {
                         fill: ${onSurfaceColorHex}EF;
                     }
+                    .replay-button .playImage {
+                        display: block;
+                        width: 100%;
+                        height: 100%;
+                        fill: currentColor;
+                        color: inherit;
+                    }
                 </style>
-                $currentHtml
-                """.trimIndent()
-                Timber.tag("Flashcard").d("styledHtml: %s", styledHtml)
-                if (webView.tag != styledHtml) {
-                    webView.tag = styledHtml
-                    webView.loadDataWithBaseURL(
-                        "file:///$mediaDirectory/",
-                        styledHtml,
-                        "text/html",
-                        "UTF-8",
-                        null
-                    )
+            """.trimIndent()
+        }
+        val styledHtml = remember(context, isNightMode, composeStyle) {
+            buildStyledHtml(context, isNightMode, composeStyle)
+        }
+        val hasImageOcclusion = currentHtml.contains("image-occlusion-container")
+        val sideToken = remember(contentKey, shown) {
+            "${contentKey.hashCode()}_${shown}".hashCode().toString(16)
+        }
+        val evalScript =
+            remember(shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion, sideToken) {
+                buildCardScript(
+                    shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion, sideToken
+                )
+            }
+
+        AndroidView(
+            factory = { context ->
+            WebView(context).apply {
+                settings.javaScriptEnabled = true
+                settings.allowFileAccess = true
+                settings.domStorageEnabled = true
+
+                webChromeClient = object : WebChromeClient() {
+                    override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                        Timber.tag("FlashcardJS")
+                            .d("${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}")
+                        return true
+                    }
                 }
-            },
-            onRelease = { webView ->
-                webView.stopLoading()
-                webView.webViewClient = WebViewClient()
-                webView.setOnTouchListener(null)
-                webView.destroy()
-            },
-            modifier = modifier
+
+                webViewClient = object : WebViewClient() {
+                    val resourceHandler = ViewerResourceHandler(context)
+
+                    override fun shouldInterceptRequest(
+                        view: WebView, request: WebResourceRequest
+                    ): WebResourceResponse? {
+                        return resourceHandler.shouldInterceptRequest(request)
+                    }
+
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView, request: WebResourceRequest
+                    ): Boolean {
+                        val uri = request.url
+                        val scheme = uri.scheme
+                        val ignoredSchemes = setOf("file", "data", "javascript", "blob")
+                        if (scheme in ignoredSchemes) {
+                            return false
+                        }
+
+                        val urlString = uri.toString()
+                        val payload = view.tag as? FlashcardPayload
+                        val effectiveBaseUrl = payload?.baseUrl ?: currentBaseUrl
+                        if (urlString.startsWith(effectiveBaseUrl)) {
+                            val path = urlString.removePrefix(effectiveBaseUrl)
+                            if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
+                                return false
+                            }
+                        }
+
+                        currentOnLinkClick(urlString)
+                        return true
+                    }
+
+                    override fun onPageFinished(view: WebView, url: String) {
+                        val payload = view.tag as? FlashcardPayload ?: return
+                        payload.shellLoaded = true
+
+                        val pendingScript = payload.pendingShellScript
+
+                        if (pendingScript != null) {
+                            view.evaluateJavascript(pendingScript, null)
+                            payload.pendingShellScript = null
+                            payload.scriptExecuted = true
+                        } else if (!payload.scriptExecuted) {
+                            payload.scriptExecuted = true
+                            view.evaluateJavascript(payload.evalScript, null)
+                        }
+                    }
+                }
+
+                val gestureDetector = GestureDetector(
+                    context, object : GestureDetector.SimpleOnGestureListener() {
+                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                            currentOnTap()
+                            return true
+                        }
+                    })
+
+                @SuppressLint("ClickableViewAccessibility") setOnTouchListener { _, event ->
+                    gestureDetector.onTouchEvent(event)
+                    false
+                }
+
+                setBackgroundColor(Color.TRANSPARENT)
+            }
+        }, update = { webView ->
+            val currentPayload = webView.tag as? FlashcardPayload
+            val shellChanged =
+                currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle
+            val shouldReload = currentPayload == null || currentPayload.contentKey != contentKey
+
+            when {
+                shouldReload -> {
+                    webView.tag = FlashcardPayload(
+                        contentKey,
+                        baseUrl,
+                        isNightMode,
+                        composeStyle,
+                        evalScript
+                    )
+                    webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
+                }
+
+                shellChanged -> {
+                    currentPayload.baseUrl = baseUrl
+                    currentPayload.isNightMode = isNightMode
+                    currentPayload.composeStyle = composeStyle
+                    currentPayload.evalScript = evalScript
+                    val shellScript =
+                        buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
+
+                    if (currentPayload.shellLoaded) {
+                        webView.evaluateJavascript(shellScript, null)
+                    } else {
+                        // Queue it up for when the page finishes loading
+                        currentPayload.pendingShellScript = shellScript
+                    }
+                }
+
+                currentPayload.shellLoaded -> {
+                    currentPayload.baseUrl = baseUrl
+                    if (currentPayload.evalScript != evalScript) {
+                        currentPayload.evalScript = evalScript
+                        webView.evaluateJavascript(evalScript, null)
+                    }
+                }
+
+                else -> {
+                    currentPayload.baseUrl = baseUrl
+                    currentPayload.evalScript = evalScript
+                }
+            }
+        }, onRelease = { webView ->
+            webView.stopLoading()
+            webView.webViewClient = WebViewClient()
+            webView.webChromeClient = null
+            webView.setOnTouchListener(null)
+            webView.destroy()
+        }, modifier = modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
         )
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun FlashcardPreview() {
-    Flashcard(
-        html = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
-        onTap = {},
-        onLinkClick = {},
-        mediaDirectory = null,
-        isAnswerShown = false
-    )
+/**
+ * Payload stored in the WebView tag for communication between the update callback and onPageFinished.
+ */
+private data class FlashcardContentKey(
+    val questionHash: Int,
+    val answerHash: Int,
+)
+
+private class FlashcardPayload(
+    val contentKey: FlashcardContentKey,
+    var baseUrl: String,
+    var isNightMode: Boolean,
+    var composeStyle: String,
+    var evalScript: String,
+    var scriptExecuted: Boolean = false,
+    var shellLoaded: Boolean = false,
+    var pendingShellScript: String? = null
+)
+
+private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js")
+private const val REVIEWER_EXTRAS_CSS_LINK =
+    """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
+
+private fun buildStyledHtml(context: Context, isNightMode: Boolean, composeStyle: String): String {
+    val shell = stdHtml(context, EXTRA_JS_ASSETS, isNightMode)
+    return shell.replace("</head>", "$REVIEWER_EXTRAS_CSS_LINK\n$composeStyle\n</head>")
 }
 
-@Preview(showBackground = true)
-@Composable
-fun FlashcardPreviewAnswerShown() {
-    Flashcard(
-        html = "<html><body><h1>Hello, World!</h1><a href=\"https://example.com\">A link</a></body></html>",
-        onTap = {},
-        onLinkClick = {},
-        mediaDirectory = null,
-        isAnswerShown = true
-    )
+/**
+ * Builds the JavaScript to show the question or answer side of a card.
+ *
+ * IMPORTANT: We must NOT embed _showQuestion/_showAnswer in `<script>` tags
+ * in the HTML because IO card HTML contains `</script>` which prematurely
+ * terminates the script tag, causing raw text to be displayed.
+ */
+private fun buildCardScript(
+    isAnswer: Boolean,
+    currentHtml: String,
+    answerHtml: String,
+    bodyClass: String,
+    hasImageOcclusion: Boolean,
+    sideToken: String,
+): String {
+    val showCardScript = if (isAnswer) {
+        "_showAnswer(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(bodyClass)});"
+    } else {
+        "_showQuestion(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(answerHtml)}, ${
+            Json.encodeToString(
+                bodyClass
+            )
+        });"
+    }
+    return if (hasImageOcclusion) {
+        val intercept = IO_SETUP_INTERCEPT.replace($$"${sideToken}", sideToken)
+        val postLoad = IO_POST_LOAD_SCRIPT.replace($$"${sideToken}", sideToken)
+        "$intercept\n$showCardScript\n$postLoad"
+    } else {
+        showCardScript
+    }
 }
+
+/**
+ * Builds JavaScript that patches the DOM in-place for a theme change,
+ * avoiding a full WebView reload (which causes a blank flash).
+ *
+ * Updates the root element classes/attributes, replaces the compose-styles
+ * CSS content, and re-runs the card display script with the new body class.
+ */
+private fun buildShellUpdateScript(
+    isNightMode: Boolean,
+    bodyClass: String,
+    composeCssContent: String,
+    evalScript: String,
+): String {
+    val docClass = if (isNightMode) "night-mode" else ""
+    val baseTheme = if (isNightMode) "dark" else "light"
+    // Escape backticks and backslashes for safe embedding in a JS template literal
+    val escapedCss = composeCssContent.replace("\\", "\\\\").replace("`", "\\`")
+    return """
+        document.documentElement.className = '$docClass';
+        document.documentElement.setAttribute('data-bs-theme', '$baseTheme');
+        document.body.className = '$bodyClass';
+        const s = document.getElementById('compose-styles');
+        if (s) s.outerHTML = `$escapedCss`;
+        $evalScript
+    """.trimIndent()
+}
+
+/**
+ * Intercepts anki.imageOcclusion.setup() with a no-op BEFORE _showQuestion runs.
+ *
+ * Why: _showQuestion is async (queued via a Promise chain). When the queued work
+ * resolves, it sets innerHTML and then executes the card's inline scripts, including
+ * `<script>anki.imageOcclusion.setup()</script>`. setup() waits for the image to load,
+ * then uses requestAnimationFrame to size the canvas and draw masks. But if the image
+ * is cached, setup() completes (~16ms) before our layout poll fires, resulting
+ * in a 0x0 canvas — masks invisible 95% of the time.
+ *
+ * By intercepting setup() here (before _showQuestion queues), the card's inline script
+ * becomes a no-op. Our [IO_POST_LOAD_SCRIPT] then applies layout dimensions and calls
+ * the original setup() exactly once, guaranteeing correct canvas sizing.
+ */
+private const val IO_SETUP_INTERCEPT: String = $$"""
+(() => {
+    const sideToken = '${sideToken}';
+    globalThis.__ioCurrentSide = sideToken;
+
+    if (typeof globalThis.anki?.imageOcclusion?.setup === 'function') {
+        // Guard: preserve original ONLY once
+        globalThis.__ioOriginalSetup ??= globalThis.anki.imageOcclusion.setup;
+        
+        // Intercept: return resolved promise if active side, else fallback
+        globalThis.anki.imageOcclusion.setup = function(...args) {
+            if (globalThis.__ioCurrentSide === sideToken) return Promise.resolve();
+            if (typeof globalThis.__ioOriginalSetup === 'function') {
+                return globalThis.__ioOriginalSetup.apply(this, args);
+            }
+            return Promise.resolve();
+        };
+    }
+})();
+"""
+
+/**
+ * Post-load JavaScript for Image Occlusion layout and setup.
+ *
+ * IMPORTANT: _showQuestion/_showAnswer are ASYNC (queued via a Promise chain in reviewer.js).
+ * When this script runs, the card HTML has NOT yet been injected into #qa.
+ * We must poll for the image-occlusion-container to appear, THEN wait for the image to load,
+ * THEN apply layout dimensions, THEN call the original setup() exactly once.
+ */
+private val IO_POST_LOAD_SCRIPT: String = $$"""
+(() => {
+    const sideToken = '${sideToken}';
+    let observer = null;
+    let timeoutId = null;
+
+    const cleanup = () => {
+        if (observer) {
+            observer.disconnect();
+            observer = null;
+        }
+        
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+        
+        if (globalThis.__ioCurrentSide === sideToken) {
+            if (globalThis.__ioOriginalSetup) {
+                globalThis.anki.imageOcclusion.setup = globalThis.__ioOriginalSetup;
+                delete globalThis.__ioOriginalSetup;
+            }
+            delete globalThis.__ioCurrentSide;
+        }
+    };
+
+    const waitForContainer = () => {
+        if (globalThis.__ioCurrentSide !== sideToken) return;
+
+        const container = document.getElementById('image-occlusion-container');
+        if (container) return processContainer(container);
+
+        observer = new MutationObserver((mutations, obs) => {
+            if (globalThis.__ioCurrentSide !== sideToken) return cleanup();
+            
+            const target = document.getElementById('image-occlusion-container');
+            if (target) {
+                // Disconnect observer & timeout, but DO NOT call full cleanup() yet.
+                // We need globalThis.__ioCurrentSide to stay alive for processContainer!
+                if (observer) { observer.disconnect(); observer = null; }
+                if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+                
+                processContainer(target);
+            }
+        });
+
+        const targetNode = document.getElementById('qa') || document.body;
+        observer.observe(targetNode, { childList: true, subtree: true });
+
+        timeoutId = setTimeout(() => {
+            console.warn("AnkiDroid IO: Container wait timed out.");
+            cleanup();
+        }, 1000);
+    };
+
+    const processContainer = (container) => {
+        if (globalThis.__ioCurrentSide !== sideToken) return;
+        
+        const image = container.querySelector('img');
+        if (!image) return cleanup();
+
+        if (image.complete && image.naturalWidth > 0) {
+            applyLayout(container, image);
+        } else {
+            image.addEventListener('load', () => applyLayout(container, image));
+            image.addEventListener('error', cleanup);
+        }
+    };
+
+    const applyLayout = (container, image) => {
+        if (globalThis.__ioCurrentSide !== sideToken) return;
+
+        try {
+            if (image.naturalWidth <= 0 || image.naturalHeight <= 0) return cleanup();
+
+            const width = Math.max(1, container.parentElement?.clientWidth || window.innerWidth || 0);
+            const height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
+
+            Object.assign(container.style, {
+                display: 'block',
+                width: width + 'px',
+                height: height + 'px',
+                minHeight: height + 'px',
+                maxWidth: '100%',
+                aspectRatio: image.naturalWidth + ' / ' + image.naturalHeight
+            });
+
+            Object.assign(image.style, {
+                width: width + 'px',
+                height: height + 'px'
+            });
+
+            const canvas = document.getElementById('image-occlusion-canvas');
+            if (canvas) {
+                Object.assign(canvas.style, {
+                    width: width + 'px',
+                    height: height + 'px'
+                });
+            }
+
+            // Force layout reflow
+            void container.offsetHeight;
+
+            // Call the original setup() exactly once for this side
+            if (globalThis.__ioOriginalSetup) {
+                const original = globalThis.__ioOriginalSetup;
+                cleanup(); // Restore original setup before invocation
+                original.call(globalThis.anki.imageOcclusion);
+            }
+        } catch(e) {
+            console.error(e);
+            cleanup(); // Unconditional restoration on error
+        }
+    };
+
+    waitForContainer();
+})();
+""".trimIndent()

@@ -39,7 +39,10 @@ import com.ichi2.anki.libanki.SoundOrVideoTag
 import com.ichi2.anki.libanki.TemplateManager
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.libanki.sched.CurrentQueueState
+import com.ichi2.anki.pages.AnkiServer
+import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
+import com.ichi2.anki.previewer.bodyClassForCardOrd
 import com.ichi2.anki.servicelayer.NoteService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -67,7 +70,10 @@ data class ReviewerState(
     val chosenAnswer: String = "",
     val answerFeedback: AnswerFeedback? = null,
     val isAnswerShown: Boolean = false,
-    val html: String = "<html><body></body></html>",
+    val questionHtml: String = "",
+    val answerHtml: String = "",
+    val bodyClass: String = "",
+    val baseUrl: String = "",
     val nextTimes: List<String> = List(4) { "" },
     val showTypeInAnswer: Boolean = false,
     val typedAnswer: String = "",
@@ -81,8 +87,7 @@ data class ReviewerState(
 )
 
 data class AnswerFeedback(
-    val rating: CardAnswer.Rating,
-    val id: String = UUID.randomUUID().toString()
+    val rating: CardAnswer.Rating, val id: String = UUID.randomUUID().toString()
 )
 
 sealed class ReviewerEvent {
@@ -126,7 +131,10 @@ sealed class ReviewerEffect {
     object NavigateToDeckOptions : ReviewerEffect()
 }
 
-class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
+class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHandler {
+
+    private val server = AnkiServer(this)
+    var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
 
     private val _state = MutableStateFlow(ReviewerState())
     val state: StateFlow<ReviewerState> = _state.asStateFlow()
@@ -199,12 +207,34 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     init {
+        server.start()
         onEvent(ReviewerEvent.LoadInitialCard)
     }
 
     override fun onCleared() {
+        server.stop()
         cardMediaPlayer.close()
     }
+
+    override suspend fun handlePostRequest(uri: String, bytes: ByteArray): ByteArray =
+        if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
+            val path = uri.substring(AnkiServer.ANKI_PREFIX.length)
+            when {
+                path.startsWith("jsapi/") -> {
+                    val api = checkNotNull(jsApi) { "jsApi must be set before handling jsapi/ requests" }
+                    api.handleJsApiRequest(
+                        path.substring("jsapi/".length),
+                        bytes,
+                        returnDefaultValues = false
+                    )
+                }
+
+                path == "i18nResources" -> CollectionManager.withCol { i18nResourcesRaw(bytes) }
+                else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
+            }
+        } else {
+            throw IllegalArgumentException("Unhandled POST request: $uri")
+        }
 
     fun onEvent(event: ReviewerEvent) {
         when (event) {
@@ -366,11 +396,15 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this, reload = true)
             val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
+            val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
 
             _state.update {
                 it.copy(
                     mediaError = null,
-                    html = processHtml(questionHtml, renderOutput),
+                    questionHtml = processHtml(questionHtml, renderOutput, this),
+                    answerHtml = processHtml(answerHtml, renderOutput, this),
+                    bodyClass = bodyClassForCardOrd(card.ord),
+                    baseUrl = server.baseUrl(),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -460,13 +494,17 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this)
             val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
+            val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
             _state.update {
                 it.copy(
                     mediaError = null,
                     newCount = queue.counts.new,
                     learnCount = queue.counts.lrn,
                     reviewCount = queue.counts.rev,
-                    html = processHtml(questionHtml, renderOutput),
+                    questionHtml = processHtml(questionHtml, renderOutput, this),
+                    answerHtml = processHtml(answerHtml, renderOutput, this),
+                    bodyClass = bodyClassForCardOrd(card.ord),
+                    baseUrl = server.baseUrl(),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -499,7 +537,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
 
                 _state.update {
                     it.copy(
-                        html = processHtml(answerHtml, renderOutput),
+                        answerHtml = processHtml(answerHtml, renderOutput, this),
                         isAnswerShown = true,
                         nextTimes = paddedLabels
                     )
@@ -541,19 +579,12 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun unanswerCard() {
-        val card = currentCard ?: return
+        currentCard ?: return
         viewModelScope.launch {
-            CollectionManager.withCol {
-                val renderOutput = card.renderOutput(this)
-                val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
-                _state.update {
-                    it.copy(
-                        html = processHtml(questionHtml, renderOutput),
-                        isAnswerShown = false,
-                        nextTimes = List(4) { "" },
-                        chosenAnswer = ""
-                    )
-                }
+            _state.update {
+                it.copy(
+                    isAnswerShown = false, nextTimes = List(4) { "" }, chosenAnswer = ""
+                )
             }
         }
     }
@@ -605,9 +636,12 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun processHtml(
-        html: String, renderOutput: TemplateManager.TemplateRenderContext.TemplateRenderOutput
+        html: String,
+        renderOutput: TemplateManager.TemplateRenderContext.TemplateRenderOutput,
+        collection: com.ichi2.anki.libanki.Collection
     ): String {
-        val processedHtml = Sound.replaceAvRefsWith(html, renderOutput) { avTag, avRef ->
+        val escapedHtml = collection.media.escapeMediaFilenames(html)
+        val processedHtml = Sound.replaceAvRefsWith(escapedHtml, renderOutput) { avTag, avRef ->
             when (avTag) {
                 is SoundOrVideoTag -> {
                     val url = "playsound:${avRef.side}:${avRef.index}"
