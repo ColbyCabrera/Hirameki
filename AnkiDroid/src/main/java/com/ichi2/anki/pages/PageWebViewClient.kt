@@ -16,7 +16,8 @@
 package com.ichi2.anki.pages
 
 import android.graphics.Bitmap
-import android.webkit.ValueCallback
+import android.os.Handler
+import android.os.Looper
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -39,11 +40,14 @@ open class PageWebViewClient : WebViewClient() {
     val onPageFinishedCallbacks: MutableList<OnPageFinishedCallback> = mutableListOf()
     val onErrorCallbacks: MutableList<OnErrorCallback> = mutableListOf()
     private val pendingStyledCallbacks = mutableListOf<PendingStyledCallback>()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private var currentNavigationId = 0
     private var styledNavigationId = -1
     private var startedThemeInjectionNavigationId = -1
     private var shownNavigationId = -1
+    private var isReleased = false
+    private var pendingVisualStateCallback: PendingVisualStateCallback? = null
 
     private fun loadDeckOptionsCss(webView: WebView): String = try {
         webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() }
@@ -91,6 +95,7 @@ open class PageWebViewClient : WebViewClient() {
     ) {
         super.onPageStarted(view, url, favicon)
         view?.isVisible = false
+        cancelPendingVisualStateCallback()
         currentNavigationId += 1
         styledNavigationId = -1
         startedThemeInjectionNavigationId = -1
@@ -396,15 +401,73 @@ open class PageWebViewClient : WebViewClient() {
             })();
             """.trimIndent(),
         ) {
+            if (isReleased) {
+                return@evaluateJavascript
+            }
+
+            scheduleVisualStateCallbackTimeout(webView, visualStateRequestId, onApplied)
+        }
+    }
+
+    private fun scheduleVisualStateCallbackTimeout(
+        webView: WebView,
+        requestId: Long,
+        onApplied: () -> Unit,
+    ) {
+        cancelPendingVisualStateCallback()
+
+        val timeoutRunnable = Runnable {
+            completeVisualStateCallback(requestId, onApplied)
+        }
+        pendingVisualStateCallback = PendingVisualStateCallback(requestId, timeoutRunnable)
+        mainHandler.postDelayed(timeoutRunnable, VISUAL_STATE_CALLBACK_TIMEOUT_MS)
+
+        try {
             webView.postVisualStateCallback(
-                visualStateRequestId,
+                requestId,
                 object : WebView.VisualStateCallback() {
                     override fun onComplete(requestId: Long) {
-                        onApplied()
+                        completeVisualStateCallback(requestId, onApplied)
                     }
                 },
             )
+        } catch (e: RuntimeException) {
+            Timber.w(e, "Failed to register visual state callback for request %d", requestId)
+            completeVisualStateCallback(requestId, onApplied)
         }
+    }
+
+    private fun completeVisualStateCallback(
+        requestId: Long,
+        onApplied: () -> Unit,
+    ) {
+        val pendingCallback = pendingVisualStateCallback ?: return
+        if (pendingCallback.requestId != requestId) {
+            return
+        }
+
+        mainHandler.removeCallbacks(pendingCallback.timeoutRunnable)
+        pendingVisualStateCallback = null
+        if (isReleased) {
+            return
+        }
+
+        onApplied()
+    }
+
+    private fun cancelPendingVisualStateCallback() {
+        pendingVisualStateCallback?.let { pendingCallback ->
+            mainHandler.removeCallbacks(pendingCallback.timeoutRunnable)
+        }
+        pendingVisualStateCallback = null
+    }
+
+    fun release() {
+        isReleased = true
+        cancelPendingVisualStateCallback()
+        pendingStyledCallbacks.clear()
+        onPageFinishedCallbacks.clear()
+        onErrorCallbacks.clear()
     }
 
     fun runWhenPageStyled(
@@ -442,6 +505,11 @@ open class PageWebViewClient : WebViewClient() {
     private data class PendingStyledCallback(
         val navigationId: Int,
         val action: (WebView) -> Unit,
+    )
+
+    private data class PendingVisualStateCallback(
+        val requestId: Long,
+        val timeoutRunnable: Runnable,
     )
 
     private fun ensureThemeApplied(webView: WebView) {
@@ -506,6 +574,7 @@ open class PageWebViewClient : WebViewClient() {
 
     companion object {
         private const val DECK_OPTIONS_CSS_ASSET = "anki_deck_options.css"
+        private const val VISUAL_STATE_CALLBACK_TIMEOUT_MS = 300L
     }
 }
 
@@ -525,24 +594,4 @@ fun isSvelteKitPage(path: String): Boolean {
 
         else -> false
     }
-}
-
-fun WebView.evaluateAfterDOMContentLoaded(
-    script: String,
-    resultCallback: ValueCallback<String>? = null,
-) {
-    evaluateJavascript(
-        """
-        var codeToRun = function() { 
-            $script
-        }
-        
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", codeToRun);
-        } else {
-          codeToRun();
-        }
-        """.trimIndent(),
-        resultCallback,
-    )
 }

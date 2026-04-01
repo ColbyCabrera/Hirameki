@@ -200,6 +200,7 @@ private fun PageWebViewInternal(
             }
         }, onRelease = { webView ->
             webView.stopLoading()
+            (webView.webViewClient as? PageWebViewClient)?.release()
             webView.webViewClient = android.webkit.WebViewClient()
             webView.destroy()
             webViewRef = null
