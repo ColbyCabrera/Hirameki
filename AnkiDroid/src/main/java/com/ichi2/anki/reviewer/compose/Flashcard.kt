@@ -353,7 +353,7 @@ private data class FlashcardContentKey(
     val answerHash: Int,
 )
 
-private data class FlashcardPayload(
+private class FlashcardPayload(
     val contentKey: FlashcardContentKey,
     var baseUrl: String,
     var isNightMode: Boolean,
