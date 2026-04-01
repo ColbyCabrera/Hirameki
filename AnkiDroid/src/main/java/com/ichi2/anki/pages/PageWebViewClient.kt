@@ -110,7 +110,8 @@ open class PageWebViewClient : WebViewClient() {
         val colors = Material3Colors.from(webView)
         cachedMaterial3ThemeCss?.takeIf { colors == cachedMaterial3Colors }?.let { return it }
 
-        val deckOptionsCss = cachedDeckOptionsCss ?: loadDeckOptionsCss(webView).also { cachedDeckOptionsCss = it }
+        val deckOptionsCss =
+            cachedDeckOptionsCss ?: loadDeckOptionsCss(webView).also { cachedDeckOptionsCss = it }
 
         val css = with(colors) {
             """
@@ -169,177 +170,13 @@ open class PageWebViewClient : WebViewClient() {
                 --bs-border-color: $outlineColor;
                 --bs-border-color-translucent: $outlineColor;
                 /* Deck options */
-                --deck-options-bg: $bgColor;
-                --deck-options-text: $textColor;
-                --deck-options-surface: $surfaceColor;
                 --deck-options-on-surface: $onSurfaceColor;
-                --deck-options-surface-container: $surfaceContainerColor;
-                --deck-options-outline: $outlineColor;
-                --deck-options-primary: $primaryColor;
                 --deck-options-on-primary: $onPrimaryColor;
                 --deck-options-tertiary-container: $tertiaryContainerColor;
                 --deck-options-on-tertiary-container: $onTertiaryContainerColor;
-                --deck-options-on-surface-variant: $onSurfaceVariantColor;
-            }
-
-            body {
-                background-color: $bgColor !important;
-                color: $textColor !important;
-            }
-
-            a, a:link, a:visited {
-                color: $primaryColor !important;
-            }
-
-            /* Bootstrap component-scoped variable overrides */
-            .deck-options-page .form-control, .deck-options-page .form-select {
-                background-color: $surfaceContainerColor !important;
-                color: $onSurfaceColor !important;
-                border-color: $outlineColor !important;
-            }
-
-            .deck-options-page .form-control:focus, .deck-options-page .form-select:focus {
-                border-color: $primaryColor !important;
-                box-shadow: 0 0 0 1px $primaryColor !important;
-            }
-
-            .deck-options-page .modal-content {
-                --bs-modal-bg: $surfaceColor;
-                --bs-modal-color: $onSurfaceColor;
-                --bs-modal-border-color: $outlineColor;
-                background-color: $surfaceColor !important;
-            }
-
-            /* Range box header - improved layout */
-            .range-box {
-                background: $surfaceColor !important;
-                border-color: $outlineColor !important;
-                display: flex !important;
-                flex-wrap: wrap !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 4px !important;
-                padding: 0px 16px 4px !important;
-            }
-
-            /* InputBox containers inside range-box */
-            .range-box > div {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 4px !important;
-                background-color: $surfaceContainerColor !important;
-                border-radius: 24px !important;
-                padding: 4px 4px !important;
-                max-width: 100% !important;
-            }
-
-            /* First InputBox - make search field go to new line */
-            .range-box > div:first-of-type {
-                flex-wrap: wrap !important;
-            }
-
-            /* Search field should take full width when wrapped */
-            .range-box > div:first-of-type input[type="text"] {
-                flex: 1 1 100% !important;
-                margin-top: 8px !important;
-            }
-
-            /* Labels inside range-box - chip style */
-            .range-box label {
-                display: inline-flex !important;
-                align-items: center !important;
-                gap: 6px !important;
-                padding: 8px 12px !important;
-                border-radius: 20px !important;
-                cursor: pointer !important;
-                transition: background-color 0.2s !important;
-            }
-
-            .range-box label:hover {
-                background-color: $outlineColor !important;
-            }
-
-            /* Selected radio label highlight */
-            .range-box input[type="radio"]:checked + label,
-            .range-box label:has(input[type="radio"]:checked) {
-                background-color: $tertiaryContainerColor !important;
-                color: $onTertiaryContainerColor !important;
-            }
-
-            /* Search input styling */
-            .range-box input[type="text"],
-            #statisticsSearchText {
-                background-color: $surfaceContainerColor !important;
-                color: $onSurfaceColor !important;
-                border: 1px solid $outlineColor !important;
-                border-radius: 20px !important;
-                padding: 8px 16px !important;
-                min-width: 150px !important;
-            }
-
-            /* Hide loading spinner styling */
-            .range-box .spin {
-                color: $primaryColor !important;
-            }
-
-            /* Radio buttons - accent color only */
-            .deck-options-page input[type="radio"] {
-                accent-color: $primaryColor !important;
-            }
-
-            /* Checkboxes - accent color only */
-            .deck-options-page input[type="checkbox"] {
-                accent-color: $primaryColor !important;
-            }
-
-            .deck-options-page input[type="range"] {
-                accent-color: $primaryColor !important;
-            }
-
-            /* Text inputs - colors only */
-            .deck-options-page input[type="text"], .deck-options-page input[type="search"], .deck-options-page select, .deck-options-page textarea {
-                background-color: $surfaceContainerColor !important;
-                color: $onSurfaceColor !important;
-                border-color: $outlineColor !important;
-            }
-
-            /* Labels - color only */
-            .deck-options-page label {
-                color: $textColor !important;
             }
 
             $deckOptionsCss
-
-            .graphs-container {
-                background-color: $bgColor !important;
-            }
-
-            /* Graph cards - Material 3 card styling */
-            .graphs-container > * {
-                background-color: $surfaceColor !important;
-                color: $onSurfaceColor !important;
-                border: 1px solid $surfaceContainerColor !important;
-                border-radius: 16px !important;
-                padding: 16px !important;
-                box-shadow: none !important;
-            }
-
-            /* Card headings */
-            .graphs-container h2,
-            .graphs-container h3,
-            .graphs-container .title {
-                color: $textColor !important;
-            }
-
-            /* Graph/chart SVG elements */
-            svg text, .axis text {
-                fill: $textColor !important;
-            }
-
-            svg .axis path, svg .axis line {
-                stroke: $outlineColor !important;
-            }
         """.trimIndent()
         }
 
@@ -621,7 +458,7 @@ open class PageWebViewClient : WebViewClient() {
     }
 
     companion object {
-        private const val DECK_OPTIONS_CSS_ASSET = "anki_deck_options.css"
+        private const val DECK_OPTIONS_CSS_ASSET = "anki_material3_theme.css"
         private const val VISUAL_STATE_CALLBACK_TIMEOUT_MS = 300L
     }
 }
