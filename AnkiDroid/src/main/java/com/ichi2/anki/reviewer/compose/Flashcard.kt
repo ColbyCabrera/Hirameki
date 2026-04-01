@@ -32,7 +32,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -57,6 +59,10 @@ fun Flashcard(
     isAnswerShown: Boolean,
     toolbarHeight: Int = 0
 ) {
+    val currentBaseUrl by rememberUpdatedState(baseUrl)
+    val currentOnLinkClick by rememberUpdatedState(onLinkClick)
+    val currentOnTap by rememberUpdatedState(onTap)
+
     val context = LocalContext.current
     val isNightMode = Themes.currentTheme.isNightMode
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -234,14 +240,16 @@ fun Flashcard(
                         }
 
                         val urlString = uri.toString()
-                        if (urlString.startsWith(baseUrl)) {
-                            val path = urlString.removePrefix(baseUrl)
+                        val payload = view.tag as? FlashcardPayload
+                        val effectiveBaseUrl = payload?.baseUrl ?: currentBaseUrl
+                        if (urlString.startsWith(effectiveBaseUrl)) {
+                            val path = urlString.removePrefix(effectiveBaseUrl)
                             if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
                                 return false
                             }
                         }
 
-                        onLinkClick(urlString)
+                        currentOnLinkClick(urlString)
                         return true
                     }
 
@@ -265,7 +273,7 @@ fun Flashcard(
                 val gestureDetector = GestureDetector(
                     context, object : GestureDetector.SimpleOnGestureListener() {
                         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                            onTap()
+                            currentOnTap()
                             return true
                         }
                     })
@@ -285,12 +293,18 @@ fun Flashcard(
 
             when {
                 shouldReload -> {
-                    webView.tag =
-                        FlashcardPayload(contentKey, isNightMode, composeStyle, evalScript)
+                    webView.tag = FlashcardPayload(
+                        contentKey,
+                        baseUrl,
+                        isNightMode,
+                        composeStyle,
+                        evalScript
+                    )
                     webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
                 }
 
                 shellChanged -> {
+                    currentPayload.baseUrl = baseUrl
                     currentPayload.isNightMode = isNightMode
                     currentPayload.composeStyle = composeStyle
                     currentPayload.evalScript = evalScript
@@ -306,6 +320,7 @@ fun Flashcard(
                 }
 
                 currentPayload.shellLoaded -> {
+                    currentPayload.baseUrl = baseUrl
                     if (currentPayload.evalScript != evalScript) {
                         currentPayload.evalScript = evalScript
                         webView.evaluateJavascript(evalScript, null)
@@ -313,6 +328,7 @@ fun Flashcard(
                 }
 
                 else -> {
+                    currentPayload.baseUrl = baseUrl
                     currentPayload.evalScript = evalScript
                 }
             }
@@ -339,6 +355,7 @@ private data class FlashcardContentKey(
 
 private data class FlashcardPayload(
     val contentKey: FlashcardContentKey,
+    var baseUrl: String,
     var isNightMode: Boolean,
     var composeStyle: String,
     var evalScript: String,
@@ -496,7 +513,11 @@ private val IO_POST_LOAD_SCRIPT: String = $$"""
             
             const target = document.getElementById('image-occlusion-container');
             if (target) {
-                cleanup(); 
+                // Disconnect observer & timeout, but DO NOT call full cleanup() yet.
+                // We need globalThis.__ioCurrentSide to stay alive for processContainer!
+                if (observer) { observer.disconnect(); observer = null; }
+                if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+                
                 processContainer(target);
             }
         });
