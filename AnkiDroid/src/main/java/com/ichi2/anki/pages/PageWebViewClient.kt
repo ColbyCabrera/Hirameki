@@ -50,6 +50,7 @@ open class PageWebViewClient : WebViewClient() {
     private var pendingVisualStateCallback: PendingVisualStateCallback? = null
     private var cachedMaterial3Colors: Material3Colors? = null
     private var cachedMaterial3ThemeCss: String? = null
+    private var cachedDeckOptionsCss: String? = null
 
     private fun loadDeckOptionsCss(webView: WebView): String = try {
         webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() }
@@ -109,7 +110,7 @@ open class PageWebViewClient : WebViewClient() {
         val colors = Material3Colors.from(webView)
         cachedMaterial3ThemeCss?.takeIf { colors == cachedMaterial3Colors }?.let { return it }
 
-        val deckOptionsCss = loadDeckOptionsCss(webView)
+        val deckOptionsCss = cachedDeckOptionsCss ?: loadDeckOptionsCss(webView).also { cachedDeckOptionsCss = it }
 
         val css = with(colors) {
             """
@@ -475,8 +476,8 @@ open class PageWebViewClient : WebViewClient() {
 
         styledNavigationId = navigationId
 
-        val readyCallbacks = pendingStyledCallbacks.filter { it.navigationId == navigationId }
-        pendingStyledCallbacks.removeAll(readyCallbacks)
+        val readyCallbacks = pendingStyledCallbacks.toList()
+        pendingStyledCallbacks.clear()
         readyCallbacks.forEach { it.action(webView) }
 
         if (shownNavigationId != navigationId) {
@@ -592,7 +593,7 @@ open class PageWebViewClient : WebViewClient() {
     ) {
         super.onPageFinished(view, url)
         if (view == null) return
-        onPageFinishedCallbacks.forEach { callback ->
+        onPageFinishedCallbacks.toList().forEach { callback ->
             try {
                 callback.onPageFinished(view)
             } catch (e: Exception) {
@@ -609,7 +610,7 @@ open class PageWebViewClient : WebViewClient() {
     ) {
         super.onReceivedError(view, request, error)
         if (request.isForMainFrame) {
-            onErrorCallbacks.forEach {
+            onErrorCallbacks.toList().forEach {
                 try {
                     it.onError(error)
                 } catch (e: Exception) {
