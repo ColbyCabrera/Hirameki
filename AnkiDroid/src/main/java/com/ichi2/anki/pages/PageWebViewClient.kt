@@ -442,6 +442,17 @@ open class PageWebViewClient : WebViewClient() {
         onErrorCallbacks.clear()
     }
 
+    /**
+     * Runs [action] only if page styling completes for the current navigation.
+     *
+     * If [styledNavigationId] already matches [currentNavigationId], [action] executes
+     * immediately. Otherwise, the callback is queued and will run when styling completes for the
+     * current navigation.
+     *
+     * Queued callbacks are discarded if navigation changes before styling completes, because
+     * [onPageStarted] clears [pendingStyledCallbacks]. Callers must tolerate dropped callbacks or
+     * re-register after navigation changes.
+     */
     fun runWhenPageStyled(
         webView: WebView,
         action: (WebView) -> Unit,
@@ -501,22 +512,18 @@ open class PageWebViewClient : WebViewClient() {
                 textColor = colorHex(webView, com.google.android.material.R.attr.colorOnBackground),
                 primaryColor = colorHex(webView, androidx.appcompat.R.attr.colorPrimary),
                 onPrimaryColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorOnPrimary
+                    webView, com.google.android.material.R.attr.colorOnPrimary
                 ),
                 surfaceColor = colorHex(webView, com.google.android.material.R.attr.colorSurface),
                 onSurfaceColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorOnSurface
+                    webView, com.google.android.material.R.attr.colorOnSurface
                 ),
                 surfaceContainerColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorSurfaceContainer
+                    webView, com.google.android.material.R.attr.colorSurfaceContainer
                 ),
                 outlineColor = colorHex(webView, com.google.android.material.R.attr.colorOutline),
                 secondaryColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorSecondary
+                    webView, com.google.android.material.R.attr.colorSecondary
                 ),
                 tertiaryContainerColor = colorHex(
                     webView,
