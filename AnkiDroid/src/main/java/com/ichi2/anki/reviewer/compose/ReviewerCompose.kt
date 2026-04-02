@@ -285,8 +285,8 @@ fun ReviewerContent(
                     snackbarData = data,
                     containerColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.onSecondary,
-                    actionColor = MaterialTheme.colorScheme.primary,
-                    dismissActionContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    actionColor = MaterialTheme.colorScheme.onSecondary,
+                    dismissActionContentColor = MaterialTheme.colorScheme.onSecondary,
                 )
             }
         }, topBar = {
