@@ -23,8 +23,6 @@ import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.DeckSelectionDialog
 import com.ichi2.anki.dialogs.GradeNowDialog
 import com.ichi2.anki.dialogs.SimpleMessageDialog
-import com.ichi2.anki.dialogs.tags.TagsDialog
-import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.CardId
@@ -36,7 +34,6 @@ import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.previewer.PreviewerFragment
 import com.ichi2.anki.scheduling.ForgetCardsDialog
 import com.ichi2.anki.scheduling.SetDueDateDialog
-import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.undoAndShowSnackbar
 import timber.log.Timber
 
@@ -81,12 +78,17 @@ class CardBrowserActionHandler(
 
     private fun moveSelectedCardsToDeck(did: DeckId) = activity.launchCatchingTask {
         val changed = withProgress { viewModel.moveSelectedCardsToDeck(did).await() }
-        viewModel.search(viewModel.searchQuery.value)
+        viewModel.launchSearchForCards()
         val message = activity.resources.getQuantityString(
             R.plurals.card_browser_cards_moved, changed.count, changed.count
         )
-        activity.showSnackbar(message) {
-            this.setAction(R.string.undo) { activity.launchCatchingTask { activity.undoAndShowSnackbar() } }
+        viewModel.emitSnackbarMessage(
+            message, activity.getString(R.string.undo)
+        ) {
+            activity.launchCatchingTask {
+                activity.undoAndShowSnackbar()
+                viewModel.launchSearchForCards()
+            }
         }
     }
 
@@ -140,7 +142,9 @@ class CardBrowserActionHandler(
                             title = activity.getString(R.string.vague_error),
                             message = activity.getString(R.string.card_browser_reposition_invalid_bounds),
                             reload = false
-                        ).show(activity.supportFragmentManager, "reposition_invalid_bounds_dialog")
+                        ).show(
+                            activity.supportFragmentManager, "reposition_invalid_bounds_dialog"
+                        )
                         return@launchCatchingTask
                     }
                     val repositionDialog = RepositionCardFragment.newInstance(
@@ -176,23 +180,8 @@ class CardBrowserActionHandler(
             .show(activity.supportFragmentManager, "exportDialog")
     }
 
-    fun showEditTagsDialog() = activity.launchCatchingTask {
-        if (!viewModel.hasSelectedAnyRows()) {
-            Timber.d("showEditTagsDialog: called with empty selection")
-            return@launchCatchingTask
-        }
-
-        val noteIds = viewModel.queryAllSelectedNoteIds()
-
-        TagsDialog(activity as TagsDialogListener).withArguments(
-                activity,
-                TagsDialog.DialogType.EDIT_TAGS,
-                noteIds
-            ).show(activity.supportFragmentManager, "edit_tags_dialog")
-    }
-
     fun showCreateFilteredDeckDialog() {
-       viewModel.showCreateFilteredDeckDialog()
+        viewModel.showCreateFilteredDeckDialog()
     }
 
     /**
@@ -202,14 +191,10 @@ class CardBrowserActionHandler(
      */
     fun warnUserIfInNotesOnlyMode(): Boolean {
         if (viewModel.cardsOrNotes == CardsOrNotes.NOTES && viewModel.hasSelectedAnyRows()) {
-            activity.showSnackbar(
+            viewModel.emitSnackbarMessage(
                 activity.getString(R.string.card_browser_unavailable_when_notes_mode),
-                duration = 5000
-            ) {
-                setAction(activity.getString(R.string.cards)) {
-                    viewModel.setCardsOrNotes(CardsOrNotes.CARDS)
-                }
-            }
+                activity.getString(R.string.cards)
+            ) { viewModel.setCardsOrNotes(CardsOrNotes.CARDS) }
             return true
         }
         return false
@@ -217,8 +202,7 @@ class CardBrowserActionHandler(
 
     fun addNote() {
         val launcher = NoteEditorLauncher.AddNoteFromCardBrowser(
-            viewModel,
-            inCardBrowserActivity = activity is com.ichi2.anki.CardBrowser
+            viewModel, inCardBrowserActivity = activity is com.ichi2.anki.CardBrowser
         )
         launchAddNote(launcher.toIntent(activity))
     }
@@ -236,7 +220,7 @@ class CardBrowserActionHandler(
     private fun ensureSelection(action: String): Boolean {
         if (!viewModel.hasSelectedAnyRows()) {
             Timber.i("Attempted $action - no cards selected")
-            activity.showSnackbar(activity.getString(R.string.card_browser_no_cards_selected))
+            viewModel.emitSnackbarMessage(activity.getString(R.string.card_browser_no_cards_selected))
             return false
         }
         return true
