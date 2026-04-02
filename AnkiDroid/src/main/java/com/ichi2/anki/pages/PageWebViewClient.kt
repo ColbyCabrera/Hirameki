@@ -274,6 +274,9 @@ open class PageWebViewClient : WebViewClient() {
     }
 
     fun release() {
+        if (isReleased) {
+            return
+        }
         isReleased = true
         cancelPendingVisualStateCallback()
         pendingStyledCallbacks.clear()
