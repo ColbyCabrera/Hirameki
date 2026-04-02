@@ -1021,6 +1021,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                 return true
             }
 
+            ViewerCommand.DELETE -> {
+                viewModel.onEvent(ReviewerEvent.DeleteNote)
+                return true
+            }
+
             ViewerCommand.MARK -> {
                 onMark(currentCard)
                 return true
