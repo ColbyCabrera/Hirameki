@@ -37,6 +37,7 @@ import com.ichi2.anki.noteeditor.compose.NoteFieldState
 import com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState
 import com.ichi2.anki.servicelayer.NoteService
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -335,6 +336,14 @@ class NoteEditorViewModel(
     }
 
     private var isInitialized = false
+    private var initializeJob: Job? = null
+    private val pendingInitCallbacks = mutableListOf<(Boolean, String?) -> Unit>()
+
+    private fun flushInitCallbacks(success: Boolean, error: String?) {
+        val callbacks = pendingInitCallbacks.toList()
+        pendingInitCallbacks.clear()
+        callbacks.forEach { it(success, error) }
+    }
 
     /**
      * Initialize the editor with a new or existing note
@@ -347,11 +356,18 @@ class NoteEditorViewModel(
         initialFieldText: String? = null,
         onComplete: ((success: Boolean, error: String?) -> Unit)? = null,
     ) {
+        onComplete?.let { pendingInitCallbacks += it }
+
         if (isInitialized) {
-            onComplete?.invoke(true, null)
+            flushInitCallbacks(true, null)
             return
         }
-        viewModelScope.launch {
+
+        if (initializeJob?.isActive == true) {
+            return
+        }
+
+        initializeJob = viewModelScope.launch {
             try {
                 // Attempt to restore draft state from SavedStateHandle
                 val restoredFieldValues = savedStateHandle?.get<Array<String>>(KEY_FIELD_VALUES)
@@ -453,12 +469,14 @@ class NoteEditorViewModel(
                 loadTags(col)
 
                 isInitialized = true
-                onComplete?.invoke(true, null)
+                flushInitCallbacks(true, null)
             } catch (e: Exception) {
                 val errorMessage = "Failed to initialize editor: ${e.message ?: "Unknown error"}"
                 Timber.e(e, "Error initializing note editor")
                 _errorState.value = errorMessage
-                onComplete?.invoke(false, errorMessage)
+                flushInitCallbacks(false, errorMessage)
+            } finally {
+                initializeJob = null
             }
         }
     }
