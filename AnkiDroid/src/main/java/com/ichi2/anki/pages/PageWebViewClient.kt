@@ -299,6 +299,10 @@ open class PageWebViewClient : WebViewClient() {
         webView: WebView,
         action: (WebView) -> Unit,
     ) {
+        if (isReleased) {
+            return
+        }
+
         val navigationId = currentNavigationId
         if (styledNavigationId == navigationId) {
             action(webView)
