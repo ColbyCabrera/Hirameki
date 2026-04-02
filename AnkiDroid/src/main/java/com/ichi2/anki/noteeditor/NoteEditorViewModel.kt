@@ -36,6 +36,7 @@ import com.ichi2.anki.noteeditor.compose.NoteEditorState
 import com.ichi2.anki.noteeditor.compose.NoteFieldState
 import com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState
 import com.ichi2.anki.servicelayer.NoteService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
@@ -342,7 +343,13 @@ class NoteEditorViewModel(
     private fun flushInitCallbacks(success: Boolean, error: String?) {
         val callbacks = pendingInitCallbacks.toList()
         pendingInitCallbacks.clear()
-        callbacks.forEach { it(success, error) }
+        callbacks.forEach { callback ->
+            try {
+                callback(success, error)
+            } catch (e: Exception) {
+                Timber.e(e, "Note editor init callback threw an exception")
+            }
+        }
     }
 
     /**
@@ -470,6 +477,8 @@ class NoteEditorViewModel(
 
                 isInitialized = true
                 flushInitCallbacks(true, null)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 val errorMessage = "Failed to initialize editor: ${e.message ?: "Unknown error"}"
                 Timber.e(e, "Error initializing note editor")
