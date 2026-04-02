@@ -171,7 +171,7 @@ fun ReviewerContent(
     var showBrushOptions by remember { mutableStateOf(false) }
     var showEraserOptions by remember { mutableStateOf(false) }
     var brushIndexToRemove by remember { mutableStateOf<Int?>(null) }
-    var pendingDeleteCardId by remember { mutableStateOf<CardId?>(null) }
+    var pendingDeleteCardId by rememberSaveable { mutableStateOf<CardId?>(null) }
     var toolbarHeight by remember { mutableIntStateOf(0) }
     var whiteboardToolbarHeight by remember { mutableIntStateOf(0) }
     val toolbarHeightDp = with(LocalDensity.current) { toolbarHeight.toDp() }
@@ -257,12 +257,12 @@ fun ReviewerContent(
         }
     }
 
-    if (pendingDeleteCardId != null) {
+    pendingDeleteCardId?.let { id ->
         DeleteConfirmationDialog(
             quantity = 1,
             onDismissRequest = { pendingDeleteCardId = null },
             onConfirm = {
-                viewModel.confirmDeleteNote(pendingDeleteCardId)
+                viewModel.confirmDeleteNote(id)
                 pendingDeleteCardId = null
             },
         )
