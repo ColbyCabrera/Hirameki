@@ -572,6 +572,50 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
+    fun `saving added note refreshes deck baseline for discard tracking`() = runTest {
+        val alternateDeckId = addDeck("Alternate")
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.onDeckSelected(SelectableDeck.Deck(alternateDeckId, "Alternate"))
+        idleMainLooper()
+        editor.setFieldValueFromUi(0, "Hello")
+        idleMainLooper()
+
+        assertThat("deck change is unsaved before save", editor.hasUnsavedChanges())
+
+        editor.saveNote()
+        idleMainLooper()
+
+        assertThat("deck change is cleared after save", !editor.hasUnsavedChanges())
+    }
+
+    @Test
+    fun `saving added note refreshes note type baseline for discard tracking`() = runTest {
+        val alternateNoteTypeName =
+            addStandardNoteType(
+                "Basic 2",
+                arrayOf("Front", "Back"),
+                "{{Front}}",
+                "{{Back}}"
+            )
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType(alternateNoteTypeName)
+        idleMainLooper()
+        editor.setFieldValueFromUi(0, "Hello")
+        idleMainLooper()
+
+        assertThat("note type change is unsaved before save", editor.hasUnsavedChanges())
+
+        editor.saveNote()
+        idleMainLooper()
+
+        assertThat("note type change is cleared after save", !editor.hasUnsavedChanges())
+    }
+
+    @Test
     fun `editing card in filtered deck retains deck`() = runTest {
         val homeDeckId = addDeck("A")
         val note = addBasicNote().updateCards { did = homeDeckId }
