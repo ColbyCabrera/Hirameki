@@ -181,14 +181,6 @@ class NoteEditorViewModel(
      */
     val noteEditorState: StateFlow<NoteEditorState> = _noteEditorState.asStateFlow()
 
-    private val _errorState = MutableStateFlow<String?>(null)
-
-    /**
-     * One-shot or sticky error messages surfaced to the UI layer for snackbars/dialogs.
-     * Null indicates no current error to display.
-     */
-    val errorState: StateFlow<String?> = _errorState.asStateFlow()
-    
     private val _snackbarMessages = MutableSharedFlow<String>()
 
     /**
@@ -215,11 +207,6 @@ class NoteEditorViewModel(
 
     /** Whether the formatting toolbar should be visible. */
     val showToolbar: StateFlow<Boolean> = _showToolbar.asStateFlow()
-
-    private val _isFieldEdited = MutableStateFlow(false)
-
-    /** True if any field content has been modified and not yet saved. */
-    val isFieldEdited: StateFlow<Boolean> = _isFieldEdited.asStateFlow()
 
     private val _showDiscardChangesDialog = MutableStateFlow(false)
 
@@ -469,9 +456,6 @@ class NoteEditorViewModel(
                 initialDeckId = _deckId.value
                 initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
 
-                // Reset the field edited flag after initialization to prevent false positives
-                _isFieldEdited.value = false
-
                 // Load tags
                 loadTags(col)
 
@@ -482,7 +466,6 @@ class NoteEditorViewModel(
             } catch (e: Exception) {
                 val errorMessage = "Failed to initialize editor: ${e.message ?: "Unknown error"}"
                 Timber.e(e, "Error initializing note editor")
-                _errorState.value = errorMessage
                 flushInitCallbacks(false, errorMessage)
             } finally {
                 initializeJob = null
@@ -600,9 +583,6 @@ class NoteEditorViewModel(
             currentState.copy(fields = updatedFields, focusedFieldIndex = focusedIndex)
         }
 
-        // Check if field values have actually changed from initial values
-        updateFieldEditedFlag()
-
         // Persist field values to SavedStateHandle
         persistDraftState()
     }
@@ -628,7 +608,6 @@ class NoteEditorViewModel(
      */
     fun updateTags(tags: Set<String>) {
         _noteEditorState.update { it.copy(tags = tags.toList()) }
-        updateFieldEditedFlag()
         persistDraftState()
     }
 
@@ -678,9 +657,7 @@ class NoteEditorViewModel(
                     loadTags(col) // Reload deck tags when deck changes
                 }
             } catch (e: Exception) {
-                val errorMessage = "Failed to select deck: ${e.message ?: "Unknown error"}"
                 Timber.e(e, "Error selecting deck")
-                _errorState.value = errorMessage
             }
         }
     }
@@ -869,16 +846,13 @@ class NoteEditorViewModel(
 
                     // Update initial field values after note type change
                     initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
-                    _isFieldEdited.value = false
 
                     persistDraftState()
 
                     Timber.d("Successfully changed note type to '%s'", noteTypeName)
                 }
             } catch (e: Exception) {
-                val errorMessage = "Failed to change note type: ${e.message ?: "Unknown error"}"
                 Timber.e(e, "Error changing note type")
-                _errorState.value = errorMessage
             }
         }
     }
@@ -987,7 +961,6 @@ class NoteEditorViewModel(
             // Back on Main dispatcher - update UI state based on save result type
             when (saveResult) {
                 is SaveResult.ValidationFailure -> {
-                    _errorState.value = "Note validation failed: Please check required fields"
                     return saveResult.validationResult
                 }
 
@@ -1014,7 +987,6 @@ class NoteEditorViewModel(
                     // Update initial field values after resetting for next note
                     initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
                     initialTags = _noteEditorState.value.tags
-                    _isFieldEdited.value = false
                 }
 
                 is SaveResult.UpdatedNote -> {
@@ -1029,9 +1001,7 @@ class NoteEditorViewModel(
             clearDraftState()
             NoteFieldsCheckResult.Success
         } catch (e: Exception) {
-            val errorMessage = "Failed to save note: ${e.message ?: "Unknown error"}"
             Timber.e(e, "Error saving note")
-            _errorState.value = errorMessage
             NoteFieldsCheckResult.Failure(null)
         }
     }
@@ -1073,9 +1043,6 @@ class NoteEditorViewModel(
                 val newEnd = newStart + selected.length
                 value.copy(text = newText, selection = TextRange(newStart, newEnd))
             }
-        }
-        if (result) {
-            _isFieldEdited.value = true
         }
         return result
     }
@@ -1278,33 +1245,6 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Toggle toolbar visibility
-     */
-    fun toggleToolbarVisibility() {
-        _showToolbar.update { !it }
-    }
-
-    /**
-     * Check if current field values differ from initial values
-     */
-    private fun updateFieldEditedFlag() {
-        val currentValues = _noteEditorState.value.fields.map { it.value.text }
-        // Also check if tags changed
-        val tagsChanged = _noteEditorState.value.tags != initialTags
-        _isFieldEdited.value = currentValues != initialFieldValues || tagsChanged
-    }
-
-    /**
-     * Reset the field edited flag (e.g., after successful save)
-     */
-    fun resetFieldEditedFlag() {
-        _isFieldEdited.value = false
-        // Update initial values to current values after save
-        initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
-        initialTags = _noteEditorState.value.tags
-    }
-
-    /**
      * Show or hide the discard changes confirmation dialog
      */
     fun setShowDiscardChangesDialog(show: Boolean) {
@@ -1326,9 +1266,6 @@ class NoteEditorViewModel(
      * from the initial state should trigger the warning, regardless of intermediate changes.
      */
     fun hasUnsavedChanges(): Boolean {
-        // If we have specific field edit flag
-        if (_isFieldEdited.value) return true
-
         // Manual check of field values against initial values
         val currentValues = _noteEditorState.value.fields.map { it.value.text }
         if (currentValues != initialFieldValues) return true
@@ -1428,36 +1365,11 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Clear the current error state (e.g., after user acknowledges the error)
-     */
-    fun clearError() {
-        _errorState.value = null
-    }
-
-    /**
      * Update the cards info display after template changes
      */
     fun updateCardsInfo(cardsInfo: String) {
         _noteEditorState.update { currentState ->
             currentState.copy(cardsInfo = cardsInfo)
-        }
-    }
-
-    /**
-     * Enable or disable the Tags button
-     */
-    fun setTagsButtonEnabled(enabled: Boolean) {
-        _noteEditorState.update { currentState ->
-            currentState.copy(isTagsButtonEnabled = enabled)
-        }
-    }
-
-    /**
-     * Enable or disable the Cards button
-     */
-    fun setCardsButtonEnabled(enabled: Boolean) {
-        _noteEditorState.update { currentState ->
-            currentState.copy(isCardsButtonEnabled = enabled)
         }
     }
 
