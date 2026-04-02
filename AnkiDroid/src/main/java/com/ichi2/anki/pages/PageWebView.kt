@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -146,6 +147,8 @@ private fun PageWebViewInternal(
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val backgroundColorArgb = remember(backgroundColor) { backgroundColor.toArgb() }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(jsCommands, webViewRef, lifecycleOwner) {
@@ -168,6 +171,7 @@ private fun PageWebViewInternal(
                     builtInZoomControls = true
                     setSupportZoom(true)
                 }
+                setBackgroundColor(backgroundColorArgb)
                 webViewClient = PageWebViewClient().apply {
                     onPageFinishedCallbacks.add { webView ->
                         isLoading = false
@@ -196,6 +200,7 @@ private fun PageWebViewInternal(
             }
         }, onRelease = { webView ->
             webView.stopLoading()
+            (webView.webViewClient as? PageWebViewClient)?.release()
             webView.webViewClient = android.webkit.WebViewClient()
             webView.destroy()
             webViewRef = null

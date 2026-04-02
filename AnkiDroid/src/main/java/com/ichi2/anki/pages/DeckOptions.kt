@@ -56,6 +56,7 @@ import timber.log.Timber
 @NeedsTest("17905: pressing back before the webpage is ready closes the screen")
 class DeckOptions : PageFragment() {
     private var webViewIsReady = false
+    private lateinit var pageWebViewClient: PageWebViewClient
 
     /**
      * Callback enabled when the manual is opened in the deck options.
@@ -185,7 +186,7 @@ class DeckOptions : PageFragment() {
         // going back on a manual page takes priority over closing a modal
         requireActivity().onBackPressedDispatcher.addCallback(this, onBackFromManual)
 
-        return object : PageWebViewClient() {
+        pageWebViewClient = object : PageWebViewClient() {
             private val ankiManualHostRegex = Regex("^docs\\.ankiweb\\.net$")
 
             /** @see onWebViewReady */
@@ -216,6 +217,8 @@ class DeckOptions : PageFragment() {
                 listenToModalShowHideEvents()
             }
         }
+
+        return pageWebViewClient
     }
 
     /**
@@ -245,9 +248,11 @@ class DeckOptions : PageFragment() {
 
     fun onWebViewReady() {
         Timber.d("WebView ready to receive input")
-        webViewIsReady = true
-        webView.isVisible = true
-        pageLoadingIndicator.isVisible = false
+        pageWebViewClient.runWhenPageStyled(webView) {
+            webViewIsReady = true
+            it.isVisible = true
+            pageLoadingIndicator.isVisible = false
+        }
     }
 
     companion object {

@@ -159,6 +159,9 @@ open class PageFragment(
     }
 
     override fun onDestroyView() {
+        if (this::webView.isInitialized) {
+            (webView.webViewClient as? PageWebViewClient)?.release()
+        }
         server.stop()
         super.onDestroyView()
     }
