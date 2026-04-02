@@ -20,7 +20,6 @@ package com.ichi2.anki
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Spinner
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.edit
@@ -665,14 +664,6 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
         val intent = editorShadow.peekNextStartedActivityForResult().intent
         return intent.extras ?: Bundle()
-    }
-
-    private fun Spinner.getItemIndex(toFind: Any): Int? {
-        for (i in 0 until count) {
-            if (this.getItemAtPosition(i) != toFind) continue
-            return i
-        }
-        return null
     }
 
     private val cardCount: Int
