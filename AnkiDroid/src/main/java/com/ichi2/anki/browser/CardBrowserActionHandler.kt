@@ -23,8 +23,6 @@ import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.DeckSelectionDialog
 import com.ichi2.anki.dialogs.GradeNowDialog
 import com.ichi2.anki.dialogs.SimpleMessageDialog
-import com.ichi2.anki.dialogs.tags.TagsDialog
-import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.CardId
@@ -180,19 +178,6 @@ class CardBrowserActionHandler(
         val (type, selectedIds) = viewModel.querySelectionExportData() ?: return
         ExportDialogFragment.newInstance(type, selectedIds)
             .show(activity.supportFragmentManager, "exportDialog")
-    }
-
-    fun showEditTagsDialog() = activity.launchCatchingTask {
-        if (!viewModel.hasSelectedAnyRows()) {
-            Timber.d("showEditTagsDialog: called with empty selection")
-            return@launchCatchingTask
-        }
-
-        val noteIds = viewModel.queryAllSelectedNoteIds()
-
-        TagsDialog(activity as TagsDialogListener).withArguments(
-            activity, TagsDialog.DialogType.EDIT_TAGS, noteIds
-        ).show(activity.supportFragmentManager, "edit_tags_dialog")
     }
 
     fun showCreateFilteredDeckDialog() {
