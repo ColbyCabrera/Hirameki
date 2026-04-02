@@ -81,12 +81,17 @@ class CardBrowserActionHandler(
 
     private fun moveSelectedCardsToDeck(did: DeckId) = activity.launchCatchingTask {
         val changed = withProgress { viewModel.moveSelectedCardsToDeck(did).await() }
-        viewModel.search(viewModel.searchQuery.value)
+        viewModel.launchSearchForCards()
         val message = activity.resources.getQuantityString(
             R.plurals.card_browser_cards_moved, changed.count, changed.count
         )
-        activity.showSnackbar(message) {
-            this.setAction(R.string.undo) { activity.launchCatchingTask { activity.undoAndShowSnackbar() } }
+        viewModel.emitSnackbarMessage(
+            message, activity.getString(R.string.undo)
+        ) {
+            activity.launchCatchingTask {
+                activity.undoAndShowSnackbar()
+                viewModel.launchSearchForCards()
+            }
         }
     }
 
@@ -140,7 +145,9 @@ class CardBrowserActionHandler(
                             title = activity.getString(R.string.vague_error),
                             message = activity.getString(R.string.card_browser_reposition_invalid_bounds),
                             reload = false
-                        ).show(activity.supportFragmentManager, "reposition_invalid_bounds_dialog")
+                        ).show(
+                            activity.supportFragmentManager, "reposition_invalid_bounds_dialog"
+                        )
                         return@launchCatchingTask
                     }
                     val repositionDialog = RepositionCardFragment.newInstance(
@@ -185,14 +192,12 @@ class CardBrowserActionHandler(
         val noteIds = viewModel.queryAllSelectedNoteIds()
 
         TagsDialog(activity as TagsDialogListener).withArguments(
-                activity,
-                TagsDialog.DialogType.EDIT_TAGS,
-                noteIds
-            ).show(activity.supportFragmentManager, "edit_tags_dialog")
+            activity, TagsDialog.DialogType.EDIT_TAGS, noteIds
+        ).show(activity.supportFragmentManager, "edit_tags_dialog")
     }
 
     fun showCreateFilteredDeckDialog() {
-       viewModel.showCreateFilteredDeckDialog()
+        viewModel.showCreateFilteredDeckDialog()
     }
 
     /**
@@ -217,8 +222,7 @@ class CardBrowserActionHandler(
 
     fun addNote() {
         val launcher = NoteEditorLauncher.AddNoteFromCardBrowser(
-            viewModel,
-            inCardBrowserActivity = activity is com.ichi2.anki.CardBrowser
+            viewModel, inCardBrowserActivity = activity is com.ichi2.anki.CardBrowser
         )
         launchAddNote(launcher.toIntent(activity))
     }
