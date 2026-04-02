@@ -207,14 +207,10 @@ class CardBrowserActionHandler(
      */
     fun warnUserIfInNotesOnlyMode(): Boolean {
         if (viewModel.cardsOrNotes == CardsOrNotes.NOTES && viewModel.hasSelectedAnyRows()) {
-            activity.showSnackbar(
+            viewModel.emitSnackbarMessage(
                 activity.getString(R.string.card_browser_unavailable_when_notes_mode),
-                duration = 5000
-            ) {
-                setAction(activity.getString(R.string.cards)) {
-                    viewModel.setCardsOrNotes(CardsOrNotes.CARDS)
-                }
-            }
+                activity.getString(R.string.cards)
+            ) { viewModel.setCardsOrNotes(CardsOrNotes.CARDS) }
             return true
         }
         return false
