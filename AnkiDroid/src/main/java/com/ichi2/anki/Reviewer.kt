@@ -425,7 +425,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             R.id.action_reschedule_card -> showDueDateDialog()
             R.id.action_delete -> {
                 Timber.i("Reviewer:: Delete note button pressed")
-                showDeleteNoteDialog()
+                viewModel.onEvent(ReviewerEvent.DeleteNote)
             }
 
             R.id.action_toggle_auto_advance -> {
@@ -866,6 +866,10 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     private fun isFlagItem(menuItem: MenuItem): Boolean = flagItemIds.contains(menuItem.itemId)
 
     override fun canAccessScheduler(): Boolean = true
+
+    override fun confirmDeleteCurrentNote() {
+        viewModel.confirmDeleteNote(currentCard?.id)
+    }
 
     override fun performReload() {
         launchCatchingTask { updateCardAndRedraw() }

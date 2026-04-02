@@ -20,6 +20,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
 import kotlinx.coroutines.flow.first
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -145,6 +146,23 @@ class ReviewerViewModelTest : RobolectricTest() {
         // After rating, we should be on the next card with answer hidden
         assertThat("Answer should be hidden after rating", state.isAnswerShown, equalTo(false))
         assertThat("New count should decrease", state.newCount, equalTo(1))
+    }
+
+    @Test
+    fun `confirmDeleteNote deletes current note and loads next card`() = runTest {
+        addBasicNote("Front1", "Back1")
+        addBasicNote("Front2", "Back2")
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        viewModel.confirmDeleteNote()
+        advanceRobolectricLooper()
+
+        val state = viewModel.state.first()
+        assertThat("Reviewer should continue with the next card", state.isFinished, equalTo(false))
+        assertThat("New count should decrease after deleting the current note", state.newCount, equalTo(1))
+        assertThat("The next card should be loaded", state.questionHtml, containsString("Front2"))
     }
 
     @Test

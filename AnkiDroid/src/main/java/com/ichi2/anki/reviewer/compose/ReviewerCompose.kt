@@ -56,6 +56,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -177,6 +179,7 @@ fun ReviewerContent(
     val currentContext by rememberUpdatedState(context)
     val snackbarHostState = remember { SnackbarHostState() }
     val layoutDirection = LocalLayoutDirection.current
+    val undoLabel = stringResource(R.string.undo)
 
     // Tags dialog state
     val showTagsDialog by viewModel.showTagsDialog.collectAsStateWithLifecycle()
@@ -226,6 +229,24 @@ fun ReviewerContent(
         state.mediaError?.let {
             snackbarHostState.showSnackbar(it.message)
             viewModel.onEvent(ReviewerEvent.MediaErrorHandled)
+        }
+    }
+
+    LaunchedEffect(viewModel.flowOfDeleteResult) {
+        viewModel.flowOfDeleteResult.collectLatest { count ->
+            val message = currentContext.resources.getQuantityString(
+                R.plurals.card_browser_cards_deleted,
+                count,
+                count,
+            )
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undoDelete()
+            }
         }
     }
 

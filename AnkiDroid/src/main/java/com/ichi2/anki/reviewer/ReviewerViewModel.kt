@@ -24,6 +24,7 @@ import androidx.core.text.htmlEncode
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import anki.scheduler.CardAnswer
+import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.cardviewer.CardMediaPlayer
@@ -43,6 +44,7 @@ import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.bodyClassForCardOrd
+import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.servicelayer.NoteService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -160,6 +162,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
+    val flowOfDeleteResult = MutableSharedFlow<Int>()
     private val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     private val cardMediaPlayer: CardMediaPlayer =
         CardMediaPlayer({ }, object : MediaErrorListener {
@@ -298,6 +301,26 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun deleteNote() {
         val card = currentCard ?: return
         viewModelScope.launch { _effect.emit(ReviewerEffect.ShowDeleteNoteDialog(card)) }
+    }
+
+    fun confirmDeleteNote(cardId: CardId? = currentCard?.id) {
+        val targetCardId = cardId ?: return
+        launchCardAction {
+            cardMediaPlayer.stop()
+            val deletedCount =
+                undoableOp {
+                    removeNotes(cardIds = listOf(targetCardId))
+                }.count
+            flowOfDeleteResult.emit(deletedCount)
+            loadCardSuspend()
+        }
+    }
+
+    fun undoDelete() = viewModelScope.launch {
+        withCol {
+            undo()
+        }
+        loadCardSuspend()
     }
 
     private fun editTags() {

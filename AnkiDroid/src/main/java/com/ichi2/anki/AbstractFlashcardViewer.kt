@@ -702,11 +702,15 @@ abstract class AbstractFlashcardViewer :
                     "AbstractFlashcardViewer:: OK button pressed to delete note %d",
                     currentCard!!.nid,
                 )
-                launchCatchingTask { stopCardMediaPlayer() }
-                deleteNoteWithoutConfirmation()
+                confirmDeleteCurrentNote()
             }
             negativeButton(R.string.dialog_cancel)
         }
+    }
+
+    protected open fun confirmDeleteCurrentNote() {
+        launchCatchingTask { stopCardMediaPlayer() }
+        deleteNoteWithoutConfirmation()
     }
 
     /** Consumers should use [.showDeleteNoteDialog]   */
