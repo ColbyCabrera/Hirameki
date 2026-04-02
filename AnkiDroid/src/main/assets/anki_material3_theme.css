@@ -70,13 +70,13 @@
     color: var(--deck-options-on-primary) !important;
 }
 
- .label-button.primary,
- .label-button.primary:hover,
- .label-button.primary:focus,
- .label-button.primary:focus-visible,
- .label-button.primary:active,
- .label-button.primary:disabled,
- .label-button.primary * {
+.label-button.primary,
+.label-button.primary:hover,
+.label-button.primary:focus,
+.label-button.primary:focus-visible,
+.label-button.primary:active,
+.label-button.primary:disabled,
+.label-button.primary * {
     color: var(--deck-options-on-primary) !important;
 }
 
