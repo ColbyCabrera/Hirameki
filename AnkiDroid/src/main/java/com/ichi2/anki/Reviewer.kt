@@ -131,11 +131,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     // ensure that the custom JS scheduler has persisted its SchedulingStates
     // back to the Reviewer before we save it to the database. If the custom
     // scheduler has not been configured, then it is safe to immediately set
-    // this to true
+    // this to true.
     //
     // This flag should be set to false when we show the front of the card
     // and only set to true once we know the custom scheduler has finished its
-    // execution, or set to true immediately if the custom scheduler has not
+    // execution. Or set to true immediately if the custom scheduler has not
     // been configured
     private var statesMutated = false
 
@@ -696,8 +696,8 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                     // set the undo title to a named action ('Undo Answer Card' etc...)
                     undoIcon.title = getColUnsafe.undoLabel()
                 } else {
-                    // In this case, there is no object word for the verb, "Undo",
-                    // so in some languages such as Japanese, which have pre/post-positional particle with the object,
+                    // In this case, there is no object word for the verb, "Undo".
+                    // So in some languages such as Japanese, which have pre- / post-positional particle with the object,
                     // we need to use the string for just "Undo" instead of the string for "Undo %s".
                     undoIcon.title = resources.getString(R.string.undo)
                     undoIcon.iconAlpha = Themes.ALPHA_ICON_DISABLED_LIGHT
@@ -1169,7 +1169,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         get() = currentCard?.id
 
     /**
-     * Whether or not dismiss note is available for current card and specified DismissType
+     * Whether dismiss note is available for current card and specified DismissType
      * @return true if there is another card of same note that could be dismissed
      */
     private fun suspendNoteAvailable(): Boolean {
