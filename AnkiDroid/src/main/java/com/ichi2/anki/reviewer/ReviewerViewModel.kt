@@ -313,7 +313,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         }
     }
 
-    fun undoDelete() = viewModelScope.launch {
+    fun undoDelete() = launchCardAction {
         withCol {
             undo()
         }
