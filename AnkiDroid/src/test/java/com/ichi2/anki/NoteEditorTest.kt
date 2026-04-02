@@ -20,7 +20,6 @@ package com.ichi2.anki
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Spinner
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.edit
@@ -337,6 +336,24 @@ class NoteEditorTest : RobolectricTest() {
             actual,
             contains(newFirstField, "")
         )
+        assertThat("sticky field content remains unsaved after save", editor.hasUnsavedChanges())
+    }
+
+    @Test
+    fun `pinned field remains unsaved after saving added note`() = runTest {
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.toggleStickyField(0)
+        idleMainLooper()
+        editor.setFieldValueFromUi(0, "Hello")
+        idleMainLooper()
+
+        editor.saveNote()
+        idleMainLooper()
+
+        assertThat(editor.currentFieldStrings.toList(), contains("Hello", ""))
+        assertThat("pinned field should still trigger discard warning", editor.hasUnsavedChanges())
     }
 
     @Test
@@ -572,6 +589,50 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
+    fun `saving added note refreshes deck baseline for discard tracking`() = runTest {
+        val alternateDeckId = addDeck("Alternate")
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.onDeckSelected(SelectableDeck.Deck(alternateDeckId, "Alternate"))
+        idleMainLooper()
+        editor.setFieldValueFromUi(0, "Hello")
+        idleMainLooper()
+
+        assertThat("deck change is unsaved before save", editor.hasUnsavedChanges())
+
+        editor.saveNote()
+        idleMainLooper()
+
+        assertThat("deck change is cleared after save", !editor.hasUnsavedChanges())
+    }
+
+    @Test
+    fun `saving added note refreshes note type baseline for discard tracking`() = runTest {
+        val alternateNoteTypeName =
+            addStandardNoteType(
+                "Basic 2",
+                arrayOf("Front", "Back"),
+                "{{Front}}",
+                "{{Back}}"
+            )
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType(alternateNoteTypeName)
+        idleMainLooper()
+        editor.setFieldValueFromUi(0, "Hello")
+        idleMainLooper()
+
+        assertThat("note type change is unsaved before save", editor.hasUnsavedChanges())
+
+        editor.saveNote()
+        idleMainLooper()
+
+        assertThat("note type change is cleared after save", !editor.hasUnsavedChanges())
+    }
+
+    @Test
     fun `editing card in filtered deck retains deck`() = runTest {
         val homeDeckId = addDeck("A")
         val note = addBasicNote().updateCards { did = homeDeckId }
@@ -621,14 +682,6 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
         val intent = editorShadow.peekNextStartedActivityForResult().intent
         return intent.extras ?: Bundle()
-    }
-
-    private fun Spinner.getItemIndex(toFind: Any): Int? {
-        for (i in 0 until count) {
-            if (this.getItemAtPosition(i) != toFind) continue
-            return i
-        }
-        return null
     }
 
     private val cardCount: Int

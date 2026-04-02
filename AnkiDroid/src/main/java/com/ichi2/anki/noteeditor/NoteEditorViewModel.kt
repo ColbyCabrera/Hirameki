@@ -448,13 +448,7 @@ class NoteEditorViewModel(
                     }
                 }
 
-                // Capture initial field values for change detection
-                initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
-                initialTags = _noteEditorState.value.tags
-
-                // Capture initial deck and note type for change detection
-                initialDeckId = _deckId.value
-                initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
+                refreshInitialEditorState()
 
                 // Load tags
                 loadTags(col)
@@ -464,9 +458,8 @@ class NoteEditorViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val errorMessage = "Failed to initialize editor: ${e.message ?: "Unknown error"}"
                 Timber.e(e, "Error initializing note editor")
-                flushInitCallbacks(false, errorMessage)
+                flushInitCallbacks(false, e.message)
             } finally {
                 initializeJob = null
             }
@@ -984,9 +977,8 @@ class NoteEditorViewModel(
                         state.copy(fields = updatedFields)
                     }
 
-                    // Update initial field values after resetting for next note
-                    initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
-                    initialTags = _noteEditorState.value.tags
+                    refreshInitialSelectionState()
+
                 }
 
                 is SaveResult.UpdatedNote -> {
@@ -994,6 +986,8 @@ class NoteEditorViewModel(
                         // Update the cached card
                         _currentCard.value = saveResult.card
                     }
+
+                    refreshInitialEditorState()
                 }
             }
 
@@ -1252,18 +1246,18 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Check if there are unsaved changes.
-     *
-     * Checks field content, tags, deck selection, and note type changes.
+    * Check if there are unsaved changes.
+    *
+    * Checks field content, tags, sticky field toggles, deck selection, and note type changes.
      *
      * **Design Decision**: Deck and note type changes are intentionally counted as "unsaved changes"
      * for BOTH new notes and existing notes. While some may argue that selecting a deck/note type
      * for a new note is "initial setup" rather than a change, I prefer to show the discard dialog
      * to prevent accidental loss of user selections. This is a deliberate UX choice.
      *
-     * Note: The tracking variables (initialDeckId, initialNoteTypeId) are set once during
-     * initialization and not updated after intentional changes. This is intentional - any deviation
-     * from the initial state should trigger the warning, regardless of intermediate changes.
+      * Note: The full field and tag baseline is refreshed only when [refreshInitialEditorState] is
+      * called. After saving a newly added note, only deck and note type are re-baselined so sticky
+      * field content preserved for the next note still counts as unsaved work.
      */
     fun hasUnsavedChanges(): Boolean {
         // Manual check of field values against initial values
@@ -1273,12 +1267,23 @@ class NoteEditorViewModel(
         // Check tags
         if (_noteEditorState.value.tags != initialTags) return true
 
+          // Sticky toggles are transient editor state and should warn before being discarded.
+          if (hasTransientStickyChanges()) return true
+
         // Check deck change (applies to both new and existing notes - see docstring)
         if (initialDeckId != 0L && _deckId.value != initialDeckId) return true
 
         // Check note type change (applies to both new and existing notes - see docstring)
         val currentNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
         return initialNoteTypeId != 0L && currentNoteTypeId != initialNoteTypeId
+    }
+
+    private fun hasTransientStickyChanges(): Boolean {
+        val noteTypeFields = _currentNote.value?.notetype?.fields ?: return false
+        return _noteEditorState.value.fields.any { field ->
+            val isBaselineSticky = field.index < noteTypeFields.length() && noteTypeFields[field.index].sticky
+            field.isSticky != isBaselineSticky
+        }
     }
 
     private fun determineFocusIndex(): Int? {
@@ -1446,5 +1451,25 @@ class NoteEditorViewModel(
         viewModelScope.launch {
             _snackbarMessages.emit(message)
         }
+    }
+
+    /**
+     * Refresh the editor baseline used by [hasUnsavedChanges].
+     *
+     * Call this after saving a note, applying multimedia attachments, or making any other edits
+     * that should become the new clean state for fields, tags, deck selection, and note type.
+     *
+     * This updates [initialFieldValues], [initialTags], [initialDeckId], and
+     * [initialNoteTypeId] to match the current editor state.
+     */
+    fun refreshInitialEditorState() {
+        initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
+        initialTags = _noteEditorState.value.tags
+        refreshInitialSelectionState()
+    }
+
+    private fun refreshInitialSelectionState() {
+        initialDeckId = _deckId.value
+        initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
     }
 }
