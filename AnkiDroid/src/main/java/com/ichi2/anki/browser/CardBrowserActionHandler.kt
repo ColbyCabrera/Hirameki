@@ -36,7 +36,6 @@ import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.previewer.PreviewerFragment
 import com.ichi2.anki.scheduling.ForgetCardsDialog
 import com.ichi2.anki.scheduling.SetDueDateDialog
-import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.undoAndShowSnackbar
 import timber.log.Timber
 
@@ -236,7 +235,7 @@ class CardBrowserActionHandler(
     private fun ensureSelection(action: String): Boolean {
         if (!viewModel.hasSelectedAnyRows()) {
             Timber.i("Attempted $action - no cards selected")
-            activity.showSnackbar(activity.getString(R.string.card_browser_no_cards_selected))
+            viewModel.emitSnackbarMessage(activity.getString(R.string.card_browser_no_cards_selected))
             return false
         }
         return true
