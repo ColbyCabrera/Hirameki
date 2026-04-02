@@ -161,7 +161,8 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
-    val flowOfDeleteResult = MutableSharedFlow<Int>()
+    private val _flowOfDeleteResult = MutableSharedFlow<Int>()
+    val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
     private val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     private val cardMediaPlayer: CardMediaPlayer =
         CardMediaPlayer({ }, object : MediaErrorListener {
@@ -308,7 +309,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val deletedCount = undoableOp {
                 removeNotes(cardIds = listOf(targetCardId))
             }.count
-            flowOfDeleteResult.emit(deletedCount)
+            _flowOfDeleteResult.emit(deletedCount)
             loadCardSuspend()
         }
     }

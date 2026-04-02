@@ -194,8 +194,15 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                         // Handled in Compose
                     }
 
+                    is ReviewerEffect.ShowSnackbar -> {
+                        // Handled in Compose
+                    }
+
                     is ReviewerEffect.PerformRedo -> redo()
                     is ReviewerEffect.ToggleWhiteboard -> toggleWhiteboard()
+                    is ReviewerEffect.ShowDeleteNoteDialog -> {
+                        // Handled in Compose via ViewModel-backed delete dialog state
+                    }
                     // TagsDialog is now handled in Compose via ViewModel state
                     is ReviewerEffect.ShowDueDateDialog -> {
                         currentCard = effect.card
@@ -232,8 +239,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                         )
                         deckOptionsLauncher.launch(i)
                     }
-
-                    else -> {}
                 }
             }
         }
