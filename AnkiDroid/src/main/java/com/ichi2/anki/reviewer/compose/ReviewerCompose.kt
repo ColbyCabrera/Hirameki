@@ -83,7 +83,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -265,13 +264,6 @@ fun ReviewerContent(
             onConfirm = {
                 viewModel.confirmDeleteNote(pendingDeleteCardId)
                 pendingDeleteCardId = null
-            },
-            icon = {
-                Icon(
-                    painter = painterResource(R.drawable.warning_24px),
-                    tint = MaterialTheme.colorScheme.error,
-                    contentDescription = null,
-                )
             },
         )
     }
