@@ -448,13 +448,7 @@ class NoteEditorViewModel(
                     }
                 }
 
-                // Capture initial field values for change detection
-                initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
-                initialTags = _noteEditorState.value.tags
-
-                // Capture initial deck and note type for change detection
-                initialDeckId = _deckId.value
-                initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
+                refreshInitialEditorState()
 
                 // Load tags
                 loadTags(col)
@@ -464,9 +458,8 @@ class NoteEditorViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val errorMessage = "Failed to initialize editor: ${e.message ?: "Unknown error"}"
                 Timber.e(e, "Error initializing note editor")
-                flushInitCallbacks(false, errorMessage)
+                flushInitCallbacks(false, e.message)
             } finally {
                 initializeJob = null
             }
@@ -984,9 +977,6 @@ class NoteEditorViewModel(
                         state.copy(fields = updatedFields)
                     }
 
-                    // Update initial field values after resetting for next note
-                    initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
-                    initialTags = _noteEditorState.value.tags
                 }
 
                 is SaveResult.UpdatedNote -> {
@@ -996,6 +986,8 @@ class NoteEditorViewModel(
                     }
                 }
             }
+
+            refreshInitialEditorState()
 
             // Clear draft state after successful save
             clearDraftState()
@@ -1261,9 +1253,9 @@ class NoteEditorViewModel(
      * for a new note is "initial setup" rather than a change, I prefer to show the discard dialog
      * to prevent accidental loss of user selections. This is a deliberate UX choice.
      *
-     * Note: The tracking variables (initialDeckId, initialNoteTypeId) are set once during
-     * initialization and not updated after intentional changes. This is intentional - any deviation
-     * from the initial state should trigger the warning, regardless of intermediate changes.
+        * Note: The tracking variables are refreshed only when [refreshInitialEditorState] is called.
+        * Normal deck and note type changes still count as unsaved changes until the caller explicitly
+        * marks the current editor state as the new baseline.
      */
     fun hasUnsavedChanges(): Boolean {
         // Manual check of field values against initial values
@@ -1446,5 +1438,21 @@ class NoteEditorViewModel(
         viewModelScope.launch {
             _snackbarMessages.emit(message)
         }
+    }
+
+    /**
+     * Refresh the editor baseline used by [hasUnsavedChanges].
+     *
+     * Call this after saving a note, applying multimedia attachments, or making any other edits
+     * that should become the new clean state for fields, tags, deck selection, and note type.
+     *
+     * This updates [initialFieldValues], [initialTags], [initialDeckId], and
+     * [initialNoteTypeId] to match the current editor state.
+     */
+    fun refreshInitialEditorState() {
+        initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
+        initialTags = _noteEditorState.value.tags
+        initialDeckId = _deckId.value
+        initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
     }
 }
