@@ -50,12 +50,13 @@ open class PageWebViewClient : WebViewClient() {
     private var pendingVisualStateCallback: PendingVisualStateCallback? = null
     private var cachedMaterial3Colors: Material3Colors? = null
     private var cachedMaterial3ThemeCss: String? = null
-    private var cachedDeckOptionsCss: String? = null
+    private var cachedMaterial3ThemeAssetCss: String? = null
 
-    private fun loadDeckOptionsCss(webView: WebView): String = try {
-        webView.context.assets.open(DECK_OPTIONS_CSS_ASSET).bufferedReader().use { it.readText() }
+    private fun loadMaterial3ThemeCss(webView: WebView): String = try {
+        webView.context.assets.open(MATERIAL3_THEME_CSS_ASSET).bufferedReader()
+            .use { it.readText() }
     } catch (e: IOException) {
-        Timber.w(e, "Unable to load CSS asset %s", DECK_OPTIONS_CSS_ASSET)
+        Timber.w(e, "Unable to load CSS asset %s", MATERIAL3_THEME_CSS_ASSET)
         ""
     }
 
@@ -110,8 +111,8 @@ open class PageWebViewClient : WebViewClient() {
         val colors = Material3Colors.from(webView)
         cachedMaterial3ThemeCss?.takeIf { colors == cachedMaterial3Colors }?.let { return it }
 
-        val deckOptionsCss =
-            cachedDeckOptionsCss ?: loadDeckOptionsCss(webView).also { cachedDeckOptionsCss = it }
+        val assetCss = cachedMaterial3ThemeAssetCss
+            ?: loadMaterial3ThemeCss(webView).also { cachedMaterial3ThemeAssetCss = it }
 
         val css = with(colors) {
             """
@@ -176,7 +177,7 @@ open class PageWebViewClient : WebViewClient() {
                 --deck-options-on-tertiary-container: $onTertiaryContainerColor;
             }
 
-            $deckOptionsCss
+            $assetCss
         """.trimIndent()
         }
 
@@ -458,7 +459,7 @@ open class PageWebViewClient : WebViewClient() {
     }
 
     companion object {
-        private const val DECK_OPTIONS_CSS_ASSET = "anki_material3_theme.css"
+        private const val MATERIAL3_THEME_CSS_ASSET = "anki_material3_theme.css"
         private const val VISUAL_STATE_CALLBACK_TIMEOUT_MS = 300L
     }
 }
