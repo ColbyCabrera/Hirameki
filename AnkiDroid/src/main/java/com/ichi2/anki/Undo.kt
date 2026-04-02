@@ -23,6 +23,7 @@ import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.libanki.redoAvailable
 import com.ichi2.anki.libanki.undoAvailable
 import com.ichi2.anki.observability.undoableOp
+import com.ichi2.anki.snackbar.canProperlyShowSnackbars
 import com.ichi2.anki.snackbar.showSnackbar
 
 private suspend fun getUndoResultMessage(): String {
@@ -40,11 +41,19 @@ private suspend fun getUndoResultMessage(): String {
     }
 }
 
+private fun FragmentActivity.showUndoSnackbarMessage(message: String, duration: Int) {
+    when {
+        this is SnackbarForwarder -> forwardSnackbar(message)
+        canProperlyShowSnackbars() -> showSnackbar(message, duration)
+        else -> showThemedToast(this, message, false)
+    }
+}
+
 /** If there's an action pending in the review queue, undo it and show a snackbar */
 suspend fun FragmentActivity.undoAndShowSnackbar(duration: Int = Snackbar.LENGTH_SHORT) {
     withProgress {
         val message = getUndoResultMessage()
-        showSnackbar(message, duration)
+        showUndoSnackbarMessage(message, duration)
     }
 }
 
@@ -64,6 +73,6 @@ suspend fun FragmentActivity.redoAndShowSnackbar(duration: Int = Snackbar.LENGTH
         } else {
             TR.undoActionRedone(changes.operation)
         }
-        showSnackbar(message, duration)
+        showUndoSnackbarMessage(message, duration)
     }
 }
