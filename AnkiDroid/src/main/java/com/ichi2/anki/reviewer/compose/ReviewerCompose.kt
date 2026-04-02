@@ -54,9 +54,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -83,6 +83,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -93,7 +94,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
+import com.ichi2.anki.dialogs.compose.DeleteConfirmationDialog
 import com.ichi2.anki.dialogs.compose.TagsDialog
+import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
@@ -169,6 +172,7 @@ fun ReviewerContent(
     var showBrushOptions by remember { mutableStateOf(false) }
     var showEraserOptions by remember { mutableStateOf(false) }
     var brushIndexToRemove by remember { mutableStateOf<Int?>(null) }
+    var pendingDeleteCardId by remember { mutableStateOf<CardId?>(null) }
     var toolbarHeight by remember { mutableIntStateOf(0) }
     var whiteboardToolbarHeight by remember { mutableIntStateOf(0) }
     val toolbarHeightDp = with(LocalDensity.current) { toolbarHeight.toDp() }
@@ -218,6 +222,10 @@ fun ReviewerContent(
                     snackbarHostState.showSnackbar(effect.message)
                 }
 
+                is ReviewerEffect.ShowDeleteNoteDialog -> {
+                    pendingDeleteCardId = effect.card.id
+                }
+
                 else -> {
                     // All other effects are handled by the Activity
                 }
@@ -248,6 +256,24 @@ fun ReviewerContent(
                 viewModel.undoDelete()
             }
         }
+    }
+
+    if (pendingDeleteCardId != null) {
+        DeleteConfirmationDialog(
+            quantity = 1,
+            onDismissRequest = { pendingDeleteCardId = null },
+            onConfirm = {
+                viewModel.confirmDeleteNote(pendingDeleteCardId)
+                pendingDeleteCardId = null
+            },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.warning_24px),
+                    tint = MaterialTheme.colorScheme.error,
+                    contentDescription = null,
+                )
+            },
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

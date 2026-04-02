@@ -17,9 +17,12 @@
 package com.ichi2.anki.dialogs.compose
 
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,9 +34,17 @@ fun DeleteConfirmationDialog(
     quantity: Int,
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
+    icon: (@Composable () -> Unit)? = {
+        Icon(
+            painter = painterResource(R.drawable.warning_24px),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error
+        )
+    },
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
+        icon = icon,
         title = {
             Text(text = pluralStringResource(R.plurals.card_browser_delete_notes, quantity))
         },

@@ -197,11 +197,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                     is ReviewerEffect.PerformRedo -> redo()
                     is ReviewerEffect.ToggleWhiteboard -> toggleWhiteboard()
                     // TagsDialog is now handled in Compose via ViewModel state
-                    is ReviewerEffect.ShowDeleteNoteDialog -> {
-                        currentCard = effect.card
-                        showDeleteNoteDialog()
-                    }
-
                     is ReviewerEffect.ShowDueDateDialog -> {
                         currentCard = effect.card
                         showDueDateDialog()
@@ -866,10 +861,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     private fun isFlagItem(menuItem: MenuItem): Boolean = flagItemIds.contains(menuItem.itemId)
 
     override fun canAccessScheduler(): Boolean = true
-
-    override fun confirmDeleteCurrentNote() {
-        viewModel.confirmDeleteNote(currentCard?.id)
-    }
 
     override fun performReload() {
         launchCatchingTask { updateCardAndRedraw() }
