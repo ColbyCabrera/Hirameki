@@ -156,6 +156,10 @@ class ReviewerViewModelTest : RobolectricTest() {
         val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
         advanceRobolectricLooper()
 
+        val initialState = viewModel.state.first()
+        assertThat("Initial card should be loaded before deleting", initialState.questionHtml, containsString("Front1"))
+        assertThat("Should have 2 new cards before deleting", initialState.newCount, equalTo(2))
+
         viewModel.confirmDeleteNote()
         advanceRobolectricLooper()
 
