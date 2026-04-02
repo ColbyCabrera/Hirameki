@@ -336,6 +336,24 @@ class NoteEditorTest : RobolectricTest() {
             actual,
             contains(newFirstField, "")
         )
+        assertThat("sticky field content remains unsaved after save", editor.hasUnsavedChanges())
+    }
+
+    @Test
+    fun `pinned field remains unsaved after saving added note`() = runTest {
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.toggleStickyField(0)
+        idleMainLooper()
+        editor.setFieldValueFromUi(0, "Hello")
+        idleMainLooper()
+
+        editor.saveNote()
+        idleMainLooper()
+
+        assertThat(editor.currentFieldStrings.toList(), contains("Hello", ""))
+        assertThat("pinned field should still trigger discard warning", editor.hasUnsavedChanges())
     }
 
     @Test

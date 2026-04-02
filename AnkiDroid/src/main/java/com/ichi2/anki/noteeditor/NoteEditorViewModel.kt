@@ -977,6 +977,8 @@ class NoteEditorViewModel(
                         state.copy(fields = updatedFields)
                     }
 
+                    refreshInitialSelectionState()
+
                 }
 
                 is SaveResult.UpdatedNote -> {
@@ -984,10 +986,10 @@ class NoteEditorViewModel(
                         // Update the cached card
                         _currentCard.value = saveResult.card
                     }
+
+                    refreshInitialEditorState()
                 }
             }
-
-            refreshInitialEditorState()
 
             // Clear draft state after successful save
             clearDraftState()
@@ -1244,18 +1246,18 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Check if there are unsaved changes.
-     *
-     * Checks field content, tags, deck selection, and note type changes.
+    * Check if there are unsaved changes.
+    *
+    * Checks field content, tags, sticky field toggles, deck selection, and note type changes.
      *
      * **Design Decision**: Deck and note type changes are intentionally counted as "unsaved changes"
      * for BOTH new notes and existing notes. While some may argue that selecting a deck/note type
      * for a new note is "initial setup" rather than a change, I prefer to show the discard dialog
      * to prevent accidental loss of user selections. This is a deliberate UX choice.
      *
-        * Note: The tracking variables are refreshed only when [refreshInitialEditorState] is called.
-        * Normal deck and note type changes still count as unsaved changes until the caller explicitly
-        * marks the current editor state as the new baseline.
+      * Note: The full field and tag baseline is refreshed only when [refreshInitialEditorState] is
+      * called. After saving a newly added note, only deck and note type are re-baselined so sticky
+      * field content preserved for the next note still counts as unsaved work.
      */
     fun hasUnsavedChanges(): Boolean {
         // Manual check of field values against initial values
@@ -1265,12 +1267,23 @@ class NoteEditorViewModel(
         // Check tags
         if (_noteEditorState.value.tags != initialTags) return true
 
+          // Sticky toggles are transient editor state and should warn before being discarded.
+          if (hasTransientStickyChanges()) return true
+
         // Check deck change (applies to both new and existing notes - see docstring)
         if (initialDeckId != 0L && _deckId.value != initialDeckId) return true
 
         // Check note type change (applies to both new and existing notes - see docstring)
         val currentNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
         return initialNoteTypeId != 0L && currentNoteTypeId != initialNoteTypeId
+    }
+
+    private fun hasTransientStickyChanges(): Boolean {
+        val noteTypeFields = _currentNote.value?.notetype?.fields ?: return false
+        return _noteEditorState.value.fields.any { field ->
+            val isBaselineSticky = field.index < noteTypeFields.length() && noteTypeFields[field.index].sticky
+            field.isSticky != isBaselineSticky
+        }
     }
 
     private fun determineFocusIndex(): Int? {
@@ -1452,6 +1465,10 @@ class NoteEditorViewModel(
     fun refreshInitialEditorState() {
         initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
         initialTags = _noteEditorState.value.tags
+        refreshInitialSelectionState()
+    }
+
+    private fun refreshInitialSelectionState() {
         initialDeckId = _deckId.value
         initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
     }
