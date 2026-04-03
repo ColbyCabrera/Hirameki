@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import anki.collection.OpChanges
 import anki.frontend.SetSchedulingStatesRequest
 import anki.scheduler.CardAnswer.Rating
 import com.google.android.material.snackbar.Snackbar
@@ -131,11 +132,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     // ensure that the custom JS scheduler has persisted its SchedulingStates
     // back to the Reviewer before we save it to the database. If the custom
     // scheduler has not been configured, then it is safe to immediately set
-    // this to true
+    // this to true.
     //
     // This flag should be set to false when we show the front of the card
     // and only set to true once we know the custom scheduler has finished its
-    // execution, or set to true immediately if the custom scheduler has not
+    // execution. Or set to true immediately if the custom scheduler has not
     // been configured
     private var statesMutated = false
 
@@ -179,29 +180,31 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         composeView.setContent {
             AnkiDroidTheme {
                 com.ichi2.anki.reviewer.compose.ReviewerContent(
-                        viewModel = viewModel,
-                        whiteboardViewModel = whiteboardViewModel,
-                        voicePlaybackViewModel = voicePlaybackViewModel
-                    )
+                    viewModel = viewModel,
+                    whiteboardViewModel = whiteboardViewModel,
+                    voicePlaybackViewModel = voicePlaybackViewModel
+                )
             }
         }
 
         lifecycleScope.launch {
             viewModel.effect.collectLatest { effect ->
                 when (effect) {
-                    is ReviewerEffect.NavigateToDeckPicker -> finish()
+                    is ReviewerEffect.NavigateToDeckPicker -> closeReviewer(RESULT_NO_MORE_CARDS)
                     is ReviewerEffect.NavigateToEditCard -> {
+                        // Handled in Compose
+                    }
+
+                    is ReviewerEffect.ShowSnackbar -> {
                         // Handled in Compose
                     }
 
                     is ReviewerEffect.PerformRedo -> redo()
                     is ReviewerEffect.ToggleWhiteboard -> toggleWhiteboard()
-                    // TagsDialog is now handled in Compose via ViewModel state
                     is ReviewerEffect.ShowDeleteNoteDialog -> {
-                        currentCard = effect.card
-                        showDeleteNoteDialog()
+                        // Handled in Compose via ViewModel-backed delete dialog state
                     }
-
+                    // TagsDialog is now handled in Compose via ViewModel state
                     is ReviewerEffect.ShowDueDateDialog -> {
                         currentCard = effect.card
                         showDueDateDialog()
@@ -237,8 +240,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                         )
                         deckOptionsLauncher.launch(i)
                     }
-
-                    else -> {}
                 }
             }
         }
@@ -425,7 +426,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             R.id.action_reschedule_card -> showDueDateDialog()
             R.id.action_delete -> {
                 Timber.i("Reviewer:: Delete note button pressed")
-                showDeleteNoteDialog()
+                viewModel.onEvent(ReviewerEvent.DeleteNote)
             }
 
             R.id.action_toggle_auto_advance -> {
@@ -580,6 +581,16 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         super.closeReviewer(result)
     }
 
+    override fun opExecuted(
+        changes: OpChanges,
+        handler: Any?,
+    ) {
+        if (handler === viewModel) {
+            return
+        }
+        super.opExecuted(changes, handler)
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -701,8 +712,8 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                     // set the undo title to a named action ('Undo Answer Card' etc...)
                     undoIcon.title = getColUnsafe.undoLabel()
                 } else {
-                    // In this case, there is no object word for the verb, "Undo",
-                    // so in some languages such as Japanese, which have pre/post-positional particle with the object,
+                    // In this case, there is no object word for the verb, "Undo".
+                    // So in some languages such as Japanese, which have pre- / post-positional particle with the object,
                     // we need to use the string for just "Undo" instead of the string for "Undo %s".
                     undoIcon.title = resources.getString(R.string.undo)
                     undoIcon.iconAlpha = Themes.ALPHA_ICON_DISABLED_LIGHT
@@ -1026,6 +1037,11 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                 return true
             }
 
+            ViewerCommand.DELETE -> {
+                viewModel.onEvent(ReviewerEvent.DeleteNote)
+                return true
+            }
+
             ViewerCommand.MARK -> {
                 onMark(currentCard)
                 return true
@@ -1125,11 +1141,10 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     private fun getSchedulingStatesWithContext(): ByteArray {
         val state = queueState ?: return ByteArray(0)
         return state.schedulingStatesWithContext().toBuilder().mergeStates(
-                state.states.toBuilder().mergeCurrent(
-                        state.states.current.toBuilder().setCustomData(state.topCard.customData)
-                            .build(),
-                    ).build(),
-            ).build().toByteArray()
+            state.states.toBuilder().mergeCurrent(
+                state.states.current.toBuilder().setCustomData(state.topCard.customData).build(),
+            ).build(),
+        ).build().toByteArray()
     }
 
     private fun setSchedulingStates(bytes: ByteArray): ByteArray {
@@ -1169,7 +1184,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         get() = currentCard?.id
 
     /**
-     * Whether or not dismiss note is available for current card and specified DismissType
+     * Whether dismiss note is available for current card and specified DismissType
      * @return true if there is another card of same note that could be dismissed
      */
     private fun suspendNoteAvailable(): Boolean {

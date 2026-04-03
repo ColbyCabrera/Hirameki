@@ -18,8 +18,12 @@ package com.ichi2.anki.reviewer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -145,6 +149,84 @@ class ReviewerViewModelTest : RobolectricTest() {
         // After rating, we should be on the next card with answer hidden
         assertThat("Answer should be hidden after rating", state.isAnswerShown, equalTo(false))
         assertThat("New count should decrease", state.newCount, equalTo(1))
+    }
+
+    @Test
+    fun `confirmDeleteNote deletes current note and loads next card`() = runTest {
+        addBasicNote("Front1", "Back1")
+        addBasicNote("Front2", "Back2")
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        val initialState = viewModel.state.first()
+        assertThat("Initial card should be loaded before deleting", initialState.questionHtml, containsString("Front1"))
+        assertThat("Should have 2 new cards before deleting", initialState.newCount, equalTo(2))
+
+        viewModel.confirmDeleteNote()
+        advanceRobolectricLooper()
+
+        val state = viewModel.state.first()
+        assertThat("Reviewer should continue with the next card", state.isFinished, equalTo(false))
+        assertThat("New count should decrease after deleting the current note", state.newCount, equalTo(1))
+        assertThat("The next card should be loaded", state.questionHtml, containsString("Front2"))
+    }
+
+    @Test
+    fun `undoDelete restores note when undo is requested immediately from delete result`() = runTest {
+        addBasicNote("Front1", "Back1")
+        addBasicNote("Front2", "Back2")
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        var deletedCount: Int? = null
+        launch {
+            viewModel.flowOfDeleteResult.collect { count ->
+                deletedCount = count
+                viewModel.undoDelete()
+                cancel()
+            }
+        }
+        advanceUntilIdle()
+
+        viewModel.confirmDeleteNote()
+        advanceUntilIdle()
+        advanceRobolectricLooper()
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertThat("Delete result should report one deleted note", deletedCount, equalTo(1))
+        assertThat("Undo should restore the deleted note", col.noteCount(), equalTo(2))
+        assertThat("Review should continue after undo", state.isFinished, equalTo(false))
+    }
+
+    @Test
+    fun `undoDelete restores note after deleting the final card`() = runTest {
+        addBasicNote("Front1", "Back1")
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        var deletedCount: Int? = null
+        launch {
+            viewModel.flowOfDeleteResult.collect { count ->
+                deletedCount = count
+                viewModel.undoDelete()
+                cancel()
+            }
+        }
+        advanceUntilIdle()
+
+        viewModel.confirmDeleteNote()
+        advanceUntilIdle()
+        advanceRobolectricLooper()
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertThat("Delete result should report one deleted note", deletedCount, equalTo(1))
+        assertThat("Undo should restore the deleted note even after finishing review", col.noteCount(), equalTo(1))
+        assertThat("Review should resume after undo", state.isFinished, equalTo(false))
     }
 
     @Test

@@ -32,6 +32,7 @@ import anki.scheduler.UnburyDeckRequest
 import com.google.android.material.appbar.MaterialToolbar
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.FilteredDeckOptions
 import com.ichi2.anki.OnErrorListener
 import com.ichi2.anki.R
@@ -56,12 +57,11 @@ import com.ichi2.utils.show
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.round
 
-class CongratsPage :
-    PageFragment(),
-    ChangeManager.Subscriber {
+class CongratsPage : PageFragment(), ChangeManager.Subscriber {
     private val viewModel by viewModels<CongratsViewModel>()
 
     init {
@@ -85,40 +85,32 @@ class CongratsPage :
     ) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.onError
-            .flowWithLifecycle(lifecycle)
-            .onEach { errorMessage ->
-                AlertDialog
-                    .Builder(requireContext())
-                    .setTitle(R.string.vague_error)
-                    .setMessage(errorMessage)
-                    .show()
+        viewModel.onError.flowWithLifecycle(lifecycle).onEach { errorMessage ->
+                AlertDialog.Builder(requireContext()).setTitle(R.string.vague_error)
+                    .setMessage(errorMessage).show()
             }.launchIn(lifecycleScope)
 
-        viewModel.unburyState
-            .onEach { state ->
+        viewModel.unburyState.flowWithLifecycle(lifecycle).onEach { state ->
                 when (state) {
                     UnburyState.OpenStudy -> openStudyOptionsAndFinish()
                     UnburyState.SelectMode -> {
-                        val unburyOptions =
-                            mutableListOf(
-                                TR.studyingManuallyBuriedCards(),
-                                TR.studyingBuriedSiblings(),
-                                TR.studyingAllBuriedCards(),
-                            )
+                        val unburyOptions = mutableListOf(
+                            TR.studyingManuallyBuriedCards(),
+                            TR.studyingBuriedSiblings(),
+                            TR.studyingAllBuriedCards(),
+                        )
                         AlertDialog.Builder(requireContext()).show {
                             negativeButton(R.string.dialog_cancel)
                             listItemsAndMessage(
                                 TR.studyingWhatWouldYouLikeToUnbury(),
                                 unburyOptions,
                             ) { _, position ->
-                                val mode =
-                                    when (position) {
-                                        0 -> UnburyDeckRequest.Mode.USER_ONLY
-                                        1 -> UnburyDeckRequest.Mode.SCHED_ONLY
-                                        2 -> UnburyDeckRequest.Mode.ALL
-                                        else -> error("Unhandled unbury option: ${unburyOptions[position]}")
-                                    }
+                                val mode = when (position) {
+                                    0 -> UnburyDeckRequest.Mode.USER_ONLY
+                                    1 -> UnburyDeckRequest.Mode.SCHED_ONLY
+                                    2 -> UnburyDeckRequest.Mode.ALL
+                                    else -> error("Unhandled unbury option: ${unburyOptions[position]}")
+                                }
                                 viewModel.onUnburyModeSelected(mode)
                             }
                         }
@@ -126,9 +118,7 @@ class CongratsPage :
                 }
             }.launchIn(lifecycleScope)
 
-        viewModel.deckOptionsDestination
-            .flowWithLifecycle(lifecycle)
-            .onEach { destination ->
+        viewModel.deckOptionsDestination.flowWithLifecycle(lifecycle).onEach { destination ->
                 val intent = destination.toIntent(requireContext())
                 startActivity(intent, null)
             }.launchIn(lifecycleScope)
@@ -147,37 +137,38 @@ class CongratsPage :
             when (CustomStudyAction.fromBundle(bundle)) {
                 CustomStudyAction.CUSTOM_STUDY_SESSION,
                 CustomStudyAction.EXTEND_STUDY_LIMITS,
-                -> openStudyOptionsAndFinish()
+                    -> openStudyOptionsAndFinish()
             }
         }
     }
 
-    override val bridgeCommands =
-        mapOf(
-            "unbury" to { viewModel.onUnbury() },
-            "customStudy" to { onStudyMore() },
-        )
+    override val bridgeCommands = mapOf(
+        "unbury" to { viewModel.onUnbury() },
+        "customStudy" to { onStudyMore() },
+    )
 
     private fun openStudyOptionsAndFinish() {
-        val intent =
-            Intent(requireContext(), StudyOptionsComposeActivity::class.java).apply {
-                putExtra("withDeckOptions", false)
-            }
+        val intent = Intent(requireContext(), StudyOptionsComposeActivity::class.java).apply {
+            putExtra("withDeckOptions", false)
+        }
         startActivity(intent, null)
         requireActivity().finish()
     }
 
     private fun onStudyMore() {
         launchCatchingTask {
-            val customStudy = CustomStudyDialog.createInstance(deckId = withCol { decks.selected() })
+            val customStudy =
+                CustomStudyDialog.createInstance(deckId = withCol { decks.selected() })
             customStudy.show(childFragmentManager, null)
         }
     }
 
     companion object {
-        fun getIntent(context: Context): Intent = getIntent(context, path = "congrats", clazz = CongratsPage::class)
+        fun getIntent(context: Context): Intent =
+            getIntent(context, path = "congrats", clazz = CongratsPage::class)
 
-        private fun displayNewCongratsScreen(context: Context): Boolean = context.sharedPrefs().getBoolean("new_congrats_screen", false)
+        private fun displayNewCongratsScreen(context: Context): Boolean =
+            context.sharedPrefs().getBoolean("new_congrats_screen", false)
 
         fun display(activity: FragmentActivity) {
             if (displayNewCongratsScreen(activity)) {
@@ -203,10 +194,26 @@ class CongratsPage :
             if (cardsInDeck) {
                 activity.launchCatchingTask {
                     val message = getDeckFinishedMessage(activity)
-                    activity.showSnackbar(message)
+                    showReviewCompletionSnackbar(activity, message)
                 }
             } else {
-                activity.showSnackbar(R.string.studyoptions_no_cards_due)
+                showReviewCompletionSnackbar(
+                    activity,
+                    activity.getString(R.string.studyoptions_no_cards_due),
+                )
+            }
+        }
+
+        private fun showReviewCompletionSnackbar(
+            activity: FragmentActivity,
+            message: String,
+        ) {
+            if (activity is DeckPicker) {
+                activity.lifecycleScope.launch {
+                    activity.viewModel.showSnackbar(message)
+                }
+            } else {
+                activity.showSnackbar(message)
             }
         }
 
@@ -218,14 +225,13 @@ class CongratsPage :
                 return activity.getString(R.string.studyoptions_congrats_finished)
             }
             // https://github.com/ankitects/anki/blob/9b4dd54312de8798a3f2bee07892bb3a488d1f9b/ts/lib/tslib/time.ts#L22
-            val (unit, amount) =
-                if (secsUntilNextLearn < TIME_MINUTE) {
-                    "seconds" to secsUntilNextLearn.toDouble()
-                } else if (secsUntilNextLearn < TIME_HOUR) {
-                    "minutes" to secsUntilNextLearn / TIME_MINUTE
-                } else {
-                    "hours" to secsUntilNextLearn / TIME_HOUR
-                }
+            val (unit, amount) = if (secsUntilNextLearn < TIME_MINUTE) {
+                "seconds" to secsUntilNextLearn.toDouble()
+            } else if (secsUntilNextLearn < TIME_HOUR) {
+                "minutes" to secsUntilNextLearn / TIME_MINUTE
+            } else {
+                "hours" to secsUntilNextLearn / TIME_HOUR
+            }
 
             val nextLearnDue = TR.schedulingNextLearnDue(unit, round(amount).toInt())
             return activity.getString(R.string.studyoptions_congrats_next_due_in, nextLearnDue)
@@ -233,9 +239,7 @@ class CongratsPage :
     }
 }
 
-class CongratsViewModel :
-    ViewModel(),
-    OnErrorListener {
+class CongratsViewModel : ViewModel(), OnErrorListener {
     override val onError = MutableSharedFlow<String>()
     val unburyState = MutableSharedFlow<UnburyState>()
     val deckOptionsDestination = MutableSharedFlow<DeckOptionsDestination>()
@@ -278,29 +282,21 @@ class DeckOptionsDestination(
     private val deckId: DeckId,
     private val isFiltered: Boolean,
 ) : Destination {
-    override fun toIntent(context: Context): Intent =
-        if (isFiltered) {
-            FilteredDeckOptions.getIntent(context, deckId = deckId)
-        } else {
-            DeckOptions.getIntent(context, deckId)
-        }
+    override fun toIntent(context: Context): Intent = if (isFiltered) {
+        FilteredDeckOptions.getIntent(context, deckId = deckId)
+    } else {
+        DeckOptions.getIntent(context, deckId)
+    }
 
     companion object {
-        suspend fun fromDeckId(deckId: DeckId): DeckOptionsDestination =
+        @CheckResult
+        suspend fun fromCurrentDeck() = withCol {
+            val deckId = decks.getCurrentId()
             DeckOptionsDestination(
                 deckId = deckId,
-                isFiltered = withCol { decks.isFiltered(deckId) },
+                isFiltered = decks.isFiltered(deckId),
             )
-
-        @CheckResult
-        suspend fun fromCurrentDeck() =
-            withCol {
-                val deckId = decks.getCurrentId()
-                DeckOptionsDestination(
-                    deckId = deckId,
-                    isFiltered = decks.isFiltered(deckId),
-                )
-            }
+        }
     }
 }
 

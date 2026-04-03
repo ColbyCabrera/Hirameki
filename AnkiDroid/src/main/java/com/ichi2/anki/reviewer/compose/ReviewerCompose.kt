@@ -54,8 +54,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -91,7 +93,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.R
+import com.ichi2.anki.dialogs.compose.DeleteConfirmationDialog
 import com.ichi2.anki.dialogs.compose.TagsDialog
+import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
@@ -167,6 +171,7 @@ fun ReviewerContent(
     var showBrushOptions by remember { mutableStateOf(false) }
     var showEraserOptions by remember { mutableStateOf(false) }
     var brushIndexToRemove by remember { mutableStateOf<Int?>(null) }
+    var pendingDeleteCardId by rememberSaveable { mutableStateOf<CardId?>(null) }
     var toolbarHeight by remember { mutableIntStateOf(0) }
     var whiteboardToolbarHeight by remember { mutableIntStateOf(0) }
     val toolbarHeightDp = with(LocalDensity.current) { toolbarHeight.toDp() }
@@ -177,6 +182,7 @@ fun ReviewerContent(
     val currentContext by rememberUpdatedState(context)
     val snackbarHostState = remember { SnackbarHostState() }
     val layoutDirection = LocalLayoutDirection.current
+    val undoLabel = stringResource(R.string.undo)
 
     // Tags dialog state
     val showTagsDialog by viewModel.showTagsDialog.collectAsStateWithLifecycle()
@@ -215,6 +221,10 @@ fun ReviewerContent(
                     snackbarHostState.showSnackbar(effect.message)
                 }
 
+                is ReviewerEffect.ShowDeleteNoteDialog -> {
+                    pendingDeleteCardId = effect.card.id
+                }
+
                 else -> {
                     // All other effects are handled by the Activity
                 }
@@ -229,6 +239,35 @@ fun ReviewerContent(
         }
     }
 
+    LaunchedEffect(viewModel.flowOfDeleteResult) {
+        viewModel.flowOfDeleteResult.collectLatest { count ->
+            val message = currentContext.resources.getQuantityString(
+                R.plurals.card_browser_cards_deleted,
+                count,
+                count,
+            )
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undoDelete()
+            }
+        }
+    }
+
+    pendingDeleteCardId?.let { id ->
+        DeleteConfirmationDialog(
+            quantity = 1,
+            onDismissRequest = { pendingDeleteCardId = null },
+            onConfirm = {
+                viewModel.confirmDeleteNote(id)
+                pendingDeleteCardId = null
+            },
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(snackbarHost = {
             SnackbarHost(
@@ -238,8 +277,8 @@ fun ReviewerContent(
                     snackbarData = data,
                     containerColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.onSecondary,
-                    actionColor = MaterialTheme.colorScheme.primary,
-                    dismissActionContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    actionColor = MaterialTheme.colorScheme.onSecondary,
+                    dismissActionContentColor = MaterialTheme.colorScheme.onSecondary,
                 )
             }
         }, topBar = {

@@ -24,7 +24,7 @@ import androidx.core.text.htmlEncode
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import anki.scheduler.CardAnswer
-import com.ichi2.anki.CollectionManager
+import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
 import com.ichi2.anki.cardviewer.CardMediaPlayer
 import com.ichi2.anki.cardviewer.MediaErrorBehavior
@@ -34,11 +34,14 @@ import com.ichi2.anki.cardviewer.TypeAnswer
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
+import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Sound
 import com.ichi2.anki.libanki.SoundOrVideoTag
-import com.ichi2.anki.libanki.TemplateManager
+import com.ichi2.anki.libanki.Tags
+import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.libanki.sched.CurrentQueueState
+import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
@@ -160,6 +163,8 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
+    private val _flowOfDeleteResult = MutableSharedFlow<Int>()
+    val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
     private val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     private val cardMediaPlayer: CardMediaPlayer =
         CardMediaPlayer({ }, object : MediaErrorListener {
@@ -192,6 +197,15 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     /** A job that is running for the current card. This is used to prevent multiple actions from running at the same time. */
     private var cardActionJob: Job? = null
 
+    private fun trackCardAction(job: Job) {
+        cardActionJob = job
+        job.invokeOnCompletion {
+            if (cardActionJob === job) {
+                cardActionJob = null
+            }
+        }
+    }
+
     /**
      * Launches a card action job, preventing concurrent execution.
      * If another job is active or the reviewer is finished, the new action is ignored.
@@ -199,11 +213,26 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
      */
     private fun launchCardAction(block: suspend () -> Unit) {
         if (cardActionJob?.isActive == true || _state.value.isFinished) return
-        cardActionJob = viewModelScope.launch {
+        trackCardAction(viewModelScope.launch {
             block()
-        }.also {
-            it.invokeOnCompletion { cardActionJob = null }
+        })
+    }
+
+    /**
+     * Enqueues a card action behind the current in-flight action instead of dropping it.
+     * This is used for delete undo so it still runs if a delete-triggered reload is completing.
+     */
+    private fun enqueueCardAction(block: suspend () -> Unit) {
+        val currentJob = cardActionJob
+        if (currentJob?.isActive != true) {
+            trackCardAction(viewModelScope.launch { block() })
+            return
         }
+
+        trackCardAction(viewModelScope.launch {
+            currentJob.join()
+            block()
+        })
     }
 
     init {
@@ -221,15 +250,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val path = uri.substring(AnkiServer.ANKI_PREFIX.length)
             when {
                 path.startsWith("jsapi/") -> {
-                    val api = checkNotNull(jsApi) { "jsApi must be set before handling jsapi/ requests" }
+                    val api =
+                        checkNotNull(jsApi) { "jsApi must be set before handling jsapi/ requests" }
                     api.handleJsApiRequest(
-                        path.substring("jsapi/".length),
-                        bytes,
-                        returnDefaultValues = false
+                        path.substring("jsapi/".length), bytes, returnDefaultValues = false
                     )
                 }
 
-                path == "i18nResources" -> CollectionManager.withCol { i18nResourcesRaw(bytes) }
+                path == "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
                 else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
             }
         } else {
@@ -300,6 +328,27 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         viewModelScope.launch { _effect.emit(ReviewerEffect.ShowDeleteNoteDialog(card)) }
     }
 
+    fun confirmDeleteNote(cardId: CardId? = currentCard?.id) {
+        val targetCardId = cardId ?: return
+        launchCardAction {
+            cardMediaPlayer.stop()
+            val deletedCount = undoableOp(this@ReviewerViewModel) {
+                removeNotes(cardIds = listOf(targetCardId))
+            }.count
+            loadCardSuspend()
+            _flowOfDeleteResult.emit(deletedCount)
+        }
+    }
+
+    fun undoDelete() {
+        enqueueCardAction {
+            undoableOp(this@ReviewerViewModel) {
+                undo()
+            }
+            loadCardSuspend()
+        }
+    }
+
     private fun editTags() {
         currentCard ?: return
         viewModelScope.launch {
@@ -312,7 +361,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         val card = currentCard ?: return
         _tagsState.value = TagsState.Loading
 
-        CollectionManager.withCol {
+        withCol {
             val note = card.note(this)
             val allTags = this.tags.all().sorted()
             _currentNoteTags.value = note.tags.toSet()
@@ -345,7 +394,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     fun updateNoteTags(newTags: Set<String>) {
         val card = currentCard ?: return
         viewModelScope.launch {
-            CollectionManager.withCol {
+            withCol {
                 val note = card.note(this)
                 note.setTagsFromStr(this, newTags.joinToString(" "))
                 this.updateNote(note)
@@ -361,13 +410,13 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     /**
      * Registers a new tag in the collection by expanding it in the tag hierarchy.
      * This method was formerly called addTag, but has been renamed to registerNewTag to clarify
-     * its purpose: it ensures the tag exists and is expanded via [setCollapsed] using
-     * [CollectionManager.withCol], then refreshes the available tags via [loadTagsForCurrentCard].
+     * its purpose: it ensures the tag exists and is expanded via [Tags.setCollapsed] using
+     * [withCol], then refreshes the available tags via [loadTagsForCurrentCard].
      * It does not directly attach the tag to the current note.
      */
     fun registerNewTag(tag: String) {
         viewModelScope.launch {
-            CollectionManager.withCol {
+            withCol {
                 this.tags.setCollapsed(tag, collapsed = false)
             }
             // Refresh tags list
@@ -391,7 +440,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         val card = currentCard ?: return
 
         cardMediaPlayer.loadCardAvTags(card)
-        CollectionManager.withCol {
+        withCol {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this, reload = true)
@@ -443,7 +492,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun playAudio(side: String, index: Int) {
         viewModelScope.launch {
             val card = currentCard ?: return@launch
-            val avTag = CollectionManager.withCol {
+            val avTag = withCol {
                 val renderOutput = card.renderOutput(this)
                 when (side) {
                     "q" -> renderOutput.questionAvTags.getOrNull(index)
@@ -465,7 +514,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private fun loadCard() = launchCardAction { loadCardSuspend() }
 
-    private suspend fun getNextCard(): Pair<Card, CurrentQueueState>? = CollectionManager.withCol {
+    private suspend fun getNextCard(): Pair<Card, CurrentQueueState>? = withCol {
         this.sched.currentQueueState()?.let {
             it.topCard.renderOutput(this, reload = true)
             Pair(it.topCard, it)
@@ -489,7 +538,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         currentCard = card
         queueState = queue
         cardMediaPlayer.loadCardAvTags(card)
-        CollectionManager.withCol {
+        withCol {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
             val renderOutput = card.renderOutput(this)
@@ -527,7 +576,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         val queue = queueState ?: return
 
         launchCardAction {
-            CollectionManager.withCol {
+            withCol {
                 val labels = this.sched.describeNextStates(queue.states)
                 typeAnswer.input = _state.value.typedAnswer
                 val renderOutput = card.renderOutput(this)
@@ -554,7 +603,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
         launchCardAction {
             var wasLeech = false
-            CollectionManager.withCol {
+            withCol {
                 this.sched.answerCard(queue, rating).also {
                     wasLeech = this.sched.stateIsLeech(queue.states.again)
                 }
@@ -592,7 +641,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun toggleMark() {
         viewModelScope.launch {
             val card = currentCard ?: return@launch
-            val note = CollectionManager.withCol {
+            val note = withCol {
                 card.note(this)
             }
             NoteService.toggleMark(note)
@@ -603,7 +652,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun setFlag(flag: Int) {
         viewModelScope.launch {
             val card = currentCard ?: return@launch
-            CollectionManager.withCol {
+            withCol {
                 this.setUserFlagForCards(listOf(card.id), flag)
             }
             _state.update { it.copy(flag = flag) }
@@ -621,7 +670,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private fun buryCard() {
         performCardAction { card ->
-            CollectionManager.withCol {
+            withCol {
                 this.sched.buryCards(listOf(card.id))
             }
         }
@@ -629,16 +678,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private fun suspendCard() {
         performCardAction { card ->
-            CollectionManager.withCol {
+            withCol {
                 this.sched.suspendCards(listOf(card.id))
             }
         }
     }
 
     private fun processHtml(
-        html: String,
-        renderOutput: TemplateManager.TemplateRenderContext.TemplateRenderOutput,
-        collection: com.ichi2.anki.libanki.Collection
+        html: String, renderOutput: TemplateRenderOutput, collection: Collection
     ): String {
         val escapedHtml = collection.media.escapeMediaFilenames(html)
         val processedHtml = Sound.replaceAvRefsWith(escapedHtml, renderOutput) { avTag, avRef ->
