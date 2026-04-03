@@ -54,7 +54,6 @@ import android.webkit.WebView
 import android.webkit.WebView.HitTestResult
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import android.widget.RelativeLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
@@ -120,8 +119,6 @@ import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.CongratsPage
 import com.ichi2.anki.pages.PostRequestHandler
-import com.ichi2.anki.preferences.AccessibilitySettingsFragment
-import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.AutomaticAnswer
 import com.ichi2.anki.reviewer.AutomaticAnswer.AutomaticallyAnswered
@@ -190,7 +187,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     private var doubleScrolling = false
     private var gesturesEnabled = false
     private var largeAnswerButtons = false
-    protected var answerButtonsPosition: String? = "bottom"
     private var doubleTapTimeInterval = DEFAULT_DOUBLE_TAP_TIME_INTERVAL
 
     // Android WebView
@@ -222,17 +218,9 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     private var cardFrame: FrameLayout? = null
     private var touchLayer: FrameLayout? = null
-    protected var topBarLayout: RelativeLayout? = null
     private var previousAnswerIndicator: PreviousAnswerIndicator? = null
 
     private var currentEase: Rating? = null
-
-    /**
-     * A record of the last time the "show answer" or ease buttons were pressed. We keep track
-     * of this time to ignore accidental button presses.
-     */
-    @VisibleForTesting
-    protected var lastClickTime: Long = 0
 
     /**
      * Swipe Detection
@@ -846,8 +834,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         }
     }
 
-    protected fun shouldShowNextReviewTime(): Boolean = showNextReviewTime
-
     protected open fun initControls() {
         cardFrame?.visibility = View.VISIBLE
         previousAnswerIndicator!!.setVisibility(View.VISIBLE)
@@ -1450,30 +1436,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     protected open fun performClickWithVisualFeedback(rating: Rating) {
         // Delay could potentially be lower - testing with 20 left a visible "click"
-    }
-
-    private fun showMinimalClickHint() {
-        if (minimalClickPrefHintShown) {
-            return
-        }
-
-        minimalClickPrefHintShown = true
-
-        showSnackbar(
-            getString(
-                R.string.show_answer_hint_long_press,
-                getString(R.string.pref_show_answer_long_press_time),
-            ),
-            minimalClickSpeed + ReviewerConstants.ACTION_SNACKBAR_DURATION_MS,
-        ) {
-            setAction(R.string.settings) {
-                val settingsIntent = PreferencesActivity.getIntent(
-                    this@AbstractFlashcardViewer,
-                    AccessibilitySettingsFragment::class,
-                )
-                startActivity(settingsIntent)
-            }
-        }
     }
 
     // ----------------------------------------------------------------------------
@@ -2310,12 +2272,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         const val RESULT_DEFAULT = 50
         const val RESULT_NO_MORE_CARDS = 52
 
-        /**
-         * Time to wait in milliseconds before resuming fullscreen mode
-         *
-         * Should be protected, using non-JVM static members protected in the superclass companion is unsupported yet
-         */
-        const val INITIAL_HIDE_DELAY = 200
         internal var displayAnswer = false
         const val DEFAULT_DOUBLE_TAP_TIME_INTERVAL = 200
 
@@ -2324,11 +2280,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
         // Android design spec for the size of the status bar.
         private const val NO_GESTURE_BORDER_DIP = 24
-
-        // maximum screen distance from initial touch where we will consider a click related to the touch
-        private const val CLICK_ACTION_THRESHOLD = 200
-
-        private var minimalClickPrefHintShown = false
 
         /**
          * @return if [gesture] is a swipe, a transition to the same direction of the swipe
