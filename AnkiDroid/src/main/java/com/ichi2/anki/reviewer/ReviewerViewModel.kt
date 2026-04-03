@@ -37,6 +37,7 @@ import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Sound
 import com.ichi2.anki.libanki.SoundOrVideoTag
+import com.ichi2.anki.libanki.Tags
 import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.libanki.sched.CurrentQueueState
@@ -331,7 +332,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         val targetCardId = cardId ?: return
         launchCardAction {
             cardMediaPlayer.stop()
-            val deletedCount = undoableOp {
+            val deletedCount = undoableOp(this@ReviewerViewModel) {
                 removeNotes(cardIds = listOf(targetCardId))
             }.count
             loadCardSuspend()
@@ -341,7 +342,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     fun undoDelete() {
         enqueueCardAction {
-            withCol {
+            undoableOp(this@ReviewerViewModel) {
                 undo()
             }
             loadCardSuspend()
@@ -409,7 +410,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     /**
      * Registers a new tag in the collection by expanding it in the tag hierarchy.
      * This method was formerly called addTag, but has been renamed to registerNewTag to clarify
-     * its purpose: it ensures the tag exists and is expanded via [setCollapsed] using
+     * its purpose: it ensures the tag exists and is expanded via [Tags.setCollapsed] using
      * [withCol], then refreshes the available tags via [loadTagsForCurrentCard].
      * It does not directly attach the tag to the current note.
      */

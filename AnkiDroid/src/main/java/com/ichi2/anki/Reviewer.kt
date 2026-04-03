@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import anki.collection.OpChanges
 import anki.frontend.SetSchedulingStatesRequest
 import anki.scheduler.CardAnswer.Rating
 import com.google.android.material.snackbar.Snackbar
@@ -179,10 +180,10 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         composeView.setContent {
             AnkiDroidTheme {
                 com.ichi2.anki.reviewer.compose.ReviewerContent(
-                        viewModel = viewModel,
-                        whiteboardViewModel = whiteboardViewModel,
-                        voicePlaybackViewModel = voicePlaybackViewModel
-                    )
+                    viewModel = viewModel,
+                    whiteboardViewModel = whiteboardViewModel,
+                    voicePlaybackViewModel = voicePlaybackViewModel
+                )
             }
         }
 
@@ -578,6 +579,16 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         // Discard the recording (which deletes the temp file)
         voicePlaybackViewModel.discardRecording()
         super.closeReviewer(result)
+    }
+
+    override fun opExecuted(
+        changes: OpChanges,
+        handler: Any?,
+    ) {
+        if (handler === viewModel) {
+            return
+        }
+        super.opExecuted(changes, handler)
     }
 
     override fun onRequestPermissionsResult(
@@ -1130,11 +1141,10 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     private fun getSchedulingStatesWithContext(): ByteArray {
         val state = queueState ?: return ByteArray(0)
         return state.schedulingStatesWithContext().toBuilder().mergeStates(
-                state.states.toBuilder().mergeCurrent(
-                        state.states.current.toBuilder().setCustomData(state.topCard.customData)
-                            .build(),
-                    ).build(),
-            ).build().toByteArray()
+            state.states.toBuilder().mergeCurrent(
+                state.states.current.toBuilder().setCustomData(state.topCard.customData).build(),
+            ).build(),
+        ).build().toByteArray()
     }
 
     private fun setSchedulingStates(bytes: ByteArray): ByteArray {
