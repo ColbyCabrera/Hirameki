@@ -656,210 +656,164 @@ class NoteEditorViewModel(
     }
 
     /**
-     * Select a note type
+     * Switches the editor to a different note type (model), migrating field data by name.
+     *
+     * This is the primary entry point for the note-type picker. The operation involves
+     * several coordinated steps to ensure the collection, deck, and editor state all
+     * stay in sync:
+     *
+     * 1. **Resolve & validate** – Look up the target note type by [noteTypeName] and
+     *    short-circuit if it is already active.
+     * 2. **Persist to collection** – Set the new note type as current, associate it
+     *    with the active deck (`mid` key), and invalidate the notetype cache so
+     *    subsequent reads return up-to-date JSON.
+     * 3. **Determine target deck** – Honor the user's
+     *    [ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK] preference: either keep the
+     *    current deck or switch to the note type's default deck.
+     * 4. **Flush UI → model** – Write the latest field text from the UI state back into
+     *    the current [Note] so nothing is lost before migration.
+     * 5. **Create a new note & migrate fields** – Build a blank note for the new model,
+     *    then copy field values from the old note into matching fields by *name* (not
+     *    index), preserving data even when the field order or count differs. Tags are
+     *    also carried over.
+     * 6. **Update reactive state** – Push the new note, deck, and field definitions into
+     *    the UI via [_currentNote], [_deckId], and [_noteEditorState], then snapshot
+     *    the baseline for [hasUnsavedChanges].
+     *
+     * All collection / IO work runs on [ioDispatcher]; UI state updates happen on the
+     * main dispatcher after the IO block completes.
+     *
+     * @param noteTypeName Display name of the target note type (e.g. "Basic", "Cloze").
+     *   Must match [NotetypeJson.name] exactly; a mismatch logs a warning and no-ops.
+     * @see updateStateFromNoteWithNotetype
      */
     fun selectNoteType(noteTypeName: String) {
         viewModelScope.launch {
             try {
                 val col = collectionProvider()
-                ensureActive() // Check cancellation after getting collection
+                ensureActive()
+                
+                val currentNote = _currentNote.value
+                val currentDeckId = _deckId.value
+                val noteEditorState = _noteEditorState.value
 
-                // Perform all DB operations on IO dispatcher
                 val result = withContext(ioDispatcher) {
+
+                    // --- 1. Resolve the target note type by name ---
                     val notetype = col.notetypes.all().find { it.name == noteTypeName }
                     if (notetype == null) {
                         Timber.w("Note type '%s' not found", noteTypeName)
                         return@withContext null
                     }
 
-                    // Check if we're already using this note type
-                    val currentNote = _currentNote.value
-                    if (currentNote != null) {
+                    // No-op when the user re-selects the already-active note type.
+                    if (currentNote != null && currentNote.notetype.id == notetype.id) {
                         Timber.d(
-                            "Current note type: '%s' (id: %d)",
-                            currentNote.notetype.name,
-                            currentNote.notetype.id
+                            "Note type '%s' is already selected, skipping change", noteTypeName
                         )
-                        if (currentNote.notetype.id == notetype.id) {
-                            Timber.d(
-                                "Note type '%s' is already selected, skipping change", noteTypeName
-                            )
-                            return@withContext null
-                        }
-                    }
-
-                    ensureActive() // Check cancellation after notetype lookup
-
-                    Timber.i(
-                        "Changing note type from '%s' to '%s' (id: %d)",
-                        currentNote?.notetype?.name ?: "null",
-                        noteTypeName,
-                        notetype.id,
-                    )
-
-                    // Set the current note type in the collection
-                    col.notetypes.setCurrent(notetype)
-
-                    // Clear notetype cache to ensure we get the fresh notetype
-                    col.notetypes.clearCache()
-
-                    // Re-fetch the notetype to ensure we have the latest version
-                    val freshNotetype = col.notetypes.get(notetype.id)
-                    if (freshNotetype == null) {
-                        Timber.e("Failed to fetch fresh notetype after cache clear")
                         return@withContext null
                     }
 
-                    Timber.d(
-                        "Fresh notetype: name='%s', id=%d, fields=%d",
-                        freshNotetype.name,
-                        freshNotetype.id,
-                        freshNotetype.fields.length(),
-                    )
+                    // --- 2. Persist note type to collection & invalidate cache ---
+                    Timber.i("Changing note type to '%s' (id: %d)", noteTypeName, notetype.id)
+                    col.notetypes.setCurrent(notetype)
+                    // The cache must be cleared so that the subsequent `get()` returns
+                    // a freshly-parsed NotetypeJson with accurate field definitions.
+                    col.notetypes.clearCache()
 
-                    // Update the current deck to use this note type
+                    val freshNotetype = col.notetypes.get(notetype.id) ?: return@withContext null
+
+                    // Associate the current deck with this note type so Anki remembers
+                    // which model was last used in this deck ("mid" = model ID).
                     val currentDeck = col.decks.current()
                     currentDeck.put("mid", freshNotetype.id)
                     col.decks.save(currentDeck)
 
-                    // Calculate new deck ID if configuration says to use note type's default deck
+                    // --- 3. Determine the target deck ---
+                    // When "Add cards to the note type's default deck" is enabled,
+                    // switch to the note type's preferred deck; otherwise stay put.
                     val newDeckId =
                         if (!col.config.getBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK)) {
-                            Timber.d(
-                                "Updated deck ID to note type's default deck: %d", freshNotetype.did
-                            )
                             freshNotetype.did
                         } else {
-                            _deckId.value
+                            currentDeckId
                         }
 
-                    // Capture existing note to preserve matching field values
-                    val oldNote = _currentNote.value
-                    if (oldNote != null) {
-                        // Sync current UI fields to the old note so migration has the latest data
-                        _noteEditorState.value.fields.forEach { fieldState ->
-                            if (fieldState.index in oldNote.fields.indices) {
-                                oldNote.fields[fieldState.index] = NoteService.convertToHtmlNewline(
-                                    fieldState.value.text, replaceNewlines = true
-                                )
+                    // --- 4. Flush pending UI edits into the current Note object ---
+                    // The user may have typed text that hasn't been written to the Note
+                    // model yet. Sync it now so the migration step below sees the
+                    // latest content. Newlines are converted to <br> for storage.
+                    if (currentNote != null) {
+                        noteEditorState.fields.forEach { fieldState ->
+                            if (fieldState.index in currentNote.fields.indices) {
+                                currentNote.fields[fieldState.index] =
+                                    NoteService.convertToHtmlNewline(
+                                        fieldState.value.text, replaceNewlines = true
+                                    )
                             }
                         }
                     }
 
+                    // --- 5. Create a new note and migrate fields by name ---
                     val newNote = Note.fromNotetypeId(col, freshNotetype.id)
 
-                    Timber.d(
-                        "After Note.fromNotetypeId: newNote.notetype.name='%s', newNote.notetype.id=%d",
-                        newNote.notetype.name,
-                        newNote.notetype.id,
-                    )
-                    Timber.d(
-                        "Expected notetype.name='%s', notetype.id=%d",
-                        freshNotetype.name,
-                        freshNotetype.id
-                    )
+                    if (currentNote != null) {
+                        // Preserve the note ID so that an in-progress edit session
+                        // continues to reference the same database row.
+                        newNote.id = currentNote.id
 
-                    // --- Field Migration & Note ID Preservation ---
-                    // When switching note types, we attempt to preserve as much data as possible by mapping
-                    // existing field values to the new note structure based on matching field names.
-                    // We also transfer the note's ID to ensure that database updates target the correct
-                    // record rather than creating a duplicate, maintaining review history and internal integrity.
-                    if (oldNote != null) {
-                        ensureActive()
-
-                        // Preserve original note ID so updateNote targets the correct record
-                        // Note: guId, mod, usn have private setters and will be updated by col.updateNote()
-                        newNote.id = oldNote.id
-
-                        val oldNotetype = oldNote.notetype
-
-                        // Precompute a name-to-index mapping for the new fields.
-                        // This allows O(1) field lookups by name, avoiding O(N) searches inside the migration loop.
+                        // Build a name→index lookup for the *new* note type's fields
+                        // so we can match old fields to new fields by their display
+                        // name, regardless of position or total count.
                         val newFieldIndexByName =
                             freshNotetype.fields.withIndex().associate { it.value.name to it.index }
 
-                        // Iterate through the old fields and migrate values where field names match in the new type.
-                        // zip() safely pairs field definitions with their values, stopping at the end of the shortest collection.
-                        oldNotetype.fields.zip(oldNote.fields).forEach { (oldField, oldValue) ->
-                            val newIndex = newFieldIndexByName[oldField.name] ?: -1
-
-                            // If a field with the exact same name exists in the new note type, transfer its content.
-                            if (newIndex in newNote.fields.indices) {
-                                newNote.fields[newIndex] = oldValue
-                                Timber.v(
-                                    "Migrated field '%s' -> '%s': %s",
-                                    oldField.name,
-                                    freshNotetype.fields[newIndex].name,
-                                    oldValue,
-                                )
+                        currentNote.notetype.fields.zip(currentNote.fields)
+                            .forEach { (oldField, oldValue) ->
+                                val newIndex = newFieldIndexByName[oldField.name] ?: -1
+                                if (newIndex in newNote.fields.indices) {
+                                    newNote.fields[newIndex] = oldValue
+                                }
                             }
-                        }
 
-                        // Reapply current draft tags from the UI state
-                        val currentTags = _noteEditorState.value.tags
-                        if (currentTags.isNotEmpty()) {
-                            newNote.setTagsFromStr(col, currentTags.joinToString(" "))
-                            Timber.d(
-                                "Reapplied tags to new note: %s", currentTags.joinToString(", ")
-                            )
+                        // Carry over any tags the user has set during this session.
+                        if (noteEditorState.tags.isNotEmpty()) {
+                            newNote.setTagsFromStr(col, noteEditorState.tags.joinToString(" "))
                         }
-
-                        ensureActive() // Check cancellation after field copying and tag restoration
                     }
 
-                    Timber.d(
-                        "About to return result: newNote object id=%s, notetype.name='%s', notetype.id=%d, fields=%d",
-                        System.identityHashCode(newNote),
-                        newNote.notetype.name,
-                        newNote.notetype.id,
-                        newNote.fields.size,
-                    )
-
-                    // Return result data
                     Triple(newNote, freshNotetype, newDeckId)
                 }
 
-                // Back on Main dispatcher - update UI state
+                // --- 6. Push results into reactive UI state (main thread) ---
                 if (result != null) {
                     val (newNote, freshNotetype, newDeckId) = result
 
-                    // Update deck ID if needed
                     if (newDeckId != _deckId.value) {
                         _deckId.value = newDeckId
                     }
 
-                    Timber.d(
-                        "Setting _currentNote.value: newNote object id=%s, notetype.name='%s', notetype.id=%d",
-                        System.identityHashCode(newNote),
-                        newNote.notetype.name,
-                        newNote.notetype.id,
-                    )
-
-                    // Force StateFlow update by creating a new reference
-                    // Note: StateFlow uses equals() which only compares IDs, so we need to force the update
+                    // StateFlow does not emit when the same reference is re-assigned.
+                    // Toggling through `null` forces downstream collectors (e.g. the
+                    // field list Composable) to recompose with the new Note object.
                     _currentNote.value = null
                     _currentNote.value = newNote
 
-                    Timber.d(
-                        "After setting _currentNote.value: _currentNote.value object id=%s, notetype.name='%s', notetype.id=%d",
-                        System.identityHashCode(_currentNote.value),
-                        _currentNote.value?.notetype?.name,
-                        _currentNote.value?.notetype?.id,
-                    )
-
-                    // Pass the fresh notetype directly to avoid cache issues
+                    // Use the explicit notetype overload to avoid reading a potentially
+                    // stale `note.notetype` from the cache.
                     updateStateFromNoteWithNotetype(
                         col, _noteEditorState.value.isAddingNote, freshNotetype
                     )
 
-                    // Update initial field values after note type change
+                    // Snapshot the new field values as the "clean" baseline so that
+                    // hasUnsavedChanges() doesn't flag the migration itself as a change.
                     initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
-
                     persistDraftState()
 
                     Timber.d("Successfully changed note type to '%s'", noteTypeName)
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Timber.e(e, "Error changing note type")
             }
         }
