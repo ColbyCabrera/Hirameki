@@ -735,6 +735,17 @@ class NoteEditorViewModel(
 
                     // Capture existing note to preserve matching field values
                     val oldNote = _currentNote.value
+                    if (oldNote != null) {
+                        // Sync current UI fields to the old note so migration has the latest data
+                        _noteEditorState.value.fields.forEach { fieldState ->
+                            if (fieldState.index in oldNote.fields.indices) {
+                                oldNote.fields[fieldState.index] = NoteService.convertToHtmlNewline(
+                                    fieldState.value.text, replaceNewlines = true
+                                )
+                            }
+                        }
+                    }
+
                     val newNote = Note.fromNotetypeId(col, freshNotetype.id)
 
                     Timber.d(
@@ -748,7 +759,11 @@ class NoteEditorViewModel(
                         freshNotetype.id
                     )
 
-                    // Copy field values from old note to new note where field names match
+                    // --- Field Migration & Note ID Preservation ---
+                    // When switching note types, we attempt to preserve as much data as possible by mapping
+                    // existing field values to the new note structure based on matching field names.
+                    // We also transfer the note's ID to ensure that database updates target the correct
+                    // record rather than creating a duplicate, maintaining review history and internal integrity.
                     if (oldNote != null) {
                         ensureActive()
 
@@ -757,21 +772,26 @@ class NoteEditorViewModel(
                         newNote.id = oldNote.id
 
                         val oldNotetype = oldNote.notetype
-                        oldNotetype.fields.forEachIndexed { oldIndex, oldField ->
-                            if (oldIndex < oldNote.fields.size) {
-                                val oldValue = oldNote.fields[oldIndex]
-                                // Find matching field in new notetype
-                                val newIndex =
-                                    freshNotetype.fields.indexOfFirst { it.name == oldField.name }
-                                if (newIndex >= 0 && newIndex < newNote.fields.size) {
-                                    newNote.fields[newIndex] = oldValue
-                                    Timber.v(
-                                        "Copied field '%s' -> '%s': %s",
-                                        oldField.name,
-                                        freshNotetype.fields[newIndex].name,
-                                        oldValue,
-                                    )
-                                }
+
+                        // Precompute a name-to-index mapping for the new fields.
+                        // This allows O(1) field lookups by name, avoiding O(N) searches inside the migration loop.
+                        val newFieldIndexByName =
+                            freshNotetype.fields.withIndex().associate { it.value.name to it.index }
+
+                        // Iterate through the old fields and migrate values where field names match in the new type.
+                        // zip() safely pairs field definitions with their values, stopping at the end of the shortest collection.
+                        oldNotetype.fields.zip(oldNote.fields).forEach { (oldField, oldValue) ->
+                            val newIndex = newFieldIndexByName[oldField.name] ?: -1
+
+                            // If a field with the exact same name exists in the new note type, transfer its content.
+                            if (newIndex in newNote.fields.indices) {
+                                newNote.fields[newIndex] = oldValue
+                                Timber.v(
+                                    "Migrated field '%s' -> '%s': %s",
+                                    oldField.name,
+                                    freshNotetype.fields[newIndex].name,
+                                    oldValue,
+                                )
                             }
                         }
 
