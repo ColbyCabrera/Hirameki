@@ -496,13 +496,13 @@ class NoteEditorViewModel(
 
                     // Collect all tags from the notes
                     noteIds.asSequence().mapNotNull { noteId ->
-                            try {
-                                col.getNote(noteId).tags
-                            } catch (e: Exception) {
-                                Timber.w(e, "Error getting note tags for note $noteId")
-                                null
-                            }
-                        }.flatten().toSet()
+                        try {
+                            col.getNote(noteId).tags
+                        } catch (e: Exception) {
+                            Timber.w(e, "Error getting note tags for note $noteId")
+                            null
+                        }
+                    }.flatten().toSet()
                 } else {
                     emptySet()
                 }
@@ -682,8 +682,7 @@ class NoteEditorViewModel(
                         )
                         if (currentNote.notetype.id == notetype.id) {
                             Timber.d(
-                                "Note type '%s' is already selected, skipping change",
-                                noteTypeName
+                                "Note type '%s' is already selected, skipping change", noteTypeName
                             )
                             return@withContext null
                         }
@@ -727,8 +726,7 @@ class NoteEditorViewModel(
                     val newDeckId =
                         if (!col.config.getBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK)) {
                             Timber.d(
-                                "Updated deck ID to note type's default deck: %d",
-                                freshNotetype.did
+                                "Updated deck ID to note type's default deck: %d", freshNotetype.did
                             )
                             freshNotetype.did
                         } else {
@@ -782,8 +780,7 @@ class NoteEditorViewModel(
                         if (currentTags.isNotEmpty()) {
                             newNote.setTagsFromStr(col, currentTags.joinToString(" "))
                             Timber.d(
-                                "Reapplied tags to new note: %s",
-                                currentTags.joinToString(", ")
+                                "Reapplied tags to new note: %s", currentTags.joinToString(", ")
                             )
                         }
 
@@ -832,9 +829,7 @@ class NoteEditorViewModel(
 
                     // Pass the fresh notetype directly to avoid cache issues
                     updateStateFromNoteWithNotetype(
-                        col,
-                        _noteEditorState.value.isAddingNote,
-                        freshNotetype
+                        col, _noteEditorState.value.isAddingNote, freshNotetype
                     )
 
                     // Update initial field values after note type change
@@ -1246,18 +1241,18 @@ class NoteEditorViewModel(
     }
 
     /**
-    * Check if there are unsaved changes.
-    *
-    * Checks field content, tags, sticky field toggles, deck selection, and note type changes.
+     * Check if there are unsaved changes.
+     *
+     * Checks field content, tags, sticky field toggles, deck selection, and note type changes.
      *
      * **Design Decision**: Deck and note type changes are intentionally counted as "unsaved changes"
      * for BOTH new notes and existing notes. While some may argue that selecting a deck/note type
      * for a new note is "initial setup" rather than a change, I prefer to show the discard dialog
      * to prevent accidental loss of user selections. This is a deliberate UX choice.
      *
-      * Note: The full field and tag baseline is refreshed only when [refreshInitialEditorState] is
-      * called. After saving a newly added note, only deck and note type are re-baselined so sticky
-      * field content preserved for the next note still counts as unsaved work.
+     * Note: The full field and tag baseline is refreshed only when [refreshInitialEditorState] is
+     * called. After saving a newly added note, only deck and note type are re-baselined so sticky
+     * field content preserved for the next note still counts as unsaved work.
      */
     fun hasUnsavedChanges(): Boolean {
         // Manual check of field values against initial values
@@ -1267,8 +1262,8 @@ class NoteEditorViewModel(
         // Check tags
         if (_noteEditorState.value.tags != initialTags) return true
 
-          // Sticky toggles are transient editor state and should warn before being discarded.
-          if (hasTransientStickyChanges()) return true
+        // Sticky toggles are transient editor state and should warn before being discarded.
+        if (hasTransientStickyChanges()) return true
 
         // Check deck change (applies to both new and existing notes - see docstring)
         if (initialDeckId != 0L && _deckId.value != initialDeckId) return true
@@ -1281,7 +1276,8 @@ class NoteEditorViewModel(
     private fun hasTransientStickyChanges(): Boolean {
         val noteTypeFields = _currentNote.value?.notetype?.fields ?: return false
         return _noteEditorState.value.fields.any { field ->
-            val isBaselineSticky = field.index < noteTypeFields.length() && noteTypeFields[field.index].sticky
+            val isBaselineSticky =
+                field.index < noteTypeFields.length() && noteTypeFields[field.index].sticky
             field.isSticky != isBaselineSticky
         }
     }
