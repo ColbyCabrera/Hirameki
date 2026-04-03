@@ -90,7 +90,7 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
                     .setMessage(errorMessage).show()
             }.launchIn(lifecycleScope)
 
-        viewModel.unburyState.onEach { state ->
+        viewModel.unburyState.flowWithLifecycle(lifecycle).onEach { state ->
                 when (state) {
                     UnburyState.OpenStudy -> openStudyOptionsAndFinish()
                     UnburyState.SelectMode -> {
