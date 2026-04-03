@@ -15,43 +15,27 @@
  ****************************************************************************************/
 package com.ichi2.anki.noteeditor.compose
 
-import android.view.ViewTreeObserver
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.compose.ui.platform.LocalDensity
 
 /**
- * Remembers the IME (Input Method Editor/Keyboard) state.
- * Returns a [State] that is true when the keyboard is visible, false otherwise.
+ * Returns a [State] that tracks whether the soft keyboard is currently visible.
  *
- * This composable observes window insets changes to detect when the soft keyboard
- * appears or disappears, which is useful for adjusting UI layout accordingly.
+ * Useful for reacting to keyboard open/close events, e.g. auto-scrolling a form
+ * to keep fields accessible when the IME appears.
  *
- * @return State<Boolean> representing whether the keyboard is currently visible
+ * @return `true` while the keyboard is visible, `false` otherwise
  */
 @Composable
 fun rememberImeState(): State<Boolean> {
-    val imeState = remember {
-        mutableStateOf(false)
+    val density = LocalDensity.current
+    val imeInsets = WindowInsets.ime
+    return remember {
+        derivedStateOf { imeInsets.getBottom(density) > 0 }
     }
-
-    val view = LocalView.current
-    DisposableEffect(view) {
-        val listener = ViewTreeObserver.OnGlobalLayoutListener {
-            val isKeyboardOpen = ViewCompat.getRootWindowInsets(view)
-                ?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
-            imeState.value = isKeyboardOpen
-        }
-
-        view.viewTreeObserver.addOnGlobalLayoutListener(listener)
-        onDispose {
-            view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
-        }
-    }
-    return imeState
 }
