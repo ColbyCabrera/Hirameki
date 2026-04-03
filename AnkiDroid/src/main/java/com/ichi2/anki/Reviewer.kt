@@ -190,7 +190,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         lifecycleScope.launch {
             viewModel.effect.collectLatest { effect ->
                 when (effect) {
-                    is ReviewerEffect.NavigateToDeckPicker -> finish()
+                    is ReviewerEffect.NavigateToDeckPicker -> closeReviewer(RESULT_NO_MORE_CARDS)
                     is ReviewerEffect.NavigateToEditCard -> {
                         // Handled in Compose
                     }
