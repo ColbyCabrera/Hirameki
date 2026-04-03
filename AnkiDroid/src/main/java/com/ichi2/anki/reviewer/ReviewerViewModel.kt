@@ -34,9 +34,10 @@ import com.ichi2.anki.cardviewer.TypeAnswer
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
+import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Sound
 import com.ichi2.anki.libanki.SoundOrVideoTag
-import com.ichi2.anki.libanki.TemplateManager
+import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.libanki.sched.CurrentQueueState
 import com.ichi2.anki.observability.undoableOp
@@ -195,6 +196,15 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     /** A job that is running for the current card. This is used to prevent multiple actions from running at the same time. */
     private var cardActionJob: Job? = null
 
+    private fun trackCardAction(job: Job) {
+        cardActionJob = job
+        job.invokeOnCompletion {
+            if (cardActionJob === job) {
+                cardActionJob = null
+            }
+        }
+    }
+
     /**
      * Launches a card action job, preventing concurrent execution.
      * If another job is active or the reviewer is finished, the new action is ignored.
@@ -202,11 +212,26 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
      */
     private fun launchCardAction(block: suspend () -> Unit) {
         if (cardActionJob?.isActive == true || _state.value.isFinished) return
-        cardActionJob = viewModelScope.launch {
+        trackCardAction(viewModelScope.launch {
             block()
-        }.also {
-            it.invokeOnCompletion { cardActionJob = null }
+        })
+    }
+
+    /**
+     * Enqueues a card action behind the current in-flight action instead of dropping it.
+     * This is used for delete undo so it still runs if a delete-triggered reload is completing.
+     */
+    private fun enqueueCardAction(block: suspend () -> Unit) {
+        val currentJob = cardActionJob
+        if (currentJob?.isActive != true) {
+            trackCardAction(viewModelScope.launch { block() })
+            return
         }
+
+        trackCardAction(viewModelScope.launch {
+            currentJob.join()
+            block()
+        })
     }
 
     init {
@@ -309,16 +334,18 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val deletedCount = undoableOp {
                 removeNotes(cardIds = listOf(targetCardId))
             }.count
-            _flowOfDeleteResult.emit(deletedCount)
             loadCardSuspend()
+            _flowOfDeleteResult.emit(deletedCount)
         }
     }
 
-    fun undoDelete() = launchCardAction {
-        withCol {
-            undo()
+    fun undoDelete() {
+        enqueueCardAction {
+            withCol {
+                undo()
+            }
+            loadCardSuspend()
         }
-        loadCardSuspend()
     }
 
     private fun editTags() {
@@ -657,9 +684,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     }
 
     private fun processHtml(
-        html: String,
-        renderOutput: TemplateManager.TemplateRenderContext.TemplateRenderOutput,
-        collection: com.ichi2.anki.libanki.Collection
+        html: String, renderOutput: TemplateRenderOutput, collection: Collection
     ): String {
         val escapedHtml = collection.media.escapeMediaFilenames(html)
         val processedHtml = Sound.replaceAvRefsWith(escapedHtml, renderOutput) { avTag, avRef ->
