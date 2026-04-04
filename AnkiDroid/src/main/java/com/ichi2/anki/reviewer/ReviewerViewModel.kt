@@ -47,6 +47,7 @@ import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.bodyClassForCardOrd
 import com.ichi2.anki.servicelayer.NoteService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -438,6 +439,16 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private suspend fun reloadCardSuspend() {
         val card = currentCard ?: return
+
+        try {
+            withCol { card.load(this) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Card might have been deleted (e.g. note type changed to one with fewer templates)
+            loadCardSuspend()
+            return
+        }
 
         cardMediaPlayer.loadCardAvTags(card)
         withCol {
