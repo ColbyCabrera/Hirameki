@@ -777,9 +777,7 @@ class NoteEditorViewModel(
                             }
 
                         // Carry over any tags the user has set during this session.
-                        if (noteEditorState.tags.isNotEmpty()) {
-                            newNote.setTagsFromStr(col, noteEditorState.tags.joinToString(" "))
-                        }
+                        newNote.setTagsFromStr(col, noteEditorState.tags.joinToString(" "))
                     }
 
                     Triple(newNote, freshNotetype, newDeckId)
@@ -802,7 +800,7 @@ class NoteEditorViewModel(
                     // Use the explicit notetype overload to avoid reading a potentially
                     // stale `note.notetype` from the cache.
                     updateStateFromNoteWithNotetype(
-                        col, _noteEditorState.value.isAddingNote, freshNotetype
+                        col, noteEditorState.isAddingNote, freshNotetype
                     )
 
                     // Snapshot the new field values as the "clean" baseline so that
