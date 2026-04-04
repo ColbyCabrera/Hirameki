@@ -806,7 +806,7 @@ class CardBrowserViewModel(
 
     @VisibleForTesting // far too complicated to mock setSavedStateProvider
     fun generateExpensiveSavedState() = Bundle().apply {
-        putSerializable(
+        putParcelable(
             STATE_MULTISELECT_VALUES,
             IdsFile(
                 cacheDir,

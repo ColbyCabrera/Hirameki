@@ -185,7 +185,7 @@ class EditDeckDescriptionDialog : DialogFragment() {
             EditDeckDescriptionDialog().apply {
                 arguments =
                     Bundle().apply {
-                        putSerializable(EditDeckDescriptionDialogViewModel.ARG_DECK_ID, deckId)
+                        putLong(EditDeckDescriptionDialogViewModel.ARG_DECK_ID, deckId)
                     }
             }
     }

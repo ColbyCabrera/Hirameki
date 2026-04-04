@@ -147,6 +147,7 @@ class ListPreferenceDialogFragment : PreferenceDialogFragmentCompat() {
         private const val SAVE_STATE_INDEX = "ListPreferenceDialogFragment.index"
         private const val SAVE_STATE_ENTRIES = "ListPreferenceDialogFragment.entries"
         private const val SAVE_STATE_ENTRY_VALUES = "ListPreferenceDialogFragment.entryValues"
+        private const val ARG_KEY = "key"
 
         fun newInstance(key: String?): ListPreferenceDialogFragment =
             ListPreferenceDialogFragment().apply {

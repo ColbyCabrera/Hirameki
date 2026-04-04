@@ -253,16 +253,14 @@ class ExportDialogFragment : DialogFragment() {
     private fun buildExportLimit(selectedDeck: DeckNameId?): ExportLimit =
         when (arguments?.getSerializableCompat<ExportType>(ARG_TYPE)) {
             ExportType.Notes -> {
-                val selectedNotesIds = arguments?.let {
-                    BundleCompat.getParcelableArrayList(it, ARG_EXPORTED_IDS, Long::class.java)
-                } ?: error("Requested export for selected notes but no notes ids were passed in!")
-                exportLimit { noteIds = noteIds { this.noteIds.addAll(selectedNotesIds.toList()) } }
+                val selectedNotesIds = arguments?.getLongArray(ARG_EXPORTED_IDS)?.toList()
+                    ?: error("Requested export for selected notes but no notes ids were passed in!")
+                exportLimit { noteIds = noteIds { this.noteIds.addAll(selectedNotesIds) } }
             }
 
             ExportType.Cards -> {
-                val selectedCardIds = arguments?.let {
-                    BundleCompat.getParcelableArrayList(it, ARG_EXPORTED_IDS, Long::class.java)
-                } ?: error("Requested export for selected cards but no cards ids were passed in!")
+                val selectedCardIds = arguments?.getLongArray(ARG_EXPORTED_IDS)?.toList()
+                    ?: error("Requested export for selected cards but no cards ids were passed in!")
                 exportLimit { cardIds = cardIds { this.cids.addAll(selectedCardIds) } }
             }
 
@@ -300,7 +298,7 @@ class ExportDialogFragment : DialogFragment() {
         ) = ExportDialogFragment().apply {
             arguments = Bundle().apply {
                 putSerializable(ARG_TYPE, type)
-                putSerializable(ARG_EXPORTED_IDS, ArrayList(ids))
+                putLongArray(ARG_EXPORTED_IDS, ids.toLongArray())
             }
         }
     }

@@ -101,7 +101,7 @@ class DeckPickerContextMenu : AnalyticsDialogFragment() {
             DeckPickerContextMenu().apply {
                 arguments =
                     Bundle().apply {
-                        putSerializable(ARG_DECK_ID, id)
+                        putLong(ARG_DECK_ID, id)
                         putString(ARG_DECK_NAME, name)
                         putBoolean(ARG_DECK_IS_DYN, isDynamic)
                         putBoolean(ARG_DECK_HAS_BURIED_IN_DECK, hasBuriedInDeck)

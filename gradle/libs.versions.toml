@@ -95,6 +95,8 @@ ktlintGradlePlugin = "14.2.0"
 leakcanaryAndroid = "2.14"
 lint = "32.1.0"
 material = "1.13.0"
+# Using alpha version for androidx.compose.material3 to access newer APIs
+# TODO: migrate to stable 1.4.0 once alpha features are no longer needed
 material3 = "1.5.0-alpha16"
 materialTapTargetPrompt = "3.3.2"
 

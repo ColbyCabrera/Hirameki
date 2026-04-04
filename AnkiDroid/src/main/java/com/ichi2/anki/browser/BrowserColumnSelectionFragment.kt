@@ -242,7 +242,7 @@ class BrowserColumnSelectionFragment : DialogFragment(R.layout.browser_columns_s
                 Timber.d("Building 'Manage columns' dialog for %s mode", cardsOrNotes)
                 arguments =
                     Bundle().apply {
-                        putSerializable(ARG_MODE, cardsOrNotes)
+                        putParcelable(ARG_MODE, cardsOrNotes)
                     }
             }
     }
