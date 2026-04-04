@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,18 +68,21 @@ fun SyncIcon(
     val currentIsSyncing by rememberUpdatedState(isSyncing)
 
     LaunchedEffect(Unit) {
-        snapshotFlow { currentIsSyncing }.collect { isSyncing ->
-            if (isSyncing) {
-                while (currentIsSyncing) {
-                    rotation.animateTo(
-                        targetValue = rotation.targetValue + 360f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow,
-                        ),
-                    )
-                    rotation.snapTo(0f)
-                }
+        while (true) {
+            // Wait until syncing starts
+            snapshotFlow { currentIsSyncing }.first { it }
+
+            // Loop full 360-degree rotations as long as syncing is active.
+            // Guarantee the animation gracefully completes its current rotation before stopping.
+            while (currentIsSyncing) {
+                rotation.animateTo(
+                    targetValue = rotation.targetValue + 360f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
+                )
+                rotation.snapTo(0f)
             }
         }
     }
@@ -105,11 +109,9 @@ fun SyncIcon(
                         else -> stringResource(R.string.sync_menu_title_no_account)
                     }
                     Text(
-                        text = "!",
-                        modifier = Modifier.semantics {
+                        text = "!", modifier = Modifier.semantics {
                             contentDescription = badgeDescription
-                        }
-                    )
+                        })
                 }
 
                 else -> { /* No badge for Normal state */
