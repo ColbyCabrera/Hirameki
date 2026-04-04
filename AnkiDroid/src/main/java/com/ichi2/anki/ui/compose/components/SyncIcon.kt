@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
-import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,21 +65,20 @@ fun SyncIcon(
     val currentIsSyncing by rememberUpdatedState(isSyncing)
 
     LaunchedEffect(Unit) {
-        while (true) {
-            snapshotFlow { currentIsSyncing }.first { isSyncing -> isSyncing }
-
-            do {
-                rotation.animateTo(
-                    targetValue = rotation.targetValue + 360f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow,
-                    ),
-                )
-                rotation.snapTo(0f)
-            } while (currentIsSyncing)
+        snapshotFlow { currentIsSyncing }.collect { isSyncing ->
+            if (isSyncing) {
+                do {
+                    rotation.animateTo(
+                        targetValue = rotation.targetValue + 360f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                    )
+                    rotation.snapTo(0f)
+                } while (currentIsSyncing)
+            }
         }
-
     }
 
     BadgedBox(
@@ -105,7 +103,7 @@ fun SyncIcon(
         }
 
         FilledIconButton(
-            onClick = { onRefresh() },
+            onClick = onRefresh,
             enabled = !isSyncing,
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
