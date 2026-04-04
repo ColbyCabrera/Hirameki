@@ -23,6 +23,9 @@ package com.ichi2.anki.ui.compose.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,8 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,6 +117,27 @@ fun SyncIcon(
                 contentDescription = contentDescription,
                 modifier = Modifier.graphicsLayer { rotationZ = rotation.value },
             )
+        }
+    }
+}
+
+@Preview(name = "SyncIcon States", showBackground = true)
+@Composable
+private fun SyncIconPreview() {
+    AnkiDroidTheme {
+        Row(
+            modifier = Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SyncIcon(
+                isSyncing = false, syncState = SyncIconState.Normal, onRefresh = { })
+            SyncIcon(
+                isSyncing = true, syncState = SyncIconState.Normal, onRefresh = { })
+            SyncIcon(
+                isSyncing = false, syncState = SyncIconState.PendingChanges, onRefresh = { })
+            SyncIcon(
+                isSyncing = false, syncState = SyncIconState.OneWay, onRefresh = { })
+            SyncIcon(
+                isSyncing = false, syncState = SyncIconState.NotLoggedIn, onRefresh = { })
         }
     }
 }
