@@ -687,9 +687,7 @@ class NoteEditorTest : RobolectricTest() {
         val fields = editor.viewModel.noteEditorState.value.fields
         assertThat("Back field (index 0) has back-val", fields[0].value.text, equalTo("back-val"))
         assertThat(
-            "Front field (index 1) has front-val",
-            fields[1].value.text,
-            equalTo("front-val")
+            "Front field (index 1) has front-val", fields[1].value.text, equalTo("front-val")
         )
     }
 
@@ -899,6 +897,94 @@ class NoteEditorTest : RobolectricTest() {
         )
     }
 
+    @Test
+    fun `switching note type saves mid on editor selected deck`() = runTest {
+        col.config.setBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK, true)
+        val collectionDeckId = addDeck("Collection Deck", setAsSelected = true)
+        val editorDeckId = addDeck("Editor Deck")
+        val alternateNoteTypeName = addStandardNoteType(
+            "Basic Editor Deck", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}"
+        )
+        val alternateNoteType = col.notetypes.byName(alternateNoteTypeName)!!
+        val originalCollectionDeckMid = col.decks.getLegacy(collectionDeckId)?.optLong("mid")
+
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.onDeckSelected(SelectableDeck.Deck(editorDeckId, "Editor Deck"))
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType(alternateNoteTypeName)
+        idleMainLooper()
+
+        assertThat("editor stays on the selected deck", editor.deckId, equalTo(editorDeckId))
+        assertThat(
+            "selected editor deck stores the last-used note type",
+            col.decks.getLegacy(editorDeckId)!!.getLong("mid"),
+            equalTo(alternateNoteType.id)
+        )
+        assertThat(
+            "collection current deck is not overwritten",
+            col.decks.getLegacy(collectionDeckId)?.optLong("mid"),
+            equalTo(originalCollectionDeckMid)
+        )
+    }
+
+    @Test
+    fun `switching note type to preferred deck refreshes deck tags`() = runTest {
+        col.config.setBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK, false)
+        val initialDeckId = addDeck("Initial Deck", setAsSelected = true)
+        val preferredDeckId = addDeck("Preferred Deck")
+        val basicNoteType = col.notetypes.byName("Basic")!!
+        basicNoteType.did = initialDeckId
+        col.notetypes.save(basicNoteType)
+        val alternateNoteTypeName = addStandardNoteType(
+            "Basic Preferred Deck", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}"
+        )
+        val alternateNoteType = col.notetypes.byName(alternateNoteTypeName)!!
+        alternateNoteType.did = preferredDeckId
+        col.notetypes.save(alternateNoteType)
+
+        addBasicNote("Initial Front", "Initial Back").update {
+                setTagsFromStr(col, "initial-only-tag")
+            }.updateCards { did = initialDeckId }
+        addBasicNote("Preferred Front", "Preferred Back").update {
+                setTagsFromStr(col, "preferred-only-tag")
+            }.updateCards { did = preferredDeckId }
+
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        assertThat(
+            "editor starts on the initial deck",
+            editor.viewModel.noteEditorState.value.selectedDeckName,
+            equalTo("Initial Deck")
+        )
+        assertThat(
+            "initial deck tags are loaded before switching",
+            editor.viewModel.deckTags.value.contains("initial-only-tag"),
+            equalTo(true)
+        )
+
+        editor.viewModel.selectNoteType(alternateNoteTypeName)
+        idleMainLooper()
+
+        assertThat(
+            "editor switches to the note type deck",
+            editor.viewModel.noteEditorState.value.selectedDeckName,
+            equalTo("Preferred Deck")
+        )
+        assertThat(
+            "preferred deck tags are reloaded after switching",
+            editor.viewModel.deckTags.value.contains("preferred-only-tag"),
+            equalTo(true)
+        )
+        assertThat(
+            "stale tags from the old deck are cleared",
+            editor.viewModel.deckTags.value.contains("initial-only-tag"),
+            equalTo(false)
+        )
+    }
     // ---- Helper Methods ----
 
     private fun moveToDynamicDeck(note: Note): DeckId {
@@ -928,10 +1014,7 @@ class NoteEditorTest : RobolectricTest() {
 
     /** Creates a "ThreeField" note type with Front, Back, and an extra Extra field */
     private fun createThreeFieldNoteType(): String = addStandardNoteType(
-        "ThreeField",
-        arrayOf("Front", "Back", "Extra"),
-        "{{Front}}",
-        "{{Back}}<br>{{Extra}}"
+        "ThreeField", arrayOf("Front", "Back", "Extra"), "{{Front}}", "{{Back}}<br>{{Extra}}"
     )
 
     private fun getCopyNoteIntent(editor: NoteEditorFragment): Bundle {
