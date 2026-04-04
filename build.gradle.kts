@@ -37,7 +37,7 @@ if (project.rootProject.file("local.properties").exists()) {
 val fatalWarnings = localProperties["fatal_warnings"] != "false"
 
 // can't be obtained inside 'subprojects'
-val ktlintVersion: String? = libs.versions.ktlint.get()
+val ktlintVersion: String = libs.versions.ktlint.get()
 
 // Here we extract per-module "best practices" settings to a single top-level evaluation
 subprojects {
@@ -143,8 +143,8 @@ fun configureAndroidVariants(androidComponentsExtension: AndroidComponentsExtens
 }
 
 val jvmVersion = Jvm.current().javaVersion?.majorVersion
-val compileSdkVersion: String? = libs.versions.compileSdk.get()
-val minSdk: String? = libs.versions.minSdk.get()
+val compileSdkVersion: String = libs.versions.compileSdk.get()
+val minSdk: String = libs.versions.minSdk.get()
 if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     println("\n\n\n")
     println("**************************************************************************************************************")

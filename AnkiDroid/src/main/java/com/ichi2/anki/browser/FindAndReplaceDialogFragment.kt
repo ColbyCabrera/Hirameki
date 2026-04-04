@@ -28,7 +28,6 @@ import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.Group
-import androidx.core.os.bundleOf
 import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -167,15 +166,15 @@ class FindAndReplaceDialogFragment : AnalyticsDialogFragment() {
         Timber.i("Sending request to find and replace...")
         setFragmentResult(
             REQUEST_FIND_AND_REPLACE,
-            bundleOf(
-                ARG_SEARCH to search.toString(),
-                ARG_REPLACEMENT to replacement.toString(),
-                ARG_FIELD to selectedField,
-                ARG_ONLY_SELECTED_NOTES to onlyInSelectedNotes,
+            Bundle().apply {
+                putString(ARG_SEARCH, search.toString())
+                putString(ARG_REPLACEMENT, replacement.toString())
+                putString(ARG_FIELD, selectedField)
+                putBoolean(ARG_ONLY_SELECTED_NOTES, onlyInSelectedNotes)
                 // "Ignore case" checkbox text => when it's checked we pass false to the backend
-                ARG_MATCH_CASE to !ignoreCase,
-                ARG_REGEX to inputAsRegex,
-            ),
+                putBoolean(ARG_MATCH_CASE, !ignoreCase)
+                putBoolean(ARG_REGEX, inputAsRegex)
+            },
         )
     }
 

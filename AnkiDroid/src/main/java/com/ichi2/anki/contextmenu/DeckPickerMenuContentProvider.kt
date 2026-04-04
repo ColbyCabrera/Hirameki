@@ -16,9 +16,9 @@
 
 package com.ichi2.anki.contextmenu
 
+import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import androidx.core.os.bundleOf
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.dialogs.DeckPickerContextMenu
 import com.ichi2.anki.libanki.DeckId
@@ -46,10 +46,10 @@ class DeckPickerMenuContentProvider(
 
         deckPicker.supportFragmentManager.setFragmentResult(
             REQUEST_KEY_CONTEXT_MENU,
-            bundleOf(
-                CONTEXT_MENU_DECK_ID to id,
-                CONTEXT_MENU_DECK_OPTION to selectedOption,
-            ),
+            Bundle().apply {
+                putSerializable(CONTEXT_MENU_DECK_ID, id)
+                putSerializable(CONTEXT_MENU_DECK_OPTION, selectedOption)
+            },
         )
         return true
     }

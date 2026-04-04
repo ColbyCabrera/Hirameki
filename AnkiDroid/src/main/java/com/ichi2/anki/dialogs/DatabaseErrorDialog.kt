@@ -27,7 +27,6 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.os.BundleCompat
-import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.BackupManager
@@ -693,9 +692,9 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
             Message.obtain().apply {
                 what = this@ShowDatabaseErrorDialog.what
                 data =
-                    bundleOf(
-                        DIALOG_KEY to dialogType,
-                    )
+                    Bundle().apply {
+                        putParcelable(DIALOG_KEY, dialogType)
+                    }
             }
 
         companion object {

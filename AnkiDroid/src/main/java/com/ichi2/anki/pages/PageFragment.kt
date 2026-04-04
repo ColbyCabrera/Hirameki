@@ -25,7 +25,6 @@ import android.webkit.WebViewClient
 import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.core.net.toUri
-import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -176,7 +175,10 @@ open class PageFragment(
             title: String? = null,
             clazz: KClass<out PageFragment> = PageFragment::class,
         ): Intent {
-            val arguments = bundleOf(PATH_ARG_KEY to path, TITLE_ARG_KEY to title)
+            val arguments = Bundle().apply {
+                putString(PATH_ARG_KEY, path)
+                putString(TITLE_ARG_KEY, title)
+            }
             return SingleFragmentActivity.getIntent(context, clazz, arguments).apply {
                 putExtra(SingleFragmentActivity.EXTRA_APPLY_INSETS_PADDING, false)
             }

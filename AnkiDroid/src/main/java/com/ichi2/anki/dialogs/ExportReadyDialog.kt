@@ -19,7 +19,6 @@ package com.ichi2.anki.dialogs
 import android.os.Bundle
 import android.os.Message
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -38,12 +37,12 @@ class ExportReadyDialog : AsyncDialogFragment() {
             .positiveButton(R.string.export_choice_save_to) {
                 parentFragmentManager.setFragmentResult(
                     REQUEST_EXPORT_SAVE,
-                    bundleOf(KEY_EXPORT_PATH to exportPath),
+                    Bundle().apply { putString(KEY_EXPORT_PATH, exportPath) },
                 )
             }.negativeButton(R.string.export_choice_share) {
                 parentFragmentManager.setFragmentResult(
                     REQUEST_EXPORT_SHARE,
-                    bundleOf(KEY_EXPORT_PATH to exportPath),
+                    Bundle().apply { putString(KEY_EXPORT_PATH, exportPath) },
                 )
             }
 
@@ -75,7 +74,7 @@ class ExportReadyDialog : AsyncDialogFragment() {
         override fun toMessage(): Message =
             Message.obtain().apply {
                 what = this@ExportReadyDialogMessage.what
-                data = bundleOf("exportPath" to exportPath)
+                data = Bundle().apply { putString("exportPath", exportPath) }
             }
 
         companion object {
@@ -93,7 +92,7 @@ class ExportReadyDialog : AsyncDialogFragment() {
 
         fun newInstance(exportPath: String) =
             ExportReadyDialog().apply {
-                arguments = bundleOf(KEY_EXPORT_PATH to exportPath)
+                arguments = Bundle().apply { putString(KEY_EXPORT_PATH, exportPath) }
             }
     }
 }

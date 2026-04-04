@@ -21,7 +21,6 @@ import android.os.Bundle
 import android.os.Message
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.ConflictResolution
 import com.ichi2.anki.R
@@ -303,10 +302,10 @@ class SyncErrorDialog : AsyncDialogFragment() {
             dialogType: Type,
             dialogMessage: String?,
         ) = SyncErrorDialog().apply {
-            arguments = bundleOf(
-                SYNC_ERROR_DIALOG_TYPE_KEY to dialogType.code,
-                DIALOG_MESSAGE_KEY to dialogMessage,
-            )
+            arguments = Bundle().apply {
+                putInt(SYNC_ERROR_DIALOG_TYPE_KEY, dialogType.code)
+                putString(DIALOG_MESSAGE_KEY, dialogMessage)
+            }
         }
     }
 
@@ -321,10 +320,10 @@ class SyncErrorDialog : AsyncDialogFragment() {
 
         override fun toMessage(): Message = Message.obtain().apply {
             what = this@SyncErrorDialogMessageHandler.what
-            data = bundleOf(
-                SYNC_ERROR_DIALOG_TYPE_KEY to dialogType.code,
-                DIALOG_MESSAGE_KEY to dialogMessage,
-            )
+            data = Bundle().apply {
+                putInt(SYNC_ERROR_DIALOG_TYPE_KEY, dialogType.code)
+                putString(DIALOG_MESSAGE_KEY, dialogMessage)
+            }
         }
 
         companion object {

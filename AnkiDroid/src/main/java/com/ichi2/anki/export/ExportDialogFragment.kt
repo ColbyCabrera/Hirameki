@@ -29,7 +29,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.os.BundleCompat
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import anki.cards.cardIds
 import anki.generic.Empty
@@ -292,17 +291,17 @@ class ExportDialogFragment : DialogFragment() {
         fun newInstance(): ExportDialogFragment = ExportDialogFragment()
 
         fun newInstance(did: DeckId) = ExportDialogFragment().apply {
-            arguments = bundleOf(ARG_DECK_ID to did)
+            arguments = Bundle().apply { putLong(ARG_DECK_ID, did) }
         }
 
         fun newInstance(
             type: ExportType,
             ids: List<Long>,
         ) = ExportDialogFragment().apply {
-            arguments = bundleOf(
-                ARG_TYPE to type,
-                ARG_EXPORTED_IDS to ids,
-            )
+            arguments = Bundle().apply {
+                putSerializable(ARG_TYPE, type)
+                putSerializable(ARG_EXPORTED_IDS, ArrayList(ids))
+            }
         }
     }
 }

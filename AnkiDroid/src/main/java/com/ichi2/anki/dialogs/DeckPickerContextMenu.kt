@@ -20,7 +20,6 @@ import android.os.Bundle
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import com.ichi2.anki.R
 import com.ichi2.anki.analytics.AnalyticsDialogFragment
 import com.ichi2.anki.contextmenu.DeckPickerMenuContentProvider
@@ -43,10 +42,10 @@ class DeckPickerContextMenu : AnalyticsDialogFragment() {
             ) { _, index: Int ->
                 parentFragmentManager.setFragmentResult(
                     REQUEST_KEY_CONTEXT_MENU,
-                    bundleOf(
-                        CONTEXT_MENU_DECK_ID to requireArguments().getLong(ARG_DECK_ID),
-                        CONTEXT_MENU_DECK_OPTION to options[index],
-                    ),
+                    Bundle().apply {
+                        putLong(CONTEXT_MENU_DECK_ID, requireArguments().getLong(ARG_DECK_ID))
+                        putSerializable(CONTEXT_MENU_DECK_OPTION, options[index])
+                    },
                 )
             }.create()
     }
@@ -101,12 +100,12 @@ class DeckPickerContextMenu : AnalyticsDialogFragment() {
         ): DeckPickerContextMenu =
             DeckPickerContextMenu().apply {
                 arguments =
-                    bundleOf(
-                        ARG_DECK_ID to id,
-                        ARG_DECK_NAME to name,
-                        ARG_DECK_IS_DYN to isDynamic,
-                        ARG_DECK_HAS_BURIED_IN_DECK to hasBuriedInDeck,
-                    )
+                    Bundle().apply {
+                        putSerializable(ARG_DECK_ID, id)
+                        putString(ARG_DECK_NAME, name)
+                        putBoolean(ARG_DECK_IS_DYN, isDynamic)
+                        putBoolean(ARG_DECK_HAS_BURIED_IN_DECK, hasBuriedInDeck)
+                    }
             }
     }
 }

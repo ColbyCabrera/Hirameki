@@ -22,7 +22,6 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.RecyclerView
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.R
@@ -59,10 +58,10 @@ class SavedBrowserSearchesDialogFragment : AnalyticsDialogFragment() {
                     Timber.d("Saved search clicked: %s", searchName)
                     parentFragmentManager.setFragmentResult(
                         REQUEST_SAVED_SEARCH_ACTION,
-                        bundleOf(
-                            ARG_TYPE to TYPE_SEARCH_SELECTED,
-                            ARG_SAVED_SEARCH to searchName,
-                        ),
+                        Bundle().apply {
+                            putInt(ARG_TYPE, TYPE_SEARCH_SELECTED)
+                            putString(ARG_SAVED_SEARCH, searchName)
+                        },
                     )
                     dismiss()
                 },
@@ -85,10 +84,10 @@ class SavedBrowserSearchesDialogFragment : AnalyticsDialogFragment() {
             positiveButton(android.R.string.ok) {
                 parentFragmentManager.setFragmentResult(
                     REQUEST_SAVED_SEARCH_ACTION,
-                    bundleOf(
-                        ARG_TYPE to TYPE_SEARCH_REMOVED,
-                        ARG_SAVED_SEARCH to searchName,
-                    ),
+                    Bundle().apply {
+                        putInt(ARG_TYPE, TYPE_SEARCH_REMOVED)
+                        putString(ARG_SAVED_SEARCH, searchName)
+                    },
                 )
                 dialog?.dismiss() // Dismiss the root dialog
             }

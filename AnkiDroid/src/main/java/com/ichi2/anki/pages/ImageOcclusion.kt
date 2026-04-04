@@ -22,7 +22,6 @@ import android.os.Bundle
 import android.view.View
 import android.webkit.WebView
 import androidx.activity.addCallback
-import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.ichi2.anki.CollectionManager.withCol
@@ -133,13 +132,13 @@ class ImageOcclusion : PageFragment(R.layout.image_occlusion) {
                     Uri.encode(imagePath)
                 }
             val arguments =
-                bundleOf(
-                    ARG_KEY_KIND to kind,
-                    ARG_KEY_ID to noteOrNotetypeId,
-                    ARG_KEY_PATH to imagePath,
-                    PATH_ARG_KEY to "image-occlusion/$suffix",
-                    ARG_KEY_EDITOR_DECK_ID to editorWorkingDeckId,
-                )
+                Bundle().apply {
+                    putString(ARG_KEY_KIND, kind)
+                    putLong(ARG_KEY_ID, noteOrNotetypeId)
+                    putString(ARG_KEY_PATH, imagePath)
+                    putString(PATH_ARG_KEY, "image-occlusion/$suffix")
+                    putLong(ARG_KEY_EDITOR_DECK_ID, editorWorkingDeckId)
+                }
             return SingleFragmentActivity.getIntent(context, ImageOcclusion::class, arguments)
         }
     }

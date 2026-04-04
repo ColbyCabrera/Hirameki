@@ -34,7 +34,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.net.toUri
-import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
@@ -272,9 +271,9 @@ class SharedDecksActivity : AnkiActivity() {
             // avoid handling the download, as FragmentManager.commit will throw
             if (!supportFragmentManager.isStateSaved) {
                 val sharedDecksDownloadFragment = SharedDecksDownloadFragment()
-                sharedDecksDownloadFragment.arguments = bundleOf(
-                    DOWNLOAD_FILE to DownloadFile(url, userAgent, contentDisposition, mimetype),
-                )
+                sharedDecksDownloadFragment.arguments = Bundle().apply {
+                    putSerializable(DOWNLOAD_FILE, DownloadFile(url, userAgent, contentDisposition, mimetype))
+                }
                 supportFragmentManager.commit {
                     add(
                         R.id.shared_decks_fragment_container,

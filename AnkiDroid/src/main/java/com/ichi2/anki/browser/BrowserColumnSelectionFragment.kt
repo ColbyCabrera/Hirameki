@@ -23,7 +23,6 @@ import androidx.activity.ComponentDialog
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.StringRes
 import androidx.core.os.BundleCompat
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -242,9 +241,9 @@ class BrowserColumnSelectionFragment : DialogFragment(R.layout.browser_columns_s
             BrowserColumnSelectionFragment().apply {
                 Timber.d("Building 'Manage columns' dialog for %s mode", cardsOrNotes)
                 arguments =
-                    bundleOf(
-                        ARG_MODE to cardsOrNotes,
-                    )
+                    Bundle().apply {
+                        putSerializable(ARG_MODE, cardsOrNotes)
+                    }
             }
     }
 }

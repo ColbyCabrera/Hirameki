@@ -16,7 +16,6 @@
 package com.ichi2.utils
 
 import android.os.Bundle
-import androidx.core.os.bundleOf
 
 /**
  * Collection of useful methods to be used with [android.os.Bundle]
@@ -29,12 +28,11 @@ object BundleUtils {
      * @param key the key to use
      * @return the long value, or null if not found
      */
-    fun Bundle.getNullableLong(key: String): Long? =
-        if (!containsKey(key)) {
-            null
-        } else {
-            getLong(key)
-        }
+    fun Bundle.getNullableLong(key: String): Long? = if (!containsKey(key)) {
+        null
+    } else {
+        getLong(key)
+    }
 
     /**
      * Retrieves a [Long] value from a [Bundle] using a key, throws if not found
@@ -57,12 +55,11 @@ object BundleUtils {
      * @param key the key to use
      * @return the int value, or null if not found
      */
-    fun Bundle.getNullableInt(key: String): Int? =
-        if (!containsKey(key)) {
-            null
-        } else {
-            getInt(key)
-        }
+    fun Bundle.getNullableInt(key: String): Int? = if (!containsKey(key)) {
+        null
+    } else {
+        getInt(key)
+    }
 }
 
 /**
@@ -83,11 +80,77 @@ fun Bundle.requireBoolean(key: String): Boolean {
  * Convenience method, allowing a `null` pair to mean 'exclude from the bundle'
  *
  * ```kotlin
- * bundleOf(
+ * bundleOfNotNull(
  *     optional?.let { KEY to it }
  * )
  * ```
  *
  * @throws IllegalArgumentException When a value is not a supported type of [Bundle].
  */
-fun bundleOfNotNull(vararg pairs: Pair<String, Any>?): Bundle = bundleOf(*pairs.mapNotNull { it }.toTypedArray())
+fun bundleOfNotNull(vararg pairs: Pair<String, Any>?): Bundle = Bundle().apply {
+    for (pair in pairs) {
+        if (pair == null) {
+            continue
+        }
+        val (key, value) = pair
+        when (value) {
+            is Boolean -> putBoolean(key, value)
+            is Byte -> putByte(key, value)
+            is Char -> putChar(key, value)
+            is Double -> putDouble(key, value)
+            is Float -> putFloat(key, value)
+            is Int -> putInt(key, value)
+            is Long -> putLong(key, value)
+            is Short -> putShort(key, value)
+            is String -> putString(key, value)
+            is CharSequence -> putCharSequence(key, value)
+            is Bundle -> putBundle(key, value)
+            is BooleanArray -> putBooleanArray(key, value)
+            is ByteArray -> putByteArray(key, value)
+            is CharArray -> putCharArray(key, value)
+            is DoubleArray -> putDoubleArray(key, value)
+            is FloatArray -> putFloatArray(key, value)
+            is IntArray -> putIntArray(key, value)
+            is LongArray -> putLongArray(key, value)
+            is ShortArray -> putShortArray(key, value)
+            is Array<*> -> {
+                val componentType = value::class.java.componentType!!
+                @Suppress("UNCHECKED_CAST") when {
+                    android.os.Parcelable::class.java.isAssignableFrom(componentType) -> {
+                        putParcelableArray(key, value as Array<android.os.Parcelable>)
+                    }
+
+                    String::class.java.isAssignableFrom(componentType) -> {
+                        putStringArray(key, value as Array<String>)
+                    }
+
+                    CharSequence::class.java.isAssignableFrom(componentType) -> {
+                        putCharSequenceArray(key, value as Array<CharSequence>)
+                    }
+
+                    Int::class.java.isAssignableFrom(componentType) -> {
+                        // Int is a primitive in Kotlin, but Array<Int> is Integer[]
+                        throw IllegalArgumentException("Unsupported bundle component Array<Int> for key \"$key\". Use IntArray instead.")
+                    }
+
+                    else -> {
+                        val valueType = componentType.canonicalName
+                        throw IllegalArgumentException(
+                            "Unsupported bundle component Array<$valueType> for key \"$key\"",
+                        )
+                    }
+                }
+            }
+
+            is android.util.Size -> putSize(key, value)
+            is android.util.SizeF -> putSizeF(key, value)
+            is android.os.IBinder -> putBinder(key, value)
+            is android.os.Parcelable -> putParcelable(key, value)
+            is java.io.Serializable -> putSerializable(key, value)
+            else -> {
+                val valueType = value.javaClass.canonicalName
+                throw IllegalArgumentException("Unsupported bundle component ($valueType) for key \"$key\"")
+            }
+        }
+    }
+}

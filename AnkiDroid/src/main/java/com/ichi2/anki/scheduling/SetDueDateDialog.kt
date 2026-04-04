@@ -29,7 +29,6 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.annotation.CheckResult
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.DialogFragment
@@ -241,10 +240,10 @@ class SetDueDateDialog : DialogFragment() {
 
         @CheckResult
         suspend fun newInstance(cardIds: List<CardId>) = SetDueDateDialog().apply {
-            arguments = bundleOf(
-                ARG_CARD_IDS to cardIds.toLongArray(),
-                ARG_FSRS to (getFSRSStatus() ?: false.also { Timber.w("FSRS Status error") }),
-            )
+            arguments = Bundle().apply {
+                putLongArray(ARG_CARD_IDS, cardIds.toLongArray())
+                putBoolean(ARG_FSRS, getFSRSStatus() ?: false.also { Timber.w("FSRS Status error") })
+            }
             Timber.i("Showing 'set due date' dialog for %d cards", cardIds.size)
         }
     }
@@ -292,7 +291,7 @@ class SetDueDateDialog : DialogFragment() {
                         return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
                             parentFragmentManager.setFragmentResult(
                                 RESULT_SUBMIT_DUE_DATE,
-                                bundleOf()
+                                Bundle()
                             )
                             true
                         } else {
@@ -360,7 +359,7 @@ class SetDueDateDialog : DialogFragment() {
                         return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
                             parentFragmentManager.setFragmentResult(
                                 RESULT_SUBMIT_DUE_DATE,
-                                bundleOf()
+                                Bundle()
                             )
                             true
                         } else {

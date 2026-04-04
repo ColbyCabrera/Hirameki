@@ -23,7 +23,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.XmlRes
-import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.preference.Preference
@@ -130,7 +129,7 @@ abstract class SettingsFragment :
             (preference as? DialogFragmentProvider)?.makeDialogFragment()
                 ?: return super.onDisplayPreferenceDialog(preference)
         Timber.d("displaying custom preference: ${dialogFragment::class.simpleName}")
-        dialogFragment.arguments = bundleOf(PREF_DIALOG_KEY to preference.key)
+        dialogFragment.arguments = Bundle().apply { putString(PREF_DIALOG_KEY, preference.key) }
         dialogFragment.setTargetFragment(this, 0)
         dialogFragment.show(parentFragmentManager, "androidx.preference.PreferenceFragment.DIALOG")
     }
