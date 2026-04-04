@@ -607,9 +607,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun `saving added note refreshes note type baseline for discard tracking`() = runTest {
-        val alternateNoteTypeName = addStandardNoteType(
-            "Basic 2", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}"
-        )
+        val alternateNoteTypeName = createBasic2NoteType()
         val editor = getNoteEditorAdding(NoteType.BASIC).build()
         idleMainLooper()
 
