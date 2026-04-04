@@ -24,6 +24,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
@@ -67,7 +68,7 @@ fun SyncIcon(
     LaunchedEffect(Unit) {
         snapshotFlow { currentIsSyncing }.collect { isSyncing ->
             if (isSyncing) {
-                do {
+                while (currentIsSyncing) {
                     rotation.animateTo(
                         targetValue = rotation.targetValue + 360f,
                         animationSpec = spring(
@@ -76,32 +77,34 @@ fun SyncIcon(
                         ),
                     )
                     rotation.snapTo(0f)
-                } while (currentIsSyncing)
+                }
             }
         }
     }
 
+    val badge: @Composable BoxScope.() -> Unit = {
+        when (syncState) {
+            SyncIconState.PendingChanges -> Badge()
+            SyncIconState.OneWay, SyncIconState.NotLoggedIn -> Badge {
+                Text("!")
+            }
+
+            else -> { /* No badge for Normal state */
+            }
+        }
+    }
+
+    val contentDescription = when (syncState) {
+        SyncIconState.PendingChanges -> stringResource(R.string.sync_menu_title_pending_changes)
+        SyncIconState.OneWay -> stringResource(R.string.sync_menu_title_one_way_sync)
+        SyncIconState.NotLoggedIn -> stringResource(R.string.sync_menu_title_no_account)
+        else -> stringResource(R.string.sync_now)
+    }
+
     BadgedBox(
         modifier = modifier,
-        badge = {
-            when (syncState) {
-                SyncIconState.PendingChanges -> Badge()
-                SyncIconState.OneWay, SyncIconState.NotLoggedIn -> Badge {
-                    Text("!")
-                }
-
-                else -> { /* No badge for Normal state */
-                }
-            }
-        },
+        badge = badge,
     ) {
-        val contentDescription = when (syncState) {
-            SyncIconState.PendingChanges -> stringResource(R.string.sync_menu_title_pending_changes)
-            SyncIconState.OneWay -> stringResource(R.string.sync_menu_title_one_way_sync)
-            SyncIconState.NotLoggedIn -> stringResource(R.string.sync_menu_title_no_account)
-            else -> stringResource(R.string.sync_now)
-        }
-
         FilledIconButton(
             onClick = onRefresh,
             enabled = !isSyncing,
