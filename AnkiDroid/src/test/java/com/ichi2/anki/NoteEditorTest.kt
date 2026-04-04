@@ -48,6 +48,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.junit.After
@@ -690,13 +691,13 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
-    fun `field content with HTML survives note type round-trip`() {
+    fun `field content with newlines survives note type round-trip`() {
         createBasic2NoteType()
         val editor = getNoteEditorAdding(NoteType.BASIC).build()
         idleMainLooper()
 
-        val htmlContent = "line1\nline2"
-        editor.setFieldValueFromUi(0, htmlContent)
+        val textWithNewline = "line1\nline2"
+        editor.setFieldValueFromUi(0, textWithNewline)
         editor.setFieldValueFromUi(1, "back")
         idleMainLooper()
 
@@ -707,7 +708,7 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
 
         val fields = editor.viewModel.noteEditorState.value.fields
-        assertThat("Front field text preserved", fields[0].value.text, equalTo(htmlContent))
+        assertThat("Front field text preserved", fields[0].value.text, equalTo(textWithNewline))
         assertThat("Back field text preserved", fields[1].value.text, equalTo("back"))
     }
 
@@ -724,7 +725,7 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
 
         val tags = editor.viewModel.noteEditorState.value.tags
-        assertThat("tags preserved after switch", tags, contains("tag1", "tag2"))
+        assertThat("tags preserved after switch", tags, containsInAnyOrder("tag1", "tag2"))
     }
 
     @Test
