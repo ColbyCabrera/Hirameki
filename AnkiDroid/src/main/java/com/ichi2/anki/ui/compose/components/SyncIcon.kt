@@ -32,17 +32,18 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,11 +54,28 @@ fun SyncIcon(
     modifier: Modifier = Modifier,
 ) {
     val rotation = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
 
     // Capture the latest syncing state so our coroutine can read it
     // safely without being canceled and restarted.
     val currentIsSyncing by rememberUpdatedState(isSyncing)
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            snapshotFlow { currentIsSyncing }.first { isSyncing -> isSyncing }
+
+            do {
+                rotation.animateTo(
+                    targetValue = rotation.targetValue + 360f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
+                )
+                rotation.snapTo(0f)
+            } while (currentIsSyncing)
+        }
+
+    }
 
     BadgedBox(
         modifier = modifier,
@@ -81,22 +99,7 @@ fun SyncIcon(
         }
 
         FilledIconButton(
-            onClick = {
-                onRefresh()
-                scope.launch {
-                    if (rotation.isRunning) return@launch
-
-                    do {
-                        rotation.animateTo(
-                            targetValue = rotation.targetValue + 360f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessLow,
-                            ),
-                        )
-                    } while (currentIsSyncing)
-                }
-            },
+            onClick = { onRefresh() },
             enabled = !isSyncing,
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
