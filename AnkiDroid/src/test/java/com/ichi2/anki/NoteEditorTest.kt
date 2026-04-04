@@ -32,8 +32,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import anki.config.ConfigKey
 import com.ichi2.anim.ActivityTransitionAnimation.Direction.DEFAULT
-import com.ichi2.anki.NoteEditorTest.FromScreen.DECK_LIST
-import com.ichi2.anki.NoteEditorTest.FromScreen.REVIEWER
 import com.ichi2.anki.api.AddContentApi.Companion.DEFAULT_DECK_ID
 import com.ichi2.anki.common.annotations.DuplicatedCode
 import com.ichi2.anki.libanki.Consts
@@ -50,6 +48,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.junit.After
@@ -129,7 +128,7 @@ class NoteEditorTest : RobolectricTest() {
     @Test
     fun `can open with corrupt current deck - Issue 14096`() {
         col.config.set(CURRENT_DECK, '"' + "1688546411954" + '"')
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         assertThat(
             "current deck is default after corruption", editor.deckId, equalTo(DEFAULT_DECK_ID)
         )
@@ -137,7 +136,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun previewWorksWithNoError() {
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         assertDoesNotThrow { runBlocking { editor.performPreview() } }
     }
 
@@ -286,7 +285,7 @@ class NoteEditorTest : RobolectricTest() {
         col.config.set(CURRENT_DECK, currentDid)
         val n = super.addBasicNote("Test", "Note")
         n.notetype.did = currentDid
-        val editor = getNoteEditorEditingExistingBasicNote("Test", "Note", DECK_LIST)
+        val editor = getNoteEditorEditingExistingBasicNote("Test", "Note", FromScreen.DECK_LIST)
         idleMainLooper()
 
         col.config.set(CURRENT_DECK, Consts.DEFAULT_DECK_ID)
@@ -370,7 +369,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun clearFieldWorks() {
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
         editor.setFieldValueFromUi(1, "Hello")
@@ -384,7 +383,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun insertIntoFocusedFieldStartsAtSelection() {
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
         editor.viewModel.onFieldFocus(0)
@@ -407,7 +406,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun insertIntoFocusedFieldWrapsSelection() {
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
         editor.viewModel.onFieldFocus(0)
@@ -430,7 +429,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun insertIntoFocusedFieldWrapsSelectionIfBackwards() {
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
         editor.viewModel.onFieldFocus(0)
@@ -453,7 +452,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun defaultsToCapitalized() {
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
         val prefs =
@@ -495,7 +494,7 @@ class NoteEditorTest : RobolectricTest() {
         val type1Name = ioType1.name
         val type2Name = ioType2.name
 
-        val editor = getNoteEditorAddingNote(DECK_LIST)
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
         editor.viewModel.selectNoteType(type1Name)
@@ -526,7 +525,7 @@ class NoteEditorTest : RobolectricTest() {
         assertThat("home deck", note.firstCard().oDid, equalTo(homeDeckId))
         assertThat("current deck", note.firstCard().did, not(equalTo(homeDeckId)))
 
-        val editor = getNoteEditorEditingExistingBasicNote(note, REVIEWER)
+        val editor = getNoteEditorEditingExistingBasicNote(note, FromScreen.REVIEWER)
         idleMainLooper()
 
         assertThat("current deck is the home deck", editor.deckId, equalTo(homeDeckId))
@@ -609,13 +608,7 @@ class NoteEditorTest : RobolectricTest() {
 
     @Test
     fun `saving added note refreshes note type baseline for discard tracking`() = runTest {
-        val alternateNoteTypeName =
-            addStandardNoteType(
-                "Basic 2",
-                arrayOf("Front", "Back"),
-                "{{Front}}",
-                "{{Back}}"
-            )
+        val alternateNoteTypeName = createBasic2NoteType()
         val editor = getNoteEditorAdding(NoteType.BASIC).build()
         idleMainLooper()
 
@@ -641,7 +634,7 @@ class NoteEditorTest : RobolectricTest() {
         assertThat("home deck", note.firstCard().oDid, equalTo(homeDeckId))
         assertThat("current deck", note.firstCard().did, not(equalTo(homeDeckId)))
 
-        val editor = getNoteEditorEditingExistingBasicNote(note, REVIEWER)
+        val editor = getNoteEditorEditingExistingBasicNote(note, FromScreen.REVIEWER)
         idleMainLooper()
 
         editor.setFieldValueFromUi(0, "Hello")
@@ -653,6 +646,344 @@ class NoteEditorTest : RobolectricTest() {
         assertThat("after: current deck", note.firstCard().did, not(equalTo(homeDeckId)))
     }
 
+    // ---- selectNoteType Tests ----
+
+    @Test
+    fun `fields migrate by name to note type with extra fields`() {
+        createThreeFieldNoteType()
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "hello")
+        editor.setFieldValueFromUi(1, "world")
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("ThreeField")
+        idleMainLooper()
+
+        val fields = editor.viewModel.noteEditorState.value.fields
+        assertThat("should have 3 fields", fields.size, equalTo(3))
+        assertThat("Front migrated", fields[0].value.text, equalTo("hello"))
+        assertThat("Back migrated", fields[1].value.text, equalTo("world"))
+        assertThat("Extra is blank", fields[2].value.text, equalTo(""))
+    }
+
+    @Test
+    fun `fields migrate by name when field order differs`() {
+        addStandardNoteType(
+            "Reversed Fields", arrayOf("Back", "Front"), "{{Back}}", "{{Front}}"
+        )
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "front-val")
+        editor.setFieldValueFromUi(1, "back-val")
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Reversed Fields")
+        idleMainLooper()
+
+        val fields = editor.viewModel.noteEditorState.value.fields
+        assertThat("Back field (index 0) has back-val", fields[0].value.text, equalTo("back-val"))
+        assertThat(
+            "Front field (index 1) has front-val", fields[1].value.text, equalTo("front-val")
+        )
+    }
+
+    @Test
+    fun `field content with newlines survives note type round-trip`() {
+        createBasic2NoteType()
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        val textWithNewline = "line1\nline2"
+        editor.setFieldValueFromUi(0, textWithNewline)
+        editor.setFieldValueFromUi(1, "back")
+        idleMainLooper()
+
+        // Switch to Basic 2 then back to Basic
+        editor.viewModel.selectNoteType("Basic 2")
+        idleMainLooper()
+        editor.viewModel.selectNoteType("Basic")
+        idleMainLooper()
+
+        val fields = editor.viewModel.noteEditorState.value.fields
+        assertThat("Front field text preserved", fields[0].value.text, equalTo(textWithNewline))
+        assertThat("Back field text preserved", fields[1].value.text, equalTo("back"))
+    }
+
+    @Test
+    fun `tags survive note type switch`() {
+        createBasic2NoteType()
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.updateTags(setOf("tag1", "tag2"))
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Basic 2")
+        idleMainLooper()
+
+        val tags = editor.viewModel.noteEditorState.value.tags
+        assertThat("tags preserved after switch", tags, containsInAnyOrder("tag1", "tag2"))
+    }
+
+    @Test
+    fun `note ID preserved during note type switch`() {
+        createBasic2NoteType()
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        val originalId = editor.viewModel.currentNote.value!!.id
+
+        editor.viewModel.selectNoteType("Basic 2")
+        idleMainLooper()
+
+        assertThat(
+            "note ID unchanged after switch",
+            editor.viewModel.currentNote.value!!.id,
+            equalTo(originalId)
+        )
+    }
+
+    @Test
+    fun `deck switches to notetype default when preference is false`() {
+        col.config.setBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK, false)
+        val customDeckId = addDeck("Custom Deck")
+
+        val customTypeName = addStandardNoteType(
+            "Custom Type", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}"
+        )
+        val customType = col.notetypes.byName(customTypeName)!!
+        customType.did = customDeckId
+        col.notetypes.save(customType)
+
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType(customTypeName)
+        idleMainLooper()
+
+        assertThat(
+            "deck switched to notetype default",
+            editor.viewModel.noteEditorState.value.selectedDeckName,
+            equalTo("Custom Deck")
+        )
+    }
+
+    @Test
+    fun `deck stays when preference is true`() {
+        col.config.setBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK, true)
+        val customDeckId = addDeck("Custom Deck")
+
+        val customTypeName = addStandardNoteType(
+            "Custom Type 2", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}"
+        )
+        val customType = col.notetypes.byName(customTypeName)!!
+        customType.did = customDeckId
+        col.notetypes.save(customType)
+
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        val originalDeckName = editor.viewModel.noteEditorState.value.selectedDeckName
+
+        editor.viewModel.selectNoteType(customTypeName)
+        idleMainLooper()
+
+        assertThat(
+            "deck unchanged",
+            editor.viewModel.noteEditorState.value.selectedDeckName,
+            equalTo(originalDeckName)
+        )
+    }
+
+    @Test
+    fun `no-op when selecting already-active note type`() {
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "test")
+        idleMainLooper()
+
+        val stateBefore = editor.viewModel.noteEditorState.value
+        val noteBefore = editor.viewModel.currentNote.value
+
+        editor.viewModel.selectNoteType("Basic")
+        idleMainLooper()
+
+        val stateAfter = editor.viewModel.noteEditorState.value
+        val noteAfter = editor.viewModel.currentNote.value
+
+        assertThat(
+            "fields unchanged",
+            stateAfter.fields.map { it.value.text },
+            equalTo(stateBefore.fields.map { it.value.text })
+        )
+        assertThat(
+            "note type unchanged",
+            stateAfter.selectedNoteTypeName,
+            equalTo(stateBefore.selectedNoteTypeName)
+        )
+        assertThat("note reference unchanged", noteAfter, equalTo(noteBefore))
+    }
+
+    @Test
+    fun `invalid note type name is a safe no-op`() {
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "test")
+        idleMainLooper()
+
+        val stateBefore = editor.viewModel.noteEditorState.value
+
+        editor.viewModel.selectNoteType("Nonexistent Type")
+        idleMainLooper()
+
+        val stateAfter = editor.viewModel.noteEditorState.value
+        assertThat(
+            "fields unchanged",
+            stateAfter.fields.map { it.value.text },
+            equalTo(stateBefore.fields.map { it.value.text })
+        )
+        assertThat("note type unchanged", stateAfter.selectedNoteTypeName, equalTo("Basic"))
+    }
+
+    @Test
+    fun `hasUnsavedChanges is true after note type switch`() {
+        createBasic2NoteType()
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        assertThat("clean state before switch", !editor.hasUnsavedChanges())
+
+        editor.viewModel.selectNoteType("Basic 2")
+        idleMainLooper()
+
+        assertThat(
+            "note type change counts as unsaved", editor.hasUnsavedChanges()
+        )
+    }
+
+    @Test
+    fun `collection current notetype updated after switch`() {
+        createBasic2NoteType()
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Basic 2")
+        idleMainLooper()
+
+        assertThat(
+            "collection current notetype updated", col.notetypes.current().name, equalTo("Basic 2")
+        )
+    }
+
+    @Test
+    fun `deck mid key updated to new notetype ID after switch`() {
+        createBasic2NoteType()
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Basic 2")
+        idleMainLooper()
+
+        val expectedId = col.notetypes.byName("Basic 2")!!.id
+        val currentDeck = col.decks.current()
+        assertThat(
+            "deck mid key matches new notetype", currentDeck.getLong("mid"), equalTo(expectedId)
+        )
+    }
+
+    @Test
+    fun `switching note type saves mid on editor selected deck`() = runTest {
+        col.config.setBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK, true)
+        val collectionDeckId = addDeck("Collection Deck", setAsSelected = true)
+        val editorDeckId = addDeck("Editor Deck")
+        val alternateNoteTypeName = addStandardNoteType(
+            "Basic Editor Deck", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}"
+        )
+        val alternateNoteType = col.notetypes.byName(alternateNoteTypeName)!!
+        val originalCollectionDeckMid = col.decks.getLegacy(collectionDeckId)?.optLong("mid")
+
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.onDeckSelected(SelectableDeck.Deck(editorDeckId, "Editor Deck"))
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType(alternateNoteTypeName)
+        idleMainLooper()
+
+        assertThat("editor stays on the selected deck", editor.deckId, equalTo(editorDeckId))
+        assertThat(
+            "selected editor deck stores the last-used note type",
+            col.decks.getLegacy(editorDeckId)!!.getLong("mid"),
+            equalTo(alternateNoteType.id)
+        )
+        assertThat(
+            "collection current deck is not overwritten",
+            col.decks.getLegacy(collectionDeckId)?.optLong("mid"),
+            equalTo(originalCollectionDeckMid)
+        )
+    }
+
+    @Test
+    fun `switching note type to preferred deck refreshes deck tags`() = runTest {
+        col.config.setBool(ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK, false)
+        val initialDeckId = addDeck("Initial Deck", setAsSelected = true)
+        val preferredDeckId = addDeck("Preferred Deck")
+        val basicNoteType = col.notetypes.byName("Basic")!!
+        basicNoteType.did = initialDeckId
+        col.notetypes.save(basicNoteType)
+        val alternateNoteTypeName = addStandardNoteType(
+            "Basic Preferred Deck", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}"
+        )
+        val alternateNoteType = col.notetypes.byName(alternateNoteTypeName)!!
+        alternateNoteType.did = preferredDeckId
+        col.notetypes.save(alternateNoteType)
+
+        addBasicNote("Initial Front", "Initial Back").update {
+                setTagsFromStr(col, "initial-only-tag")
+            }.updateCards { did = initialDeckId }
+        addBasicNote("Preferred Front", "Preferred Back").update {
+                setTagsFromStr(col, "preferred-only-tag")
+            }.updateCards { did = preferredDeckId }
+
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        assertThat(
+            "editor starts on the initial deck",
+            editor.viewModel.noteEditorState.value.selectedDeckName,
+            equalTo("Initial Deck")
+        )
+        assertThat(
+            "initial deck tags are loaded before switching",
+            editor.viewModel.deckTags.value.contains("initial-only-tag"),
+            equalTo(true)
+        )
+
+        editor.viewModel.selectNoteType(alternateNoteTypeName)
+        idleMainLooper()
+
+        assertThat(
+            "editor switches to the note type deck",
+            editor.viewModel.noteEditorState.value.selectedDeckName,
+            equalTo("Preferred Deck")
+        )
+        assertThat(
+            "preferred deck tags are reloaded after switching",
+            editor.viewModel.deckTags.value.contains("preferred-only-tag"),
+            equalTo(true)
+        )
+        assertThat(
+            "stale tags from the old deck are cleared",
+            editor.viewModel.deckTags.value.contains("initial-only-tag"),
+            equalTo(false)
+        )
+    }
     // ---- Helper Methods ----
 
     private fun moveToDynamicDeck(note: Note): DeckId {
@@ -675,6 +1006,15 @@ class NoteEditorTest : RobolectricTest() {
             clone
         }
     }
+
+    /** Creates a "Basic 2" note type with the same field schema as Basic */
+    private fun createBasic2NoteType(): String =
+        addStandardNoteType("Basic 2", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}")
+
+    /** Creates a "ThreeField" note type with Front, Back, and an extra Extra field */
+    private fun createThreeFieldNoteType(): String = addStandardNoteType(
+        "ThreeField", arrayOf("Front", "Back", "Extra"), "{{Front}}", "{{Back}}<br>{{Extra}}"
+    )
 
     private fun getCopyNoteIntent(editor: NoteEditorFragment): Bundle {
         val editorShadow = shadowOf(editor.requireActivity())
@@ -714,8 +1054,8 @@ class NoteEditorTest : RobolectricTest() {
     private fun getNoteEditorAddingNote(from: FromScreen): NoteEditorFragment {
         ensureCollectionLoadIsSynchronous()
         val bundle = when (from) {
-            REVIEWER -> NoteEditorLauncher.AddNoteFromReviewer().toBundle()
-            DECK_LIST -> NoteEditorLauncher.AddNote().toBundle()
+            FromScreen.REVIEWER -> NoteEditorLauncher.AddNoteFromReviewer().toBundle()
+            FromScreen.DECK_LIST -> NoteEditorLauncher.AddNote().toBundle()
         }
         val editor = openNoteEditorWithArgs(bundle)
         idleMainLooper()
@@ -736,8 +1076,8 @@ class NoteEditorTest : RobolectricTest() {
         from: FromScreen,
     ): NoteEditorFragment {
         val bundle = when (from) {
-            REVIEWER -> NoteEditorLauncher.EditCard(n.firstCard().id, DEFAULT).toBundle()
-            DECK_LIST -> NoteEditorLauncher.AddNote().toBundle()
+            FromScreen.REVIEWER -> NoteEditorLauncher.EditCard(n.firstCard().id, DEFAULT).toBundle()
+            FromScreen.DECK_LIST -> NoteEditorLauncher.AddNote().toBundle()
         }
         val editor = openNoteEditorWithArgs(bundle)
         idleMainLooper()
@@ -797,7 +1137,7 @@ class NoteEditorTest : RobolectricTest() {
 
         fun buildInternal(): NoteEditorFragment {
             col.notetypes.setCurrent(notetype)
-            val noteEditor = getNoteEditorAddingNote(REVIEWER)
+            val noteEditor = getNoteEditorAddingNote(FromScreen.REVIEWER)
             idleMainLooper()
 
             if (this.firstField != null) {
