@@ -664,8 +664,8 @@ class NoteEditorViewModel(
      *
      * 1. **Resolve & validate** – Look up the target note type by [noteTypeName] and
      *    short-circuit if it is already active.
-     * 2. **Persist to collection** – Set the new note type as current, associate it
-     *    with the active deck (`mid` key), and invalidate the notetype cache so
+    * 2. **Persist to collection** – Set the new note type as current, associate it
+    *    with the deck the editor will use after the switch (`mid` key), and invalidate the notetype cache so
      *    subsequent reads return up-to-date JSON.
      * 3. **Determine target deck** – Honor the user's
      *    [ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK] preference: either keep the
@@ -723,12 +723,6 @@ class NoteEditorViewModel(
 
                     val freshNotetype = col.notetypes.get(notetype.id) ?: return@withContext null
 
-                    // Associate the current deck with this note type so Anki remembers
-                    // which model was last used in this deck ("mid" = model ID).
-                    val currentDeck = col.decks.current()
-                    currentDeck.put("mid", freshNotetype.id)
-                    col.decks.save(currentDeck)
-
                     // --- 3. Determine the target deck ---
                     // When "Add cards to the note type's default deck" is enabled,
                     // switch to the note type's preferred deck; otherwise stay put.
@@ -738,6 +732,19 @@ class NoteEditorViewModel(
                         } else {
                             currentDeckId
                         }
+
+                    // Associate the note type with the deck the editor is actually using
+                    // after this switch so deck-specific model memory stays in sync.
+                    val targetDeck =
+                        col.decks.getLegacy(newDeckId) ?: run {
+                            Timber.w(
+                                "Deck %d missing while updating note type preference; falling back to current deck",
+                                newDeckId,
+                            )
+                            col.decks.current()
+                        }
+                    targetDeck.put("mid", freshNotetype.id)
+                    col.decks.save(targetDeck)
 
                     // --- 4. Flush pending UI edits into the current Note object ---
                     // The user may have typed text that hasn't been written to the Note
@@ -786,8 +793,9 @@ class NoteEditorViewModel(
                 // --- 6. Push results into reactive UI state (main thread) ---
                 if (result != null) {
                     val (newNote, freshNotetype, newDeckId) = result
+                    val deckChanged = newDeckId != _deckId.value
 
-                    if (newDeckId != _deckId.value) {
+                    if (deckChanged) {
                         _deckId.value = newDeckId
                     }
 
@@ -802,6 +810,10 @@ class NoteEditorViewModel(
                     updateStateFromNoteWithNotetype(
                         col, noteEditorState.isAddingNote, freshNotetype
                     )
+
+                    if (deckChanged) {
+                        loadTags(col)
+                    }
 
                     // Snapshot the new field values as the "clean" baseline so that
                     // hasUnsavedChanges() doesn't flag the migration itself as a change.
