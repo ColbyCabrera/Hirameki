@@ -439,6 +439,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private suspend fun reloadCardSuspend() {
         val card = currentCard ?: return
 
+        try {
+            withCol { card.load(this) }
+        } catch (_: Exception) {
+            // Card might have been deleted (e.g. note type changed to one with fewer templates)
+            loadCardSuspend()
+            return
+        }
+
         cardMediaPlayer.loadCardAvTags(card)
         withCol {
             val note = card.note(this)
