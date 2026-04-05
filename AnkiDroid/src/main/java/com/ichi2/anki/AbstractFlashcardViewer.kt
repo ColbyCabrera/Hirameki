@@ -551,7 +551,9 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         // so hardcode this functionality for now.
         // This is in onKeyDown to match the gesture processor in the Reviewer
         if (!displayAnswer) {
-            if (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            val focus = currentFocus
+            val isTextInputFocused = focus is android.widget.EditText
+            if (!isTextInputFocused && (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)) {
                 displayCardAnswer()
                 return true
             }
