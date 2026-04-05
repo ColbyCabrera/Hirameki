@@ -127,7 +127,7 @@ class HelpDialogTest {
             fragmentArgs =
                 Bundle().apply {
                     putInt(HelpDialog.ARG_MENU_TITLE, R.string.help)
-                    putParcelableArray(ARG_MENU_ITEMS, mainHelpMenuItems)
+                    putParcelableArray(ARG_MENU_ITEMS, mainHelpMenuItems.toList().toTypedArray())
                 },
             themeResId = R.style.Theme_Light,
             initialState = Lifecycle.State.RESUMED,
@@ -177,7 +177,7 @@ class HelpDialogTest {
             fragmentArgs =
                 Bundle().apply {
                     putInt(HelpDialog.ARG_MENU_TITLE, R.string.help)
-                    putParcelableArray(ARG_MENU_ITEMS, mainHelpMenuItems)
+                    putParcelableArray(ARG_MENU_ITEMS, mainHelpMenuItems.toList().toTypedArray())
                 },
             themeResId = R.style.Theme_Light,
             initialState = Lifecycle.State.RESUMED,
@@ -192,7 +192,7 @@ class HelpDialogTest {
                 .inRoot(isDialog())
                 .perform(click())
             verify(exactly = 1) { mockActionDispatcher.onOpenUrl(AnkiDroidApp.manualUrl) }
-            // an url resource is being shown
+            // a url resource is being shown
             onView(withText(R.string.help_item_anki_manual)).inRoot(isDialog()).perform(click())
             verify(exactly = 1) { mockActionDispatcher.onOpenUrlResource(R.string.link_anki_manual) }
             pressBackUnconditionally()
