@@ -244,6 +244,14 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             }
         }
 
+        // Sync ViewModel's currentCard to AbstractFlashcardViewer.currentCard
+        // so that AnkiDroidJsAPI and legacy code can access it
+        lifecycleScope.launch {
+            viewModel.state.collect {
+                currentCard = viewModel.currentCard
+            }
+        }
+
         // Initialize whiteboard controller directly (collection is already loaded from DeckPicker)
         whiteboardController = WhiteboardController(this, whiteboardViewModel, viewModel)
         whiteboardController.initialize()
