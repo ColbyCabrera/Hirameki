@@ -41,6 +41,7 @@ import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.ThemeUtils
 import androidx.appcompat.widget.TooltipCompat
 import androidx.compose.ui.platform.ComposeView
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -170,7 +171,16 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         enableEdgeToEdge()
 
         val composeView = ComposeView(this)
-        setContentView(composeView)
+        val coordinatorLayout = CoordinatorLayout(this).apply {
+            id = R.id.root_layout
+            addView(
+                composeView, android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        setContentView(coordinatorLayout)
 
         if (!ensureStoragePermissions()) {
             return
@@ -247,8 +257,8 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         // Sync ViewModel's currentCard to AbstractFlashcardViewer.currentCard
         // so that AnkiDroidJsAPI and legacy code can access it
         lifecycleScope.launch {
-            viewModel.state.collect {
-                currentCard = viewModel.currentCard
+            viewModel.currentCardFlow.collect {
+                currentCard = it
             }
         }
 

@@ -146,7 +146,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private val _effect = MutableSharedFlow<ReviewerEffect>()
     val effect: SharedFlow<ReviewerEffect> = _effect.asSharedFlow()
 
-    internal var currentCard: Card? = null
+    private val _currentCard = MutableStateFlow<Card?>(null)
+    val currentCardFlow: StateFlow<Card?> = _currentCard.asStateFlow()
+
+    private var currentCard: Card?
+        get() = _currentCard.value
+        set(value) {
+            _currentCard.value = value
+        }
     private var queueState: CurrentQueueState? = null
 
     // Tags dialog state
