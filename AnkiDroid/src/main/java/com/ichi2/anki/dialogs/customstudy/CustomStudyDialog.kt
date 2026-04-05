@@ -74,7 +74,6 @@ import com.ichi2.anki.utils.ext.sharedPrefs
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.withProgress
 import com.ichi2.utils.BundleUtils.getNullableInt
-import com.ichi2.utils.bundleOfNotNull
 import com.ichi2.utils.cancelable
 import com.ichi2.utils.coMeasureTime
 import com.ichi2.utils.customView
@@ -719,10 +718,9 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
          */
         fun createInstance(deckId: DeckId): CustomStudyDialog =
             CustomStudyDialog().apply {
-                arguments =
-                    bundleOfNotNull(
-                        ARG_DID to deckId,
-                    )
+                arguments = Bundle().apply {
+                    putLong(ARG_DID, deckId)
+                }
             }
 
         /**
@@ -736,11 +734,10 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             contextMenuAttribute: ContextMenuOption,
         ): CustomStudyDialog =
             CustomStudyDialog().apply {
-                arguments =
-                    bundleOfNotNull(
-                        ARG_DID to deckId,
-                        ARG_SUB_DIALOG_ID to contextMenuAttribute.ordinal,
-                    )
+                arguments = Bundle().apply {
+                    putLong(ARG_DID, deckId)
+                    putInt(ARG_SUB_DIALOG_ID, contextMenuAttribute.ordinal)
+                }
             }
 
         /**
