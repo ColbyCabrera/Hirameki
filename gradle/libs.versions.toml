@@ -95,8 +95,6 @@ ktlintGradlePlugin = "14.2.0"
 leakcanaryAndroid = "2.14"
 lint = "32.1.0"
 material = "1.13.0"
-# Using alpha version for androidx.compose.material3 to access newer APIs
-# TODO: migrate to stable 1.4.0 once alpha features are no longer needed
 material3 = "1.5.0-alpha16"
 materialTapTargetPrompt = "3.3.2"
 
@@ -121,14 +119,8 @@ timber = "5.0.1"
 # In the past, releases have been published before the changelog
 triplet = "4.0.0"
 turbine = "1.2.1"
-foundation = "1.10.6"
 androidxLifecycleViewmodelCompose = "2.10.0"
 androidxConstraintlayoutCompose = "1.1.1"
-uiText = "1.10.6"
-animation = "1.10.6"
-uiUnit = "1.10.6"
-material3WindowSizeClass = "1.4.0"
-uiTestJunit4 = "1.10.6"
 glanceAppWidget = "1.2.0-rc01"
 glancePreview = "1.2.0-rc01"
 
@@ -143,7 +135,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
-androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-compose-material = { module = "androidx.compose.material:material" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidxConstraintlayout" }
@@ -235,12 +227,12 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 cashapp-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
-androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
-androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
-androidx-compose-material3-window-size-class1 = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "material3WindowSizeClass" }
-androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "uiTestJunit4" }
-androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "uiTestJunit4" }
+androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation" }
+androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit" }
+androidx-compose-material3-window-size-class1 = { group = "androidx.compose.material3", name = "material3-window-size-class" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glanceAppWidget" }
 androidx-glance-appwidget-preview = { group = "androidx.glance", name = "glance-appwidget-preview", version.ref = "glanceAppWidget" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glanceAppWidget" }
@@ -253,8 +245,6 @@ android-library = { id = "com.android.library", version.ref = "androidGradlePlug
 
 tripletPlay = { id = "com.github.triplet.play", version.ref = "triplet" }
 
-
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
