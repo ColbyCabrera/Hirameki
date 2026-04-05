@@ -35,7 +35,7 @@
  * * Convert to Kotlin
  * * Remove Hungarian Notation
  * * Rely on `ListPreferenceTrait` rather than `ListPreference`
- * * `bundleOf` + `.apply` usage
+ * * Use standard Bundle constructor and direct population in ListPreferenceDialogFragment.newInstance
  * * `if (preference.callChangeListener(value)) {` - depend on `preference` and `listPreference`
  */
 
