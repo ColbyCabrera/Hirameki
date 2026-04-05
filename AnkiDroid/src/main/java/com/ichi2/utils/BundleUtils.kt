@@ -114,7 +114,7 @@ fun bundleOfNotNull(vararg pairs: Pair<String, Any>?): Bundle = Bundle().apply {
             is LongArray -> putLongArray(key, value)
             is ShortArray -> putShortArray(key, value)
             is Array<*> -> {
-                val componentType = value::class.java.componentType!!
+                val componentType = requireNotNull(value::class.java.componentType) { "Expected array with non-null component type for key \"$key\"" }
                 @Suppress("UNCHECKED_CAST") when {
                     android.os.Parcelable::class.java.isAssignableFrom(componentType) -> {
                         putParcelableArray(key, value as Array<android.os.Parcelable>)
