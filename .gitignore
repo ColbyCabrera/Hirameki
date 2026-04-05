@@ -70,7 +70,3 @@ hs_err_pid*
 # https://github.com/JetBrains/kotlin/blob/ca34e5d2fd255ed0501bae4fae3d3691dc40d375/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/compilerRunner/GradleKotlinCompilerRunner.kt#L458
 /.kotlin
 /.idea/dictionaries/project.xml
-
-# AI Agent files
-AGENTS.md
-.skills/
