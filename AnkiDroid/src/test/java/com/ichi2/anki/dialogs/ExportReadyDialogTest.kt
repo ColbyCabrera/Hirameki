@@ -54,4 +54,20 @@ class ExportReadyDialogTest {
         val backToMessage = dialogMessage.toMessage()
         assertThat(backToMessage.data.getString(ExportReadyDialog.KEY_EXPORT_PATH), equalTo("/legacy/path"))
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `fromMessage throws on null data`() {
+        val message = Message.obtain().apply {
+            data = null
+        }
+        ExportReadyDialogMessage.fromMessage(message)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `fromMessage throws on missing export path`() {
+        val message = Message.obtain().apply {
+            data = Bundle()
+        }
+        ExportReadyDialogMessage.fromMessage(message)
+    }
 }
