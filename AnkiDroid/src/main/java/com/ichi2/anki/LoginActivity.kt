@@ -55,13 +55,15 @@ class LoginActivity : MyAccount(), CollectionPermissionScreenLauncher {
         if (collectionPermissionScreenWasOpened()) {
             return
         }
+
+        refreshLoginStatus()
     }
 
     /**
      * Handles closing the activity and setting the result when the user is logged in
      */
     override fun refreshLoginStatus() {
-        if (Prefs.hkey != null) {
+        if (!Prefs.hkey.isNullOrEmpty()) {
             // This was intended to be shown from the 'app intro' where a user should not be logged in
             if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
                 showThemedToast(this, R.string.already_logged_in, true)
