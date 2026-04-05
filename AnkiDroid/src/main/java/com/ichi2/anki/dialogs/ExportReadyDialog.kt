@@ -75,7 +75,9 @@ class ExportReadyDialog : AsyncDialogFragment() {
 
         companion object {
             fun fromMessage(message: Message): ExportReadyDialogMessage {
-                val exportPath = message.data.getString(KEY_EXPORT_PATH)!!
+                val exportPath = message.data.getString(KEY_EXPORT_PATH)
+                    ?: message.data.getString("exportPath")
+                    ?: throw IllegalArgumentException("Missing export path")
                 return ExportReadyDialogMessage(exportPath)
             }
         }
