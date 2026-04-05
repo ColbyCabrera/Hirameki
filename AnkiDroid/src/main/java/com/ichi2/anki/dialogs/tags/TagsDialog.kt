@@ -142,7 +142,7 @@ class TagsDialog : AnalyticsDialogFragment {
         checkedTags: ArrayList<String> = arrayListOf(),
     ): TagsDialog {
         val file = IdsFile(context.cacheDir, noteIds)
-        arguments = this.arguments ?: Bundle().apply {
+        arguments = (this.arguments ?: Bundle()).apply {
             putParcelable(ARG_TAGS_FILE, file)
             putParcelable(ARG_DIALOG_TYPE, type)
             putStringArrayList(ARG_CHECKED_TAGS, checkedTags)
