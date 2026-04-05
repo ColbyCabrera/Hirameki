@@ -64,6 +64,7 @@ class LoginActivityTest : RobolectricTest() {
         assertEquals(false, activity.isFinishing)
 
         activity.finish()
+        // Verify that the activity does not return RESULT_OK (defaults to RESULT_CANCELED)
         assertEquals(Activity.RESULT_CANCELED, Shadows.shadowOf(activity).resultCode)
 
         controller.destroy()
