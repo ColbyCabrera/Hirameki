@@ -23,7 +23,6 @@ import android.widget.CheckBox
 import android.widget.ImageButton
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
@@ -185,9 +184,9 @@ class EditDeckDescriptionDialog : DialogFragment() {
         fun newInstance(deckId: DeckId): EditDeckDescriptionDialog =
             EditDeckDescriptionDialog().apply {
                 arguments =
-                    bundleOf(
-                        EditDeckDescriptionDialogViewModel.ARG_DECK_ID to deckId,
-                    )
+                    Bundle().apply {
+                        putLong(EditDeckDescriptionDialogViewModel.ARG_DECK_ID, deckId)
+                    }
             }
     }
 }

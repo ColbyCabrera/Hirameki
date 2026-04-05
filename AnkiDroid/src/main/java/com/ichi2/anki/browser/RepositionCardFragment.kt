@@ -22,7 +22,6 @@ import android.view.WindowManager
 import android.widget.CheckBox
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import com.google.android.material.textfield.TextInputEditText
@@ -90,12 +89,12 @@ class RepositionCardFragment : DialogFragment() {
                         stepInputEditText.textAsIntOrNull() ?: return@positiveButton
                     setFragmentResult(
                         REQUEST_REPOSITION_NEW_CARDS,
-                        bundleOf(
-                            ARG_POSITION to position,
-                            ARG_STEP to step,
-                            ARG_RANDOM to randomCheck.isChecked,
-                            ARG_SHIFT to shiftPositionCheck.isChecked,
-                        ),
+                        Bundle().apply {
+                            putInt(ARG_POSITION, position)
+                            putInt(ARG_STEP, step)
+                            putBoolean(ARG_RANDOM, randomCheck.isChecked)
+                            putBoolean(ARG_SHIFT, shiftPositionCheck.isChecked)
+                        },
                     )
                 }
             }
@@ -126,12 +125,12 @@ class RepositionCardFragment : DialogFragment() {
             shift: Boolean,
         ) = RepositionCardFragment().apply {
             arguments =
-                bundleOf(
-                    ARG_QUEUE_TOP to queueTop,
-                    ARG_QUEUE_BOTTOM to queueBottom,
-                    ARG_RANDOM to random,
-                    ARG_SHIFT to shift,
-                )
+                Bundle().apply {
+                    putInt(ARG_QUEUE_TOP, queueTop)
+                    putInt(ARG_QUEUE_BOTTOM, queueBottom)
+                    putBoolean(ARG_RANDOM, random)
+                    putBoolean(ARG_SHIFT, shift)
+                }
         }
     }
 }

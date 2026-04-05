@@ -16,7 +16,6 @@
 package com.ichi2.utils
 
 import android.os.Bundle
-import androidx.core.os.bundleOf
 
 /**
  * Collection of useful methods to be used with [android.os.Bundle]
@@ -29,12 +28,11 @@ object BundleUtils {
      * @param key the key to use
      * @return the long value, or null if not found
      */
-    fun Bundle.getNullableLong(key: String): Long? =
-        if (!containsKey(key)) {
-            null
-        } else {
-            getLong(key)
-        }
+    fun Bundle.getNullableLong(key: String): Long? = if (!containsKey(key)) {
+        null
+    } else {
+        getLong(key)
+    }
 
     /**
      * Retrieves a [Long] value from a [Bundle] using a key, throws if not found
@@ -57,12 +55,11 @@ object BundleUtils {
      * @param key the key to use
      * @return the int value, or null if not found
      */
-    fun Bundle.getNullableInt(key: String): Int? =
-        if (!containsKey(key)) {
-            null
-        } else {
-            getInt(key)
-        }
+    fun Bundle.getNullableInt(key: String): Int? = if (!containsKey(key)) {
+        null
+    } else {
+        getInt(key)
+    }
 }
 
 /**
@@ -76,18 +73,3 @@ fun Bundle.requireBoolean(key: String): Boolean {
     check(containsKey(key)) { "key: '$key' not found" }
     return getBoolean(key)
 }
-
-/**
- * Returns a new [Bundle] with the given key/value pairs as elements.
- *
- * Convenience method, allowing a `null` pair to mean 'exclude from the bundle'
- *
- * ```kotlin
- * bundleOf(
- *     optional?.let { KEY to it }
- * )
- * ```
- *
- * @throws IllegalArgumentException When a value is not a supported type of [Bundle].
- */
-fun bundleOfNotNull(vararg pairs: Pair<String, Any>?): Bundle = bundleOf(*pairs.mapNotNull { it }.toTypedArray())

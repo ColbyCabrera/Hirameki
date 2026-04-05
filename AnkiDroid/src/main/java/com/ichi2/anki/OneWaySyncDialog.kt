@@ -16,8 +16,8 @@
 
 package com.ichi2.anki
 
+import android.os.Bundle
 import android.os.Message
-import androidx.core.os.bundleOf
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.dialogs.ConfirmationDialog
 import com.ichi2.anki.dialogs.DialogHandlerMessage
@@ -69,7 +69,9 @@ class OneWaySyncDialog(
 
     override fun toMessage(): Message = Message.obtain().apply {
         what = this@OneWaySyncDialog.what
-        data = bundleOf("message" to message)
+        data = Bundle().apply {
+            putString("message", message)
+        }
     }
 
     companion object {

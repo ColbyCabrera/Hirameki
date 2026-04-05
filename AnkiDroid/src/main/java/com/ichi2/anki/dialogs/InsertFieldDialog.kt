@@ -20,7 +20,6 @@ import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.RecyclerView
 import com.ichi2.anki.CardTemplateEditor
@@ -76,7 +75,7 @@ class InsertFieldDialog : DialogFragment() {
     private fun selectFieldAndClose(textView: TextView) {
         parentFragmentManager.setFragmentResult(
             REQUEST_FIELD_INSERT,
-            bundleOf(KEY_INSERTED_FIELD to textView.text.toString()),
+            Bundle().apply { putString(KEY_INSERTED_FIELD, textView.text.toString()) },
         )
         dismiss()
     }
@@ -96,7 +95,7 @@ class InsertFieldDialog : DialogFragment() {
 
         fun newInstance(fieldItems: List<String>): InsertFieldDialog =
             InsertFieldDialog().apply {
-                arguments = bundleOf(KEY_FIELD_ITEMS to ArrayList(fieldItems))
+                arguments = Bundle().apply { putStringArrayList(KEY_FIELD_ITEMS, ArrayList(fieldItems)) }
             }
     }
 }

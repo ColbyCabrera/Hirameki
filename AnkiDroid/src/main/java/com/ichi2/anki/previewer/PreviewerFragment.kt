@@ -25,7 +25,6 @@ import android.view.View
 import android.webkit.WebView
 import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
@@ -289,10 +288,10 @@ class PreviewerFragment :
             currentIndex: Int,
         ): Intent {
             val arguments =
-                bundleOf(
-                    CURRENT_INDEX_ARG to currentIndex,
-                    CARD_IDS_FILE_ARG to idsFile,
-                )
+                Bundle().apply {
+                    putInt(CURRENT_INDEX_ARG, currentIndex)
+                    putParcelable(CARD_IDS_FILE_ARG, idsFile)
+                }
             return CardViewerActivity.getIntent(context, PreviewerFragment::class, arguments)
         }
     }

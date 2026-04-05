@@ -35,7 +35,7 @@
  * * Convert to Kotlin
  * * Remove Hungarian Notation
  * * Rely on `ListPreferenceTrait` rather than `ListPreference`
- * * `bundleOf` + `.apply` usage
+ * * Use standard Bundle constructor and direct population in ListPreferenceDialogFragment.newInstance
  * * `if (preference.callChangeListener(value)) {` - depend on `preference` and `listPreference`
  */
 
@@ -44,7 +44,6 @@ package com.ichi2.preferences
 import android.content.DialogInterface
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import androidx.preference.ListPreferenceDialogFragmentCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceDialogFragmentCompat
@@ -148,10 +147,11 @@ class ListPreferenceDialogFragment : PreferenceDialogFragmentCompat() {
         private const val SAVE_STATE_INDEX = "ListPreferenceDialogFragment.index"
         private const val SAVE_STATE_ENTRIES = "ListPreferenceDialogFragment.entries"
         private const val SAVE_STATE_ENTRY_VALUES = "ListPreferenceDialogFragment.entryValues"
+        private const val ARG_KEY = "key"
 
         fun newInstance(key: String?): ListPreferenceDialogFragment =
             ListPreferenceDialogFragment().apply {
-                arguments = bundleOf(ARG_KEY to key)
+                arguments = Bundle().apply { putString(ARG_KEY, key) }
             }
     }
 }

@@ -19,7 +19,6 @@ import android.os.Bundle
 import android.view.View
 import android.webkit.WebView
 import androidx.core.os.BundleCompat
-import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
@@ -87,7 +86,7 @@ class TemplatePreviewerFragment :
             backgroundOverrideColor: Int? = null,
         ): TemplatePreviewerFragment =
             TemplatePreviewerFragment().apply {
-                val args = bundleOf(ARGS_KEY to arguments)
+                val args = Bundle().apply { putParcelable(ARGS_KEY, arguments) }
                 backgroundOverrideColor?.let { args.putInt(ARG_BACKGROUND_OVERRIDE_COLOR, backgroundOverrideColor) }
                 this.arguments = args
             }

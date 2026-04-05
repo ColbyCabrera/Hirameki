@@ -29,7 +29,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.os.BundleCompat
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import anki.cards.cardIds
 import anki.generic.Empty
@@ -254,16 +253,14 @@ class ExportDialogFragment : DialogFragment() {
     private fun buildExportLimit(selectedDeck: DeckNameId?): ExportLimit =
         when (arguments?.getSerializableCompat<ExportType>(ARG_TYPE)) {
             ExportType.Notes -> {
-                val selectedNotesIds = arguments?.let {
-                    BundleCompat.getParcelableArrayList(it, ARG_EXPORTED_IDS, Long::class.java)
-                } ?: error("Requested export for selected notes but no notes ids were passed in!")
-                exportLimit { noteIds = noteIds { this.noteIds.addAll(selectedNotesIds.toList()) } }
+                val selectedNotesIds = arguments?.getLongArray(ARG_EXPORTED_IDS)?.toList()
+                    ?: error("Requested export for selected notes but no notes ids were passed in!")
+                exportLimit { noteIds = noteIds { this.noteIds.addAll(selectedNotesIds) } }
             }
 
             ExportType.Cards -> {
-                val selectedCardIds = arguments?.let {
-                    BundleCompat.getParcelableArrayList(it, ARG_EXPORTED_IDS, Long::class.java)
-                } ?: error("Requested export for selected cards but no cards ids were passed in!")
+                val selectedCardIds = arguments?.getLongArray(ARG_EXPORTED_IDS)?.toList()
+                    ?: error("Requested export for selected cards but no cards ids were passed in!")
                 exportLimit { cardIds = cardIds { this.cids.addAll(selectedCardIds) } }
             }
 
@@ -292,17 +289,17 @@ class ExportDialogFragment : DialogFragment() {
         fun newInstance(): ExportDialogFragment = ExportDialogFragment()
 
         fun newInstance(did: DeckId) = ExportDialogFragment().apply {
-            arguments = bundleOf(ARG_DECK_ID to did)
+            arguments = Bundle().apply { putLong(ARG_DECK_ID, did) }
         }
 
         fun newInstance(
             type: ExportType,
             ids: List<Long>,
         ) = ExportDialogFragment().apply {
-            arguments = bundleOf(
-                ARG_TYPE to type,
-                ARG_EXPORTED_IDS to ids,
-            )
+            arguments = Bundle().apply {
+                putSerializable(ARG_TYPE, type)
+                putLongArray(ARG_EXPORTED_IDS, ids.toLongArray())
+            }
         }
     }
 }

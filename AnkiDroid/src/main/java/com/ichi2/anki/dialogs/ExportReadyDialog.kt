@@ -19,7 +19,6 @@ package com.ichi2.anki.dialogs
 import android.os.Bundle
 import android.os.Message
 import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -28,22 +27,21 @@ import com.ichi2.utils.positiveButton
 
 class ExportReadyDialog : AsyncDialogFragment() {
     private val exportPath
-        get() = requireArguments().getString(KEY_EXPORT_PATH) ?: error("Missing required argument: exportPath!")
+        get() = requireArguments().getString(KEY_EXPORT_PATH)
+            ?: error("Missing required argument: exportPath!")
 
     override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
         val dialog = AlertDialog.Builder(requireActivity())
 
-        dialog
-            .setTitle(notificationTitle)
-            .positiveButton(R.string.export_choice_save_to) {
+        dialog.setTitle(notificationTitle).positiveButton(R.string.export_choice_save_to) {
                 parentFragmentManager.setFragmentResult(
                     REQUEST_EXPORT_SAVE,
-                    bundleOf(KEY_EXPORT_PATH to exportPath),
+                    Bundle().apply { putString(KEY_EXPORT_PATH, exportPath) },
                 )
             }.negativeButton(R.string.export_choice_share) {
                 parentFragmentManager.setFragmentResult(
                     REQUEST_EXPORT_SHARE,
-                    bundleOf(KEY_EXPORT_PATH to exportPath),
+                    Bundle().apply { putString(KEY_EXPORT_PATH, exportPath) },
                 )
             }
 
@@ -62,25 +60,25 @@ class ExportReadyDialog : AsyncDialogFragment() {
     class ExportReadyDialogMessage(
         private val exportPath: String,
     ) : DialogHandlerMessage(
-            which = WhichDialogHandler.MSG_EXPORT_READY,
-            analyticName = "ExportReadyDialog",
-        ) {
+        which = WhichDialogHandler.MSG_EXPORT_READY,
+        analyticName = "ExportReadyDialog",
+    ) {
         override fun handleAsyncMessage(activity: AnkiActivity) {
             // we may be called via any AnkiActivity but export is a DeckPicker thing
-            activity
-                .requireDeckPickerOrShowError()
-                ?.showDialogFragment(newInstance(exportPath))
+            activity.requireDeckPickerOrShowError()?.showDialogFragment(newInstance(exportPath))
         }
 
-        override fun toMessage(): Message =
-            Message.obtain().apply {
-                what = this@ExportReadyDialogMessage.what
-                data = bundleOf("exportPath" to exportPath)
-            }
+        override fun toMessage(): Message = Message.obtain().apply {
+            what = this@ExportReadyDialogMessage.what
+            data = Bundle().apply { putString(KEY_EXPORT_PATH, exportPath) }
+        }
 
         companion object {
             fun fromMessage(message: Message): ExportReadyDialogMessage {
-                val exportPath = message.data.getString("exportPath")!!
+                val data = requireNotNull(message.data) { "Missing message data bundle" }
+                val exportPath = data.getString(KEY_EXPORT_PATH)
+                    ?: data.getString("exportPath")
+                    ?: throw IllegalArgumentException("Missing export path")
                 return ExportReadyDialogMessage(exportPath)
             }
         }
@@ -91,9 +89,8 @@ class ExportReadyDialog : AsyncDialogFragment() {
         const val REQUEST_EXPORT_SHARE = "request_export_share"
         const val KEY_EXPORT_PATH = "key_export_path"
 
-        fun newInstance(exportPath: String) =
-            ExportReadyDialog().apply {
-                arguments = bundleOf(KEY_EXPORT_PATH to exportPath)
-            }
+        fun newInstance(exportPath: String) = ExportReadyDialog().apply {
+            arguments = Bundle().apply { putString(KEY_EXPORT_PATH, exportPath) }
+        }
     }
 }

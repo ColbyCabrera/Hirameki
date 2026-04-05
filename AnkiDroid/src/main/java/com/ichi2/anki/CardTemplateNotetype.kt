@@ -21,7 +21,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.core.os.bundleOf
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.libanki.CardTemplate
 import com.ichi2.anki.libanki.Collection
@@ -49,10 +48,10 @@ class CardTemplateNotetype(
     private var _templateChanges = ArrayList<Array<Any>>()
 
     fun toBundle(): Bundle =
-        bundleOf(
-            INTENT_MODEL_FILENAME to saveTempNoteType(AnkiDroidApp.instance.applicationContext, notetype),
-            "mTemplateChanges" to _templateChanges,
-        )
+        Bundle().apply {
+            putString(INTENT_MODEL_FILENAME, saveTempNoteType(AnkiDroidApp.instance.applicationContext, notetype))
+            putSerializable("mTemplateChanges", _templateChanges)
+        }
 
     private fun loadTemplateChanges(bundle: Bundle) {
         try {

@@ -1,7 +1,7 @@
 [versions]
-activityCompose = "1.12.4"
+activityCompose = "1.13.0"
 compileSdk = "36"
-composeBomVersion = "2026.02.01"
+composeBomVersion = "2026.03.01"
 nav3Core = "1.0.1"
 lifecycleViewmodelNav3 = "2.10.0"
 
@@ -20,17 +20,17 @@ ktlint = '1.5.0'
 # https://developer.android.com/build/releases/past-releases
 androidGradlePlugin = "9.1.0"
 # https://developer.android.com/jetpack/androidx/releases/activity
-androidxActivity = "1.12.4"
+androidxActivity = "1.13.0"
 # https://developer.android.com/jetpack/androidx/releases/annotation
 androidxAnnotation = "1.9.1"
 # https://developer.android.com/jetpack/androidx/releases/appcompat
 androidxAppCompat = "1.7.1"
 # https://developer.android.com/jetpack/androidx/releases/browser
-androidxBrowser = "1.9.0"
+androidxBrowser = "1.10.0"
 # https://developer.android.com/jetpack/androidx/releases/constraintlayout
 androidxConstraintlayout = "2.2.1"
 # https://developer.android.com/jetpack/androidx/releases/core
-androidxCoreKtx = "1.17.0"
+androidxCoreKtx = "1.18.0"
 # https://developer.android.com/jetpack/androidx/releases/draganddrop
 androidxDragAndDrop = "1.0.0"
 # https://developer.android.com/jetpack/androidx/releases/exifinterface
@@ -40,7 +40,7 @@ androidxFragmentKtx = "1.8.9"
 # https://developer.android.com/jetpack/androidx/releases/media
 androidxMedia = "1.7.1"
 # https://developer.android.com/jetpack/androidx/releases/media3
-androidxMedia3 = "1.9.2"
+androidxMedia3 = "1.10.0"
 # https://developer.android.com/jetpack/androidx/releases/preference
 androidxPreferenceKtx = "1.2.1"
 # https://developer.android.com/jetpack/androidx/releases/recyclerview
@@ -58,7 +58,7 @@ androidxViewpager2 = "1.1.0"
 # https://developer.android.com/jetpack/androidx/releases/webkit
 androidxWebkit = "1.15.0"
 # https://developer.android.com/jetpack/androidx/releases/work
-androidxWork = "2.11.1"
+androidxWork = "2.11.2"
 ankiBackend = '0.1.61-anki25.09'
 autoService = "1.1.1"
 autoServiceAnnotations = "1.1.1"
@@ -88,25 +88,25 @@ junitJupiter = "6.0.3"
 # https://github.com/junit-team/junit5/releases/ - version numbers differ; changelogs in bundle
 junitPlatformLauncher = "6.0.3"
 # https://github.com/JetBrains/kotlin/releases/
-kotlin = '2.3.10'
+kotlin = '2.3.20'
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxSerializationJson = "1.10.0"
-ktlintGradlePlugin = "14.1.0"
+ktlintGradlePlugin = "14.2.0"
 leakcanaryAndroid = "2.14"
 lint = "32.1.0"
 material = "1.13.0"
-material3 = "1.5.0-alpha15"
+material3 = "1.5.0-alpha16"
 materialTapTargetPrompt = "3.3.2"
 
 # Only needed until mockito kotlin updates this transitive itself
-mockitoCore = "5.22.0"
+mockitoCore = "5.23.0"
 mockitoInline = "5.2.0"
-mockitoKotlin = "6.2.3" # maybe can remove mockitoCore and its usage with release > 5.4.0
+mockitoKotlin = "6.3.0" # maybe can remove mockitoCore and its usage with release > 5.4.0
 mockk = "1.14.9"
 nanohttpd = "2.3.1"
 okhttp = "5.3.2"
 # https://github.com/protocolbuffers/protobuf/releases
-protobufKotlinLite = "4.34.0"
+protobufKotlinLite = "4.34.1"
 # ../AnkiDroid/robolectricDownload.gradle may need changes - read instructions in that file
 robolectric = "4.16.1"
 searchpreference = "2.7.3"
@@ -119,14 +119,8 @@ timber = "5.0.1"
 # In the past, releases have been published before the changelog
 triplet = "4.0.0"
 turbine = "1.2.1"
-foundation = "1.10.4"
 androidxLifecycleViewmodelCompose = "2.10.0"
 androidxConstraintlayoutCompose = "1.1.1"
-uiText = "1.10.4"
-animation = "1.10.4"
-uiUnit = "1.10.4"
-material3WindowSizeClass = "1.4.0"
-uiTestJunit4 = "1.10.4"
 glanceAppWidget = "1.2.0-rc01"
 glancePreview = "1.2.0-rc01"
 
@@ -141,7 +135,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
-androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-compose-material = { module = "androidx.compose.material:material" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidxConstraintlayout" }
@@ -233,12 +227,12 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 cashapp-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
-androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
-androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
-androidx-compose-material3-window-size-class1 = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "material3WindowSizeClass" }
-androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "uiTestJunit4" }
-androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "uiTestJunit4" }
+androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation" }
+androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit" }
+androidx-compose-material3-window-size-class1 = { group = "androidx.compose.material3", name = "material3-window-size-class" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glanceAppWidget" }
 androidx-glance-appwidget-preview = { group = "androidx.glance", name = "glance-appwidget-preview", version.ref = "glanceAppWidget" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glanceAppWidget" }
@@ -251,15 +245,11 @@ android-library = { id = "com.android.library", version.ref = "androidGradlePlug
 
 tripletPlay = { id = "com.github.triplet.play", version.ref = "triplet" }
 
-
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
-
 ktlint-gradle-plugin = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradlePlugin" }
-
 
 keeper = { id = "com.slack.keeper", version.ref = "slackKeeper" }

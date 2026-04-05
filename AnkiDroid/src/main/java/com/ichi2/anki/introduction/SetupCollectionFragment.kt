@@ -42,7 +42,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -68,7 +67,7 @@ class SetupCollectionFragment : Fragment() {
     }
 
     private fun setResult(option: CollectionSetupOption) {
-        setFragmentResult(FRAGMENT_KEY, bundleOf(RESULT_KEY to option))
+        setFragmentResult(FRAGMENT_KEY, Bundle().apply { putParcelable(RESULT_KEY, option) })
     }
 
     @Parcelize

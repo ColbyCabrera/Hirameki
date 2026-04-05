@@ -36,7 +36,6 @@ import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
-import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
@@ -75,7 +74,6 @@ import com.ichi2.anki.utils.ext.sharedPrefs
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.withProgress
 import com.ichi2.utils.BundleUtils.getNullableInt
-import com.ichi2.utils.bundleOfNotNull
 import com.ichi2.utils.cancelable
 import com.ichi2.utils.coMeasureTime
 import com.ichi2.utils.customView
@@ -444,7 +442,7 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
                 STUDY_FORGOT, STUDY_AHEAD, STUDY_PREVIEW, STUDY_TAGS -> CustomStudyAction.CUSTOM_STUDY_SESSION
             }
 
-        setFragmentResult(CustomStudyAction.REQUEST_KEY, bundleOf(CustomStudyAction.BUNDLE_KEY to action.ordinal))
+        setFragmentResult(CustomStudyAction.REQUEST_KEY, Bundle().apply { putInt(CustomStudyAction.BUNDLE_KEY, action.ordinal) })
 
         // save the default values (not in upstream)
         when (contextMenuOption) {
@@ -720,10 +718,9 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
          */
         fun createInstance(deckId: DeckId): CustomStudyDialog =
             CustomStudyDialog().apply {
-                arguments =
-                    bundleOfNotNull(
-                        ARG_DID to deckId,
-                    )
+                arguments = Bundle().apply {
+                    putLong(ARG_DID, deckId)
+                }
             }
 
         /**
@@ -737,11 +734,10 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             contextMenuAttribute: ContextMenuOption,
         ): CustomStudyDialog =
             CustomStudyDialog().apply {
-                arguments =
-                    bundleOfNotNull(
-                        ARG_DID to deckId,
-                        ARG_SUB_DIALOG_ID to contextMenuAttribute.ordinal,
-                    )
+                arguments = Bundle().apply {
+                    putLong(ARG_DID, deckId)
+                    putInt(ARG_SUB_DIALOG_ID, contextMenuAttribute.ordinal)
+                }
             }
 
         /**

@@ -20,7 +20,6 @@ package com.ichi2.anki.multimedia
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
@@ -100,10 +99,10 @@ class MultimediaActivity :
         val fragment =
             FragmentFactoryUtils.instantiate<Fragment>(this, fragmentClassName).apply {
                 arguments =
-                    bundleOf(
-                        MULTIMEDIA_ARGS_EXTRA to intent.multimediaArgsExtra,
-                        EXTRA_MEDIA_OPTIONS to intent.mediaOptionsExtra,
-                    )
+                    Bundle().apply {
+                        putSerializable(MULTIMEDIA_ARGS_EXTRA, intent.multimediaArgsExtra)
+                        putSerializable(EXTRA_MEDIA_OPTIONS, intent.mediaOptionsExtra)
+                    }
             }
 
         supportFragmentManager.commit {

@@ -25,7 +25,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.BundleCompat
-import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
@@ -143,7 +142,7 @@ class ImportFileSelectionFragment : DialogFragment() {
 
         fun newInstance(options: ImportOptions) =
             ImportFileSelectionFragment().apply {
-                arguments = bundleOf(ARG_IMPORT_OPTIONS to options)
+                arguments = Bundle().apply { putParcelable(ARG_IMPORT_OPTIONS, options) }
             }
 
         /**
