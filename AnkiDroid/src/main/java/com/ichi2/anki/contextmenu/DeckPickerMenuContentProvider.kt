@@ -47,7 +47,7 @@ class DeckPickerMenuContentProvider(
         deckPicker.supportFragmentManager.setFragmentResult(
             REQUEST_KEY_CONTEXT_MENU,
             Bundle().apply {
-                putSerializable(CONTEXT_MENU_DECK_ID, id)
+                putLong(CONTEXT_MENU_DECK_ID, id)
                 putSerializable(CONTEXT_MENU_DECK_OPTION, selectedOption)
             },
         )
