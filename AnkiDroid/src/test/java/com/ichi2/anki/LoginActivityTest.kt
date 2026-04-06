@@ -44,12 +44,14 @@ class LoginActivityTest : RobolectricTest() {
         Prefs.hkey = "anything not empty"
 
         val controller = Robolectric.buildActivity(LoginActivity::class.java).create()
-        val activity = controller.get()
+        try {
+            val activity = controller.get()
 
-        assertEquals(Activity.RESULT_OK, Shadows.shadowOf(activity).resultCode)
-        assertEquals(true, activity.isFinishing)
-
-        controller.destroy()
+            assertEquals(Activity.RESULT_OK, Shadows.shadowOf(activity).resultCode)
+            assertEquals(true, activity.isFinishing)
+        } finally {
+            controller.destroy()
+        }
     }
 
     @Test
