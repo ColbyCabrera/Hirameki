@@ -16,6 +16,7 @@
 
 package com.ichi2.utils
 
+import android.text.Editable
 import android.widget.EditText
 
 /** Moves the cursor to the end of the [EditText] */
@@ -27,4 +28,8 @@ fun EditText.moveCursorToEnd() = setSelection(text?.length ?: 0)
  *
  * note: "1.0" returns `null`
  */
-fun EditText.textAsIntOrNull() = this.text.toString().toIntOrNull()
+fun EditText.textAsIntOrNull() = this.text?.textAsIntOrNull()
+
+fun Editable.textAsIntOrNull() = this.toString().toIntOrNull()
+
+fun CharSequence.textAsIntOrNull() = this.toString().toIntOrNull()
