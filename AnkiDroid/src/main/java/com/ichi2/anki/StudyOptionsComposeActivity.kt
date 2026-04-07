@@ -22,55 +22,65 @@ package com.ichi2.anki
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.*
+import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
 import com.ichi2.anki.deckpicker.compose.StudyOptionsScreen
+import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
 import com.ichi2.anki.utils.ext.showDialogFragment
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class StudyOptionsComposeActivity : AnkiActivity() {
+    @VisibleForTesting
+    internal var collectionDispatcher: CoroutineDispatcher = ioDispatcher
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (showedActivityFailedScreen(savedInstanceState)) {
+            return
+        }
         super.onCreate(savedInstanceState)
         setContent {
             var studyOptionsData by remember { mutableStateOf<StudyOptionsData?>(null) }
 
             LaunchedEffect(Unit) {
-                studyOptionsData =
-                    withContext(Dispatchers.IO) {
-                        withCol {
-                            val deckId = intent.getLongExtra(DECK_ID, decks.current().id)
-                            decks.select(deckId)
-                            val deck = decks.current()
-                            val counts = sched.counts()
-                            var buriedNew = 0
-                            var buriedLearning = 0
-                            var buriedReview = 0
-                            val tree = sched.deckDueTree(deck.id)
-                            if (tree != null) {
-                                buriedNew = tree.newCount - counts.new
-                                buriedLearning = tree.learnCount - counts.lrn
-                                buriedReview = tree.reviewCount - counts.rev
-                            }
-                            StudyOptionsData(
-                                deckId = deck.id,
-                                deckName = deck.getString("name"),
-                                deckDescription = deck.description,
-                                newCount = counts.new,
-                                lrnCount = counts.lrn,
-                                revCount = counts.rev,
-                                buriedNew = buriedNew,
-                                buriedLrn = buriedLearning,
-                                buriedRev = buriedReview,
-                                totalNewCards = sched.totalNewForCurrentDeck(),
-                                totalCards = decks.cardCount(deck.id, includeSubdecks = true),
-                                isFiltered = deck.isFiltered,
-                                haveBuried = sched.haveBuried(),
-                            )
+                studyOptionsData = withContext(collectionDispatcher) {
+                    withCol {
+                        val deckId = intent.getLongExtra(DECK_ID, decks.current().id)
+                        decks.select(deckId)
+                        val deck = decks.current()
+                        val counts = sched.counts()
+                        var buriedNew = 0
+                        var buriedLearning = 0
+                        var buriedReview = 0
+                        val tree = sched.deckDueTree(deck.id)
+                        if (tree != null) {
+                            buriedNew = tree.newCount - counts.new
+                            buriedLearning = tree.learnCount - counts.lrn
+                            buriedReview = tree.reviewCount - counts.rev
                         }
+                        StudyOptionsData(
+                            deckId = deck.id,
+                            deckName = deck.getString("name"),
+                            deckDescription = deck.description,
+                            newCount = counts.new,
+                            lrnCount = counts.lrn,
+                            revCount = counts.rev,
+                            buriedNew = buriedNew,
+                            buriedLrn = buriedLearning,
+                            buriedRev = buriedReview,
+                            totalNewCards = sched.totalNewForCurrentDeck(),
+                            totalCards = decks.cardCount(deck.id, includeSubdecks = true),
+                            isFiltered = deck.isFiltered,
+                            haveBuried = sched.haveBuried(),
+                        )
                     }
+                }
             }
 
             StudyOptionsScreen(
@@ -84,6 +94,7 @@ class StudyOptionsComposeActivity : AnkiActivity() {
             )
         }
     }
+
     companion object {
         const val DECK_ID = "deck_id"
     }
