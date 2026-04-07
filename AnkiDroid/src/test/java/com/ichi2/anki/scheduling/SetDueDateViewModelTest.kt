@@ -16,6 +16,7 @@
 
 package com.ichi2.anki.scheduling
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.sched.SetDueDateDays
 import com.ichi2.anki.scheduling.SetDueDateViewModel.DateRange
@@ -25,9 +26,11 @@ import com.ichi2.testutils.common.assertThrows
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
+import org.junit.runner.RunWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@RunWith(AndroidJUnit4::class)
 class SetDueDateViewModelTest : JvmTest() {
     @Test
     fun `initial values`() =
