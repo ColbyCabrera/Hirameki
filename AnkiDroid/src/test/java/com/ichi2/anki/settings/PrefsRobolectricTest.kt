@@ -47,7 +47,6 @@ import kotlin.reflect.KVisibility
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
-import kotlin.sequences.map
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
@@ -91,8 +90,7 @@ class PrefsRobolectricTest : RobolectricTest() {
             .flatMap { getAttrsFromXml(targetContext, it, listOf("defaultValue", "key")) }
             .filter { it["key"] != null }.associate {
                 PreferenceTestUtils.attrValueToString(
-                    it["key"]!!,
-                    targetContext
+                    it["key"]!!, targetContext
                 ) to it["defaultValue"]
             }
 
@@ -140,16 +138,16 @@ class PrefsRobolectricTest : RobolectricTest() {
     @Suppress("UNCHECKED_CAST")
     @Test
     fun `PrefEnum values match their preference entries`() {
-        val listPreferences = PreferenceTestUtils.getAllPreferencesFragments(targetContext)
-            .filterIsInstance<SettingsFragment>().map { it.preferenceResource }
-            .flatMap { getAttrsFromXml(targetContext, it, listOf("key", "entryValues")) }
-            .filter { it["key"] != null && it["entryValues"] != null }.associate {
-                PreferenceTestUtils.attrValueToString(
-                    it["key"]!!,
-                    targetContext
-                ) to PreferenceTestUtils.attrToStringArray(it["entryValues"]!!, targetContext)
-                    .toList()
-            }
+        val listPreferences =
+            PreferenceTestUtils.getAllPreferencesFragments(targetContext).asSequence()
+                .filterIsInstance<SettingsFragment>().map { it.preferenceResource }
+                .flatMap { getAttrsFromXml(targetContext, it, listOf("key", "entryValues")) }
+                .filter { it["key"] != null && it["entryValues"] != null }.associate {
+                    PreferenceTestUtils.attrValueToString(
+                        it["key"]!!, targetContext
+                    ) to PreferenceTestUtils.attrToStringArray(it["entryValues"]!!, targetContext)
+                        .toList()
+                }
 
         // Prefs property name (String) -> Key (String)
         val allPropertiesAndKeys = getPropertyNamesAndKeys()
