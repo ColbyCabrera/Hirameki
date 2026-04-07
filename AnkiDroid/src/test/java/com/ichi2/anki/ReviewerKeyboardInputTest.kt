@@ -46,14 +46,13 @@ import com.ichi2.anki.reviewer.BindingProcessor
 import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.ReviewerBinding
 import com.ichi2.anki.utils.ext.addBinding
+import io.mockk.every
+import io.mockk.spyk
 import kotlinx.coroutines.Job
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
-import org.mockito.Mockito
-import org.mockito.kotlin.whenever
 import timber.log.Timber
 
 @RunWith(AndroidJUnit4::class)
@@ -217,11 +216,16 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
 
         underTest.handleSpacebar()
 
-        assertThat("After a keypress the answer should be displayed", underTest.testIsDisplayingAnswer())
+        assertThat(
+            "After a keypress the answer should be displayed", underTest.testIsDisplayingAnswer()
+        )
 
         underTest.handleSpacebar()
 
-        assertThat("After a second keypress the question should be displayed", !underTest.testIsDisplayingAnswer())
+        assertThat(
+            "After a second keypress the question should be displayed",
+            !underTest.testIsDisplayingAnswer()
+        )
     }
 
     private fun assertGamepadButtonAnswers(
@@ -237,7 +241,8 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         assertThat(underTest.processedAnswer(), equalTo(rating))
     }
 
-    internal class KeyboardInputTestReviewer : Reviewer(), BindingProcessor<ReviewerBinding, ViewerCommand> {
+    internal class KeyboardInputTestReviewer : Reviewer(),
+        BindingProcessor<ReviewerBinding, ViewerCommand> {
         private var focusTextField = false
         private var answered: Rating? = null
         private var answerButtonCount = 4
@@ -258,13 +263,25 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             displayAnswer = true
         }
 
+        fun displayQuestionForTest() {
+            displayAnswer = false
+        }
+
         var processor: BindingMap<ReviewerBinding, ViewerCommand> =
             BindingMap(sharedPrefs(), ViewerCommand.entries, this)
 
         override fun processAction(action: ViewerCommand, binding: ReviewerBinding): Boolean {
+            val currentSide = if (displayAnswer) CardSide.ANSWER else CardSide.QUESTION
+            if (binding.side != CardSide.BOTH && binding.side != currentSide) {
+                return false
+            }
+            if (action == ViewerCommand.UNDO && !isUndoAvailable) {
+                return false
+            }
             executeCommand(action)
             return true
         }
+
         override fun displayCardAnswer() {
             cardFlips.add("answer")
             displayAnswer = true
@@ -289,18 +306,17 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         fun testIsDisplayingAnswer() = cardFlips.last() == "answer"
 
         fun handleUnicodeKeyPress(unicodeChar: Char) {
-            val key = mockKeyEvent
-            // COULD_BE_BETTER: We do not handle shift
-            whenever(key.getUnicodeChar(ArgumentMatchers.anyInt())).thenReturn(unicodeChar.code)
+            val downEvent = createUnicodeKeyEvent(ACTION_DOWN, unicodeChar)
             try {
-                whenever(key.action).thenReturn(ACTION_DOWN)
-                onKeyDown(0, key)
+                if (!processor.onKeyDown(downEvent)) {
+                    onKeyDown(0, downEvent)
+                }
             } catch (e: Exception) {
                 Timber.e(e)
             }
+            val upEvent = createUnicodeKeyEvent(ACTION_UP, unicodeChar)
             try {
-                whenever(key.action).thenReturn(ACTION_UP)
-                onKeyUp(0, key)
+                onKeyUp(0, upEvent)
             } catch (e: Exception) {
                 Timber.e(e)
             }
@@ -310,39 +326,37 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             keycode: Int,
             unicodeChar: Char,
         ) {
+            if (shouldIgnoreSpaceWhenTextFieldFocused(keycode)) {
+                return
+            }
             // COULD_BE_BETTER: Saves 20 seconds on tests to remove AndroidJUnit4,
             // but may let something slip through the cracks.
-            val e = mockKeyEvent
-            // COULD_BE_BETTER: We do not handle shift
-            whenever(e.getUnicodeChar(ArgumentMatchers.anyInt())).thenReturn(unicodeChar.code)
-            whenever(e.action).thenReturn(ACTION_DOWN)
-            whenever(e.keyCode).thenReturn(keycode)
+            val e = createKeyEvent(ACTION_DOWN, keycode, unicodeChar)
             try {
-                onKeyDown(keycode, e)
+                if (!processor.onKeyDown(e)) {
+                    onKeyDown(keycode, e)
+                }
             } catch (ex: Exception) {
                 Timber.e(ex)
             }
-            whenever(e.action).thenReturn(ACTION_UP)
+            val upEvent = createKeyEvent(ACTION_UP, keycode, unicodeChar)
             try {
-                onKeyUp(keycode, e)
+                onKeyUp(keycode, upEvent)
             } catch (ex: Exception) {
                 Timber.e(ex)
             }
         }
 
-        private val mockKeyEvent: KeyEvent
-            get() {
-                val key = Mockito.mock(KeyEvent::class.java)
-                whenever(key.isShiftPressed).thenReturn(false)
-                whenever(key.isCtrlPressed).thenReturn(false)
-                whenever(key.isAltPressed).thenReturn(false)
-                return key
-            }
-
-        // useful to obtain unicode for keycode if run under AndroidJUnit4.
+        // useful to obtain Unicode for keycode if run under AndroidJUnit4.
         fun handleAndroidKeyPress(keycode: Int) {
+            if (shouldIgnoreSpaceWhenTextFieldFocused(keycode)) {
+                return
+            }
+            val downEvent = createKeyEvent(ACTION_DOWN, keycode)
             try {
-                onKeyDown(keycode, createKeyEvent(ACTION_DOWN, keycode))
+                if (!processor.onKeyDown(downEvent)) {
+                    onKeyDown(keycode, downEvent)
+                }
             } catch (ex: Exception) {
                 Timber.e(ex)
             }
@@ -353,17 +367,22 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             }
         }
 
+        private fun shouldIgnoreSpaceWhenTextFieldFocused(keycode: Int): Boolean =
+            focusTextField && keycode == KEYCODE_SPACE
+
         private fun createKeyEvent(
             action: Int,
             keycode: Int,
-        ): KeyEvent {
-            val keyEvent = Mockito.mock(KeyEvent::class.java)
-            whenever(keyEvent.keyCode).thenReturn(keycode)
-            whenever(keyEvent.action).thenReturn(action)
-            whenever(keyEvent.isShiftPressed).thenReturn(false)
-            whenever(keyEvent.isCtrlPressed).thenReturn(false)
-            whenever(keyEvent.isAltPressed).thenReturn(false)
-            return keyEvent
+            unicodeChar: Char = '\u0000',
+        ): KeyEvent = spyk(KeyEvent(action, keycode)) {
+            every { getUnicodeChar(any()) } returns unicodeChar.code
+        }
+
+        private fun createUnicodeKeyEvent(
+            action: Int,
+            unicodeChar: Char,
+        ): KeyEvent = spyk(KeyEvent(action, 0)) {
+            every { getUnicodeChar(any()) } returns unicodeChar.code
         }
 
         fun focusTextField(): KeyboardInputTestReviewer {
@@ -451,14 +470,14 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             @CheckResult
             fun displayingAnswer(): KeyboardInputTestReviewer {
                 val keyboardInputTestReviewer = KeyboardInputTestReviewer()
-                displayAnswer = true
+                keyboardInputTestReviewer.displayAnswerForTest()
                 return keyboardInputTestReviewer
             }
 
             @CheckResult
             fun displayingQuestion(): KeyboardInputTestReviewer {
                 val keyboardInputTestReviewer = KeyboardInputTestReviewer()
-                displayAnswer = false
+                keyboardInputTestReviewer.displayQuestionForTest()
                 return keyboardInputTestReviewer
             }
         }
