@@ -51,6 +51,10 @@ class LoginActivity : MyAccount(), CollectionPermissionScreenLauncher {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (isFinishing) {
+            return
+        }
+
         // LoginActivity can be opened from IntroductionActivity, so we need permissions
         if (collectionPermissionScreenWasOpened()) {
             return
