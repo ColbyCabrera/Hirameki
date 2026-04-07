@@ -47,7 +47,6 @@ import kotlin.reflect.KVisibility
 import kotlin.reflect.full.createType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.memberProperties
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
@@ -168,7 +167,6 @@ class PrefsRobolectricTest : RobolectricTest() {
         }
 
         for ((key, enumValues) in prefsEnumKeysAndValues) {
-            assertContains(listPreferences, key)
             assertEquals(enumValues, listPreferences[key])
         }
     }
