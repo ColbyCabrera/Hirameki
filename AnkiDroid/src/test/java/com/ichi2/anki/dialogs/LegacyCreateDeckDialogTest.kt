@@ -44,7 +44,7 @@ import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(RobolectricTestRunner::class)
-class CreateDeckDialogTest : RobolectricTest() {
+class LegacyCreateDeckDialogTest : RobolectricTest() {
     private lateinit var activityScenario: ActivityScenario<DeckPicker>
 
     override fun setUp() {
@@ -188,8 +188,6 @@ class CreateDeckDialogTest : RobolectricTest() {
         }
     }
 
-
-
     @Test
     fun positiveButtonEnabledOnMatchingDeckNames() {
         val previousDeckName = "Deck Name"
@@ -253,6 +251,7 @@ class CreateDeckDialogTest : RobolectricTest() {
     ) {
         activityScenario.onActivity { activity: DeckPicker ->
             val createDeckDialog = CreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
+            createDeckDialog.onSnackbarMessage = { }
             callback(createDeckDialog)
         }
     }
@@ -268,7 +267,9 @@ class CreateDeckDialogTest : RobolectricTest() {
     ) {
         activityScenario.onActivity { activity: DeckPicker ->
             val assertionCalled = AtomicReference(false)
-            callback(CreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)) {
+            val createDeckDialog = CreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
+            createDeckDialog.onSnackbarMessage = { }
+            callback(createDeckDialog) {
                 assertionCalled.set(true)
             }
             assertThat("no call to assertionCalled()", assertionCalled.get(), equalTo(true))
@@ -286,7 +287,7 @@ class CreateDeckDialogTest : RobolectricTest() {
 }
 
 /** Test of [CreateDeckDialog] */
-class CreateDeckDialogNonAndroidTest {
+class LegacyCreateDeckDialogNonAndroidTest {
     @Test
     fun `number larger than nine detection`() {
         fun assertLargerThanNine(
