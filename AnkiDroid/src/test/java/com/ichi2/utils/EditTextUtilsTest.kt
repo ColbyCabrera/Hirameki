@@ -16,12 +16,15 @@
 
 package com.ichi2.utils
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.testutils.JvmTest
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class EditTextUtilsTest : JvmTest() {
     @Test
     fun `textAsIntOrNull test`() {
