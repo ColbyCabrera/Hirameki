@@ -1,3 +1,19 @@
+/*
+ *  Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+ *
+ *  This program is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free Software
+ *  Foundation; either version 3 of the License, or (at your option) any later
+ *  version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *  PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with
+ *  this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.ichi2.anki.introduction
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,13 +32,13 @@ class IntroductionI18nTest : RobolectricTest() {
     fun stringsEnglish() {
         val ctx = targetContext
         val title = ctx.getStringByLocale(R.string.intro_title_before_continuing, Locale.ENGLISH)
-        assertEquals("Before continuing!", title)
+        assertEquals("Welcome to Hirameki!", title)
 
         val donation = ctx.getStringByLocale(R.string.intro_fork_disclaimer_1, Locale.ENGLISH)
-        assertEquals("This app is a fork of AnkiDroid. Please consider donating to the AnkiDroid team to support their work. The creator of Anki has also kindly allowed the use of AnkiWeb sync. If you'd like to support him, please consider buying the iPhone version of Anki.", donation)
+        assertEquals("Hirameki is a customized, open-source version of AnkiDroid. If you love this app, please consider supporting the original AnkiDroid team and the creator of AnkiWeb, as this app is built on their incredible work.", donation)
 
         val contact = ctx.getStringByLocale(R.string.intro_fork_disclaimer_2, Locale.ENGLISH)
-        assertEquals("If you have any issues with this version, please contact me and not the AnkiDroid team. Happy memorizing!", contact)
+        assertEquals("Please direct any bug reports or feedback about this version to us directly, rather than the AnkiDroid team. Happy memorizing!", contact)
 
         val donate = ctx.getStringByLocale(R.string.donate, Locale.ENGLISH)
         assertEquals("Donate", donate)
