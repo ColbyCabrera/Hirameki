@@ -39,11 +39,13 @@ import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.Reviewer
 import com.ichi2.anki.SharedDecksActivity
 import com.ichi2.anki.SingleFragmentActivity
+import com.ichi2.anki.StudyOptionsComposeActivity
 import com.ichi2.anki.instantnoteeditor.InstantNoteEditorActivity
 import com.ichi2.anki.multimedia.MultimediaActivity
 import com.ichi2.anki.notetype.ManageNotetypes
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.previewer.CardViewerActivity
+import com.ichi2.anki.ui.compose.CongratsActivity
 import com.ichi2.anki.ui.windows.managespace.ManageSpaceActivity
 import com.ichi2.anki.ui.windows.permissions.AllPermissionsExplanationActivity
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
@@ -69,6 +71,8 @@ object ActivityList {
             get(IntentHandler2::class.java),
             // get(StudyOptionsActivity::class.java),
             get(CardBrowser::class.java),
+            get(StudyOptionsComposeActivity::class.java),
+            get(CongratsActivity::class.java),
             get(NoteTypeFieldEditor::class.java),
             get(NoteEditorActivity::class.java),
             // Likely has unhandled intents
