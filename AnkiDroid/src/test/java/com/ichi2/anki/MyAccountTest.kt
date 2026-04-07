@@ -19,6 +19,9 @@ package com.ichi2.anki
 
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTextInput
@@ -50,8 +53,7 @@ class MyAccountTest : RobolectricTest() {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.password))
             .performTextInput(testPassword)
 
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.log_in))
-            .assertIsEnabled()
+        composeTestRule.onLoginButton().assertIsEnabled()
     }
 
     @Test
@@ -61,8 +63,7 @@ class MyAccountTest : RobolectricTest() {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.password))
             .performTextInput(testPassword)
 
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.log_in))
-            .assertIsNotEnabled()
+        composeTestRule.onLoginButton().assertIsNotEnabled()
     }
 
     @Test
@@ -72,7 +73,9 @@ class MyAccountTest : RobolectricTest() {
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.username))
             .performTextInput(testEmail)
 
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.log_in))
-            .assertIsNotEnabled()
+        composeTestRule.onLoginButton().assertIsNotEnabled()
     }
+
+    private fun AndroidComposeTestRule<*, *>.onLoginButton() =
+        onNode(hasText(activity.getString(R.string.log_in)) and hasClickAction())
 }
