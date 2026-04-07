@@ -86,20 +86,24 @@ class PrefsRobolectricTest : RobolectricTest() {
     fun `all default values match the preference XMLs`() {
         val keysAndDefaultValues = getKeysAndDefaultValues()
         val devOptionsKeys = PreferenceTestUtils.getDevOptionsKeys(targetContext)
-        val prefs =
-            PreferenceTestUtils
-                .getAllPreferencesFragments(targetContext)
-                .asSequence()
-                .filterIsInstance<SettingsFragment>()
-                .map { it.preferenceResource }
-                .flatMap { getAttrsFromXml(targetContext, it, listOf("defaultValue", "key")) }
-                .filter { it["key"] != null }
-                .associate { PreferenceTestUtils.attrValueToString(it["key"]!!, targetContext) to it["defaultValue"] }
+        val prefs = PreferenceTestUtils.getAllPreferencesFragments(targetContext).asSequence()
+            .filterIsInstance<SettingsFragment>().map { it.preferenceResource }
+            .flatMap { getAttrsFromXml(targetContext, it, listOf("defaultValue", "key")) }
+            .filter { it["key"] != null }.associate {
+                PreferenceTestUtils.attrValueToString(
+                    it["key"]!!,
+                    targetContext
+                ) to it["defaultValue"]
+            }
 
         for ((key, defaultValue) in keysAndDefaultValues.entries) {
             if (key !in prefs || key in devOptionsKeys) continue
             val prefsDefaultValue = prefs.getValue(key)
-            assertThat("The default value of '$key' matches the preference XML", defaultValue.toString(), equalTo(prefsDefaultValue))
+            assertThat(
+                "The default value of '$key' matches the preference XML",
+                defaultValue.toString(),
+                equalTo(prefsDefaultValue)
+            )
         }
     }
 
@@ -113,7 +117,8 @@ class PrefsRobolectricTest : RobolectricTest() {
         mockkObject(Prefs)
         every { Prefs.resources } returns mockResources
         doAnswer { invocation ->
-            val key = PreferenceTestUtils.attrValueToString("@${invocation.arguments[0]}", targetContext)
+            val key =
+                PreferenceTestUtils.attrValueToString("@${invocation.arguments[0]}", targetContext)
             keys.append(key)
             invocation.callRealMethod()
         }.run {
@@ -135,32 +140,34 @@ class PrefsRobolectricTest : RobolectricTest() {
     @Suppress("UNCHECKED_CAST")
     @Test
     fun `PrefEnum values match their preference entries`() {
+        val listPreferences = PreferenceTestUtils.getAllPreferencesFragments(targetContext)
+            .filterIsInstance<SettingsFragment>().map { it.preferenceResource }
+            .flatMap { getAttrsFromXml(targetContext, it, listOf("key", "entryValues")) }
+            .filter { it["key"] != null && it["entryValues"] != null }.associate {
+                PreferenceTestUtils.attrValueToString(
+                    it["key"]!!,
+                    targetContext
+                ) to PreferenceTestUtils.attrToStringArray(it["entryValues"]!!, targetContext)
+                    .toList()
+            }
+
         // Prefs property name (String) -> Key (String)
         val allPropertiesAndKeys = getPropertyNamesAndKeys()
-        val enumProperties =
-            Prefs::class.memberProperties.filter {
-                it.returnType.isSubtypeOf(PrefEnum::class.createType())
-            }
-        // Key (String) -> Prefs property
-        val enumPropertiesMap = enumProperties.associateBy { allPropertiesAndKeys.getValue(it.name) }
+        val enumProperties = Prefs::class.memberProperties.filter {
+            it.returnType.isSubtypeOf(PrefEnum::class.createType())
+        }
+        // Only enum-backed prefs that are exposed as list preferences in settings XML should be validated here.
+        val enumPropertiesMap =
+            enumProperties.associateBy { allPropertiesAndKeys.getValue(it.name) }
+                .filterKeys { it in listPreferences }
         // Key (String) -> PrefEnum entryValues (List<String>)
         val prefsEnumKeysAndValues = mutableMapOf<String, List<String>>()
         for ((key, property) in enumPropertiesMap.entries) {
-            val enumConstants = ((property.returnType.classifier as KClass<*>).java.enumConstants) as Array<PrefEnum>
-            prefsEnumKeysAndValues[key] = enumConstants.map { targetContext.resources.getString(it.entryResId) }
+            val enumConstants =
+                ((property.returnType.classifier as KClass<*>).java.enumConstants) as Array<PrefEnum>
+            prefsEnumKeysAndValues[key] =
+                enumConstants.map { targetContext.resources.getString(it.entryResId) }
         }
-
-        val listPreferences =
-            PreferenceTestUtils
-                .getAllPreferencesFragments(targetContext)
-                .filterIsInstance<SettingsFragment>()
-                .map { it.preferenceResource }
-                .flatMap { getAttrsFromXml(targetContext, it, listOf("key", "entryValues")) }
-                .filter { it["entryValues"] != null }
-                .associate {
-                    PreferenceTestUtils.attrValueToString(it["key"]!!, targetContext) to
-                        PreferenceTestUtils.attrToStringArray(it["entryValues"]!!, targetContext).toList()
-                }
 
         for ((key, enumValues) in prefsEnumKeysAndValues) {
             assertContains(listPreferences, key)
