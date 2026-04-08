@@ -84,7 +84,7 @@ object RustBackendLoader {
                     ),
                 )
             }
-            if (e.message == null || !e.message!!.contains("already loaded in another classloader")) {
+            if (e.message?.contains("already loaded in another classloader") != true) {
                 throw e
             }
             print("native library already loaded in another classloader: $path")
