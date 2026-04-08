@@ -157,6 +157,13 @@ class PrefsRobolectricTest : RobolectricTest() {
         val enumPropertiesMap =
             enumProperties.associateBy { allPropertiesAndKeys.getValue(it.name) }
                 .filterKeys { it in listPreferences }
+
+        assertThat(
+            "Expected at least one enum-backed list preference to be validated",
+            enumPropertiesMap.isNotEmpty(),
+            equalTo(true)
+        )
+
         // Key (String) -> PrefEnum entryValues (List<String>)
         val prefsEnumKeysAndValues = mutableMapOf<String, List<String>>()
         for ((key, property) in enumPropertiesMap.entries) {
@@ -165,6 +172,12 @@ class PrefsRobolectricTest : RobolectricTest() {
             prefsEnumKeysAndValues[key] =
                 enumConstants.map { targetContext.resources.getString(it.entryResId) }
         }
+
+        assertThat(
+            "Expected at least one enum key-value pair to be validated",
+            prefsEnumKeysAndValues.isNotEmpty(),
+            equalTo(true)
+        )
 
         for ((key, enumValues) in prefsEnumKeysAndValues) {
             assertEquals(enumValues, listPreferences[key])
