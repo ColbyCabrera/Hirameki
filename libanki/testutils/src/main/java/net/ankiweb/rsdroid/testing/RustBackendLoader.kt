@@ -128,7 +128,7 @@ object RustBackendLoader {
             }
         }
 
-        fileNameToPathCache[fullFilename] = expectedFile.path
+        fileNameToPathCache[fullFilename] = expectedFile.absolutePath
         return expectedFile.absolutePath
     }
 
