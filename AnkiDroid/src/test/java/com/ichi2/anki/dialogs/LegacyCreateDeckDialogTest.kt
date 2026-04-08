@@ -44,7 +44,7 @@ import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(RobolectricTestRunner::class)
-class CreateDeckDialogTest : RobolectricTest() {
+class LegacyCreateDeckDialogTest : RobolectricTest() {
     private lateinit var activityScenario: ActivityScenario<DeckPicker>
 
     override fun setUp() {
@@ -188,8 +188,6 @@ class CreateDeckDialogTest : RobolectricTest() {
         }
     }
 
-
-
     @Test
     fun positiveButtonEnabledOnMatchingDeckNames() {
         val previousDeckName = "Deck Name"
@@ -243,6 +241,16 @@ class CreateDeckDialogTest : RobolectricTest() {
         }
     }
 
+    private fun makeCreateDeckDialog(
+        activity: DeckPicker,
+        titleResId: Int,
+        deckDialogType: DeckDialogType,
+        parentId: DeckId? = null,
+    ): CreateDeckDialog =
+        CreateDeckDialog(activity, titleResId, deckDialogType, parentId).apply {
+            onSnackbarMessage = { }
+        }
+
     /**
      * Creates a test instance of [CreateDeckDialog]
      */
@@ -252,7 +260,7 @@ class CreateDeckDialogTest : RobolectricTest() {
         callback: (CreateDeckDialog.() -> Unit),
     ) {
         activityScenario.onActivity { activity: DeckPicker ->
-            val createDeckDialog = CreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
+            val createDeckDialog = makeCreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
             callback(createDeckDialog)
         }
     }
@@ -268,25 +276,17 @@ class CreateDeckDialogTest : RobolectricTest() {
     ) {
         activityScenario.onActivity { activity: DeckPicker ->
             val assertionCalled = AtomicReference(false)
-            callback(CreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)) {
+            val createDeckDialog = makeCreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
+            callback(createDeckDialog) {
                 assertionCalled.set(true)
             }
             assertThat("no call to assertionCalled()", assertionCalled.get(), equalTo(true))
         }
     }
-
-    @Suppress("SameParameterValue")
-    private fun deckTreeName(
-        start: Int,
-        end: Int,
-        prefix: String,
-    ): String =
-        List(end - start + 1) { "${prefix}${it + start}" }
-            .joinToString("::")
 }
 
 /** Test of [CreateDeckDialog] */
-class CreateDeckDialogNonAndroidTest {
+class LegacyCreateDeckDialogNonAndroidTest {
     @Test
     fun `number larger than nine detection`() {
         fun assertLargerThanNine(

@@ -27,4 +27,6 @@ fun EditText.moveCursorToEnd() = setSelection(text?.length ?: 0)
  *
  * note: "1.0" returns `null`
  */
-fun EditText.textAsIntOrNull() = this.text.toString().toIntOrNull()
+fun EditText.textAsIntOrNull() = this.text?.textAsIntOrNull()
+
+fun CharSequence.textAsIntOrNull() = this.toString().toIntOrNull()

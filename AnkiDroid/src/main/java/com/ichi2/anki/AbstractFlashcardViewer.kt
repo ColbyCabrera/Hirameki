@@ -551,7 +551,9 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         // so hardcode this functionality for now.
         // This is in onKeyDown to match the gesture processor in the Reviewer
         if (!displayAnswer) {
-            if (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            val focus = currentFocus
+            val isTextInputFocused = focus?.onCheckIsTextEditor() == true
+            if (!isTextInputFocused && (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)) {
                 displayCardAnswer()
                 return true
             }
@@ -752,7 +754,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             cardFrameParent = cardFrame!!.parent as ViewGroup
         }
         touchLayer =
-            findViewById<FrameLayout>(R.id.touch_layer).apply { setOnTouchListener(gestureListener) }
+            findViewById<FrameLayout>(R.id.touch_layer)?.apply { setOnTouchListener(gestureListener) }
         cardFrame?.removeAllViews()
 
         // Initialize swipe
@@ -1847,6 +1849,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     val writeLock: Lock
         get() = cardLock.writeLock()
     open var currentCard: Card? = null
+        internal set
 
     /** Refreshes the WebView after a crash  */
     fun destroyWebViewFrame() {

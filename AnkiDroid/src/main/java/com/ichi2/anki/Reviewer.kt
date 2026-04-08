@@ -41,6 +41,7 @@ import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.ThemeUtils
 import androidx.appcompat.widget.TooltipCompat
 import androidx.compose.ui.platform.ComposeView
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -115,6 +116,12 @@ import kotlin.coroutines.resume
 
 @NeedsTest("#14709: Timebox shouldn't appear instantly when the Reviewer is opened")
 open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
+    override var currentCard: Card?
+        get() = viewModel.currentCardFlow.value
+        set(value) {
+            viewModel.currentCard = value
+        }
+
     private var queueState: CurrentQueueState? = null
     private val customSchedulingKey = TimeManager.time.intTimeMS().toString()
     private var hasDrawerSwipeConflicts = false
@@ -170,7 +177,18 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         enableEdgeToEdge()
 
         val composeView = ComposeView(this)
-        setContentView(composeView)
+        val coordinatorLayout = CoordinatorLayout(this).apply {
+            id = R.id.root_layout
+            isFocusable = true
+            isFocusableInTouchMode = true
+            addView(
+                composeView, android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        setContentView(coordinatorLayout)
 
         if (!ensureStoragePermissions()) {
             return
@@ -206,13 +224,15 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                     }
                     // TagsDialog is now handled in Compose via ViewModel state
                     is ReviewerEffect.ShowDueDateDialog -> {
-                        currentCard = effect.card
                         showDueDateDialog()
                     }
 
                     is ReviewerEffect.ReplayMedia -> {
-                        currentCard = effect.card
                         playMedia(true)
+                    }
+
+                    is ReviewerEffect.ShowTimeboxReachedDialog -> {
+                        dealWithTimeBox(effect.timebox)
                     }
 
                     is ReviewerEffect.ToggleVoicePlayback -> {
@@ -241,6 +261,21 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                         deckOptionsLauncher.launch(i)
                     }
                 }
+            }
+        }
+
+        // Sync ViewModel's currentCard to AbstractFlashcardViewer.currentCard
+        // so that AnkiDroidJsAPI and legacy code can access it
+        lifecycleScope.launch {
+            viewModel.currentCardFlow.collect {
+                super.currentCard = it
+            }
+        }
+
+        // Sync ViewModel's queueState to Reviewer.queueState
+        lifecycleScope.launch {
+            viewModel.queueStateFlow.collect {
+                queueState = it
             }
         }
 
@@ -910,14 +945,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     }
 
     override suspend fun updateCurrentCard() {
-        val state = withCol {
-            sched.currentQueueState()?.apply {
-                topCard.renderOutput(this@withCol, reload = true)
-            }
-        }
-        state?.timeboxReached?.let { dealWithTimeBox(it) }
-        currentCard = state?.topCard
-        queueState = state
+        viewModel.loadCardSuspend()
     }
 
     override suspend fun answerCardInner(rating: Rating) {

@@ -133,6 +133,7 @@ sealed class ReviewerEffect {
     data class ReplayMedia(val card: Card) : ReviewerEffect()
     object ToggleVoicePlayback : ReviewerEffect()
     object NavigateToDeckOptions : ReviewerEffect()
+    data class ShowTimeboxReachedDialog(val timebox: Collection.TimeboxReached) : ReviewerEffect()
 }
 
 class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHandler {
@@ -146,8 +147,17 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private val _effect = MutableSharedFlow<ReviewerEffect>()
     val effect: SharedFlow<ReviewerEffect> = _effect.asSharedFlow()
 
-    private var currentCard: Card? = null
+    private val _currentCard = MutableStateFlow<Card?>(null)
+    val currentCardFlow: StateFlow<Card?> = _currentCard.asStateFlow()
+
+    internal var currentCard: Card?
+        get() = _currentCard.value
+        set(value) {
+            _currentCard.value = value
+        }
     private var queueState: CurrentQueueState? = null
+    private val _queueStateFlow = MutableStateFlow<CurrentQueueState?>(null)
+    val queueStateFlow: StateFlow<CurrentQueueState?> = _queueStateFlow.asStateFlow()
 
     // Tags dialog state
     private val _tagsState = MutableStateFlow<TagsState>(TagsState.Loading)
@@ -437,7 +447,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         viewModelScope.launch { _effect.emit(ReviewerEffect.PerformRedo) }
     }
 
-    private suspend fun reloadCardSuspend() {
+    internal suspend fun reloadCardSuspend() {
         val card = currentCard ?: return
 
         try {
@@ -451,6 +461,8 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         }
 
         cardMediaPlayer.loadCardAvTags(card)
+        var queue: CurrentQueueState? = null
+        var updatedState: ReviewerState? = null
         withCol {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
@@ -458,9 +470,14 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
             val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
 
-            _state.update {
-                it.copy(
+            queue = this.sched.currentQueueState()
+
+            updatedState =
+                _state.value.copy(
                     mediaError = null,
+                    newCount = queue?.counts?.new ?: 0,
+                    learnCount = queue?.counts?.lrn ?: 0,
+                    reviewCount = queue?.counts?.rev ?: 0,
                     questionHtml = processHtml(questionHtml, renderOutput, this),
                     answerHtml = processHtml(answerHtml, renderOutput, this),
                     bodyClass = bodyClassForCardOrd(card.ord),
@@ -475,8 +492,11 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
                     mediaDirectory = this.media.dir,
                     isFinished = false
                 )
-            }
         }
+        queue?.timeboxReached?.let { _effect.emit(ReviewerEffect.ShowTimeboxReachedDialog(it)) }
+        _state.value = requireNotNull(updatedState)
+        _queueStateFlow.value = queue
+        queueState = queue
     }
 
     private fun editCard() {
@@ -532,7 +552,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         }
     }
 
-    private suspend fun loadCardSuspend() {
+    internal suspend fun loadCardSuspend() {
         val cardAndQueueState = getNextCard()
         if (cardAndQueueState == null) {
             _state.update {
@@ -548,6 +568,8 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         val (card, queue) = cardAndQueueState
         currentCard = card
         queueState = queue
+        _queueStateFlow.value = queue
+        queue.timeboxReached?.let { _effect.emit(ReviewerEffect.ShowTimeboxReachedDialog(it)) }
         cardMediaPlayer.loadCardAvTags(card)
         withCol {
             val note = card.note(this)

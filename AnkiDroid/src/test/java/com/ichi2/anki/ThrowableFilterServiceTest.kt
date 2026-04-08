@@ -21,7 +21,6 @@ import anki.backend.backendError
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.servicelayer.ThrowableFilterService
 import com.ichi2.anki.servicelayer.ThrowableFilterService.safeFromPII
-import com.ichi2.testutils.JvmTest
 import net.ankiweb.rsdroid.exceptions.BackendDeckIsFilteredException
 import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
@@ -32,7 +31,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
-class ThrowableFilterServiceTest : JvmTest() {
+class ThrowableFilterServiceTest {
     @Test
     fun `Normal exceptions are flagged as PII-safe`() {
         val exception = BackendDeckIsFilteredException(backendError {})

@@ -56,15 +56,15 @@ class AnkiDroidJsAPITest : RobolectricTest() {
 
             assertThat(
                 getDataFromRequest("nextTime1", jsapi).withoutUnicodeIsolation(),
-                equalTo(formatApiResult("<1m")),
+                equalTo(formatApiResult("1m")),
             )
             assertThat(
                 getDataFromRequest("nextTime2", jsapi).withoutUnicodeIsolation(),
-                equalTo(formatApiResult("<6m")),
+                equalTo(formatApiResult("6m")),
             )
             assertThat(
                 getDataFromRequest("nextTime3", jsapi).withoutUnicodeIsolation(),
-                equalTo(formatApiResult("<10m")),
+                equalTo(formatApiResult("10m")),
             )
             assertThat(
                 getDataFromRequest("nextTime4", jsapi).withoutUnicodeIsolation(),

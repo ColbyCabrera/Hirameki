@@ -17,26 +17,40 @@
 package com.ichi2.anki
 
 import android.app.Activity
-import androidx.lifecycle.Lifecycle
-import androidx.test.core.app.ActivityScenario.launchActivityForResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.settings.Prefs
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.Shadows
 import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class LoginActivityTest : RobolectricTest() {
+
+    @Before
+    override fun setUp() {
+        super.setUp()
+        // Ensure the activity doesn't finish itself due to being a "test client" (monkey/firebase)
+        android.provider.Settings.System.putString(
+            targetContext.contentResolver, "firebase.test.lab", "false"
+        )
+    }
+
     @Test
     fun activityIsClosedIfStartedWhenLoggedIn() {
         // Effectively mocks isLoggedIn() to return true.
         Prefs.hkey = "anything not empty"
 
-        launchActivityForResult(LoginActivity::class.java).use { scenario ->
-            // When the user is logged in, we expect the activity to call finish() from onCreate().
-            // Since this is expected behaviour, we also expect the result to be "OK".
-            assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
-            assertEquals(Lifecycle.State.DESTROYED, scenario.state)
+        val controller = Robolectric.buildActivity(LoginActivity::class.java).create()
+        try {
+            val activity = controller.get()
+
+            assertEquals(Activity.RESULT_OK, Shadows.shadowOf(activity).resultCode)
+            assertEquals(true, activity.isFinishing)
+        } finally {
+            controller.destroy()
         }
     }
 
@@ -45,14 +59,18 @@ class LoginActivityTest : RobolectricTest() {
         // Effectively mocks isLoggedIn() to return false.
         Prefs.hkey = ""
 
-        val scenario = launchActivityForResult(LoginActivity::class.java)
+        val controller =
+            Robolectric.buildActivity(LoginActivity::class.java).create().start().resume()
+        try {
+            val activity = controller.get()
 
-        // Since the activity state is different than STATE_LOGGED_IN, we *don't* expect the
-        // activity to finish immediately.
-        assertEquals(Lifecycle.State.RESUMED, scenario.state)
+            assertEquals(false, activity.isFinishing)
 
-        // Now we close the activity and check the result.
-        scenario.close()
-        assertEquals(Activity.RESULT_CANCELED, scenario.result.resultCode)
+            activity.finish()
+            // Verify that the activity does not return RESULT_OK (defaults to RESULT_CANCELED)
+            assertEquals(Activity.RESULT_CANCELED, Shadows.shadowOf(activity).resultCode)
+        } finally {
+            controller.destroy()
+        }
     }
 }

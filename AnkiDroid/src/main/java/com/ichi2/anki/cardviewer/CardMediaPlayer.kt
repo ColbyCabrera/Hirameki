@@ -56,7 +56,7 @@ import java.io.Closeable
 
 /**
  * Handles the two ways an Anki card defines sound:
- * * Regular Sound (file-based, mp3 etc..): [SoundOrVideoTag]
+ * * Regular Sound (file-based, mp3 etc...): [SoundOrVideoTag]
  *   *  No docs for [sound:], but this handles Sound or Video with a reference to the file
  *   * `[sound:audio.mp3]` in a field
  *   * `[sound:video.mp4]` in a field
@@ -229,7 +229,11 @@ class CardMediaPlayer : Closeable {
     override fun close() {
         soundTagPlayer.release()
         try {
-            ttsPlayer.getCompleted().close()
+            if (ttsPlayer.isCompleted) {
+                ttsPlayer.getCompleted().close()
+            } else {
+                ttsPlayer.cancel()
+            }
         } catch (e: Exception) {
             Timber.i(e, "ttsPlayer close()")
         }

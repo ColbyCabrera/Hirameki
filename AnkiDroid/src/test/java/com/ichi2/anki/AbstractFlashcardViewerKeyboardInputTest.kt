@@ -16,7 +16,10 @@
 package com.ichi2.anki
 
 import android.view.KeyEvent
+import android.widget.EditText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.every
+import io.mockk.mockk
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +51,10 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
 
         underTest.handleKeyPress(KeyEvent.KEYCODE_NUMPAD_ENTER)
 
-        assertThat("NumPad Enter should display answer on any card viewer", underTest.didDisplayAnswer())
+        assertThat(
+            "NumPad Enter should display answer on any card viewer",
+            underTest.didDisplayAnswer()
+        )
     }
 
     @Test
@@ -66,7 +72,9 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
 
     private class KeyboardInputTestCardViewer : AbstractFlashcardViewer() {
         private var displayAnswer = false
-        private var focusTextField = false
+        private var focusedView: android.view.View? = null
+
+        override fun getCurrentFocus(): android.view.View? = focusedView
 
         override fun performReload() {
             // intentionally blank
@@ -94,12 +102,13 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
         }
 
         fun focusTextField() {
-            focusTextField = true
+            focusedView = mockk<EditText>(relaxed = true) {
+                every { onCheckIsTextEditor() } returns true
+            }
         }
 
         companion object {
             fun create(): KeyboardInputTestCardViewer {
-                displayAnswer = false
                 return KeyboardInputTestCardViewer()
             }
         }

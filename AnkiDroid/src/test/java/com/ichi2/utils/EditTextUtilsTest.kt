@@ -16,27 +16,18 @@
 
 package com.ichi2.utils
 
-import android.widget.EditText
-import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.ichi2.testutils.AndroidTest
-import com.ichi2.testutils.EmptyApplication
-import com.ichi2.testutils.targetContext
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.nullValue
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(application = EmptyApplication::class)
-class EditTextUtilsTest : AndroidTest {
+class EditTextUtilsTest {
     @Test
     fun `textAsIntOrNull test`() {
-        fun textAsIntOrNull(value: String) =
-            EditText(targetContext)
-                .apply { setText(value) }
-                .textAsIntOrNull()
+        fun textAsIntOrNull(value: String) = value.textAsIntOrNull()
 
         fun textAsIntOrNull(value: Long) = textAsIntOrNull(value.toString())
 

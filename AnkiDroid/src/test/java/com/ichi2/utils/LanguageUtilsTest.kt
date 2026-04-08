@@ -17,7 +17,6 @@ package com.ichi2.utils
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.collect.Sets
-import com.ichi2.testutils.EmptyApplication
 import com.ichi2.utils.LanguageUtilsTest.Companion.CURRENT_LANGUAGES
 import com.ichi2.utils.LanguageUtilsTest.Companion.PREVIOUS_LANGUAGES
 import org.hamcrest.MatcherAssert.assertThat
@@ -25,10 +24,8 @@ import org.hamcrest.Matchers
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(application = EmptyApplication::class)
 class LanguageUtilsTest {
     @Test
     @Ignore("temp ignore - languages were removed for 18980")
