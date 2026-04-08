@@ -126,15 +126,26 @@ object RustBackendLoader {
                 }
                 outStream.flush()
             }
-            check(
-                tempFile.renameTo(expectedFile) || tempFile.copyTo(expectedFile, overwrite = true)
-                    .let { tempFile.delete(); true }) {
+            check(moveOrReplace(tempFile, expectedFile)) {
                 "Could not move extracted rsdroid library to $expectedFile"
             }
         }
 
         fileNameToPathCache[fullFilename] = expectedFile.absolutePath
         return expectedFile.absolutePath
+    }
+
+    private fun moveOrReplace(tempFile: File, expectedFile: File): Boolean {
+        if (tempFile.renameTo(expectedFile)) {
+            return true
+        }
+        return try {
+            tempFile.copyTo(expectedFile, overwrite = true)
+            tempFile.delete()
+            true
+        } catch (_: IOException) {
+            false
+        }
     }
 
     private fun <T> withStream(
