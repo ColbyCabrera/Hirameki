@@ -36,7 +36,7 @@ import kotlin.Throws
 object RustBackendLoader {
     private var hasSetUp = false
     private val fileNameToPathCache = HashMap<String, String>()
-    var PRINT_DEBUG = false
+    var printDebug = false
 
     @JvmStatic
     @Synchronized
@@ -57,7 +57,7 @@ object RustBackendLoader {
     }
 
     private fun print(message: String) {
-        if (PRINT_DEBUG) {
+        if (printDebug) {
             println(message)
         }
     }
