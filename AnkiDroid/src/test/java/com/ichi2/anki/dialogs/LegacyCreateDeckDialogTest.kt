@@ -241,6 +241,16 @@ class LegacyCreateDeckDialogTest : RobolectricTest() {
         }
     }
 
+    private fun makeCreateDeckDialog(
+        activity: DeckPicker,
+        titleResId: Int,
+        deckDialogType: DeckDialogType,
+        parentId: DeckId? = null,
+    ): CreateDeckDialog =
+        CreateDeckDialog(activity, titleResId, deckDialogType, parentId).apply {
+            onSnackbarMessage = { }
+        }
+
     /**
      * Creates a test instance of [CreateDeckDialog]
      */
@@ -250,8 +260,7 @@ class LegacyCreateDeckDialogTest : RobolectricTest() {
         callback: (CreateDeckDialog.() -> Unit),
     ) {
         activityScenario.onActivity { activity: DeckPicker ->
-            val createDeckDialog = CreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
-            createDeckDialog.onSnackbarMessage = { }
+            val createDeckDialog = makeCreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
             callback(createDeckDialog)
         }
     }
@@ -267,23 +276,13 @@ class LegacyCreateDeckDialogTest : RobolectricTest() {
     ) {
         activityScenario.onActivity { activity: DeckPicker ->
             val assertionCalled = AtomicReference(false)
-            val createDeckDialog = CreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
-            createDeckDialog.onSnackbarMessage = { }
+            val createDeckDialog = makeCreateDeckDialog(activity, R.string.new_deck, deckDialogType, parentId)
             callback(createDeckDialog) {
                 assertionCalled.set(true)
             }
             assertThat("no call to assertionCalled()", assertionCalled.get(), equalTo(true))
         }
     }
-
-    @Suppress("SameParameterValue")
-    private fun deckTreeName(
-        start: Int,
-        end: Int,
-        prefix: String,
-    ): String =
-        List(end - start + 1) { "${prefix}${it + start}" }
-            .joinToString("::")
 }
 
 /** Test of [CreateDeckDialog] */
