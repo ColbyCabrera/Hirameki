@@ -126,8 +126,7 @@ open class AnkiDroidJsAPI(
             activity.runOnUiThread {
                 activity.showSnackbar(
                     context.getString(
-                        R.string.invalid_json_data,
-                        j.localizedMessage
+                        R.string.invalid_json_data, j.localizedMessage
                     )
                 )
             }
@@ -190,8 +189,7 @@ open class AnkiDroidJsAPI(
                     activity.runOnUiThread {
                         activity.showSnackbar(
                             context.getString(
-                                R.string.update_js_api_version,
-                                apiDevContact
+                                R.string.update_js_api_version, apiDevContact
                             )
                         )
                     }
@@ -202,8 +200,7 @@ open class AnkiDroidJsAPI(
                     activity.runOnUiThread {
                         activity.showSnackbar(
                             context.getString(
-                                R.string.valid_js_api_version,
-                                apiDevContact
+                                R.string.valid_js_api_version, apiDevContact
                             )
                         )
                     }
@@ -258,8 +255,7 @@ open class AnkiDroidJsAPI(
             "toggleFlag" -> {
                 if (apiParams !in flagCommands) {
                     showDeveloperContact(
-                        ANKI_JS_ERROR_CODE_FLAG_CARD,
-                        apiContract.cardSuppliedDeveloperContact
+                        ANKI_JS_ERROR_CODE_FLAG_CARD, apiContract.cardSuppliedDeveloperContact
                     )
                     return@withContext convertToByteArray(apiContract, false)
                 }
@@ -271,17 +267,11 @@ open class AnkiDroidJsAPI(
             }, apiContract, ANKI_JS_ERROR_CODE_MARK_CARD, ::convertToByteArray)
 
             "buryCard" -> processAction(
-                activity::buryCard,
-                apiContract,
-                ANKI_JS_ERROR_CODE_BURY_CARD,
-                ::convertToByteArray
+                activity::buryCard, apiContract, ANKI_JS_ERROR_CODE_BURY_CARD, ::convertToByteArray
             )
 
             "buryNote" -> processAction(
-                activity::buryNote,
-                apiContract,
-                ANKI_JS_ERROR_CODE_BURT_NOTE,
-                ::convertToByteArray
+                activity::buryNote, apiContract, ANKI_JS_ERROR_CODE_BURT_NOTE, ::convertToByteArray
             )
 
             "suspendCard" -> processAction(
@@ -303,8 +293,7 @@ open class AnkiDroidJsAPI(
                     val days = apiParams.toInt()
                     if (days !in 0..9999) {
                         showDeveloperContact(
-                            ANKI_JS_ERROR_CODE_SET_DUE,
-                            apiContract.cardSuppliedDeveloperContact
+                            ANKI_JS_ERROR_CODE_SET_DUE, apiContract.cardSuppliedDeveloperContact
                         )
                         return@withContext convertToByteArray(apiContract, false)
                     }
@@ -314,8 +303,7 @@ open class AnkiDroidJsAPI(
                     return@withContext convertToByteArray(apiContract, true)
                 } catch (_: NumberFormatException) {
                     showDeveloperContact(
-                        ANKI_JS_ERROR_CODE_SET_DUE,
-                        apiContract.cardSuppliedDeveloperContact
+                        ANKI_JS_ERROR_CODE_SET_DUE, apiContract.cardSuppliedDeveloperContact
                     )
                     return@withContext convertToByteArray(apiContract, false)
                 }
@@ -328,8 +316,7 @@ open class AnkiDroidJsAPI(
             }
 
             "cardMark" -> convertToByteArray(
-                apiContract,
-                currentCard.note(getColUnsafe).hasTag(getColUnsafe, "marked")
+                apiContract, currentCard.note(getColUnsafe).hasTag(getColUnsafe, "marked")
             )
 
             "cardFlag" -> convertToByteArray(apiContract, currentCard.userFlag())
@@ -348,13 +335,11 @@ open class AnkiDroidJsAPI(
             "cardLapses" -> convertToByteArray(apiContract, currentCard.lapses)
             "cardDue" -> convertToByteArray(apiContract, currentCard.due)
             "deckName" -> convertToByteArray(
-                apiContract,
-                Decks.basename(activity.getColUnsafe.decks.name(currentCard.did))
+                apiContract, Decks.basename(activity.getColUnsafe.decks.name(currentCard.did))
             )
 
             "isActiveNetworkMetered" -> convertToByteArray(
-                apiContract,
-                NetworkUtils.isActiveNetworkMetered()
+                apiContract, NetworkUtils.isActiveNetworkMetered()
             )
 
             "ttsSetLanguage" -> convertToByteArray(apiContract, talker.setLanguage(apiParams))
@@ -368,8 +353,7 @@ open class AnkiDroidJsAPI(
             "ttsIsSpeaking" -> convertToByteArray(apiContract, talker.isSpeaking)
             "ttsSetPitch" -> convertToByteArray(apiContract, talker.setPitch(apiParams.toFloat()))
             "ttsSetSpeechRate" -> convertToByteArray(
-                apiContract,
-                talker.setSpeechRate(apiParams.toFloat())
+                apiContract, talker.setSpeechRate(apiParams.toFloat())
             )
 
             "ttsFieldModifierIsAvailable" -> {
@@ -494,8 +478,7 @@ open class AnkiDroidJsAPI(
             }
 
             "sttSetLanguage" -> convertToByteArray(
-                apiContract,
-                speechRecognizer.setLanguage(apiParams)
+                apiContract, speechRecognizer.setLanguage(apiParams)
             )
 
             "sttStart" -> {
@@ -504,15 +487,13 @@ open class AnkiDroidJsAPI(
                         activity.lifecycleScope.launch {
                             val apiResult = ApiResult.success(
                                 Json.encodeToString(
-                                    ListSerializer(String.serializer()),
-                                    results
+                                    ListSerializer(String.serializer()), results
                                 )
                             )
                             val jsonEncodedString =
                                 withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
                             activity.webView!!.evaluateJavascript(
-                                "ankiSttResult($jsonEncodedString)",
-                                null
+                                "ankiSttResult($jsonEncodedString)", null
                             )
                         }
                     }
@@ -523,8 +504,7 @@ open class AnkiDroidJsAPI(
                             val jsonEncodedString =
                                 withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
                             activity.webView!!.evaluateJavascript(
-                                "ankiSttResult($jsonEncodedString)",
-                                null
+                                "ankiSttResult($jsonEncodedString)", null
                             )
                         }
                     }
@@ -536,8 +516,7 @@ open class AnkiDroidJsAPI(
             "sttStop" -> convertToByteArray(apiContract, speechRecognizer.stop())
             else -> {
                 showDeveloperContact(
-                    ANKI_JS_ERROR_CODE_ERROR,
-                    apiContract.cardSuppliedDeveloperContact
+                    ANKI_JS_ERROR_CODE_ERROR, apiContract.cardSuppliedDeveloperContact
                 )
                 throw Exception("unhandled request: $methodName")
             }
@@ -619,9 +598,9 @@ open class AnkiDroidJsAPI(
         abstract fun putValue(o: JSONObject)
 
         override fun toString() = JSONObject().apply {
-                put(SUCCESS_KEY, status)
-                putValue(this)
-            }.toString()
+            put(SUCCESS_KEY, status)
+            putValue(this)
+        }.toString()
 
         @Suppress("RemoveRedundantQualifierName") // we don't want `String(true, value)`
         companion object {
