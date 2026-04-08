@@ -47,6 +47,7 @@ import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.ReviewerBinding
 import com.ichi2.anki.utils.ext.addBinding
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.Job
 import org.hamcrest.MatcherAssert.assertThat
@@ -243,7 +244,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
 
     internal class KeyboardInputTestReviewer : Reviewer(),
         BindingProcessor<ReviewerBinding, ViewerCommand> {
-        private var focusTextField = false
         private var answered: Rating? = null
         private var answerButtonCount = 4
         var editCardCalled = false
@@ -258,6 +258,9 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         private val cardFlips = mutableListOf<String>()
         override val isDrawerOpen: Boolean
             get() = false
+
+        private var focusedView: android.view.View? = null
+        override fun getCurrentFocus(): android.view.View? = focusedView
 
         fun displayAnswerForTest() {
             displayAnswer = true
@@ -326,9 +329,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             keycode: Int,
             unicodeChar: Char,
         ) {
-            if (shouldIgnoreSpaceWhenTextFieldFocused(keycode)) {
-                return
-            }
             // COULD_BE_BETTER: Saves 20 seconds on tests to remove AndroidJUnit4,
             // but may let something slip through the cracks.
             val e = createKeyEvent(ACTION_DOWN, keycode, unicodeChar)
@@ -349,9 +349,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
 
         // useful to obtain Unicode for keycode if run under AndroidJUnit4.
         fun handleAndroidKeyPress(keycode: Int) {
-            if (shouldIgnoreSpaceWhenTextFieldFocused(keycode)) {
-                return
-            }
             val downEvent = createKeyEvent(ACTION_DOWN, keycode)
             try {
                 if (!processor.onKeyDown(downEvent)) {
@@ -366,9 +363,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
                 Timber.e(ex)
             }
         }
-
-        private fun shouldIgnoreSpaceWhenTextFieldFocused(keycode: Int): Boolean =
-            focusTextField && keycode == KEYCODE_SPACE
 
         private fun createKeyEvent(
             action: Int,
@@ -386,7 +380,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         }
 
         fun focusTextField(): KeyboardInputTestReviewer {
-            focusTextField = true
+            focusedView = mockk<android.widget.EditText>(relaxed = true)
             return this
         }
 
