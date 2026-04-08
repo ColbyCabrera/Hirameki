@@ -86,12 +86,24 @@ object RustBackendLoader {
                     ),
                 )
             }
-            val pattern = Regex("already loaded|already_init|classloader", RegexOption.IGNORE_CASE)
-            if (e.message?.contains(pattern) != true) {
+            if (!isAlreadyLoaded(e.message ?: "")) {
                 throw e
             }
             print("native library already loaded in another classloader: $path")
         }
+    }
+
+    private fun isAlreadyLoaded(message: String): Boolean {
+        val patterns = listOf("already loaded", "already_init")
+        return patterns.any {
+            message.contains(
+                it,
+                ignoreCase = true
+            )
+        } || (message.contains("loaded", ignoreCase = true) && message.contains(
+            "classloader",
+            ignoreCase = true
+        ))
     }
 
     @Throws(IOException::class)
@@ -100,7 +112,12 @@ object RustBackendLoader {
         extension: String,
     ): String {
         val fullFilename = fileName + extension
-        fileNameToPathCache[fullFilename]?.let { return it }
+        fileNameToPathCache[fullFilename]?.let { cachedPath ->
+            if (File(cachedPath).exists()) {
+                return cachedPath
+            }
+            fileNameToPathCache.remove(fullFilename)
+        }
 
         val buffer = ByteArray(8 * 1024)
         val checksum = withStream(fullFilename) { stream ->
