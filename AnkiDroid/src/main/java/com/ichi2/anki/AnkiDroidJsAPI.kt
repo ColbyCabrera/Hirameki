@@ -492,7 +492,11 @@ open class AnkiDroidJsAPI(
                             )
                             val jsonEncodedString =
                                 withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
-                            activity.webView!!.evaluateJavascript(
+                            if (activity.isFinishing || activity.isDestroyed) {
+                                return@launch
+                            }
+                            val webView = activity.webView ?: return@launch
+                            webView.evaluateJavascript(
                                 "ankiSttResult($jsonEncodedString)", null
                             )
                         }
@@ -503,7 +507,11 @@ open class AnkiDroidJsAPI(
                             val apiResult = ApiResult.failure(errorMessage)
                             val jsonEncodedString =
                                 withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
-                            activity.webView!!.evaluateJavascript(
+                            if (activity.isFinishing || activity.isDestroyed) {
+                                return@launch
+                            }
+                            val webView = activity.webView ?: return@launch
+                            webView.evaluateJavascript(
                                 "ankiSttResult($jsonEncodedString)", null
                             )
                         }
