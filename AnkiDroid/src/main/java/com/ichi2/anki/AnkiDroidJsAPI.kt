@@ -47,6 +47,7 @@ import com.ichi2.anki.servicelayer.resetCards
 import com.ichi2.anki.snackbar.setMaxLines
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.utils.NetworkUtils
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -66,6 +67,7 @@ typealias JvmString = String
 
 open class AnkiDroidJsAPI(
     private val activity: AbstractFlashcardViewer,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
     private val currentCard: Card
         get() = activity.currentCard!!
@@ -74,7 +76,7 @@ open class AnkiDroidJsAPI(
         get() = activity.getColUnsafe
 
     /**
-     Javascript Interface class for calling Java function from AnkiDroid WebView
+     JavaScript Interface class for calling Java function from AnkiDroid WebView
      see js-api.js for available functions
      */
 
@@ -107,7 +109,7 @@ open class AnkiDroidJsAPI(
     ): ByteArray = ApiResult.String(apiContract.isValid, string).toString().toByteArray()
 
     /**
-     * The method parse json data and return api contract object
+     * The method parse JSON data and return api contract object
      * @param byteArray
      * @return apiContract or null
      */
@@ -170,7 +172,7 @@ open class AnkiDroidJsAPI(
 
             /*
              * if api major version equals to supplied major version then return true and also check for minor version and patch version
-             * show toast for update and contact developer if need updates
+             * show toast for update and contact developer if updates needed
              * otherwise return false
              */
             return when {
@@ -209,7 +211,7 @@ open class AnkiDroidJsAPI(
         methodName: String,
         bytes: ByteArray,
         returnDefaultValues: Boolean = true,
-    ) = withContext(Dispatchers.Main) {
+    ) = withContext(mainDispatcher) {
         // the method will call to set the card supplied data and is valid version for each api request
         val apiContract = parseJsApiContract(bytes)!!
         // if api not init or is api not called from reviewer then return default -1
@@ -463,7 +465,7 @@ open class AnkiDroidJsAPI(
         var nextTime4 = ""
     }
 
-    sealed class ApiResult protected constructor(
+    sealed class ApiResult(
         private val status: JvmBoolean,
     ) {
         class Boolean(
