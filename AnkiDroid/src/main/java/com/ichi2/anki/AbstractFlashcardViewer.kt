@@ -552,7 +552,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         // This is in onKeyDown to match the gesture processor in the Reviewer
         if (!displayAnswer) {
             val focus = currentFocus
-            val isTextInputFocused = focus is android.widget.EditText
+            val isTextInputFocused = focus?.onCheckIsTextEditor() == true
             if (!isTextInputFocused && (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)) {
                 displayCardAnswer()
                 return true
@@ -1849,6 +1849,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     val writeLock: Lock
         get() = cardLock.writeLock()
     open var currentCard: Card? = null
+        internal set
 
     /** Refreshes the WebView after a crash  */
     fun destroyWebViewFrame() {
