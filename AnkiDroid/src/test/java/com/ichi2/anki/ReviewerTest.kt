@@ -76,7 +76,10 @@ class ReviewerTest : RobolectricTest() {
         fun <T : Reviewer?> startReviewer(
             testClass: RobolectricTest,
             clazz: Class<T>,
-        ): T = startActivityNormallyOpenCollectionWithIntent(testClass, clazz, Intent())
+        ): T = startActivityNormallyOpenCollectionWithIntent(testClass, clazz, Intent()).apply {
+            this?.onCollectionLoaded(testClass.col)
+            advanceRobolectricLooper()
+        }
     }
 }
 
