@@ -31,6 +31,7 @@ import android.view.KeyEvent.KEYCODE_F5
 import android.view.KeyEvent.KEYCODE_R
 import android.view.KeyEvent.KEYCODE_SPACE
 import android.view.KeyEvent.KEYCODE_Z
+import android.widget.EditText
 import androidx.annotation.CheckResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import anki.scheduler.CardAnswer.Rating
@@ -255,6 +256,13 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         var replayMediaCalled = false
             private set
 
+        private var _currentCard: Card? = mockk<Card>(relaxed = true)
+        override var currentCard: Card?
+            get() = _currentCard
+            set(value) {
+                _currentCard = value
+            }
+
         private val cardFlips = mutableListOf<String>()
         override val isDrawerOpen: Boolean
             get() = false
@@ -380,7 +388,9 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         }
 
         fun focusTextField(): KeyboardInputTestReviewer {
-            focusedView = mockk<android.widget.EditText>(relaxed = true)
+            focusedView = mockk<EditText>(relaxed = true) {
+                every { onCheckIsTextEditor() } returns true
+            }
             return this
         }
 
