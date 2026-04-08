@@ -20,11 +20,7 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
-import java.lang.IllegalStateException
-import java.lang.RuntimeException
 import java.security.MessageDigest
-import java.util.HashMap
-import kotlin.Throws
 
 /**
  * Loads a librsdroid alternative to allow testing of rsdroid under a Robolectric-based environment.
@@ -49,8 +45,15 @@ object RustBackendLoader {
         print("loading rsdroid-testing for: $osName")
         when {
             normalizedOsName.contains("win") -> load("rsdroid", ".dll")
-            normalizedOsName.contains("mac") || normalizedOsName.contains("darwin") -> load("librsdroid", ".dylib")
-            normalizedOsName.contains("nix") || normalizedOsName.contains("nux") || normalizedOsName.contains("linux") -> load("librsdroid", ".so")
+            normalizedOsName.contains("mac") || normalizedOsName.contains("darwin") -> load(
+                "librsdroid",
+                ".dylib"
+            )
+
+            normalizedOsName.contains("nix") || normalizedOsName.contains("nux") || normalizedOsName.contains(
+                "linux"
+            ) -> load("librsdroid", ".so")
+
             else -> throw IllegalStateException("Could not determine OS Type for: '$osName'")
         }
         hasSetUp = true
@@ -100,18 +103,18 @@ object RustBackendLoader {
         fileNameToPathCache[fullFilename]?.let { return it }
 
         val buffer = ByteArray(8 * 1024)
-        val checksum =
-            withStream(fullFilename) { stream ->
-                val digest = MessageDigest.getInstance("SHA-1")
-                var bytesRead: Int
-                while (stream.read(buffer).also { bytesRead = it } != -1) {
-                    digest.update(buffer, 0, bytesRead)
-                }
-                digest.digest().joinToString("") { "%02x".format(it) }
+        val checksum = withStream(fullFilename) { stream ->
+            val digest = MessageDigest.getInstance("SHA-1")
+            var bytesRead: Int
+            while (stream.read(buffer).also { bytesRead = it } != -1) {
+                digest.update(buffer, 0, bytesRead)
             }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        }
 
         val loaderId = System.identityHashCode(RustBackendLoader::class.java.classLoader)
-        val expectedFile = File(System.getProperty("java.io.tmpdir"), "$fileName-$checksum-$loaderId$extension")
+        val expectedFile =
+            File(System.getProperty("java.io.tmpdir"), "$fileName-$checksum-$loaderId$extension")
         if (!expectedFile.exists()) {
             val tempFile = File.createTempFile("$fileName-$loaderId-", extension)
             tempFile.outputStream().use { outStream ->
@@ -123,7 +126,9 @@ object RustBackendLoader {
                 }
                 outStream.flush()
             }
-            check(tempFile.renameTo(expectedFile) || tempFile.copyTo(expectedFile, overwrite = true).let { tempFile.delete(); true }) {
+            check(
+                tempFile.renameTo(expectedFile) || tempFile.copyTo(expectedFile, overwrite = true)
+                    .let { tempFile.delete(); true }) {
                 "Could not move extracted rsdroid library to $expectedFile"
             }
         }
