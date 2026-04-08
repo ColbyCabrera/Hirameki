@@ -76,8 +76,8 @@ open class AnkiDroidJsAPI(
         get() = activity.getColUnsafe
 
     /**
-     JavaScript Interface class for calling Java function from AnkiDroid WebView
-     see js-api.js for available functions
+    JavaScript Interface class for calling Java function from AnkiDroid WebView
+    see js-api.js for available functions
      */
 
     private val context: Context = activity
@@ -124,7 +124,12 @@ open class AnkiDroidJsAPI(
         } catch (j: JSONException) {
             Timber.w(j)
             activity.runOnUiThread {
-                activity.showSnackbar(context.getString(R.string.invalid_json_data, j.localizedMessage))
+                activity.showSnackbar(
+                    context.getString(
+                        R.string.invalid_json_data,
+                        j.localizedMessage
+                    )
+                )
             }
         }
         return null
@@ -143,7 +148,8 @@ open class AnkiDroidJsAPI(
         apiDevContact: String,
     ) {
         val errorMsg: String = context.getString(R.string.anki_js_error_code, errorCode)
-        val snackbarMsg: String = context.getString(R.string.api_version_developer_contact, apiDevContact, errorMsg)
+        val snackbarMsg: String =
+            context.getString(R.string.api_version_developer_contact, apiDevContact, errorMsg)
 
         activity.showSnackbar(snackbarMsg, Snackbar.LENGTH_INDEFINITE) {
             setMaxLines(3)
@@ -179,15 +185,27 @@ open class AnkiDroidJsAPI(
                 versionSupplied == versionCurrent -> {
                     true
                 }
+
                 versionSupplied.isLowerThan(versionCurrent) -> {
                     activity.runOnUiThread {
-                        activity.showSnackbar(context.getString(R.string.update_js_api_version, apiDevContact))
+                        activity.showSnackbar(
+                            context.getString(
+                                R.string.update_js_api_version,
+                                apiDevContact
+                            )
+                        )
                     }
                     versionSupplied.isHigherThanOrEquivalentTo(Version.parse(AnkiDroidJsAPIConstants.MINIMUM_JS_API_VERSION))
                 }
+
                 else -> {
                     activity.runOnUiThread {
-                        activity.showSnackbar(context.getString(R.string.valid_js_api_version, apiDevContact))
+                        activity.showSnackbar(
+                            context.getString(
+                                R.string.valid_js_api_version,
+                                apiDevContact
+                            )
+                        )
                     }
                     false
                 }
@@ -235,24 +253,55 @@ open class AnkiDroidJsAPI(
             "nextTime4" -> convertToByteArray(apiContract, cardDataForJsAPI.nextTime4)
             "toggleFlag" -> {
                 if (apiParams !in flagCommands) {
-                    showDeveloperContact(ANKI_JS_ERROR_CODE_FLAG_CARD, apiContract.cardSuppliedDeveloperContact)
+                    showDeveloperContact(
+                        ANKI_JS_ERROR_CODE_FLAG_CARD,
+                        apiContract.cardSuppliedDeveloperContact
+                    )
                     return@withContext convertToByteArray(apiContract, false)
                 }
                 convertToByteArray(apiContract, activity.executeCommand(flagCommands[apiParams]!!))
             }
-            "markCard" ->
-                processAction({
-                    activity.executeCommand(ViewerCommand.MARK)
-                }, apiContract, ANKI_JS_ERROR_CODE_MARK_CARD, ::convertToByteArray)
-            "buryCard" -> processAction(activity::buryCard, apiContract, ANKI_JS_ERROR_CODE_BURY_CARD, ::convertToByteArray)
-            "buryNote" -> processAction(activity::buryNote, apiContract, ANKI_JS_ERROR_CODE_BURT_NOTE, ::convertToByteArray)
-            "suspendCard" -> processAction(activity::suspendCard, apiContract, ANKI_JS_ERROR_CODE_SUSPEND_CARD, ::convertToByteArray)
-            "suspendNote" -> processAction(activity::suspendNote, apiContract, ANKI_JS_ERROR_CODE_SUSPEND_NOTE, ::convertToByteArray)
+
+            "markCard" -> processAction({
+                activity.executeCommand(ViewerCommand.MARK)
+            }, apiContract, ANKI_JS_ERROR_CODE_MARK_CARD, ::convertToByteArray)
+
+            "buryCard" -> processAction(
+                activity::buryCard,
+                apiContract,
+                ANKI_JS_ERROR_CODE_BURY_CARD,
+                ::convertToByteArray
+            )
+
+            "buryNote" -> processAction(
+                activity::buryNote,
+                apiContract,
+                ANKI_JS_ERROR_CODE_BURT_NOTE,
+                ::convertToByteArray
+            )
+
+            "suspendCard" -> processAction(
+                activity::suspendCard,
+                apiContract,
+                ANKI_JS_ERROR_CODE_SUSPEND_CARD,
+                ::convertToByteArray
+            )
+
+            "suspendNote" -> processAction(
+                activity::suspendNote,
+                apiContract,
+                ANKI_JS_ERROR_CODE_SUSPEND_NOTE,
+                ::convertToByteArray
+            )
+
             "setCardDue" -> {
                 try {
                     val days = apiParams.toInt()
                     if (days !in 0..9999) {
-                        showDeveloperContact(ANKI_JS_ERROR_CODE_SET_DUE, apiContract.cardSuppliedDeveloperContact)
+                        showDeveloperContact(
+                            ANKI_JS_ERROR_CODE_SET_DUE,
+                            apiContract.cardSuppliedDeveloperContact
+                        )
                         return@withContext convertToByteArray(apiContract, false)
                     }
                     activity.launchCatchingTask {
@@ -260,16 +309,25 @@ open class AnkiDroidJsAPI(
                     }
                     return@withContext convertToByteArray(apiContract, true)
                 } catch (_: NumberFormatException) {
-                    showDeveloperContact(ANKI_JS_ERROR_CODE_SET_DUE, apiContract.cardSuppliedDeveloperContact)
+                    showDeveloperContact(
+                        ANKI_JS_ERROR_CODE_SET_DUE,
+                        apiContract.cardSuppliedDeveloperContact
+                    )
                     return@withContext convertToByteArray(apiContract, false)
                 }
             }
+
             "resetProgress" -> {
                 val cardIds = listOf(currentCard.id)
                 activity.launchCatchingTask { activity.resetCards(cardIds) }
                 convertToByteArray(apiContract, true)
             }
-            "cardMark" -> convertToByteArray(apiContract, currentCard.note(getColUnsafe).hasTag(getColUnsafe, "marked"))
+
+            "cardMark" -> convertToByteArray(
+                apiContract,
+                currentCard.note(getColUnsafe).hasTag(getColUnsafe, "marked")
+            )
+
             "cardFlag" -> convertToByteArray(apiContract, currentCard.userFlag())
             "cardReps" -> convertToByteArray(apiContract, currentCard.reps)
             "cardInterval" -> convertToByteArray(apiContract, currentCard.ivl)
@@ -285,8 +343,16 @@ open class AnkiDroidJsAPI(
             "cardQueue" -> convertToByteArray(apiContract, currentCard.queue.code)
             "cardLapses" -> convertToByteArray(apiContract, currentCard.lapses)
             "cardDue" -> convertToByteArray(apiContract, currentCard.due)
-            "deckName" -> convertToByteArray(apiContract, Decks.basename(activity.getColUnsafe.decks.name(currentCard.did)))
-            "isActiveNetworkMetered" -> convertToByteArray(apiContract, NetworkUtils.isActiveNetworkMetered())
+            "deckName" -> convertToByteArray(
+                apiContract,
+                Decks.basename(activity.getColUnsafe.decks.name(currentCard.did))
+            )
+
+            "isActiveNetworkMetered" -> convertToByteArray(
+                apiContract,
+                NetworkUtils.isActiveNetworkMetered()
+            )
+
             "ttsSetLanguage" -> convertToByteArray(apiContract, talker.setLanguage(apiParams))
             "ttsSpeak" -> {
                 val jsonObject = JSONObject(apiParams)
@@ -294,29 +360,36 @@ open class AnkiDroidJsAPI(
                 val queueMode = jsonObject.getInt("queueMode")
                 convertToByteArray(apiContract, talker.speak(text, queueMode))
             }
+
             "ttsIsSpeaking" -> convertToByteArray(apiContract, talker.isSpeaking)
             "ttsSetPitch" -> convertToByteArray(apiContract, talker.setPitch(apiParams.toFloat()))
-            "ttsSetSpeechRate" -> convertToByteArray(apiContract, talker.setSpeechRate(apiParams.toFloat()))
+            "ttsSetSpeechRate" -> convertToByteArray(
+                apiContract,
+                talker.setSpeechRate(apiParams.toFloat())
+            )
+
             "ttsFieldModifierIsAvailable" -> {
                 // Know if {{tts}} is supported - issue #10443
                 // Return false for now
                 convertToByteArray(apiContract, false)
             }
+
             "ttsStop" -> convertToByteArray(apiContract, talker.stop())
             "searchCard" -> {
-                val intent =
-                    Intent(context, CardBrowser::class.java).apply {
-                        putExtra("currentCard", currentCard.id)
-                        putExtra("search_query", apiParams)
-                    }
+                val intent = Intent(context, CardBrowser::class.java).apply {
+                    putExtra("currentCard", currentCard.id)
+                    putExtra("search_query", apiParams)
+                }
                 activity.startActivity(intent)
                 convertToByteArray(apiContract, true)
             }
+
             "isDisplayingAnswer" -> convertToByteArray(apiContract, activity.isDisplayingAnswer)
             "addTagToCard" -> {
                 activity.runOnUiThread { activity.editTags() }
                 convertToByteArray(apiContract, true)
             }
+
             "isInFullscreen" -> convertToByteArray(apiContract, activity.isFullscreen)
             "isTopbarShown" -> convertToByteArray(apiContract, activity.prefShowTopbar)
             "isInNightMode" -> convertToByteArray(apiContract, activity.isInNightMode)
@@ -324,18 +397,22 @@ open class AnkiDroidJsAPI(
                 activity.webView!!.isHorizontalScrollBarEnabled = apiParams.toBoolean()
                 convertToByteArray(apiContract, true)
             }
+
             "enableVerticalScrollbar" -> {
                 activity.webView!!.isVerticalScrollBarEnabled = apiParams.toBoolean()
                 convertToByteArray(apiContract, true)
             }
+
             "showNavigationDrawer" -> {
                 activity.onNavigationPressed()
                 convertToByteArray(apiContract, true)
             }
+
             "showOptionsMenu" -> {
                 activity.openOptionsMenu()
                 convertToByteArray(apiContract, true)
             }
+
             "showToast" -> {
                 val jsonObject = JSONObject(apiParams)
                 val text = jsonObject.getString("text")
@@ -344,22 +421,27 @@ open class AnkiDroidJsAPI(
                 showThemedToast(context, msgDecode, shortLength)
                 convertToByteArray(apiContract, true)
             }
+
             "showAnswer" -> {
                 activity.displayCardAnswer()
                 convertToByteArray(apiContract, true)
             }
+
             "answerEase1" -> {
                 activity.flipOrAnswerCard(Rating.AGAIN)
                 convertToByteArray(apiContract, true)
             }
+
             "answerEase2" -> {
                 activity.flipOrAnswerCard(Rating.HARD)
                 convertToByteArray(apiContract, true)
             }
+
             "answerEase3" -> {
                 activity.flipOrAnswerCard(Rating.GOOD)
                 convertToByteArray(apiContract, true)
             }
+
             "answerEase4" -> {
                 activity.flipOrAnswerCard(Rating.EASY)
                 convertToByteArray(apiContract, true)
@@ -369,10 +451,9 @@ open class AnkiDroidJsAPI(
                 val jsonObject = JSONObject(apiParams)
                 val noteId = jsonObject.getLong("noteId")
                 val tag = jsonObject.getString("tag")
-                val note =
-                    getColUnsafe.getNote(noteId).apply {
-                        addTag(tag)
-                    }
+                val note = getColUnsafe.getNote(noteId).apply {
+                    addTag(tag)
+                }
                 getColUnsafe.updateNote(note)
                 convertToByteArray(apiContract, true)
             }
@@ -392,10 +473,9 @@ open class AnkiDroidJsAPI(
                         setTagsFromStr(this@withCol, tagsAsString)
                     }
 
-                    val note =
-                        getNote(noteId).apply {
-                            setTagsFromList(tags.stringIterable().toList())
-                        }
+                    val note = getNote(noteId).apply {
+                        setTagsFromList(tags.stringIterable().toList())
+                    }
                     updateNote(note)
                 }
                 convertToByteArray(apiContract, true)
@@ -403,39 +483,58 @@ open class AnkiDroidJsAPI(
 
             "getNoteTags" -> {
                 val noteId = currentCard.nid
-                val noteTags =
-                    withCol {
-                        getNote(noteId).tags
-                    }
+                val noteTags = withCol {
+                    getNote(noteId).tags
+                }
                 convertToByteArray(apiContract, JSONArray(noteTags).toString())
             }
 
-            "sttSetLanguage" -> convertToByteArray(apiContract, speechRecognizer.setLanguage(apiParams))
-            "sttStart" -> {
-                val callback =
-                    object : JavaScriptSTT.SpeechRecognitionCallback {
-                        override fun onResult(results: List<String>) {
-                            activity.lifecycleScope.launch {
-                                val apiResult = ApiResult.success(Json.encodeToString(ListSerializer(String.serializer()), results))
-                                val jsonEncodedString = withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
-                                activity.webView!!.evaluateJavascript("ankiSttResult($jsonEncodedString)", null)
-                            }
-                        }
+            "sttSetLanguage" -> convertToByteArray(
+                apiContract,
+                speechRecognizer.setLanguage(apiParams)
+            )
 
-                        override fun onError(errorMessage: String) {
-                            activity.lifecycleScope.launch {
-                                val apiResult = ApiResult.failure(errorMessage)
-                                val jsonEncodedString = withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
-                                activity.webView!!.evaluateJavascript("ankiSttResult($jsonEncodedString)", null)
-                            }
+            "sttStart" -> {
+                val callback = object : JavaScriptSTT.SpeechRecognitionCallback {
+                    override fun onResult(results: List<String>) {
+                        activity.lifecycleScope.launch {
+                            val apiResult = ApiResult.success(
+                                Json.encodeToString(
+                                    ListSerializer(String.serializer()),
+                                    results
+                                )
+                            )
+                            val jsonEncodedString =
+                                withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
+                            activity.webView!!.evaluateJavascript(
+                                "ankiSttResult($jsonEncodedString)",
+                                null
+                            )
                         }
                     }
+
+                    override fun onError(errorMessage: String) {
+                        activity.lifecycleScope.launch {
+                            val apiResult = ApiResult.failure(errorMessage)
+                            val jsonEncodedString =
+                                withContext(Dispatchers.Default) { JSONObject.quote(apiResult.toString()) }
+                            activity.webView!!.evaluateJavascript(
+                                "ankiSttResult($jsonEncodedString)",
+                                null
+                            )
+                        }
+                    }
+                }
                 speechRecognizer.setRecognitionCallback(callback)
                 convertToByteArray(apiContract, speechRecognizer.start())
             }
+
             "sttStop" -> convertToByteArray(apiContract, speechRecognizer.stop())
             else -> {
-                showDeveloperContact(ANKI_JS_ERROR_CODE_ERROR, apiContract.cardSuppliedDeveloperContact)
+                showDeveloperContact(
+                    ANKI_JS_ERROR_CODE_ERROR,
+                    apiContract.cardSuppliedDeveloperContact
+                )
                 throw Exception("unhandled request: $methodName")
             }
         }
@@ -515,12 +614,10 @@ open class AnkiDroidJsAPI(
 
         abstract fun putValue(o: JSONObject)
 
-        override fun toString() =
-            JSONObject()
-                .apply {
-                    put(SUCCESS_KEY, status)
-                    putValue(this)
-                }.toString()
+        override fun toString() = JSONObject().apply {
+                put(SUCCESS_KEY, status)
+                putValue(this)
+            }.toString()
 
         @Suppress("RemoveRedundantQualifierName") // we don't want `String(true, value)`
         companion object {
