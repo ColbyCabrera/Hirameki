@@ -46,8 +46,7 @@ object RustBackendLoader {
         when {
             normalizedOsName.contains("win") -> load("rsdroid", ".dll")
             normalizedOsName.contains("mac") || normalizedOsName.contains("darwin") -> load(
-                "librsdroid",
-                ".dylib"
+                "librsdroid", ".dylib"
             )
 
             normalizedOsName.contains("nix") || normalizedOsName.contains("nux") || normalizedOsName.contains(
