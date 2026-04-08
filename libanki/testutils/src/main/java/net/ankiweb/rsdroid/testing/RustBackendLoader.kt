@@ -161,6 +161,13 @@ object RustBackendLoader {
             tempFile.delete()
             true
         } catch (_: IOException) {
+            try {
+                if (expectedFile.exists()) {
+                    expectedFile.delete()
+                }
+            } catch (_: Exception) {
+                // Ignore cleanup failures safely
+            }
             false
         }
     }
