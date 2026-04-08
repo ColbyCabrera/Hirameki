@@ -16,7 +16,9 @@
 package com.ichi2.anki
 
 import android.view.KeyEvent
+import android.widget.EditText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.every
 import io.mockk.mockk
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -100,7 +102,9 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
         }
 
         fun focusTextField() {
-            focusedView = mockk<android.widget.EditText>(relaxed = true)
+            focusedView = mockk<EditText>(relaxed = true) {
+                every { onCheckIsTextEditor() } returns true
+            }
         }
 
         companion object {
