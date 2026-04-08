@@ -754,7 +754,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             cardFrameParent = cardFrame!!.parent as ViewGroup
         }
         touchLayer =
-            findViewById<FrameLayout>(R.id.touch_layer).apply { setOnTouchListener(gestureListener) }
+            findViewById<FrameLayout>(R.id.touch_layer)?.apply { setOnTouchListener(gestureListener) }
         cardFrame?.removeAllViews()
 
         // Initialize swipe
