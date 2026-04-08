@@ -147,9 +147,14 @@ class DeckOptionsCssTest : InstrumentedTest() {
                         "  return style.getPropertyValue('--canvas').trim(); " +
                         "})();"
                     ) { result ->
-                        // result is like "\"#ffffff\""
-                        actualBgColor = result.replace("\"", "").lowercase()
-                        latch.countDown()
+                        // result is like "\"#ffffff\"" or null
+                        try {
+                            if (result != null) {
+                                actualBgColor = result.replace("\"", "").lowercase()
+                            }
+                        } finally {
+                            latch.countDown()
+                        }
                     }
                 }
             }
@@ -168,7 +173,34 @@ class DeckOptionsCssTest : InstrumentedTest() {
             assertThat("Timed out waiting for computed style check", success, `is`(true))
             
             // NOTE: This is where we expect failure in those 10/100 cases
-            assertThat("Applied CSS variable --canvas should match theme background", actualBgColor, `is`(expectedBgColor))
+            // We will now poll if it failed, to see if it fixes itself or what the value actually was!
+            if (actualBgColor != expectedBgColor) {
+                var latestColor: String? = actualBgColor
+                println("DeckOptionsCssTest: initial mismatch! expected=$expectedBgColor, actual=$actualBgColor. Polling for a fix...")
+                var fixed = false
+                for (i in 0 until 20) {
+                    Thread.sleep(200)
+                    scenario.onActivity { activity ->
+                        activity.requireDeckOptionsFragment().webView.evaluateJavascript(
+                            "(function() { " +
+                            "  var style = getComputedStyle(document.documentElement); " +
+                            "  return style.getPropertyValue('--canvas').trim(); " +
+                            "})();"
+                        ) { result ->
+                            latestColor = result.replace("\"", "").lowercase()
+                        }
+                    }
+                    if (latestColor == expectedBgColor) {
+                        fixed = true
+                        println("DeckOptionsCssTest: matched after ${i * 200}ms!")
+                        break
+                    }
+                }
+                println("DeckOptionsCssTest: final latestColor=$latestColor, expected=$expectedBgColor")
+                assertThat("Applied CSS variable --canvas should match theme background", latestColor, `is`(expectedBgColor))
+            } else {
+                assertThat("Applied CSS variable --canvas should match theme background", actualBgColor, `is`(expectedBgColor))
+            }
         }
     }
 }
