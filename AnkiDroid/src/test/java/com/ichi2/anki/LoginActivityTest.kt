@@ -61,14 +61,16 @@ class LoginActivityTest : RobolectricTest() {
 
         val controller =
             Robolectric.buildActivity(LoginActivity::class.java).create().start().resume()
-        val activity = controller.get()
+        try {
+            val activity = controller.get()
 
-        assertEquals(false, activity.isFinishing)
+            assertEquals(false, activity.isFinishing)
 
-        activity.finish()
-        // Verify that the activity does not return RESULT_OK (defaults to RESULT_CANCELED)
-        assertEquals(Activity.RESULT_CANCELED, Shadows.shadowOf(activity).resultCode)
-
-        controller.destroy()
+            activity.finish()
+            // Verify that the activity does not return RESULT_OK (defaults to RESULT_CANCELED)
+            assertEquals(Activity.RESULT_CANCELED, Shadows.shadowOf(activity).resultCode)
+        } finally {
+            controller.destroy()
+        }
     }
 }
