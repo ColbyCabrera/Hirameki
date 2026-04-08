@@ -231,7 +231,11 @@ open class AnkiDroidJsAPI(
         returnDefaultValues: Boolean = true,
     ) = withContext(mainDispatcher) {
         // the method will call to set the card supplied data and is valid version for each api request
-        val apiContract = parseJsApiContract(bytes)!!
+        val apiContract = parseJsApiContract(bytes)
+        if (apiContract == null) {
+            Timber.w("handleJsApiRequest: failed to parse JS API contract")
+            return@withContext -1
+        }
         // if api not init or is api not called from reviewer then return default -1
         // also other action will not be modified
         if (!apiContract.isValid or returnDefaultValues) {
