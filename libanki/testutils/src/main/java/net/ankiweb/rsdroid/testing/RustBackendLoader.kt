@@ -151,7 +151,9 @@ object RustBackendLoader {
         fullFilename: String,
         func: (InputStream) -> T,
     ): T {
-        val stream = RustBackendLoader::class.java.classLoader!!.getResourceAsStream(fullFilename)
+        val loader = RustBackendLoader::class.java.classLoader
+            ?: throw IllegalStateException("Could not retrieve classloader for RustBackendLoader")
+        val stream = loader.getResourceAsStream(fullFilename)
             ?: throw IllegalStateException("Could not find bundled backend resource '$fullFilename'")
         return stream.use(func)
     }
