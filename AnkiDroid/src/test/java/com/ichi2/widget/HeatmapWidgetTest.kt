@@ -23,15 +23,13 @@ import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.DB
 import com.ichi2.anki.libanki.LibAnki
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import net.ankiweb.rsdroid.Backend
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -39,12 +37,12 @@ class HeatmapWidgetTest {
 
     @Test
     fun testGetColorForCount() {
-        val colors = mock<ColorProviders>()
-        val surfaceVariant = mock<ColorProvider>()
-        val primary = mock<ColorProvider>()
+        val colors = mockk<ColorProviders>()
+        val surfaceVariant = mockk<ColorProvider>()
+        val primary = mockk<ColorProvider>()
 
-        whenever(colors.surfaceVariant).thenReturn(surfaceVariant)
-        whenever(colors.primary).thenReturn(primary)
+        every { colors.surfaceVariant } returns surfaceVariant
+        every { colors.primary } returns primary
 
         // 0 -> surfaceVariant, 0.5f
         var result = HeatmapWidget.getColorForCount(0, colors)
@@ -91,28 +89,30 @@ class HeatmapWidgetTest {
     @Suppress("DEPRECATION")
     fun testFetchHeatmapData() = runTest {
         // Mock Cursor
-        val mockCursor = mock<Cursor>()
+        val mockCursor = mockk<Cursor>()
         // Simulate 2 rows:
         // 1. day=100, count=5
         // 2. day=101, count=10
         // moveToNext returns true twice, then false
-        whenever(mockCursor.moveToNext()).doReturn(true).doReturn(true).doReturn(false)
-        whenever(mockCursor.getLong(0)).doReturn(100L).doReturn(101L)
-        whenever(mockCursor.getInt(1)).doReturn(5).doReturn(10)
+        every { mockCursor.moveToNext() } returns true andThen true andThen false
+        every { mockCursor.getLong(0) } returns 100L andThen 101L
+        every { mockCursor.getInt(1) } returns 5 andThen 10
+        every { mockCursor.close() } returns Unit
 
         // Mock DB
-        val mockDb = mock<DB> {
-            on { query(any(), any()) } doReturn mockCursor
-            on { query(any()) } doReturn mockCursor
+        val mockDb = mockk<DB> {
+            every { query(any(), *anyVararg()) } returns mockCursor
+            every { query(any()) } returns mockCursor
         }
 
         // Mock Collection
-        val mockCol = mock<Collection> {
-            on { db } doReturn mockDb
+        val mockCol = mockk<Collection> {
+            every { db } returns mockDb
+            every { dbClosed } returns false
         }
 
         // Mock Backend to prevent loading native libraries
-        val mockBackend = mock<Backend>()
+        val mockBackend = mockk<Backend>()
         setBackend(mockBackend)
 
         // Inject mock collection
