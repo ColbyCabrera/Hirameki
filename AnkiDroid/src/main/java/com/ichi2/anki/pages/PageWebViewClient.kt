@@ -119,62 +119,67 @@ open class PageWebViewClient : WebViewClient() {
             /* Override ALL Anki + Bootstrap CSS variables with Material 3 */
             :root, :root.night-mode {
                 /* Foreground */
-                --fg: $textColor;
-                --fg-subtle: $onSurfaceVariantColor;
-                --fg-disabled: $outlineColor;
-                --fg-faint: $outlineColor;
-                --fg-link: $primaryColor;
+                --fg: $textColor !important;
+                --fg-subtle: $onSurfaceVariantColor !important;
+                --fg-disabled: $outlineColor !important;
+                --fg-faint: $outlineColor !important;
+                --fg-link: $primaryColor !important;
                 /* Canvas / Background */
-                --canvas: $bgColor;
-                --canvas-elevated: $surfaceColor;
-                --canvas-inset: $surfaceContainerColor;
-                --canvas-overlay: $surfaceContainerHighColor;
-                --canvas-code: $surfaceContainerColor;
+                --canvas: $bgColor !important;
+                --canvas-elevated: $surfaceColor !important;
+                --canvas-inset: $surfaceContainerColor !important;
+                --canvas-overlay: $surfaceContainerHighColor !important;
+                --canvas-code: $surfaceContainerColor !important;
                 /* Borders */
-                --border: $outlineColor;
-                --border-subtle: $surfaceContainerHighColor;
-                --border-strong: $outlineColor;
-                --border-focus: $primaryColor;
+                --border: $outlineColor !important;
+                --border-subtle: $surfaceContainerHighColor !important;
+                --border-strong: $outlineColor !important;
+                --border-focus: $primaryColor !important;
                 /* Buttons */
-                --button-bg: $surfaceContainerColor;
-                --button-gradient-start: $surfaceContainerColor;
-                --button-gradient-end: $surfaceContainerColor;
-                --button-hover-border: $outlineColor;
-                --button-disabled: $surfaceContainerColor;
-                --button-primary-bg: $primaryColor;
-                --button-primary-gradient-start: $primaryColor;
-                --button-primary-gradient-end: $primaryColor;
-                --button-primary-disabled: $primaryColor;
+                --button-bg: $surfaceContainerColor !important;
+                --button-gradient-start: $surfaceContainerColor !important;
+                --button-gradient-end: $surfaceContainerColor !important;
+                --button-hover-border: $outlineColor !important;
+                --button-disabled: $surfaceContainerColor !important;
+                --button-primary-bg: $primaryColor !important;
+                --button-primary-gradient-start: $primaryColor !important;
+                --button-primary-gradient-end: $primaryColor !important;
+                --button-primary-disabled: $primaryColor !important;
                 /* Shadows */
-                --shadow: transparent;
-                --shadow-inset: transparent;
-                --shadow-subtle: transparent;
-                --shadow-focus: $primaryColor;
+                --shadow: transparent !important;
+                --shadow-inset: transparent !important;
+                --shadow-subtle: transparent !important;
+                --shadow-focus: $primaryColor !important;
                 /* Accents */
-                --accent-card: $primaryColor;
-                --accent-note: $secondaryColor;
-                --accent-danger: $errorContainerColor;
+                --accent-card: $primaryColor !important;
+                --accent-note: $secondaryColor !important;
+                --accent-danger: $errorContainerColor !important;
                 /* Bootstrap body / text */
-                --bs-body-bg: $bgColor;
-                --bs-body-color: $textColor;
-                --bs-emphasis-color: $textColor;
-                --bs-secondary-color: $onSurfaceVariantColor;
-                --bs-tertiary-color: $outlineColor;
-                --bs-secondary-bg: $surfaceContainerColor;
-                --bs-tertiary-bg: $surfaceContainerColor;
+                --bs-body-bg: $bgColor !important;
+                --bs-body-color: $textColor !important;
+                --bs-emphasis-color: $textColor !important;
+                --bs-secondary-color: $onSurfaceVariantColor !important;
+                --bs-tertiary-color: $outlineColor !important;
+                --bs-secondary-bg: $surfaceContainerColor !important;
+                --bs-tertiary-bg: $surfaceContainerColor !important;
                 /* Bootstrap brand */
-                --bs-primary: $primaryColor;
-                --bs-secondary: $secondaryColor;
-                --bs-link-color: $primaryColor;
-                --bs-link-hover-color: $primaryColor;
+                --bs-primary: $primaryColor !important;
+                --bs-secondary: $secondaryColor !important;
+                --bs-link-color: $primaryColor !important;
+                --bs-link-hover-color: $primaryColor !important;
                 /* Bootstrap borders */
-                --bs-border-color: $outlineColor;
-                --bs-border-color-translucent: $outlineColor;
+                --bs-border-color: $outlineColor !important;
+                --bs-border-color-translucent: $outlineColor !important;
                 /* Deck options */
-                --deck-options-on-surface: $onSurfaceColor;
-                --deck-options-on-primary: $onPrimaryColor;
-                --deck-options-tertiary-container: $tertiaryContainerColor;
-                --deck-options-on-tertiary-container: $onTertiaryContainerColor;
+                --deck-options-on-surface: $onSurfaceColor !important;
+                --deck-options-on-primary: $onPrimaryColor !important;
+                --deck-options-tertiary-container: $tertiaryContainerColor !important;
+                --deck-options-on-tertiary-container: $onTertiaryContainerColor !important;
+            }
+
+            /* Style Bootstrap switch handle */
+            .form-switch .form-check-input:checked {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='${onPrimaryColor.replace("#", "%23")}'/%3e%3c/svg%3e") !important;
             }
 
             $assetCss

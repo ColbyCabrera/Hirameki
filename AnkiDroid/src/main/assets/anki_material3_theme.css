@@ -139,6 +139,12 @@
     border-radius: 16px !important;
 }
 
+/* Bootstrap Switch Styling */
+.form-check-input:checked {
+    background-color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+}
+
 body {
     background-color: var(--canvas) !important;
     color: var(--fg) !important;

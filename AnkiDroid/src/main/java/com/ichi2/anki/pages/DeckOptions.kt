@@ -361,7 +361,7 @@ private fun ProgressContext.toOptimizingPresetString(): String? {
     return label + "\n" + reviewsLabel
 }
 
-private fun FragmentActivity.requireDeckOptionsFragment(): DeckOptions {
+internal fun FragmentActivity.requireDeckOptionsFragment(): DeckOptions {
     require(this is SingleFragmentActivity) { "activity must be SingleFragmentActivity" }
     return requireNotNull(this.fragment as? DeckOptions?) { "fragment must be DeckOptions" }
 }
