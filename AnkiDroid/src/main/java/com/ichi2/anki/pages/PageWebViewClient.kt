@@ -175,11 +175,11 @@ open class PageWebViewClient : WebViewClient() {
                 --deck-options-on-primary: $onPrimaryColor !important;
                 --deck-options-tertiary-container: $tertiaryContainerColor !important;
                 --deck-options-on-tertiary-container: $onTertiaryContainerColor !important;
-                
-                /* Style Bootstrap switch handle */
-                .form-switch .form-check-input:checked {
-                    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='${onPrimaryColor.replace("#", "%23")}'/%3e%3c/svg%3e") !important;
-                }
+            }
+
+            /* Style Bootstrap switch handle */
+            .form-switch .form-check-input:checked {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='${onPrimaryColor.replace("#", "%23")}'/%3e%3c/svg%3e") !important;
             }
 
             $assetCss
