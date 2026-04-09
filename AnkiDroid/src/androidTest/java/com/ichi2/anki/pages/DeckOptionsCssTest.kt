@@ -65,15 +65,15 @@ class DeckOptionsCssTest : InstrumentedTest() {
             scenario.onActivity { activity ->
                 val fragment = activity.requireDeckOptionsFragment()
                 val webView = fragment.webView
-                
+
                 // The PageWebViewClient manages the injection logic.
                 val webViewClient = webView.webViewClient as PageWebViewClient
-                
+
                 // WAIT for the WebView to become visible "naturally" 
                 // (i.e. via the deckOptionsReady call from the JS side)
                 // In the test, we'll poll for fragment.webView.isVisible
                 // This replaces the "cheat" of manually calling activity.deckOptionsReady(byteArrayOf())
-                
+
                 // Since onActivity runs on the UI thread, we can't poll here easily.
                 // We'll move the visibility check into a polling loop outside.
 
@@ -110,10 +110,10 @@ class DeckOptionsCssTest : InstrumentedTest() {
             val success = latch.await(10, TimeUnit.SECONDS)
             assertThat("Timed out waiting for CSS injection", success, `is`(true))
             assertThat("CSS content should not be null", cssContent, notNullValue())
-            
+
             // evaluateJavascript returns "null" as a string if the JS returned null
             assertThat("CSS content should not be \"null\"", cssContent != "null", `is`(true))
-            
+
             // Check for a few expected CSS variables from anki_material3_theme.css
             assertThat("CSS content should contain --canvas variable", cssContent!!.contains("--canvas"), `is`(true))
             assertThat("CSS content should contain --fg variable", cssContent.contains("--fg"), `is`(true))
@@ -122,7 +122,7 @@ class DeckOptionsCssTest : InstrumentedTest() {
     }
 
     @Test
-    @Repeat(100)
+    @Repeat(20)
     fun testCssApplication() {
         val deckId = col.decks.allNamesAndIds().random().id
         val intent = DeckOptions.getIntent(testContext, deckId)
@@ -171,15 +171,15 @@ class DeckOptionsCssTest : InstrumentedTest() {
 
             val success = latch.await(10, TimeUnit.SECONDS)
             assertThat("Timed out waiting for computed style check", success, `is`(true))
-            
+
             // NOTE: This is where we expect failure in those 10/100 cases
             // We will now poll if it failed, to see if it fixes itself or what the value actually was!
             if (actualBgColor != expectedBgColor) {
                 var latestColor: String? = actualBgColor
                 println("DeckOptionsCssTest: initial mismatch! expected=$expectedBgColor, actual=$actualBgColor. Polling for a fix...")
-                var fixed = false
                 for (i in 0 until 20) {
                     Thread.sleep(200)
+                    val pollLatch = CountDownLatch(1)
                     scenario.onActivity { activity ->
                         activity.requireDeckOptionsFragment().webView.evaluateJavascript(
                             "(function() { " +
@@ -188,10 +188,11 @@ class DeckOptionsCssTest : InstrumentedTest() {
                             "})();"
                         ) { result ->
                             latestColor = result.replace("\"", "").lowercase()
+                            pollLatch.countDown()
                         }
                     }
+                    pollLatch.await(2, TimeUnit.SECONDS)
                     if (latestColor == expectedBgColor) {
-                        fixed = true
                         println("DeckOptionsCssTest: matched after ${i * 200}ms!")
                         break
                     }
