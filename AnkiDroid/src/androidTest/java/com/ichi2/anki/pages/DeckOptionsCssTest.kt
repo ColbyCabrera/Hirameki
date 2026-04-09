@@ -21,12 +21,12 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.SingleFragmentActivity
+import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission
 import com.ichi2.anki.testutil.Repeat
 import com.ichi2.anki.testutil.RepeatRule
 import com.ichi2.anki.testutil.disableIntroductionSlide
 import com.ichi2.anki.testutil.grantPermissions
-import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.utils.toRGBHex
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
@@ -79,10 +79,7 @@ class DeckOptionsCssTest : InstrumentedTest() {
 
                 webViewClient.runWhenPageStyled(webView) {
                     webView.evaluateJavascript(
-                        "(function() { " +
-                        "  var style = document.getElementById('material3-theme'); " +
-                        "  return style ? style.textContent : null; " +
-                        "})();"
+                        "(function() { " + "  var style = document.getElementById('material3-theme'); " + "  return style ? style.textContent : null; " + "})();"
                     ) { result ->
                         // result will be like "\"some-css-content\"" or "null"
                         if (result != "null") {
@@ -104,7 +101,11 @@ class DeckOptionsCssTest : InstrumentedTest() {
                 Thread.sleep(500)
             }
 
-            assertThat("WebView should become visible naturally (deckOptionsReady)", isVisible, `is`(true))
+            assertThat(
+                "WebView should become visible naturally (deckOptionsReady)",
+                isVisible,
+                `is`(true)
+            )
 
             // Wait for the style to be injected and verified
             val success = latch.await(10, TimeUnit.SECONDS)
@@ -115,9 +116,21 @@ class DeckOptionsCssTest : InstrumentedTest() {
             assertThat("CSS content should not be \"null\"", cssContent != "null", `is`(true))
 
             // Check for a few expected CSS variables from anki_material3_theme.css
-            assertThat("CSS content should contain --canvas variable", cssContent!!.contains("--canvas"), `is`(true))
-            assertThat("CSS content should contain --fg variable", cssContent.contains("--fg"), `is`(true))
-            assertThat("CSS content should contain .deck-options-page selector", cssContent.contains(".deck-options-page"), `is`(true))
+            assertThat(
+                "CSS content should contain --canvas variable",
+                cssContent!!.contains("--canvas"),
+                `is`(true)
+            )
+            assertThat(
+                "CSS content should contain --fg variable",
+                cssContent.contains("--fg"),
+                `is`(true)
+            )
+            assertThat(
+                "CSS content should contain .deck-options-page selector",
+                cssContent.contains(".deck-options-page"),
+                `is`(true)
+            )
         }
     }
 
@@ -142,10 +155,7 @@ class DeckOptionsCssTest : InstrumentedTest() {
                 webViewClient.runWhenPageStyled(webView) {
                     // Check computed style of the body
                     webView.evaluateJavascript(
-                        "(function() { " +
-                        "  var style = getComputedStyle(document.documentElement); " +
-                        "  return style.getPropertyValue('--canvas').trim(); " +
-                        "})();"
+                        "(function() { " + "  var style = getComputedStyle(document.documentElement); " + "  return style.getPropertyValue('--canvas').trim(); " + "})();"
                     ) { result ->
                         // result is like "\"#ffffff\"" or null
                         try {
@@ -162,7 +172,9 @@ class DeckOptionsCssTest : InstrumentedTest() {
             // Polling loop for visibility to verify "real" readiness
             var isVisible = false
             for (i in 0 until 40) {
-                scenario.onActivity { activity -> isVisible = activity.requireDeckOptionsFragment().webView.isVisible }
+                scenario.onActivity { activity ->
+                    isVisible = activity.requireDeckOptionsFragment().webView.isVisible
+                }
                 if (isVisible) break
                 Thread.sleep(500)
             }
@@ -182,10 +194,7 @@ class DeckOptionsCssTest : InstrumentedTest() {
                     val pollLatch = CountDownLatch(1)
                     scenario.onActivity { activity ->
                         activity.requireDeckOptionsFragment().webView.evaluateJavascript(
-                            "(function() { " +
-                            "  var style = getComputedStyle(document.documentElement); " +
-                            "  return style.getPropertyValue('--canvas').trim(); " +
-                            "})();"
+                            "(function() { " + "  var style = getComputedStyle(document.documentElement); " + "  return style.getPropertyValue('--canvas').trim(); " + "})();"
                         ) { result ->
                             latestColor = result.replace("\"", "").lowercase()
                             pollLatch.countDown()
@@ -198,9 +207,17 @@ class DeckOptionsCssTest : InstrumentedTest() {
                     }
                 }
                 println("DeckOptionsCssTest: final latestColor=$latestColor, expected=$expectedBgColor")
-                assertThat("Applied CSS variable --canvas should match theme background", latestColor, `is`(expectedBgColor))
+                assertThat(
+                    "Applied CSS variable --canvas should match theme background",
+                    latestColor,
+                    `is`(expectedBgColor)
+                )
             } else {
-                assertThat("Applied CSS variable --canvas should match theme background", actualBgColor, `is`(expectedBgColor))
+                assertThat(
+                    "Applied CSS variable --canvas should match theme background",
+                    actualBgColor,
+                    `is`(expectedBgColor)
+                )
             }
         }
     }
