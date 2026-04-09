@@ -34,7 +34,12 @@ class RepeatRule : TestRule {
         }
     }
 
-    private class RepeatStatement(private val base: Statement, private val times: Int) : Statement() {
+    private class RepeatStatement(private val base: Statement, private val times: Int) :
+        Statement() {
+        init {
+            require(times > 0) { "Repeat count must be > 0" }
+        }
+
         override fun evaluate() {
             repeat(times) {
                 base.evaluate()
