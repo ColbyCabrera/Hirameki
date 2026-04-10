@@ -72,6 +72,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
@@ -182,11 +183,7 @@ fun TagsDialog(
                             }
                         }
                         val potentialNewTag by remember(
-                            searchQuery,
-                            allTags,
-                            filteredTags,
-                            checkedTags,
-                            indeterminateTags
+                            searchQuery, allTags, filteredTags, checkedTags, indeterminateTags
                         ) {
                             derivedStateOf {
                                 val trimmedQuery = searchQuery.trim()
@@ -375,7 +372,13 @@ private fun SearchBarRow(
             TextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
-                placeholder = { Text(text = stringResource(id = R.string.card_browser_search_tags_hint)) },
+                placeholder = {
+                    Text(
+                        text = stringResource(id = R.string.card_browser_search_tags_hint),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.search_24px),
@@ -402,6 +405,7 @@ private fun SearchBarRow(
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onDone() }),
+                singleLine = true,
                 modifier = Modifier.weight(1f)
             )
 
