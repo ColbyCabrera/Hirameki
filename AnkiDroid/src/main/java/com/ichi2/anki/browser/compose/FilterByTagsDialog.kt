@@ -23,7 +23,6 @@ package com.ichi2.anki.browser.compose
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.ichi2.anki.R
-import com.ichi2.anki.browser.CardBrowserViewModel
 import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.dialogs.compose.TagsState
 
@@ -49,6 +48,5 @@ fun FilterByTagsDialog(
         title = stringResource(id = R.string.card_browser_search_by_tag),
         confirmButtonText = stringResource(id = R.string.dialog_ok),
         showFilterByDeckToggle = true,
-        onAddTag = { /* Not used in this context */ }
-    )
+        onAddTag = { /* Not used in this context */ })
 }
