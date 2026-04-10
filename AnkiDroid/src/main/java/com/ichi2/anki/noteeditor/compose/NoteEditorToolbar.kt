@@ -31,10 +31,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatUnderlined
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -66,7 +66,7 @@ import com.ichi2.anki.noteeditor.ToolbarButtonModel
 /**
  * Formatting toolbar for the note editor
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorToolbar(
     modifier: Modifier = Modifier,
@@ -89,7 +89,7 @@ fun NoteEditorToolbar(
 ) {
     if (!isVisible) return
 
-    BottomAppBar(
+    FlexibleBottomAppBar(
         modifier = modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
