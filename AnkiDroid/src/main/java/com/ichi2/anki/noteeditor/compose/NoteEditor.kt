@@ -169,7 +169,7 @@ fun NoteEditorScreen(
     val imeState = rememberImeState()
     val scrollState = rememberScrollState()
     var showTagsDialog by remember { mutableStateOf(false) }
-    var filterByDeck by remember { mutableStateOf(true) }
+    var filterByDeck by remember(deckTags) { mutableStateOf(deckTags.isNotEmpty()) }
 
     if (showTagsDialog) {
         TagsDialog(
