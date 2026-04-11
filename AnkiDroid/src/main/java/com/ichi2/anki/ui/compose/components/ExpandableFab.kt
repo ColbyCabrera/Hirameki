@@ -18,7 +18,6 @@
 package com.ichi2.anki.ui.compose.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -44,11 +43,11 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import com.ichi2.anki.R
 
-const val CHECK_DATABASE_FAB_TAG = "expandable_fab_check_database"
 const val GET_SHARED_FAB_TAG = "expandable_fab_get_shared"
 const val ADD_FILTERED_DECK_FAB_TAG = "expandable_fab_add_filtered_deck"
 const val ADD_DECK_FAB_TAG = "expandable_fab_add_deck"
 const val ADD_NOTE_FAB_TAG = "expandable_fab_add_note"
+const val IMPORT_FAB_TAG = "expandable_fab_import"
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -59,7 +58,7 @@ fun ExpandableFab(
     onAddDeck: () -> Unit,
     onAddSharedDeck: () -> Unit,
     onAddFilteredDeck: () -> Unit,
-    onCheckDatabase: () -> Unit
+    onImport: () -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -100,10 +99,15 @@ fun ExpandableFab(
         },
     ) {
         FloatingActionButtonMenuItem(
-            modifier = Modifier.testTag(CHECK_DATABASE_FAB_TAG),
-            onClick = onMenuItemClick(onCheckDatabase),
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = null) },
-            text = { Text(text = stringResource(R.string.check_db)) },
+            modifier = Modifier.testTag(IMPORT_FAB_TAG),
+            onClick = onMenuItemClick(onImport),
+            icon = {
+                Icon(
+                    painterResource(id = R.drawable.download_24px),
+                    contentDescription = null,
+                )
+            },
+            text = { Text(text = stringResource(R.string.menu_import)) },
         )
         FloatingActionButtonMenuItem(
             modifier = Modifier.testTag(GET_SHARED_FAB_TAG),
