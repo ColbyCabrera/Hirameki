@@ -471,9 +471,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         super.onPause()
         gestureDetectorImpl.stopShakeDetector()
         if (this::cardMediaPlayer.isInitialized) {
-            launchCatchingTask {
-                cardMediaPlayer.setEnabled(false)
-            }
+            cardMediaPlayer.setEnabled(false)
             ReadText.stopTts()
         }
         // Prevent loss of data in Cookies
@@ -484,9 +482,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         super.onResume()
         gestureDetectorImpl.startShakeDetector()
         if (this::cardMediaPlayer.isInitialized) {
-            launchCatchingTask {
-                cardMediaPlayer.setEnabled(true)
-            }
+            cardMediaPlayer.setEnabled(true)
         }
         // Reset the activity title
         updateActionBar()
@@ -1232,7 +1228,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         return true
     }
 
-    private suspend fun stopCardMediaPlayer() {
+    private fun stopCardMediaPlayer() {
         cardMediaPlayer.stop()
         ReadText.stopTts()
     }
