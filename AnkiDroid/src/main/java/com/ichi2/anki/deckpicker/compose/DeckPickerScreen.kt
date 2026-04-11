@@ -46,10 +46,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -99,6 +95,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
 import anki.decks.deckTreeNode
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.deckpicker.DisplayDeckNode
@@ -139,7 +136,7 @@ private fun RenderDeck(
             onExpandClick = { deckRowActions.onExpandClick(deck) },
             onDeckOptions = { deckRowActions.onDeckOptions(deck) },
             onRename = { deckRowActions.onRename(deck) },
-            onExport = { deckRowActions.onExport(deck) },
+            onExportDeck = { deckRowActions.onExportDeck(deck) },
             onDelete = { deckRowActions.onDelete(deck) },
             onRebuild = { deckRowActions.onRebuild(deck) },
             onEmpty = { deckRowActions.onEmpty(deck) },
@@ -344,10 +341,10 @@ private fun DeckPickerTopBar(
     onRefresh: () -> Unit,
     onNavigationIconClick: (() -> Unit)?,
     studyOptionsData: StudyOptionsData?,
-    studyOptionsActions: StudyOptionsPanelActions,
+    moreOptionsMenuActions: MoreOptionsMenuActions,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
-    var isStudyOptionsMenuOpen by remember { mutableStateOf(false) }
+    var isMoreOptionsMenuOpen by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
     val searchAnim by animateFloatAsState(
         targetValue = if (isSearchOpen) 1f else 0f,
@@ -469,94 +466,95 @@ private fun DeckPickerTopBar(
                             .height(40.dp)
                             .width(48.dp)
                     )
-                    if (studyOptionsData != null) {
-                        FilledIconButton(
-                            onClick = { isStudyOptionsMenuOpen = true },
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
+                    FilledIconButton(
+                        onClick = { isMoreOptionsMenuOpen = true },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+
                         ) {
-                            Icon(
-                                Icons.Default.MoreVert,
-                                contentDescription = stringResource(R.string.more_options),
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = isStudyOptionsMenuOpen,
-                            onDismissRequest = { isStudyOptionsMenuOpen = false },
-                            shape = MaterialTheme.shapes.large,
-                        ) {
-                            if (studyOptionsData.isFiltered) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.rebuild)) },
-                                    onClick = {
-                                        isStudyOptionsMenuOpen = false
-                                        studyOptionsActions.onRebuildDeck(studyOptionsData.deckId)
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Refresh,
-                                            contentDescription = null,
-                                        )
-                                    },
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.more_options),
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = isMoreOptionsMenuOpen,
+                        onDismissRequest = { isMoreOptionsMenuOpen = false },
+                        shape = MaterialTheme.shapes.large,
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.check_db)) },
+                            onClick = {
+                                isMoreOptionsMenuOpen = false
+                                moreOptionsMenuActions.onCheckDatabase()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.checklist_24px),
+                                    contentDescription = null,
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.empty_cards_action)) },
-                                    onClick = {
-                                        isStudyOptionsMenuOpen = false
-                                        studyOptionsActions.onEmptyDeck(studyOptionsData.deckId)
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Outlined.Delete,
-                                            contentDescription = null,
-                                        )
-                                    },
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = TR.actionsExport()) },
+                            onClick = {
+                                isMoreOptionsMenuOpen = false
+                                moreOptionsMenuActions.onExport()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.file_export_24px),
+                                    contentDescription = null,
                                 )
-                            } else {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.custom_study)) },
-                                    onClick = {
-                                        isStudyOptionsMenuOpen = false
-                                        studyOptionsActions.onCustomStudy(studyOptionsData.deckId)
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Star,
-                                            contentDescription = null,
-                                        )
-                                    },
-                                )
-                            }
+                            },
+                        )
+                        if (studyOptionsData != null) {
                             DropdownMenuItem(
-                                text = { Text(stringResource(R.string.deck_options)) },
+                                text = { Text(TR.actionsEmptyCards()) },
                                 onClick = {
-                                    isStudyOptionsMenuOpen = false
-                                    studyOptionsActions.onDeckOptionsItemSelected(studyOptionsData.deckId)
+                                    isMoreOptionsMenuOpen = false
+                                    moreOptionsMenuActions.onDeleteEmptyCards(studyOptionsData.deckId)
                                 },
                                 leadingIcon = {
                                     Icon(
-                                        Icons.Default.Settings,
+                                        painterResource(R.drawable.delete_24px),
                                         contentDescription = null,
                                     )
                                 },
                             )
-                            if (studyOptionsData.haveBuried) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.unbury)) },
-                                    onClick = {
-                                        isStudyOptionsMenuOpen = false
-                                        studyOptionsActions.onUnbury(studyOptionsData.deckId)
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            painter = painterResource(R.drawable.undo_24px),
-                                            contentDescription = null,
-                                        )
-                                    },
-                                )
-                            }
+                        }
+                        if (studyOptionsData != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.custom_study)) },
+                                onClick = {
+                                    isMoreOptionsMenuOpen = false
+                                    moreOptionsMenuActions.onCustomStudy(studyOptionsData.deckId)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painterResource(R.drawable.star_24px),
+                                        contentDescription = null,
+                                    )
+                                },
+                            )
+                        }
+                        if (studyOptionsData != null && studyOptionsData.haveBuried) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.unbury)) },
+                                onClick = {
+                                    isMoreOptionsMenuOpen = false
+                                    moreOptionsMenuActions.onUnbury(studyOptionsData.deckId)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.undo_24px),
+                                        contentDescription = null,
+                                    )
+                                },
+                            )
+
                         }
                     }
                 }
@@ -583,7 +581,7 @@ fun DeckPickerScreen(
     onSearchQueryChanged: (String) -> Unit,
     deckRowActions: DeckRowActions,
     fabActions: FabActions,
-    studyOptionsPanelActions: StudyOptionsPanelActions,
+    moreOptionsMenuActions: MoreOptionsMenuActions,
     onNavigationIconClick: () -> Unit,
     studyOptionsData: StudyOptionsData?,
     requestSearchFocus: Boolean,
@@ -632,8 +630,8 @@ fun DeckPickerScreen(
                     syncState = syncState,
                     onRefresh = onRefresh,
                     onNavigationIconClick = if (!fragmented) onNavigationIconClick else null,
-                    studyOptionsData = if (fragmented) studyOptionsData else null,
-                    studyOptionsActions = studyOptionsPanelActions,
+                    studyOptionsData = studyOptionsData,
+                    moreOptionsMenuActions = moreOptionsMenuActions,
                     scrollBehavior = scrollBehavior
                 )
             }) { paddingValues ->
@@ -657,8 +655,8 @@ fun DeckPickerScreen(
                     Box(modifier = Modifier.weight(1f)) {
                         StudyOptionsScreen(
                             studyOptionsData = studyOptionsData,
-                            onStartStudy = studyOptionsPanelActions.onStartStudy,
-                            onCustomStudy = studyOptionsPanelActions.onCustomStudy,
+                            onStartStudy = moreOptionsMenuActions.onStartStudy,
+                            onCustomStudy = moreOptionsMenuActions.onCustomStudy,
                         )
                     }
                 }
@@ -704,7 +702,7 @@ private fun DeckPickerFab(
             onAddDeck = fabActions.onAddDeck,
             onAddSharedDeck = fabActions.onAddSharedDeck,
             onAddFilteredDeck = fabActions.onAddFilteredDeck,
-            onCheckDatabase = fabActions.onCheckDatabase,
+            onImport = fabActions.onImport,
         )
     }
     BackHandler(expanded) { onExpandedChange(false) }
@@ -739,12 +737,12 @@ fun DeckPickerTopBarPreview() {
                 isFiltered = false,
                 haveBuried = true
             ),
-            studyOptionsActions = StudyOptionsPanelActions(
+            moreOptionsMenuActions = MoreOptionsMenuActions(
                 onStartStudy = {},
-                onRebuildDeck = {},
-                onEmptyDeck = {},
+                onDeleteEmptyCards = {},
                 onCustomStudy = {},
-                onDeckOptionsItemSelected = {},
+                onCheckDatabase = {},
+                onExport = {},
                 onUnbury = {}),
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         )
@@ -766,12 +764,12 @@ fun DeckPickerTopBarSearchOpenPreview() {
             onRefresh = {},
             onNavigationIconClick = {},
             studyOptionsData = null,
-            studyOptionsActions = StudyOptionsPanelActions(
+            moreOptionsMenuActions = MoreOptionsMenuActions(
                 onStartStudy = {},
-                onRebuildDeck = {},
-                onEmptyDeck = {},
+                onDeleteEmptyCards = {},
                 onCustomStudy = {},
-                onDeckOptionsItemSelected = {},
+                onCheckDatabase = {},
+                onExport = {},
                 onUnbury = {}),
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         )
@@ -817,7 +815,7 @@ fun RenderDeckPreview() {
                 onExpandClick = {},
                 onDeckOptions = {},
                 onRename = {},
-                onExport = {},
+                onExportDeck = {},
                 onDelete = {},
                 onRebuild = {},
                 onEmpty = {},

@@ -142,7 +142,7 @@ private data class DeckPickerDrawerActions(
     val onDeckOptions: (Long) -> Unit,
     val onDeckOptionsItemSelected: (Long) -> Unit,
     val onRename: (Long) -> Unit,
-    val onExport: (Long) -> Unit,
+    val onExportDeck: (Long) -> Unit,
     val onDelete: (Long) -> Unit,
     val onRebuild: (Long) -> Unit,
     val onEmpty: (Long) -> Unit,
@@ -153,7 +153,9 @@ private data class DeckPickerDrawerActions(
     val onUnbury: (Long) -> Unit,
     val onSearchFocusRequested: () -> Unit,
     val onNavigationItemClick: (AppNavigationItem) -> Unit,
-    val onNavigationIconClick: () -> Unit
+    val onNavigationIconClick: () -> Unit,
+    val onImport: () -> Unit,
+    val onExport: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -172,6 +174,8 @@ fun DeckPickerNavHost(
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onLoginToAnkiWeb: () -> Unit,
+    onImport: () -> Unit,
+    onExport: () -> Unit,
 ) {
     val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -192,6 +196,8 @@ fun DeckPickerNavHost(
                 onShowDialogFragment = onShowDialogFragment,
                 onInvalidateOptionsMenu = onInvalidateOptionsMenu,
                 onLoginToAnkiWeb = onLoginToAnkiWeb,
+                onImport = onImport,
+                onExport = onExport,
                 lifecycle = lifecycle
             )
         }
@@ -245,6 +251,8 @@ private fun DeckPickerMainContent(
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onLoginToAnkiWeb: () -> Unit,
+    onImport: () -> Unit,
+    onExport: () -> Unit,
     lifecycle: Lifecycle
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -371,7 +379,7 @@ private fun DeckPickerMainContent(
         onDeckOptions = { viewModel.openDeckOptions(it) },
         onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
         onRename = { viewModel.showRenameDeckDialog(it) },
-        onExport = { viewModel.exportDeck(it) },
+        onExportDeck = { viewModel.exportDeck(it) },
         onDelete = { deckId -> viewModel.deleteDeck(deckId) },
         onRebuild = { viewModel.rebuildFilteredDeck(it) },
         onEmpty = { viewModel.emptyFilteredDeck(it) },
@@ -391,7 +399,10 @@ private fun DeckPickerMainContent(
         },
         onNavigationIconClick = {
             coroutineScope.launch { drawerState.open() }
-        })
+        },
+        onImport = onImport,
+        onExport = onExport,
+    )
 
     val deckPickerDrawerState = DeckPickerDrawerState(
         fragmented = fragmented,
@@ -507,7 +518,7 @@ private fun DeckPickerWithDrawer(
                 onExpandClick = actions.onExpandClick,
                 onDeckOptions = { deck -> actions.onDeckOptions(deck.did) },
                 onRename = { deck -> actions.onRename(deck.did) },
-                onExport = { deck -> actions.onExport(deck.did) },
+                onExportDeck = { deck -> actions.onExportDeck(deck.did) },
                 onDelete = { deck -> actions.onDelete(deck.did) },
                 onRebuild = { deck -> actions.onRebuild(deck.did) },
                 onEmpty = { deck -> actions.onEmpty(deck.did) },
@@ -518,14 +529,15 @@ private fun DeckPickerWithDrawer(
                 onAddDeck = actions.onAddDeck,
                 onAddSharedDeck = actions.onAddSharedDeck,
                 onAddFilteredDeck = actions.onAddFilteredDeck,
-                onCheckDatabase = actions.onCheckDatabase,
+                onImport = actions.onImport,
             ),
-            studyOptionsPanelActions = StudyOptionsPanelActions(
+
+            moreOptionsMenuActions = MoreOptionsMenuActions(
                 onStartStudy = actions.onStartStudy,
-                onRebuildDeck = actions.onRebuildDeck,
-                onEmptyDeck = actions.onEmptyDeck,
+                onDeleteEmptyCards = {}, // TODO ADD EMPTY CARDS DELETION
+                onCheckDatabase = actions.onCheckDatabase,
                 onCustomStudy = actions.onCustomStudy,
-                onDeckOptionsItemSelected = actions.onDeckOptionsItemSelected,
+                onExport = actions.onExport,
                 onUnbury = actions.onUnbury,
             ),
             onNavigationIconClick = actions.onNavigationIconClick,

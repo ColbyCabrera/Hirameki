@@ -491,7 +491,10 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     },
                     onShowDialogFragment = { it.show(supportFragmentManager, null) },
                     onInvalidateOptionsMenu = { invalidateOptionsMenu() },
-                    onLoginToAnkiWeb = { loginToSyncServer() })
+                    onLoginToAnkiWeb = { loginToSyncServer() },
+                    onImport = { showImportDialog() },
+                    onExport = { exportCollection() },
+                )
             }
         }
 
