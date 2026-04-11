@@ -49,88 +49,6 @@ class DeckPickerScreenTest : RobolectricTest() {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun studyOptionsMenuShowsUnburyAndInvokesCallbackWhenDeckHasBuriedCards() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val moreOptionsLabel = context.getString(R.string.more_options)
-        val unburyLabel = context.getString(R.string.unbury)
-        var unburiedDeckId: Long? = null
-
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = true,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    studyOptionsPanelActions = StudyOptionsPanelActions(
-                        onStartStudy = {},
-                        onRebuildDeck = {},
-                        onEmptyDeck = {},
-                        onCustomStudy = {},
-                        onDeckOptionsItemSelected = {},
-                        onUnbury = { unburiedDeckId = it },
-                    ),
-                    onNavigationIconClick = {},
-                    studyOptionsData = studyOptionsData(haveBuried = true),
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
-        composeTestRule.onNodeWithText(unburyLabel).assertIsDisplayed()
-        composeTestRule.onNodeWithText(unburyLabel).performClick()
-
-        assertEquals(42L, unburiedDeckId)
-    }
-
-    @Test
-    fun studyOptionsMenuHidesUnburyWhenDeckHasNoBuriedCards() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val moreOptionsLabel = context.getString(R.string.more_options)
-        val unburyLabel = context.getString(R.string.unbury)
-
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = true,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    studyOptionsPanelActions = StudyOptionsPanelActions(
-                        onStartStudy = {},
-                        onRebuildDeck = {},
-                        onEmptyDeck = {},
-                        onCustomStudy = {},
-                        onDeckOptionsItemSelected = {},
-                        onUnbury = {},
-                    ),
-                    onNavigationIconClick = {},
-                    studyOptionsData = studyOptionsData(haveBuried = false),
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
-        composeTestRule.onNodeWithText(unburyLabel).assertDoesNotExist()
-    }
-
-    @Test
     fun searchOpenInputAndCloseRoutesQueryChanges() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val searchDecksLabel = context.getString(R.string.search_decks)
@@ -153,8 +71,9 @@ class DeckPickerScreenTest : RobolectricTest() {
                     },
                     deckRowActions = emptyDeckRowActions(),
                     fabActions = emptyFabActions(),
-                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
                     onSearchFocusRequested = {},
@@ -172,48 +91,6 @@ class DeckPickerScreenTest : RobolectricTest() {
         assertEquals(listOf("spanish", ""), queryEvents)
     }
 
-    @Test
-    fun fabMenuInvokesCheckDatabaseCallback() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
-        val checkDatabaseLabel = context.getString(R.string.check_db)
-        var callbackInvoked = false
-
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = FabActions(
-                        onAddNote = {},
-                        onAddDeck = {},
-                        onAddSharedDeck = {},
-                        onAddFilteredDeck = {},
-                        onCheckDatabase = { callbackInvoked = true },
-                    ),
-                    studyOptionsPanelActions = emptyStudyOptionsActions(),
-                    onNavigationIconClick = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
-        composeTestRule.waitForIdle()
-        composeTestRule.onAllNodesWithText(checkDatabaseLabel)[0].performClick()
-        composeTestRule.waitForIdle()
-
-        assertEquals(true, callbackInvoked)
-    }
 
     @Test
     fun fabMenuInvokesGetSharedCallback() {
@@ -236,10 +113,11 @@ class DeckPickerScreenTest : RobolectricTest() {
                         onAddDeck = {},
                         onAddSharedDeck = { callbackInvoked = true },
                         onAddFilteredDeck = {},
-                        onCheckDatabase = {},
+                        onImport = {},
                     ),
-                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
                     onSearchFocusRequested = {},
@@ -279,10 +157,11 @@ class DeckPickerScreenTest : RobolectricTest() {
                         onAddDeck = {},
                         onAddSharedDeck = {},
                         onAddFilteredDeck = { callbackInvoked = true },
-                        onCheckDatabase = {},
+                        onImport = {},
                     ),
-                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
                     onSearchFocusRequested = {},
@@ -321,10 +200,11 @@ class DeckPickerScreenTest : RobolectricTest() {
                         onAddDeck = { callbackInvoked = true },
                         onAddSharedDeck = {},
                         onAddFilteredDeck = {},
-                        onCheckDatabase = {},
+                        onImport = {},
                     ),
-                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
                     onSearchFocusRequested = {},
@@ -364,10 +244,11 @@ class DeckPickerScreenTest : RobolectricTest() {
                         onAddDeck = {},
                         onAddSharedDeck = {},
                         onAddFilteredDeck = {},
-                        onCheckDatabase = {},
+                        onImport = {},
                     ),
-                    studyOptionsPanelActions = emptyStudyOptionsActions(),
+                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
                     onSearchFocusRequested = {},
@@ -390,7 +271,9 @@ class DeckPickerScreenTest : RobolectricTest() {
         onExpandClick = {},
         onDeckOptions = {},
         onRename = {},
-        onExport = {},
+        onCustomStudy = {},
+        onUnbury = {},
+        onExportDeck = {},
         onDelete = {},
         onRebuild = {},
         onEmpty = {},
@@ -402,31 +285,13 @@ class DeckPickerScreenTest : RobolectricTest() {
         onAddDeck = {},
         onAddSharedDeck = {},
         onAddFilteredDeck = {},
-        onCheckDatabase = {},
+        onImport = {},
     )
 
-    private fun emptyStudyOptionsActions() = StudyOptionsPanelActions(
+    private fun emptyMoreOptionsMenuActions() = MoreOptionsMenuActions(
         onStartStudy = {},
-        onRebuildDeck = {},
-        onEmptyDeck = {},
-        onCustomStudy = {},
-        onDeckOptionsItemSelected = {},
-        onUnbury = {},
-    )
-
-    private fun studyOptionsData(haveBuried: Boolean) = StudyOptionsData(
-        deckId = 42L,
-        deckName = "Spanish",
-        deckDescription = "",
-        newCount = 5,
-        lrnCount = 2,
-        revCount = 8,
-        buriedNew = if (haveBuried) 1 else 0,
-        buriedLrn = if (haveBuried) 1 else 0,
-        buriedRev = if (haveBuried) 2 else 0,
-        totalNewCards = 12,
-        totalCards = 20,
-        isFiltered = false,
-        haveBuried = haveBuried,
+        onDeleteEmptyCards = {},
+        onCheckDatabase = {},
+        onExport = {},
     )
 }

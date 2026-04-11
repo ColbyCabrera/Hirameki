@@ -26,6 +26,8 @@ data class DeckRowActions(
     val onExpandClick: (DisplayDeckNode) -> Unit,
     val onDeckOptions: (DisplayDeckNode) -> Unit,
     val onRename: (DisplayDeckNode) -> Unit,
+    val onCustomStudy: (DisplayDeckNode) -> Unit,
+    val onUnbury: (DisplayDeckNode) -> Unit,
     val onExportDeck: (DisplayDeckNode) -> Unit,
     val onDelete: (DisplayDeckNode) -> Unit,
     val onRebuild: (DisplayDeckNode) -> Unit,
@@ -41,8 +43,6 @@ data class MoreOptionsMenuActions(
     val onExport: () -> Unit,
     val onStartStudy: () -> Unit,
     val onDeleteEmptyCards: (Long) -> Unit,
-    val onCustomStudy: (Long) -> Unit,
-    val onUnbury: (Long) -> Unit,
 )
 
 /**
