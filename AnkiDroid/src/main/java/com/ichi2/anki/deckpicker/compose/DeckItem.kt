@@ -87,7 +87,7 @@ data class DeckItemActions(
     val onExpandClick: () -> Unit,
     val onDeckOptions: () -> Unit,
     val onRename: () -> Unit,
-    val onExport: () -> Unit,
+    val onExportDeck: () -> Unit,
     val onDelete: () -> Unit,
     val onRebuild: () -> Unit,
     val onEmpty: () -> Unit,
@@ -236,7 +236,7 @@ fun DeckItem(
                         text = { Text(stringResource(R.string.export_deck)) },
                         onClick = {
                             isContextMenuOpen = false
-                            actions.onExport()
+                            actions.onExportDeck()
                         },
                         leadingIcon = {
                             Icon(
