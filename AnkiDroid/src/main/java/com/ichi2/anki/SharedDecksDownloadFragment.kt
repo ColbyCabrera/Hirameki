@@ -38,6 +38,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import com.ichi2.anki.SharedDecksActivity.Companion.DOWNLOAD_FILE
 import com.ichi2.anki.snackbar.showSnackbar
@@ -147,6 +150,12 @@ class SharedDecksDownloadFragment : Fragment(R.layout.fragment_shared_decks_down
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(left = systemBars.left, right = systemBars.right, top = systemBars.top, bottom = systemBars.bottom)
+            insets
+        }
 
         downloadPercentageText = view.findViewById(R.id.download_percentage)
         downloadProgressBar = view.findViewById(R.id.download_progress)
