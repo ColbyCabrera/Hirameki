@@ -89,6 +89,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     private val flowOfDeckDueTree = MutableStateFlow<DeckNode?>(null)
 
+    /** Decks that contain buried cards */
+    private val flowOfBuriedDecks = MutableStateFlow<Set<DeckId>>(emptySet())
+
     private val _syncState = MutableStateFlow(SyncIconState.Normal)
     val syncState: StateFlow<SyncIconState> = _syncState.asStateFlow()
 
@@ -218,22 +221,19 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         flowOfDeckDueTree,
         flowOfCurrentDeckFilter,
         flowOfFocusedDeck,
+        flowOfBuriedDecks,
         flowOfRefreshDeckList.onStart { emit(Unit) },
-    ) { tree, filter, _, _ ->
+    ) { tree, filter, _, buriedDecks, _ ->
         if (tree == null) return@combine FlattenedDeckList.empty
 
         // TODO: use flowOfFocusedDeck once it's set on all instances
-        val (currentDeckId, decksWithBuried) = withCol {
-            val id = decks.current().getLong("id")
-            val buried =
-                db.queryLongList("SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})")
-                    .toSet()
-            id to buried
+        val currentDeckId = withCol {
+            decks.current().getLong("id")
         }
         Timber.i("currentDeckId: %d", currentDeckId)
 
         FlattenedDeckList(
-            data = tree.filterAndFlattenDisplay(filter, currentDeckId, decksWithBuried),
+            data = tree.filterAndFlattenDisplay(filter, currentDeckId, buriedDecks),
             hasSubDecks = tree.children.any { it.children.any() },
         )
     }
@@ -684,15 +684,18 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         loadDeckCounts?.cancel()
         val loadDeckCounts = viewModelScope.launch {
             Timber.d("Refreshing deck list")
-            val (deckDueTree, collectionHasNoCards) = withCol {
-                Pair(sched.deckDueTree(), isEmpty)
+            val (deckDueTree, collectionHasNoCards, buriedDecks) = withCol {
+                val buried =
+                    db.queryLongList("SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})")
+                        .toSet()
+                Triple(sched.deckDueTree(), isEmpty, buried)
             }
 
             ensureActive()
 
             dueTree = deckDueTree
-
             flowOfCollectionHasNoCards.value = collectionHasNoCards
+            flowOfBuriedDecks.value = buriedDecks
 
             refreshSyncState()
 
