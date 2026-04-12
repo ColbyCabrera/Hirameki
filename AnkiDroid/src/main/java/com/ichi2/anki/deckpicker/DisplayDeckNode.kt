@@ -78,7 +78,7 @@ data class DisplayDeckNode private constructor(
 }
 
 private fun DeckNode.hasBuriedRecursively(decksWithBuried: Set<DeckId>): Boolean {
-    if (decksWithBuried.contains(did)) return true
+    if (did in decksWithBuried) return true
     return children.any { it.hasBuriedRecursively(decksWithBuried) }
 }
 
