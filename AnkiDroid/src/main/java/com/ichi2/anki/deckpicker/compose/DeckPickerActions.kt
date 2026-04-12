@@ -42,7 +42,7 @@ data class MoreOptionsMenuActions(
     val onCheckDatabase: () -> Unit,
     val onExport: () -> Unit,
     val onStartStudy: () -> Unit,
-    val onDeleteEmptyCards: (Long) -> Unit,
+    val onDeleteEmptyCards: () -> Unit,
 )
 
 /**

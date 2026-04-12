@@ -92,6 +92,7 @@ import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.launch
+import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -156,6 +157,7 @@ private data class DeckPickerDrawerActions(
     val onNavigationIconClick: () -> Unit,
     val onImport: () -> Unit,
     val onExport: () -> Unit,
+    val onDeleteEmptyCards: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -402,6 +404,7 @@ private fun DeckPickerMainContent(
         },
         onImport = onImport,
         onExport = onExport,
+        onDeleteEmptyCards = { onShowDialogFragment(EmptyCardsDialogFragment()) },
     )
 
     val deckPickerDrawerState = DeckPickerDrawerState(
@@ -536,7 +539,7 @@ private fun DeckPickerWithDrawer(
 
             moreOptionsMenuActions = MoreOptionsMenuActions(
                 onStartStudy = actions.onStartStudy,
-                onDeleteEmptyCards = {}, // TODO ADD EMPTY CARDS DELETION
+                onDeleteEmptyCards = actions.onDeleteEmptyCards,
                 onCheckDatabase = actions.onCheckDatabase,
                 onExport = actions.onExport,
             ),

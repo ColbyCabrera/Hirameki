@@ -540,7 +540,7 @@ fun MoreOptionsMenu(
                 text = { Text(TR.actionsEmptyCards()) },
                 onClick = {
                     onMoreOptionsMenuOpenChange(false)
-                    moreOptionsMenuActions.onDeleteEmptyCards(-1) // TODO PASS REAL FUNC VALUES ONCE IMPLEMENTED
+                    moreOptionsMenuActions.onDeleteEmptyCards()
                 },
                 leadingIcon = {
                     Icon(
