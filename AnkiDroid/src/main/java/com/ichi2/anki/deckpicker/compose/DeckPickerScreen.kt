@@ -490,63 +490,66 @@ fun MoreOptionsMenu(
     isMoreOptionsMenuOpen: Boolean,
     onMoreOptionsMenuOpenChange: (Boolean) -> Unit,
     moreOptionsMenuActions: MoreOptionsMenuActions,
+    modifier: Modifier = Modifier,
 ) {
-    FilledIconButton(
-        onClick = { onMoreOptionsMenuOpenChange(true) },
-        colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    ) {
-        Icon(
-            Icons.Default.MoreVert,
-            contentDescription = stringResource(R.string.more_options),
-        )
-    }
-    DropdownMenu(
-        expanded = isMoreOptionsMenuOpen,
-        onDismissRequest = { onMoreOptionsMenuOpenChange(false) },
-        shape = MaterialTheme.shapes.large,
-    ) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.check_db)) },
-            onClick = {
-                onMoreOptionsMenuOpenChange(false)
-                moreOptionsMenuActions.onCheckDatabase()
-            },
-            leadingIcon = {
-                Icon(
-                    painterResource(R.drawable.checklist_24px),
-                    contentDescription = null,
-                )
-            },
-        )
-        DropdownMenuItem(
-            text = { Text(text = TR.actionsExport()) },
-            onClick = {
-                onMoreOptionsMenuOpenChange(false)
-                moreOptionsMenuActions.onExport()
-            },
-            leadingIcon = {
-                Icon(
-                    painterResource(R.drawable.file_export_24px),
-                    contentDescription = null,
-                )
-            },
-        )
-        DropdownMenuItem(
-            text = { Text(TR.actionsEmptyCards()) },
-            onClick = {
-                onMoreOptionsMenuOpenChange(false)
-                moreOptionsMenuActions.onDeleteEmptyCards(-1) // TODO PASS REAL FUNC VALUES ONCE IMPLEMENTED
-            },
-            leadingIcon = {
-                Icon(
-                    painterResource(R.drawable.delete_24px),
-                    contentDescription = null,
-                )
-            },
-        )
+    Box(modifier = modifier) {
+        FilledIconButton(
+            onClick = { onMoreOptionsMenuOpenChange(true) },
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        ) {
+            Icon(
+                Icons.Default.MoreVert,
+                contentDescription = stringResource(R.string.more_options),
+            )
+        }
+        DropdownMenu(
+            expanded = isMoreOptionsMenuOpen,
+            onDismissRequest = { onMoreOptionsMenuOpenChange(false) },
+            shape = MaterialTheme.shapes.large,
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.check_db)) },
+                onClick = {
+                    onMoreOptionsMenuOpenChange(false)
+                    moreOptionsMenuActions.onCheckDatabase()
+                },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.checklist_24px),
+                        contentDescription = null,
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(text = TR.actionsExport()) },
+                onClick = {
+                    onMoreOptionsMenuOpenChange(false)
+                    moreOptionsMenuActions.onExport()
+                },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.file_export_24px),
+                        contentDescription = null,
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(TR.actionsEmptyCards()) },
+                onClick = {
+                    onMoreOptionsMenuOpenChange(false)
+                    moreOptionsMenuActions.onDeleteEmptyCards(-1) // TODO PASS REAL FUNC VALUES ONCE IMPLEMENTED
+                },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.delete_24px),
+                        contentDescription = null,
+                    )
+                },
+            )
+        }
     }
 }
 
@@ -764,7 +767,10 @@ fun RenderDeckPreview() {
         )
 
         val childDeck = DisplayDeckNode.from(
-            node = rootDeckNode.children[0], matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false
+            node = rootDeckNode.children[0],
+            matchesSearchOrChild = true,
+            selectedDeckId = 0L,
+            hasBuried = false
         )
         RenderDeck(
             deck = rootDeck,
