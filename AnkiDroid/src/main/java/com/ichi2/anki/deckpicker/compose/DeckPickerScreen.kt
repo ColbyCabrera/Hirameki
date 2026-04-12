@@ -760,11 +760,11 @@ fun RenderDeckPreview() {
             }, fullDeckName = "Japanese"
         )
         val rootDeck = DisplayDeckNode.from(
-            node = rootDeckNode, matchesSearchOrChild = true, selectedDeckId = 1L
+            node = rootDeckNode, matchesSearchOrChild = true, selectedDeckId = 1L, hasBuried = false
         )
 
         val childDeck = DisplayDeckNode.from(
-            node = rootDeckNode.children[0], matchesSearchOrChild = true, selectedDeckId = 0L
+            node = rootDeckNode.children[0], matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false
         )
         RenderDeck(
             deck = rootDeck,

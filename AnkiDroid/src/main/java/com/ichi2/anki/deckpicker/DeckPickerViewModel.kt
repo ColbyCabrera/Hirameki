@@ -43,6 +43,8 @@ import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Decks
+import com.ichi2.anki.libanki.QueueType.ManuallyBuried
+import com.ichi2.anki.libanki.QueueType.SiblingBuried
 import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.anki.libanki.utils.extend
@@ -221,11 +223,17 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         if (tree == null) return@combine FlattenedDeckList.empty
 
         // TODO: use flowOfFocusedDeck once it's set on all instances
-        val currentDeckId = withCol { decks.current().getLong("id") }
+        val (currentDeckId, decksWithBuried) = withCol {
+            val id = decks.current().getLong("id")
+            val buried =
+                db.queryLongList("SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})")
+                    .toSet()
+            id to buried
+        }
         Timber.i("currentDeckId: %d", currentDeckId)
 
         FlattenedDeckList(
-            data = tree.filterAndFlattenDisplay(filter, currentDeckId),
+            data = tree.filterAndFlattenDisplay(filter, currentDeckId, decksWithBuried),
             hasSubDecks = tree.children.any { it.children.any() },
         )
     }
@@ -514,7 +522,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
                 // to match and avoid unnecessary scrolls in `renderPage()`.
                 focusedDeck = Consts.DEFAULT_DECK_ID
-                    updateDeckList()
+                updateDeckList()
 
                 val deletionResult =
                     DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)

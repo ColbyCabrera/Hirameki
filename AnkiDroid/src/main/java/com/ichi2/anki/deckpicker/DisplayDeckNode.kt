@@ -45,6 +45,7 @@ data class DisplayDeckNode private constructor(
     val lrnCount: Int,
     val revCount: Int,
     val isSelected: Boolean,
+    val hasBuried: Boolean,
 ) {
     /** Reference to the original [DeckNode]. Excluded from equals/hashCode by being outside the constructor. */
     lateinit var deckNode: DeckNode
@@ -58,21 +59,27 @@ data class DisplayDeckNode private constructor(
             node: DeckNode,
             matchesSearchOrChild: Boolean,
             selectedDeckId: DeckId,
-        ): DisplayDeckNode =
-            DisplayDeckNode(
-                did = node.did,
-                fullDeckName = node.fullDeckName,
-                lastDeckNameComponent = node.lastDeckNameComponent,
-                collapsed = node.collapsed,
-                canCollapse = node.children.any() && matchesSearchOrChild,
-                depth = node.depth,
-                filtered = node.filtered,
-                newCount = node.newCount,
-                lrnCount = node.lrnCount,
-                revCount = node.revCount,
-                isSelected = node.did == selectedDeckId,
-            ).apply { deckNode = node }
+            hasBuried: Boolean,
+        ): DisplayDeckNode = DisplayDeckNode(
+            did = node.did,
+            fullDeckName = node.fullDeckName,
+            lastDeckNameComponent = node.lastDeckNameComponent,
+            collapsed = node.collapsed,
+            canCollapse = node.children.any() && matchesSearchOrChild,
+            depth = node.depth,
+            filtered = node.filtered,
+            newCount = node.newCount,
+            lrnCount = node.lrnCount,
+            revCount = node.revCount,
+            isSelected = node.did == selectedDeckId,
+            hasBuried = hasBuried,
+        ).apply { deckNode = node }
     }
+}
+
+private fun DeckNode.hasBuriedRecursively(decksWithBuried: Set<DeckId>): Boolean {
+    if (decksWithBuried.contains(did)) return true
+    return children.any { it.hasBuriedRecursively(decksWithBuried) }
 }
 
 /** Convert the tree into a flat list of [DisplayDeckNode]s, where matching decks and the children/parents
@@ -80,15 +87,21 @@ data class DisplayDeckNode private constructor(
 fun DeckNode.filterAndFlattenDisplay(
     filter: CharSequence?,
     selectedDeckId: DeckId,
+    decksWithBuried: Set<DeckId>,
 ): List<DisplayDeckNode> {
-    val filterPattern =
-        if (filter.isNullOrBlank()) {
-            null
-        } else {
-            filter.toString().lowercase(Locale.getDefault()).trim()
-        }
+    val filterPattern = if (filter.isNullOrBlank()) {
+        null
+    } else {
+        filter.toString().lowercase(Locale.getDefault()).trim()
+    }
     val list = mutableListOf<DisplayDeckNode>()
-    filterAndFlattenDisplayInner(filterPattern, list, parentMatched = false, selectedDeckId)
+    filterAndFlattenDisplayInner(
+        filterPattern,
+        list,
+        parentMatched = false,
+        selectedDeckId,
+        decksWithBuried
+    )
     return list
 }
 
@@ -97,9 +110,10 @@ private fun DeckNode.filterAndFlattenDisplayInner(
     list: MutableList<DisplayDeckNode>,
     parentMatched: Boolean,
     selectedDeckId: DeckId,
+    decksWithBuried: Set<DeckId>,
 ) {
     if (!isSyntheticDeck && (nameMatchesFilter((filter)) || parentMatched)) {
-        this.addVisibleToList(list, matchesSearchOrChild = true, selectedDeckId)
+        this.addVisibleToList(list, matchesSearchOrChild = true, selectedDeckId, decksWithBuried)
         return
     }
 
@@ -115,12 +129,19 @@ private fun DeckNode.filterAndFlattenDisplayInner(
                 this,
                 matchesSearchOrChild = false,
                 selectedDeckId = selectedDeckId,
+                hasBuried = hasBuriedRecursively(decksWithBuried),
             ),
         )
     }
     val startingLen = list.size
     for (child in children) {
-        child.filterAndFlattenDisplayInner(filter, list, parentMatched = false, selectedDeckId)
+        child.filterAndFlattenDisplayInner(
+            filter,
+            list,
+            parentMatched = false,
+            selectedDeckId,
+            decksWithBuried
+        )
     }
     if (!isSyntheticDeck && startingLen == list.size) {
         // we don't include ourselves if no children matched
@@ -132,11 +153,19 @@ private fun DeckNode.addVisibleToList(
     list: MutableList<DisplayDeckNode>,
     matchesSearchOrChild: Boolean,
     selectedDeckId: DeckId,
+    decksWithBuried: Set<DeckId>,
 ) {
-    list.append(DisplayDeckNode.from(this, matchesSearchOrChild, selectedDeckId))
+    list.append(
+        DisplayDeckNode.from(
+            this,
+            matchesSearchOrChild,
+            selectedDeckId,
+            hasBuriedRecursively(decksWithBuried)
+        )
+    )
     if (!collapsed) {
         for (child in children) {
-            child.addVisibleToList(list, matchesSearchOrChild, selectedDeckId)
+            child.addVisibleToList(list, matchesSearchOrChild, selectedDeckId, decksWithBuried)
         }
     }
 }
@@ -156,6 +185,7 @@ private fun DeckNode.nameMatchesFilter(filter: CharSequence?): Boolean {
     return if (filter == null) {
         true
     } else {
-        return node.name.lowercase(Locale.getDefault()).contains(filter) || node.name.lowercase(Locale.ROOT).contains(filter)
+        node.name.lowercase(Locale.getDefault())
+            .contains(filter) || node.name.lowercase(Locale.ROOT).contains(filter)
     }
 }

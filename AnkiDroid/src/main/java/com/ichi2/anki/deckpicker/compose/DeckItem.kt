@@ -242,14 +242,17 @@ fun DeckItem(
                         painter = painterResource(R.drawable.edit_24px), contentDescription = null
                     )
                 })
-                DropdownMenuItem(text = { Text(stringResource(R.string.unbury)) }, onClick = {
-                    isContextMenuOpen = false
-                    actions.onUnbury()
-                }, leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.undo_24px), contentDescription = null
-                    )
-                })
+                if (deck.hasBuried) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.unbury)) }, onClick = {
+                        isContextMenuOpen = false
+                        actions.onUnbury()
+                    }, leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.undo_24px),
+                            contentDescription = null
+                        )
+                    })
+                }
                 DropdownMenuItem(text = { Text(stringResource(R.string.export_deck)) }, onClick = {
                     isContextMenuOpen = false
                     actions.onExportDeck()
@@ -374,7 +377,12 @@ private fun DeckItemPreview() {
                 })
             }, fullDeckName = "Japanese"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(
+            node,
+            matchesSearchOrChild = true,
+            selectedDeckId = 0L,
+            hasBuried = false
+        )
         DeckItem(
             deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         )
@@ -395,7 +403,12 @@ private fun DeckItemSubdeckPreview() {
                 newCount = 3
             }, fullDeckName = "Japanese::Kanji"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(
+            node,
+            matchesSearchOrChild = true,
+            selectedDeckId = 0L,
+            hasBuried = false
+        )
         DeckItem(
             deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         )

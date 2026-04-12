@@ -61,7 +61,7 @@ class DeckItemTest : RobolectricTest() {
                 filtered = false
             }, fullDeckName = "Japanese"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false)
 
         val actions = DeckItemActions(
             onDeckClick = {},
@@ -125,7 +125,7 @@ class DeckItemTest : RobolectricTest() {
                 filtered = false
             }, fullDeckName = "Spanish"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false)
 
         val actions = DeckItemActions(
             onDeckClick = {},
@@ -200,7 +200,7 @@ class DeckItemTest : RobolectricTest() {
                 filtered = true
             }, fullDeckName = "Filtered"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false)
 
         val actions = DeckItemActions(
             onDeckClick = {},
