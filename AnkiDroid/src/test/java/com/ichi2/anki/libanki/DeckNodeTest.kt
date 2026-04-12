@@ -21,6 +21,7 @@ import anki.decks.deckTreeNode
 import com.ichi2.anki.deckpicker.filterAndFlattenDisplay
 import com.ichi2.anki.libanki.sched.DeckNode
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DeckNodeTest {
@@ -66,7 +67,6 @@ class DeckNodeTest {
         val group = makeNode("Group", 4, 4)
         val algebra = makeNode("Algebra", 3, 3, children = listOf(group))
         val math = makeNode("Math", 2, 2, collapsed = true, children = listOf(algebra))
-        val science = makeNode("Science", 1, 1, children = listOf(math))
 
         val results = math.filterAndFlatten(null)
         assertEquals(1, results.size)
@@ -107,6 +107,28 @@ class DeckNodeTest {
 
         val results = science.filterAndFlatten("th::alg")
         assertEquals(emptyList<String>(), results.map { it.lastDeckNameComponent })
+    }
+
+    @Test
+    fun `decksWithBuried recursively propagates hasBuried flag`() {
+        // Science::Math::Algebra::Group
+        val group = makeNode("Group", 4, 4)
+        val algebra = makeNode("Algebra", 3, 3, children = listOf(group))
+        val math = makeNode("Math", 2, 2, collapsed = false, children = listOf(algebra))
+        val science = makeNode("Science", 1, 1, children = listOf(math))
+
+        // If 'Group' (4L) has a buried card, then its ancestors should also reflect hasBuried = true.
+        val resultsDeep = science.filterAndFlattenDisplay(filter = null, selectedDeckId = 1L, decksWithBuried = setOf(4L))
+        assertEquals(4, resultsDeep.size)
+        assertTrue(resultsDeep.all { it.hasBuried })
+
+        // If ONLY 'Math' (2L) has a buried card, Science and Math are true, but Algebra and Group are false
+        val resultsMid = science.filterAndFlattenDisplay(filter = null, selectedDeckId = 1L, decksWithBuried = setOf(2L))
+        assertEquals(4, resultsMid.size)
+        assertTrue(resultsMid.first { it.did == 1L }.hasBuried) // Science
+        assertTrue(resultsMid.first { it.did == 2L }.hasBuried) // Math
+        assertEquals(false, resultsMid.first { it.did == 3L }.hasBuried) // Algebra
+        assertEquals(false, resultsMid.first { it.did == 4L }.hasBuried) // Group
     }
 }
 
