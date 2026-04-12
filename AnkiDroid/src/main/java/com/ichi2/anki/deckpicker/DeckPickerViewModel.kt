@@ -684,7 +684,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         loadDeckCounts?.cancel()
         val loadDeckCounts = viewModelScope.launch {
             Timber.d("Refreshing deck list")
-            refreshSyncState()
             val (deckDueTree, collectionHasNoCards) = withCol {
                 Pair(sched.deckDueTree(), isEmpty)
             }
@@ -694,6 +693,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             dueTree = deckDueTree
 
             flowOfCollectionHasNoCards.value = collectionHasNoCards
+
+            refreshSyncState()
 
             // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
             val studiedToday = withCol { sched.studiedToday().replace("\n", " ") }
