@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -115,7 +116,7 @@ fun AudioRecorderContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
+                    .padding(bottom = 48.dp, start = 16.dp, end = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -148,7 +149,9 @@ fun AudioRecorderContent(
                                 }
                             })
                         StopButton(
-                            modifier = Modifier.weight(1f),
+                            modifier = if (uiState.state == AudioRecorderViewModel.RecordingState.Recording) Modifier.weight(
+                                1f
+                            ) else Modifier,
                             onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) })
                         SaveButton(
                             enabled = false, onClick = { })
@@ -160,6 +163,7 @@ fun AudioRecorderContent(
                         AudioRecorderViewModel.RecordingState.PlaybackPaused
                     ) -> {
                         PlayPauseButton(
+                            modifier = Modifier.weight(1f),
                             isPlaying = uiState.state == AudioRecorderViewModel.RecordingState.Playing,
                             onClick = {
                                 if (uiState.state == AudioRecorderViewModel.RecordingState.Playing) {
@@ -168,7 +172,7 @@ fun AudioRecorderContent(
                                     onIntent(AudioRecorderViewModel.Intent.StartPlayback)
                                 }
                             })
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.width(8.dp))
                         SaveButton(
                             enabled = uiState.isSaveEnabled,
                             onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) })
