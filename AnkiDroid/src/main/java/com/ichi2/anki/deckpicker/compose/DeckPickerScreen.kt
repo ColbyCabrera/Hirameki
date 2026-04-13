@@ -566,6 +566,7 @@ fun DeckPickerScreen(
     fabActions: FabActions,
     moreOptionsMenuActions: MoreOptionsMenuActions,
     onNavigationIconClick: () -> Unit,
+    onStartStudy: () -> Unit,
     onCustomStudy: (Long) -> Unit,
     studyOptionsData: StudyOptionsData?,
     requestSearchFocus: Boolean,
@@ -638,7 +639,7 @@ fun DeckPickerScreen(
                     Box(modifier = Modifier.weight(1f)) {
                         StudyOptionsScreen(
                             studyOptionsData = studyOptionsData,
-                            onStartStudy = moreOptionsMenuActions.onStartStudy,
+                            onStartStudy = onStartStudy,
                             onCustomStudy = onCustomStudy,
                         )
                     }
@@ -706,7 +707,6 @@ fun DeckPickerTopBarPreview() {
             onRefresh = {},
             onNavigationIconClick = {},
             moreOptionsMenuActions = MoreOptionsMenuActions(
-                onStartStudy = {},
                 onDeleteEmptyCards = {},
                 onCheckDatabase = {},
                 onExport = {}),
@@ -730,7 +730,6 @@ fun DeckPickerTopBarSearchOpenPreview() {
             onRefresh = {},
             onNavigationIconClick = {},
             moreOptionsMenuActions = MoreOptionsMenuActions(
-                onStartStudy = {},
                 onDeleteEmptyCards = {},
                 onCheckDatabase = {},
                 onExport = {}),

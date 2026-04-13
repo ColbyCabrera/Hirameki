@@ -536,14 +536,13 @@ private fun DeckPickerWithDrawer(
                 onAddFilteredDeck = actions.onAddFilteredDeck,
                 onImport = actions.onImport,
             ),
-
             moreOptionsMenuActions = MoreOptionsMenuActions(
-                onStartStudy = actions.onStartStudy,
                 onDeleteEmptyCards = actions.onDeleteEmptyCards,
                 onCheckDatabase = actions.onCheckDatabase,
                 onExport = actions.onExport,
             ),
             onNavigationIconClick = actions.onNavigationIconClick,
+            onStartStudy = actions.onStartStudy,
             onCustomStudy = actions.onCustomStudy,
             studyOptionsData = state.studyOptionsData,
             requestSearchFocus = state.requestSearchFocus,
