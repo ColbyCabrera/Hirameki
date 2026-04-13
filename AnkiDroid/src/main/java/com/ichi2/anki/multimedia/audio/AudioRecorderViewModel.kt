@@ -220,7 +220,7 @@ class AudioRecorderViewModel : ViewModel() {
             while (isActive && _uiState.value.state == RecordingState.Recording) {
                 val amp = audioRecorder?.maxAmplitude() ?: 0
                 // Normalize amplitude (max is typically around 32767)
-                _uiState.update { it.copy(amplitude = (amp / 32767f).coerceIn(0f, 1f)) }
+                _uiState.update { it.copy(amplitude = (amp / Short.MAX_VALUE.toFloat()).coerceIn(0f, 1f)) }
                 delay(50)
             }
         }
