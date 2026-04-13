@@ -23,7 +23,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,11 +31,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -49,9 +48,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -90,8 +91,6 @@ fun SharedDecksDownloadScreen(
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Top section: Hero and Title
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 DownloadHero(isFailed = state.isFailed, isComplete = state.isComplete)
@@ -192,34 +191,52 @@ private fun DownloadProgressSection(state: DownloadUiState) {
     )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
+        Box(
+            modifier = Modifier.size(240.dp), contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = state.progressText,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.primary
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(0.95f)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
+                        shape = RoundedPolygonShape(MaterialShapes.Cookie4Sided)
+                    )
             )
 
-            if (state.isWaitingForNetwork) {
+            // Pulsing technical wavy ring
+            CircularWavyProgressIndicator(
+                modifier = Modifier.fillMaxSize(),
+                progress = { animatedProgress },
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                color = if (state.isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            )
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = stringResource(R.string.check_network),
-                    style = MaterialTheme.typography.labelMedium,
+                    text = if (state.isWaitingForNetwork) ">>> WAITING FOR NETWORK <<<" else "DOWNLOADING",
+                    style = MaterialTheme.typography.labelSmall,
                     fontFamily = RobotoMono,
-                    color = MaterialTheme.colorScheme.error
+                    fontWeight = FontWeight.Bold,
+                    color = if (state.isFailed || state.isWaitingForNetwork) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary.copy(
+                        alpha = 0.8f
+                    )
+                )
+                Text(
+                    text = state.progressText,
+                    fontFamily = RobotoMono,
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Black,
+                    lineHeight = 64.sp,
+                    color = if (state.isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = if (state.isFailed || state.isWaitingForNetwork) "ERROR: HALTED" else "STATUS: ACTIVE",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = RobotoMono,
+                    color = if (state.isFailed || state.isWaitingForNetwork) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LinearWavyProgressIndicator(
-            progress = { animatedProgress },
-            modifier = Modifier.fillMaxWidth(),
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        )
     }
 }
 
@@ -323,5 +340,29 @@ fun SharedDecksDownloadScreenFailedPreview() {
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg", isDownloading = false, isFailed = true
         ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DownloadProgressSectionPreview() {
+    AnkiDroidTheme {
+        DownloadProgressSection(
+            state = DownloadUiState(
+                progress = 75f, progressText = "75%"
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DownloadProgressSectionWaitingPreview() {
+    AnkiDroidTheme {
+        DownloadProgressSection(
+            state = DownloadUiState(
+                progress = 0f, progressText = "0%", isWaitingForNetwork = true
+            )
+        )
     }
 }
