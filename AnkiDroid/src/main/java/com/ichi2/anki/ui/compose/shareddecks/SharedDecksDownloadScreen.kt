@@ -41,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -58,7 +59,6 @@ import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
-
 
 data class DownloadUiState(
     val fileName: String = "",
@@ -95,7 +95,7 @@ fun SharedDecksDownloadScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 DownloadHero(isFailed = state.isFailed, isComplete = state.isComplete)
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = if (state.isFailed) {
@@ -163,17 +163,20 @@ private fun DownloadHero(isFailed: Boolean, isComplete: Boolean) {
     }
 
     val shape = if (isFailed) {
-        RoundedPolygonShape(MaterialShapes.SoftBoom)
+        RoundedPolygonShape(MaterialShapes.Triangle)
     } else {
         RoundedPolygonShape(MaterialShapes.Cookie4Sided)
     }
 
     Box(
-        modifier = Modifier
-            .size(120.dp)
-            .background(containerColor, shape),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.size(120.dp), contentAlignment = Alignment.Center
     ) {
+
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp), shape = shape, color = containerColor
+        ) {}
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
