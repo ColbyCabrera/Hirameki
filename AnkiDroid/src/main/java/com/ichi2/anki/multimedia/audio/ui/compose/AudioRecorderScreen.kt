@@ -41,15 +41,12 @@ import java.util.Locale
 
 @Composable
 fun AudioRecorderScreen(
-    viewModel: AudioRecorderViewModel,
-    modifier: Modifier = Modifier
+    viewModel: AudioRecorderViewModel, modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AudioRecorderContent(
-        uiState = uiState,
-        onIntent = viewModel::processIntent,
-        modifier = modifier
+        uiState = uiState, onIntent = viewModel::processIntent, modifier = modifier
     )
 }
 
@@ -62,7 +59,7 @@ fun AudioRecorderContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface) // Use Material3 surface color
+            .background(MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
@@ -119,7 +116,7 @@ fun AudioRecorderContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 when (uiState.state) {
@@ -130,7 +127,8 @@ fun AudioRecorderContent(
                                 onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) })
                             SaveButton(
                                 modifier = Modifier.align(Alignment.CenterEnd),
-                                enabled = false, onClick = { })
+                                enabled = false,
+                                onClick = { })
                         }
                     }
 
@@ -138,7 +136,9 @@ fun AudioRecorderContent(
                         AudioRecorderViewModel.RecordingState.Recording,
                         AudioRecorderViewModel.RecordingState.RecordingPaused
                     ) -> {
+
                         PauseResumeButton(
+                            modifier = Modifier.weight(1f),
                             isPaused = uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused,
                             onClick = {
                                 if (uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
@@ -148,6 +148,7 @@ fun AudioRecorderContent(
                                 }
                             })
                         StopButton(
+                            modifier = Modifier.weight(1f),
                             onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) })
                         SaveButton(
                             enabled = false, onClick = { })
@@ -182,8 +183,7 @@ fun AudioRecorderContent(
 
 @Composable
 fun RecordButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
@@ -201,15 +201,12 @@ fun RecordButton(
 
 @Composable
 fun StopButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
-        shape = CircleShape, // Adjust for pill shape if needed, screenshot shows pill shape for stop/pause
-        modifier = modifier
-            .height(80.dp)
-            .padding(horizontal = 16.dp),
+        shape = CircleShape,
+        modifier = modifier.height(80.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
         Icon(
@@ -228,16 +225,12 @@ fun StopButton(
 
 @Composable
 fun PauseResumeButton(
-    isPaused: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    isPaused: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
-        shape = CircleShape, // Pill
-        modifier = modifier
-            .height(80.dp)
-            .padding(horizontal = 16.dp),
+        shape = CircleShape,
+        modifier = modifier.height(80.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     ) {
         Icon(
@@ -257,9 +250,7 @@ fun PauseResumeButton(
 
 @Composable
 fun PlayPauseButton(
-    isPlaying: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    isPlaying: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
@@ -288,9 +279,7 @@ fun PlayPauseButton(
 
 @Composable
 fun SaveButton(
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
     IconButton(
         onClick = onClick,
