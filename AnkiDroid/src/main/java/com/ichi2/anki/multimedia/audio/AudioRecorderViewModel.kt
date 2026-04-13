@@ -1,7 +1,6 @@
 package com.ichi2.anki.multimedia.audio
 
 import android.app.Application
-import android.content.Context
 import android.media.MediaPlayer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -44,6 +43,7 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
         val durationMillis: Long = 0L,
         val playbackProgressMillis: Long = 0L,
         val amplitude: Float = 0f,
+        val amplitudes: List<Float> = emptyList(),
         val isSaveEnabled: Boolean = false,
         val savedFile: File? = null
     )
@@ -90,7 +90,7 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
             accumulatedDurationMillis = 0L
             startTimeMillis = System.currentTimeMillis()
 
-            _uiState.update { it.copy(state = RecordingState.Recording, durationMillis = 0L, savedFile = null, isSaveEnabled = false) }
+            _uiState.update { it.copy(state = RecordingState.Recording, durationMillis = 0L, savedFile = null, isSaveEnabled = false, amplitudes = emptyList()) }
 
             startTimer()
             startAmplitudeMonitoring()
@@ -221,8 +221,13 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
         amplitudeJob = viewModelScope.launch {
             while (isActive && _uiState.value.state == RecordingState.Recording) {
                 val amp = audioRecorder?.maxAmplitude() ?: 0
-                // Normalize amplitude (max is typically around 32767)
-                _uiState.update { it.copy(amplitude = (amp / Short.MAX_VALUE.toFloat()).coerceIn(0f, 1f)) }
+                val normalizedAmplitude = WaveformUtils.normalize(amp)
+                _uiState.update { state ->
+                    state.copy(
+                        amplitude = normalizedAmplitude,
+                        amplitudes = (state.amplitudes + normalizedAmplitude).takeLast(MAX_AMPLITUDES)
+                    )
+                }
                 delay(50)
             }
         }
@@ -276,5 +281,9 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
     override fun onCleared() {
         super.onCleared()
         stopAndReset()
+    }
+
+    companion object {
+        private const val MAX_AMPLITUDES = 200
     }
 }

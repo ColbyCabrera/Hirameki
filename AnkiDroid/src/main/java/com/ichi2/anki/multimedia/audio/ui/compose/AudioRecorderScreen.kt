@@ -23,8 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -41,7 +41,7 @@ import java.util.Locale
 
 @Composable
 fun AudioRecorderScreen(viewModel: AudioRecorderViewModel) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AudioRecorderContent(
         uiState = uiState, onIntent = viewModel::processIntent
@@ -88,7 +88,7 @@ fun AudioRecorderContent(
             ) {
                 AudioWaveformCompose(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    amplitude = uiState.amplitude,
+                    amplitudes = uiState.amplitudes,
                     isRecording = uiState.state == AudioRecorderViewModel.RecordingState.Recording
                 )
             }
@@ -310,7 +310,7 @@ private fun AudioRecorderScreenRecordingPreview() {
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.Recording,
                 durationMillis = 12300L,
-                amplitude = 0.5f
+                amplitudes = listOf(0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f)
             ), onIntent = {})
     }
 }
@@ -323,7 +323,7 @@ private fun AudioRecorderScreenRecordingPausedPreview() {
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.RecordingPaused,
                 durationMillis = 15000L,
-                amplitude = 0.2f
+                amplitudes = listOf(0.1f, 0.2f, 0.15f)
             ), onIntent = {})
     }
 }

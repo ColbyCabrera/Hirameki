@@ -15,10 +15,8 @@
  */
 package com.ichi2.anki.multimedia.audio
 
-
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
@@ -28,151 +26,185 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.withStyledAttributes
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import androidx.compose.foundation.Canvas as ComposeCanvas
 
-// TODO : Middle blue line should move left->mid https://github.com/ankidroid/Anki-Android/pull/14591#issuecomment-1791037102
-
-/**This class represents a custom View used for creating audio waveforms when recording audio.
- * It loops over each spike and add it on the screen and the height of the spike is determined by the
- * amplitude that is returned by the audio recorder while recording audio. **/
+/**
+ * Legacy Android View for audio waveforms.
+ * Redesigned to be a simple renderer; calculation logic should be handled by the caller.
+ */
 class AudioWaveform(
     context: Context,
     attrs: AttributeSet? = null,
 ) : View(context, attrs) {
-    private var spikePaint = Paint().apply {
-        color = Color.rgb(244, 81, 30)
-    }
-
-    private var verticalLinePaint = Paint().apply {
-        color = Color.rgb(33, 150, 243)
+    private val spikePaint = Paint().apply { isAntiAlias = true }
+    private val verticalLinePaint = Paint().apply {
         style = Paint.Style.STROKE
         strokeWidth = 5f
+        isAntiAlias = true
     }
+    private val backgroundPaint = Paint()
 
-    private var backgroundPaint = Paint().apply {
-        color = Color.argb(20, 229, 228, 226)
-    }
-
-    fun setSpikeColor(color: Int) {
-        spikePaint.color = color
-        invalidate()
-    }
-
-    fun setVerticalLineColor(color: Int) {
-        verticalLinePaint.color = color
-        invalidate()
-    }
-
-    fun setWaveformBackgroundColor(color: Int) {
-        backgroundPaint.color = color
-        invalidate()
-    }
-
-    private var amplitudes = ArrayList<Float>()
-    private var audioSpikes = ArrayList<RectF>()
-
+    private val amplitudes = ArrayList<Float>()
+    private val audioSpikes = ArrayList<RectF>()
     private var radius = 3f
-
-    /** Width of the audio spike **/
     private var w = 6f
-
-    /** Screen width, it's updated according to the actual screen width **/
-    private val sw get() = width
-
-    /** Gap between each spike **/
     private var d = 4f
-
-    // Intended to be `val` but declared a `var` instead to allow initialization from the init {} block
     private var displayVerticalLine: Boolean = true
-
-    /**
-     * If the vertical line is displayed, the waveform is drawn up to the line
-     * Otherwise, the waveform takes up the full width of the control
-     */
-    private val percentageOfWidthToFill: Float
-        get() = if (displayVerticalLine) 0.5f else 1f
-
-    private val spikeCount
-        get() = (sw / (w + d) * percentageOfWidthToFill).toInt()
 
     init {
         context.withStyledAttributes(attrs, R.styleable.AudioWaveform, 0, 0) {
             displayVerticalLine = getBoolean(R.styleable.AudioWaveform_display_vertical_line, true)
-            backgroundPaint.color =
-                getColor(R.styleable.AudioWaveform_android_background, backgroundPaint.color)
+            backgroundPaint.color = getColor(R.styleable.AudioWaveform_android_background, 0)
         }
     }
 
-    fun addAmplitude(amp: Float) {
-        // minimum height 6 is assigned by default to avoid blank spikes, making the UI consistent
-        val norm = (amp.toInt() / 7).coerceAtMost(300).coerceAtLeast(6).toFloat()
-        amplitudes.add(norm)
-        audioSpikes.clear()
-        val amps = amplitudes.takeLast(spikeCount)
-        for ((index, amplitude) in amps.withIndex()) {
-            val left = index * (w + d)
-            val top = height / 2 - amplitude / 2
-            val right = left + w
-            val bottom = top + amplitude
-            audioSpikes.add(RectF(left, top, right, bottom))
-        }
+    fun addAmplitude(normalizedAmplitude: Float) {
+        amplitudes.add(normalizedAmplitude)
+        updateSpikes()
         invalidate()
     }
 
-    fun clear(): ArrayList<*> {
-        val amps = amplitudes.clone() as ArrayList<*>
+    fun clear() {
         amplitudes.clear()
         audioSpikes.clear()
         invalidate()
-        return amps
+    }
+
+    private fun updateSpikes() {
+        audioSpikes.clear()
+        val percentageOfWidthToFill = if (displayVerticalLine) 0.5f else 1f
+        val spikeCount = (width / (w + d) * percentageOfWidthToFill).toInt()
+        val amps = amplitudes.takeLast(spikeCount)
+
+        for ((index, amp) in amps.withIndex()) {
+            val left = index * (w + d)
+            val top = height / 2f - amp / 2f
+            val right = left + w
+            val bottom = top + amp
+            audioSpikes.add(RectF(left, top, right, bottom))
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
-
-        audioSpikes.forEach {
-            canvas.drawRoundRect(it, radius, radius, spikePaint)
-        }
-
+        audioSpikes.forEach { canvas.drawRoundRect(it, radius, radius, spikePaint) }
         if (displayVerticalLine) {
-            // mid blue vertical line
             val centerX = width / 2f
-            val startY = 0f
-            val endY = height.toFloat()
-            canvas.drawLine(centerX, startY, centerX, endY, verticalLinePaint)
+            canvas.drawLine(centerX, 0f, centerX, height.toFloat(), verticalLinePaint)
         }
     }
 }
 
-
 @Composable
 fun AudioWaveformCompose(
-    modifier: Modifier = Modifier, amplitude: Float, isRecording: Boolean
+    modifier: Modifier = Modifier,
+    amplitudes: List<Float>,
+    isRecording: Boolean,
+    displayVerticalLine: Boolean = false
 ) {
     val spikeColor = MaterialTheme.colorScheme.primary
     val verticalLineColor = MaterialTheme.colorScheme.tertiary
-    val backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+    val backgroundColor = MaterialTheme.colorScheme.surface
 
-    AndroidView(modifier = modifier
-        .fillMaxWidth()
-        .height(100.dp), factory = { context ->
-        AudioWaveform(context)
-    }, update = { view ->
-        // Update colors from theme
-        view.setSpikeColor(spikeColor.toArgb())
-        view.setVerticalLineColor(verticalLineColor.toArgb())
-        view.setWaveformBackgroundColor(backgroundColor.toArgb())
+    ComposeCanvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(100.dp)
+    ) {
+        val w = 6.dp.toPx()
+        val d = 4.dp.toPx()
+        val radius = 3.dp.toPx()
+        val percentageOfWidthToFill = if (displayVerticalLine) 0.5f else 1f
+        val spikeCount = (size.width / (w + d) * percentageOfWidthToFill).toInt()
+
+        // Draw background
+        drawRect(color = backgroundColor)
 
         if (isRecording) {
-            view.addAmplitude(amplitude * Short.MAX_VALUE.toFloat())
-        } else {
-            view.clear()
+            val relevantAmplitudes = amplitudes.takeLast(spikeCount)
+            relevantAmplitudes.forEachIndexed { index, ampFactor ->
+                val spikeHeight = (ampFactor * size.height).coerceIn(6.dp.toPx(), size.height)
+                val left = index * (w + d)
+                val top = (size.height - spikeHeight) / 2
+
+                drawRoundRect(
+                    color = spikeColor,
+                    topLeft = Offset(left, top),
+                    size = Size(w, spikeHeight),
+                    cornerRadius = CornerRadius(radius, radius)
+                )
+            }
         }
-    })
+
+        if (displayVerticalLine) {
+            val centerX = size.width / 2f
+            drawLine(
+                color = verticalLineColor,
+                start = Offset(centerX, 0f),
+                end = Offset(centerX, size.height),
+                strokeWidth = 2.dp.toPx()
+            )
+        }
+    }
 }
 
+@Preview(name = "Recording", showBackground = true)
+@Composable
+private fun AudioWaveformRecordingPreview() {
+    AnkiDroidTheme {
+        AudioWaveformCompose(
+            amplitudes = listOf(
+                0.1f,
+                0.2f,
+                0.5f,
+                0.3f,
+                0.8f,
+                0.6f,
+                0.4f,
+                0.9f,
+                0.7f,
+                0.5f,
+                0.2f,
+                0.4f,
+                0.6f,
+                0.8f,
+                1.0f
+            ), isRecording = true
+        )
+    }
+}
+
+@Preview(name = "Not Recording", showBackground = true)
+@Composable
+private fun AudioWaveformNotRecordingPreview() {
+    AnkiDroidTheme {
+        AudioWaveformCompose(
+            amplitudes = listOf(
+                0.1f,
+                0.2f,
+                0.5f,
+                0.3f,
+                0.8f,
+                0.6f,
+                0.4f,
+                0.9f,
+                0.7f,
+                0.5f,
+                0.2f,
+                0.4f,
+                0.6f,
+                0.8f,
+                1.0f
+            ), isRecording = false
+        )
+    }
+}
