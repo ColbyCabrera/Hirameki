@@ -149,10 +149,13 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      */
     val flowOfFocusedDeck = MutableStateFlow<DeckId?>(null)
 
+    val flowOfCurrentDeckId = MutableStateFlow(1L)
+
     var focusedDeck: DeckId?
         get() = flowOfFocusedDeck.value
         set(value) {
             flowOfFocusedDeck.value = value
+            if (value != null) flowOfCurrentDeckId.value = value
         }
 
     init {
@@ -222,14 +225,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         flowOfCurrentDeckFilter,
         flowOfFocusedDeck,
         flowOfBuriedDecks,
-        flowOfRefreshDeckList.onStart { emit(Unit) },
-    ) { tree, filter, _, buriedDecks, _ ->
+        combine(flowOfCurrentDeckId, flowOfRefreshDeckList.onStart { emit(Unit) }, ::Pair),
+    ) { tree, filter, _, buriedDecks, (currentDeckId, _) ->
         if (tree == null) return@combine FlattenedDeckList.empty
 
-        // TODO: use flowOfFocusedDeck once it's set on all instances
-        val currentDeckId = withCol {
-            decks.current().getLong("id")
-        }
         Timber.i("currentDeckId: %d", currentDeckId)
 
         FlattenedDeckList(
