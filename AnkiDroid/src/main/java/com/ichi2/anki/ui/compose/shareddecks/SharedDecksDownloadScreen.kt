@@ -31,14 +31,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -49,7 +47,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -81,57 +78,57 @@ fun SharedDecksDownloadScreen(
     onOpenInBrowser: () -> Unit
 ) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0),
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    // Back handled by the fragment's onBackPressedCallback or cancel button
-                }
-            )
-        }
-    ) { innerPadding ->
+        contentWindowInsets = WindowInsets(0), topBar = {
+            TopAppBar(title = { }, navigationIcon = {
+                // Back handled by the fragment's onBackPressedCallback or cancel button
+            })
+        }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            DownloadHero(isFailed = state.isFailed, isComplete = state.isComplete)
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Top section: Hero and Title
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                DownloadHero(isFailed = state.isFailed, isComplete = state.isComplete)
 
-            Text(
-                text = if (state.isFailed) {
-                    stringResource(R.string.download_failed)
-                } else if (state.isComplete) {
-                    stringResource(R.string.import_deck)
-                } else {
-                    stringResource(R.string.downloading_file, state.fileName)
-                },
-                style = MaterialTheme.typography.displayMediumEmphasized,
-                textAlign = TextAlign.Center,
-                color = if (state.isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-            )
+                Spacer(modifier = Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = if (state.isFailed) {
+                        stringResource(R.string.download_failed)
+                    } else if (state.isComplete) {
+                        stringResource(R.string.import_deck)
+                    } else {
+                        stringResource(R.string.downloading_file, state.fileName)
+                    },
+                    style = MaterialTheme.typography.displayMediumEmphasized,
+                    textAlign = TextAlign.Center,
+                    color = if (state.isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                )
 
-            Text(
-                text = stringResource(R.string.deck_download_progress_message),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(48.dp))
+                Text(
+                    text = stringResource(R.string.deck_download_progress_message),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Center section: Progress
             DownloadProgressSection(state = state)
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
+            // Bottom section: Actions
             DownloadActions(
                 state = state,
                 onCancel = onCancel,
@@ -139,6 +136,8 @@ fun SharedDecksDownloadScreen(
                 onImport = onImport,
                 onOpenInBrowser = onOpenInBrowser
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -151,7 +150,7 @@ private fun DownloadHero(isFailed: Boolean, isComplete: Boolean) {
         isComplete -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.secondaryContainer
     }
-    
+
     val icon = when {
         isFailed -> R.drawable.error_24px
         isComplete -> R.drawable.ic_done_white
@@ -185,11 +184,11 @@ private fun DownloadHero(isFailed: Boolean, isComplete: Boolean) {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadProgressSection(state: DownloadUiState) {
     val animatedProgress by animateFloatAsState(
-        targetValue = state.progress / 100f,
-        label = "DownloadProgress"
+        targetValue = state.progress / 100f, label = "DownloadProgress"
     )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -203,7 +202,7 @@ private fun DownloadProgressSection(state: DownloadUiState) {
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            
+
             if (state.isWaitingForNetwork) {
                 Text(
                     text = stringResource(R.string.check_network),
@@ -214,19 +213,17 @@ private fun DownloadProgressSection(state: DownloadUiState) {
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        LinearProgressIndicator(
+        LinearWavyProgressIndicator(
             progress = { animatedProgress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(12.dp),
-            strokeCap = StrokeCap.Round,
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            modifier = Modifier.fillMaxWidth(),
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadActions(
     state: DownloadUiState,
@@ -236,60 +233,71 @@ private fun DownloadActions(
     onOpenInBrowser: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AnimatedVisibility(
-            visible = state.isComplete,
-            enter = fadeIn(),
-            exit = fadeOut()
+            visible = state.isComplete, enter = fadeIn(), exit = fadeOut()
         ) {
             Button(
                 onClick = onImport,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
                 shape = MaterialTheme.shapes.extraLarge
             ) {
-                Text(stringResource(R.string.import_deck))
+                Text(
+                    text = stringResource(R.string.import_deck),
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
         }
 
         AnimatedVisibility(
-            visible = state.isFailed,
-            enter = fadeIn(),
-            exit = fadeOut()
+            visible = state.isFailed, enter = fadeIn(), exit = fadeOut()
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
                     onClick = onRetry,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
                     shape = MaterialTheme.shapes.extraLarge
                 ) {
-                    Text(stringResource(R.string.try_again))
+                    Text(
+                        text = stringResource(R.string.try_again),
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
-                
+
                 FilledTonalButton(
                     onClick = onOpenInBrowser,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
                     shape = MaterialTheme.shapes.extraLarge
                 ) {
-                    Text(stringResource(R.string.open_in_browser))
+                    Text(
+                        text = stringResource(R.string.open_in_browser),
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         }
 
         AnimatedVisibility(
-            visible = !state.isComplete && !state.isFailed,
-            enter = fadeIn(),
-            exit = fadeOut()
+            visible = !state.isComplete && !state.isFailed, enter = fadeIn(), exit = fadeOut()
         ) {
             TextButton(
                 onClick = onCancel,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = MaterialTheme.shapes.extraLarge
             ) {
                 Text(
                     text = stringResource(R.string.cancel_download),
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelLarge
                 )
             }
         }
@@ -302,15 +310,8 @@ fun SharedDecksDownloadScreenPreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
-                fileName = "Medical Terminology.apkg",
-                progress = 45f,
-                progressText = "45.2%"
-            ),
-            onCancel = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {}
-        )
+            fileName = "Medical Terminology.apkg", progress = 45f, progressText = "45.2%"
+        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
 
@@ -320,14 +321,7 @@ fun SharedDecksDownloadScreenFailedPreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
-                fileName = "Medical Terminology.apkg",
-                isDownloading = false,
-                isFailed = true
-            ),
-            onCancel = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {}
-        )
+            fileName = "Medical Terminology.apkg", isDownloading = false, isFailed = true
+        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
