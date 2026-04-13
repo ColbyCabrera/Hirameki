@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -303,9 +302,9 @@ fun SaveButton(
         )
     ) {
         Icon(
-            imageVector = Icons.Default.Done,
+            painter = painterResource(id = R.drawable.save_24px),
             contentDescription = stringResource(R.string.save),
-            tint = if (enabled) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.outline
+            tint = MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
 }
