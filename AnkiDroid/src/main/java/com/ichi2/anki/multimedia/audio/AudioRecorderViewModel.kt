@@ -1,8 +1,9 @@
 package com.ichi2.anki.multimedia.audio
 
+import android.app.Application
 import android.content.Context
 import android.media.MediaPlayer
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.multimediacard.AudioRecorder
 import kotlinx.coroutines.Job
@@ -16,10 +17,10 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 
-class AudioRecorderViewModel : ViewModel() {
+class AudioRecorderViewModel(application: Application) : AndroidViewModel(application) {
 
     sealed interface Intent {
-        data class StartRecording(val context: Context) : Intent
+        object StartRecording : Intent
         object PauseRecording : Intent
         object ResumeRecording : Intent
         object StopRecording : Intent
@@ -63,7 +64,7 @@ class AudioRecorderViewModel : ViewModel() {
 
     fun processIntent(intent: Intent) {
         when (intent) {
-            is Intent.StartRecording -> startRecording(intent.context)
+            is Intent.StartRecording -> startRecording()
             is Intent.PauseRecording -> pauseRecording()
             is Intent.ResumeRecording -> resumeRecording()
             is Intent.StopRecording -> stopRecording()
@@ -74,7 +75,8 @@ class AudioRecorderViewModel : ViewModel() {
         }
     }
 
-    private fun startRecording(context: Context) {
+    private fun startRecording() {
+        val context = getApplication<Application>()
         Timber.i("AudioRecorderViewModel: starting recording")
         try {
             val tempFile = AudioRecordingController.generateTempAudioFile(context) ?: return
