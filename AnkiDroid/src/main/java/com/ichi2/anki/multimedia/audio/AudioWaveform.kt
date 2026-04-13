@@ -14,12 +14,6 @@
  *  this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.ichi2.anki.multimedia.audio
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 
 
 import android.content.Context
@@ -29,6 +23,14 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.withStyledAttributes
 import com.ichi2.anki.R
 
@@ -41,22 +43,34 @@ class AudioWaveform(
     context: Context,
     attrs: AttributeSet? = null,
 ) : View(context, attrs) {
-    private var spikePaint =
-        Paint().apply {
-            color = Color.rgb(244, 81, 30)
-        }
+    private var spikePaint = Paint().apply {
+        color = Color.rgb(244, 81, 30)
+    }
 
-    private var verticalLinePaint =
-        Paint().apply {
-            color = Color.rgb(33, 150, 243)
-            style = Paint.Style.STROKE
-            strokeWidth = 5f
-        }
+    private var verticalLinePaint = Paint().apply {
+        color = Color.rgb(33, 150, 243)
+        style = Paint.Style.STROKE
+        strokeWidth = 5f
+    }
 
-    private var backgroundPaint =
-        Paint().apply {
-            color = Color.argb(20, 229, 228, 226)
-        }
+    private var backgroundPaint = Paint().apply {
+        color = Color.argb(20, 229, 228, 226)
+    }
+
+    fun setSpikeColor(color: Int) {
+        spikePaint.color = color
+        invalidate()
+    }
+
+    fun setVerticalLineColor(color: Int) {
+        verticalLinePaint.color = color
+        invalidate()
+    }
+
+    fun setWaveformBackgroundColor(color: Int) {
+        backgroundPaint.color = color
+        invalidate()
+    }
 
     private var amplitudes = ArrayList<Float>()
     private var audioSpikes = ArrayList<RectF>()
@@ -83,14 +97,13 @@ class AudioWaveform(
         get() = if (displayVerticalLine) 0.5f else 1f
 
     private val spikeCount
-        get() =
-            (sw / (w + d) * percentageOfWidthToFill)
-                .toInt()
+        get() = (sw / (w + d) * percentageOfWidthToFill).toInt()
 
     init {
         context.withStyledAttributes(attrs, R.styleable.AudioWaveform, 0, 0) {
             displayVerticalLine = getBoolean(R.styleable.AudioWaveform_display_vertical_line, true)
-            backgroundPaint.color = getColor(R.styleable.AudioWaveform_android_background, backgroundPaint.color)
+            backgroundPaint.color =
+                getColor(R.styleable.AudioWaveform_android_background, backgroundPaint.color)
         }
     }
 
@@ -139,25 +152,27 @@ class AudioWaveform(
 
 @Composable
 fun AudioWaveformCompose(
-    modifier: Modifier = Modifier,
-    amplitude: Float,
-    isRecording: Boolean
+    modifier: Modifier = Modifier, amplitude: Float, isRecording: Boolean
 ) {
-    AndroidView(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(100.dp),
-        factory = { context ->
-            AudioWaveform(context).apply {
-                // Initialize default values or attributes if needed
-            }
-        },
-        update = { view ->
-            if (isRecording) {
-                view.addAmplitude(amplitude * 32767f)
-            } else {
-                view.clear()
-            }
+    val spikeColor = MaterialTheme.colorScheme.primary
+    val verticalLineColor = MaterialTheme.colorScheme.tertiary
+    val backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+
+    AndroidView(modifier = modifier
+        .fillMaxWidth()
+        .height(100.dp), factory = { context ->
+        AudioWaveform(context)
+    }, update = { view ->
+        // Update colors from theme
+        view.setSpikeColor(spikeColor.toArgb())
+        view.setVerticalLineColor(verticalLineColor.toArgb())
+        view.setWaveformBackgroundColor(backgroundColor.toArgb())
+
+        if (isRecording) {
+            view.addAmplitude(amplitude * Short.MAX_VALUE.toFloat())
+        } else {
+            view.clear()
         }
-    )
+    })
 }
+
