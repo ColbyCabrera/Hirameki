@@ -97,7 +97,7 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
                 val savedFile = state.savedFile
                 if (savedFile != null && state.state == AudioRecorderViewModel.RecordingState.PlaybackReady) {
                     viewModel.updateCurrentMultimediaPath(savedFile)
-                    viewModel.updateMediaFileLength(state.durationMillis)
+                    viewModel.updateMediaFileLength(savedFile.length())
                     onDone()
                 } else if (state.state == AudioRecorderViewModel.RecordingState.Idle && savedFile == null) {
                     // Handled discard if needed

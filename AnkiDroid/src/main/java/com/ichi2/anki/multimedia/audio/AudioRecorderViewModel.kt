@@ -144,8 +144,7 @@ class AudioRecorderViewModel : ViewModel() {
                     state = RecordingState.PlaybackReady,
                     amplitude = 0f,
                     durationMillis = accumulatedDurationMillis,
-                    isSaveEnabled = true,
-                    savedFile = audioFile
+                    isSaveEnabled = true
                 )
             }
         } catch (e: Exception) {
