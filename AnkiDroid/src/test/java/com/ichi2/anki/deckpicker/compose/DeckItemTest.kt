@@ -61,14 +61,16 @@ class DeckItemTest : RobolectricTest() {
                 filtered = false
             }, fullDeckName = "Japanese"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false)
 
         val actions = DeckItemActions(
             onDeckClick = {},
             onExpandClick = {},
             onDeckOptions = {},
             onRename = {},
-            onExport = {},
+            onCustomStudy = {},
+            onUnbury = {},
+            onExportDeck = {},
             onDelete = {},
             onRebuild = {},
             onEmpty = {},
@@ -123,14 +125,16 @@ class DeckItemTest : RobolectricTest() {
                 filtered = false
             }, fullDeckName = "Spanish"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false)
 
         val actions = DeckItemActions(
             onDeckClick = {},
             onExpandClick = {},
             onDeckOptions = { deckOptionsClicked = true },
             onRename = { renameClicked = true },
-            onExport = { exportClicked = true },
+            onCustomStudy = {},
+            onUnbury = {},
+            onExportDeck = { exportClicked = true },
             onDelete = { deleteClicked = true },
             onRebuild = {},
             onEmpty = {},
@@ -196,14 +200,16 @@ class DeckItemTest : RobolectricTest() {
                 filtered = true
             }, fullDeckName = "Filtered"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = false)
 
         val actions = DeckItemActions(
             onDeckClick = {},
             onExpandClick = {},
             onDeckOptions = {},
             onRename = {},
-            onExport = {},
+            onCustomStudy = {},
+            onUnbury = {},
+            onExportDeck = {},
             onDelete = {},
             onRebuild = { rebuildClicked = true },
             onEmpty = { emptyClicked = true },
@@ -220,8 +226,8 @@ class DeckItemTest : RobolectricTest() {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithText(createSubdeckLabel).assertDoesNotExist()
-        composeTestRule.onNodeWithText(renameLabel).assertDoesNotExist()
-        composeTestRule.onNodeWithText(exportLabel).assertDoesNotExist()
+        composeTestRule.onNodeWithText(renameLabel).assertIsDisplayed()
+        composeTestRule.onNodeWithText(exportLabel).assertIsDisplayed()
         composeTestRule.onNodeWithText(rebuildLabel).assertIsDisplayed()
         composeTestRule.onNodeWithText(emptyLabel).assertIsDisplayed()
 
@@ -233,5 +239,94 @@ class DeckItemTest : RobolectricTest() {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(rebuildLabel).performClick()
         assertTrue(rebuildClicked)
+    }
+
+    @Test
+    fun showsUnburyWhenHasBuriedAndInvokesCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val unburyLabel = context.getString(R.string.unbury)
+        var unburyClicked = false
+
+        val node = DeckNode(
+            node = deckTreeNode {
+                name = "Japanese"
+                deckId = 1L
+            }, fullDeckName = "Japanese"
+        )
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = true)
+
+        val actions = DeckItemActions(
+            onDeckClick = {},
+            onExpandClick = {},
+            onDeckOptions = {},
+            onRename = {},
+            onCustomStudy = {},
+            onUnbury = { unburyClicked = true },
+            onExportDeck = {},
+            onDelete = {},
+            onRebuild = {},
+            onEmpty = {},
+            onCreateSubdeck = {}
+        )
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                DeckItem(deck = deck, actions = actions)
+            }
+        }
+
+        composeTestRule.onNodeWithText("Japanese")
+            .performSemanticsAction(SemanticsActions.OnLongClick)
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText(unburyLabel).assertIsDisplayed()
+        composeTestRule.onNodeWithText(unburyLabel).performClick()
+
+        assertTrue(unburyClicked)
+    }
+
+    @Test
+    fun showsUnburyForFilteredDeckWhenHasBuriedAndInvokesCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val unburyLabel = context.getString(R.string.unbury)
+        var unburyClicked = false
+
+        val node = DeckNode(
+            node = deckTreeNode {
+                name = "Filtered"
+                deckId = 3L
+                filtered = true
+            }, fullDeckName = "Filtered"
+        )
+        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L, hasBuried = true)
+
+        val actions = DeckItemActions(
+            onDeckClick = {},
+            onExpandClick = {},
+            onDeckOptions = {},
+            onRename = {},
+            onCustomStudy = {},
+            onUnbury = { unburyClicked = true },
+            onExportDeck = {},
+            onDelete = {},
+            onRebuild = {},
+            onEmpty = {},
+            onCreateSubdeck = {}
+        )
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                DeckItem(deck = deck, actions = actions)
+            }
+        }
+
+        composeTestRule.onNodeWithText("Filtered")
+            .performSemanticsAction(SemanticsActions.OnLongClick)
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText(unburyLabel).assertIsDisplayed()
+        composeTestRule.onNodeWithText(unburyLabel).performClick()
+
+        assertTrue(unburyClicked)
     }
 }

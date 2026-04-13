@@ -26,7 +26,9 @@ data class DeckRowActions(
     val onExpandClick: (DisplayDeckNode) -> Unit,
     val onDeckOptions: (DisplayDeckNode) -> Unit,
     val onRename: (DisplayDeckNode) -> Unit,
-    val onExport: (DisplayDeckNode) -> Unit,
+    val onCustomStudy: (DisplayDeckNode) -> Unit,
+    val onUnbury: (DisplayDeckNode) -> Unit,
+    val onExportDeck: (DisplayDeckNode) -> Unit,
     val onDelete: (DisplayDeckNode) -> Unit,
     val onRebuild: (DisplayDeckNode) -> Unit,
     val onEmpty: (DisplayDeckNode) -> Unit,
@@ -34,15 +36,12 @@ data class DeckRowActions(
 )
 
 /**
- * Actions for the StudyOptions panel (tablet only) and its top bar overflow menu.
+ * Actions for the more options menu
  */
-data class StudyOptionsPanelActions(
-    val onStartStudy: () -> Unit,
-    val onRebuildDeck: (Long) -> Unit,
-    val onEmptyDeck: (Long) -> Unit,
-    val onCustomStudy: (Long) -> Unit,
-    val onDeckOptionsItemSelected: (Long) -> Unit,
-    val onUnbury: (Long) -> Unit,
+data class MoreOptionsMenuActions(
+    val onCheckDatabase: () -> Unit,
+    val onExport: () -> Unit,
+    val onDeleteEmptyCards: () -> Unit,
 )
 
 /**
@@ -53,5 +52,5 @@ data class FabActions(
     val onAddDeck: () -> Unit,
     val onAddSharedDeck: () -> Unit,
     val onAddFilteredDeck: () -> Unit,
-    val onCheckDatabase: () -> Unit,
+    val onImport: () -> Unit,
 )

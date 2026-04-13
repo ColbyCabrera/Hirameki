@@ -87,7 +87,9 @@ data class DeckItemActions(
     val onExpandClick: () -> Unit,
     val onDeckOptions: () -> Unit,
     val onRename: () -> Unit,
-    val onExport: () -> Unit,
+    val onCustomStudy: () -> Unit,
+    val onUnbury: () -> Unit,
+    val onExportDeck: () -> Unit,
     val onDelete: () -> Unit,
     val onRebuild: () -> Unit,
     val onEmpty: () -> Unit,
@@ -209,6 +211,17 @@ fun DeckItem(
                         })
                 } else {
                     DropdownMenuItem(
+                        text = { Text(stringResource(R.string.custom_study)) },
+                        onClick = {
+                            isContextMenuOpen = false
+                            actions.onCustomStudy()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painterResource(R.drawable.star_24px), contentDescription = null
+                            )
+                        })
+                    DropdownMenuItem(
                         text = { Text(stringResource(R.string.create_subdeck)) },
                         onClick = {
                             isContextMenuOpen = false
@@ -220,31 +233,34 @@ fun DeckItem(
                                 contentDescription = null
                             )
                         })
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.rename_deck)) },
-                        onClick = {
-                            isContextMenuOpen = false
-                            actions.onRename()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.edit_24px),
-                                contentDescription = null
-                            )
-                        })
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.export_deck)) },
-                        onClick = {
-                            isContextMenuOpen = false
-                            actions.onExport()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.share_24px),
-                                contentDescription = null
-                            )
-                        })
                 }
+                DropdownMenuItem(text = { Text(stringResource(R.string.rename_deck)) }, onClick = {
+                    isContextMenuOpen = false
+                    actions.onRename()
+                }, leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.edit_24px), contentDescription = null
+                    )
+                })
+                if (deck.hasBuried) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.unbury)) }, onClick = {
+                        isContextMenuOpen = false
+                        actions.onUnbury()
+                    }, leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.undo_24px),
+                            contentDescription = null
+                        )
+                    })
+                }
+                DropdownMenuItem(text = { Text(stringResource(R.string.export_deck)) }, onClick = {
+                    isContextMenuOpen = false
+                    actions.onExportDeck()
+                }, leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.share_24px), contentDescription = null
+                    )
+                })
                 DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
                     isContextMenuOpen = false
                     actions.onDeckOptions()
@@ -266,7 +282,6 @@ fun DeckItem(
             }
         }
     }
-
 
     when (deck.depth) {
         0 -> {
@@ -362,9 +377,14 @@ private fun DeckItemPreview() {
                 })
             }, fullDeckName = "Japanese"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(
+            node,
+            matchesSearchOrChild = true,
+            selectedDeckId = 0L,
+            hasBuried = false
+        )
         DeckItem(
-            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {})
+            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         )
     }
 }
@@ -383,9 +403,14 @@ private fun DeckItemSubdeckPreview() {
                 newCount = 3
             }, fullDeckName = "Japanese::Kanji"
         )
-        val deck = DisplayDeckNode.from(node, matchesSearchOrChild = true, selectedDeckId = 0L)
+        val deck = DisplayDeckNode.from(
+            node,
+            matchesSearchOrChild = true,
+            selectedDeckId = 0L,
+            hasBuried = false
+        )
         DeckItem(
-            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {})
+            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
         )
     }
 }

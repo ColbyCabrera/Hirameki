@@ -43,6 +43,8 @@ import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Decks
+import com.ichi2.anki.libanki.QueueType.ManuallyBuried
+import com.ichi2.anki.libanki.QueueType.SiblingBuried
 import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.anki.libanki.utils.extend
@@ -86,6 +88,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val flowOfStartupResponse = MutableStateFlow<StartupResponse?>(null)
 
     private val flowOfDeckDueTree = MutableStateFlow<DeckNode?>(null)
+
+    /** Decks that contain buried cards */
+    private val flowOfBuriedDecks = MutableStateFlow<Set<DeckId>>(emptySet())
 
     private val _syncState = MutableStateFlow(SyncIconState.Normal)
     val syncState: StateFlow<SyncIconState> = _syncState.asStateFlow()
@@ -144,10 +149,13 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      */
     val flowOfFocusedDeck = MutableStateFlow<DeckId?>(null)
 
+    val flowOfCurrentDeckId = MutableStateFlow(1L)
+
     var focusedDeck: DeckId?
         get() = flowOfFocusedDeck.value
         set(value) {
             flowOfFocusedDeck.value = value
+            if (value != null) flowOfCurrentDeckId.value = value
         }
 
     init {
@@ -216,16 +224,15 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         flowOfDeckDueTree,
         flowOfCurrentDeckFilter,
         flowOfFocusedDeck,
-        flowOfRefreshDeckList.onStart { emit(Unit) },
-    ) { tree, filter, _, _ ->
+        flowOfBuriedDecks,
+        combine(flowOfCurrentDeckId, flowOfRefreshDeckList.onStart { emit(Unit) }, ::Pair),
+    ) { tree, filter, _, buriedDecks, (currentDeckId, _) ->
         if (tree == null) return@combine FlattenedDeckList.empty
 
-        // TODO: use flowOfFocusedDeck once it's set on all instances
-        val currentDeckId = withCol { decks.current().getLong("id") }
         Timber.i("currentDeckId: %d", currentDeckId)
 
         FlattenedDeckList(
-            data = tree.filterAndFlattenDisplay(filter, currentDeckId),
+            data = tree.filterAndFlattenDisplay(filter, currentDeckId, buriedDecks),
             hasSubDecks = tree.children.any { it.children.any() },
         )
     }
@@ -514,7 +521,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
                 // to match and avoid unnecessary scrolls in `renderPage()`.
                 focusedDeck = Consts.DEFAULT_DECK_ID
-                    updateDeckList()
+                updateDeckList()
 
                 val deletionResult =
                     DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
@@ -613,6 +620,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         _effects.send(DeckPickerEffect.CheckDatabase)
     }
 
+    fun showEmptyCardsDialog() = launchCatchingIO {
+        _effects.send(DeckPickerEffect.ShowEmptyCardsDialog)
+    }
+
 
     fun addNote(
         deckId: DeckId?,
@@ -676,16 +687,20 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         loadDeckCounts?.cancel()
         val loadDeckCounts = viewModelScope.launch {
             Timber.d("Refreshing deck list")
-            refreshSyncState()
-            val (deckDueTree, collectionHasNoCards) = withCol {
-                Pair(sched.deckDueTree(), isEmpty)
+            val (deckDueTree, collectionHasNoCards, buriedDecks) = withCol {
+                val buried =
+                    db.queryLongList("SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})")
+                        .toSet()
+                Triple(sched.deckDueTree(), isEmpty, buried)
             }
 
             ensureActive()
 
             dueTree = deckDueTree
-
             flowOfCollectionHasNoCards.value = collectionHasNoCards
+            flowOfBuriedDecks.value = buriedDecks
+
+            launch { refreshSyncState() }
 
             // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
             val studiedToday = withCol { sched.studiedToday().replace("\n", " ") }
@@ -935,4 +950,7 @@ sealed class DeckPickerEffect {
 
     /** Check database */
     data object CheckDatabase : DeckPickerEffect()
+
+    /** Show the empty cards dialog */
+    data object ShowEmptyCardsDialog : DeckPickerEffect()
 }

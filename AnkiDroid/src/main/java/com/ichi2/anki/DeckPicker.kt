@@ -491,7 +491,10 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     },
                     onShowDialogFragment = { it.show(supportFragmentManager, null) },
                     onInvalidateOptionsMenu = { invalidateOptionsMenu() },
-                    onLoginToAnkiWeb = { loginToSyncServer() })
+                    onLoginToAnkiWeb = { loginToSyncServer() },
+                    onImport = { showImportDialog() },
+                    onExport = { exportCollection() },
+                )
             }
         }
 
@@ -570,6 +573,9 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 is DeckPickerEffect.RebuildFilteredDeck -> rebuildFiltered(effect.deckId)
                 is DeckPickerEffect.CheckDatabase -> {
                     showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
+                }
+                is DeckPickerEffect.ShowEmptyCardsDialog -> {
+                    EmptyCardsDialogFragment().show(supportFragmentManager, EmptyCardsDialogFragment.TAG)
                 }
             }
         }
