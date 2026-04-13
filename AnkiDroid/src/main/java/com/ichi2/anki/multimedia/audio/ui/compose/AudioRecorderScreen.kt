@@ -24,7 +24,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -33,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ichi2.anki.R
 import com.ichi2.anki.multimedia.audio.AudioRecorderViewModel
 import com.ichi2.anki.multimedia.audio.AudioWaveformCompose
@@ -40,20 +40,27 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import java.util.Locale
 
 @Composable
-fun AudioRecorderScreen(viewModel: AudioRecorderViewModel) {
+fun AudioRecorderScreen(
+    viewModel: AudioRecorderViewModel,
+    modifier: Modifier = Modifier
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AudioRecorderContent(
-        uiState = uiState, onIntent = viewModel::processIntent
+        uiState = uiState,
+        onIntent = viewModel::processIntent,
+        modifier = modifier
     )
 }
 
 @Composable
 fun AudioRecorderContent(
-    uiState: AudioRecorderViewModel.UiState, onIntent: (AudioRecorderViewModel.Intent) -> Unit
+    uiState: AudioRecorderViewModel.UiState,
+    onIntent: (AudioRecorderViewModel.Intent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface) // Use Material3 surface color
     ) {
@@ -117,12 +124,14 @@ fun AudioRecorderContent(
             ) {
                 when (uiState.state) {
                     AudioRecorderViewModel.RecordingState.Idle -> {
-                        Spacer(modifier = Modifier.weight(1f))
-                        RecordButton(
-                            onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) })
-                        Spacer(modifier = Modifier.weight(1f))
-                        SaveButton(
-                            enabled = false, onClick = { })
+                        Box(Modifier.fillMaxWidth()) {
+                            RecordButton(
+                                modifier = Modifier.align(Alignment.Center),
+                                onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) })
+                            SaveButton(
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                                enabled = false, onClick = { })
+                        }
                     }
 
                     in listOf(
@@ -172,11 +181,14 @@ fun AudioRecorderContent(
 }
 
 @Composable
-fun RecordButton(onClick: () -> Unit) {
+fun RecordButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Button(
         onClick = onClick,
         shape = CircleShape,
-        modifier = Modifier.size(80.dp),
+        modifier = modifier.size(80.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
         Icon(
@@ -188,11 +200,14 @@ fun RecordButton(onClick: () -> Unit) {
 }
 
 @Composable
-fun StopButton(onClick: () -> Unit) {
+fun StopButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Button(
         onClick = onClick,
         shape = CircleShape, // Adjust for pill shape if needed, screenshot shows pill shape for stop/pause
-        modifier = Modifier
+        modifier = modifier
             .height(80.dp)
             .padding(horizontal = 16.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
@@ -212,11 +227,15 @@ fun StopButton(onClick: () -> Unit) {
 }
 
 @Composable
-fun PauseResumeButton(isPaused: Boolean, onClick: () -> Unit) {
+fun PauseResumeButton(
+    isPaused: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Button(
         onClick = onClick,
         shape = CircleShape, // Pill
-        modifier = Modifier
+        modifier = modifier
             .height(80.dp)
             .padding(horizontal = 16.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -237,11 +256,15 @@ fun PauseResumeButton(isPaused: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun PlayPauseButton(isPlaying: Boolean, onClick: () -> Unit) {
+fun PlayPauseButton(
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Button(
         onClick = onClick,
         shape = CircleShape, // Pill
-        modifier = Modifier
+        modifier = modifier
             .height(80.dp)
             .padding(horizontal = 16.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -264,12 +287,16 @@ fun PlayPauseButton(isPlaying: Boolean, onClick: () -> Unit) {
 
 
 @Composable
-fun SaveButton(enabled: Boolean, onClick: () -> Unit) {
+fun SaveButton(
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Button(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        modifier = Modifier.size(64.dp), // Slightly smaller
+        modifier = modifier.size(64.dp), // Slightly smaller
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
