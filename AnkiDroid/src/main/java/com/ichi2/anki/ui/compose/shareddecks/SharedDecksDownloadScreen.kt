@@ -16,7 +16,9 @@
 package com.ichi2.anki.ui.compose.shareddecks
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -48,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -190,7 +193,9 @@ private fun DownloadHero(isFailed: Boolean, isComplete: Boolean) {
 @Composable
 private fun DownloadProgressSection(state: DownloadUiState) {
     val animatedProgress by animateFloatAsState(
-        targetValue = state.progress / 100f, label = "DownloadProgress"
+        targetValue = state.progress / 100f, animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow
+        ), label = "DownloadProgress"
     )
     Box(
         modifier = Modifier
@@ -200,9 +205,12 @@ private fun DownloadProgressSection(state: DownloadUiState) {
         Box(
             modifier = Modifier
                 .fillMaxSize(0.95f)
+                .graphicsLayer(
+                    rotationZ = animatedProgress * 360f
+                )
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
-                    shape = RoundedPolygonShape(MaterialShapes.Cookie4Sided)
+                    shape = RoundedPolygonShape(MaterialShapes.Arrow)
                 )
         )
 
