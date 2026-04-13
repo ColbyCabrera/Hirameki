@@ -239,6 +239,25 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    /**
+     * Stops any active recording or playback and releases hardware resources.
+     * This is intended to be called when the UI is backgrounded to ensure the
+     * microphone or media player are not held indefinitely.
+     */
+    fun stopAllAndRelease() {
+        Timber.i("AudioRecorderViewModel: stopAllAndRelease")
+        if (_uiState.value.state in listOf(RecordingState.Recording, RecordingState.RecordingPaused)) {
+            stopRecording()
+        }
+        if (_uiState.value.state == RecordingState.Playing) {
+            pausePlayback()
+        }
+
+        // Ensure media player is fully released if it was paused or playing
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+
     private fun stopAndReset() {
         timerJob?.cancel()
         amplitudeJob?.cancel()

@@ -91,6 +91,11 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         return true
     }
 
+    override fun onStop() {
+        super.onStop()
+        audioRecorderViewModel.stopAllAndRelease()
+    }
+
     private fun setupDoneAction() {
         lifecycleScope.launch {
             audioRecorderViewModel.uiState.collect { state ->
