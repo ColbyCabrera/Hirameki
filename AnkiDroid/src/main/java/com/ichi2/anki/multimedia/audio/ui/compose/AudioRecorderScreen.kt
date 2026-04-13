@@ -20,6 +20,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -29,25 +30,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Locale
 import com.ichi2.anki.R
 import com.ichi2.anki.multimedia.audio.AudioRecorderViewModel
 import com.ichi2.anki.multimedia.audio.AudioWaveformCompose
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import java.util.Locale
 
 @Composable
 fun AudioRecorderScreen(viewModel: AudioRecorderViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
+    AudioRecorderContent(
+        uiState = uiState, onIntent = viewModel::processIntent
+    )
+}
+
+@Composable
+fun AudioRecorderContent(
+    uiState: AudioRecorderViewModel.UiState, onIntent: (AudioRecorderViewModel.Intent) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface) // Use Material3 surface color
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             // Delete / Top Right
@@ -58,7 +69,7 @@ fun AudioRecorderScreen(viewModel: AudioRecorderViewModel) {
                 horizontalArrangement = Arrangement.End
             ) {
                 if (uiState.state != AudioRecorderViewModel.RecordingState.Idle) {
-                    IconButton(onClick = { viewModel.processIntent(AudioRecorderViewModel.Intent.DiscardRecording) }) {
+                    IconButton(onClick = { onIntent(AudioRecorderViewModel.Intent.DiscardRecording) }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = stringResource(R.string.delete_note_message),
@@ -73,7 +84,8 @@ fun AudioRecorderScreen(viewModel: AudioRecorderViewModel) {
             if (uiState.state in listOf(
                     AudioRecorderViewModel.RecordingState.Recording,
                     AudioRecorderViewModel.RecordingState.RecordingPaused
-                )) {
+                )
+            ) {
                 AudioWaveformCompose(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     amplitude = uiState.amplitude,
@@ -84,13 +96,16 @@ fun AudioRecorderScreen(viewModel: AudioRecorderViewModel) {
             Spacer(modifier = Modifier.weight(1f))
 
             // Text / Time
-            Text(
-                text = formatDuration(uiState.durationMillis.takeIf { uiState.state in listOf(AudioRecorderViewModel.RecordingState.Recording, AudioRecorderViewModel.RecordingState.RecordingPaused) } ?: uiState.playbackProgressMillis),
+            Text(text = formatDuration(uiState.durationMillis.takeIf {
+                uiState.state in listOf(
+                    AudioRecorderViewModel.RecordingState.Recording,
+                    AudioRecorderViewModel.RecordingState.RecordingPaused
+                )
+            } ?: uiState.playbackProgressMillis),
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
+                modifier = Modifier.padding(bottom = 32.dp))
 
             // Controls
             Row(
@@ -104,60 +119,49 @@ fun AudioRecorderScreen(viewModel: AudioRecorderViewModel) {
                     AudioRecorderViewModel.RecordingState.Idle -> {
                         Spacer(modifier = Modifier.weight(1f))
                         RecordButton(
-                            onClick = { viewModel.processIntent(AudioRecorderViewModel.Intent.StartRecording) }
-                        )
+                            onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) })
                         Spacer(modifier = Modifier.weight(1f))
                         SaveButton(
-                            enabled = false,
-                            onClick = { }
-                        )
+                            enabled = false, onClick = { })
                     }
 
                     in listOf(
                         AudioRecorderViewModel.RecordingState.Recording,
                         AudioRecorderViewModel.RecordingState.RecordingPaused
-                    )
-                        -> {
+                    ) -> {
                         PauseResumeButton(
                             isPaused = uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused,
                             onClick = {
                                 if (uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
-                                    viewModel.processIntent(AudioRecorderViewModel.Intent.ResumeRecording)
+                                    onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
                                 } else {
-                                    viewModel.processIntent(AudioRecorderViewModel.Intent.PauseRecording)
+                                    onIntent(AudioRecorderViewModel.Intent.PauseRecording)
                                 }
-                            }
-                        )
+                            })
                         StopButton(
-                            onClick = { viewModel.processIntent(AudioRecorderViewModel.Intent.StopRecording) }
-                        )
+                            onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) })
                         SaveButton(
-                            enabled = false,
-                            onClick = { }
-                        )
+                            enabled = false, onClick = { })
                     }
 
                     in listOf(
                         AudioRecorderViewModel.RecordingState.PlaybackReady,
                         AudioRecorderViewModel.RecordingState.Playing,
                         AudioRecorderViewModel.RecordingState.PlaybackPaused
-                    )
-                        -> {
+                    ) -> {
                         PlayPauseButton(
                             isPlaying = uiState.state == AudioRecorderViewModel.RecordingState.Playing,
                             onClick = {
                                 if (uiState.state == AudioRecorderViewModel.RecordingState.Playing) {
-                                    viewModel.processIntent(AudioRecorderViewModel.Intent.PausePlayback)
+                                    onIntent(AudioRecorderViewModel.Intent.PausePlayback)
                                 } else {
-                                    viewModel.processIntent(AudioRecorderViewModel.Intent.StartPlayback)
+                                    onIntent(AudioRecorderViewModel.Intent.StartPlayback)
                                 }
-                            }
-                        )
+                            })
                         Spacer(modifier = Modifier.weight(1f))
                         SaveButton(
                             enabled = uiState.isSaveEnabled,
-                            onClick = { viewModel.processIntent(AudioRecorderViewModel.Intent.SaveRecording) }
-                        )
+                            onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) })
                     }
 
                     else -> {}
@@ -219,8 +223,9 @@ fun PauseResumeButton(isPaused: Boolean, onClick: () -> Unit) {
     ) {
         Icon(
             painter = painterResource(id = if (isPaused) R.drawable.round_play_arrow_24 else R.drawable.round_pause_24), // Ensure icons
-            contentDescription = if (isPaused) stringResource(R.string.play_recording) else stringResource(R.string.pause_playback),
-            tint = MaterialTheme.colorScheme.onSecondaryContainer
+            contentDescription = if (isPaused) stringResource(R.string.play_recording) else stringResource(
+                R.string.pause_playback
+            ), tint = MaterialTheme.colorScheme.onSecondaryContainer
         )
         Text(
             text = if (isPaused) stringResource(R.string.play_recording) else stringResource(R.string.pause_playback),
@@ -243,7 +248,9 @@ fun PlayPauseButton(isPlaying: Boolean, onClick: () -> Unit) {
     ) {
         Icon(
             painter = painterResource(id = if (isPlaying) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
-            contentDescription = if (isPlaying) stringResource(R.string.pause_playback) else stringResource(R.string.play_recording),
+            contentDescription = if (isPlaying) stringResource(R.string.pause_playback) else stringResource(
+                R.string.play_recording
+            ),
             tint = MaterialTheme.colorScheme.onSecondaryContainer
         )
         Text(
@@ -282,4 +289,114 @@ private fun formatDuration(millis: Long): String {
     val seconds = totalSeconds % 60
     val deciseconds = (millis % 1000) / 100
     return String.format(Locale.ROOT, "%02d:%02d.%d", minutes, seconds, deciseconds)
+}
+
+@Preview(name = "Idle State", showBackground = true)
+@Composable
+private fun AudioRecorderScreenIdlePreview() {
+    AnkiDroidTheme {
+        AudioRecorderContent(
+            uiState = AudioRecorderViewModel.UiState(
+                state = AudioRecorderViewModel.RecordingState.Idle
+            ), onIntent = {})
+    }
+}
+
+@Preview(name = "Recording State", showBackground = true)
+@Composable
+private fun AudioRecorderScreenRecordingPreview() {
+    AnkiDroidTheme {
+        AudioRecorderContent(
+            uiState = AudioRecorderViewModel.UiState(
+                state = AudioRecorderViewModel.RecordingState.Recording,
+                durationMillis = 12300L,
+                amplitude = 0.5f
+            ), onIntent = {})
+    }
+}
+
+@Preview(name = "Recording Paused", showBackground = true)
+@Composable
+private fun AudioRecorderScreenRecordingPausedPreview() {
+    AnkiDroidTheme {
+        AudioRecorderContent(
+            uiState = AudioRecorderViewModel.UiState(
+                state = AudioRecorderViewModel.RecordingState.RecordingPaused,
+                durationMillis = 15000L,
+                amplitude = 0.2f
+            ), onIntent = {})
+    }
+}
+
+@Preview(name = "Playback Ready State", showBackground = true)
+@Composable
+private fun AudioRecorderScreenPlaybackReadyPreview() {
+    AnkiDroidTheme {
+        AudioRecorderContent(
+            uiState = AudioRecorderViewModel.UiState(
+                state = AudioRecorderViewModel.RecordingState.PlaybackReady,
+                durationMillis = 30000L,
+                playbackProgressMillis = 0L,
+                isSaveEnabled = true
+            ), onIntent = {})
+    }
+}
+
+@Preview(name = "Playing State", showBackground = true)
+@Composable
+private fun AudioRecorderScreenPlayingPreview() {
+    AnkiDroidTheme {
+        AudioRecorderContent(
+            uiState = AudioRecorderViewModel.UiState(
+                state = AudioRecorderViewModel.RecordingState.Playing,
+                durationMillis = 30000L,
+                playbackProgressMillis = 10500L,
+                isSaveEnabled = true
+            ), onIntent = {})
+    }
+}
+
+@Preview(name = "Playback Paused", showBackground = true)
+@Composable
+private fun AudioRecorderScreenPlaybackPausedPreview() {
+    AnkiDroidTheme {
+        AudioRecorderContent(
+            uiState = AudioRecorderViewModel.UiState(
+                state = AudioRecorderViewModel.RecordingState.PlaybackPaused,
+                durationMillis = 30000L,
+                playbackProgressMillis = 10500L,
+                isSaveEnabled = true
+            ), onIntent = {})
+    }
+}
+
+@Preview(name = "Buttons Overview", showBackground = true)
+@Composable
+private fun AudioRecorderButtonsPreview() {
+    AnkiDroidTheme {
+        Surface {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    RecordButton(onClick = {})
+                    StopButton(onClick = {})
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    PauseResumeButton(isPaused = false, onClick = {})
+                    PauseResumeButton(isPaused = true, onClick = {})
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    PlayPauseButton(isPlaying = false, onClick = {})
+                    PlayPauseButton(isPlaying = true, onClick = {})
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SaveButton(enabled = true, onClick = {})
+                    SaveButton(enabled = false, onClick = {})
+                }
+            }
+        }
+    }
 }
