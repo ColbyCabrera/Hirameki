@@ -34,6 +34,7 @@ import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT
 import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT_FIELD_INDEX
 import com.ichi2.anki.multimedia.audio.AudioRecorderViewModel
 import com.ichi2.anki.multimedia.audio.ui.compose.AudioRecorderScreen
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.FileUtil
 import com.ichi2.utils.Permissions
 import kotlinx.coroutines.launch
@@ -55,18 +56,17 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         }
     }
 
-    private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { isGranted ->
-            if (isGranted) {
-                Timber.d("Audio permission granted")
-                initializeComposeUI()
-            } else {
-                Timber.d("Audio permission denied")
-                showErrorDialog(resources.getString(R.string.multimedia_editor_audio_permission_refused))
-            }
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { isGranted ->
+        if (isGranted) {
+            Timber.d("Audio permission granted")
+            initializeComposeUI()
+        } else {
+            Timber.d("Audio permission denied")
+            showErrorDialog(resources.getString(R.string.multimedia_editor_audio_permission_refused))
         }
+    }
 
     override fun onViewCreated(
         view: View,
@@ -121,11 +121,10 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         field.mediaFile = viewModel.currentMultimediaPath.value
         field.hasTemporaryMedia = true
 
-        val resultData =
-            Intent().apply {
-                putExtra(MULTIMEDIA_RESULT, field)
-                putExtra(MULTIMEDIA_RESULT_FIELD_INDEX, indexValue)
-            }
+        val resultData = Intent().apply {
+            putExtra(MULTIMEDIA_RESULT, field)
+            putExtra(MULTIMEDIA_RESULT_FIELD_INDEX, indexValue)
+        }
         requireActivity().setResult(AppCompatActivity.RESULT_OK, resultData)
         requireActivity().finish()
     }
@@ -136,7 +135,8 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
             composeView?.apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
-                    AudioRecorderScreen(viewModel = audioRecorderViewModel)
+                    AnkiDroidTheme { AudioRecorderScreen(viewModel = audioRecorderViewModel) }
+
                 }
             }
         } catch (e: Exception) {
@@ -150,11 +150,10 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         fun getIntent(
             context: Context,
             multimediaExtra: MultimediaActivityExtra,
-        ): Intent =
-            MultimediaActivity.getIntent(
-                context,
-                AudioRecordingFragment::class,
-                multimediaExtra,
-            )
+        ): Intent = MultimediaActivity.getIntent(
+            context,
+            AudioRecordingFragment::class,
+            multimediaExtra,
+        )
     }
 }
