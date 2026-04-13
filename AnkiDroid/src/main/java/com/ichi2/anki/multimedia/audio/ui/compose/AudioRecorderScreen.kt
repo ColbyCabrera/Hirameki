@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -117,7 +118,7 @@ fun AudioRecorderContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 48.dp, start = 16.dp, end = 16.dp),
+                    .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -246,7 +247,7 @@ fun PauseResumeButton(
             ), tint = MaterialTheme.colorScheme.onSecondaryContainer
         )
         Text(
-            text = if (isPaused) stringResource(R.string.play_recording) else stringResource(R.string.pause_playback),
+            text = if (isPaused) stringResource(R.string.resume) else stringResource(R.string.pause_playback),
             color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.padding(start = 8.dp),
             fontSize = 18.sp
@@ -291,12 +292,12 @@ fun SaveButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Button(
+    IconButton(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
         modifier = modifier.size(64.dp), // Slightly smaller
-        colors = ButtonDefaults.buttonColors(
+        colors = IconButtonDefaults.iconButtonColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
         )
