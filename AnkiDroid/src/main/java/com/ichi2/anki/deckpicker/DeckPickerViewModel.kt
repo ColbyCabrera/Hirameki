@@ -697,7 +697,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             flowOfCollectionHasNoCards.value = collectionHasNoCards
             flowOfBuriedDecks.value = buriedDecks
 
-            refreshSyncState()
+            launch { refreshSyncState() }
 
             // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
             val studiedToday = withCol { sched.studiedToday().replace("\n", " ") }
