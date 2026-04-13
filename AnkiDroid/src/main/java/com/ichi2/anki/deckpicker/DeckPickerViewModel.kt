@@ -621,6 +621,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         _effects.send(DeckPickerEffect.CheckDatabase)
     }
 
+    fun showEmptyCardsDialog() = launchCatchingIO {
+        _effects.send(DeckPickerEffect.ShowEmptyCardsDialog)
+    }
+
 
     fun addNote(
         deckId: DeckId?,
@@ -947,4 +951,7 @@ sealed class DeckPickerEffect {
 
     /** Check database */
     data object CheckDatabase : DeckPickerEffect()
+
+    /** Show the empty cards dialog */
+    data object ShowEmptyCardsDialog : DeckPickerEffect()
 }

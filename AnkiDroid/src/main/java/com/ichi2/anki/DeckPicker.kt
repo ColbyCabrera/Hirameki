@@ -574,6 +574,9 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 is DeckPickerEffect.CheckDatabase -> {
                     showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
                 }
+                is DeckPickerEffect.ShowEmptyCardsDialog -> {
+                    EmptyCardsDialogFragment().show(supportFragmentManager, EmptyCardsDialogFragment.TAG)
+                }
             }
         }
 

@@ -404,7 +404,7 @@ private fun DeckPickerMainContent(
         },
         onImport = onImport,
         onExport = onExport,
-        onDeleteEmptyCards = { onShowDialogFragment(EmptyCardsDialogFragment()) },
+        onDeleteEmptyCards = { viewModel.showEmptyCardsDialog() },
     )
 
     val deckPickerDrawerState = DeckPickerDrawerState(
