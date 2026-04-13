@@ -24,14 +24,16 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.button.MaterialButton
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
-import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT
 import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT_FIELD_INDEX
-import com.ichi2.anki.multimedia.audio.AudioRecordingController
+import com.ichi2.anki.multimedia.audio.AudioRecorderViewModel
+import com.ichi2.anki.multimedia.audio.ui.compose.AudioRecorderScreen
 import com.ichi2.utils.FileUtil
 import com.ichi2.utils.Permissions
 import kotlinx.coroutines.launch
@@ -41,7 +43,7 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
     override val title: String
         get() = resources.getString(R.string.multimedia_editor_field_editing_audio)
 
-    private var audioRecordingController: AudioRecordingController? = null
+    private val audioRecorderViewModel: AudioRecorderViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,8 +61,7 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         ) { isGranted ->
             if (isGranted) {
                 Timber.d("Audio permission granted")
-                initializeAudioRecorder()
-                setupDoneButton()
+                initializeComposeUI()
             } else {
                 Timber.d("Audio permission denied")
                 showErrorDialog(resources.getString(R.string.multimedia_editor_audio_permission_refused))
@@ -77,8 +78,8 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
             return
         }
 
-        initializeAudioRecorder()
-        setupDoneButton()
+        initializeComposeUI()
+        setupDoneAction()
     }
 
     private fun hasMicPermission(): Boolean {
@@ -90,60 +91,54 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         return true
     }
 
-    @NeedsTest("Done button is enabled only when the length is not null")
-    private fun setupDoneButton() {
+    private fun setupDoneAction() {
         lifecycleScope.launch {
-            viewModel.currentMultimediaPath.collect { path ->
-                view?.findViewById<MaterialButton>(R.id.action_done)?.isEnabled = path != null
-            }
-        }
-        view?.findViewById<MaterialButton>(R.id.action_done)?.setOnClickListener {
-            Timber.d("AudioRecordingFragment:: Done button pressed")
-            if (viewModel.selectedMediaFileSize == 0L) {
-                Timber.d("Audio length not valid")
-                return@setOnClickListener
-            }
-
-            field.mediaFile = viewModel.currentMultimediaPath.value
-            field.hasTemporaryMedia = true
-
-            val resultData =
-                Intent().apply {
-                    putExtra(MULTIMEDIA_RESULT, field)
-                    putExtra(MULTIMEDIA_RESULT_FIELD_INDEX, indexValue)
+            audioRecorderViewModel.uiState.collect { state ->
+                val savedFile = state.savedFile
+                if (savedFile != null && state.state == AudioRecorderViewModel.RecordingState.PlaybackReady) {
+                    viewModel.updateCurrentMultimediaPath(savedFile)
+                    viewModel.updateMediaFileLength(state.durationMillis)
+                    onDone()
+                } else if (state.state == AudioRecorderViewModel.RecordingState.Idle && savedFile == null) {
+                    // Handled discard if needed
                 }
-            requireActivity().setResult(AppCompatActivity.RESULT_OK, resultData)
-            requireActivity().finish()
+            }
         }
     }
 
-    @NeedsTest("AudioRecordingController is correctly initialized")
-    private fun initializeAudioRecorder() {
-        if (audioRecordingController != null) return
-        Timber.d("Initialising AudioRecordingController")
+    private fun onDone() {
+        Timber.d("AudioRecordingFragment:: Done action triggered")
+        if (viewModel.selectedMediaFileSize == 0L) {
+            Timber.d("Audio length not valid")
+            return
+        }
+
+        field.mediaFile = viewModel.currentMultimediaPath.value
+        field.hasTemporaryMedia = true
+
+        val resultData =
+            Intent().apply {
+                putExtra(MULTIMEDIA_RESULT, field)
+                putExtra(MULTIMEDIA_RESULT_FIELD_INDEX, indexValue)
+            }
+        requireActivity().setResult(AppCompatActivity.RESULT_OK, resultData)
+        requireActivity().finish()
+    }
+
+    private fun initializeComposeUI() {
         try {
-            audioRecordingController =
-                AudioRecordingController(
-                    context = requireActivity(),
-                    linearLayout = view?.findViewById(R.id.audio_recorder_layout)!!,
-                    viewModel = viewModel,
-                    note = note,
-                )
+            val composeView = view?.findViewById<ComposeView>(R.id.compose_view)
+            composeView?.apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+                setContent {
+                    AudioRecorderScreen(viewModel = audioRecorderViewModel)
+                }
+            }
         } catch (e: Exception) {
-            Timber.w(e, "unable to add the audio recorder to toolbar")
-            CrashReportService.sendExceptionReport(e, "Unable to create recorder tool bar")
+            Timber.w(e, "unable to add the audio recorder to fragment")
+            CrashReportService.sendExceptionReport(e, "Unable to create recorder compose view")
             showErrorDialog()
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        audioRecordingController?.onDestroy()
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        audioRecordingController?.onFocusLost()
     }
 
     companion object {

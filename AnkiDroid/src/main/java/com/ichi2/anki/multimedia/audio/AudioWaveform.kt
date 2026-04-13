@@ -14,6 +14,13 @@
  *  this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.ichi2.anki.multimedia.audio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+
 
 import android.content.Context
 import android.graphics.Canvas
@@ -127,4 +134,30 @@ class AudioWaveform(
             canvas.drawLine(centerX, startY, centerX, endY, verticalLinePaint)
         }
     }
+}
+
+
+@Composable
+fun AudioWaveformCompose(
+    modifier: Modifier = Modifier,
+    amplitude: Float,
+    isRecording: Boolean
+) {
+    AndroidView(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(100.dp),
+        factory = { context ->
+            AudioWaveform(context).apply {
+                // Initialize default values or attributes if needed
+            }
+        },
+        update = { view ->
+            if (isRecording) {
+                view.addAmplitude(amplitude * 32767f)
+            } else {
+                view.clear()
+            }
+        }
+    )
 }
