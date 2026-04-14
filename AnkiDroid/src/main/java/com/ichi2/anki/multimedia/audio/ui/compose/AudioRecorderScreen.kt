@@ -91,9 +91,6 @@ fun AudioRecorderContent(
                 .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // Delete / Top Right
-
             Surface(
                 Modifier
                     .weight(1f)
@@ -173,47 +170,50 @@ fun AudioRecorderContent(
                             targetState = state,
                             label = "PlayPauseSlot"
                         ) { targetState ->
-                            if (targetState in listOf(
-                                    AudioRecorderViewModel.RecordingState.Recording,
-                                    AudioRecorderViewModel.RecordingState.RecordingPaused
-                                )
-                            ) {
-                                PauseResumeButton(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .animateWidth(interactionSource),
-                                    isPaused = targetState == AudioRecorderViewModel.RecordingState.RecordingPaused,
-                                    onClick = {
-                                        if (targetState == AudioRecorderViewModel.RecordingState.RecordingPaused) {
-                                            onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
-                                        } else {
-                                            onIntent(AudioRecorderViewModel.Intent.PauseRecording)
-                                        }
-                                    },
-                                    interactionSource = interactionSource,
-                                )
-                            } else {
-                                PlayPauseButton(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .animateWidth(interactionSource),
-                                    isPlaying = targetState == AudioRecorderViewModel.RecordingState.Playing,
-                                    onClick = {
-                                        if (targetState == AudioRecorderViewModel.RecordingState.Playing) {
-                                            onIntent(AudioRecorderViewModel.Intent.PausePlayback)
-                                        } else {
-                                            onIntent(AudioRecorderViewModel.Intent.StartPlayback)
-                                        }
-                                    },
-                                    interactionSource = interactionSource,
-                                )
+                            when (targetState) {
+                                AudioRecorderViewModel.RecordingState.Recording,
+                                AudioRecorderViewModel.RecordingState.RecordingPaused -> {
+                                    PauseResumeButton(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .animateWidth(interactionSource),
+                                        isPaused = targetState == AudioRecorderViewModel.RecordingState.RecordingPaused,
+                                        onClick = {
+                                            if (targetState == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                                                onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
+                                            } else {
+                                                onIntent(AudioRecorderViewModel.Intent.PauseRecording)
+                                            }
+                                        },
+                                        interactionSource = interactionSource,
+                                    )
+                                }
+                                else -> {
+                                    PlayPauseButton(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .animateWidth(interactionSource),
+                                        isPlaying = targetState == AudioRecorderViewModel.RecordingState.Playing,
+                                        onClick = {
+                                            if (targetState == AudioRecorderViewModel.RecordingState.Playing) {
+                                                onIntent(AudioRecorderViewModel.Intent.PausePlayback)
+                                            } else {
+                                                onIntent(AudioRecorderViewModel.Intent.StartPlayback)
+                                            }
+                                        },
+                                        interactionSource = interactionSource,
+                                    )
+                                }
                             }
                         }
                     }, menuContent = { })
                 }
 
                 // Slot 2: Record/Stop (Hidden in Playback)
-                if (state == AudioRecorderViewModel.RecordingState.Idle || state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                if (state == AudioRecorderViewModel.RecordingState.Idle ||
+                    state == AudioRecorderViewModel.RecordingState.Recording ||
+                    state == AudioRecorderViewModel.RecordingState.RecordingPaused
+                ) {
                     customItem(buttonGroupContent = {
                         val interactionSource = remember { MutableInteractionSource() }
                         AnimatedContent(
@@ -221,20 +221,23 @@ fun AudioRecorderContent(
                                 1f
                             ), targetState = state, label = "RecordStopSlot"
                         ) { targetState ->
-                            if (targetState == AudioRecorderViewModel.RecordingState.Idle) {
-                                RecordButton(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .animateWidth(interactionSource),
-                                    onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
-                                    interactionSource = interactionSource,
-                                )
-                            } else {
-                                StopButton(
-                                    modifier = Modifier.animateWidth(interactionSource),
-                                    onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
-                                    interactionSource = interactionSource,
-                                )
+                            when (targetState) {
+                                AudioRecorderViewModel.RecordingState.Idle -> {
+                                    RecordButton(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .animateWidth(interactionSource),
+                                        onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
+                                        interactionSource = interactionSource,
+                                    )
+                                }
+                                else -> {
+                                    StopButton(
+                                        modifier = Modifier.animateWidth(interactionSource),
+                                        onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
+                                        interactionSource = interactionSource,
+                                    )
+                                }
                             }
                         }
                     }, menuContent = { })
