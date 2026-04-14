@@ -149,91 +149,104 @@ fun AudioRecorderContent(
                 modifier = Modifier.padding(bottom = 32.dp))
 
             // Controls
-            ButtonGroup(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 48.dp, start = 16.dp, end = 16.dp)
-                    .animateContentSize(),
-                expandedRatio = 0.05f,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                overflowIndicator = {}) {
-                val state = uiState.state
+            AudioRecorderControls(
+                state = uiState.state,
+                isSaveEnabled = uiState.isSaveEnabled,
+                onIntent = onIntent,
+                modifier = Modifier.padding(bottom = 48.dp, start = 16.dp, end = 16.dp)
+            )
+        }
+    }
+}
 
-                // Slot 1: Play/Pause/Resume (Hidden in Idle)
-                if (state != AudioRecorderViewModel.RecordingState.Idle) {
-                    customItem(buttonGroupContent = {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        if (state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
-                            PauseResumeButton(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .animateWidth(interactionSource),
-                                isPaused = state == AudioRecorderViewModel.RecordingState.RecordingPaused,
-                                onClick = {
-                                    if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
-                                        onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
-                                    } else {
-                                        onIntent(AudioRecorderViewModel.Intent.PauseRecording)
-                                    }
-                                },
-                                interactionSource = interactionSource,
-                            )
-                        } else {
-                            PlayPauseButton(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .animateWidth(interactionSource),
-                                isPlaying = state == AudioRecorderViewModel.RecordingState.Playing,
-                                onClick = {
-                                    if (state == AudioRecorderViewModel.RecordingState.Playing) {
-                                        onIntent(AudioRecorderViewModel.Intent.PausePlayback)
-                                    } else {
-                                        onIntent(AudioRecorderViewModel.Intent.StartPlayback)
-                                    }
-                                },
-                                interactionSource = interactionSource,
-                            )
-                        }
-                    }, menuContent = { })
-                }
-
-                // Slot 2: Record/Stop (Hidden in Playback)
-                if (state == AudioRecorderViewModel.RecordingState.Idle || state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
-                    customItem(buttonGroupContent = {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        if (state == AudioRecorderViewModel.RecordingState.Idle) {
-                            RecordButton(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .animateWidth(interactionSource),
-                                onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
-                                interactionSource = interactionSource,
-                            )
-                        } else {
-                            StopButton(
-                                modifier = (if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) Modifier else Modifier.weight(
-                                    1f
-                                )).animateWidth(interactionSource),
-                                onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
-                                interactionSource = interactionSource,
-                            )
-                        }
-                    }, menuContent = { })
-                }
-
-                // Slot 3: Save (Always visible)
-                customItem(buttonGroupContent = {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    SaveButton(
-                        modifier = Modifier.animateWidth(interactionSource),
-                        enabled = uiState.isSaveEnabled,
-                        onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) },
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun AudioRecorderControls(
+    state: AudioRecorderViewModel.RecordingState,
+    isSaveEnabled: Boolean,
+    onIntent: (AudioRecorderViewModel.Intent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ButtonGroup(
+        modifier = modifier
+            .fillMaxWidth()
+            .animateContentSize(),
+        expandedRatio = 0.05f,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        overflowIndicator = {}) {
+        // Slot 1: Play/Pause/Resume (Hidden in Idle)
+        if (state != AudioRecorderViewModel.RecordingState.Idle) {
+            customItem(buttonGroupContent = {
+                val interactionSource = remember { MutableInteractionSource() }
+                if (state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                    PauseResumeButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .animateWidth(interactionSource),
+                        isPaused = state == AudioRecorderViewModel.RecordingState.RecordingPaused,
+                        onClick = {
+                            if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                                onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
+                            } else {
+                                onIntent(AudioRecorderViewModel.Intent.PauseRecording)
+                            }
+                        },
                         interactionSource = interactionSource,
                     )
-                }, menuContent = { })
-            }
+                } else {
+                    PlayPauseButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .animateWidth(interactionSource),
+                        isPlaying = state == AudioRecorderViewModel.RecordingState.Playing,
+                        onClick = {
+                            if (state == AudioRecorderViewModel.RecordingState.Playing) {
+                                onIntent(AudioRecorderViewModel.Intent.PausePlayback)
+                            } else {
+                                onIntent(AudioRecorderViewModel.Intent.StartPlayback)
+                            }
+                        },
+                        interactionSource = interactionSource,
+                    )
+                }
+            }, menuContent = { })
         }
+
+        // Slot 2: Record/Stop (Hidden in Playback)
+        if (state == AudioRecorderViewModel.RecordingState.Idle || state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+            customItem(buttonGroupContent = {
+                val interactionSource = remember { MutableInteractionSource() }
+                if (state == AudioRecorderViewModel.RecordingState.Idle) {
+                    RecordButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .animateWidth(interactionSource),
+                        onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
+                        interactionSource = interactionSource,
+                    )
+                } else {
+                    StopButton(
+                        modifier = (if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) Modifier else Modifier.weight(
+                            1f
+                        )).animateWidth(interactionSource),
+                        onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
+                        interactionSource = interactionSource,
+                    )
+                }
+            }, menuContent = { })
+        }
+
+        // Slot 3: Save (Always visible)
+        customItem(buttonGroupContent = {
+            val interactionSource = remember { MutableInteractionSource() }
+            SaveButton(
+                modifier = Modifier.animateWidth(interactionSource),
+                enabled = isSaveEnabled,
+                onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) },
+                interactionSource = interactionSource,
+            )
+        }, menuContent = { })
     }
 }
 
@@ -485,6 +498,27 @@ private fun AudioRecorderScreenPlaybackPausedPreview() {
                     0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
                 )
             ), onIntent = {})
+    }
+}
+
+@Preview(name = "Controls Overview", showBackground = true)
+@Composable
+private fun AudioRecorderControlsPreview() {
+    AnkiDroidTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            AudioRecorderControls(
+                state = AudioRecorderViewModel.RecordingState.Idle,
+                isSaveEnabled = false,
+                onIntent = {})
+            AudioRecorderControls(
+                state = AudioRecorderViewModel.RecordingState.Recording,
+                isSaveEnabled = true,
+                onIntent = {})
+            AudioRecorderControls(
+                state = AudioRecorderViewModel.RecordingState.Playing,
+                isSaveEnabled = true,
+                onIntent = {})
+        }
     }
 }
 
