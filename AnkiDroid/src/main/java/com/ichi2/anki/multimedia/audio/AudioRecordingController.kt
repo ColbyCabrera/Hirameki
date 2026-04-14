@@ -182,7 +182,7 @@ class AudioRecordingController(
         }
         recordButton = layout.findViewById(R.id.action_start_recording)
         audioTimeView = layout.findViewById(R.id.audio_time_track)
-        audioWaveform = layout.findViewById(R.id.audio_waveform_view)
+        audioWaveform = layout.findViewById<AudioWaveform>(R.id.audio_waveform_view)
         cancelAudioRecordingButton = layout.findViewById(R.id.action_cancel_recording)
         playAudioButton = layout.findViewById(R.id.action_play_recording)
         forwardAudioButton = layout.findViewById(R.id.action_forward)
@@ -730,8 +730,9 @@ class AudioRecordingController(
     override fun onAudioTick() {
         try {
             if (isRecording) {
-                val maxAmplitude = audioRecorder.maxAmplitude() / 10
-                audioWaveform.addAmplitude(maxAmplitude.toFloat())
+                val rawAmplitude = audioRecorder.maxAmplitude()
+                val calculatedHeight = WaveformUtils.legacyNormalize(rawAmplitude.toFloat() / 10f)
+                audioWaveform.addAmplitude(calculatedHeight)
             }
         } catch (e: IllegalStateException) {
             Timber.d(e, "Audio recorder interrupted")
