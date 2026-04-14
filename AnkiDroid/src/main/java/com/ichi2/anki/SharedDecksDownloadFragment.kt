@@ -31,24 +31,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import com.ichi2.anki.SharedDecksActivity.Companion.DOWNLOAD_FILE
 import com.ichi2.anki.snackbar.showSnackbar
+import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
 import com.ichi2.anki.ui.compose.shareddecks.DownloadUiState
 import com.ichi2.anki.ui.compose.shareddecks.SharedDecksDownloadScreen
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -153,7 +148,7 @@ class SharedDecksDownloadFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         return ComposeView(requireContext()).apply {
             setContent {
                 AnkiDroidTheme {
@@ -227,7 +222,7 @@ class SharedDecksDownloadFragment : Fragment() {
         onBackPressedCallback.isEnabled = isDownloadInProgress
         Timber.d("Download ID -> $downloadId")
         Timber.d("File name -> $fileName")
-        uiState.update { it.copy(fileName = fileName ?: "", isDownloading = true, isFailed = false, isComplete = false) }
+        uiState.update { it.copy(fileName = fileName ?: "", status = DownloadStatus.Downloading) }
         startDownloadProgressChecker()
     }
 
@@ -342,7 +337,7 @@ class SharedDecksDownloadFragment : Fragment() {
                     uiState.update { it.copy(
                         progress = 100f,
                         progressText = getString(R.string.percentage, DOWNLOAD_COMPLETED_PROGRESS_PERCENTAGE),
-                        isComplete = true
+                        status = DownloadStatus.Complete
                     ) }
                 }
 
@@ -367,7 +362,7 @@ class SharedDecksDownloadFragment : Fragment() {
             } else {
                 null
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 
@@ -471,7 +466,7 @@ class SharedDecksDownloadFragment : Fragment() {
                 state.copy(
                     progress = downloadProgress,
                     progressText = getString(R.string.percentage, progressTextValue),
-                    isWaitingForNetwork = isWaitingForNetwork
+                    status = if (isWaitingForNetwork) DownloadStatus.WaitingForNetwork else DownloadStatus.Downloading
                 )
             }
         }
@@ -526,7 +521,7 @@ class SharedDecksDownloadFragment : Fragment() {
                 Timber.i("Download failed, update UI and provide option to retry")
                 context?.let { showThemedToast(it, R.string.something_wrong, false) }
                 // Update UI if download could not be successful
-                uiState.update { it.copy(isFailed = true, isDownloading = false) }
+                uiState.update { it.copy(status = DownloadStatus.Failed) }
             }
         }
 

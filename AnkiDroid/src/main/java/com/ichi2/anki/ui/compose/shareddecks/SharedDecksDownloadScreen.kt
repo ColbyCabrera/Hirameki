@@ -63,14 +63,19 @@ import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
 
+sealed interface DownloadStatus {
+    data object Idle : DownloadStatus
+    data object Downloading : DownloadStatus
+    data object WaitingForNetwork : DownloadStatus
+    data object Failed : DownloadStatus
+    data object Complete : DownloadStatus
+}
+
 data class DownloadUiState(
     val fileName: String = "",
     val progress: Float = 0f,
     val progressText: String = "0%",
-    val isDownloading: Boolean = true,
-    val isFailed: Boolean = false,
-    val isWaitingForNetwork: Boolean = false,
-    val isComplete: Boolean = false
+    val status: DownloadStatus = DownloadStatus.Idle
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -96,21 +101,19 @@ fun SharedDecksDownloadScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                DownloadHero(isFailed = state.isFailed, isComplete = state.isComplete)
+                DownloadHero(status = state.status)
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = if (state.isFailed) {
-                        stringResource(R.string.download_failed)
-                    } else if (state.isComplete) {
-                        stringResource(R.string.import_deck)
-                    } else {
-                        stringResource(R.string.downloading_file, state.fileName)
+                    text = when (state.status) {
+                        DownloadStatus.Failed -> stringResource(R.string.download_failed)
+                        DownloadStatus.Complete -> stringResource(R.string.import_deck)
+                        else -> stringResource(R.string.downloading_file, state.fileName)
                     },
                     style = MaterialTheme.typography.displayMediumEmphasized,
                     textAlign = TextAlign.Center,
-                    color = if (state.isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -146,29 +149,28 @@ fun SharedDecksDownloadScreen(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun DownloadHero(isFailed: Boolean, isComplete: Boolean) {
-    val containerColor = when {
-        isFailed -> MaterialTheme.colorScheme.errorContainer
-        isComplete -> MaterialTheme.colorScheme.primaryContainer
+private fun DownloadHero(status: DownloadStatus) {
+    val containerColor = when (status) {
+        DownloadStatus.Failed -> MaterialTheme.colorScheme.errorContainer
+        DownloadStatus.Complete -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.secondaryContainer
     }
 
-    val icon = when {
-        isFailed -> R.drawable.error_24px
-        isComplete -> R.drawable.ic_done_white
+    val icon = when (status) {
+        DownloadStatus.Failed -> R.drawable.error_24px
+        DownloadStatus.Complete -> R.drawable.ic_done_white
         else -> R.drawable.download_24px
     }
 
-    val iconTint = when {
-        isFailed -> MaterialTheme.colorScheme.onErrorContainer
-        isComplete -> MaterialTheme.colorScheme.onPrimaryContainer
+    val iconTint = when (status) {
+        DownloadStatus.Failed -> MaterialTheme.colorScheme.onErrorContainer
+        DownloadStatus.Complete -> MaterialTheme.colorScheme.onPrimaryContainer
         else -> MaterialTheme.colorScheme.onSecondaryContainer
     }
 
-    val shape = if (isFailed) {
-        RoundedPolygonShape(MaterialShapes.Triangle)
-    } else {
-        RoundedPolygonShape(MaterialShapes.Cookie4Sided)
+    val shape = when (status) {
+        DownloadStatus.Failed -> RoundedPolygonShape(MaterialShapes.Triangle)
+        else -> RoundedPolygonShape(MaterialShapes.Cookie4Sided)
     }
 
     Box(
@@ -219,16 +221,21 @@ private fun DownloadProgressSection(state: DownloadUiState) {
             modifier = Modifier.fillMaxSize(),
             progress = { animatedProgress },
             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            color = if (state.isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
         )
 
+        val isHalted =
+            state.status == DownloadStatus.Failed || state.status == DownloadStatus.WaitingForNetwork
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = if (state.isWaitingForNetwork) ">>> WAITING FOR NETWORK <<<" else "DOWNLOADING",
+                text = when (state.status) {
+                    DownloadStatus.WaitingForNetwork -> ">>> WAITING FOR NETWORK <<<"
+                    else -> "DOWNLOADING"
+                },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = RobotoMono,
                 fontWeight = FontWeight.Bold,
-                color = if (state.isFailed || state.isWaitingForNetwork) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary.copy(
+                color = if (isHalted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary.copy(
                     alpha = 0.8f
                 )
             )
@@ -238,13 +245,13 @@ private fun DownloadProgressSection(state: DownloadUiState) {
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Black,
                 lineHeight = 64.sp,
-                color = if (state.isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = if (state.isFailed || state.isWaitingForNetwork) "ERROR: HALTED" else "STATUS: ACTIVE",
+                text = if (isHalted) "ERROR: HALTED" else "STATUS: ACTIVE",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = RobotoMono,
-                color = if (state.isFailed || state.isWaitingForNetwork) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isHalted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -263,7 +270,7 @@ private fun DownloadActions(
         modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AnimatedVisibility(
-            visible = state.isComplete, enter = fadeIn(), exit = fadeOut()
+            visible = state.status == DownloadStatus.Complete, enter = fadeIn(), exit = fadeOut()
         ) {
             Button(
                 onClick = onImport,
@@ -280,7 +287,7 @@ private fun DownloadActions(
         }
 
         AnimatedVisibility(
-            visible = state.isFailed, enter = fadeIn(), exit = fadeOut()
+            visible = state.status == DownloadStatus.Failed, enter = fadeIn(), exit = fadeOut()
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
@@ -312,7 +319,9 @@ private fun DownloadActions(
         }
 
         AnimatedVisibility(
-            visible = !state.isComplete && !state.isFailed, enter = fadeIn(), exit = fadeOut()
+            visible = state.status != DownloadStatus.Complete && state.status != DownloadStatus.Failed,
+            enter = fadeIn(),
+            exit = fadeOut()
         ) {
             Button(
                 onClick = onCancel,
@@ -340,7 +349,10 @@ fun SharedDecksDownloadScreenPreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
-            fileName = "Medical Terminology.apkg", progress = 45f, progressText = "45.2%"
+            fileName = "Medical Terminology.apkg",
+            progress = 45f,
+            progressText = "45.2%",
+            status = DownloadStatus.Downloading
         ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
@@ -351,7 +363,7 @@ fun SharedDecksDownloadScreenFailedPreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
-            fileName = "Medical Terminology.apkg", isDownloading = false, isFailed = true
+            fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
         ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
@@ -362,7 +374,7 @@ fun DownloadProgressSectionPreview() {
     AnkiDroidTheme {
         DownloadProgressSection(
             state = DownloadUiState(
-                progress = 75f, progressText = "75%"
+                progress = 75f, progressText = "75%", status = DownloadStatus.Downloading
             )
         )
     }
@@ -374,7 +386,7 @@ fun DownloadProgressSectionWaitingPreview() {
     AnkiDroidTheme {
         DownloadProgressSection(
             state = DownloadUiState(
-                progress = 0f, progressText = "0%", isWaitingForNetwork = true
+                progress = 0f, progressText = "0%", status = DownloadStatus.WaitingForNetwork
             )
         )
     }
