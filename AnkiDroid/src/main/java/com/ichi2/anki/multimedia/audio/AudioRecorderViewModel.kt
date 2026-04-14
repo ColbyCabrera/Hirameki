@@ -78,13 +78,15 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
     private fun startRecording() {
         val context = getApplication<Application>()
         Timber.i("AudioRecorderViewModel: starting recording")
+        var tempFile: File? = null
+        var localRecorder: AudioRecorder? = null
         try {
-            val tempFile = AudioRecordingController.generateTempAudioFile(context) ?: return
+            tempFile = AudioRecordingController.generateTempAudioFile(context) ?: return
+            localRecorder = AudioRecorder()
+            localRecorder.startRecording(context, tempFile)
 
             audioRecorder?.release()
-            audioRecorder = AudioRecorder().apply {
-                startRecording(context, tempFile)
-            }
+            audioRecorder = localRecorder
             audioFile = tempFile
 
             accumulatedDurationMillis = 0L
@@ -104,6 +106,8 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
             startAmplitudeMonitoring()
         } catch (e: Exception) {
             Timber.e(e, "Failed to start recording")
+            localRecorder?.release()
+            tempFile?.delete()
             _uiState.update { it.copy(state = RecordingState.Idle) }
         }
     }
@@ -178,23 +182,28 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
         Timber.i("AudioRecorderViewModel: starting playback")
         try {
             if (mediaPlayer == null) {
-                mediaPlayer = MediaPlayer().apply {
-                    setDataSource(file.absolutePath)
-                    prepare()
+                val localMediaPlayer = MediaPlayer()
+                try {
+                    localMediaPlayer.setDataSource(file.absolutePath)
+                    localMediaPlayer.prepare()
+
+                    localMediaPlayer.setOnCompletionListener {
+                        _uiState.update {
+                            it.copy(
+                                state = RecordingState.PlaybackReady,
+                                playbackProgressMillis = 0L
+                            )
+                        }
+                        playbackProgressJob?.cancel()
+                    }
+                    mediaPlayer = localMediaPlayer
+                } catch (e: Exception) {
+                    localMediaPlayer.release()
+                    throw e
                 }
             }
 
             mediaPlayer?.start()
-
-            mediaPlayer?.setOnCompletionListener {
-                _uiState.update {
-                    it.copy(
-                        state = RecordingState.PlaybackReady,
-                        playbackProgressMillis = 0L
-                    )
-                }
-                playbackProgressJob?.cancel()
-            }
 
             _uiState.update { it.copy(state = RecordingState.Playing) }
             startPlaybackProgressMonitoring()
