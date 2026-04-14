@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.withStyledAttributes
@@ -109,12 +110,11 @@ fun AudioWaveformCompose(
     modifier: Modifier = Modifier,
     amplitudes: List<Float>,
     isRecording: Boolean,
-    displayVerticalLine: Boolean = false
+    displayVerticalLine: Boolean = false,
+    spikeColor: Color = MaterialTheme.colorScheme.primary,
+    verticalLineColor: Color = MaterialTheme.colorScheme.tertiary,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
 ) {
-    val spikeColor = MaterialTheme.colorScheme.primary
-    val verticalLineColor = MaterialTheme.colorScheme.tertiary
-    val backgroundColor = MaterialTheme.colorScheme.surface
-
     ComposeCanvas(
         modifier = modifier
             .fillMaxWidth()
