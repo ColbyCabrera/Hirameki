@@ -17,9 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -285,20 +285,15 @@ fun PlayPauseButton(
 fun SaveButton(
     enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
 ) {
-    IconButton(
+    FilledIconButton(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        modifier = modifier.size(64.dp), // Slightly smaller
-        colors = IconButtonDefaults.iconButtonColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        modifier = modifier.size(64.dp),
     ) {
         Icon(
             painter = painterResource(id = R.drawable.save_24px),
             contentDescription = stringResource(R.string.save),
-            tint = MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
 }
