@@ -45,7 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -59,6 +58,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
@@ -82,6 +82,7 @@ data class DownloadUiState(
 @Composable
 fun SharedDecksDownloadScreen(
     state: DownloadUiState,
+    onNavigateUp: () -> Unit,
     onCancel: () -> Unit,
     onRetry: () -> Unit,
     onImport: () -> Unit,
@@ -89,9 +90,7 @@ fun SharedDecksDownloadScreen(
 ) {
     Scaffold(
         contentWindowInsets = WindowInsets(0), topBar = {
-            TopAppBar(title = { }, navigationIcon = {
-                // Back handled by the fragment's onBackPressedCallback or cancel button
-            })
+            AnkiTopAppBar(onNavigateUp = onNavigateUp)
         }) { innerPadding ->
         Column(
             modifier = Modifier
@@ -355,7 +354,7 @@ fun SharedDecksDownloadScreenPreview() {
             progress = 45f,
             progressText = "45.2%",
             status = DownloadStatus.Downloading
-        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ), onNavigateUp = {}, onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
 
@@ -366,7 +365,7 @@ fun SharedDecksDownloadScreenFailedPreview() {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
-        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ), onNavigateUp = {}, onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
 
@@ -380,7 +379,7 @@ fun SharedDecksDownloadScreenCompletePreview() {
             progress = 100f,
             progressText = "100%",
             status = DownloadStatus.Complete
-        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ), onNavigateUp = {}, onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
 

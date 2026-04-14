@@ -156,6 +156,7 @@ class SharedDecksDownloadFragment : Fragment() {
                     val fileToBeDownloaded = arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)!!
                     SharedDecksDownloadScreen(
                         state = state,
+                        onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
                         onCancel = { showCancelConfirmationDialog() },
                         onRetry = {
                             downloadManager.remove(downloadId)

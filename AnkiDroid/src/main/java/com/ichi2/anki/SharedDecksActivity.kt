@@ -20,8 +20,27 @@ package com.ichi2.anki
 import android.app.DownloadManager
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
 import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.webkit.WebResourceError
@@ -31,17 +50,14 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.widget.SearchView
-import androidx.appcompat.widget.Toolbar
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFINITE
 import com.ichi2.anki.SharedDecksActivity.Companion.MAX_REDIRECTS
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.snackbar.showSnackbar
-import com.ichi2.ui.AccessibleSearchView
+import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.FileNameAndExtension
 import timber.log.Timber
 import java.io.Serializable
@@ -121,7 +137,7 @@ class SharedDecksActivity : AnkiActivity() {
         }
 
         /**
-         * Prevent the WebView from loading urls which arent needed for importing shared decks.
+         * Prevent the WebView from loading urls which aren't needed for importing shared decks.
          * This is to prevent potential misuse, such as bypassing content restrictions or
          * using the AnkiDroid WebView as a regular browser to bypass browser blocks,
          * which could lead to procrastination.
@@ -243,23 +259,72 @@ class SharedDecksActivity : AnkiActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_shared_decks)
-        setTitle(R.string.download_deck)
-
-        val webviewToolbar: Toolbar = findViewById(R.id.webview_toolbar)
-        webviewToolbar.setTitleTextColor(getColor(R.color.white))
-
-        setSupportActionBar(webviewToolbar)
-
-        ViewCompat.setOnApplyWindowInsetsListener(webviewToolbar) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(v.paddingLeft, systemBars.top, v.paddingRight, v.paddingBottom)
-            insets
-        }
-
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowHomeEnabled(true)
 
         webView = findViewById(R.id.media_check_webview)
+
+        val composeView: ComposeView = findViewById(R.id.top_bar_compose_view)
+        composeView.setContent {
+            AnkiDroidTheme {
+                var isSearching by remember { mutableStateOf(false) }
+                var searchQuery by remember { mutableStateOf("") }
+
+                AnkiTopAppBar(
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
+                    onNavigateUp = {
+                        if (isSearching) {
+                            isSearching = false
+                            searchQuery = ""
+                        } else {
+                            onBackPressedCallback.isEnabled = false
+                            onBackPressedDispatcher.onBackPressed()
+                        }
+                    },
+                    titleContent = {
+                        if (isSearching) {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(end = 16.dp),
+                                placeholder = { Text(getString(R.string.search_using_deck_name)) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(onSearch = {
+                                    webView.loadUrl(resources.getString(R.string.shared_decks_url) + searchQuery)
+                                    isSearching = false
+                                })
+                            )
+                        } else {
+                            Text(
+                                getString(R.string.download_deck),
+                                style = MaterialTheme.typography.displayMediumEmphasized,
+                                maxLines = 1
+                            )
+                        }
+                    },
+                    actions = {
+                        if (!isSearching) {
+                            IconButton(onClick = { isSearching = true }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_search_white),
+                                    contentDescription = getString(R.string.search_using_deck_name)
+                                )
+                            }
+                            IconButton(onClick = {
+                                shouldHistoryBeCleared = true
+                                webView.loadUrl(resources.getString(R.string.shared_decks_url))
+                            }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.home_icon),
+                                    contentDescription = getString(R.string.home)
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+        }
 
         downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
 
@@ -286,40 +351,6 @@ class SharedDecksActivity : AnkiActivity() {
 
         webView.webViewClient = webViewClient
         onBackPressedDispatcher.addCallback(onBackPressedCallback)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.download_shared_decks_menu, menu)
-
-        val searchView = menu.findItem(R.id.search)?.actionView as AccessibleSearchView
-        searchView.queryHint = getString(R.string.search_using_deck_name)
-        searchView.setMaxWidth(Integer.MAX_VALUE)
-        searchView.setOnQueryTextListener(
-            object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean {
-                    webView.loadUrl(resources.getString(R.string.shared_decks_url) + query)
-                    return true
-                }
-
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    // Nothing to do here
-                    return false
-                }
-            },
-        )
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.home) {
-            // R.id.home refers to a custom 'home' menu item defined in your app resources (res/menu/...).
-            shouldHistoryBeCleared = true
-            webView.loadUrl(resources.getString(R.string.shared_decks_url))
-        } else if (item.itemId == android.R.id.home) {
-            // android.R.id.home refers to the system-provided "up" button in the app toolbar
-            onBackPressedCallback.isEnabled = false
-        }
-        return super.onOptionsItemSelected(item)
     }
 }
 
