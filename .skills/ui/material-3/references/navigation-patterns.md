@@ -6,7 +6,7 @@ Guide for choosing and implementing Material Design 3 navigation components.
 
 Use **`androidx.compose.material3`**: `NavigationBar`, `NavigationRail`, `NavigationDrawerItem`, `ModalNavigationDrawer`, `DismissibleNavigationDrawer`, `PermanentNavigationDrawer`, `NavigationBarItem`, `NavigationRailItem`, top app bars (`TopAppBar`, `CenterAlignedTopAppBar`, `LargeTopAppBar`, expressive variants per BOM), and **`Scaffold`** (`bottomBar`, `floatingActionButton`, `snackbarHost`).
 
-Wire destinations with **Navigation Compose** (`NavHost`, `composable`, `rememberNavController`). For **adaptive** UIs, use **`calculateWindowSizeClass`**, **`androidx.compose.material3.adaptive`**, or **`currentWindowAdaptiveInfo`** / **`NavigableListDetailPaneScaffold`** (names and packages depend on your BOM — check [Android Developers](https://developer.android.com/jetpack/androidx/releases/compose-material3)).
+Wire destinations using **Navigation 3** with explicit back stack state and modern APIs as the preferred approach for new Compose navigation work. For **adaptive** UIs, use **`calculateWindowSizeClass`**, **`androidx.compose.material3.adaptive`**, or **`currentWindowAdaptiveInfo`** / **`NavigableListDetailPaneScaffold`** (names and packages depend on your BOM — check [Android Developers](https://developer.android.com/jetpack/androidx/releases/compose-material3)). Navigation 3 patterns should be used alongside these adaptive helpers.
 
 ```kotlin
 // Conceptual — adapt routes and selection to your app
