@@ -1,20 +1,23 @@
 package com.ichi2.anki.multimedia.audio.ui.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonShapes
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,11 +26,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +55,7 @@ fun AudioRecorderScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AudioRecorderContent(
     uiState: AudioRecorderViewModel.UiState,
@@ -114,49 +121,74 @@ fun AudioRecorderContent(
                 modifier = Modifier.padding(bottom = 32.dp))
 
             // Controls
-            Row(
+            ButtonGroup(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 48.dp, start = 16.dp, end = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                verticalAlignment = Alignment.CenterVertically,
+                overflowIndicator = {}) {
                 when (uiState.state) {
                     AudioRecorderViewModel.RecordingState.Idle -> {
-                        Box(Modifier.fillMaxWidth()) {
+                        customItem(buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
                             RecordButton(
-                                modifier = Modifier.align(Alignment.Center),
-                                onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) })
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .animateWidth(interactionSource),
+                                onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
+                                interactionSource = interactionSource,
+                            )
+                        }, menuContent = { })
+                        customItem(buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
                             SaveButton(
-                                modifier = Modifier.align(Alignment.CenterEnd),
+                                modifier = Modifier.animateWidth(interactionSource),
                                 enabled = false,
-                                onClick = { })
-                        }
+                                onClick = { },
+                                interactionSource = interactionSource,
+                            )
+                        }, menuContent = { })
                     }
 
                     in listOf(
                         AudioRecorderViewModel.RecordingState.Recording,
                         AudioRecorderViewModel.RecordingState.RecordingPaused
                     ) -> {
-
-                        PauseResumeButton(
-                            modifier = Modifier.weight(1f),
-                            isPaused = uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused,
-                            onClick = {
-                                if (uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
-                                    onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
-                                } else {
-                                    onIntent(AudioRecorderViewModel.Intent.PauseRecording)
-                                }
-                            })
-                        StopButton(
-                            modifier = if (uiState.state == AudioRecorderViewModel.RecordingState.Recording) Modifier.weight(
-                                1f
-                            ) else Modifier,
-                            onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) })
-                        SaveButton(
-                            enabled = uiState.isSaveEnabled,
-                            onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) })
+                        customItem(buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            PauseResumeButton(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .animateWidth(interactionSource),
+                                isPaused = uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused,
+                                onClick = {
+                                    if (uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                                        onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
+                                    } else {
+                                        onIntent(AudioRecorderViewModel.Intent.PauseRecording)
+                                    }
+                                },
+                                interactionSource = interactionSource,
+                            )
+                        }, menuContent = { })
+                        customItem(buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            StopButton(
+                                modifier = Modifier.animateWidth(interactionSource),
+                                onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
+                                interactionSource = interactionSource,
+                            )
+                        }, menuContent = { })
+                        customItem(buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            SaveButton(
+                                modifier = Modifier.animateWidth(interactionSource),
+                                enabled = uiState.isSaveEnabled,
+                                onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) },
+                                interactionSource = interactionSource,
+                            )
+                        }, menuContent = { })
                     }
 
                     in listOf(
@@ -164,20 +196,32 @@ fun AudioRecorderContent(
                         AudioRecorderViewModel.RecordingState.Playing,
                         AudioRecorderViewModel.RecordingState.PlaybackPaused
                     ) -> {
-                        PlayPauseButton(
-                            modifier = Modifier.weight(1f),
-                            isPlaying = uiState.state == AudioRecorderViewModel.RecordingState.Playing,
-                            onClick = {
-                                if (uiState.state == AudioRecorderViewModel.RecordingState.Playing) {
-                                    onIntent(AudioRecorderViewModel.Intent.PausePlayback)
-                                } else {
-                                    onIntent(AudioRecorderViewModel.Intent.StartPlayback)
-                                }
-                            })
-                        Spacer(modifier = Modifier.width(8.dp))
-                        SaveButton(
-                            enabled = uiState.isSaveEnabled,
-                            onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) })
+                        customItem(buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            PlayPauseButton(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .animateWidth(interactionSource),
+                                isPlaying = uiState.state == AudioRecorderViewModel.RecordingState.Playing,
+                                onClick = {
+                                    if (uiState.state == AudioRecorderViewModel.RecordingState.Playing) {
+                                        onIntent(AudioRecorderViewModel.Intent.PausePlayback)
+                                    } else {
+                                        onIntent(AudioRecorderViewModel.Intent.StartPlayback)
+                                    }
+                                },
+                                interactionSource = interactionSource,
+                            )
+                        }, menuContent = { })
+                        customItem(buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            SaveButton(
+                                modifier = Modifier.animateWidth(interactionSource),
+                                enabled = uiState.isSaveEnabled,
+                                onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) },
+                                interactionSource = interactionSource,
+                            )
+                        }, menuContent = { })
                     }
 
                     else -> {}
@@ -189,13 +233,17 @@ fun AudioRecorderContent(
 
 @Composable
 fun RecordButton(
-    onClick: () -> Unit, modifier: Modifier = Modifier
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    shape: Shape = CircleShape
 ) {
     Button(
         onClick = onClick,
-        shape = CircleShape,
+        shape = shape,
         modifier = modifier.size(80.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        interactionSource = interactionSource,
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_record),
@@ -207,16 +255,21 @@ fun RecordButton(
 
 @Composable
 fun StopButton(
-    onClick: () -> Unit, modifier: Modifier = Modifier
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    shape: Shape = CircleShape
 ) {
     Button(
         onClick = onClick,
-        shape = CircleShape,
+        shape = shape,
         modifier = modifier.height(80.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(horizontal = 24.dp)
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.ic_stop), // Need stop icon
+            painter = painterResource(id = R.drawable.ic_stop),
             contentDescription = stringResource(R.string.stop_recording),
             tint = MaterialTheme.colorScheme.onErrorContainer
         )
@@ -224,47 +277,64 @@ fun StopButton(
             text = stringResource(R.string.stop_recording),
             color = MaterialTheme.colorScheme.onErrorContainer,
             modifier = Modifier.padding(start = 8.dp),
-            fontSize = 18.sp
+            fontSize = 18.sp,
+            softWrap = false,
+            overflow = TextOverflow.Clip
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeButton(
-    isPaused: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
+    isPaused: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    shapes: ButtonShapes = ButtonDefaults.shapes()
 ) {
     Button(
         onClick = onClick,
-        shape = CircleShape,
+        shapes = shapes,
         modifier = modifier.height(80.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(horizontal = 24.dp)
     ) {
         Icon(
-            painter = painterResource(id = if (isPaused) R.drawable.round_play_arrow_24 else R.drawable.round_pause_24), // Ensure icons
+            painter = painterResource(id = if (isPaused) R.drawable.round_play_arrow_24 else R.drawable.round_pause_24),
             contentDescription = if (isPaused) stringResource(R.string.play_recording) else stringResource(
                 R.string.pause_playback
-            ), tint = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
+            tint = MaterialTheme.colorScheme.onSecondaryContainer
         )
         Text(
             text = if (isPaused) stringResource(R.string.resume) else stringResource(R.string.pause_playback),
             color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.padding(start = 8.dp),
-            fontSize = 18.sp
+            fontSize = 18.sp,
+            softWrap = false,
+            overflow = TextOverflow.Clip
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PlayPauseButton(
-    isPlaying: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    shapes: ButtonShapes = ButtonDefaults.shapes()
 ) {
     Button(
         onClick = onClick,
-        shape = CircleShape, // Pill
-        modifier = modifier
-            .height(80.dp)
-            .padding(horizontal = 16.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        shapes = shapes,
+        modifier = modifier.height(80.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(horizontal = 24.dp)
     ) {
         Icon(
             painter = painterResource(id = if (isPlaying) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
@@ -277,7 +347,9 @@ fun PlayPauseButton(
             text = if (isPlaying) stringResource(R.string.pause_playback) else stringResource(R.string.play_recording),
             color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.padding(start = 8.dp),
-            fontSize = 18.sp
+            fontSize = 18.sp,
+            softWrap = false,
+            overflow = TextOverflow.Clip
         )
     }
 }
@@ -285,13 +357,18 @@ fun PlayPauseButton(
 
 @Composable
 fun SaveButton(
-    enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    shape: Shape = CircleShape
 ) {
     FilledIconButton(
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
+        shape = shape,
         modifier = modifier.size(64.dp),
+        interactionSource = interactionSource,
     ) {
         Icon(
             painter = painterResource(id = R.drawable.save_24px),
@@ -404,6 +481,7 @@ private fun AudioRecorderScreenPlaybackPausedPreview() {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview(name = "Buttons Overview", showBackground = true)
 @Composable
 private fun AudioRecorderButtonsPreview() {
