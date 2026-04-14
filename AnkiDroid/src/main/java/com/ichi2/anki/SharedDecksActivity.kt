@@ -29,26 +29,24 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.fragment.app.commit
@@ -56,6 +54,7 @@ import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFI
 import com.ichi2.anki.SharedDecksActivity.Companion.MAX_REDIRECTS
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.snackbar.showSnackbar
+import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.FileNameAndExtension
@@ -267,6 +266,12 @@ class SharedDecksActivity : AnkiActivity() {
             AnkiDroidTheme {
                 var isSearching by remember { mutableStateOf(false) }
                 var searchQuery by remember { mutableStateOf("") }
+                val searchFocusRequester = remember { FocusRequester() }
+                val searchAnim by animateFloatAsState(
+                    targetValue = if (isSearching) 1f else 0f,
+                    animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+                    label = "searchAnim"
+                )
 
                 AnkiTopAppBar(
                     modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
@@ -280,43 +285,48 @@ class SharedDecksActivity : AnkiActivity() {
                         }
                     },
                     titleContent = {
-                        if (isSearching) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(end = 16.dp),
-                                placeholder = { Text(getString(R.string.search_using_deck_name)) },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(onSearch = {
-                                    webView.loadUrl(resources.getString(R.string.shared_decks_url) + searchQuery)
-                                    isSearching = false
-                                })
-                            )
-                        } else {
+                        if (!isSearching) {
                             Text(
                                 getString(R.string.download_deck),
                                 style = MaterialTheme.typography.displayMediumEmphasized,
-                                maxLines = 1
-                            )
+                                maxLines = 1,
+                                modifier = Modifier.graphicsLayer {
+                                    alpha = 1f - searchAnim
+                                })
                         }
                     },
                     actions = {
-                        if (!isSearching) {
-                            IconButton(onClick = { isSearching = true }) {
+                        if (isSearching) {
+                            AnkiSearchBar(
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                onSearch = {
+                                    webView.loadUrl(resources.getString(R.string.shared_decks_url) + it)
+                                    isSearching = false
+                                },
+                                onActiveChange = { isSearching = it },
+                                placeholder = getString(R.string.search_using_deck_name),
+                                focusRequester = searchFocusRequester,
+                                searchAnim = searchAnim,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 60.dp, end = 12.dp, bottom = 8.dp)
+                            )
+                        } else {
+                            IconButton(
+                                onClick = { isSearching = true },
+                                modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim }) {
                                 Icon(
-                                    painter = painterResource(R.drawable.ic_search_white),
+                                    painter = painterResource(R.drawable.search_24px),
                                     contentDescription = getString(R.string.search_using_deck_name)
                                 )
                             }
                             IconButton(onClick = {
                                 shouldHistoryBeCleared = true
                                 webView.loadUrl(resources.getString(R.string.shared_decks_url))
-                            }) {
+                            }, modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim }) {
                                 Icon(
-                                    painter = painterResource(R.drawable.home_icon),
+                                    painter = painterResource(R.drawable.home_24px),
                                     contentDescription = getString(R.string.home)
                                 )
                             }
@@ -337,8 +347,7 @@ class SharedDecksActivity : AnkiActivity() {
                 val sharedDecksDownloadFragment = SharedDecksDownloadFragment()
                 sharedDecksDownloadFragment.arguments = Bundle().apply {
                     putSerializable(
-                        DOWNLOAD_FILE,
-                        DownloadFile(url, userAgent, contentDisposition, mimetype)
+                        DOWNLOAD_FILE, DownloadFile(url, userAgent, contentDisposition, mimetype)
                     )
                 }
                 supportFragmentManager.commit {
