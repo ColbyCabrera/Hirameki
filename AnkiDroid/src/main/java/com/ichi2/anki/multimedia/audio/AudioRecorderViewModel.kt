@@ -5,6 +5,8 @@ import android.media.MediaPlayer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.multimediacard.AudioRecorder
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,10 +15,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 
-class AudioRecorderViewModel(application: Application) : AndroidViewModel(application) {
+class AudioRecorderViewModel @JvmOverloads constructor(
+    application: Application,
+    private val ioDispatcher: CoroutineDispatcher = com.ichi2.anki.ioDispatcher
+) : AndroidViewModel(application) {
 
     sealed interface Intent {
         object StartRecording : Intent
@@ -78,37 +84,43 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
     private fun startRecording() {
         val context = getApplication<Application>()
         Timber.i("AudioRecorderViewModel: starting recording")
-        var tempFile: File? = null
-        var localRecorder: AudioRecorder? = null
-        try {
-            tempFile = AudioRecordingController.generateTempAudioFile(context) ?: return
-            localRecorder = AudioRecorder()
-            localRecorder.startRecording(context, tempFile)
+        viewModelScope.launch(ioDispatcher) {
+            var tempFile: File? = null
+            var localRecorder: AudioRecorder? = null
+            try {
+                tempFile = AudioRecordingController.generateTempAudioFile(context) ?: return@launch
+                localRecorder = AudioRecorder()
+                localRecorder.startRecording(context, tempFile)
 
-            audioRecorder?.release()
-            audioRecorder = localRecorder
-            audioFile = tempFile
+                withContext(Dispatchers.Main) {
+                    audioRecorder?.release()
+                    audioRecorder = localRecorder
+                    audioFile = tempFile
 
-            accumulatedDurationMillis = 0L
-            startTimeMillis = System.currentTimeMillis()
+                    accumulatedDurationMillis = 0L
+                    startTimeMillis = System.currentTimeMillis()
 
-            _uiState.update {
-                it.copy(
-                    state = RecordingState.Recording,
-                    durationMillis = 0L,
-                    savedFile = null,
-                    isSaveEnabled = true,
-                    amplitudes = emptyList()
-                )
+                    _uiState.update {
+                        it.copy(
+                            state = RecordingState.Recording,
+                            durationMillis = 0L,
+                            savedFile = null,
+                            isSaveEnabled = true,
+                            amplitudes = emptyList()
+                        )
+                    }
+
+                    startTimer()
+                    startAmplitudeMonitoring()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to start recording")
+                localRecorder?.release()
+                tempFile?.delete()
+                withContext(Dispatchers.Main) {
+                    _uiState.update { it.copy(state = RecordingState.Idle) }
+                }
             }
-
-            startTimer()
-            startAmplitudeMonitoring()
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to start recording")
-            localRecorder?.release()
-            tempFile?.delete()
-            _uiState.update { it.copy(state = RecordingState.Idle) }
         }
     }
 
@@ -180,36 +192,44 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
         ) return
 
         Timber.i("AudioRecorderViewModel: starting playback")
-        try {
-            if (mediaPlayer == null) {
-                val localMediaPlayer = MediaPlayer()
-                try {
-                    localMediaPlayer.setDataSource(file.absolutePath)
-                    localMediaPlayer.prepare()
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                if (mediaPlayer == null) {
+                    val localMediaPlayer = MediaPlayer()
+                    try {
+                        localMediaPlayer.setDataSource(file.absolutePath)
+                        localMediaPlayer.prepare()
 
-                    localMediaPlayer.setOnCompletionListener {
-                        _uiState.update {
-                            it.copy(
-                                state = RecordingState.PlaybackReady,
-                                playbackProgressMillis = 0L
-                            )
+                        withContext(Dispatchers.Main) {
+                            localMediaPlayer.setOnCompletionListener {
+                                _uiState.update {
+                                    it.copy(
+                                        state = RecordingState.PlaybackReady,
+                                        playbackProgressMillis = 0L
+                                    )
+                                }
+                                playbackProgressJob?.cancel()
+                            }
+                            mediaPlayer = localMediaPlayer
                         }
-                        playbackProgressJob?.cancel()
+                    } catch (e: Exception) {
+                        localMediaPlayer.release()
+                        throw e
                     }
-                    mediaPlayer = localMediaPlayer
-                } catch (e: Exception) {
-                    localMediaPlayer.release()
-                    throw e
+                }
+
+                withContext(Dispatchers.Main) {
+                    mediaPlayer?.start()
+
+                    _uiState.update { it.copy(state = RecordingState.Playing) }
+                    startPlaybackProgressMonitoring()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to start playback")
+                withContext(Dispatchers.Main) {
+                    _uiState.update { it.copy(state = RecordingState.PlaybackReady) }
                 }
             }
-
-            mediaPlayer?.start()
-
-            _uiState.update { it.copy(state = RecordingState.Playing) }
-            startPlaybackProgressMonitoring()
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to start playback")
-            _uiState.update { it.copy(state = RecordingState.PlaybackReady) }
         }
     }
 
