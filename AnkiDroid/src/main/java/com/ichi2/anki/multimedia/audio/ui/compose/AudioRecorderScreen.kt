@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
@@ -67,38 +65,41 @@ fun AudioRecorderContent(
         ) {
 
             // Delete / Top Right
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
+
+            Surface(
+                modifier
+                    .weight(1f)
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.End
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = MaterialTheme.shapes.large
+
             ) {
-                if (uiState.state != AudioRecorderViewModel.RecordingState.Idle) {
-                    IconButton(onClick = { onIntent(AudioRecorderViewModel.Intent.DiscardRecording) }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.delete_note_message),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                Box {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        if (uiState.state != AudioRecorderViewModel.RecordingState.Idle) {
+                            IconButton(onClick = { onIntent(AudioRecorderViewModel.Intent.DiscardRecording) }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.delete_24px),
+                                    contentDescription = stringResource(R.string.delete_note_message),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
+                    AudioWaveformCompose(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 16.dp),
+                        amplitudes = uiState.amplitudes,
+                        isRecording = uiState.state == AudioRecorderViewModel.RecordingState.Recording
+                    )
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (uiState.state in listOf(
-                    AudioRecorderViewModel.RecordingState.Recording,
-                    AudioRecorderViewModel.RecordingState.RecordingPaused
-                )
-            ) {
-                AudioWaveformCompose(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    amplitudes = uiState.amplitudes,
-                    isRecording = uiState.state == AudioRecorderViewModel.RecordingState.Recording
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
 
             // Text / Time
             Text(text = formatDuration(uiState.durationMillis.takeIf {
@@ -313,7 +314,9 @@ private fun AudioRecorderScreenIdlePreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
             uiState = AudioRecorderViewModel.UiState(
-                state = AudioRecorderViewModel.RecordingState.Idle
+                state = AudioRecorderViewModel.RecordingState.Idle, amplitudes = listOf(
+                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
+                )
             ), onIntent = {})
     }
 }
@@ -327,7 +330,9 @@ private fun AudioRecorderScreenRecordingPreview() {
                 state = AudioRecorderViewModel.RecordingState.Recording,
                 durationMillis = 12300L,
                 isSaveEnabled = true,
-                amplitudes = listOf(0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f)
+                amplitudes = listOf(
+                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
+                )
             ), onIntent = {})
     }
 }
@@ -341,7 +346,9 @@ private fun AudioRecorderScreenRecordingPausedPreview() {
                 state = AudioRecorderViewModel.RecordingState.RecordingPaused,
                 durationMillis = 15000L,
                 isSaveEnabled = true,
-                amplitudes = listOf(0.1f, 0.2f, 0.15f)
+                amplitudes = listOf(
+                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
+                )
             ), onIntent = {})
     }
 }
@@ -355,7 +362,10 @@ private fun AudioRecorderScreenPlaybackReadyPreview() {
                 state = AudioRecorderViewModel.RecordingState.PlaybackReady,
                 durationMillis = 30000L,
                 playbackProgressMillis = 0L,
-                isSaveEnabled = true
+                isSaveEnabled = true,
+                amplitudes = listOf(
+                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
+                )
             ), onIntent = {})
     }
 }
@@ -369,7 +379,10 @@ private fun AudioRecorderScreenPlayingPreview() {
                 state = AudioRecorderViewModel.RecordingState.Playing,
                 durationMillis = 30000L,
                 playbackProgressMillis = 10500L,
-                isSaveEnabled = true
+                isSaveEnabled = true,
+                amplitudes = listOf(
+                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
+                )
             ), onIntent = {})
     }
 }
@@ -383,7 +396,10 @@ private fun AudioRecorderScreenPlaybackPausedPreview() {
                 state = AudioRecorderViewModel.RecordingState.PlaybackPaused,
                 durationMillis = 30000L,
                 playbackProgressMillis = 10500L,
-                isSaveEnabled = true
+                isSaveEnabled = true,
+                amplitudes = listOf(
+                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
+                )
             ), onIntent = {})
     }
 }
