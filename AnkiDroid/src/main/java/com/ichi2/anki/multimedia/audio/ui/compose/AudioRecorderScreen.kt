@@ -95,7 +95,7 @@ fun AudioRecorderContent(
             // Delete / Top Right
 
             Surface(
-                modifier
+                Modifier
                     .weight(1f)
                     .padding(16.dp),
                 color = MaterialTheme.colorScheme.surfaceContainer,
@@ -133,7 +133,8 @@ fun AudioRecorderContent(
             Text(text = formatDuration(uiState.durationMillis.takeIf {
                 uiState.state in listOf(
                     AudioRecorderViewModel.RecordingState.Recording,
-                    AudioRecorderViewModel.RecordingState.RecordingPaused
+                    AudioRecorderViewModel.RecordingState.RecordingPaused,
+                    AudioRecorderViewModel.RecordingState.PlaybackReady
                 )
             } ?: uiState.playbackProgressMillis),
                 fontFamily = RobotoMono,
