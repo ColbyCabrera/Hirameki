@@ -201,15 +201,6 @@ class AudioRecorderViewModel @JvmOverloads constructor(
                         localMediaPlayer.prepare()
 
                         withContext(Dispatchers.Main) {
-                            localMediaPlayer.setOnCompletionListener {
-                                _uiState.update {
-                                    it.copy(
-                                        state = RecordingState.PlaybackReady,
-                                        playbackProgressMillis = 0L
-                                    )
-                                }
-                                playbackProgressJob?.cancel()
-                            }
                             mediaPlayer = localMediaPlayer
                         }
                     } catch (e: Exception) {
@@ -219,7 +210,18 @@ class AudioRecorderViewModel @JvmOverloads constructor(
                 }
 
                 withContext(Dispatchers.Main) {
-                    mediaPlayer?.start()
+                    mediaPlayer?.apply {
+                        setOnCompletionListener {
+                            _uiState.update {
+                                it.copy(
+                                    state = RecordingState.PlaybackReady,
+                                    playbackProgressMillis = 0L
+                                )
+                            }
+                            playbackProgressJob?.cancel()
+                        }
+                        start()
+                    }
 
                     _uiState.update { it.copy(state = RecordingState.Playing) }
                     startPlaybackProgressMonitoring()
