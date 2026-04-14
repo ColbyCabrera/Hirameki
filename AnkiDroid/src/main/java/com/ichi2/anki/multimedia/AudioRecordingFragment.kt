@@ -27,7 +27,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
 import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT
@@ -61,7 +63,7 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
     ) { isGranted ->
         if (isGranted) {
             Timber.d("Audio permission granted")
-            initializeComposeUI()
+            runFullRecorderSetup()
         } else {
             Timber.d("Audio permission denied")
             showErrorDialog(resources.getString(R.string.multimedia_editor_audio_permission_refused))
@@ -78,11 +80,7 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
             return
         }
 
-        (requireActivity() as? MultimediaActivity)?.setToolbarVisible(false)
-
-        initializeComposeUI()
-        setupDoneAction()
-        setupCloseAction()
+        runFullRecorderSetup()
     }
 
     private fun hasMicPermission(): Boolean {
@@ -100,25 +98,29 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
     }
 
     private fun setupDoneAction() {
-        lifecycleScope.launch {
-            audioRecorderViewModel.uiState.collect { state ->
-                val savedFile = state.savedFile
-                if (savedFile != null && state.state == AudioRecorderViewModel.RecordingState.PlaybackReady) {
-                    viewModel.updateCurrentMultimediaPath(savedFile)
-                    viewModel.updateMediaFileLength(savedFile.length())
-                    onDone()
-                } else if (state.state == AudioRecorderViewModel.RecordingState.Idle && savedFile == null) {
-                    // Handled discard if needed
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                audioRecorderViewModel.uiState.collect { state ->
+                    val savedFile = state.savedFile
+                    if (savedFile != null && state.state == AudioRecorderViewModel.RecordingState.PlaybackReady) {
+                        viewModel.updateCurrentMultimediaPath(savedFile)
+                        viewModel.updateMediaFileLength(savedFile.length())
+                        onDone()
+                    } else if (state.state == AudioRecorderViewModel.RecordingState.Idle && savedFile == null) {
+                        // Handled discard if needed
+                    }
                 }
             }
         }
     }
 
     private fun setupCloseAction() {
-        lifecycleScope.launch {
-            audioRecorderViewModel.uiState.collect { state ->
-                if (state.shouldClose) {
-                    requireActivity().finish()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                audioRecorderViewModel.uiState.collect { state ->
+                    if (state.shouldClose) {
+                        requireActivity().finish()
+                    }
                 }
             }
         }
@@ -140,6 +142,13 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         }
         requireActivity().setResult(AppCompatActivity.RESULT_OK, resultData)
         requireActivity().finish()
+    }
+
+    private fun runFullRecorderSetup() {
+        (requireActivity() as? MultimediaActivity)?.setToolbarVisible(false)
+        setupDoneAction()
+        setupCloseAction()
+        initializeComposeUI()
     }
 
     private fun initializeComposeUI() {
