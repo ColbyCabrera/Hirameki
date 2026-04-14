@@ -42,6 +42,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.multimedia.audio.AudioRecorderViewModel
 import com.ichi2.anki.multimedia.audio.AudioWaveformCompose
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.ui.compose.theme.RobotoMono
 import java.util.Locale
 
 @Composable
@@ -115,8 +116,9 @@ fun AudioRecorderContent(
                     AudioRecorderViewModel.RecordingState.RecordingPaused
                 )
             } ?: uiState.playbackProgressMillis),
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Medium,
+                fontFamily = RobotoMono,
+                fontSize = 84.sp,
+                fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 32.dp))
 
