@@ -90,7 +90,15 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
             accumulatedDurationMillis = 0L
             startTimeMillis = System.currentTimeMillis()
 
-            _uiState.update { it.copy(state = RecordingState.Recording, durationMillis = 0L, savedFile = null, isSaveEnabled = false, amplitudes = emptyList()) }
+            _uiState.update {
+                it.copy(
+                    state = RecordingState.Recording,
+                    durationMillis = 0L,
+                    savedFile = null,
+                    isSaveEnabled = true,
+                    amplitudes = emptyList()
+                )
+            }
 
             startTimer()
             startAmplitudeMonitoring()
@@ -201,6 +209,9 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun saveRecording() {
+        if (_uiState.value.state in listOf(RecordingState.Recording, RecordingState.RecordingPaused)) {
+            stopRecording()
+        }
         // Just marks that we want to save, fragment handles the result logic via uiState observation
         _uiState.update { it.copy(savedFile = audioFile) }
     }

@@ -154,7 +154,8 @@ fun AudioRecorderContent(
                             ) else Modifier,
                             onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) })
                         SaveButton(
-                            enabled = false, onClick = { })
+                            enabled = uiState.isSaveEnabled,
+                            onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) })
                     }
 
                     in listOf(
@@ -325,6 +326,7 @@ private fun AudioRecorderScreenRecordingPreview() {
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.Recording,
                 durationMillis = 12300L,
+                isSaveEnabled = true,
                 amplitudes = listOf(0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f)
             ), onIntent = {})
     }
@@ -338,6 +340,7 @@ private fun AudioRecorderScreenRecordingPausedPreview() {
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.RecordingPaused,
                 durationMillis = 15000L,
+                isSaveEnabled = true,
                 amplitudes = listOf(0.1f, 0.2f, 0.15f)
             ), onIntent = {})
     }
