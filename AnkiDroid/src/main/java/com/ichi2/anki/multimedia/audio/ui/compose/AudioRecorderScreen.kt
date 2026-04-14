@@ -1,5 +1,7 @@
 package com.ichi2.anki.multimedia.audio.ui.compose
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -154,109 +156,100 @@ fun AudioRecorderContent(
             ButtonGroup(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 48.dp, start = 16.dp, end = 16.dp),
+                    .padding(bottom = 48.dp, start = 16.dp, end = 16.dp)
+                    .animateContentSize(),
                 expandedRatio = 0.05f,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 overflowIndicator = {}) {
-                when (uiState.state) {
-                    AudioRecorderViewModel.RecordingState.Idle -> {
-                        customItem(buttonGroupContent = {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            RecordButton(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .animateWidth(interactionSource),
-                                onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
-                                interactionSource = interactionSource,
-                            )
-                        }, menuContent = { })
-                        customItem(buttonGroupContent = {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            SaveButton(
-                                modifier = Modifier.animateWidth(interactionSource),
-                                enabled = false,
-                                onClick = { },
-                                interactionSource = interactionSource,
-                            )
-                        }, menuContent = { })
-                    }
+                val state = uiState.state
 
-                    in listOf(
-                        AudioRecorderViewModel.RecordingState.Recording,
-                        AudioRecorderViewModel.RecordingState.RecordingPaused
-                    ) -> {
-                        customItem(buttonGroupContent = {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            PauseResumeButton(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .animateWidth(interactionSource),
-                                isPaused = uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused,
-                                onClick = {
-                                    if (uiState.state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
-                                        onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
-                                    } else {
-                                        onIntent(AudioRecorderViewModel.Intent.PauseRecording)
-                                    }
-                                },
-                                interactionSource = interactionSource,
-                            )
-                        }, menuContent = { })
-                        customItem(buttonGroupContent = {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            StopButton(
-                                modifier = Modifier.animateWidth(interactionSource),
-                                onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
-                                interactionSource = interactionSource,
-                            )
-                        }, menuContent = { })
-                        customItem(buttonGroupContent = {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            SaveButton(
-                                modifier = Modifier.animateWidth(interactionSource),
-                                enabled = uiState.isSaveEnabled,
-                                onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) },
-                                interactionSource = interactionSource,
-                            )
-                        }, menuContent = { })
-                    }
-
-                    in listOf(
-                        AudioRecorderViewModel.RecordingState.PlaybackReady,
-                        AudioRecorderViewModel.RecordingState.Playing,
-                        AudioRecorderViewModel.RecordingState.PlaybackPaused
-                    ) -> {
-                        customItem(buttonGroupContent = {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            PlayPauseButton(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .animateWidth(interactionSource),
-                                isPlaying = uiState.state == AudioRecorderViewModel.RecordingState.Playing,
-                                onClick = {
-                                    if (uiState.state == AudioRecorderViewModel.RecordingState.Playing) {
-                                        onIntent(AudioRecorderViewModel.Intent.PausePlayback)
-                                    } else {
-                                        onIntent(AudioRecorderViewModel.Intent.StartPlayback)
-                                    }
-                                },
-                                interactionSource = interactionSource,
-                            )
-                        }, menuContent = { })
-                        customItem(buttonGroupContent = {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            SaveButton(
-                                modifier = Modifier.animateWidth(interactionSource),
-                                enabled = uiState.isSaveEnabled,
-                                onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) },
-                                interactionSource = interactionSource,
-                            )
-                        }, menuContent = { })
-                    }
-
-                    else -> {}
+                // Slot 1: Play/Pause/Resume (Hidden in Idle)
+                if (state != AudioRecorderViewModel.RecordingState.Idle) {
+                    customItem(buttonGroupContent = {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        AnimatedContent(
+                            modifier = Modifier.weight(1f),
+                            targetState = state,
+                            label = "PlayPauseSlot"
+                        ) { targetState ->
+                            if (targetState in listOf(
+                                    AudioRecorderViewModel.RecordingState.Recording,
+                                    AudioRecorderViewModel.RecordingState.RecordingPaused
+                                )
+                            ) {
+                                PauseResumeButton(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .animateWidth(interactionSource),
+                                    isPaused = targetState == AudioRecorderViewModel.RecordingState.RecordingPaused,
+                                    onClick = {
+                                        if (targetState == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                                            onIntent(AudioRecorderViewModel.Intent.ResumeRecording)
+                                        } else {
+                                            onIntent(AudioRecorderViewModel.Intent.PauseRecording)
+                                        }
+                                    },
+                                    interactionSource = interactionSource,
+                                )
+                            } else {
+                                PlayPauseButton(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .animateWidth(interactionSource),
+                                    isPlaying = targetState == AudioRecorderViewModel.RecordingState.Playing,
+                                    onClick = {
+                                        if (targetState == AudioRecorderViewModel.RecordingState.Playing) {
+                                            onIntent(AudioRecorderViewModel.Intent.PausePlayback)
+                                        } else {
+                                            onIntent(AudioRecorderViewModel.Intent.StartPlayback)
+                                        }
+                                    },
+                                    interactionSource = interactionSource,
+                                )
+                            }
+                        }
+                    }, menuContent = { })
                 }
+
+                // Slot 2: Record/Stop (Hidden in Playback)
+                if (state == AudioRecorderViewModel.RecordingState.Idle || state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                    customItem(buttonGroupContent = {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        AnimatedContent(
+                            modifier = if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) Modifier else Modifier.weight(
+                                1f
+                            ), targetState = state, label = "RecordStopSlot"
+                        ) { targetState ->
+                            if (targetState == AudioRecorderViewModel.RecordingState.Idle) {
+                                RecordButton(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .animateWidth(interactionSource),
+                                    onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
+                                    interactionSource = interactionSource,
+                                )
+                            } else {
+                                StopButton(
+                                    modifier = Modifier.animateWidth(interactionSource),
+                                    onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
+                                    interactionSource = interactionSource,
+                                )
+                            }
+                        }
+                    }, menuContent = { })
+                }
+
+                // Slot 3: Save (Always visible)
+                customItem(buttonGroupContent = {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    SaveButton(
+                        modifier = Modifier.animateWidth(interactionSource),
+                        enabled = uiState.isSaveEnabled,
+                        onClick = { onIntent(AudioRecorderViewModel.Intent.SaveRecording) },
+                        interactionSource = interactionSource,
+                    )
+                }, menuContent = { })
             }
         }
     }
