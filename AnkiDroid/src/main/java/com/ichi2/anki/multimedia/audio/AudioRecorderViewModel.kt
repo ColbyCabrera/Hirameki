@@ -248,8 +248,6 @@ class AudioRecorderViewModel @JvmOverloads constructor(
     private fun discardRecording() {
         Timber.i("AudioRecorderViewModel: discarding recording")
         stopAndReset()
-        audioFile?.delete()
-        audioFile = null
     }
 
     private fun saveRecording() {
@@ -341,6 +339,26 @@ class AudioRecorderViewModel @JvmOverloads constructor(
         mediaPlayer?.release()
         mediaPlayer = null
 
+        // Safe deletion of transient audio files before clearing references
+        val filesToDelete = listOfNotNull(
+            audioFile,
+            _uiState.value.savedFile,
+            AudioRecordingController.tempAudioPath
+        )
+
+        filesToDelete.distinct().forEach { file ->
+            try {
+                if (file.exists()) {
+                    val deleted = file.delete()
+                    Timber.d("AudioRecorderViewModel: Deleted transient file ${file.name}: $deleted")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "AudioRecorderViewModel: Failed to delete transient file ${file.name}")
+            }
+        }
+
+        audioFile = null
+        AudioRecordingController.tempAudioPath = null
         _uiState.update { UiState() }
     }
 
