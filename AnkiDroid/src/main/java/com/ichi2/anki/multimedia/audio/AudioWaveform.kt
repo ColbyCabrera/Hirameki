@@ -135,8 +135,8 @@ fun AudioWaveformCompose(
                 amplitudes.takeLast(spikeCount)
             } else {
                 val halfSpikeCount = spikeCount / 2
-                val start = (currentIndex - halfSpikeCount).coerceAtLeast(0)
-                val end = (start + spikeCount).coerceAtMost(amplitudes.size)
+                val start = (currentIndex - halfSpikeCount).coerceIn(0, amplitudes.size)
+                val end = (start + spikeCount).coerceIn(start, amplitudes.size)
                 // If we are near the end, we might have fewer spikes than spikeCount. 
                 // That's fine, we'll just draw what we have from 'start'
                 amplitudes.subList(start, end)
