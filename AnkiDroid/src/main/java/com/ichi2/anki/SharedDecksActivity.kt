@@ -20,6 +20,15 @@ package com.ichi2.anki
 import android.app.DownloadManager
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.webkit.CookieManager
+import android.webkit.URLUtil
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,15 +50,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import android.webkit.CookieManager
-import android.webkit.URLUtil
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.core.net.toUri
 import androidx.fragment.app.commit
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFINITE
@@ -321,8 +321,7 @@ class SharedDecksActivity : AnkiActivity() {
                                 )
                             }
                         }
-                    }
-                )
+                    })
             }
         }
 
@@ -337,7 +336,10 @@ class SharedDecksActivity : AnkiActivity() {
             if (!supportFragmentManager.isStateSaved) {
                 val sharedDecksDownloadFragment = SharedDecksDownloadFragment()
                 sharedDecksDownloadFragment.arguments = Bundle().apply {
-                    putSerializable(DOWNLOAD_FILE, DownloadFile(url, userAgent, contentDisposition, mimetype))
+                    putSerializable(
+                        DOWNLOAD_FILE,
+                        DownloadFile(url, userAgent, contentDisposition, mimetype)
+                    )
                 }
                 supportFragmentManager.commit {
                     add(
@@ -365,18 +367,18 @@ data class DownloadFile(
 ) : Serializable {
     /** @return a filename with the provided extension */
     fun toFileName(extension: String): String = URLUtil.guessFileName(
-            this.url,
-            this.contentDisposition,
-            this.mimeType,
-        ).let { maybeCorruptFileName ->
-            // #17573: https://issuetracker.google.com/issues/382864232
-            // guessFileName may return ".bin" as an extension
-            (FileNameAndExtension.fromString(maybeCorruptFileName)
-            // default if maybeCorruptFileName doesn't contain a '.'
-            // Add randomness to avoid file name conflicts between different decks
-                ?: FileNameAndExtension.fromString("download-${Random.nextInt()}$extension")!!).replaceExtension(
-                    extension = extension
-                ) // enforce the provided extension
-                .toString()
-        }
+        this.url,
+        this.contentDisposition,
+        this.mimeType,
+    ).let { maybeCorruptFileName ->
+        // #17573: https://issuetracker.google.com/issues/382864232
+        // guessFileName may return ".bin" as an extension
+        (FileNameAndExtension.fromString(maybeCorruptFileName)
+        // default if maybeCorruptFileName doesn't contain a '.'
+        // Add randomness to avoid file name conflicts between different decks
+            ?: FileNameAndExtension.fromString("download-${Random.nextInt()}$extension")!!).replaceExtension(
+            extension = extension
+        ) // enforce the provided extension
+            .toString()
+    }
 }

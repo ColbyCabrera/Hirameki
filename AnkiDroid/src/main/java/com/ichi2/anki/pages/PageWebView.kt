@@ -88,8 +88,9 @@ fun PageWebView(
         contentWindowInsets = WindowInsets(0),
         topBar = {
             AnkiTopAppBar(
-                titleText = title, onNavigateUp = onNavigateUp, actions = { topBarActions?.invoke(this) }
-            )
+                titleText = title,
+                onNavigateUp = onNavigateUp,
+                actions = { topBarActions?.invoke(this) })
         },
     ) { padding ->
         Box(
