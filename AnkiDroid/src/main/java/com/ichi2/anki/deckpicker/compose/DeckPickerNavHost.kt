@@ -92,7 +92,6 @@ import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import kotlinx.coroutines.launch
-import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
 @OptIn(ExperimentalMaterial3Api::class)
