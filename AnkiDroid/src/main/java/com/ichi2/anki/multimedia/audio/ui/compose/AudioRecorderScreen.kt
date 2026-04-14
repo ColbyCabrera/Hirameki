@@ -323,13 +323,13 @@ fun PauseResumeButton(
     ) {
         Icon(
             painter = painterResource(id = if (isPaused) R.drawable.round_play_arrow_24 else R.drawable.round_pause_24),
-            contentDescription = if (isPaused) stringResource(R.string.play_recording) else stringResource(
+            contentDescription = if (isPaused) stringResource(R.string.resume_recording) else stringResource(
                 R.string.pause_playback
             ),
             tint = MaterialTheme.colorScheme.onSecondaryContainer
         )
         Text(
-            text = if (isPaused) stringResource(R.string.resume) else stringResource(R.string.pause_playback),
+            text = if (isPaused) stringResource(R.string.resume_recording) else stringResource(R.string.pause_playback),
             color = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.padding(start = 8.dp),
             fontSize = 18.sp,
