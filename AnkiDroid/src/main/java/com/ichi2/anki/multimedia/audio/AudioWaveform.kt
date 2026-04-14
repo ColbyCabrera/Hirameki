@@ -110,6 +110,7 @@ fun AudioWaveformCompose(
     modifier: Modifier = Modifier,
     amplitudes: List<Float>,
     showAmplitudes: Boolean,
+    currentIndex: Int = -1,
     displayVerticalLine: Boolean = false,
     spikeColor: Color = MaterialTheme.colorScheme.primary,
     verticalLineColor: Color = MaterialTheme.colorScheme.tertiary,
@@ -130,7 +131,17 @@ fun AudioWaveformCompose(
         drawRect(color = backgroundColor)
 
         if (showAmplitudes) {
-            val relevantAmplitudes = amplitudes.takeLast(spikeCount)
+            val relevantAmplitudes = if (currentIndex == -1) {
+                amplitudes.takeLast(spikeCount)
+            } else {
+                val halfSpikeCount = spikeCount / 2
+                val start = (currentIndex - halfSpikeCount).coerceAtLeast(0)
+                val end = (start + spikeCount).coerceAtMost(amplitudes.size)
+                // If we are near the end, we might have fewer spikes than spikeCount. 
+                // That's fine, we'll just draw what we have from 'start'
+                amplitudes.subList(start, end)
+            }
+
             relevantAmplitudes.forEachIndexed { index, ampFactor ->
                 val spikeHeight = (ampFactor * size.height).coerceIn(6.dp.toPx(), size.height)
                 val left = index * (w + d)

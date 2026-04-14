@@ -51,6 +51,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
         val playbackProgressMillis: Long = 0L,
         val amplitude: Float = 0f,
         val amplitudes: List<Float> = emptyList(),
+        val amplitudeSampleMs: Long = AMPLITUDE_SAMPLE_MS,
         val isSaveEnabled: Boolean = false,
         val savedFile: File? = null,
         val shouldClose: Boolean = false
@@ -274,7 +275,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
                 val currentDuration =
                     accumulatedDurationMillis + (System.currentTimeMillis() - startTimeMillis)
                 _uiState.update { it.copy(durationMillis = currentDuration) }
-                delay(50) // Update relatively frequently for UI responsiveness
+                delay(AMPLITUDE_SAMPLE_MS)
             }
         }
     }
@@ -288,12 +289,10 @@ class AudioRecorderViewModel @JvmOverloads constructor(
                 _uiState.update { state ->
                     state.copy(
                         amplitude = normalizedAmplitude,
-                        amplitudes = (state.amplitudes + normalizedAmplitude).takeLast(
-                            MAX_AMPLITUDES
-                        )
+                        amplitudes = state.amplitudes + normalizedAmplitude
                     )
                 }
-                delay(50)
+                delay(AMPLITUDE_SAMPLE_MS)
             }
         }
     }
@@ -304,7 +303,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
             while (isActive && _uiState.value.state == RecordingState.Playing) {
                 val player = mediaPlayer ?: break
                 _uiState.update { it.copy(playbackProgressMillis = player.currentPosition.toLong()) }
-                delay(50)
+                delay(AMPLITUDE_SAMPLE_MS)
             }
         }
     }
@@ -370,6 +369,6 @@ class AudioRecorderViewModel @JvmOverloads constructor(
     }
 
     companion object {
-        private const val MAX_AMPLITUDES = 200
+        const val AMPLITUDE_SAMPLE_MS = 50L
     }
 }

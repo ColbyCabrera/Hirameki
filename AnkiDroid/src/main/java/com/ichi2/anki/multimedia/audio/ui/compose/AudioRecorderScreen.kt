@@ -124,7 +124,17 @@ fun AudioRecorderContent(
                             .align(Alignment.Center)
                             .padding(horizontal = 16.dp),
                         amplitudes = uiState.amplitudes,
-                        showAmplitudes = uiState.state != AudioRecorderViewModel.RecordingState.Idle
+                        showAmplitudes = uiState.state != AudioRecorderViewModel.RecordingState.Idle,
+                        currentIndex = if (uiState.state in listOf(
+                                AudioRecorderViewModel.RecordingState.Playing,
+                                AudioRecorderViewModel.RecordingState.PlaybackPaused,
+                                AudioRecorderViewModel.RecordingState.PlaybackReady
+                            )
+                        ) {
+                            (uiState.playbackProgressMillis / uiState.amplitudeSampleMs).toInt()
+                        } else {
+                            -1
+                        }
                     )
                 }
             }
