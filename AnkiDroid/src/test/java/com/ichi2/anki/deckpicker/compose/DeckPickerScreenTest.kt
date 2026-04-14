@@ -73,6 +73,7 @@ class DeckPickerScreenTest : RobolectricTest() {
                     fabActions = emptyFabActions(),
                     moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onStartStudy = {},
                     onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
@@ -117,6 +118,7 @@ class DeckPickerScreenTest : RobolectricTest() {
                     ),
                     moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onStartStudy = {},
                     onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
@@ -161,6 +163,7 @@ class DeckPickerScreenTest : RobolectricTest() {
                     ),
                     moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onStartStudy = {},
                     onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
@@ -204,6 +207,7 @@ class DeckPickerScreenTest : RobolectricTest() {
                     ),
                     moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onStartStudy = {},
                     onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
@@ -248,6 +252,7 @@ class DeckPickerScreenTest : RobolectricTest() {
                     ),
                     moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
                     onNavigationIconClick = {},
+                    onStartStudy = {},
                     onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
@@ -289,7 +294,6 @@ class DeckPickerScreenTest : RobolectricTest() {
     )
 
     private fun emptyMoreOptionsMenuActions() = MoreOptionsMenuActions(
-        onStartStudy = {},
         onDeleteEmptyCards = {},
         onCheckDatabase = {},
         onExport = {},
