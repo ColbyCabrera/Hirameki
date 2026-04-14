@@ -109,7 +109,7 @@ class AudioWaveform(
 fun AudioWaveformCompose(
     modifier: Modifier = Modifier,
     amplitudes: List<Float>,
-    isRecording: Boolean,
+    showAmplitudes: Boolean,
     displayVerticalLine: Boolean = false,
     spikeColor: Color = MaterialTheme.colorScheme.primary,
     verticalLineColor: Color = MaterialTheme.colorScheme.tertiary,
@@ -129,7 +129,7 @@ fun AudioWaveformCompose(
         // Draw background
         drawRect(color = backgroundColor)
 
-        if (isRecording) {
+        if (showAmplitudes) {
             val relevantAmplitudes = amplitudes.takeLast(spikeCount)
             relevantAmplitudes.forEachIndexed { index, ampFactor ->
                 val spikeHeight = (ampFactor * size.height).coerceIn(6.dp.toPx(), size.height)
@@ -178,7 +178,7 @@ private fun AudioWaveformRecordingPreview() {
                 0.6f,
                 0.8f,
                 1.0f
-            ), isRecording = true
+            ), showAmplitudes = true
         )
     }
 }
@@ -204,7 +204,7 @@ private fun AudioWaveformNotRecordingPreview() {
                 0.6f,
                 0.8f,
                 1.0f
-            ), isRecording = false
+            ), showAmplitudes = false
         )
     }
 }

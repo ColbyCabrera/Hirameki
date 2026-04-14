@@ -124,7 +124,7 @@ fun AudioRecorderContent(
                             .align(Alignment.Center)
                             .padding(horizontal = 16.dp),
                         amplitudes = uiState.amplitudes,
-                        isRecording = uiState.state == AudioRecorderViewModel.RecordingState.Recording
+                        showAmplitudes = uiState.state != AudioRecorderViewModel.RecordingState.Idle
                     )
                 }
             }
@@ -148,6 +148,7 @@ fun AudioRecorderContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 48.dp, start = 16.dp, end = 16.dp),
+                expandedRatio = 0.05f,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 overflowIndicator = {}) {
