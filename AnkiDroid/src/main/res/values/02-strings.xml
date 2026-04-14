@@ -318,6 +318,10 @@
     <string name="something_wrong">Something went wrong, please try again</string>
     <string name="download_failed">Download failed</string>
     <string name="deck_download_progress_message">You can use other apps while the download is running</string>
+    <string name="download_status_waiting_for_network">&quot;&gt;&gt;&gt; WAITING FOR NETWORK &lt;&lt;&lt;&quot;</string>
+    <string name="download_status_downloading">DOWNLOADING</string>
+    <string name="download_status_halted">ERROR: HALTED</string>
+    <string name="download_status_active">STATUS: ACTIVE</string>
     <string name="check_network">Please check your network connection</string>
     <string name="search_using_deck_name">Search using deck name</string>
     <string name="external_storage_unavailable">Download aborted, the external storage is not available</string>

@@ -229,8 +229,8 @@ private fun DownloadProgressSection(state: DownloadUiState) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = when (state.status) {
-                    DownloadStatus.WaitingForNetwork -> ">>> WAITING FOR NETWORK <<<"
-                    else -> "DOWNLOADING"
+                    DownloadStatus.WaitingForNetwork -> stringResource(R.string.download_status_waiting_for_network)
+                    else -> stringResource(R.string.download_status_downloading)
                 },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = RobotoMono,
@@ -248,7 +248,9 @@ private fun DownloadProgressSection(state: DownloadUiState) {
                 color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = if (isHalted) "ERROR: HALTED" else "STATUS: ACTIVE",
+                text = if (isHalted) stringResource(R.string.download_status_halted) else stringResource(
+                    R.string.download_status_active
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = RobotoMono,
                 color = if (isHalted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
@@ -364,6 +366,20 @@ fun SharedDecksDownloadScreenFailedPreview() {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
+        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+    }
+}
+
+@Preview
+@Composable
+fun SharedDecksDownloadScreenCompletePreview() {
+    AnkiDroidTheme {
+        SharedDecksDownloadScreen(
+            state = DownloadUiState(
+            fileName = "Medical Terminology.apkg",
+            progress = 100f,
+            progressText = "100%",
+            status = DownloadStatus.Complete
         ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
     }
 }
