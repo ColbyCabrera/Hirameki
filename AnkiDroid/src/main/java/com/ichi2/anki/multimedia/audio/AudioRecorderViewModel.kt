@@ -8,6 +8,7 @@ import com.ichi2.anki.multimediacard.AudioRecorder
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -160,29 +161,58 @@ class AudioRecorderViewModel @JvmOverloads constructor(
         ) return
         Timber.i("AudioRecorderViewModel: stopping recording")
 
-        timerJob?.cancel()
-        amplitudeJob?.cancel()
-
         if (_uiState.value.state == RecordingState.Recording) {
             accumulatedDurationMillis += System.currentTimeMillis() - startTimeMillis
         }
 
-        try {
-            audioRecorder?.stopRecording()
-            audioRecorder?.release()
-            audioRecorder = null
+        // Isolate reference to prevent concurrent calls during stopAndReset
+        val recorderToStop = audioRecorder
+        audioRecorder = null
+        val durationToSave = accumulatedDurationMillis
 
-            _uiState.update {
-                it.copy(
-                    state = RecordingState.PlaybackReady,
-                    amplitude = 0f,
-                    durationMillis = accumulatedDurationMillis,
-                    isSaveEnabled = true
-                )
+        viewModelScope.launch(ioDispatcher) {
+            timerJob?.cancel()
+            amplitudeJob?.cancel()
+
+            var stopException: Exception? = null
+            try {
+                recorderToStop?.stopRecording()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to stop recording")
+                stopException = e
+            } finally {
+                // Ensure release executes even if viewModelScope is canceled
+                withContext(NonCancellable) {
+                    try {
+                        recorderToStop?.release()
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to release recording")
+                    }
+                }
+
+                withContext(Dispatchers.Main) {
+                    if (stopException != null) {
+                        _uiState.update { it.copy(state = RecordingState.Idle) }
+                    } else {
+                        _uiState.update { state ->
+                            // Update state safely if we haven't been reset while stopping
+                            if (state.state in listOf(
+                                    RecordingState.Recording, RecordingState.RecordingPaused
+                                )
+                            ) {
+                                state.copy(
+                                    state = RecordingState.PlaybackReady,
+                                    amplitude = 0f,
+                                    durationMillis = durationToSave,
+                                    isSaveEnabled = true
+                                )
+                            } else {
+                                state
+                            }
+                        }
+                    }
+                }
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to stop recording")
-            _uiState.update { it.copy(state = RecordingState.Idle) }
         }
     }
 
