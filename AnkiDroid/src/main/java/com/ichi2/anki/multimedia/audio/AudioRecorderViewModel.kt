@@ -33,6 +33,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
         object PausePlayback : Intent
         object DiscardRecording : Intent
         object SaveRecording : Intent
+        object CloseRecorder : Intent
     }
 
     sealed interface RecordingState {
@@ -51,7 +52,8 @@ class AudioRecorderViewModel @JvmOverloads constructor(
         val amplitude: Float = 0f,
         val amplitudes: List<Float> = emptyList(),
         val isSaveEnabled: Boolean = false,
-        val savedFile: File? = null
+        val savedFile: File? = null,
+        val shouldClose: Boolean = false
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -78,6 +80,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
             is Intent.PausePlayback -> pausePlayback()
             is Intent.DiscardRecording -> discardRecording()
             is Intent.SaveRecording -> saveRecording()
+            is Intent.CloseRecorder -> closeRecorder()
         }
     }
 
@@ -151,8 +154,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
 
     private fun stopRecording() {
         if (_uiState.value.state !in listOf(
-                RecordingState.Recording,
-                RecordingState.RecordingPaused
+                RecordingState.Recording, RecordingState.RecordingPaused
             )
         ) return
         Timber.i("AudioRecorderViewModel: stopping recording")
@@ -186,8 +188,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
     private fun startPlayback() {
         val file = audioFile ?: return
         if (_uiState.value.state !in listOf(
-                RecordingState.PlaybackReady,
-                RecordingState.PlaybackPaused
+                RecordingState.PlaybackReady, RecordingState.PlaybackPaused
             )
         ) return
 
@@ -250,10 +251,14 @@ class AudioRecorderViewModel @JvmOverloads constructor(
         stopAndReset()
     }
 
+    private fun closeRecorder() {
+        Timber.i("AudioRecorderViewModel: closing recorder")
+        _uiState.update { it.copy(shouldClose = true) }
+    }
+
     private fun saveRecording() {
         if (_uiState.value.state in listOf(
-                RecordingState.Recording,
-                RecordingState.RecordingPaused
+                RecordingState.Recording, RecordingState.RecordingPaused
             )
         ) {
             stopRecording()
@@ -312,8 +317,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
     fun stopAllAndRelease() {
         Timber.i("AudioRecorderViewModel: stopAllAndRelease")
         if (_uiState.value.state in listOf(
-                RecordingState.Recording,
-                RecordingState.RecordingPaused
+                RecordingState.Recording, RecordingState.RecordingPaused
             )
         ) {
             stopRecording()
@@ -341,9 +345,7 @@ class AudioRecorderViewModel @JvmOverloads constructor(
 
         // Safe deletion of transient audio files before clearing references
         val filesToDelete = listOfNotNull(
-            audioFile,
-            _uiState.value.savedFile,
-            AudioRecordingController.tempAudioPath
+            audioFile, _uiState.value.savedFile, AudioRecordingController.tempAudioPath
         )
 
         filesToDelete.distinct().forEach { file ->

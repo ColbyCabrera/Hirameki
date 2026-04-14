@@ -20,9 +20,11 @@ package com.ichi2.anki.multimedia
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
@@ -81,8 +83,10 @@ class MultimediaActivity :
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
-            view.updatePadding(top = insets.getInsets(systemBars()).top)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_layout)) { view, insets ->
+            val systemBarsInsets = insets.getInsets(systemBars())
+            toolbar.updatePadding(top = systemBarsInsets.top)
+            view.updatePadding(bottom = systemBarsInsets.bottom)
             insets
         }
 
@@ -113,6 +117,10 @@ class MultimediaActivity :
             Timber.d("MultimediaActivity:: Back pressed")
             onBackPressedDispatcher.onBackPressed()
         }
+    }
+
+    fun setToolbarVisible(visible: Boolean) {
+        findViewById<View>(R.id.app_bar).isVisible = visible
     }
 
     override val baseSnackbarBuilder: SnackbarBuilder = {

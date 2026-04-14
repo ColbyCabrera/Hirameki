@@ -78,8 +78,11 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
             return
         }
 
+        (requireActivity() as? MultimediaActivity)?.setToolbarVisible(false)
+
         initializeComposeUI()
         setupDoneAction()
+        setupCloseAction()
     }
 
     private fun hasMicPermission(): Boolean {
@@ -111,6 +114,16 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
         }
     }
 
+    private fun setupCloseAction() {
+        lifecycleScope.launch {
+            audioRecorderViewModel.uiState.collect { state ->
+                if (state.shouldClose) {
+                    requireActivity().finish()
+                }
+            }
+        }
+    }
+
     private fun onDone() {
         Timber.d("AudioRecordingFragment:: Done action triggered")
         if (viewModel.selectedMediaFileSize == 0L) {
@@ -135,8 +148,18 @@ class AudioRecordingFragment : MultimediaFragment(R.layout.fragment_audio_record
             composeView?.apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
-                    AnkiDroidTheme { AudioRecorderScreen(viewModel = audioRecorderViewModel) }
-
+                    AnkiDroidTheme {
+                        AudioRecorderScreen(
+                            title = title,
+                            viewModel = audioRecorderViewModel,
+                            onBackClick = {
+                                if (audioRecorderViewModel.uiState.value.state != AudioRecorderViewModel.RecordingState.Idle) {
+                                    audioRecorderViewModel.processIntent(AudioRecorderViewModel.Intent.DiscardRecording)
+                                }
+                                audioRecorderViewModel.processIntent(AudioRecorderViewModel.Intent.CloseRecorder)
+                            },
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {

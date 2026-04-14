@@ -1,6 +1,5 @@
 package com.ichi2.anki.multimedia.audio.ui.compose
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +21,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,35 +41,55 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ichi2.anki.R
 import com.ichi2.anki.multimedia.audio.AudioRecorderViewModel
 import com.ichi2.anki.multimedia.audio.AudioWaveformCompose
+import com.ichi2.anki.noteeditor.compose.NoteEditorTopAppBar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
 import java.util.Locale
 
 @Composable
 fun AudioRecorderScreen(
-    viewModel: AudioRecorderViewModel, modifier: Modifier = Modifier
+    title: String,
+    onBackClick: () -> Unit,
+    viewModel: AudioRecorderViewModel,
+    modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AudioRecorderContent(
-        uiState = uiState, onIntent = viewModel::processIntent, modifier = modifier
+        title = title,
+        onBackClick = onBackClick,
+        uiState = uiState,
+        onIntent = viewModel::processIntent,
+        modifier = modifier
     )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AudioRecorderContent(
+    title: String,
+    onBackClick: () -> Unit,
     uiState: AudioRecorderViewModel.UiState,
     onIntent: (AudioRecorderViewModel.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-    ) {
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            NoteEditorTopAppBar(
+                title = title,
+                onBackClick = onBackClick,
+                showSaveAction = false,
+                showPreviewAction = false
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    ) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             // Delete / Top Right
@@ -392,6 +412,8 @@ private fun formatDuration(millis: Long): String {
 private fun AudioRecorderScreenIdlePreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
+            title = "Audio Recorder",
+            onBackClick = {},
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.Idle, amplitudes = listOf(
                     0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
@@ -405,6 +427,8 @@ private fun AudioRecorderScreenIdlePreview() {
 private fun AudioRecorderScreenRecordingPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
+            title = "Audio Recorder",
+            onBackClick = {},
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.Recording,
                 durationMillis = 12300L,
@@ -421,6 +445,8 @@ private fun AudioRecorderScreenRecordingPreview() {
 private fun AudioRecorderScreenRecordingPausedPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
+            title = "Audio Recorder",
+            onBackClick = {},
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.RecordingPaused,
                 durationMillis = 15000L,
@@ -437,6 +463,8 @@ private fun AudioRecorderScreenRecordingPausedPreview() {
 private fun AudioRecorderScreenPlaybackReadyPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
+            title = "Audio Recorder",
+            onBackClick = {},
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.PlaybackReady,
                 durationMillis = 30000L,
@@ -454,6 +482,8 @@ private fun AudioRecorderScreenPlaybackReadyPreview() {
 private fun AudioRecorderScreenPlayingPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
+            title = "Audio Recorder",
+            onBackClick = {},
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.Playing,
                 durationMillis = 30000L,
@@ -471,6 +501,8 @@ private fun AudioRecorderScreenPlayingPreview() {
 private fun AudioRecorderScreenPlaybackPausedPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
+            title = "Audio Recorder",
+            onBackClick = {},
             uiState = AudioRecorderViewModel.UiState(
                 state = AudioRecorderViewModel.RecordingState.PlaybackPaused,
                 durationMillis = 30000L,
