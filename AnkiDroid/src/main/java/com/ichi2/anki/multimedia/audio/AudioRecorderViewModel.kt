@@ -134,7 +134,11 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun stopRecording() {
-        if (_uiState.value.state !in listOf(RecordingState.Recording, RecordingState.RecordingPaused)) return
+        if (_uiState.value.state !in listOf(
+                RecordingState.Recording,
+                RecordingState.RecordingPaused
+            )
+        ) return
         Timber.i("AudioRecorderViewModel: stopping recording")
 
         timerJob?.cancel()
@@ -165,7 +169,11 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
 
     private fun startPlayback() {
         val file = audioFile ?: return
-        if (_uiState.value.state !in listOf(RecordingState.PlaybackReady, RecordingState.PlaybackPaused)) return
+        if (_uiState.value.state !in listOf(
+                RecordingState.PlaybackReady,
+                RecordingState.PlaybackPaused
+            )
+        ) return
 
         Timber.i("AudioRecorderViewModel: starting playback")
         try {
@@ -179,7 +187,12 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
             mediaPlayer?.start()
 
             mediaPlayer?.setOnCompletionListener {
-                _uiState.update { it.copy(state = RecordingState.PlaybackReady, playbackProgressMillis = 0L) }
+                _uiState.update {
+                    it.copy(
+                        state = RecordingState.PlaybackReady,
+                        playbackProgressMillis = 0L
+                    )
+                }
                 playbackProgressJob?.cancel()
             }
 
@@ -209,7 +222,11 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun saveRecording() {
-        if (_uiState.value.state in listOf(RecordingState.Recording, RecordingState.RecordingPaused)) {
+        if (_uiState.value.state in listOf(
+                RecordingState.Recording,
+                RecordingState.RecordingPaused
+            )
+        ) {
             stopRecording()
         }
         // Just marks that we want to save, fragment handles the result logic via uiState observation
@@ -220,7 +237,8 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (isActive && _uiState.value.state == RecordingState.Recording) {
-                val currentDuration = accumulatedDurationMillis + (System.currentTimeMillis() - startTimeMillis)
+                val currentDuration =
+                    accumulatedDurationMillis + (System.currentTimeMillis() - startTimeMillis)
                 _uiState.update { it.copy(durationMillis = currentDuration) }
                 delay(50) // Update relatively frequently for UI responsiveness
             }
@@ -236,7 +254,9 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
                 _uiState.update { state ->
                     state.copy(
                         amplitude = normalizedAmplitude,
-                        amplitudes = (state.amplitudes + normalizedAmplitude).takeLast(MAX_AMPLITUDES)
+                        amplitudes = (state.amplitudes + normalizedAmplitude).takeLast(
+                            MAX_AMPLITUDES
+                        )
                     )
                 }
                 delay(50)
@@ -262,7 +282,11 @@ class AudioRecorderViewModel(application: Application) : AndroidViewModel(applic
      */
     fun stopAllAndRelease() {
         Timber.i("AudioRecorderViewModel: stopAllAndRelease")
-        if (_uiState.value.state in listOf(RecordingState.Recording, RecordingState.RecordingPaused)) {
+        if (_uiState.value.state in listOf(
+                RecordingState.Recording,
+                RecordingState.RecordingPaused
+            )
+        ) {
             stopRecording()
         }
         if (_uiState.value.state == RecordingState.Playing) {
