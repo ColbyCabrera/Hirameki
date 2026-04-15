@@ -147,7 +147,8 @@ class SharedDecksDownloadFragment : Fragment() {
                 AnkiDroidTheme {
                     val state by uiState.collectAsState()
                     val fileToBeDownloaded =
-                        arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)!!
+                        arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)
+                            ?: return@AnkiDroidTheme
                     SharedDecksDownloadScreen(
                         state = state,
                         onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
@@ -173,7 +174,8 @@ class SharedDecksDownloadFragment : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
 
-        val fileToBeDownloaded = arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)!!
+        val fileToBeDownloaded =
+            arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE) ?: return
         downloadManager = (activity as SharedDecksActivity).downloadManager
 
         downloadFile(fileToBeDownloaded)
@@ -281,8 +283,7 @@ class SharedDecksDownloadFragment : Fragment() {
                 if (!ImportUtils.isFileAValidDeck(fileName!!)) {
                     Timber.i("File does not have 'apkg' or 'colpkg' extension, abort the deck opening task")
                     checkDownloadStatusAndUnregisterReceiver(
-                        isSuccessful = false,
-                        isInvalidDeckFile = true
+                        isSuccessful = false, isInvalidDeckFile = true
                     )
                     return false
                 }
@@ -338,12 +339,9 @@ class SharedDecksDownloadFragment : Fragment() {
                 // Setting these since progress checker can stop before progress is updated to represent 100%
                 uiState.update {
                     it.copy(
-                        progress = 100f,
-                        progressText = getString(
-                            R.string.percentage,
-                            DOWNLOAD_COMPLETED_PROGRESS_PERCENTAGE
-                        ),
-                        status = DownloadStatus.Complete
+                        progress = 100f, progressText = getString(
+                            R.string.percentage, DOWNLOAD_COMPLETED_PROGRESS_PERCENTAGE
+                        ), status = DownloadStatus.Complete
                     )
                 }
             }
@@ -492,11 +490,12 @@ class SharedDecksDownloadFragment : Fragment() {
         fileIntent.action = Intent.ACTION_VIEW
 
         val fileUri = context?.let {
+            val currentFileName = fileName ?: return@let null
             val sharedDecksPath = File(it.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER)
             FileProvider.getUriForFile(
                 it,
                 it.applicationContext?.packageName + ".apkgfileprovider",
-                File(sharedDecksPath, fileName.toString()),
+                File(sharedDecksPath, currentFileName),
             )
         }
         Timber.d("File URI -> $fileUri")
