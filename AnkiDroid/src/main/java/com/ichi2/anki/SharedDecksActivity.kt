@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -266,8 +267,8 @@ class SharedDecksActivity : AnkiActivity() {
         val composeView: ComposeView = findViewById(R.id.top_bar_compose_view)
         composeView.setContent {
             AnkiDroidTheme {
-                var isSearching by remember { mutableStateOf(false) }
-                var searchQuery by remember { mutableStateOf("") }
+                var isSearching by rememberSaveable { mutableStateOf(false) }
+                var searchQuery by rememberSaveable { mutableStateOf("") }
                 val searchFocusRequester = remember { FocusRequester() }
                 val searchAnim by animateFloatAsState(
                     targetValue = if (isSearching) 1f else 0f,
