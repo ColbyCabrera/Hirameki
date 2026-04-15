@@ -43,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -53,7 +52,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
-import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.themes.Themes
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
@@ -211,13 +209,5 @@ private fun PageWebViewInternal(
         if (hasError) {
             PageWebViewError()
         }
-    }
-}
-
-@Preview
-@Composable
-private fun PageWebViewTopBarPreview() {
-    AnkiDroidTheme {
-        AnkiTopAppBar(titleText = "Preview Title", onNavigateUp = {})
     }
 }
