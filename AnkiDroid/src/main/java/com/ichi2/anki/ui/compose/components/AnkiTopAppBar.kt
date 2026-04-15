@@ -84,23 +84,19 @@ private fun AnkiTopAppBarLongTitlePreview() {
 @Composable
 private fun AnkiTopAppBarWithActionsPreview() {
     AnkiDroidTheme {
-        AnkiTopAppBar(
-            titleText = "AnkiDroid",
-            onNavigateUp = {},
-            actions = {
-                IconButton(onClick = {}) {
-                    Icon(
-                        painter = painterResource(R.drawable.star_24px),
-                        contentDescription = "Star",
-                    )
-                }
-                IconButton(onClick = {}) {
-                    Icon(
-                        painter = painterResource(R.drawable.download_24px),
-                        contentDescription = "Download",
-                    )
-                }
+        AnkiTopAppBar(titleText = "AnkiDroid", onNavigateUp = {}, actions = {
+            IconButton(onClick = {}) {
+                Icon(
+                    painter = painterResource(R.drawable.star_24px),
+                    contentDescription = "Star",
+                )
             }
-        )
+            IconButton(onClick = {}) {
+                Icon(
+                    painter = painterResource(R.drawable.download_24px),
+                    contentDescription = "Download",
+                )
+            }
+        })
     }
 }
