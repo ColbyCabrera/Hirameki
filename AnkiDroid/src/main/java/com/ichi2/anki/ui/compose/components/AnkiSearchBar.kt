@@ -1,9 +1,6 @@
 package com.ichi2.anki.ui.compose.components
 
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -102,8 +99,8 @@ fun AnkiSearchBar(
             expanded = false,
             onExpandedChange = { },
             modifier = modifier.graphicsLayer {
-                    alpha = searchAnim
-                },
+                alpha = searchAnim
+            },
             shape = SearchBarDefaults.inputFieldShape,
             colors = SearchBarDefaults.colors(
                 containerColor = containerColor,
