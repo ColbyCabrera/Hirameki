@@ -293,7 +293,11 @@ class SharedDecksActivity : AnkiActivity() {
                                 query = searchQuery,
                                 onQueryChange = { searchQuery = it },
                                 onSearch = {
-                                    webView.loadUrl(resources.getString(R.string.shared_decks_url) + it)
+                                    val searchUrl =
+                                        resources.getString(R.string.shared_decks_url).toUri()
+                                            .buildUpon().appendQueryParameter("search", it).build()
+                                            .toString()
+                                    webView.loadUrl(searchUrl)
                                     isSearching = false
                                 },
                                 onActiveChange = { isSearching = it },
