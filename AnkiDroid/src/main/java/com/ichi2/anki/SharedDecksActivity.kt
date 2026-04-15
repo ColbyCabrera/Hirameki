@@ -31,6 +31,8 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -285,17 +287,6 @@ class SharedDecksActivity : AnkiActivity() {
                         }
                     },
                     titleContent = {
-                        if (!isSearching) {
-                            Text(
-                                getString(R.string.download_deck),
-                                style = MaterialTheme.typography.displayMediumEmphasized,
-                                maxLines = 1,
-                                modifier = Modifier.graphicsLayer {
-                                    alpha = 1f - searchAnim
-                                })
-                        }
-                    },
-                    actions = {
                         if (isSearching) {
                             AnkiSearchBar(
                                 query = searchQuery,
@@ -309,10 +300,22 @@ class SharedDecksActivity : AnkiActivity() {
                                 focusRequester = searchFocusRequester,
                                 searchAnim = searchAnim,
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 60.dp, end = 12.dp, bottom = 8.dp)
+                                    .fillMaxWidth()
+                                    .height(60.dp)
+                                    .padding(end = 12.dp, bottom = 8.dp)
                             )
                         } else {
+                            Text(
+                                getString(R.string.download_deck),
+                                style = MaterialTheme.typography.displayMediumEmphasized,
+                                maxLines = 1,
+                                modifier = Modifier.graphicsLayer {
+                                    alpha = 1f - searchAnim
+                                })
+                        }
+                    },
+                    actions = {
+                        if (!isSearching) {
                             IconButton(
                                 onClick = { isSearching = true },
                                 modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim }) {

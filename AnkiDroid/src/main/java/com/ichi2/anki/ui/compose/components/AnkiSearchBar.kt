@@ -1,10 +1,14 @@
 package com.ichi2.anki.ui.compose.components
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarDefaults.InputField
@@ -54,58 +58,59 @@ fun AnkiSearchBar(
     val density = LocalDensity.current
     val searchOffsetPx = with(density) { (-8).dp.toPx() }
 
-    SearchBar(
-        inputField = {
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
-            }
-            InputField(
-                query = query,
-                onQueryChange = onQueryChange,
-                onSearch = onSearch,
-                expanded = true,
-                onExpandedChange = { },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester)
-                    .graphicsLayer {
-                        alpha = searchAnim
-                        translationY = searchOffsetPx * (1f - searchAnim)
-                        scaleX = 0.98f + 0.02f * searchAnim
-                        scaleY = 0.98f + 0.02f * searchAnim
-                    },
-                placeholder = { Text(placeholder) },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.search_24px),
-                        contentDescription = placeholder,
-                    )
-                },
-                trailingIcon = {
-                    IconButton(onClick = {
-                        onQueryChange("")
-                        onActiveChange(false)
-                    }) {
+    ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
+        SearchBar(
+            inputField = {
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                }
+                InputField(
+                    query = query,
+                    onQueryChange = onQueryChange,
+                    onSearch = onSearch,
+                    expanded = true,
+                    onExpandedChange = { },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                        .graphicsLayer {
+                            alpha = searchAnim
+                            translationY = searchOffsetPx * (1f - searchAnim)
+                            scaleX = 0.98f + 0.02f * searchAnim
+                            scaleY = 0.98f + 0.02f * searchAnim
+                        },
+                    placeholder = { Text(placeholder) },
+                    leadingIcon = {
                         Icon(
-                            painter = painterResource(R.drawable.close_24px),
-                            contentDescription = stringResource(R.string.close),
+                            painter = painterResource(R.drawable.search_24px),
+                            contentDescription = placeholder,
                         )
-                    }
-                },
-            )
-        },
-        expanded = false,
-        onExpandedChange = { },
-        modifier = modifier
-            .graphicsLayer {
-                alpha = searchAnim
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            onQueryChange("")
+                            onActiveChange(false)
+                        }) {
+                            Icon(
+                                painter = painterResource(R.drawable.close_24px),
+                                contentDescription = stringResource(R.string.close),
+                            )
+                        }
+                    },
+                )
             },
-        shape = SearchBarDefaults.inputFieldShape,
-        colors = SearchBarDefaults.colors(
-            containerColor = containerColor,
-        ),
-        content = { },
-    )
+            expanded = false,
+            onExpandedChange = { },
+            modifier = modifier.graphicsLayer {
+                    alpha = searchAnim
+                },
+            shape = SearchBarDefaults.inputFieldShape,
+            colors = SearchBarDefaults.colors(
+                containerColor = containerColor,
+            ),
+            content = { },
+        )
+    }
 }
 
 @Preview(showBackground = true)
@@ -118,7 +123,6 @@ private fun AnkiSearchBarPreview() {
             onSearch = {},
             onActiveChange = {},
             placeholder = "Search...",
-            focusRequester = remember { FocusRequester() }
-        )
+            focusRequester = remember { FocusRequester() })
     }
 }
