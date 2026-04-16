@@ -129,7 +129,11 @@ fun SharedDecksDownloadScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = stringResource(R.string.deck_download_progress_message),
+                    text = when (state.status) {
+                        DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
+                        DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
+                        else -> stringResource(R.string.deck_download_progress_message)
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
