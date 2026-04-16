@@ -322,8 +322,7 @@ class SharedDecksDownloadFragment : Fragment() {
 
                 // Return if mDownloadId does not match with the ID of the completed download.
                 if (viewModel.downloadId != intent?.getLongExtra(
-                        DownloadManager.EXTRA_DOWNLOAD_ID,
-                        0
+                        DownloadManager.EXTRA_DOWNLOAD_ID, 0
                     )
                 ) {
                     Timber.w("Download id did not match expected id. Ignoring this download completion")
@@ -417,14 +416,20 @@ class SharedDecksDownloadFragment : Fragment() {
                 File(sharedDecksPath, fileName),
             )
         }
+
+        if (fileUri == null) {
+            Timber.w("fileUri is null, cannot open deck for import. context is null or fileName is empty.")
+            return
+        }
+
         Timber.d("File URI -> $fileUri")
         fileIntent.setDataAndType(fileUri, mimeType)
         fileIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         fileIntent.putExtra(EXTRA_IS_SHARED_DOWNLOAD, true)
         try {
-            context?.startActivity(fileIntent)
+            requireContext().startActivity(fileIntent)
         } catch (e: ActivityNotFoundException) {
-            context?.let { showThemedToast(it, R.string.something_wrong, false) }
+            showThemedToast(requireContext(), R.string.something_wrong, false)
             Timber.w(e)
         }
     }
