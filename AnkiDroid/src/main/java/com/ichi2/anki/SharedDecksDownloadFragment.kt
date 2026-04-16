@@ -413,7 +413,8 @@ class SharedDecksDownloadFragment : Fragment() {
 
         val fileUri = run {
             if (fileName.isEmpty()) return@run null
-            val sharedDecksPath = File(context.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER)
+            val sharedDecksPath =
+                File(context.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER)
             FileProvider.getUriForFile(
                 context,
                 context.applicationContext?.packageName + ".apkgfileprovider",
