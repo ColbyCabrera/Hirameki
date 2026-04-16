@@ -88,31 +88,25 @@ fun SharedDecksDownloadScreen(
     onNavigateUp: () -> Unit,
     onCancel: () -> Unit,
     onConfirmCancel: () -> Unit,
+    onDismissCancelDialog: () -> Unit,
     onRetry: () -> Unit,
     onImport: () -> Unit,
     onOpenInBrowser: () -> Unit,
-    onDismissCancelDialog: () -> Unit,
 ) {
     if (state.showCancelDialog) {
-        AlertDialog(
-            onDismissRequest = onDismissCancelDialog,
-            title = {
-                Text(text = stringResource(R.string.cancel_download_question_title))
-            },
-            text = {
-                Text(text = stringResource(R.string.cancel_download_explanation))
-            },
-            confirmButton = {
-                TextButton(onClick = onConfirmCancel) {
-                    Text(stringResource(R.string.dialog_yes))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismissCancelDialog) {
-                    Text(stringResource(R.string.dialog_no))
-                }
+        AlertDialog(onDismissRequest = onDismissCancelDialog, title = {
+            Text(text = stringResource(R.string.cancel_download_question_title))
+        }, text = {
+            Text(text = stringResource(R.string.cancel_download_explanation))
+        }, confirmButton = {
+            TextButton(onClick = onConfirmCancel) {
+                Text(stringResource(R.string.dialog_yes))
             }
-        )
+        }, dismissButton = {
+            TextButton(onClick = onDismissCancelDialog) {
+                Text(stringResource(R.string.dialog_no))
+            }
+        })
     }
 
     Scaffold(
@@ -385,10 +379,10 @@ fun SharedDecksDownloadScreenPreview() {
             onNavigateUp = {},
             onCancel = {},
             onConfirmCancel = {},
+            onDismissCancelDialog = {},
             onRetry = {},
             onImport = {},
-            onOpenInBrowser = {},
-            onDismissCancelDialog = {})
+            onOpenInBrowser = {})
     }
 }
 
@@ -403,10 +397,10 @@ fun SharedDecksDownloadScreenFailedPreview() {
             onNavigateUp = {},
             onCancel = {},
             onConfirmCancel = {},
+            onDismissCancelDialog = {},
             onRetry = {},
             onImport = {},
-            onOpenInBrowser = {},
-            onDismissCancelDialog = {})
+            onOpenInBrowser = {})
     }
 }
 
@@ -424,10 +418,10 @@ fun SharedDecksDownloadScreenCompletePreview() {
             onNavigateUp = {},
             onCancel = {},
             onConfirmCancel = {},
+            onDismissCancelDialog = {},
             onRetry = {},
             onImport = {},
-            onOpenInBrowser = {},
-            onDismissCancelDialog = {})
+            onOpenInBrowser = {})
     }
 }
 

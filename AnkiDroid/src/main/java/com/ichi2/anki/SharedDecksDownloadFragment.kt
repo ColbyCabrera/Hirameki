@@ -157,6 +157,7 @@ class SharedDecksDownloadFragment : Fragment() {
                             stopDownloadProgressChecker()
                             parentFragmentManager.popBackStack()
                         },
+                        onDismissCancelDialog = { uiState.update { it.copy(showCancelDialog = false) } },
                         onRetry = {
                             downloadManager.remove(downloadId)
                             downloadFile(fileToBeDownloaded)
@@ -166,9 +167,7 @@ class SharedDecksDownloadFragment : Fragment() {
                             downloadManager.remove(downloadId)
                             openUrl(requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri())
                             parentFragmentManager.popBackStack()
-                        },
-                        onDismissCancelDialog = { uiState.update { it.copy(showCancelDialog = false) } }
-                    )
+                        })
                 }
             }
         }
@@ -179,7 +178,10 @@ class SharedDecksDownloadFragment : Fragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, onBackPressedCallback)
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            onBackPressedCallback
+        )
 
         val fileToBeDownloaded =
             arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE) ?: return
