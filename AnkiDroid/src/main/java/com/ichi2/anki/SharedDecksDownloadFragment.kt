@@ -526,7 +526,7 @@ class SharedDecksDownloadFragment : Fragment() {
                 Timber.i("File is not a valid deck, hence return from the download screen")
                 context?.let { showThemedToast(it, R.string.import_log_no_apkg, false) }
                 // Go back if file is not a deck and cannot be imported
-                activity?.onBackPressedDispatcher?.onBackPressed()
+                parentFragmentManager.popBackStack()
             } else {
                 Timber.i("Download failed, update UI and provide option to retry")
                 context?.let { showThemedToast(it, R.string.something_wrong, false) }
@@ -551,7 +551,8 @@ class SharedDecksDownloadFragment : Fragment() {
                 unregisterReceiver()
                 isDownloadInProgress = false
                 onBackPressedCallback.isEnabled = isDownloadInProgress
-                activity?.onBackPressedDispatcher?.onBackPressed()
+                stopDownloadProgressChecker()
+                parentFragmentManager.popBackStack()
             }
             setNegativeButton(R.string.dialog_no) { _, _ ->
                 downloadCancelConfirmationDialog?.dismiss()
