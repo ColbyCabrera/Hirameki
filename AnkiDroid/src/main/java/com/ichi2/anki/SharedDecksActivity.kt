@@ -20,8 +20,6 @@ package com.ichi2.anki
 import android.app.DownloadManager
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.webkit.WebResourceError
@@ -31,17 +29,37 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.widget.SearchView
-import androidx.appcompat.widget.Toolbar
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.commit
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFINITE
 import com.ichi2.anki.SharedDecksActivity.Companion.MAX_REDIRECTS
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.snackbar.showSnackbar
-import com.ichi2.ui.AccessibleSearchView
+import com.ichi2.anki.ui.compose.components.AnkiSearchBar
+import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.FileNameAndExtension
 import timber.log.Timber
 import java.io.Serializable
@@ -121,7 +139,7 @@ class SharedDecksActivity : AnkiActivity() {
         }
 
         /**
-         * Prevent the WebView from loading urls which arent needed for importing shared decks.
+         * Prevent the WebView from loading urls which aren't needed for importing shared decks.
          * This is to prevent potential misuse, such as bypassing content restrictions or
          * using the AnkiDroid WebView as a regular browser to bypass browser blocks,
          * which could lead to procrastination.
@@ -243,23 +261,87 @@ class SharedDecksActivity : AnkiActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_shared_decks)
-        setTitle(R.string.download_deck)
-
-        val webviewToolbar: Toolbar = findViewById(R.id.webview_toolbar)
-        webviewToolbar.setTitleTextColor(getColor(R.color.white))
-
-        setSupportActionBar(webviewToolbar)
-
-        ViewCompat.setOnApplyWindowInsetsListener(webviewToolbar) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(v.paddingLeft, systemBars.top, v.paddingRight, v.paddingBottom)
-            insets
-        }
-
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowHomeEnabled(true)
 
         webView = findViewById(R.id.media_check_webview)
+
+        val composeView: ComposeView = findViewById(R.id.top_bar_compose_view)
+        composeView.setContent {
+            AnkiDroidTheme {
+                var isSearching by rememberSaveable { mutableStateOf(false) }
+                var searchQuery by rememberSaveable { mutableStateOf("") }
+                val searchFocusRequester = remember { FocusRequester() }
+                val searchAnim by animateFloatAsState(
+                    targetValue = if (isSearching) 1f else 0f,
+                    animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+                    label = "searchAnim"
+                )
+
+                AnkiTopAppBar(
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.statusBars),
+                    onNavigateUp = {
+                        if (isSearching) {
+                            isSearching = false
+                            searchQuery = ""
+                        } else {
+                            onBackPressedCallback.isEnabled = false
+                            onBackPressedDispatcher.onBackPressed()
+                        }
+                    },
+                    titleContent = {
+                        if (isSearching) {
+                            AnkiSearchBar(
+                                query = searchQuery,
+                                onQueryChange = { searchQuery = it },
+                                onSearch = {
+                                    val searchUrl =
+                                        resources.getString(R.string.shared_decks_url).toUri()
+                                            .buildUpon().appendQueryParameter("search", it).build()
+                                            .toString()
+                                    webView.loadUrl(searchUrl)
+                                    isSearching = false
+                                },
+                                onActiveChange = { isSearching = it },
+                                placeholder = getString(R.string.search_using_deck_name),
+                                focusRequester = searchFocusRequester,
+                                searchAnim = searchAnim,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .padding(end = 12.dp, bottom = 8.dp)
+                            )
+                        } else {
+                            Text(
+                                getString(R.string.download_deck),
+                                style = MaterialTheme.typography.displayMediumEmphasized,
+                                maxLines = 1,
+                                modifier = Modifier.graphicsLayer {
+                                    alpha = 1f - searchAnim
+                                })
+                        }
+                    },
+                    actions = {
+                        if (!isSearching) {
+                            IconButton(
+                                onClick = { isSearching = true },
+                                modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.search_24px),
+                                    contentDescription = getString(R.string.search_using_deck_name)
+                                )
+                            }
+                            IconButton(onClick = {
+                                shouldHistoryBeCleared = true
+                                webView.loadUrl(resources.getString(R.string.shared_decks_url))
+                            }, modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.home_24px),
+                                    contentDescription = getString(R.string.home)
+                                )
+                            }
+                        }
+                    })
+            }
+        }
 
         downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
 
@@ -272,7 +354,9 @@ class SharedDecksActivity : AnkiActivity() {
             if (!supportFragmentManager.isStateSaved) {
                 val sharedDecksDownloadFragment = SharedDecksDownloadFragment()
                 sharedDecksDownloadFragment.arguments = Bundle().apply {
-                    putSerializable(DOWNLOAD_FILE, DownloadFile(url, userAgent, contentDisposition, mimetype))
+                    putSerializable(
+                        DOWNLOAD_FILE, DownloadFile(url, userAgent, contentDisposition, mimetype)
+                    )
                 }
                 supportFragmentManager.commit {
                     add(
@@ -287,40 +371,6 @@ class SharedDecksActivity : AnkiActivity() {
         webView.webViewClient = webViewClient
         onBackPressedDispatcher.addCallback(onBackPressedCallback)
     }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.download_shared_decks_menu, menu)
-
-        val searchView = menu.findItem(R.id.search)?.actionView as AccessibleSearchView
-        searchView.queryHint = getString(R.string.search_using_deck_name)
-        searchView.setMaxWidth(Integer.MAX_VALUE)
-        searchView.setOnQueryTextListener(
-            object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean {
-                    webView.loadUrl(resources.getString(R.string.shared_decks_url) + query)
-                    return true
-                }
-
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    // Nothing to do here
-                    return false
-                }
-            },
-        )
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.home) {
-            // R.id.home refers to a custom 'home' menu item defined in your app resources (res/menu/...).
-            shouldHistoryBeCleared = true
-            webView.loadUrl(resources.getString(R.string.shared_decks_url))
-        } else if (item.itemId == android.R.id.home) {
-            // android.R.id.home refers to the system-provided "up" button in the app toolbar
-            onBackPressedCallback.isEnabled = false
-        }
-        return super.onOptionsItemSelected(item)
-    }
 }
 
 /**
@@ -334,18 +384,17 @@ data class DownloadFile(
 ) : Serializable {
     /** @return a filename with the provided extension */
     fun toFileName(extension: String): String = URLUtil.guessFileName(
-            this.url,
-            this.contentDisposition,
-            this.mimeType,
-        ).let { maybeCorruptFileName ->
-            // #17573: https://issuetracker.google.com/issues/382864232
-            // guessFileName may return ".bin" as an extension
-            (FileNameAndExtension.fromString(maybeCorruptFileName)
-            // default if maybeCorruptFileName doesn't contain a '.'
-            // Add randomness to avoid file name conflicts between different decks
-                ?: FileNameAndExtension.fromString("download-${Random.nextInt()}$extension")!!).replaceExtension(
-                    extension = extension
-                ) // enforce the provided extension
-                .toString()
+        this.url,
+        this.contentDisposition,
+        this.mimeType,
+    ).let { maybeCorruptFileName ->
+        // #17573: https://issuetracker.google.com/issues/382864232
+        // guessFileName may return ".bin" as an extension
+        val base = FileNameAndExtension.fromString(maybeCorruptFileName) ?: requireNotNull(
+            FileNameAndExtension.fromString("download-${Random.nextInt(Int.MAX_VALUE)}.tmp")
+        ) {
+            "failed to parse fallback filename"
         }
+        base.replaceExtension(extension).toString()
+    }
 }

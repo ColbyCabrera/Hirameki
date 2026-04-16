@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -45,7 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -59,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
@@ -75,23 +77,41 @@ data class DownloadUiState(
     val fileName: String = "",
     val progress: Float = 0f,
     val progressText: String = "0%",
-    val status: DownloadStatus = DownloadStatus.Idle
+    val status: DownloadStatus = DownloadStatus.Idle,
+    val showCancelDialog: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedDecksDownloadScreen(
     state: DownloadUiState,
+    onNavigateUp: () -> Unit,
     onCancel: () -> Unit,
+    onConfirmCancel: () -> Unit,
+    onDismissCancelDialog: () -> Unit,
     onRetry: () -> Unit,
     onImport: () -> Unit,
-    onOpenInBrowser: () -> Unit
+    onOpenInBrowser: () -> Unit,
 ) {
+    if (state.showCancelDialog) {
+        AlertDialog(onDismissRequest = onDismissCancelDialog, title = {
+            Text(text = stringResource(R.string.cancel_download_question_title))
+        }, text = {
+            Text(text = stringResource(R.string.cancel_download_explanation))
+        }, confirmButton = {
+            TextButton(onClick = onConfirmCancel) {
+                Text(stringResource(R.string.dialog_yes))
+            }
+        }, dismissButton = {
+            TextButton(onClick = onDismissCancelDialog) {
+                Text(stringResource(R.string.dialog_no))
+            }
+        })
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0), topBar = {
-            TopAppBar(title = { }, navigationIcon = {
-                // Back handled by the fragment's onBackPressedCallback or cancel button
-            })
+            AnkiTopAppBar(onNavigateUp = onNavigateUp)
         }) { innerPadding ->
         Column(
             modifier = Modifier
@@ -355,7 +375,14 @@ fun SharedDecksDownloadScreenPreview() {
             progress = 45f,
             progressText = "45.2%",
             status = DownloadStatus.Downloading
-        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ),
+            onNavigateUp = {},
+            onCancel = {},
+            onConfirmCancel = {},
+            onDismissCancelDialog = {},
+            onRetry = {},
+            onImport = {},
+            onOpenInBrowser = {})
     }
 }
 
@@ -366,7 +393,14 @@ fun SharedDecksDownloadScreenFailedPreview() {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
-        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ),
+            onNavigateUp = {},
+            onCancel = {},
+            onConfirmCancel = {},
+            onDismissCancelDialog = {},
+            onRetry = {},
+            onImport = {},
+            onOpenInBrowser = {})
     }
 }
 
@@ -380,7 +414,14 @@ fun SharedDecksDownloadScreenCompletePreview() {
             progress = 100f,
             progressText = "100%",
             status = DownloadStatus.Complete
-        ), onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ),
+            onNavigateUp = {},
+            onCancel = {},
+            onConfirmCancel = {},
+            onDismissCancelDialog = {},
+            onRetry = {},
+            onImport = {},
+            onOpenInBrowser = {})
     }
 }
 

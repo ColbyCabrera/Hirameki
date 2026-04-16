@@ -11,14 +11,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/webview_toolbar"
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/top_bar_compose_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="@style/ActionBarStyle"
-        android:background="?attr/appBarColor"
-        app:popupTheme="@style/ActionBar.Popup"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -29,7 +25,7 @@
         android:layout_height="0dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/webview_toolbar"
+        app:layout_constraintTop_toBottomOf="@id/top_bar_compose_view"
         app:layout_constraintBottom_toBottomOf="parent" />
     
     <FrameLayout

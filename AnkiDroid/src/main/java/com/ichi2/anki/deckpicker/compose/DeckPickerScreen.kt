@@ -54,7 +54,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LinearProgressIndicator
@@ -62,9 +61,6 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SearchBarDefaults.InputField
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -85,10 +81,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -101,6 +95,7 @@ import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.ui.compose.SnackbarPaddingBottom
+import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.ExpandableFab
 import com.ichi2.anki.ui.compose.components.ExpandableFabContainer
 import com.ichi2.anki.ui.compose.components.Scrim
@@ -351,8 +346,6 @@ private fun DeckPickerTopBar(
         targetValue = if (isSearchOpen) 1f else 0f,
         animationSpec = motionScheme.defaultEffectsSpec(),
     )
-    val density = LocalDensity.current
-    val searchOffsetPx = with(density) { (-8).dp.toPx() }
 
     BackHandler(isSearchOpen) {
         onSearchQueryChanged("")
@@ -390,56 +383,18 @@ private fun DeckPickerTopBar(
         },
         actions = {
             if (isSearchOpen) {
-                SearchBar(
-                    inputField = {
-                        LaunchedEffect(Unit) {
-                            searchFocusRequester.requestFocus()
-                        }
-                        InputField(
-                            query = searchQuery,
-                            onQueryChange = onSearchQueryChanged,
-                            onSearch = { /* Search is performed as user types */ },
-                            expanded = true,
-                            onExpandedChange = { },
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(searchFocusRequester)
-                                .graphicsLayer {
-                                    alpha = searchAnim
-                                    translationY = searchOffsetPx * (1f - searchAnim)
-                                    scaleX = 0.98f + 0.02f * searchAnim
-                                    scaleY = 0.98f + 0.02f * searchAnim
-                                },
-                            placeholder = { Text(stringResource(R.string.search_decks)) },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.search_24px),
-                                    contentDescription = stringResource(R.string.search_decks),
-                                )
-                            },
-                            trailingIcon = {
-                                IconButton(onClick = {
-                                    onSearchQueryChanged("")
-                                    onSearchOpenChange(false)
-                                }) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.close_24px),
-                                        contentDescription = stringResource(R.string.close),
-                                    )
-                                }
-                            },
-                        )
-                    },
-                    expanded = false,
-                    onExpandedChange = { },
+                AnkiSearchBar(
+                    query = searchQuery,
+                    onQueryChange = onSearchQueryChanged,
+                    onSearch = { /* Search is performed as user types */ },
+                    onActiveChange = onSearchOpenChange,
+                    placeholder = stringResource(R.string.search_decks),
+                    focusRequester = searchFocusRequester,
+                    searchAnim = searchAnim,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 16.dp, end = 12.dp)
-                        .graphicsLayer {
-                            alpha = searchAnim
-                        },
-                    shape = SearchBarDefaults.inputFieldShape,
-                    content = { },
+                        .padding(start = 16.dp, end = 12.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
             } else {
                 Row(
