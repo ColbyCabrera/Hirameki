@@ -87,7 +87,6 @@ class SharedDecksDownloadFragment : Fragment() {
 
     var isDownloadInProgress = false
 
-    private var downloadCancelConfirmationDialog: AlertDialog? = null
     private val onBackPressedCallback = object : OnBackPressedCallback(isDownloadInProgress) {
         override fun handleOnBackPressed() {
             showCancelConfirmationDialog()
@@ -153,6 +152,15 @@ class SharedDecksDownloadFragment : Fragment() {
                         state = state,
                         onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
                         onCancel = { showCancelConfirmationDialog() },
+                        onConfirmCancel = {
+                            uiState.update { it.copy(showCancelDialog = false) }
+                            downloadManager.remove(downloadId)
+                            unregisterReceiver()
+                            isDownloadInProgress = false
+                            onBackPressedCallback.isEnabled = isDownloadInProgress
+                            stopDownloadProgressChecker()
+                            parentFragmentManager.popBackStack()
+                        },
                         onRetry = {
                             downloadManager.remove(downloadId)
                             downloadFile(fileToBeDownloaded)
@@ -162,7 +170,9 @@ class SharedDecksDownloadFragment : Fragment() {
                             downloadManager.remove(downloadId)
                             openUrl(requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri())
                             parentFragmentManager.popBackStack()
-                        })
+                        },
+                        onDismissCancelDialog = { uiState.update { it.copy(showCancelDialog = false) } }
+                    )
                 }
             }
         }
@@ -538,30 +548,9 @@ class SharedDecksDownloadFragment : Fragment() {
         unregisterReceiver()
         isDownloadInProgress = false
         onBackPressedCallback.isEnabled = isDownloadInProgress
-
-        // If the cancel confirmation dialog is being shown and the download is no longer in progress, then remove the dialog.
-        removeCancelConfirmationDialog()
     }
 
     private fun showCancelConfirmationDialog() {
-        downloadCancelConfirmationDialog = AlertDialog.Builder(requireContext()).create {
-            setTitle(R.string.cancel_download_question_title)
-            setPositiveButton(R.string.dialog_yes) { _, _ ->
-                downloadManager.remove(downloadId)
-                unregisterReceiver()
-                isDownloadInProgress = false
-                onBackPressedCallback.isEnabled = isDownloadInProgress
-                stopDownloadProgressChecker()
-                parentFragmentManager.popBackStack()
-            }
-            setNegativeButton(R.string.dialog_no) { _, _ ->
-                downloadCancelConfirmationDialog?.dismiss()
-            }
-        }
-        downloadCancelConfirmationDialog?.show()
-    }
-
-    private fun removeCancelConfirmationDialog() {
-        downloadCancelConfirmationDialog?.dismiss()
+        uiState.update { it.copy(showCancelDialog = true) }
     }
 }

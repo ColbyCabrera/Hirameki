@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -45,6 +46,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -75,7 +77,8 @@ data class DownloadUiState(
     val fileName: String = "",
     val progress: Float = 0f,
     val progressText: String = "0%",
-    val status: DownloadStatus = DownloadStatus.Idle
+    val status: DownloadStatus = DownloadStatus.Idle,
+    val showCancelDialog: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -84,10 +87,34 @@ fun SharedDecksDownloadScreen(
     state: DownloadUiState,
     onNavigateUp: () -> Unit,
     onCancel: () -> Unit,
+    onConfirmCancel: () -> Unit,
     onRetry: () -> Unit,
     onImport: () -> Unit,
-    onOpenInBrowser: () -> Unit
+    onOpenInBrowser: () -> Unit,
+    onDismissCancelDialog: () -> Unit,
 ) {
+    if (state.showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = onDismissCancelDialog,
+            title = {
+                Text(text = stringResource(R.string.cancel_download_question_title))
+            },
+            text = {
+                Text(text = stringResource(R.string.cancel_download_explanation))
+            },
+            confirmButton = {
+                TextButton(onClick = onConfirmCancel) {
+                    Text(stringResource(R.string.dialog_yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissCancelDialog) {
+                    Text(stringResource(R.string.dialog_no))
+                }
+            }
+        )
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0), topBar = {
             AnkiTopAppBar(onNavigateUp = onNavigateUp)
@@ -354,7 +381,14 @@ fun SharedDecksDownloadScreenPreview() {
             progress = 45f,
             progressText = "45.2%",
             status = DownloadStatus.Downloading
-        ), onNavigateUp = {}, onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ),
+            onNavigateUp = {},
+            onCancel = {},
+            onConfirmCancel = {},
+            onRetry = {},
+            onImport = {},
+            onOpenInBrowser = {},
+            onDismissCancelDialog = {})
     }
 }
 
@@ -365,7 +399,14 @@ fun SharedDecksDownloadScreenFailedPreview() {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
-        ), onNavigateUp = {}, onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ),
+            onNavigateUp = {},
+            onCancel = {},
+            onConfirmCancel = {},
+            onRetry = {},
+            onImport = {},
+            onOpenInBrowser = {},
+            onDismissCancelDialog = {})
     }
 }
 
@@ -379,7 +420,14 @@ fun SharedDecksDownloadScreenCompletePreview() {
             progress = 100f,
             progressText = "100%",
             status = DownloadStatus.Complete
-        ), onNavigateUp = {}, onCancel = {}, onRetry = {}, onImport = {}, onOpenInBrowser = {})
+        ),
+            onNavigateUp = {},
+            onCancel = {},
+            onConfirmCancel = {},
+            onRetry = {},
+            onImport = {},
+            onOpenInBrowser = {},
+            onDismissCancelDialog = {})
     }
 }
 
