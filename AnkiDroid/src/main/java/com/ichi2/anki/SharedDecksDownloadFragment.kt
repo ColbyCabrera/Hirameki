@@ -402,23 +402,27 @@ class SharedDecksDownloadFragment : Fragment() {
      * Open the downloaded deck using 'fileName'.
      */
     private fun openDownloadedDeck(context: Context?) {
+        if (context == null) {
+            Timber.w("Context is null, cannot open deck for import.")
+            return
+        }
         val fileName = viewModel.uiState.value.fileName
         val mimeType = URLConnection.guessContentTypeFromName(fileName)
         val fileIntent = Intent(context, IntentHandler::class.java)
         fileIntent.action = Intent.ACTION_VIEW
 
-        val fileUri = context?.let {
-            if (fileName.isEmpty()) return@let null
-            val sharedDecksPath = File(it.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER)
+        val fileUri = run {
+            if (fileName.isEmpty()) return@run null
+            val sharedDecksPath = File(context.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER)
             FileProvider.getUriForFile(
-                it,
-                it.applicationContext?.packageName + ".apkgfileprovider",
+                context,
+                context.applicationContext?.packageName + ".apkgfileprovider",
                 File(sharedDecksPath, fileName),
             )
         }
 
         if (fileUri == null) {
-            Timber.w("fileUri is null, cannot open deck for import. context is null or fileName is empty.")
+            Timber.w("fileUri is null, cannot open deck for import. fileName is empty.")
             return
         }
 
@@ -427,9 +431,9 @@ class SharedDecksDownloadFragment : Fragment() {
         fileIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         fileIntent.putExtra(EXTRA_IS_SHARED_DOWNLOAD, true)
         try {
-            requireContext().startActivity(fileIntent)
+            context.startActivity(fileIntent)
         } catch (e: ActivityNotFoundException) {
-            showThemedToast(requireContext(), R.string.something_wrong, false)
+            showThemedToast(context, R.string.something_wrong, false)
             Timber.w(e)
         }
     }
