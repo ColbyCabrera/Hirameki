@@ -128,13 +128,17 @@ class SharedDecksDownloadFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
+        val fileToBeDownloaded = arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)
+        if (fileToBeDownloaded == null) {
+            Timber.w("SharedDecksDownloadFragment started without DOWNLOAD_FILE argument")
+            parentFragmentManager.popBackStack()
+            return View(requireContext())
+        }
+
         return ComposeView(requireContext()).apply {
             setContent {
                 AnkiDroidTheme {
                     val state by viewModel.uiState.collectAsState()
-                    val fileToBeDownloaded =
-                        arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)
-                            ?: return@AnkiDroidTheme
                     SharedDecksDownloadScreen(
                         state = state,
                         onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
