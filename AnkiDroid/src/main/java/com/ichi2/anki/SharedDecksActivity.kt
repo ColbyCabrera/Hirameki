@@ -390,12 +390,11 @@ data class DownloadFile(
     ).let { maybeCorruptFileName ->
         // #17573: https://issuetracker.google.com/issues/382864232
         // guessFileName may return ".bin" as an extension
-        (FileNameAndExtension.fromString(maybeCorruptFileName)
-        // default if maybeCorruptFileName doesn't contain a '.'
-        // Add randomness to avoid file name conflicts between different decks
-            ?: FileNameAndExtension.fromString("download-${Random.nextInt()}$extension")!!).replaceExtension(
-            extension = extension
-        ) // enforce the provided extension
-            .toString()
+        val base = FileNameAndExtension.fromString(maybeCorruptFileName) ?: requireNotNull(
+            FileNameAndExtension.fromString("download-${Random.nextInt(Int.MAX_VALUE)}.tmp")
+        ) {
+            "failed to parse fallback filename"
+        }
+        base.replaceExtension(extension).toString()
     }
 }
