@@ -33,7 +33,6 @@ import android.view.ViewGroup
 import android.webkit.CookieManager
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
@@ -51,7 +50,6 @@ import com.ichi2.anki.utils.openUrl
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import com.ichi2.compat.CompatHelper.Companion.registerReceiverCompat
 import com.ichi2.utils.ImportUtils
-import com.ichi2.utils.create
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import timber.log.Timber
@@ -155,9 +153,7 @@ class SharedDecksDownloadFragment : Fragment() {
                         onConfirmCancel = {
                             uiState.update { it.copy(showCancelDialog = false) }
                             downloadManager.remove(downloadId)
-                            unregisterReceiver()
-                            isDownloadInProgress = false
-                            onBackPressedCallback.isEnabled = isDownloadInProgress
+                            resetDownloadState()
                             stopDownloadProgressChecker()
                             parentFragmentManager.popBackStack()
                         },
@@ -382,6 +378,15 @@ class SharedDecksDownloadFragment : Fragment() {
     }
 
     /**
+     * Resets the download state by unregistering the receiver and updating progress tracking flags.
+     */
+    private fun resetDownloadState() {
+        unregisterReceiver()
+        isDownloadInProgress = false
+        onBackPressedCallback.isEnabled = isDownloadInProgress
+    }
+
+    /**
      * Unregister the mOnComplete broadcast receiver.
      */
     private fun unregisterReceiver() {
@@ -545,9 +550,7 @@ class SharedDecksDownloadFragment : Fragment() {
             }
         }
 
-        unregisterReceiver()
-        isDownloadInProgress = false
-        onBackPressedCallback.isEnabled = isDownloadInProgress
+        resetDownloadState()
     }
 
     private fun showCancelConfirmationDialog() {
