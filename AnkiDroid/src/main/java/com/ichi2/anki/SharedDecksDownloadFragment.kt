@@ -173,6 +173,7 @@ class SharedDecksDownloadFragment : Fragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, onBackPressedCallback)
 
         val fileToBeDownloaded =
             arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE) ?: return
