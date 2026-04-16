@@ -65,45 +65,24 @@ import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
 
-sealed interface DownloadStatus {
-    data object Idle : DownloadStatus
-    data object Downloading : DownloadStatus
-    data object WaitingForNetwork : DownloadStatus
-    data object Failed : DownloadStatus
-    data object Complete : DownloadStatus
-}
-
-data class DownloadUiState(
-    val fileName: String = "",
-    val progress: Float = 0f,
-    val progressText: String = "0%",
-    val status: DownloadStatus = DownloadStatus.Idle,
-    val showCancelDialog: Boolean = false
-)
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedDecksDownloadScreen(
     state: DownloadUiState,
     onNavigateUp: () -> Unit,
-    onCancel: () -> Unit,
-    onConfirmCancel: () -> Unit,
-    onDismissCancelDialog: () -> Unit,
-    onRetry: () -> Unit,
-    onImport: () -> Unit,
-    onOpenInBrowser: () -> Unit,
+    onIntent: (DownloadIntent) -> Unit,
 ) {
     if (state.showCancelDialog) {
-        AlertDialog(onDismissRequest = onDismissCancelDialog, title = {
+        AlertDialog(onDismissRequest = { onIntent(DownloadIntent.DismissCancelDialog) }, title = {
             Text(text = stringResource(R.string.cancel_download_question_title))
         }, text = {
             Text(text = stringResource(R.string.cancel_download_explanation))
         }, confirmButton = {
-            TextButton(onClick = onConfirmCancel) {
+            TextButton(onClick = { onIntent(DownloadIntent.ConfirmCancel) }) {
                 Text(stringResource(R.string.dialog_yes))
             }
         }, dismissButton = {
-            TextButton(onClick = onDismissCancelDialog) {
+            TextButton(onClick = { onIntent(DownloadIntent.DismissCancelDialog) }) {
                 Text(stringResource(R.string.dialog_no))
             }
         })
@@ -155,11 +134,7 @@ fun SharedDecksDownloadScreen(
             }
 
             DownloadActions(
-                state = state,
-                onCancel = onCancel,
-                onRetry = onRetry,
-                onImport = onImport,
-                onOpenInBrowser = onOpenInBrowser
+                state = state, onIntent = onIntent
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -282,11 +257,7 @@ private fun DownloadProgressSection(state: DownloadUiState) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadActions(
-    state: DownloadUiState,
-    onCancel: () -> Unit,
-    onRetry: () -> Unit,
-    onImport: () -> Unit,
-    onOpenInBrowser: () -> Unit
+    state: DownloadUiState, onIntent: (DownloadIntent) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -295,7 +266,7 @@ private fun DownloadActions(
             visible = state.status == DownloadStatus.Complete, enter = fadeIn(), exit = fadeOut()
         ) {
             Button(
-                onClick = onImport,
+                onClick = { onIntent(DownloadIntent.ImportClicked) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp),
@@ -313,7 +284,7 @@ private fun DownloadActions(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
-                    onClick = onRetry,
+                    onClick = { onIntent(DownloadIntent.RetryClicked) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
@@ -326,7 +297,7 @@ private fun DownloadActions(
                 }
 
                 FilledTonalButton(
-                    onClick = onOpenInBrowser,
+                    onClick = { onIntent(DownloadIntent.OpenInBrowserClicked) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
@@ -346,7 +317,7 @@ private fun DownloadActions(
             exit = fadeOut()
         ) {
             Button(
-                onClick = onCancel,
+                onClick = { onIntent(DownloadIntent.CancelClicked) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -375,14 +346,7 @@ fun SharedDecksDownloadScreenPreview() {
             progress = 45f,
             progressText = "45.2%",
             status = DownloadStatus.Downloading
-        ),
-            onNavigateUp = {},
-            onCancel = {},
-            onConfirmCancel = {},
-            onDismissCancelDialog = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {})
+        ), onNavigateUp = {}, onIntent = {})
     }
 }
 
@@ -393,14 +357,7 @@ fun SharedDecksDownloadScreenFailedPreview() {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
-        ),
-            onNavigateUp = {},
-            onCancel = {},
-            onConfirmCancel = {},
-            onDismissCancelDialog = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {})
+        ), onNavigateUp = {}, onIntent = {})
     }
 }
 
@@ -414,14 +371,7 @@ fun SharedDecksDownloadScreenCompletePreview() {
             progress = 100f,
             progressText = "100%",
             status = DownloadStatus.Complete
-        ),
-            onNavigateUp = {},
-            onCancel = {},
-            onConfirmCancel = {},
-            onDismissCancelDialog = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {})
+        ), onNavigateUp = {}, onIntent = {})
     }
 }
 
