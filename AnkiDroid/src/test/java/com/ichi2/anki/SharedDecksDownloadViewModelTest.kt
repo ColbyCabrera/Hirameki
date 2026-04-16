@@ -7,6 +7,7 @@ import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -63,8 +64,7 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     @Test
     fun `test polling updates progress`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
-        viewModel.dispatcher =
-            coroutineContext[kotlin.coroutines.ContinuationInterceptor] as kotlinx.coroutines.CoroutineDispatcher
+        viewModel.dispatcher = StandardTestDispatcher(testScheduler)
         val cursor = MatrixCursor(
             arrayOf(
                 DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
@@ -73,25 +73,29 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
                 DownloadManager.COLUMN_REASON
             )
         )
-        cursor.addRow(arrayOf<Any>(50L, 100, DownloadManager.STATUS_RUNNING, 0))
+        cursor.addRow(arrayOf<Any>(50L, 100L, DownloadManager.STATUS_RUNNING, 0))
 
         every { downloadManager.query(any()) } returns cursor
 
-        viewModel.startPolling(downloadManager, 123L) { "%.0f%%".format(it) }
+        try {
+            viewModel.startPolling(downloadManager, 123L) { "%.0f%%".format(it) }
 
-        // Wait for first poll
-        advanceTimeBy(100)
+            // Wait for first poll
+            advanceTimeBy(100)
 
-        assertEquals(50f, viewModel.uiState.value.progress)
-        assertEquals("50%", viewModel.uiState.value.progressText)
-        assertEquals(DownloadStatus.Downloading, viewModel.uiState.value.status)
+            assertEquals(50f, viewModel.uiState.value.progress)
+            assertEquals("50%", viewModel.uiState.value.progressText)
+            assertEquals(DownloadStatus.Downloading, viewModel.uiState.value.status)
+            viewModel.stopPolling()
+        } finally {
+            cursor.close()
+        }
     }
 
     @Test
     fun `test polling handles waiting for network`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
-        viewModel.dispatcher =
-            coroutineContext[kotlin.coroutines.ContinuationInterceptor] as kotlinx.coroutines.CoroutineDispatcher
+        viewModel.dispatcher = StandardTestDispatcher(testScheduler)
         val cursor = MatrixCursor(
             arrayOf(
                 DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
@@ -102,19 +106,21 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         )
         cursor.addRow(
             arrayOf<Any>(
-                0L,
-                100,
-                DownloadManager.STATUS_PAUSED,
-                DownloadManager.PAUSED_WAITING_FOR_NETWORK
+                0L, 100L, DownloadManager.STATUS_PAUSED, DownloadManager.PAUSED_WAITING_FOR_NETWORK
             )
         )
 
         every { downloadManager.query(any()) } returns cursor
 
-        viewModel.startPolling(downloadManager, 123L) { "Waiting..." }
+        try {
+            viewModel.startPolling(downloadManager, 123L) { "Waiting..." }
 
-        advanceTimeBy(100)
+            advanceTimeBy(100)
 
-        assertEquals(DownloadStatus.WaitingForNetwork, viewModel.uiState.value.status)
+            assertEquals(DownloadStatus.WaitingForNetwork, viewModel.uiState.value.status)
+            viewModel.stopPolling()
+        } finally {
+            cursor.close()
+        }
     }
 }
