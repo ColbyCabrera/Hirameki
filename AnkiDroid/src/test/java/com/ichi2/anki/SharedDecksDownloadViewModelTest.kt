@@ -10,6 +10,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,7 +59,7 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         viewModel.showCancelDialog()
         assertTrue(viewModel.uiState.value.showCancelDialog)
         viewModel.dismissCancelDialog()
-        assertTrue(!viewModel.uiState.value.showCancelDialog)
+        assertFalse(viewModel.uiState.value.showCancelDialog)
     }
 
     @Test
@@ -77,7 +78,7 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
 
         every { downloadManager.query(any()) } returns cursor
 
-        try {
+        cursor.use {
             viewModel.startPolling(downloadManager, 123L) { "%.0f%%".format(it) }
 
             // Wait for first poll
@@ -87,8 +88,6 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             assertEquals("50%", viewModel.uiState.value.progressText)
             assertEquals(DownloadStatus.Downloading, viewModel.uiState.value.status)
             viewModel.stopPolling()
-        } finally {
-            cursor.close()
         }
     }
 
@@ -112,15 +111,13 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
 
         every { downloadManager.query(any()) } returns cursor
 
-        try {
+        cursor.use {
             viewModel.startPolling(downloadManager, 123L) { "Waiting..." }
 
             advanceTimeBy(100)
 
             assertEquals(DownloadStatus.WaitingForNetwork, viewModel.uiState.value.status)
             viewModel.stopPolling()
-        } finally {
-            cursor.close()
         }
     }
 }
