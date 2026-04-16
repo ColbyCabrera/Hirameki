@@ -259,6 +259,7 @@ class SharedDecksDownloadFragment : Fragment() {
 
         // Store unique download ID to be used when onReceive() of BroadcastReceiver gets executed.
         val downloadId = downloadManager.enqueue(downloadRequest)
+        viewModel.setDownloadId(downloadId)
         Timber.d("Download ID -> $downloadId")
         Timber.d("File name -> $currentFileName")
         viewModel.setFileName(currentFileName)

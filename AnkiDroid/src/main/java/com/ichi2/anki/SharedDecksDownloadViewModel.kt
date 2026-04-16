@@ -65,6 +65,10 @@ class SharedDecksDownloadViewModel : ViewModel() {
         }
     }
 
+    fun setDownloadId(id: Long) {
+        this.downloadId = id
+    }
+
     fun startPolling(
         downloadManager: DownloadManager,
         downloadId: Long,
