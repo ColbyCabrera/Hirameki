@@ -65,6 +65,17 @@ import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
 
+/**
+ * The main screen for displaying the progress of a shared deck download.
+ *
+ * This screen provides visual feedback on the download's progress, shows status updates
+ * (e.g., waiting for network, failed), and allows the user to perform actions like
+ * cancelling, retrying, or importing the finished download.
+ *
+ * @param state The current UI state containing progress, status, and file information.
+ * @param onNavigateUp Callback for when the user clicks the back navigation button.
+ * @param onIntent Callback for processing user actions (intents) on this screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedDecksDownloadScreen(
@@ -142,9 +153,15 @@ fun SharedDecksDownloadScreen(
     }
 }
 
+/**
+ * Displays a large icon (hero) representing the current status of the download.
+ * Uses different shapes and colors based on whether the download is active,
+ * complete, or failed.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadHero(status: DownloadStatus) {
+
     val containerColor = when (status) {
         DownloadStatus.Failed -> MaterialTheme.colorScheme.errorContainer
         DownloadStatus.Complete -> MaterialTheme.colorScheme.primaryContainer
@@ -186,9 +203,14 @@ private fun DownloadHero(status: DownloadStatus) {
     }
 }
 
+/**
+ * Displays the progress section of the download screen, including a circular
+ * wavy progress indicator and text showing the percentage.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadProgressSection(state: DownloadUiState) {
+
     val animatedProgress by animateFloatAsState(
         targetValue = state.progress / 100f, animationSpec = spring(
             dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow
@@ -254,11 +276,16 @@ private fun DownloadProgressSection(state: DownloadUiState) {
     }
 }
 
+/**
+ * Displays the action buttons available to the user based on the current [DownloadStatus].
+ * This includes "Import", "Try Again", "Open in Browser", and "Cancel".
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadActions(
     state: DownloadUiState, onIntent: (DownloadIntent) -> Unit
 ) {
+
     Column(
         modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

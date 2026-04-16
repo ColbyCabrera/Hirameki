@@ -32,7 +32,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for managing the state and logic of downloading shared decks.
+ * This ViewModel handles polling the [android.app.DownloadManager] for progress,
+ * processing UI intents, and maintaining the [DownloadUiState].
+ */
 class SharedDecksDownloadViewModel : ViewModel() {
+
     private val _uiState = MutableStateFlow(DownloadUiState())
     val uiState: StateFlow<DownloadUiState> = _uiState.asStateFlow()
 
@@ -43,7 +49,15 @@ class SharedDecksDownloadViewModel : ViewModel() {
 
     internal var dispatcher = Dispatchers.IO
 
+    /**
+     * Processes a user [DownloadIntent] and updates the UI state accordingly.
+     * Some intents may require the [DownloadManager] to perform actions like cancelling a download.
+     *
+     * @param intent The user action to process.
+     * @param downloadManager Optional [DownloadManager] for executing download-related commands.
+     */
     fun onIntent(intent: DownloadIntent, downloadManager: DownloadManager? = null) {
+
         when (intent) {
             DownloadIntent.CancelClicked -> showCancelDialog()
             DownloadIntent.ConfirmCancel -> {
@@ -69,11 +83,17 @@ class SharedDecksDownloadViewModel : ViewModel() {
         this.downloadId = id
     }
 
+    /**
+     * Starts a periodic job to poll the [DownloadManager] for the current progress of a download.
+     *
+     * @param downloadManager The system service used to query download status.
+     * @param downloadId The unique ID of the download to track.
+     * @param progressTextProvider A lambda that formats the numeric progress into a displayable string.
+     */
     fun startPolling(
-        downloadManager: DownloadManager,
-        downloadId: Long,
-        progressTextProvider: (Float) -> String
+        downloadManager: DownloadManager, downloadId: Long, progressTextProvider: (Float) -> String
     ) {
+
         this.downloadId = downloadId
         progressJob?.cancel()
         progressJob = viewModelScope.launch(dispatcher) {
@@ -84,7 +104,11 @@ class SharedDecksDownloadViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Stops the periodic progress polling job if it is currently running.
+     */
     fun stopPolling() {
+
         progressJob?.cancel()
         progressJob = null
     }
@@ -132,7 +156,13 @@ class SharedDecksDownloadViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Updates the UI state to reflect a successfully completed download.
+     *
+     * @param progressText The final text to display for 100% completion.
+     */
     fun onDownloadComplete(progressText: String) {
+
         stopPolling()
         _uiState.update {
             it.copy(
@@ -141,7 +171,11 @@ class SharedDecksDownloadViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Updates the UI state to reflect a failed download attempt.
+     */
     fun onDownloadFailed() {
+
         stopPolling()
         _uiState.update { it.copy(status = DownloadStatus.Failed) }
     }
@@ -158,7 +192,11 @@ class SharedDecksDownloadViewModel : ViewModel() {
         _uiState.update { it.copy(showCancelDialog = false) }
     }
 
+    /**
+     * Resets the ViewModel to its initial idle state.
+     */
     fun resetState() {
+
         stopPolling()
         _uiState.value = DownloadUiState()
     }

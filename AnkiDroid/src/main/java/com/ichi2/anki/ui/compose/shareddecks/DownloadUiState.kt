@@ -15,7 +15,11 @@
  */
 package com.ichi2.anki.ui.compose.shareddecks
 
+/**
+ * Represents the possible statuses of a shared deck download.
+ */
 sealed interface DownloadStatus {
+    /** The download has not started yet. */
     data object Idle : DownloadStatus
     data object Downloading : DownloadStatus
     data object WaitingForNetwork : DownloadStatus
@@ -23,15 +27,38 @@ sealed interface DownloadStatus {
     data object Complete : DownloadStatus
 }
 
+/**
+ * Intents representing user actions on the shared decks download screen.
+ */
 sealed interface DownloadIntent {
+    /** User clicked the cancel button to stop the download. */
     data object CancelClicked : DownloadIntent
+
+    /** User confirmed the cancellation in the dialog. */
     data object ConfirmCancel : DownloadIntent
+
+    /** User dismissed the cancellation dialog without cancelling. */
     data object DismissCancelDialog : DownloadIntent
-    object RetryClicked : DownloadIntent
-    object ImportClicked : DownloadIntent
-    object OpenInBrowserClicked : DownloadIntent
+
+    /** User clicked to retry a failed download. */
+    data object RetryClicked : DownloadIntent
+
+    /** User clicked to import the successfully downloaded deck. */
+    data object ImportClicked : DownloadIntent
+
+    /** User clicked to open the deck page in a web browser. */
+    data object OpenInBrowserClicked : DownloadIntent
 }
 
+/**
+ * UI state for the Shared Decks Download screen.
+ *
+ * @property fileName The name of the file being downloaded.
+ * @property progress The current download progress as a percentage (0-100).
+ * @property progressText A formatted string representing the progress (e.g., "45.5%").
+ * @property status The current [DownloadStatus] of the operation.
+ * @property showCancelDialog Whether the cancellation confirmation dialog should be visible.
+ */
 data class DownloadUiState(
     val fileName: String = "",
     val progress: Float = 0f,
