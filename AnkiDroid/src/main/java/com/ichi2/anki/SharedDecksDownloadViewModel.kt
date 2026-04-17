@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -50,11 +51,11 @@ class SharedDecksDownloadViewModel(
     private val _uiState = MutableStateFlow(DownloadUiState())
     val uiState: StateFlow<DownloadUiState> = _uiState.asStateFlow()
 
-    var downloadId: Long = 0
-        private set
-
     private var progressJob: Job? = null
     private val progressJobMutex = Mutex()
+
+    private val currentDownloadId: Long
+        get() = _uiState.value.downloadId
 
     /**
      * Processes a user [DownloadIntent] and updates the UI state accordingly.
@@ -69,11 +70,11 @@ class SharedDecksDownloadViewModel(
             DownloadIntent.CancelClicked -> showCancelDialog()
             DownloadIntent.ConfirmCancel -> {
                 if (downloadManager != null) {
-                    cancelDownload(downloadManager, downloadId)
+                    cancelDownload(downloadManager, currentDownloadId)
                 } else {
                     Timber.w(
                         "ConfirmCancel: downloadManager is null, cannot cancel download ID %d",
-                        downloadId
+                        currentDownloadId
                     )
                     resetState()
                 }
@@ -82,7 +83,7 @@ class SharedDecksDownloadViewModel(
             DownloadIntent.DismissCancelDialog -> dismissCancelDialog()
             DownloadIntent.RetryClicked -> {
                 if (downloadManager != null) {
-                    downloadManager.remove(downloadId)
+                    downloadManager.remove(currentDownloadId)
                 } else {
                     logMissingDownloadManager("RetryClicked")
                 }
@@ -95,7 +96,7 @@ class SharedDecksDownloadViewModel(
 
             DownloadIntent.OpenInBrowserClicked -> {
                 if (downloadManager != null) {
-                    downloadManager.remove(downloadId)
+                    downloadManager.remove(currentDownloadId)
                 } else {
                     logMissingDownloadManager("OpenInBrowserClicked")
                 }
@@ -105,7 +106,7 @@ class SharedDecksDownloadViewModel(
     }
 
     fun setDownloadId(id: Long) {
-        this.downloadId = id
+        _uiState.update { it.copy(downloadId = id) }
     }
 
     /**
@@ -117,12 +118,12 @@ class SharedDecksDownloadViewModel(
     fun startPolling(
         downloadManager: DownloadManager, downloadId: Long
     ) {
-        this.downloadId = downloadId
+        setDownloadId(downloadId)
         viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
             progressJobMutex.withLock {
                 clearProgressJobLocked()
                 progressJob = viewModelScope.launch(dispatcher) {
-                    while (true) {
+                    while (isActive) {
                         checkDownloadProgress(downloadManager, downloadId)
                         delay(1000)
                     }
@@ -249,7 +250,7 @@ class SharedDecksDownloadViewModel(
         Timber.w(
             "%s: downloadManager is null, cannot remove downloadId=%d, status=%s, showCancelDialog=%s, fileName=%s",
             action,
-            downloadId,
+            currentDownloadId,
             state.status,
             state.showCancelDialog,
             state.fileName

@@ -53,12 +53,14 @@ sealed interface DownloadIntent {
 /**
  * UI state for the Shared Decks Download screen.
  *
+ * @property downloadId The active DownloadManager ID for the current download, if any.
  * @property fileName The name of the file being downloaded.
  * @property progress The current download progress as a percentage (0-100).
  * @property status The current [DownloadStatus] of the operation.
  * @property showCancelDialog Whether the cancellation confirmation dialog should be visible.
  */
 data class DownloadUiState(
+    val downloadId: Long = 0L,
     val fileName: String = "",
     val progress: Float = 0f,
     val status: DownloadStatus = DownloadStatus.Idle,

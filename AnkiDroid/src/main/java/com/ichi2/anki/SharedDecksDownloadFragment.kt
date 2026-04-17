@@ -191,15 +191,18 @@ class SharedDecksDownloadFragment : Fragment() {
             downloadFile(fileToBeDownloaded)
         } else {
             // Re-register receiver and resume polling if we're still downloading or waiting for network
-            val status = viewModel.uiState.value.status
-            if (status == DownloadStatus.Downloading || status == DownloadStatus.WaitingForNetwork) {
+            val state = viewModel.uiState.value
+            if (
+                (state.status == DownloadStatus.Downloading || state.status == DownloadStatus.WaitingForNetwork) &&
+                state.downloadId != 0L
+            ) {
                 Timber.d("Resuming polling and re-registering receiver after config change")
                 activity?.registerReceiverCompat(
                     onComplete,
                     IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
                     ContextCompat.RECEIVER_EXPORTED,
                 )
-                startPolling(viewModel.downloadId)
+                startPolling(state.downloadId)
             }
         }
     }
@@ -309,7 +312,8 @@ class SharedDecksDownloadFragment : Fragment() {
                 }
 
                 // Return if mDownloadId does not match with the ID of the completed download.
-                if (viewModel.downloadId != intent?.getLongExtra(
+                val downloadId = viewModel.uiState.value.downloadId
+                if (downloadId != intent?.getLongExtra(
                         DownloadManager.EXTRA_DOWNLOAD_ID, 0
                     )
                 ) {
@@ -327,7 +331,7 @@ class SharedDecksDownloadFragment : Fragment() {
                 }
 
                 val query = DownloadManager.Query()
-                query.setFilterById(viewModel.downloadId)
+                query.setFilterById(downloadId)
                 val cursor = downloadManager.query(query)
 
                 cursor.use {

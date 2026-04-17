@@ -123,6 +123,11 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         viewModel.uiState.test {
             assertEquals(DownloadStatus.Idle, awaitItem().status)
             viewModel.startPolling(downloadManager, 123L)
+
+            val downloadIdState = awaitItem()
+            assertEquals(123L, downloadIdState.downloadId)
+            assertEquals(DownloadStatus.Idle, downloadIdState.status)
+
             advanceTimeBy(100)
             val item = awaitItem()
             assertEquals(50f, item.progress)
@@ -164,6 +169,11 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         viewModel.uiState.test {
             assertEquals(DownloadStatus.Idle, awaitItem().status)
             viewModel.startPolling(downloadManager, 123L)
+
+            val downloadIdState = awaitItem()
+            assertEquals(123L, downloadIdState.downloadId)
+            assertEquals(DownloadStatus.Idle, downloadIdState.status)
+
             advanceTimeBy(100)
             val item = awaitItem()
             assertEquals(DownloadStatus.WaitingForNetwork, item.status)
@@ -200,6 +210,10 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             viewModel.startPolling(downloadManager, 123L)
             viewModel.stopPolling()
 
+            val downloadIdState = awaitItem()
+            assertEquals(123L, downloadIdState.downloadId)
+            assertEquals(DownloadStatus.Idle, downloadIdState.status)
+
             advanceTimeBy(1100)
 
             expectNoEvents()
@@ -235,12 +249,18 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     fun `test RetryClicked updates state and removes download`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
         val downloadId = 123L
-        viewModel.setDownloadId(downloadId)
-        viewModel.onDownloadFailed()
 
         every { downloadManager.remove(downloadId) } returns 1
 
         viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+            viewModel.setDownloadId(downloadId)
+            viewModel.onDownloadFailed()
+
+            val downloadIdState = awaitItem()
+            assertEquals(downloadId, downloadIdState.downloadId)
+            assertEquals(DownloadStatus.Idle, downloadIdState.status)
+
             assertEquals(DownloadStatus.Failed, awaitItem().status)
             viewModel.onIntent(DownloadIntent.RetryClicked, downloadManager)
 
@@ -257,6 +277,7 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     fun `test RetryClicked with null downloadManager still updates state`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
         val downloadId = 123L
+
         viewModel.setDownloadId(downloadId)
         viewModel.onDownloadFailed()
 
@@ -359,6 +380,10 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             // Start polling
             viewModel.startPolling(downloadManager, 123L)
 
+            val downloadIdState = awaitItem()
+            assertEquals(123L, downloadIdState.downloadId)
+            assertEquals(DownloadStatus.Downloading, downloadIdState.status)
+
             // Advance small amount to trigger first query, but we'll race it with onDownloadComplete
             // Actually, with StandardTestDispatcher, the polling coroutine won't run until we yield or advance.
 
@@ -402,6 +427,10 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             awaitItem() // Downloading
 
             viewModel.startPolling(downloadManager, 123L)
+
+            val downloadIdState = awaitItem()
+            assertEquals(123L, downloadIdState.downloadId)
+            assertEquals(DownloadStatus.Downloading, downloadIdState.status)
 
             // Reset state while polling might be active
             viewModel.resetState()

@@ -9,10 +9,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +49,14 @@ class SharedDecksActivityTest : RobolectricTest() {
         var fragment =
             activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
         assertNotNull("Fragment should be added for deck info URL", fragment)
+        val downloadFile =
+            fragment?.arguments?.getSerializableCompat<DownloadFile>(SharedDecksActivity.DOWNLOAD_FILE)
+        assertTrue("DOWNLOAD_FILE argument should be a DownloadFile", downloadFile is DownloadFile)
+        downloadFile as DownloadFile
+        assertEquals("https://ankiweb.net/shared/info/12345678", downloadFile.url)
+        assertEquals("userAgent", downloadFile.userAgent)
+        assertEquals("attachment; filename=deck.apkg", downloadFile.contentDisposition)
+        assertEquals("application/octet-stream", downloadFile.mimeType)
 
         // Clear the fragment for the next test
         activity.supportFragmentManager.popBackStackImmediate()
