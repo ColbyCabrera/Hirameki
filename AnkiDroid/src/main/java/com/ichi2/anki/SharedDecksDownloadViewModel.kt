@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * ViewModel for managing the state and logic of downloading shared decks.
@@ -62,7 +63,16 @@ class SharedDecksDownloadViewModel(
         when (intent) {
             DownloadIntent.CancelClicked -> showCancelDialog()
             DownloadIntent.ConfirmCancel -> {
-                downloadManager?.let { cancelDownload(it, downloadId) }
+                if (downloadManager != null) {
+                    cancelDownload(downloadManager, downloadId)
+                } else {
+                    Timber.w(
+                        "ConfirmCancel: downloadManager is null, cannot cancel download ID %d",
+                        downloadId
+                    )
+                    dismissCancelDialog()
+                    resetState()
+                }
             }
 
             DownloadIntent.DismissCancelDialog -> dismissCancelDialog()
@@ -119,7 +129,8 @@ class SharedDecksDownloadViewModel(
         val query = DownloadManager.Query().setFilterById(downloadId)
         val cursor = try {
             downloadManager.query(query)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to query DownloadManager for downloadId=%d", downloadId)
             null
         }
 

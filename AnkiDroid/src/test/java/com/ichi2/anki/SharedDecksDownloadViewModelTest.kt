@@ -4,6 +4,7 @@ import android.app.DownloadManager
 import android.database.MatrixCursor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
+import com.ichi2.anki.ui.compose.shareddecks.DownloadIntent
 import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
 import io.mockk.every
 import io.mockk.mockk
@@ -147,6 +148,23 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
                 viewModel.stopPolling()
                 cancelAndIgnoreRemainingEvents()
             }
+        }
+    }
+
+    @Test
+    fun `test ConfirmCancel with null downloadManager resets state`() = runTest {
+        val viewModel = SharedDecksDownloadViewModel()
+        viewModel.uiState.test {
+            awaitItem() // Initial
+            viewModel.showCancelDialog()
+            assertTrue(awaitItem().showCancelDialog)
+
+            viewModel.onIntent(DownloadIntent.ConfirmCancel, null)
+
+            val item = awaitItem()
+            assertFalse(item.showCancelDialog)
+            assertEquals(DownloadStatus.Idle, item.status)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }
