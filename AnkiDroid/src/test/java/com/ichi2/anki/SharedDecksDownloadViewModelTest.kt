@@ -85,8 +85,8 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
 
     @Test
     fun `test polling updates progress`() = runTest {
-        val viewModel = SharedDecksDownloadViewModel()
-        viewModel.dispatcher = StandardTestDispatcher(testScheduler)
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = SharedDecksDownloadViewModel(testDispatcher)
         val cursor = MatrixCursor(
             arrayOf(
                 DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
@@ -118,8 +118,8 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
 
     @Test
     fun `test polling handles waiting for network`() = runTest {
-        val viewModel = SharedDecksDownloadViewModel()
-        viewModel.dispatcher = StandardTestDispatcher(testScheduler)
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = SharedDecksDownloadViewModel(testDispatcher)
         val cursor = MatrixCursor(
             arrayOf(
                 DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,

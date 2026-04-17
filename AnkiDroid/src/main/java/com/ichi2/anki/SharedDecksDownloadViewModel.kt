@@ -23,6 +23,7 @@ import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.ui.compose.shareddecks.DownloadIntent
 import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
 import com.ichi2.anki.ui.compose.shareddecks.DownloadUiState
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -37,7 +38,9 @@ import kotlinx.coroutines.launch
  * This ViewModel handles polling the [android.app.DownloadManager] for progress,
  * processing UI intents, and maintaining the [DownloadUiState].
  */
-class SharedDecksDownloadViewModel : ViewModel() {
+class SharedDecksDownloadViewModel(
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DownloadUiState())
     val uiState: StateFlow<DownloadUiState> = _uiState.asStateFlow()
@@ -46,8 +49,6 @@ class SharedDecksDownloadViewModel : ViewModel() {
         private set
 
     private var progressJob: Job? = null
-
-    internal var dispatcher = Dispatchers.IO
 
     /**
      * Processes a user [DownloadIntent] and updates the UI state accordingly.
