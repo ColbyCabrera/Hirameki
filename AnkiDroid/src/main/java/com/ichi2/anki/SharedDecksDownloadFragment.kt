@@ -400,10 +400,17 @@ class SharedDecksDownloadFragment : Fragment() {
         val fileIntent = Intent(context, IntentHandler::class.java)
         fileIntent.action = Intent.ACTION_VIEW
 
+        val externalFilesDir = context.getExternalFilesDir(null)
+        if (externalFilesDir == null) {
+            Timber.e("External files directory is null, cannot open deck for import.")
+            showThemedToast(context, R.string.external_storage_unavailable, false)
+            return
+        }
+
         val fileUri = FileProvider.getUriForFile(
             context,
             context.applicationContext.packageName + ".apkgfileprovider",
-            File(File(context.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER), fileName),
+            File(File(externalFilesDir, SHARED_DECKS_DOWNLOAD_FOLDER), fileName),
         )
 
         Timber.d("File URI -> $fileUri")
