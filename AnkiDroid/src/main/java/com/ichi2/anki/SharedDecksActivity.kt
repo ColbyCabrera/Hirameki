@@ -61,6 +61,7 @@ import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.FileNameAndExtension
+import com.ichi2.utils.ImportUtils
 import timber.log.Timber
 import java.io.Serializable
 import kotlin.random.Random
@@ -247,8 +248,30 @@ class SharedDecksActivity : AnkiActivity() {
         const val SHARED_DECKS_DOWNLOAD_FRAGMENT = "SharedDecksDownloadFragment"
         const val DOWNLOAD_FILE = "DownloadFile"
         private const val HTTP_STATUS_TOO_MANY_REQUESTS = 429
+        private const val SHARED_DECKS_SEARCH_PATH = "/shared/decks"
         private const val USER_DECKS_PATH = "/decks"
         private const val MAX_REDIRECTS = 3
+    }
+
+    private fun buildSharedDecksSearchUrl(query: String): String {
+        val sharedDecksUri = getString(R.string.shared_decks_url).toUri()
+        val normalizedPath = sharedDecksUri.path
+            ?.trimEnd('/')
+            ?.let { path ->
+                when {
+                    path.endsWith(SHARED_DECKS_SEARCH_PATH) -> path
+                    path.endsWith("/shared") -> "$path/decks"
+                    else -> SHARED_DECKS_SEARCH_PATH
+                }
+            }
+            ?: SHARED_DECKS_SEARCH_PATH
+
+        return sharedDecksUri.buildUpon()
+            .clearQuery()
+            .path(normalizedPath)
+            .appendQueryParameter("search", query)
+            .build()
+            .toString()
     }
 
     // Show WebView with AnkiWeb shared decks with the functionality to capture downloads and import decks.
@@ -292,11 +315,8 @@ class SharedDecksActivity : AnkiActivity() {
                             AnkiSearchBar(
                                 query = searchQuery,
                                 onQueryChange = { searchQuery = it },
-                                onSearch = {
-                                    val searchUrl =
-                                        resources.getString(R.string.shared_decks_url).toUri()
-                                            .buildUpon().appendQueryParameter("search", it).build()
-                                            .toString()
+                                onSearch = { query ->
+                                    val searchUrl = buildSharedDecksSearchUrl(query)
                                     webView.loadUrl(searchUrl)
                                     isSearching = false
                                 },
@@ -349,6 +369,12 @@ class SharedDecksActivity : AnkiActivity() {
         webView.loadUrl(resources.getString(R.string.shared_decks_url))
         webView.webViewClient = WebViewClient()
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
+            if (!ImportUtils.isFileAValidDeck(fileName) && url?.contains("download-deck/") != true) {
+                Timber.d("Ignoring download for non-deck URL: %s", url)
+                return@setDownloadListener
+            }
+
             // If the activity/fragment lifecycle has already begun teardown process,
             // avoid handling the download, as FragmentManager.commit will throw
             if (!supportFragmentManager.isStateSaved) {

@@ -14,6 +14,8 @@
  *  this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.ichi2.anki.ui.compose.shareddecks
+ 
+import java.util.Locale
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -49,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -65,45 +68,35 @@ import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
 
-sealed interface DownloadStatus {
-    data object Idle : DownloadStatus
-    data object Downloading : DownloadStatus
-    data object WaitingForNetwork : DownloadStatus
-    data object Failed : DownloadStatus
-    data object Complete : DownloadStatus
-}
-
-data class DownloadUiState(
-    val fileName: String = "",
-    val progress: Float = 0f,
-    val progressText: String = "0%",
-    val status: DownloadStatus = DownloadStatus.Idle,
-    val showCancelDialog: Boolean = false
-)
-
+/**
+ * The main screen for displaying the progress of a shared deck download.
+ *
+ * This screen provides visual feedback on the download's progress, shows status updates
+ * (e.g., waiting for network, failed), and allows the user to perform actions like
+ * cancelling, retrying, or importing the finished download.
+ *
+ * @param state The current UI state containing progress, status, and file information.
+ * @param onNavigateUp Callback for when the user clicks the back navigation button.
+ * @param onIntent Callback for processing user actions (intents) on this screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedDecksDownloadScreen(
     state: DownloadUiState,
     onNavigateUp: () -> Unit,
-    onCancel: () -> Unit,
-    onConfirmCancel: () -> Unit,
-    onDismissCancelDialog: () -> Unit,
-    onRetry: () -> Unit,
-    onImport: () -> Unit,
-    onOpenInBrowser: () -> Unit,
+    onIntent: (DownloadIntent) -> Unit,
 ) {
     if (state.showCancelDialog) {
-        AlertDialog(onDismissRequest = onDismissCancelDialog, title = {
+        AlertDialog(onDismissRequest = { onIntent(DownloadIntent.DismissCancelDialog) }, title = {
             Text(text = stringResource(R.string.cancel_download_question_title))
         }, text = {
             Text(text = stringResource(R.string.cancel_download_explanation))
         }, confirmButton = {
-            TextButton(onClick = onConfirmCancel) {
+            TextButton(onClick = { onIntent(DownloadIntent.ConfirmCancel) }) {
                 Text(stringResource(R.string.dialog_yes))
             }
         }, dismissButton = {
-            TextButton(onClick = onDismissCancelDialog) {
+            TextButton(onClick = { onIntent(DownloadIntent.DismissCancelDialog) }) {
                 Text(stringResource(R.string.dialog_no))
             }
         })
@@ -139,7 +132,11 @@ fun SharedDecksDownloadScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = stringResource(R.string.deck_download_progress_message),
+                    text = when (state.status) {
+                        DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
+                        DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
+                        else -> stringResource(R.string.deck_download_progress_message)
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -155,11 +152,7 @@ fun SharedDecksDownloadScreen(
             }
 
             DownloadActions(
-                state = state,
-                onCancel = onCancel,
-                onRetry = onRetry,
-                onImport = onImport,
-                onOpenInBrowser = onOpenInBrowser
+                state = state, onIntent = onIntent
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -167,9 +160,15 @@ fun SharedDecksDownloadScreen(
     }
 }
 
+/**
+ * Displays a large icon (hero) representing the current status of the download.
+ * Uses different shapes and colors based on whether the download is active,
+ * complete, or failed.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadHero(status: DownloadStatus) {
+
     val containerColor = when (status) {
         DownloadStatus.Failed -> MaterialTheme.colorScheme.errorContainer
         DownloadStatus.Complete -> MaterialTheme.colorScheme.primaryContainer
@@ -211,9 +210,14 @@ private fun DownloadHero(status: DownloadStatus) {
     }
 }
 
+/**
+ * Displays the progress section of the download screen, including a circular
+ * wavy progress indicator and text showing the percentage.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadProgressSection(state: DownloadUiState) {
+
     val animatedProgress by animateFloatAsState(
         targetValue = state.progress / 100f, animationSpec = spring(
             dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow
@@ -259,8 +263,15 @@ private fun DownloadProgressSection(state: DownloadUiState) {
                     alpha = 0.8f
                 )
             )
+            val progressText = remember(state.progress) {
+                if (state.progress <= 0f || state.progress >= 100f) {
+                    "%.0f".format(Locale.getDefault(), state.progress)
+                } else {
+                    "%.1f".format(Locale.getDefault(), state.progress)
+                }
+            }
             Text(
-                text = state.progressText,
+                text = stringResource(R.string.percentage, progressText),
                 fontFamily = RobotoMono,
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Black,
@@ -279,15 +290,16 @@ private fun DownloadProgressSection(state: DownloadUiState) {
     }
 }
 
+/**
+ * Displays the action buttons available to the user based on the current [DownloadStatus].
+ * This includes "Import", "Try Again", "Open in Browser", and "Cancel".
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadActions(
-    state: DownloadUiState,
-    onCancel: () -> Unit,
-    onRetry: () -> Unit,
-    onImport: () -> Unit,
-    onOpenInBrowser: () -> Unit
+    state: DownloadUiState, onIntent: (DownloadIntent) -> Unit
 ) {
+
     Column(
         modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -295,7 +307,7 @@ private fun DownloadActions(
             visible = state.status == DownloadStatus.Complete, enter = fadeIn(), exit = fadeOut()
         ) {
             Button(
-                onClick = onImport,
+                onClick = { onIntent(DownloadIntent.ImportClicked) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp),
@@ -313,7 +325,7 @@ private fun DownloadActions(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
-                    onClick = onRetry,
+                    onClick = { onIntent(DownloadIntent.RetryClicked) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
@@ -326,7 +338,7 @@ private fun DownloadActions(
                 }
 
                 FilledTonalButton(
-                    onClick = onOpenInBrowser,
+                    onClick = { onIntent(DownloadIntent.OpenInBrowserClicked) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
@@ -346,7 +358,7 @@ private fun DownloadActions(
             exit = fadeOut()
         ) {
             Button(
-                onClick = onCancel,
+                onClick = { onIntent(DownloadIntent.CancelClicked) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -373,16 +385,8 @@ fun SharedDecksDownloadScreenPreview() {
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg",
             progress = 45f,
-            progressText = "45.2%",
             status = DownloadStatus.Downloading
-        ),
-            onNavigateUp = {},
-            onCancel = {},
-            onConfirmCancel = {},
-            onDismissCancelDialog = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {})
+        ), onNavigateUp = {}, onIntent = {})
     }
 }
 
@@ -393,14 +397,7 @@ fun SharedDecksDownloadScreenFailedPreview() {
         SharedDecksDownloadScreen(
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
-        ),
-            onNavigateUp = {},
-            onCancel = {},
-            onConfirmCancel = {},
-            onDismissCancelDialog = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {})
+        ), onNavigateUp = {}, onIntent = {})
     }
 }
 
@@ -412,16 +409,8 @@ fun SharedDecksDownloadScreenCompletePreview() {
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg",
             progress = 100f,
-            progressText = "100%",
             status = DownloadStatus.Complete
-        ),
-            onNavigateUp = {},
-            onCancel = {},
-            onConfirmCancel = {},
-            onDismissCancelDialog = {},
-            onRetry = {},
-            onImport = {},
-            onOpenInBrowser = {})
+        ), onNavigateUp = {}, onIntent = {})
     }
 }
 
@@ -431,7 +420,7 @@ fun DownloadProgressSectionPreview() {
     AnkiDroidTheme {
         DownloadProgressSection(
             state = DownloadUiState(
-                progress = 75f, progressText = "75%", status = DownloadStatus.Downloading
+                progress = 75f, status = DownloadStatus.Downloading
             )
         )
     }
@@ -443,7 +432,7 @@ fun DownloadProgressSectionWaitingPreview() {
     AnkiDroidTheme {
         DownloadProgressSection(
             state = DownloadUiState(
-                progress = 0f, progressText = "0%", status = DownloadStatus.WaitingForNetwork
+                progress = 0f, status = DownloadStatus.WaitingForNetwork
             )
         )
     }

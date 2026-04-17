@@ -25,8 +25,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.database.Cursor
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -40,22 +38,24 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.ichi2.anki.SharedDecksActivity.Companion.DOWNLOAD_FILE
 import com.ichi2.anki.snackbar.showSnackbar
+import com.ichi2.anki.ui.compose.shareddecks.DownloadIntent
 import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
-import com.ichi2.anki.ui.compose.shareddecks.DownloadUiState
 import com.ichi2.anki.ui.compose.shareddecks.SharedDecksDownloadScreen
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.openUrl
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import com.ichi2.compat.CompatHelper.Companion.registerReceiverCompat
 import com.ichi2.utils.ImportUtils
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 import java.net.URLConnection
-import kotlin.math.abs
 
 /**
  * Used when a download is captured from AnkiWeb shared decks WebView.
@@ -65,14 +65,8 @@ import kotlin.math.abs
  * simultaneously is not supported.
  */
 class SharedDecksDownloadFragment : Fragment() {
-    private var downloadId: Long = 0
 
-    private var fileName: String? = null
-
-    private var handler: Handler = Handler(Looper.getMainLooper())
-    private var isProgressCheckerRunning = false
-
-    private val uiState = MutableStateFlow(DownloadUiState())
+    private val viewModel: SharedDecksDownloadViewModel by viewModels()
 
     /**
      * Android's DownloadManager - Used here to manage the functionality of downloading decks, one
@@ -83,20 +77,13 @@ class SharedDecksDownloadFragment : Fragment() {
      */
     private lateinit var downloadManager: DownloadManager
 
-    var isDownloadInProgress = false
-
-    private val onBackPressedCallback = object : OnBackPressedCallback(isDownloadInProgress) {
+    private val onBackPressedCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
             showCancelConfirmationDialog()
         }
     }
 
     companion object {
-        const val DOWNLOAD_PROGRESS_CHECK_DELAY = 1000L
-
-        const val DOWNLOAD_STARTED_PROGRESS_PERCENTAGE = "0"
-        const val DOWNLOAD_COMPLETED_PROGRESS_PERCENTAGE = "100"
-
         const val EXTRA_IS_SHARED_DOWNLOAD = "extra_is_shared_download"
 
         /**
@@ -138,56 +125,95 @@ class SharedDecksDownloadFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
-            setContent {
-                AnkiDroidTheme {
-                    val state by uiState.collectAsState()
-                    val fileToBeDownloaded =
-                        arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)
-                            ?: return@AnkiDroidTheme
-                    SharedDecksDownloadScreen(
-                        state = state,
-                        onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
-                        onCancel = { showCancelConfirmationDialog() },
-                        onConfirmCancel = {
-                            uiState.update { it.copy(showCancelDialog = false) }
-                            downloadManager.remove(downloadId)
-                            resetDownloadState()
-                            stopDownloadProgressChecker()
-                            parentFragmentManager.popBackStack()
-                        },
-                        onDismissCancelDialog = { uiState.update { it.copy(showCancelDialog = false) } },
-                        onRetry = {
-                            downloadManager.remove(downloadId)
-                            downloadFile(fileToBeDownloaded)
-                        },
-                        onImport = { openDownloadedDeck(context) },
-                        onOpenInBrowser = {
-                            downloadManager.remove(downloadId)
-                            openUrl(requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri())
-                            parentFragmentManager.popBackStack()
-                        })
-                }
-            }
-        }
-    }
+    ): View = ComposeView(requireContext())
 
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
-        requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner,
-            onBackPressedCallback
-        )
-
-        val fileToBeDownloaded =
-            arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE) ?: return
+        val fileToBeDownloaded = arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)
+        if (fileToBeDownloaded == null) {
+            Timber.w("SharedDecksDownloadFragment started without DOWNLOAD_FILE argument")
+            parentFragmentManager.popBackStack()
+            return
+        }
         downloadManager = (activity as SharedDecksActivity).downloadManager
 
-        downloadFile(fileToBeDownloaded)
+        (view as ComposeView).setContent {
+            AnkiDroidTheme {
+                val state by viewModel.uiState.collectAsState()
+                SharedDecksDownloadScreen(
+                    state = state,
+                    onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
+                    onIntent = { intent ->
+                        when (intent) {
+                            DownloadIntent.ConfirmCancel -> {
+                                viewModel.onIntent(intent, downloadManager)
+                                resetDownloadState()
+                                parentFragmentManager.popBackStack()
+                            }
+
+                            DownloadIntent.RetryClicked -> {
+                                viewModel.onIntent(intent, downloadManager)
+                                downloadFile(fileToBeDownloaded)
+                            }
+
+                            DownloadIntent.ImportClicked -> openDownloadedDeck(context)
+                            DownloadIntent.OpenInBrowserClicked -> {
+                                viewModel.onIntent(intent, downloadManager)
+                                openUrl(
+                                    requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri()
+                                )
+                                parentFragmentManager.popBackStack()
+                            }
+
+                            else -> viewModel.onIntent(intent)
+                        }
+                    })
+            }
+        }
+
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner, onBackPressedCallback
+        )
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    onBackPressedCallback.isEnabled =
+                        state.status == DownloadStatus.Downloading || state.status == DownloadStatus.WaitingForNetwork
+                }
+            }
+        }
+
+        if (viewModel.uiState.value.status == DownloadStatus.Idle) {
+            downloadFile(fileToBeDownloaded)
+        } else {
+            // Re-register receiver and resume polling if we're still downloading or waiting for network
+            val state = viewModel.uiState.value
+            if (
+                (state.status == DownloadStatus.Downloading || state.status == DownloadStatus.WaitingForNetwork) &&
+                state.downloadId != 0L
+            ) {
+                Timber.d("Resuming polling and re-registering receiver after config change")
+                activity?.registerReceiverCompat(
+                    onComplete,
+                    IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                    ContextCompat.RECEIVER_EXPORTED,
+                )
+                startPolling(state.downloadId)
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        unregisterReceiver()
+    }
+
+    private fun startPolling(downloadId: Long) {
+        viewModel.startPolling(downloadManager, downloadId)
     }
 
     /**
@@ -205,8 +231,14 @@ class SharedDecksDownloadFragment : Fragment() {
         }
         // ensure the "shared_decks" folder exists
         val decksDownloadFolder = File(externalFilesFolder, SHARED_DECKS_DOWNLOAD_FOLDER)
-        if (!decksDownloadFolder.exists()) {
-            decksDownloadFolder.mkdirs()
+        if (!decksDownloadFolder.exists() && !decksDownloadFolder.mkdirs()) {
+            Timber.e(
+                "Failed to create shared decks download folder: %s",
+                decksDownloadFolder.absolutePath
+            )
+            showSnackbar(R.string.external_storage_unavailable)
+            parentFragmentManager.popBackStack()
+            return
         }
         // Register broadcast receiver for download completion.
         Timber.d("Registering broadcast receiver for download completion")
@@ -221,14 +253,12 @@ class SharedDecksDownloadFragment : Fragment() {
         val downloadRequest = generateDeckDownloadRequest(fileToBeDownloaded, currentFileName)
 
         // Store unique download ID to be used when onReceive() of BroadcastReceiver gets executed.
-        downloadId = downloadManager.enqueue(downloadRequest)
-        fileName = currentFileName
-        isDownloadInProgress = true
-        onBackPressedCallback.isEnabled = isDownloadInProgress
+        val downloadId = downloadManager.enqueue(downloadRequest)
+        viewModel.setDownloadId(downloadId)
         Timber.d("Download ID -> $downloadId")
-        Timber.d("File name -> $fileName")
-        uiState.update { it.copy(fileName = fileName ?: "", status = DownloadStatus.Downloading) }
-        startDownloadProgressChecker()
+        Timber.d("File name -> $currentFileName")
+        viewModel.setFileName(currentFileName)
+        startPolling(downloadId)
     }
 
     private fun generateDeckDownloadRequest(
@@ -271,25 +301,28 @@ class SharedDecksDownloadFragment : Fragment() {
              * @return Whether the data in the received data is an importable deck
              */
             fun verifyDeckIsImportable(): Boolean {
-                if (fileName == null) {
+                val fileName = viewModel.uiState.value.fileName
+                if (fileName.isEmpty()) {
                     // Send ACRA report
                     CrashReportService.sendExceptionReport(
-                        "File name is null",
+                        "File name is empty",
                         "SharedDecksDownloadFragment::verifyDeckIsImportable",
                     )
                     return false
                 }
 
                 // Return if mDownloadId does not match with the ID of the completed download.
-                if (downloadId != intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0)) {
+                val downloadId = viewModel.uiState.value.downloadId
+                if (downloadId != intent?.getLongExtra(
+                        DownloadManager.EXTRA_DOWNLOAD_ID, 0
+                    )
+                ) {
                     Timber.w("Download id did not match expected id. Ignoring this download completion")
                     return false
                 }
 
-                stopDownloadProgressChecker()
-
                 // Halt execution if file doesn't have extension as 'apkg' or 'colpkg'
-                if (!ImportUtils.isFileAValidDeck(fileName!!)) {
+                if (!ImportUtils.isFileAValidDeck(fileName)) {
                     Timber.i("File does not have 'apkg' or 'colpkg' extension, abort the deck opening task")
                     checkDownloadStatusAndUnregisterReceiver(
                         isSuccessful = false, isInvalidDeckFile = true
@@ -344,22 +377,56 @@ class SharedDecksDownloadFragment : Fragment() {
                 return
             }
 
-            if (isVisible) {
-                // Setting these since progress checker can stop before progress is updated to represent 100%
-                uiState.update {
-                    it.copy(
-                        progress = 100f, progressText = getString(
-                            R.string.percentage, DOWNLOAD_COMPLETED_PROGRESS_PERCENTAGE
-                        ), status = DownloadStatus.Complete
-                    )
-                }
-            }
+            // Setting these since progress checker can stop before progress is updated to represent 100%
+            viewModel.onDownloadComplete()
 
             Timber.i("Opening downloaded deck for import")
             openDownloadedDeck(context)
 
             Timber.d("Checking download status and unregistering receiver")
             checkDownloadStatusAndUnregisterReceiver(isSuccessful = true)
+        }
+    }
+
+    /**
+     * Open the downloaded deck using 'fileName'.
+     */
+    private fun openDownloadedDeck(context: Context?) {
+        if (context == null) {
+            Timber.w("Context is null, cannot open deck for import.")
+            return
+        }
+        val fileName = viewModel.uiState.value.fileName
+        if (fileName.isEmpty()) {
+            Timber.d("SharedDecksDownloadFragment: fileName was empty, returning early from openDownloadedDeck")
+            return
+        }
+        val mimeType = URLConnection.guessContentTypeFromName(fileName)
+        val fileIntent = Intent(context, IntentHandler::class.java)
+        fileIntent.action = Intent.ACTION_VIEW
+
+        val externalFilesDir = context.getExternalFilesDir(null)
+        if (externalFilesDir == null) {
+            Timber.e("External files directory is null, cannot open deck for import.")
+            showThemedToast(context, R.string.external_storage_unavailable, false)
+            return
+        }
+
+        val fileUri = FileProvider.getUriForFile(
+            context,
+            context.applicationContext.packageName + ".apkgfileprovider",
+            File(File(externalFilesDir, SHARED_DECKS_DOWNLOAD_FOLDER), fileName),
+        )
+
+        Timber.d("File URI -> $fileUri")
+        fileIntent.setDataAndType(fileUri, mimeType)
+        fileIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        fileIntent.putExtra(EXTRA_IS_SHARED_DOWNLOAD, true)
+        try {
+            context.startActivity(fileIntent)
+        } catch (e: ActivityNotFoundException) {
+            showThemedToast(context, R.string.something_wrong, false)
+            Timber.w(e)
         }
     }
 
@@ -384,8 +451,7 @@ class SharedDecksDownloadFragment : Fragment() {
      */
     private fun resetDownloadState() {
         unregisterReceiver()
-        isDownloadInProgress = false
-        onBackPressedCallback.isEnabled = isDownloadInProgress
+        viewModel.stopPolling()
     }
 
     /**
@@ -404,131 +470,6 @@ class SharedDecksDownloadFragment : Fragment() {
     }
 
     /**
-     * Check download progress and update status at intervals of 0.1 second.
-     */
-    private val downloadProgressChecker: Runnable by lazy {
-        object : Runnable {
-            override fun run() {
-                if (!isVisible) {
-                    stopDownloadProgressChecker()
-                    return
-                }
-                checkDownloadProgress()
-
-                // Keep checking download progress at intervals of 1 second.
-                handler.postDelayed(this, DOWNLOAD_PROGRESS_CHECK_DELAY)
-            }
-        }
-    }
-
-    /**
-     * Start checking for download progress.
-     */
-    private fun startDownloadProgressChecker() {
-        Timber.d("Starting download progress checker")
-        downloadProgressChecker.run()
-        isProgressCheckerRunning = true
-        uiState.update {
-            it.copy(
-                progress = 0f,
-                progressText = getString(R.string.percentage, DOWNLOAD_STARTED_PROGRESS_PERCENTAGE)
-            )
-        }
-    }
-
-    /**
-     * Stop checking for download progress.
-     */
-    private fun stopDownloadProgressChecker() {
-        Timber.d("Stopping download progress checker")
-        handler.removeCallbacks(downloadProgressChecker)
-        isProgressCheckerRunning = false
-    }
-
-    /**
-     * Checks download progress and sets the current progress in ProgressBar.
-     */
-    private fun checkDownloadProgress() {
-        val query = DownloadManager.Query()
-        query.setFilterById(downloadId)
-
-        val cursor = downloadManager.query(query)
-
-        cursor.use {
-            // Return if cursor is empty.
-            if (!it.moveToFirst()) {
-                return
-            }
-
-            // Calculate download progress and display it in the ProgressBar.
-            val downloadedBytes =
-                it.getLong(it.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
-            val totalBytes = it.getInt(it.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-            // Taking absolute value to prevent case of -0.0 % being shown.
-            val downloadProgress: Float = abs(downloadedBytes * 1f / totalBytes * 100)
-            val downloadProgressIntValue = downloadProgress.toInt()
-            val progressTextValue =
-                if (downloadProgressIntValue == 0 || downloadProgressIntValue == 100) {
-                    // Show 0 % and 100 % instead of 0.0 % and 100.0 %
-                    downloadProgressIntValue.toString()
-                } else {
-                    // Show download progress percentage up to 1 decimal place.
-                    "%.1f".format(downloadProgress)
-                }
-
-            val columnIndexForStatus = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-            val columnIndexForReason = it.getColumnIndex(DownloadManager.COLUMN_REASON)
-
-            if (columnIndexForStatus == -1 || columnIndexForReason == -1) {
-                Timber.w("Column for status or reason does not exist")
-                return
-            }
-
-            val isWaitingForNetwork =
-                it.getInt(columnIndexForStatus) == DownloadManager.STATUS_PAUSED && it.getInt(
-                    columnIndexForReason
-                ) == DownloadManager.PAUSED_WAITING_FOR_NETWORK
-
-            uiState.update { state ->
-                state.copy(
-                    progress = downloadProgress,
-                    progressText = getString(R.string.percentage, progressTextValue),
-                    status = if (isWaitingForNetwork) DownloadStatus.WaitingForNetwork else DownloadStatus.Downloading
-                )
-            }
-        }
-    }
-
-    /**
-     * Open the downloaded deck using 'mFileName'.
-     */
-    private fun openDownloadedDeck(context: Context?) {
-        val mimeType = URLConnection.guessContentTypeFromName(fileName)
-        val fileIntent = Intent(context, IntentHandler::class.java)
-        fileIntent.action = Intent.ACTION_VIEW
-
-        val fileUri = context?.let {
-            val currentFileName = fileName ?: return@let null
-            val sharedDecksPath = File(it.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER)
-            FileProvider.getUriForFile(
-                it,
-                it.applicationContext?.packageName + ".apkgfileprovider",
-                File(sharedDecksPath, currentFileName),
-            )
-        }
-        Timber.d("File URI -> $fileUri")
-        fileIntent.setDataAndType(fileUri, mimeType)
-        fileIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        fileIntent.putExtra(EXTRA_IS_SHARED_DOWNLOAD, true)
-        try {
-            context?.startActivity(fileIntent)
-        } catch (e: ActivityNotFoundException) {
-            context?.let { showThemedToast(it, R.string.something_wrong, false) }
-            Timber.w(e)
-        }
-    }
-
-    /**
      * Handle download error scenarios.
      *
      * If there are any pending downloads, continue with them.
@@ -538,7 +479,7 @@ class SharedDecksDownloadFragment : Fragment() {
         isSuccessful: Boolean,
         isInvalidDeckFile: Boolean = false,
     ) {
-        if (isVisible && !isSuccessful) {
+        if (!isSuccessful) {
             if (isInvalidDeckFile) {
                 Timber.i("File is not a valid deck, hence return from the download screen")
                 context?.let { showThemedToast(it, R.string.import_log_no_apkg, false) }
@@ -548,7 +489,7 @@ class SharedDecksDownloadFragment : Fragment() {
                 Timber.i("Download failed, update UI and provide option to retry")
                 context?.let { showThemedToast(it, R.string.something_wrong, false) }
                 // Update UI if download could not be successful
-                uiState.update { it.copy(status = DownloadStatus.Failed) }
+                viewModel.onDownloadFailed()
             }
         }
 
@@ -556,6 +497,6 @@ class SharedDecksDownloadFragment : Fragment() {
     }
 
     private fun showCancelConfirmationDialog() {
-        uiState.update { it.copy(showCancelDialog = true) }
+        viewModel.showCancelDialog()
     }
 }
