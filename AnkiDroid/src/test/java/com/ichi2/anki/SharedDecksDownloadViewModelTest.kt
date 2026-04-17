@@ -26,7 +26,6 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         val viewModel = SharedDecksDownloadViewModel()
         assertEquals(DownloadStatus.Idle, viewModel.uiState.value.status)
         assertEquals(0f, viewModel.uiState.value.progress)
-        assertEquals("0%", viewModel.uiState.value.progressText)
     }
 
     @Test
@@ -40,10 +39,9 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     @Test
     fun `test onDownloadComplete updates state`() {
         val viewModel = SharedDecksDownloadViewModel()
-        viewModel.onDownloadComplete("100%")
+        viewModel.onDownloadComplete()
         assertEquals(DownloadStatus.Complete, viewModel.uiState.value.status)
         assertEquals(100f, viewModel.uiState.value.progress)
-        assertEquals("100%", viewModel.uiState.value.progressText)
     }
 
     @Test
@@ -79,13 +77,12 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         every { downloadManager.query(any()) } returns cursor
 
         cursor.use {
-            viewModel.startPolling(downloadManager, 123L) { "%.0f%%".format(it) }
+            viewModel.startPolling(downloadManager, 123L)
 
             // Wait for first poll
             advanceTimeBy(100)
 
             assertEquals(50f, viewModel.uiState.value.progress)
-            assertEquals("50%", viewModel.uiState.value.progressText)
             assertEquals(DownloadStatus.Downloading, viewModel.uiState.value.status)
             viewModel.stopPolling()
         }
@@ -112,7 +109,7 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         every { downloadManager.query(any()) } returns cursor
 
         cursor.use {
-            viewModel.startPolling(downloadManager, 123L) { "Waiting..." }
+            viewModel.startPolling(downloadManager, 123L)
 
             advanceTimeBy(100)
 

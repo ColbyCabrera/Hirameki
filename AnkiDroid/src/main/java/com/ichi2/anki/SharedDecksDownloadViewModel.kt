@@ -88,17 +88,16 @@ class SharedDecksDownloadViewModel : ViewModel() {
      *
      * @param downloadManager The system service used to query download status.
      * @param downloadId The unique ID of the download to track.
-     * @param progressTextProvider A lambda that formats the numeric progress into a displayable string.
      */
     fun startPolling(
-        downloadManager: DownloadManager, downloadId: Long, progressTextProvider: (Float) -> String
+        downloadManager: DownloadManager, downloadId: Long
     ) {
 
         this.downloadId = downloadId
         progressJob?.cancel()
         progressJob = viewModelScope.launch(dispatcher) {
             while (true) {
-                checkDownloadProgress(downloadManager, downloadId, progressTextProvider)
+                checkDownloadProgress(downloadManager, downloadId)
                 delay(1000)
             }
         }
@@ -114,7 +113,7 @@ class SharedDecksDownloadViewModel : ViewModel() {
     }
 
     private fun checkDownloadProgress(
-        downloadManager: DownloadManager, downloadId: Long, progressTextProvider: (Float) -> String
+        downloadManager: DownloadManager, downloadId: Long
     ) {
         val query = DownloadManager.Query().setFilterById(downloadId)
         val cursor = try {
@@ -149,7 +148,6 @@ class SharedDecksDownloadViewModel : ViewModel() {
             _uiState.update { state ->
                 state.copy(
                     progress = downloadProgress,
-                    progressText = progressTextProvider(downloadProgress),
                     status = if (isWaitingForNetwork) DownloadStatus.WaitingForNetwork else DownloadStatus.Downloading
                 )
             }
@@ -158,15 +156,12 @@ class SharedDecksDownloadViewModel : ViewModel() {
 
     /**
      * Updates the UI state to reflect a successfully completed download.
-     *
-     * @param progressText The final text to display for 100% completion.
      */
-    fun onDownloadComplete(progressText: String) {
-
+    fun onDownloadComplete() {
         stopPolling()
         _uiState.update {
             it.copy(
-                progress = 100f, progressText = progressText, status = DownloadStatus.Complete
+                progress = 100f, status = DownloadStatus.Complete
             )
         }
     }

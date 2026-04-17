@@ -84,8 +84,6 @@ class SharedDecksDownloadFragment : Fragment() {
     }
 
     companion object {
-        const val DOWNLOAD_COMPLETED_PROGRESS_PERCENTAGE = "100"
-
         const val EXTRA_IS_SHARED_DOWNLOAD = "extra_is_shared_download"
 
         /**
@@ -221,14 +219,7 @@ class SharedDecksDownloadFragment : Fragment() {
     }
 
     private fun startPolling(downloadId: Long) {
-        viewModel.startPolling(downloadManager, downloadId) { progress ->
-            val downloadProgressIntValue = progress.toInt()
-            if (downloadProgressIntValue == 0 || downloadProgressIntValue == 100) {
-                getString(R.string.percentage, downloadProgressIntValue.toString())
-            } else {
-                getString(R.string.percentage, "%.1f".format(progress))
-            }
-        }
+        viewModel.startPolling(downloadManager, downloadId)
     }
 
     /**
@@ -386,9 +377,7 @@ class SharedDecksDownloadFragment : Fragment() {
             }
 
             // Setting these since progress checker can stop before progress is updated to represent 100%
-            viewModel.onDownloadComplete(
-                context.getString(R.string.percentage, DOWNLOAD_COMPLETED_PROGRESS_PERCENTAGE)
-            )
+            viewModel.onDownloadComplete()
 
             Timber.i("Opening downloaded deck for import")
             openDownloadedDeck(context)

@@ -260,8 +260,13 @@ private fun DownloadProgressSection(state: DownloadUiState) {
                     alpha = 0.8f
                 )
             )
+            val progressText = if (state.progress <= 0f || state.progress >= 100f) {
+                stringResource(R.string.percentage, state.progress.toInt().toString())
+            } else {
+                stringResource(R.string.percentage, "%.1f".format(state.progress))
+            }
             Text(
-                text = state.progressText,
+                text = progressText,
                 fontFamily = RobotoMono,
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Black,
@@ -375,7 +380,6 @@ fun SharedDecksDownloadScreenPreview() {
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg",
             progress = 45f,
-            progressText = "45.2%",
             status = DownloadStatus.Downloading
         ), onNavigateUp = {}, onIntent = {})
     }
@@ -400,7 +404,6 @@ fun SharedDecksDownloadScreenCompletePreview() {
             state = DownloadUiState(
             fileName = "Medical Terminology.apkg",
             progress = 100f,
-            progressText = "100%",
             status = DownloadStatus.Complete
         ), onNavigateUp = {}, onIntent = {})
     }
@@ -412,7 +415,7 @@ fun DownloadProgressSectionPreview() {
     AnkiDroidTheme {
         DownloadProgressSection(
             state = DownloadUiState(
-                progress = 75f, progressText = "75%", status = DownloadStatus.Downloading
+                progress = 75f, status = DownloadStatus.Downloading
             )
         )
     }
@@ -424,7 +427,7 @@ fun DownloadProgressSectionWaitingPreview() {
     AnkiDroidTheme {
         DownloadProgressSection(
             state = DownloadUiState(
-                progress = 0f, progressText = "0%", status = DownloadStatus.WaitingForNetwork
+                progress = 0f, status = DownloadStatus.WaitingForNetwork
             )
         )
     }

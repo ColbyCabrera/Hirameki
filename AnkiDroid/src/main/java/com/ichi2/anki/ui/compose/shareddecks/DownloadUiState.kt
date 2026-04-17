@@ -55,14 +55,12 @@ sealed interface DownloadIntent {
  *
  * @property fileName The name of the file being downloaded.
  * @property progress The current download progress as a percentage (0-100).
- * @property progressText A formatted string representing the progress (e.g., "45.5%").
  * @property status The current [DownloadStatus] of the operation.
  * @property showCancelDialog Whether the cancellation confirmation dialog should be visible.
  */
 data class DownloadUiState(
     val fileName: String = "",
     val progress: Float = 0f,
-    val progressText: String = "0%",
     val status: DownloadStatus = DownloadStatus.Idle,
     val showCancelDialog: Boolean = false
 )
