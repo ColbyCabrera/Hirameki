@@ -125,59 +125,57 @@ class SharedDecksDownloadFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
-        val fileToBeDownloaded = arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)
-        if (fileToBeDownloaded == null) {
-            Timber.w("SharedDecksDownloadFragment started without DOWNLOAD_FILE argument")
-            parentFragmentManager.popBackStack()
-            return View(requireContext())
-        }
-
-        return ComposeView(requireContext()).apply {
-            setContent {
-                AnkiDroidTheme {
-                    val state by viewModel.uiState.collectAsState()
-                    SharedDecksDownloadScreen(
-                        state = state,
-                        onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
-                        onIntent = { intent ->
-                            when (intent) {
-                                DownloadIntent.ConfirmCancel -> {
-                                    viewModel.onIntent(intent, downloadManager)
-                                    resetDownloadState()
-                                    parentFragmentManager.popBackStack()
-                                }
-
-                                DownloadIntent.RetryClicked -> {
-                                    viewModel.onIntent(intent)
-                                    downloadManager.remove(viewModel.downloadId)
-                                    downloadFile(fileToBeDownloaded)
-                                }
-
-                                DownloadIntent.ImportClicked -> openDownloadedDeck(context)
-                                DownloadIntent.OpenInBrowserClicked -> {
-                                    viewModel.onIntent(intent)
-                                    downloadManager.remove(viewModel.downloadId)
-                                    openUrl(
-                                        requireContext().getDeckPageUri(fileToBeDownloaded.url)
-                                            .toUri()
-                                    )
-                                    parentFragmentManager.popBackStack()
-                                }
-
-                                else -> viewModel.onIntent(intent)
-                            }
-                        })
-                }
-            }
-        }
-    }
+    ): View = ComposeView(requireContext())
 
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+        val fileToBeDownloaded = arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE)
+        if (fileToBeDownloaded == null) {
+            Timber.w("SharedDecksDownloadFragment started without DOWNLOAD_FILE argument")
+            parentFragmentManager.popBackStack()
+            return
+        }
+        downloadManager = (activity as SharedDecksActivity).downloadManager
+
+        (view as ComposeView).setContent {
+            AnkiDroidTheme {
+                val state by viewModel.uiState.collectAsState()
+                SharedDecksDownloadScreen(
+                    state = state,
+                    onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
+                    onIntent = { intent ->
+                        when (intent) {
+                            DownloadIntent.ConfirmCancel -> {
+                                viewModel.onIntent(intent, downloadManager)
+                                resetDownloadState()
+                                parentFragmentManager.popBackStack()
+                            }
+
+                            DownloadIntent.RetryClicked -> {
+                                viewModel.onIntent(intent)
+                                downloadManager.remove(viewModel.downloadId)
+                                downloadFile(fileToBeDownloaded)
+                            }
+
+                            DownloadIntent.ImportClicked -> openDownloadedDeck(context)
+                            DownloadIntent.OpenInBrowserClicked -> {
+                                viewModel.onIntent(intent)
+                                downloadManager.remove(viewModel.downloadId)
+                                openUrl(
+                                    requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri()
+                                )
+                                parentFragmentManager.popBackStack()
+                            }
+
+                            else -> viewModel.onIntent(intent)
+                        }
+                    })
+            }
+        }
+
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner, onBackPressedCallback
         )
@@ -190,10 +188,6 @@ class SharedDecksDownloadFragment : Fragment() {
                 }
             }
         }
-
-        val fileToBeDownloaded =
-            arguments?.getSerializableCompat<DownloadFile>(DOWNLOAD_FILE) ?: return
-        downloadManager = (activity as SharedDecksActivity).downloadManager
 
         if (viewModel.uiState.value.status == DownloadStatus.Idle) {
             downloadFile(fileToBeDownloaded)
