@@ -237,8 +237,14 @@ class SharedDecksDownloadFragment : Fragment() {
         }
         // ensure the "shared_decks" folder exists
         val decksDownloadFolder = File(externalFilesFolder, SHARED_DECKS_DOWNLOAD_FOLDER)
-        if (!decksDownloadFolder.exists()) {
-            decksDownloadFolder.mkdirs()
+        if (!decksDownloadFolder.exists() && !decksDownloadFolder.mkdirs()) {
+            Timber.e(
+                "Failed to create shared decks download folder: %s",
+                decksDownloadFolder.absolutePath
+            )
+            showSnackbar(R.string.external_storage_unavailable)
+            parentFragmentManager.popBackStack()
+            return
         }
         // Register broadcast receiver for download completion.
         Timber.d("Registering broadcast receiver for download completion")
