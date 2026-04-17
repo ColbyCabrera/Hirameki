@@ -114,7 +114,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import kotlin.coroutines.resume
 
-@NeedsTest("#14709: Timebox shouldn't appear instantly when the Reviewer is opened")
 open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     override var currentCard: Card?
         get() = viewModel.currentCardFlow.value
@@ -381,7 +380,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             }
             viewModel.onEvent(ReviewerEvent.OnVoicePlaybackStateChanged(voicePlaybackViewModel.isVisible.value))
 
-            withCol { startTimebox() }
             updateCardAndRedraw()
         }
         disableDrawerSwipeOnConflicts()
