@@ -5,8 +5,8 @@ import android.webkit.WebView
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -43,13 +43,15 @@ class SharedDecksActivityTest : RobolectricTest() {
         )
         activity.supportFragmentManager.executePendingTransactions()
 
-        var fragment = activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
+        var fragment =
+            activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
         assertNotNull("Fragment should be added for deck info URL", fragment)
 
         // Clear the fragment for the next test
         activity.supportFragmentManager.popBackStackImmediate()
         activity.supportFragmentManager.executePendingTransactions()
-        fragment = activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
+        fragment =
+            activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
         assertNull("Fragment should be removed", fragment)
 
         // 2. Test a search URL - should be ignored
@@ -62,7 +64,8 @@ class SharedDecksActivityTest : RobolectricTest() {
         )
         activity.supportFragmentManager.executePendingTransactions()
 
-        fragment = activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
+        fragment =
+            activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
         assertNull("Fragment should NOT be added for search URL", fragment)
     }
 
@@ -80,14 +83,17 @@ class SharedDecksActivityTest : RobolectricTest() {
         assertNotNull("Initial load should have occurred", initialLast)
 
         // Click search icon to open search bar
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name)).performClick()
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
+            .performClick()
 
         // Type search query
         val query = "kanji"
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name)).performTextInput(query)
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
+            .performTextInput(query)
 
         // Perform search (IME action)
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name)).performImeAction()
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
+            .performImeAction()
 
         // Verify WebView loaded the correct search URL and it's different from the initial one
         val lastUrl = shadowWebView.lastLoadedUrl
