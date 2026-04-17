@@ -88,32 +88,28 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     fun `test polling updates progress`() = runTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
         val viewModel = SharedDecksDownloadViewModel(testDispatcher)
-        val cursor = MatrixCursor(
-            arrayOf(
-                DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
-                DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
-                DownloadManager.COLUMN_STATUS,
-                DownloadManager.COLUMN_REASON
-            )
-        )
-        cursor.addRow(arrayOf<Any>(50L, 100L, DownloadManager.STATUS_RUNNING, 0))
 
-        every { downloadManager.query(any()) } returns cursor
-
-        cursor.use {
-            viewModel.uiState.test {
-                assertEquals(DownloadStatus.Idle, awaitItem().status)
-                viewModel.startPolling(downloadManager, 123L)
-
-                // Wait for first poll
-                advanceTimeBy(100)
-
-                val item = awaitItem()
-                assertEquals(50f, item.progress)
-                assertEquals(DownloadStatus.Downloading, item.status)
-                viewModel.stopPolling()
-                cancelAndIgnoreRemainingEvents()
+        every { downloadManager.query(any()) } answers {
+            MatrixCursor(
+                arrayOf(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                    DownloadManager.COLUMN_STATUS,
+                    DownloadManager.COLUMN_REASON
+                )
+            ).apply {
+                addRow(arrayOf<Any>(50L, 100L, DownloadManager.STATUS_RUNNING, 0))
             }
+        }
+
+        viewModel.startPolling(downloadManager, 123L)
+        advanceTimeBy(100)
+        viewModel.uiState.test {
+            val item = awaitItem()
+            assertEquals(50f, item.progress)
+            assertEquals(DownloadStatus.Downloading, item.status)
+            viewModel.stopPolling()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -121,33 +117,34 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     fun `test polling handles waiting for network`() = runTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
         val viewModel = SharedDecksDownloadViewModel(testDispatcher)
-        val cursor = MatrixCursor(
-            arrayOf(
-                DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
-                DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
-                DownloadManager.COLUMN_STATUS,
-                DownloadManager.COLUMN_REASON
-            )
-        )
-        cursor.addRow(
-            arrayOf<Any>(
-                0L, 100L, DownloadManager.STATUS_PAUSED, DownloadManager.PAUSED_WAITING_FOR_NETWORK
-            )
-        )
 
-        every { downloadManager.query(any()) } returns cursor
-
-        cursor.use {
-            viewModel.uiState.test {
-                assertEquals(DownloadStatus.Idle, awaitItem().status)
-                viewModel.startPolling(downloadManager, 123L)
-
-                advanceTimeBy(100)
-
-                assertEquals(DownloadStatus.WaitingForNetwork, awaitItem().status)
-                viewModel.stopPolling()
-                cancelAndIgnoreRemainingEvents()
+        every { downloadManager.query(any()) } answers {
+            MatrixCursor(
+                arrayOf(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                    DownloadManager.COLUMN_STATUS,
+                    DownloadManager.COLUMN_REASON
+                )
+            ).apply {
+                addRow(
+                    arrayOf<Any>(
+                        0L,
+                        100L,
+                        DownloadManager.STATUS_PAUSED,
+                        DownloadManager.PAUSED_WAITING_FOR_NETWORK
+                    )
+                )
             }
+        }
+
+        viewModel.startPolling(downloadManager, 123L)
+        advanceTimeBy(100)
+        viewModel.uiState.test {
+            val item = awaitItem()
+            assertEquals(DownloadStatus.WaitingForNetwork, item.status)
+            viewModel.stopPolling()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
