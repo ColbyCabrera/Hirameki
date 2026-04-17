@@ -244,4 +244,93 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `test polling does not overwrite terminal states`() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = SharedDecksDownloadViewModel(testDispatcher)
+
+        // Mock DownloadManager to return a running status
+        every { downloadManager.query(any()) } answers {
+            MatrixCursor(
+                arrayOf(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                    DownloadManager.COLUMN_STATUS,
+                    DownloadManager.COLUMN_REASON
+                )
+            ).apply {
+                addRow(arrayOf<Any>(80L, 100L, DownloadManager.STATUS_RUNNING, 0))
+            }
+        }
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+
+            // Start downloading state
+            viewModel.setFileName("test.apkg")
+            assertEquals(DownloadStatus.Downloading, awaitItem().status)
+
+            // Start polling
+            viewModel.startPolling(downloadManager, 123L)
+
+            // Advance small amount to trigger first query, but we'll race it with onDownloadComplete
+            // Actually, with StandardTestDispatcher, the polling coroutine won't run until we yield or advance.
+
+            // Set terminal state BEFORE the polling loop has a chance to update (simulating race)
+            viewModel.onDownloadComplete()
+            assertEquals(DownloadStatus.Complete, awaitItem().status)
+
+            // Now let the polling loop execute checkDownloadProgress
+            advanceTimeBy(1100)
+
+            expectNoEvents()
+            assertEquals(DownloadStatus.Complete, viewModel.uiState.value.status)
+            assertEquals(100f, viewModel.uiState.value.progress)
+
+            viewModel.stopPolling()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `test polling does not overwrite idle state after reset`() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = SharedDecksDownloadViewModel(testDispatcher)
+
+        every { downloadManager.query(any()) } answers {
+            MatrixCursor(
+                arrayOf(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                    DownloadManager.COLUMN_STATUS,
+                    DownloadManager.COLUMN_REASON
+                )
+            ).apply {
+                addRow(arrayOf<Any>(50L, 100L, DownloadManager.STATUS_RUNNING, 0))
+            }
+        }
+
+        viewModel.uiState.test {
+            awaitItem() // Idle
+            viewModel.setFileName("test.apkg")
+            awaitItem() // Downloading
+
+            viewModel.startPolling(downloadManager, 123L)
+
+            // Reset state while polling might be active
+            viewModel.resetState()
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+
+            // Let polling loop run
+            advanceTimeBy(1100)
+
+            // Should remain Idle
+            expectNoEvents()
+            assertEquals(DownloadStatus.Idle, viewModel.uiState.value.status)
+            assertEquals(0f, viewModel.uiState.value.progress)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }
