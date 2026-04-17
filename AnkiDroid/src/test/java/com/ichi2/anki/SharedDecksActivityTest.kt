@@ -2,6 +2,7 @@ package com.ichi2.anki
 
 import android.content.Intent
 import android.webkit.WebView
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
@@ -88,12 +89,10 @@ class SharedDecksActivityTest : RobolectricTest() {
 
         // Type search query
         val query = "kanji"
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
-            .performTextInput(query)
+        composeTestRule.onNode(hasTestTag("search_field")).performTextInput(query)
 
         // Perform search (IME action)
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
-            .performImeAction()
+        composeTestRule.onNode(hasTestTag("search_field")).performImeAction()
 
         // Verify WebView loaded the correct search URL and it's different from the initial one
         val lastUrl = shadowWebView.lastLoadedUrl
