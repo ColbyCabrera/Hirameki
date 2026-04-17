@@ -208,7 +208,7 @@ class SharedDecksDownloadViewModel(
         _uiState.value = DownloadUiState()
     }
 
-    fun cancelDownload(downloadManager: DownloadManager, downloadId: Long) {
+    private fun cancelDownload(downloadManager: DownloadManager, downloadId: Long) {
         _uiState.update { it.copy(showCancelDialog = false) }
         downloadManager.remove(downloadId)
         resetState()
