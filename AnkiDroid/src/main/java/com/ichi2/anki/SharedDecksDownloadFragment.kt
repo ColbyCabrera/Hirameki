@@ -395,25 +395,18 @@ class SharedDecksDownloadFragment : Fragment() {
             return
         }
         val fileName = viewModel.uiState.value.fileName
+        if (fileName.isEmpty()) {
+            return
+        }
         val mimeType = URLConnection.guessContentTypeFromName(fileName)
         val fileIntent = Intent(context, IntentHandler::class.java)
         fileIntent.action = Intent.ACTION_VIEW
 
-        val fileUri = run {
-            if (fileName.isEmpty()) return@run null
-            val sharedDecksPath =
-                File(context.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER)
-            FileProvider.getUriForFile(
-                context,
-                context.applicationContext?.packageName + ".apkgfileprovider",
-                File(sharedDecksPath, fileName),
-            )
-        }
-
-        if (fileUri == null) {
-            Timber.w("fileUri is null, cannot open deck for import. fileName is empty.")
-            return
-        }
+        val fileUri = FileProvider.getUriForFile(
+            context,
+            context.applicationContext.packageName + ".apkgfileprovider",
+            File(File(context.getExternalFilesDir(null), SHARED_DECKS_DOWNLOAD_FOLDER), fileName),
+        )
 
         Timber.d("File URI -> $fileUri")
         fileIntent.setDataAndType(fileUri, mimeType)
