@@ -3,6 +3,7 @@ package com.ichi2.anki
 import android.app.DownloadManager
 import android.database.MatrixCursor
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.cash.turbine.test
 import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
 import io.mockk.every
 import io.mockk.mockk
@@ -22,42 +23,64 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     private val downloadManager: DownloadManager = mockk()
 
     @Test
-    fun `test initial state`() {
+    fun `test initial state`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
-        assertEquals(DownloadStatus.Idle, viewModel.uiState.value.status)
-        assertEquals(0f, viewModel.uiState.value.progress)
+        viewModel.uiState.test {
+            val first = awaitItem()
+            assertEquals(DownloadStatus.Idle, first.status)
+            assertEquals(0f, first.progress)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `test setFileName updates state`() {
+    fun `test setFileName updates state`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
-        viewModel.setFileName("test.apkg")
-        assertEquals("test.apkg", viewModel.uiState.value.fileName)
-        assertEquals(DownloadStatus.Downloading, viewModel.uiState.value.status)
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+            viewModel.setFileName("test.apkg")
+            val item = awaitItem()
+            assertEquals("test.apkg", item.fileName)
+            assertEquals(DownloadStatus.Downloading, item.status)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `test onDownloadComplete updates state`() {
+    fun `test onDownloadComplete updates state`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
-        viewModel.onDownloadComplete()
-        assertEquals(DownloadStatus.Complete, viewModel.uiState.value.status)
-        assertEquals(100f, viewModel.uiState.value.progress)
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+            viewModel.onDownloadComplete()
+            val item = awaitItem()
+            assertEquals(DownloadStatus.Complete, item.status)
+            assertEquals(100f, item.progress)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `test onDownloadFailed updates state`() {
+    fun `test onDownloadFailed updates state`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
-        viewModel.onDownloadFailed()
-        assertEquals(DownloadStatus.Failed, viewModel.uiState.value.status)
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+            viewModel.onDownloadFailed()
+            assertEquals(DownloadStatus.Failed, awaitItem().status)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `test show and dismiss cancel dialog`() {
+    fun `test show and dismiss cancel dialog`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
-        viewModel.showCancelDialog()
-        assertTrue(viewModel.uiState.value.showCancelDialog)
-        viewModel.dismissCancelDialog()
-        assertFalse(viewModel.uiState.value.showCancelDialog)
+        viewModel.uiState.test {
+            assertFalse(awaitItem().showCancelDialog)
+            viewModel.showCancelDialog()
+            assertTrue(awaitItem().showCancelDialog)
+            viewModel.dismissCancelDialog()
+            assertFalse(awaitItem().showCancelDialog)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -77,14 +100,19 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         every { downloadManager.query(any()) } returns cursor
 
         cursor.use {
-            viewModel.startPolling(downloadManager, 123L)
+            viewModel.uiState.test {
+                assertEquals(DownloadStatus.Idle, awaitItem().status)
+                viewModel.startPolling(downloadManager, 123L)
 
-            // Wait for first poll
-            advanceTimeBy(100)
+                // Wait for first poll
+                advanceTimeBy(100)
 
-            assertEquals(50f, viewModel.uiState.value.progress)
-            assertEquals(DownloadStatus.Downloading, viewModel.uiState.value.status)
-            viewModel.stopPolling()
+                val item = awaitItem()
+                assertEquals(50f, item.progress)
+                assertEquals(DownloadStatus.Downloading, item.status)
+                viewModel.stopPolling()
+                cancelAndIgnoreRemainingEvents()
+            }
         }
     }
 
@@ -109,12 +137,16 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
         every { downloadManager.query(any()) } returns cursor
 
         cursor.use {
-            viewModel.startPolling(downloadManager, 123L)
+            viewModel.uiState.test {
+                assertEquals(DownloadStatus.Idle, awaitItem().status)
+                viewModel.startPolling(downloadManager, 123L)
 
-            advanceTimeBy(100)
+                advanceTimeBy(100)
 
-            assertEquals(DownloadStatus.WaitingForNetwork, viewModel.uiState.value.status)
-            viewModel.stopPolling()
+                assertEquals(DownloadStatus.WaitingForNetwork, awaitItem().status)
+                viewModel.stopPolling()
+                cancelAndIgnoreRemainingEvents()
+            }
         }
     }
 }
