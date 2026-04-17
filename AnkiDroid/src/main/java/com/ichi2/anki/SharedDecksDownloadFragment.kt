@@ -155,15 +155,13 @@ class SharedDecksDownloadFragment : Fragment() {
                             }
 
                             DownloadIntent.RetryClicked -> {
-                                viewModel.onIntent(intent)
-                                downloadManager.remove(viewModel.downloadId)
+                                viewModel.onIntent(intent, downloadManager)
                                 downloadFile(fileToBeDownloaded)
                             }
 
                             DownloadIntent.ImportClicked -> openDownloadedDeck(context)
                             DownloadIntent.OpenInBrowserClicked -> {
-                                viewModel.onIntent(intent)
-                                downloadManager.remove(viewModel.downloadId)
+                                viewModel.onIntent(intent, downloadManager)
                                 openUrl(
                                     requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri()
                                 )

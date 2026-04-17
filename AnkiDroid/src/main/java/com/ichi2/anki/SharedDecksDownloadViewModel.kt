@@ -78,6 +78,7 @@ class SharedDecksDownloadViewModel(
 
             DownloadIntent.DismissCancelDialog -> dismissCancelDialog()
             DownloadIntent.RetryClicked -> {
+                downloadManager?.remove(downloadId)
                 _uiState.update { it.copy(status = DownloadStatus.Downloading, progress = 0f) }
             }
 
@@ -86,6 +87,7 @@ class SharedDecksDownloadViewModel(
             }
 
             DownloadIntent.OpenInBrowserClicked -> {
+                downloadManager?.remove(downloadId)
                 resetState()
             }
         }
