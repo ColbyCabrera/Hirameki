@@ -394,6 +394,7 @@ class SharedDecksDownloadFragment : Fragment() {
         }
         val fileName = viewModel.uiState.value.fileName
         if (fileName.isEmpty()) {
+            Timber.d("SharedDecksDownloadFragment: fileName was empty, returning early from openDownloadedDeck")
             return
         }
         val mimeType = URLConnection.guessContentTypeFromName(fileName)
