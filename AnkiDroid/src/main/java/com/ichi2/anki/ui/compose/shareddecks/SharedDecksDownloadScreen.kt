@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -262,13 +263,15 @@ private fun DownloadProgressSection(state: DownloadUiState) {
                     alpha = 0.8f
                 )
             )
-            val progressText = if (state.progress <= 0f || state.progress >= 100f) {
-                stringResource(R.string.percentage, "%.0f".format(Locale.ROOT, state.progress))
-            } else {
-                stringResource(R.string.percentage, "%.1f".format(Locale.ROOT, state.progress))
+            val progressText = remember(state.progress) {
+                if (state.progress <= 0f || state.progress >= 100f) {
+                    "%.0f".format(Locale.getDefault(), state.progress)
+                } else {
+                    "%.1f".format(Locale.getDefault(), state.progress)
+                }
             }
             Text(
-                text = progressText,
+                text = stringResource(R.string.percentage, progressText),
                 fontFamily = RobotoMono,
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Black,
