@@ -198,17 +198,16 @@ class SharedDecksDownloadFragment : Fragment() {
         if (viewModel.uiState.value.status == DownloadStatus.Idle) {
             downloadFile(fileToBeDownloaded)
         } else {
-            // Re-register receiver and resume polling if we're still downloading/failed/complete
-            if (viewModel.uiState.value.status == DownloadStatus.Downloading || viewModel.uiState.value.status == DownloadStatus.WaitingForNetwork || viewModel.uiState.value.status == DownloadStatus.Failed) {
+            // Re-register receiver and resume polling if we're still downloading or waiting for network
+            val status = viewModel.uiState.value.status
+            if (status == DownloadStatus.Downloading || status == DownloadStatus.WaitingForNetwork) {
                 Timber.d("Resuming polling and re-registering receiver after config change")
                 activity?.registerReceiverCompat(
                     onComplete,
                     IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
                     ContextCompat.RECEIVER_EXPORTED,
                 )
-                if (viewModel.uiState.value.status != DownloadStatus.Failed) {
-                    startPolling(viewModel.downloadId)
-                }
+                startPolling(viewModel.downloadId)
             }
         }
     }
