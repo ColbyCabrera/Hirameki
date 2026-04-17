@@ -163,7 +163,12 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     fun `test ConfirmCancel with null downloadManager resets state`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
         viewModel.uiState.test {
-            awaitItem() // Initial
+            awaitItem() // Initial (Idle)
+
+            // Drive to non-Idle state
+            viewModel.setFileName("test.apkg")
+            assertEquals(DownloadStatus.Downloading, awaitItem().status)
+
             viewModel.showCancelDialog()
             assertTrue(awaitItem().showCancelDialog)
 
