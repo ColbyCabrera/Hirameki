@@ -8,6 +8,7 @@ import com.ichi2.anki.ui.compose.shareddecks.DownloadIntent
 import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -110,6 +111,10 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             assertEquals(50f, item.progress)
             assertEquals(DownloadStatus.Downloading, item.status)
             viewModel.stopPolling()
+
+            advanceTimeBy(2000)
+            expectNoEvents()
+
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -146,6 +151,10 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             val item = awaitItem()
             assertEquals(DownloadStatus.WaitingForNetwork, item.status)
             viewModel.stopPolling()
+
+            advanceTimeBy(2000)
+            expectNoEvents()
+
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -163,6 +172,70 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             val item = awaitItem()
             assertFalse(item.showCancelDialog)
             assertEquals(DownloadStatus.Idle, item.status)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `test RetryClicked updates state and removes download`() = runTest {
+        val viewModel = SharedDecksDownloadViewModel()
+        val downloadId = 123L
+        viewModel.setDownloadId(downloadId)
+        viewModel.onDownloadFailed()
+
+        every { downloadManager.remove(downloadId) } returns 1
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Failed, awaitItem().status)
+            viewModel.onIntent(DownloadIntent.RetryClicked, downloadManager)
+
+            val item = awaitItem()
+            assertEquals(DownloadStatus.Downloading, item.status)
+            assertEquals(0f, item.progress)
+
+            verify { downloadManager.remove(downloadId) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `test OpenInBrowserClicked resets state and removes download`() = runTest {
+        val viewModel = SharedDecksDownloadViewModel()
+        val downloadId = 123L
+        viewModel.setDownloadId(downloadId)
+        viewModel.onDownloadComplete()
+
+        every { downloadManager.remove(downloadId) } returns 1
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Complete, awaitItem().status)
+            viewModel.onIntent(DownloadIntent.OpenInBrowserClicked, downloadManager)
+
+            val item = awaitItem()
+            assertEquals(DownloadStatus.Idle, item.status)
+
+            verify { downloadManager.remove(downloadId) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `test ConfirmCancel with downloadManager removes download and resets state`() = runTest {
+        val viewModel = SharedDecksDownloadViewModel()
+        val downloadId = 123L
+        viewModel.setDownloadId(downloadId)
+        viewModel.setFileName("test.apkg")
+
+        every { downloadManager.remove(downloadId) } returns 1
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Downloading, awaitItem().status)
+            viewModel.onIntent(DownloadIntent.ConfirmCancel, downloadManager)
+
+            val item = awaitItem()
+            assertEquals(DownloadStatus.Idle, item.status)
+
+            verify { downloadManager.remove(downloadId) }
             cancelAndIgnoreRemainingEvents()
         }
     }
