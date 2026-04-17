@@ -61,6 +61,7 @@ import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.FileNameAndExtension
+import com.ichi2.utils.ImportUtils
 import timber.log.Timber
 import java.io.Serializable
 import kotlin.random.Random
@@ -293,14 +294,9 @@ class SharedDecksActivity : AnkiActivity() {
                                 query = searchQuery,
                                 onQueryChange = { searchQuery = it },
                                 onSearch = { query ->
-                                    val searchUrl =
-                                        resources.getString(R.string.shared_decks_url)
-                                            .removeSuffix("/")
-                                            .toUri()
-                                            .buildUpon()
-                                            .appendQueryParameter("search", query)
-                                            .build()
-                                            .toString()
+                                    val searchUrl = resources.getString(R.string.shared_decks_url)
+                                        .removeSuffix("/").toUri().buildUpon()
+                                        .appendQueryParameter("search", query).build().toString()
                                     webView.loadUrl(searchUrl)
                                     isSearching = false
                                 },
@@ -353,6 +349,12 @@ class SharedDecksActivity : AnkiActivity() {
         webView.loadUrl(resources.getString(R.string.shared_decks_url))
         webView.webViewClient = WebViewClient()
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
+            if (!ImportUtils.isFileAValidDeck(fileName) && url?.contains("download-deck/") != true) {
+                Timber.d("Ignoring download for non-deck URL: %s", url)
+                return@setDownloadListener
+            }
+
             // If the activity/fragment lifecycle has already begun teardown process,
             // avoid handling the download, as FragmentManager.commit will throw
             if (!supportFragmentManager.isStateSaved) {
