@@ -55,12 +55,12 @@ open class MockTime(
     }
 
     /** Add ms milliseconds  */
-    private fun addMs(ms: Long) {
+    fun addMs(ms: Long) {
         time += ms
     }
 
     /** add s seconds  */
-    private fun addS(s: Long) {
+    fun addS(s: Long) {
         addMs(s * 1000L)
     }
 
@@ -70,7 +70,7 @@ open class MockTime(
     }
 
     /** add h hours */
-    private fun addH(h: Long) {
+    fun addH(h: Long) {
         addM(h * 60)
     }
 
@@ -102,7 +102,8 @@ open class MockTime(
             milliseconds: Int = 0,
         ): Long {
             val timeZone = TimeZone.getTimeZone("GMT")
-            val gregorianCalendar: Calendar = GregorianCalendar(year, month, date, hourOfDay, minute, second)
+            val gregorianCalendar: Calendar =
+                GregorianCalendar(year, month, date, hourOfDay, minute, second)
             gregorianCalendar.timeZone = timeZone
             gregorianCalendar[Calendar.MILLISECOND] = milliseconds
             return gregorianCalendar.timeInMillis

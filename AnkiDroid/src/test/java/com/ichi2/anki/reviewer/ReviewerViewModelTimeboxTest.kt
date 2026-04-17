@@ -1,13 +1,10 @@
 package com.ichi2.anki.reviewer
 
+import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.cash.turbine.test
 import com.ichi2.anki.RobolectricTest
-import com.ichi2.anki.common.time.Time
-import com.ichi2.anki.common.time.TimeManager
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceUntilIdle
-import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -18,44 +15,27 @@ class ReviewerViewModelTimeboxTest : RobolectricTest() {
     @Test
     fun `timebox dialog does not appear because startTimebox is called during LoadInitialCard`() =
         runTest {
-            // Mock time to 1000 seconds.
-            // If startTimebox hadn't been called, elapsed would be 1000 - 0 = 1000 > 300.
-            val mockTime = object : Time() {
-                override fun intTimeMS(): Long = 1000000L
-            }
-            TimeManager.resetWith(mockTime)
+            // Given we have a card
+            addBasicNote("Front", "Back")
 
-            try {
-                // Given we have a card and a time limit of 5 minutes (300 seconds)
-                addBasicNote("Front", "Back")
-                col.config.set("timeLim", 300)
+            // And a time limit of 5 minutes (300 seconds)
+            col.config.set("timeLim", 300)
 
-                // And the ViewModel is initialized
-                var timeboxDialogEmitCount = 0
-                val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            // And we mock the current time to 1000 seconds
+            collectionTime.addS(1000)
 
-                val job = launch {
-                    viewModel.effect.collect { effect ->
-                        if (effect is ReviewerEffect.ShowTimeboxReachedDialog) {
-                            timeboxDialogEmitCount++
-                        }
-                    }
-                }
+            // When the ViewModel is initialized
+            val app = ApplicationProvider.getApplicationContext<Application>()
+            val viewModel = ReviewerViewModel(app)
 
-                // When we process the initial load
+            // Then no timebox dialog should have been emitted because startTimebox()
+            // is called during LoadInitialCard, which resets the timer to current time.
+            viewModel.effect.test {
+                // Process the LoadInitialCard event triggered in init
                 advanceRobolectricLooper()
-                advanceUntilIdle()
 
-                // Then no timebox dialog should have been emitted because startTimebox() was called at t=1000
-                // and the timer was reset to the current time.
-                assertEquals(
-                    "Timebox dialog should not appear initially",
-                    0,
-                    timeboxDialogEmitCount
-                )
-                job.cancel()
-            } finally {
-                TimeManager.reset()
+                // expectNoEvents() ensures that the flow is silent and no Timebox dialog was emitted.
+                expectNoEvents()
             }
         }
 }
