@@ -24,6 +24,7 @@ import com.ichi2.anki.ui.compose.shareddecks.DownloadIntent
 import com.ichi2.anki.ui.compose.shareddecks.DownloadStatus
 import com.ichi2.anki.ui.compose.shareddecks.DownloadUiState
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,6 +33,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 /**
@@ -50,6 +54,7 @@ class SharedDecksDownloadViewModel(
         private set
 
     private var progressJob: Job? = null
+    private val progressJobMutex = Mutex()
 
     /**
      * Processes a user [DownloadIntent] and updates the UI state accordingly.
@@ -105,11 +110,15 @@ class SharedDecksDownloadViewModel(
         downloadManager: DownloadManager, downloadId: Long
     ) {
         this.downloadId = downloadId
-        progressJob?.cancel()
-        progressJob = viewModelScope.launch(dispatcher) {
-            while (true) {
-                checkDownloadProgress(downloadManager, downloadId)
-                delay(1000)
+        viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            progressJobMutex.withLock {
+                clearProgressJobLocked()
+                progressJob = viewModelScope.launch(dispatcher) {
+                    while (true) {
+                        checkDownloadProgress(downloadManager, downloadId)
+                        delay(1000)
+                    }
+                }
             }
         }
     }
@@ -118,7 +127,22 @@ class SharedDecksDownloadViewModel(
      * Stops the periodic progress polling job if it is currently running.
      */
     fun stopPolling() {
+        viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            progressJobMutex.withLock {
+                clearProgressJobLocked()
+            }
+        }
+    }
 
+    private fun stopPollingBlocking() {
+        runBlocking {
+            progressJobMutex.withLock {
+                clearProgressJobLocked()
+            }
+        }
+    }
+
+    private fun clearProgressJobLocked() {
         progressJob?.cancel()
         progressJob = null
     }
@@ -213,7 +237,7 @@ class SharedDecksDownloadViewModel(
     }
 
     override fun onCleared() {
+        stopPollingBlocking()
         super.onCleared()
-        stopPolling()
     }
 }

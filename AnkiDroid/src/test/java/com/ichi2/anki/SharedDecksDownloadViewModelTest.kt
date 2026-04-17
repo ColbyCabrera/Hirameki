@@ -1,3 +1,20 @@
+/****************************************************************************************
+ *                                                                                      *
+ * Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>                                                         *
+ *                                                                                      *
+ * This program is free software; you can redistribute it and/or modify it under        *
+ * the terms of the GNU General Public License as published by the Free Software        *
+ * Foundation; either version 3 of the License, or (at your option) any later           *
+ * version.                                                                             *
+ *                                                                                      *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY      *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A      *
+ * PARTICULAR PURPOSE. See the GNU General Public License for more details.             *
+ *                                                                                      *
+ * You should have received a copy of the GNU General Public License along with         *
+ * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
+ ****************************************************************************************/
+
 package com.ichi2.anki
 
 import android.app.DownloadManager
@@ -154,6 +171,39 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
 
             advanceTimeBy(2000)
             expectNoEvents()
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `test stopPolling cancels an immediate polling start`() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = SharedDecksDownloadViewModel(testDispatcher)
+
+        every { downloadManager.query(any()) } answers {
+            MatrixCursor(
+                arrayOf(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                    DownloadManager.COLUMN_STATUS,
+                    DownloadManager.COLUMN_REASON
+                )
+            ).apply {
+                addRow(arrayOf<Any>(50L, 100L, DownloadManager.STATUS_RUNNING, 0))
+            }
+        }
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+
+            viewModel.startPolling(downloadManager, 123L)
+            viewModel.stopPolling()
+
+            advanceTimeBy(1100)
+
+            expectNoEvents()
+            verify(exactly = 0) { downloadManager.query(any()) }
 
             cancelAndIgnoreRemainingEvents()
         }
