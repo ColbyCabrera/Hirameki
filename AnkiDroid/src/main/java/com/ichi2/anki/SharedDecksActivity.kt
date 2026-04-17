@@ -248,8 +248,30 @@ class SharedDecksActivity : AnkiActivity() {
         const val SHARED_DECKS_DOWNLOAD_FRAGMENT = "SharedDecksDownloadFragment"
         const val DOWNLOAD_FILE = "DownloadFile"
         private const val HTTP_STATUS_TOO_MANY_REQUESTS = 429
+        private const val SHARED_DECKS_SEARCH_PATH = "/shared/decks"
         private const val USER_DECKS_PATH = "/decks"
         private const val MAX_REDIRECTS = 3
+    }
+
+    private fun buildSharedDecksSearchUrl(query: String): String {
+        val sharedDecksUri = getString(R.string.shared_decks_url).toUri()
+        val normalizedPath = sharedDecksUri.path
+            ?.trimEnd('/')
+            ?.let { path ->
+                when {
+                    path.endsWith(SHARED_DECKS_SEARCH_PATH) -> path
+                    path.endsWith("/shared") -> "$path/decks"
+                    else -> SHARED_DECKS_SEARCH_PATH
+                }
+            }
+            ?: SHARED_DECKS_SEARCH_PATH
+
+        return sharedDecksUri.buildUpon()
+            .clearQuery()
+            .path(normalizedPath)
+            .appendQueryParameter("search", query)
+            .build()
+            .toString()
     }
 
     // Show WebView with AnkiWeb shared decks with the functionality to capture downloads and import decks.
@@ -294,9 +316,7 @@ class SharedDecksActivity : AnkiActivity() {
                                 query = searchQuery,
                                 onQueryChange = { searchQuery = it },
                                 onSearch = { query ->
-                                    val searchUrl = resources.getString(R.string.shared_decks_url)
-                                        .removeSuffix("/").toUri().buildUpon()
-                                        .appendQueryParameter("search", query).build().toString()
+                                    val searchUrl = buildSharedDecksSearchUrl(query)
                                     webView.loadUrl(searchUrl)
                                     isSearching = false
                                 },
