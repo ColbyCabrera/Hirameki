@@ -71,7 +71,6 @@ class SharedDecksDownloadViewModel(
                         "ConfirmCancel: downloadManager is null, cannot cancel download ID %d",
                         downloadId
                     )
-                    dismissCancelDialog()
                     resetState()
                 }
             }
@@ -207,13 +206,11 @@ class SharedDecksDownloadViewModel(
      * Resets the ViewModel to its initial idle state.
      */
     fun resetState() {
-
         stopPolling()
         _uiState.value = DownloadUiState()
     }
 
     private fun cancelDownload(downloadManager: DownloadManager, downloadId: Long) {
-        _uiState.update { it.copy(showCancelDialog = false) }
         downloadManager.remove(downloadId)
         resetState()
     }
