@@ -102,9 +102,10 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             }
         }
 
-        viewModel.startPolling(downloadManager, 123L)
-        advanceTimeBy(100)
         viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+            viewModel.startPolling(downloadManager, 123L)
+            advanceTimeBy(100)
             val item = awaitItem()
             assertEquals(50f, item.progress)
             assertEquals(DownloadStatus.Downloading, item.status)
@@ -138,9 +139,10 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             }
         }
 
-        viewModel.startPolling(downloadManager, 123L)
-        advanceTimeBy(100)
         viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+            viewModel.startPolling(downloadManager, 123L)
+            advanceTimeBy(100)
             val item = awaitItem()
             assertEquals(DownloadStatus.WaitingForNetwork, item.status)
             viewModel.stopPolling()
