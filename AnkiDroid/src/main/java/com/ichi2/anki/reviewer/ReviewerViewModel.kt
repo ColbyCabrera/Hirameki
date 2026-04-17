@@ -279,7 +279,10 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         when (event) {
             is ReviewerEvent.ShowAnswer -> showAnswer()
             is ReviewerEvent.RateCard -> rateCard(event.rating)
-            is ReviewerEvent.LoadInitialCard -> loadCard()
+            is ReviewerEvent.LoadInitialCard -> launchCardAction {
+                withCol { startTimebox() }
+                loadCardSuspend()
+            }
             is ReviewerEvent.OnTypedAnswerChanged -> onTypedAnswerChanged(event.newText)
             is ReviewerEvent.ToggleMark -> toggleMark()
             is ReviewerEvent.SetFlag -> setFlag(event.flag)
