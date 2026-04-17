@@ -8,7 +8,6 @@ import app.cash.turbine.test
 import com.ichi2.anki.RobolectricTest
 import kotlinx.coroutines.test.advanceUntilIdle
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -68,21 +67,11 @@ class ReviewerViewModelTimeboxTest : RobolectricTest() {
             // We use a loop with awaitItem to find the specific effect.
             // This is more robust than cancelAndConsumeRemainingEvents() which might miss the event
             // if it hasn't been emitted yet (even with advanceUntilIdle).
-            var hasDialog = false
             // ReviewerViewModel might emit other effects (like ReplayMedia) during reload.
             // Turbine will time out if we wait too long without receiving the expected event.
-            try {
-                while (true) {
-                    val effect = awaitItem()
-                    if (effect is ReviewerEffect.ShowTimeboxReachedDialog) {
-                        hasDialog = true
-                        break
-                    }
-                }
-            } catch (_: Throwable) {
-                // If it times out or flow closes, hasDialog remains false
+            while (awaitItem() !is ReviewerEffect.ShowTimeboxReachedDialog) {
+                // Ignore other effects until we find the dialog reached event
             }
-            assertTrue("Timebox dialog SHOULD appear after limit is exceeded", hasDialog)
             cancelAndIgnoreRemainingEvents()
         }
     }
