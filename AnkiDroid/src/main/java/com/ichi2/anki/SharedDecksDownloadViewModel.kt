@@ -26,6 +26,7 @@ import com.ichi2.anki.ui.compose.shareddecks.DownloadUiState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,13 +104,14 @@ class SharedDecksDownloadViewModel(
     fun startPolling(
         downloadManager: DownloadManager, downloadId: Long
     ) {
-
         this.downloadId = downloadId
-        progressJob?.cancel()
-        progressJob = viewModelScope.launch(dispatcher) {
-            while (true) {
-                checkDownloadProgress(downloadManager, downloadId)
-                delay(1000)
+        viewModelScope.launch {
+            progressJob?.cancelAndJoin()
+            progressJob = launch(dispatcher) {
+                while (true) {
+                    checkDownloadProgress(downloadManager, downloadId)
+                    delay(1000)
+                }
             }
         }
     }
