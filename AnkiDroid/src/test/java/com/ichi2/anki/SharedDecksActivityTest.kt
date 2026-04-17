@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performImeAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -74,6 +75,10 @@ class SharedDecksActivityTest : RobolectricTest() {
         val webView = activity.findViewById<WebView>(R.id.media_check_webview)
         val shadowWebView = shadowOf(webView)
 
+        // Capture initial state
+        val initialLast = shadowWebView.lastLoadedUrl
+        assertNotNull("Initial load should have occurred", initialLast)
+
         // Click search icon to open search bar
         composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name)).performClick()
 
@@ -84,9 +89,9 @@ class SharedDecksActivityTest : RobolectricTest() {
         // Perform search (IME action)
         composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name)).performImeAction()
 
-        // Verify WebView loaded the correct search URL
+        // Verify WebView loaded the correct search URL and it's different from the initial one
         val lastUrl = shadowWebView.lastLoadedUrl
-        assertNotNull("WebView should have loaded a URL", lastUrl)
+        assertNotEquals("Search should have triggered a new load", initialLast, lastUrl)
         assertEquals("https://ankiweb.net/shared/decks?search=kanji", lastUrl)
     }
 }
