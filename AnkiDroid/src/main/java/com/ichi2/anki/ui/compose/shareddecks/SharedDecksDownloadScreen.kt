@@ -14,6 +14,8 @@
  *  this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.ichi2.anki.ui.compose.shareddecks
+ 
+import java.util.Locale
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -261,9 +263,9 @@ private fun DownloadProgressSection(state: DownloadUiState) {
                 )
             )
             val progressText = if (state.progress <= 0f || state.progress >= 100f) {
-                stringResource(R.string.percentage, state.progress.toInt().toString())
+                stringResource(R.string.percentage, "%.0f".format(Locale.ROOT, state.progress))
             } else {
-                stringResource(R.string.percentage, "%.1f".format(state.progress))
+                stringResource(R.string.percentage, "%.1f".format(Locale.ROOT, state.progress))
             }
             Text(
                 text = progressText,
