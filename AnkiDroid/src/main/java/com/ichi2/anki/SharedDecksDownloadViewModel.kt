@@ -81,7 +81,11 @@ class SharedDecksDownloadViewModel(
 
             DownloadIntent.DismissCancelDialog -> dismissCancelDialog()
             DownloadIntent.RetryClicked -> {
-                downloadManager?.remove(downloadId)
+                if (downloadManager != null) {
+                    downloadManager.remove(downloadId)
+                } else {
+                    logMissingDownloadManager("RetryClicked")
+                }
                 _uiState.update { it.copy(status = DownloadStatus.Downloading, progress = 0f) }
             }
 
@@ -90,7 +94,11 @@ class SharedDecksDownloadViewModel(
             }
 
             DownloadIntent.OpenInBrowserClicked -> {
-                downloadManager?.remove(downloadId)
+                if (downloadManager != null) {
+                    downloadManager.remove(downloadId)
+                } else {
+                    logMissingDownloadManager("OpenInBrowserClicked")
+                }
                 resetState()
             }
         }
@@ -234,6 +242,18 @@ class SharedDecksDownloadViewModel(
     private fun cancelDownload(downloadManager: DownloadManager, downloadId: Long) {
         downloadManager.remove(downloadId)
         resetState()
+    }
+
+    private fun logMissingDownloadManager(action: String) {
+        val state = _uiState.value
+        Timber.w(
+            "%s: downloadManager is null, cannot remove downloadId=%d, status=%s, showCancelDialog=%s, fileName=%s",
+            action,
+            downloadId,
+            state.status,
+            state.showCancelDialog,
+            state.fileName
+        )
     }
 
     override fun onCleared() {

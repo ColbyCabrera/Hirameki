@@ -254,6 +254,24 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     }
 
     @Test
+    fun `test RetryClicked with null downloadManager still updates state`() = runTest {
+        val viewModel = SharedDecksDownloadViewModel()
+        val downloadId = 123L
+        viewModel.setDownloadId(downloadId)
+        viewModel.onDownloadFailed()
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Failed, awaitItem().status)
+            viewModel.onIntent(DownloadIntent.RetryClicked, null)
+
+            val item = awaitItem()
+            assertEquals(DownloadStatus.Downloading, item.status)
+            assertEquals(0f, item.progress)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `test OpenInBrowserClicked resets state and removes download`() = runTest {
         val viewModel = SharedDecksDownloadViewModel()
         val downloadId = 123L
@@ -270,6 +288,23 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
             assertEquals(DownloadStatus.Idle, item.status)
 
             verify { downloadManager.remove(downloadId) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `test OpenInBrowserClicked with null downloadManager still resets state`() = runTest {
+        val viewModel = SharedDecksDownloadViewModel()
+        val downloadId = 123L
+        viewModel.setDownloadId(downloadId)
+        viewModel.onDownloadComplete()
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Complete, awaitItem().status)
+            viewModel.onIntent(DownloadIntent.OpenInBrowserClicked, null)
+
+            val item = awaitItem()
+            assertEquals(DownloadStatus.Idle, item.status)
             cancelAndIgnoreRemainingEvents()
         }
     }
