@@ -404,6 +404,49 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
     }
 
     @Test
+    fun `test polling does not overwrite failed state`() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = SharedDecksDownloadViewModel(testDispatcher)
+
+        every { downloadManager.query(any()) } answers {
+            MatrixCursor(
+                arrayOf(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                    DownloadManager.COLUMN_STATUS,
+                    DownloadManager.COLUMN_REASON
+                )
+            ).apply {
+                addRow(arrayOf<Any>(80L, 100L, DownloadManager.STATUS_RUNNING, 0))
+            }
+        }
+
+        viewModel.uiState.test {
+            assertEquals(DownloadStatus.Idle, awaitItem().status)
+
+            viewModel.setFileName("test.apkg")
+            assertEquals(DownloadStatus.Downloading, awaitItem().status)
+
+            viewModel.startPolling(downloadManager, 123L)
+
+            val downloadIdState = awaitItem()
+            assertEquals(123L, downloadIdState.downloadId)
+            assertEquals(DownloadStatus.Downloading, downloadIdState.status)
+
+            viewModel.onDownloadFailed()
+            assertEquals(DownloadStatus.Failed, awaitItem().status)
+
+            advanceTimeBy(1100)
+
+            expectNoEvents()
+            assertEquals(DownloadStatus.Failed, viewModel.uiState.value.status)
+
+            viewModel.stopPolling()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `test polling does not overwrite idle state after reset`() = runTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
         val viewModel = SharedDecksDownloadViewModel(testDispatcher)

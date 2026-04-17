@@ -191,10 +191,18 @@ class SharedDecksDownloadViewModel(
                 it.getInt(statusIdx) == DownloadManager.STATUS_PAUSED && it.getInt(reasonIdx) == DownloadManager.PAUSED_WAITING_FOR_NETWORK
 
             _uiState.update { state ->
-                state.copy(
-                    progress = downloadProgress,
-                    status = if (isWaitingForNetwork) DownloadStatus.WaitingForNetwork else DownloadStatus.Downloading
-                )
+                    if (state.status == DownloadStatus.Complete || state.status == DownloadStatus.Failed) {
+                        state
+                    } else {
+                        state.copy(
+                            progress = downloadProgress,
+                            status = if (isWaitingForNetwork) {
+                                DownloadStatus.WaitingForNetwork
+                            } else {
+                                DownloadStatus.Downloading
+                            }
+                        )
+                    }
             }
         }
     }
