@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki
 
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.KeyEvent.ACTION_DOWN
 import android.view.KeyEvent.ACTION_UP
@@ -55,6 +56,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 import timber.log.Timber
 
 @RunWith(AndroidJUnit4::class)
@@ -71,6 +73,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     fun whenDisplayingAnswerTyping1AnswersFarLeftButton() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
         underTest.handleAndroidKeyPress(KEYCODE_1)
+        shadowOf(Looper.getMainLooper()).idle()
         assertThat(underTest.processedAnswer(), equalTo(Rating.AGAIN))
     }
 
@@ -78,6 +81,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     fun whenDisplayingAnswerTyping2AnswersSecondButton() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
         underTest.handleAndroidKeyPress(KEYCODE_2)
+        shadowOf(Looper.getMainLooper()).idle()
         assertThat(underTest.processedAnswer(), equalTo(Rating.HARD))
     }
 
@@ -85,6 +89,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     fun whenDisplayingAnswerTyping3AnswersThirdButton() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
         underTest.handleAndroidKeyPress(KEYCODE_3)
+        shadowOf(Looper.getMainLooper()).idle()
         assertThat(underTest.processedAnswer(), equalTo(Rating.GOOD))
     }
 
@@ -92,6 +97,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     fun whenDisplayingAnswerTyping4AnswersFarRightButton() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
         underTest.handleAndroidKeyPress(KEYCODE_4)
+        shadowOf(Looper.getMainLooper()).idle()
         assertThat(underTest.processedAnswer(), equalTo(Rating.EASY))
     }
 
@@ -100,6 +106,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     fun spaceAnswersThirdButtonWhenFourButtonsShowing() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer().withButtons(4)
         underTest.handleSpacebar()
+        shadowOf(Looper.getMainLooper()).idle()
         assertThat(underTest.processedAnswer(), equalTo(Rating.GOOD))
     }
 
@@ -223,6 +230,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         )
 
         underTest.handleSpacebar()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertThat(
             "After a second keypress the question should be displayed",
@@ -240,6 +248,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         assertThat("Initial button should display answer", underTest.didDisplayAnswer())
         underTest.displayAnswerForTest()
         underTest.handleGamepadPress(keycodeButton)
+        shadowOf(Looper.getMainLooper()).idle()
         assertThat(underTest.processedAnswer(), equalTo(rating))
     }
 
