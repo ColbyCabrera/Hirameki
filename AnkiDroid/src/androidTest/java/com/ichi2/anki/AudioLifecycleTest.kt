@@ -101,13 +101,17 @@ class AudioLifecycleTest : InstrumentedTest() {
     }
 
     private fun setupCardWithAudio(fileName: String) {
-        // Create a dummy audio file in the media folder
+        // Use a real audio file from assets to ensure it can be played.
+        val testContext = InstrumentationRegistry.getInstrumentation().context
         val mediaDir = col.media.dir
         if (!mediaDir.exists()) mediaDir.mkdirs()
         val audioFile = File(mediaDir, fileName)
-        // We write a small valid-ish header or just enough for it to "play"
-        // In a real test, we might need a real tiny MP3.
-        audioFile.writeBytes(ByteArray(1024))
+
+        testContext.assets.open("anki-15872-audio-only.mp4").use { input ->
+            audioFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
 
         val note = addNoteUsingBasicNoteType("Front [sound:$fileName]", "Back")
         val card = note.firstCard(col)
