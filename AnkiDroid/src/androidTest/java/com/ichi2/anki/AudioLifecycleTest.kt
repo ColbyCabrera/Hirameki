@@ -51,6 +51,10 @@ class AudioLifecycleTest : InstrumentedTest() {
 
         if (!device.isScreenOn) {
             device.wakeUp()
+            Thread.sleep(500)
+            // Swipe up or press menu to unlock if needed
+            device.pressMenu()
+            Thread.sleep(500)
         }
     }
 
@@ -125,13 +129,14 @@ class AudioLifecycleTest : InstrumentedTest() {
     }
 
     private fun checkAudioPlaying() {
+        // Wait for audio to start (up to 5 seconds)
         var playing = false
-        repeat(20) {
+        for (i in 1..10) {
             if (audioManager.isMusicActive) {
                 playing = true
-                return@repeat
+                break
             }
-            Thread.sleep(200)
+            Thread.sleep(500)
         }
         assertTrue("Audio should be playing initially", playing)
     }
