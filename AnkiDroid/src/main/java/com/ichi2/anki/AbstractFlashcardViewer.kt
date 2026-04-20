@@ -67,7 +67,6 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.coroutineScope
 import anki.collection.OpChanges
 import anki.scheduler.CardAnswer.Rating
 import com.drakeet.drawer.FullDraggableContainer
@@ -152,9 +151,7 @@ import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.title
 import com.squareup.seismic.ShakeDetector
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
@@ -487,9 +484,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         gestureDetectorImpl.startShakeDetector()
         // Resume all active media players
         getCardMediaPlayers().forEach {
-            lifecycle.coroutineScope.launch(Dispatchers.IO) {
-                it.setEnabled(true)
-            }
+            it.setEnabled(true)
         }
         // Reset the activity title
         updateActionBar()
