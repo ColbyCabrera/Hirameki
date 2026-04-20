@@ -35,6 +35,8 @@ import io.mockk.coVerifySequence
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.just
+import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import org.hamcrest.MatcherAssert.assertThat
@@ -43,7 +45,9 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CardMediaPlayerTest : JvmTest() {
-    internal val tagPlayer: SoundTagPlayer = mockk<SoundTagPlayer>()
+    internal val tagPlayer: SoundTagPlayer = mockk<SoundTagPlayer>().also {
+        every { it.stop() } just runs
+    }
     internal val ttsPlayer: TtsPlayer = mockk<TtsPlayer>()
     internal val onMediaGroupCompleted: () -> Unit =
         mockk<() -> Unit>().also {
@@ -145,6 +149,7 @@ class CardMediaPlayerTest : JvmTest() {
             playAllAndWait()
 
             coVerifySequence {
+                tagPlayer.stop()
                 tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
                 tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
                 tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
@@ -164,6 +169,7 @@ class CardMediaPlayerTest : JvmTest() {
             playAllAndWait()
 
             coVerifySequence {
+                tagPlayer.stop()
                 tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
             }
 
@@ -180,6 +186,7 @@ class CardMediaPlayerTest : JvmTest() {
             playAllAndWait()
 
             coVerifySequence {
+                tagPlayer.stop()
                 tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
                 tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
             }
@@ -195,6 +202,7 @@ class CardMediaPlayerTest : JvmTest() {
             playOneAndWait(SoundOrVideoTag("a.mp3"))
 
             coVerifySequence {
+                tagPlayer.stop()
                 tagPlayer.play(SoundOrVideoTag("a.mp3"), any())
                 tagPlayer.play(SoundOrVideoTag("a.mp3"), any())
             }
