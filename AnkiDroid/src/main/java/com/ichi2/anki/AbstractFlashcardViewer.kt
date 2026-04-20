@@ -67,6 +67,7 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle.State.RESUMED
+import androidx.lifecycle.coroutineScope
 import anki.collection.OpChanges
 import anki.scheduler.CardAnswer.Rating
 import com.drakeet.drawer.FullDraggableContainer
@@ -151,7 +152,9 @@ import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.title
 import com.squareup.seismic.ShakeDetector
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
@@ -470,12 +473,11 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     override fun onPause() {
         super.onPause()
         gestureDetectorImpl.stopShakeDetector()
-        if (this::cardMediaPlayer.isInitialized) {
-            launchCatchingTask {
-                cardMediaPlayer.setEnabled(false)
-            }
-            ReadText.stopTts()
+        // Stop all active media players
+        getCardMediaPlayers().forEach {
+            it.setEnabled(false)
         }
+        ReadText.stopTts()
         // Prevent loss of data in Cookies
         CookieManager.getInstance().flush()
     }
@@ -483,15 +485,23 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     override fun onResume() {
         super.onResume()
         gestureDetectorImpl.startShakeDetector()
-        if (this::cardMediaPlayer.isInitialized) {
-            launchCatchingTask {
-                cardMediaPlayer.setEnabled(true)
+        // Resume all active media players
+        getCardMediaPlayers().forEach {
+            lifecycle.coroutineScope.launch(Dispatchers.IO) {
+                it.setEnabled(true)
             }
         }
         // Reset the activity title
         updateActionBar()
         selectNavigationItem(-1)
         refreshIfRequired(isResuming = true)
+    }
+
+    /**
+     * @return A list of [CardMediaPlayer] instances that should be managed by the activity lifecycle.
+     */
+    protected open fun getCardMediaPlayers(): List<CardMediaPlayer> {
+        return if (this::cardMediaPlayer.isInitialized) listOf(cardMediaPlayer) else emptyList()
     }
 
     /**
@@ -1225,8 +1235,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             }
             stopCardMediaPlayer()
             showSnackbar(
-                TR.studyingCardsBuried(changed.count),
-                ReviewerConstants.ACTION_SNACKBAR_DURATION_MS
+                TR.studyingCardsBuried(changed.count), ReviewerConstants.ACTION_SNACKBAR_DURATION_MS
             )
         }
         return true
