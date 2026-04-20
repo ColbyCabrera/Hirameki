@@ -63,24 +63,22 @@ class AudioLifecycleTest : InstrumentedTest() {
         setupCardWithAudio("test_audio_bg.mp3")
 
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val scenario = ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context))
+        ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context)).use {
+            // Trigger playback
+            replayMedia()
 
-        // Trigger playback
-        replayMedia()
+            // Wait for audio to start
+            checkAudioPlaying()
 
-        // Wait for audio to start
-        checkAudioPlaying()
+            // Send app to background
+            device.pressHome()
 
-        // Send app to background
-        device.pressHome()
+            // Wait for onPause/onStop
+            checkAudioStopped()
 
-        // Wait for onPause/onStop
-        Thread.sleep(2000)
-
-        // Assert audio is STOPPED
-        assertFalse("Audio should pause in background", audioManager.isMusicActive)
-
-        scenario.close()
+            // Assert audio is STOPPED
+            assertFalse("Audio should pause in background", audioManager.isMusicActive)
+        }
     }
 
     @Test
@@ -88,20 +86,18 @@ class AudioLifecycleTest : InstrumentedTest() {
         setupCardWithAudio("test_audio_screen.mp3")
 
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val scenario = ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context))
+        ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context)).use {
+            replayMedia()
 
-        replayMedia()
+            checkAudioPlaying()
 
-        checkAudioPlaying()
+            // Turn off the screen
+            device.sleep()
+            checkAudioStopped()
 
-        // Turn off the screen
-        device.sleep()
-        Thread.sleep(2000)
-
-        // Assert audio is STOPPED
-        assertFalse("Audio should pause when screen is off", audioManager.isMusicActive)
-
-        scenario.close()
+            // Assert audio is STOPPED
+            assertFalse("Audio should pause when screen is off", audioManager.isMusicActive)
+        }
     }
 
     private fun setupCardWithAudio(fileName: String) {
@@ -131,7 +127,7 @@ class AudioLifecycleTest : InstrumentedTest() {
     private fun checkAudioPlaying() {
         // Wait for audio to start (up to 5 seconds)
         var playing = false
-        for (i in 1..10) {
+        for (_i in 1..10) {
             if (audioManager.isMusicActive) {
                 playing = true
                 break
@@ -139,6 +135,20 @@ class AudioLifecycleTest : InstrumentedTest() {
             Thread.sleep(500)
         }
         assertTrue("Audio should be playing initially", playing)
+    }
+
+    private fun checkAudioStopped(timeoutMs: Long = 5000) {
+        // Wait for audio to stop (up to timeoutMs)
+        var stopped = false
+        val iterations = (timeoutMs / 500).toInt().coerceAtLeast(1)
+        for (_i in 1..iterations) {
+            if (!audioManager.isMusicActive) {
+                stopped = true
+                break
+            }
+            Thread.sleep(500)
+        }
+        assertTrue("Audio should have stopped", stopped)
     }
 
     @After
