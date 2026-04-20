@@ -117,9 +117,9 @@ class CardMediaPlayer : Closeable {
     var isEnabled: Boolean = true
         private set
 
-    suspend fun setEnabled(enabled: Boolean) {
+    fun setEnabled(enabled: Boolean) {
         if (!enabled) stop()
-        this.isEnabled = enabled
+        isEnabled = enabled
     }
 
     @VisibleForTesting
@@ -221,9 +221,10 @@ class CardMediaPlayer : Closeable {
             }
     }
 
-    suspend fun stop() {
+    fun stop() {
         if (isPlaying) Timber.i("stopping playing all AV tags")
-        playAvTagsJob?.cancelAndJoin()
+        playAvTagsJob?.cancel()
+        soundTagPlayer.stop()
     }
 
     override fun close() {

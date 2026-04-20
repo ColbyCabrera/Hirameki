@@ -33,8 +33,10 @@ import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.coVerifySequence
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import org.hamcrest.MatcherAssert.assertThat
@@ -43,162 +45,156 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CardMediaPlayerTest : JvmTest() {
-    internal val tagPlayer: SoundTagPlayer = mockk<SoundTagPlayer>()
+    internal val tagPlayer: SoundTagPlayer = mockk<SoundTagPlayer>().also {
+        every { it.stop() } just runs
+    }
     internal val ttsPlayer: TtsPlayer = mockk<TtsPlayer>()
-    internal val onMediaGroupCompleted: () -> Unit =
-        mockk<() -> Unit>().also {
-            every { it.invoke() } answers { }
-        }
+    internal val onMediaGroupCompleted: () -> Unit = mockk<() -> Unit>().also {
+        every { it.invoke() } answers { }
+    }
 
     @Test
-    fun `no sounds fires completed listener`() =
-        runSoundPlayerTest(
-            answers = emptyList(),
-            questions = emptyList(),
-        ) {
-            playAllAndWait(BACK)
+    fun `no sounds fires completed listener`() = runSoundPlayerTest(
+        answers = emptyList(),
+        questions = emptyList(),
+    ) {
+        playAllAndWait(BACK)
 
-            verifyNoSoundsPlayed()
-        }
-
-    @Test
-    fun singleSoundSuccess() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("abc.mp3")),
-        ) {
-            playAllAndWait()
-
-            coVerify(exactly = 1) { tagPlayer.play(SoundOrVideoTag("abc.mp3"), any()) }
-            coVerify(exactly = 0) { ttsPlayer.play(any()) }
-            ensureOnMediaGroupCompletedCalled()
-        }
+        verifyNoSoundsPlayed()
+    }
 
     @Test
-    fun `back is not played on front`() =
-        runSoundPlayerTest(
-            answers = listOf(SoundOrVideoTag("abc.mp3")),
-        ) {
-            playAllAndWait()
+    fun singleSoundSuccess() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("abc.mp3")),
+    ) {
+        playAllAndWait()
 
-            verifyNoSoundsPlayed()
-        }
-
-    @Test
-    fun `front is not played on back`() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("abc.mp3")),
-        ) {
-            playAllAndWait(BACK)
-
-            verifyNoSoundsPlayed()
-        }
+        coVerify(exactly = 1) { tagPlayer.play(SoundOrVideoTag("abc.mp3"), any()) }
+        coVerify(exactly = 0) { ttsPlayer.play(any()) }
+        ensureOnMediaGroupCompletedCalled()
+    }
 
     @Test
-    fun `replay - front may be played on back`() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("front.mp3")),
-            answers = listOf(SoundOrVideoTag("back.mp3")),
-            replayQuestion = true,
-        ) {
-            replayAllAndWait(BACK)
+    fun `back is not played on front`() = runSoundPlayerTest(
+        answers = listOf(SoundOrVideoTag("abc.mp3")),
+    ) {
+        playAllAndWait()
 
-            coVerifyOrder {
-                tagPlayer.play(SoundOrVideoTag("front.mp3"), any())
-                tagPlayer.play(SoundOrVideoTag("back.mp3"), any())
-            }
-        }
+        verifyNoSoundsPlayed()
+    }
 
     @Test
-    fun `replay when replayQuestion is false`() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("front.mp3")),
-            answers = listOf(SoundOrVideoTag("back.mp3")),
-            replayQuestion = false,
-        ) {
-            replayAllAndWait(BACK)
+    fun `front is not played on back`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("abc.mp3")),
+    ) {
+        playAllAndWait(BACK)
 
-            coVerifyOrder {
-                tagPlayer.play(SoundOrVideoTag("back.mp3"), any())
-            }
-        }
+        verifyNoSoundsPlayed()
+    }
 
     @Test
-    fun `onMediaGroupCompleted is called after exception`() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("aa.mp3")),
-        ) {
-            coEvery { tagPlayer.play(any(), any()) } throws TestException("test")
+    fun `replay - front may be played on back`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("front.mp3")),
+        answers = listOf(SoundOrVideoTag("back.mp3")),
+        replayQuestion = true,
+    ) {
+        replayAllAndWait(BACK)
 
-            playAllAndWait()
-
-            coVerify(exactly = 1) { tagPlayer.play(any(), any()) }
-            ensureOnMediaGroupCompletedCalled()
+        coVerifyOrder {
+            tagPlayer.play(SoundOrVideoTag("front.mp3"), any())
+            tagPlayer.play(SoundOrVideoTag("back.mp3"), any())
         }
+    }
 
     @Test
-    fun `replay calls play twice`() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("aa.mp3"), SoundOrVideoTag("bb.mp3")),
-        ) {
-            coEvery { tagPlayer.play(any(), any()) } throws MediaException(RETRY_MEDIA)
+    fun `replay when replayQuestion is false`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("front.mp3")),
+        answers = listOf(SoundOrVideoTag("back.mp3")),
+        replayQuestion = false,
+    ) {
+        replayAllAndWait(BACK)
 
-            playAllAndWait()
-
-            coVerifySequence {
-                tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
-                tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
-                tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
-                tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
-            }
-
-            ensureOnMediaGroupCompletedCalled()
+        coVerifyOrder {
+            tagPlayer.play(SoundOrVideoTag("back.mp3"), any())
         }
+    }
 
     @Test
-    fun `stop stops playback and calls completed listener`() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("aa.mp3"), SoundOrVideoTag("bb.mp3")),
-        ) {
-            coEvery { tagPlayer.play(any(), any()) } throws MediaException(STOP_MEDIA)
+    fun `onMediaGroupCompleted is called after exception`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("aa.mp3")),
+    ) {
+        coEvery { tagPlayer.play(any(), any()) } throws TestException("test")
 
-            playAllAndWait()
+        playAllAndWait()
 
-            coVerifySequence {
-                tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
-            }
-
-            ensureOnMediaGroupCompletedCalled()
-        }
+        coVerify(exactly = 1) { tagPlayer.play(any(), any()) }
+        ensureOnMediaGroupCompletedCalled()
+    }
 
     @Test
-    fun `continue continues playback and calls completed listener`() =
-        runSoundPlayerTest(
-            questions = listOf(SoundOrVideoTag("aa.mp3"), SoundOrVideoTag("bb.mp3")),
-        ) {
-            coEvery { tagPlayer.play(any(), any()) } throws MediaException(CONTINUE_MEDIA)
+    fun `replay calls play twice`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("aa.mp3"), SoundOrVideoTag("bb.mp3")),
+    ) {
+        coEvery { tagPlayer.play(any(), any()) } throws MediaException(RETRY_MEDIA)
 
-            playAllAndWait()
+        playAllAndWait()
 
-            coVerifySequence {
-                tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
-                tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
-            }
-
-            ensureOnMediaGroupCompletedCalled()
+        coVerifySequence {
+            tagPlayer.stop()
+            tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
+            tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
+            tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
+            tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
         }
+
+        ensureOnMediaGroupCompletedCalled()
+    }
 
     @Test
-    fun `retry playing single sound`() =
-        runSoundPlayerTest {
-            coEvery { tagPlayer.play(any(), any()) } throws MediaException(RETRY_MEDIA)
+    fun `stop stops playback and calls completed listener`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("aa.mp3"), SoundOrVideoTag("bb.mp3")),
+    ) {
+        coEvery { tagPlayer.play(any(), any()) } throws MediaException(STOP_MEDIA)
 
-            playOneAndWait(SoundOrVideoTag("a.mp3"))
+        playAllAndWait()
 
-            coVerifySequence {
-                tagPlayer.play(SoundOrVideoTag("a.mp3"), any())
-                tagPlayer.play(SoundOrVideoTag("a.mp3"), any())
-            }
+        coVerifySequence {
+            tagPlayer.stop()
+            tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
         }
+
+        ensureOnMediaGroupCompletedCalled()
+    }
+
+    @Test
+    fun `continue continues playback and calls completed listener`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("aa.mp3"), SoundOrVideoTag("bb.mp3")),
+    ) {
+        coEvery { tagPlayer.play(any(), any()) } throws MediaException(CONTINUE_MEDIA)
+
+        playAllAndWait()
+
+        coVerifySequence {
+            tagPlayer.stop()
+            tagPlayer.play(SoundOrVideoTag("aa.mp3"), any())
+            tagPlayer.play(SoundOrVideoTag("bb.mp3"), any())
+        }
+
+        ensureOnMediaGroupCompletedCalled()
+    }
+
+    @Test
+    fun `retry playing single sound`() = runSoundPlayerTest {
+        coEvery { tagPlayer.play(any(), any()) } throws MediaException(RETRY_MEDIA)
+
+        playOneAndWait(SoundOrVideoTag("a.mp3"))
+
+        coVerifySequence {
+            tagPlayer.stop()
+            tagPlayer.play(SoundOrVideoTag("a.mp3"), any())
+            tagPlayer.play(SoundOrVideoTag("a.mp3"), any())
+        }
+    }
 
     private fun verifyNoSoundsPlayed() {
         coVerify(exactly = 0) { tagPlayer.play(any(), any()) }
@@ -271,12 +267,11 @@ fun CardMediaPlayerTest.runSoundPlayerTest(
     autoplay: Boolean? = null,
     testBody: suspend CardMediaPlayer.() -> Unit,
 ) = runTest {
-    val cardMediaPlayer =
-        CardMediaPlayer(
-            soundTagPlayer = tagPlayer,
-            ttsPlayer = CompletableDeferred(ttsPlayer),
-            mediaErrorListener = mockk(),
-        )
+    val cardMediaPlayer = CardMediaPlayer(
+        soundTagPlayer = tagPlayer,
+        ttsPlayer = CompletableDeferred(ttsPlayer),
+        mediaErrorListener = mockk(),
+    )
     cardMediaPlayer.setOnMediaGroupCompletedListener(onMediaGroupCompleted)
     assertThat("can play sounds", cardMediaPlayer.isEnabled)
     cardMediaPlayer.setup(questions, answers, replayQuestion, autoplay)

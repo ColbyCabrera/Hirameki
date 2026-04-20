@@ -176,8 +176,8 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
     private val _flowOfDeleteResult = MutableSharedFlow<Int>()
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
-    private val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
-    private val cardMediaPlayer: CardMediaPlayer =
+    internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
+    internal val cardMediaPlayer: CardMediaPlayer =
         CardMediaPlayer({ }, object : MediaErrorListener {
             override fun onError(uri: Uri): MediaErrorBehavior {
                 Timber.w("Error playing media: %s", uri)
@@ -545,8 +545,6 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun onTypedAnswerChanged(newText: String) {
         _state.update { it.copy(typedAnswer = newText) }
     }
-
-    private fun loadCard() = launchCardAction { loadCardSuspend() }
 
     private suspend fun getNextCard(): Pair<Card, CurrentQueueState>? = withCol {
         this.sched.currentQueueState()?.let {

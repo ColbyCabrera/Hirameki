@@ -470,12 +470,11 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     override fun onPause() {
         super.onPause()
         gestureDetectorImpl.stopShakeDetector()
-        if (this::cardMediaPlayer.isInitialized) {
-            launchCatchingTask {
-                cardMediaPlayer.setEnabled(false)
-            }
-            ReadText.stopTts()
+        // Stop all active media players
+        getCardMediaPlayers().forEach {
+            it.setEnabled(false)
         }
+        ReadText.stopTts()
         // Prevent loss of data in Cookies
         CookieManager.getInstance().flush()
     }
@@ -483,15 +482,21 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     override fun onResume() {
         super.onResume()
         gestureDetectorImpl.startShakeDetector()
-        if (this::cardMediaPlayer.isInitialized) {
-            launchCatchingTask {
-                cardMediaPlayer.setEnabled(true)
-            }
+        // Resume all active media players
+        getCardMediaPlayers().forEach {
+            it.setEnabled(true)
         }
         // Reset the activity title
         updateActionBar()
         selectNavigationItem(-1)
         refreshIfRequired(isResuming = true)
+    }
+
+    /**
+     * @return A list of [CardMediaPlayer] instances that should be managed by the activity lifecycle.
+     */
+    protected open fun getCardMediaPlayers(): List<CardMediaPlayer> {
+        return if (this::cardMediaPlayer.isInitialized) listOf(cardMediaPlayer) else emptyList()
     }
 
     /**
@@ -683,7 +688,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     }
 
     protected open fun confirmDeleteCurrentNote() {
-        launchCatchingTask { stopCardMediaPlayer() }
+        stopCardMediaPlayer()
         deleteNoteWithoutConfirmation()
     }
 
@@ -708,6 +713,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     }
 
     open fun answerCard(rating: Rating) = preventSimultaneousExecutions(ANSWER_CARD) {
+        stopCardMediaPlayer()
         launchCatchingTask {
             if (inAnswer) {
                 return@launchCatchingTask
@@ -719,7 +725,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             }
             // Temporarily sets the answer indicator dots appearing below the toolbar
             previousAnswerIndicator?.displayAnswerIndicator(rating)
-            stopCardMediaPlayer()
             currentEase = rating
 
             try {
@@ -1173,13 +1178,13 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     }
 
     fun buryCard(): Boolean {
+        stopCardMediaPlayer()
         launchCatchingTask {
             withProgress {
                 undoableOp {
                     sched.buryCards(listOf(currentCard!!.id))
                 }
             }
-            stopCardMediaPlayer()
             showSnackbar(R.string.card_buried, ReviewerConstants.ACTION_SNACKBAR_DURATION_MS)
         }
         return true
@@ -1187,13 +1192,13 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     @VisibleForTesting
     open fun suspendCard(): Boolean {
+        stopCardMediaPlayer()
         launchCatchingTask {
             withProgress {
                 undoableOp {
                     sched.suspendCards(listOf(currentCard!!.id))
                 }
             }
-            stopCardMediaPlayer()
             showSnackbar(TR.studyingCardSuspended(), ReviewerConstants.ACTION_SNACKBAR_DURATION_MS)
         }
         return true
@@ -1201,6 +1206,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     @VisibleForTesting
     open fun suspendNote(): Boolean {
+        stopCardMediaPlayer()
         launchCatchingTask {
             val changed = withProgress {
                 undoableOp {
@@ -1209,7 +1215,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             }
             val count = changed.count
             val noteSuspended = resources.getQuantityString(R.plurals.note_suspended, count, count)
-            stopCardMediaPlayer()
             showSnackbar(noteSuspended, ReviewerConstants.ACTION_SNACKBAR_DURATION_MS)
         }
         return true
@@ -1217,22 +1222,21 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     @VisibleForTesting
     open fun buryNote(): Boolean {
+        stopCardMediaPlayer()
         launchCatchingTask {
             val changed = withProgress {
                 undoableOp {
                     sched.buryNotes(listOf(currentCard!!.nid))
                 }
             }
-            stopCardMediaPlayer()
             showSnackbar(
-                TR.studyingCardsBuried(changed.count),
-                ReviewerConstants.ACTION_SNACKBAR_DURATION_MS
+                TR.studyingCardsBuried(changed.count), ReviewerConstants.ACTION_SNACKBAR_DURATION_MS
             )
         }
         return true
     }
 
-    private suspend fun stopCardMediaPlayer() {
+    private fun stopCardMediaPlayer() {
         cardMediaPlayer.stop()
         ReadText.stopTts()
     }

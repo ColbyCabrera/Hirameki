@@ -107,6 +107,7 @@ import com.ichi2.utils.show
 import com.ichi2.utils.tintOverflowMenuIcons
 import com.ichi2.utils.title
 import com.ichi2.widget.WidgetStatus.updateInBackground
+import com.ichi2.anki.cardviewer.CardMediaPlayer
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -1032,6 +1033,10 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         if (!isFinishing && colIsOpenUnsafe()) {
             updateInBackground(this)
         }
+    }
+
+    override fun getCardMediaPlayers(): List<CardMediaPlayer> {
+        return super.getCardMediaPlayers() + viewModel.cardMediaPlayer
     }
 
     override fun initControls() {
