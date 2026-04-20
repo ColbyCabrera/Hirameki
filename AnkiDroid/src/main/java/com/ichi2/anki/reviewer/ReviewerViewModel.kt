@@ -546,8 +546,6 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         _state.update { it.copy(typedAnswer = newText) }
     }
 
-    private fun loadCard() = launchCardAction { loadCardSuspend() }
-
     private suspend fun getNextCard(): Pair<Card, CurrentQueueState>? = withCol {
         this.sched.currentQueueState()?.let {
             it.topCard.renderOutput(this, reload = true)
