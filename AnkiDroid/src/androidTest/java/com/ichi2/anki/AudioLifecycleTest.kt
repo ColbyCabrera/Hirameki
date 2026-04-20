@@ -48,7 +48,7 @@ class AudioLifecycleTest : InstrumentedTest() {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         val context = ApplicationProvider.getApplicationContext<Context>()
         audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        
+
         if (!device.isScreenOn) {
             device.wakeUp()
         }
@@ -69,13 +69,13 @@ class AudioLifecycleTest : InstrumentedTest() {
 
         // Send app to background
         device.pressHome()
-        
+
         // Wait for onPause/onStop
         Thread.sleep(2000)
 
         // Assert audio is STOPPED
         assertFalse("Audio should pause in background", audioManager.isMusicActive)
-        
+
         scenario.close()
     }
 
@@ -96,7 +96,7 @@ class AudioLifecycleTest : InstrumentedTest() {
 
         // Assert audio is STOPPED
         assertFalse("Audio should pause when screen is off", audioManager.isMusicActive)
-        
+
         scenario.close()
     }
 
@@ -107,7 +107,7 @@ class AudioLifecycleTest : InstrumentedTest() {
         val audioFile = File(mediaDir, fileName)
         // We write a small valid-ish header or just enough for it to "play"
         // In a real test, we might need a real tiny MP3.
-        audioFile.writeBytes(ByteArray(1024)) 
+        audioFile.writeBytes(ByteArray(1024))
 
         val note = addNoteUsingBasicNoteType("Front [sound:$fileName]", "Back")
         val card = note.firstCard(col)
@@ -117,7 +117,7 @@ class AudioLifecycleTest : InstrumentedTest() {
     private fun replayMedia() {
         // Press 'R' to replay media
         device.pressKeyCode(android.view.KeyEvent.KEYCODE_R)
-        Thread.sleep(500) 
+        Thread.sleep(500)
     }
 
     private fun checkAudioPlaying() {
