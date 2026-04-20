@@ -1036,7 +1036,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     }
 
     override fun getCardMediaPlayers(): List<CardMediaPlayer> {
-        return super.getCardMediaPlayers() + listOf(viewModel.cardMediaPlayer)
+        return super.getCardMediaPlayers() + viewModel.cardMediaPlayer
     }
 
     override fun initControls() {
