@@ -65,7 +65,7 @@ class AudioLifecycleTest : InstrumentedTest() {
         replayMedia()
 
         // Wait for audio to start
-        checkAudioPlaying(true, "Audio should be playing initially")
+        checkAudioPlaying()
 
         // Send app to background
         device.pressHome()
@@ -88,7 +88,7 @@ class AudioLifecycleTest : InstrumentedTest() {
 
         replayMedia()
 
-        checkAudioPlaying(true, "Audio should be playing initially")
+        checkAudioPlaying()
 
         // Turn off the screen
         device.sleep()
@@ -120,16 +120,16 @@ class AudioLifecycleTest : InstrumentedTest() {
         Thread.sleep(500) 
     }
 
-    private fun checkAudioPlaying(expected: Boolean, message: String) {
+    private fun checkAudioPlaying() {
         var playing = false
-        for (i in 1..20) {
-            if (audioManager.isMusicActive == expected) {
-                playing = expected
-                break
+        repeat(20) {
+            if (audioManager.isMusicActive) {
+                playing = true
+                return@repeat
             }
             Thread.sleep(200)
         }
-        assertTrue(message, playing == expected)
+        assertTrue("Audio should be playing initially", playing)
     }
 
     @After
