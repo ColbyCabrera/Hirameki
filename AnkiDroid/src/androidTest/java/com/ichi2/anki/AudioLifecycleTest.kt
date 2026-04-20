@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission.storagePermission
 import com.ichi2.anki.testutil.grantPermissions
@@ -65,7 +66,7 @@ class AudioLifecycleTest : InstrumentedTest() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context)).use {
             // Trigger playback
-            replayMedia()
+            replayMedia(it)
 
             // Wait for audio to start
             checkAudioPlaying()
@@ -87,7 +88,7 @@ class AudioLifecycleTest : InstrumentedTest() {
 
         val context = ApplicationProvider.getApplicationContext<Context>()
         ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context)).use {
-            replayMedia()
+            replayMedia(it)
 
             checkAudioPlaying()
 
@@ -118,16 +119,16 @@ class AudioLifecycleTest : InstrumentedTest() {
         card.moveToReviewQueue()
     }
 
-    private fun replayMedia() {
-        // Press 'R' to replay media
-        device.pressKeyCode(android.view.KeyEvent.KEYCODE_R)
-        Thread.sleep(500)
+    private fun replayMedia(scenario: ActivityScenario<Reviewer>) {
+        scenario.onActivity { reviewer ->
+            reviewer.viewModel.onEvent(ReviewerEvent.ReplayMedia)
+        }
     }
 
     private fun checkAudioPlaying() {
         // Wait for audio to start (up to 5 seconds)
         var playing = false
-        for (_i in 1..10) {
+        for (i in 1..10) {
             if (audioManager.isMusicActive) {
                 playing = true
                 break
@@ -141,7 +142,7 @@ class AudioLifecycleTest : InstrumentedTest() {
         // Wait for audio to stop (up to timeoutMs)
         var stopped = false
         val iterations = (timeoutMs / 500).toInt().coerceAtLeast(1)
-        for (_i in 1..iterations) {
+        for (i in 1..iterations) {
             if (!audioManager.isMusicActive) {
                 stopped = true
                 break
