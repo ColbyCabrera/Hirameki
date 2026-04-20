@@ -176,7 +176,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
     private val _flowOfDeleteResult = MutableSharedFlow<Int>()
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
-    val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
+    internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     internal val cardMediaPlayer: CardMediaPlayer =
         CardMediaPlayer({ }, object : MediaErrorListener {
             override fun onError(uri: Uri): MediaErrorBehavior {
