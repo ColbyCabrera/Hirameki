@@ -61,7 +61,7 @@ class AudioLifecycleTest : InstrumentedTest() {
 
     @Test
     fun testAudioPausesWhenAppGoesToBackground() {
-        setupCardWithAudio("test_audio_bg.mp3")
+        setupCardWithAudio("test_audio_bg.mp4")
 
         val context = ApplicationProvider.getApplicationContext<Context>()
         ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context)).use {
@@ -84,7 +84,7 @@ class AudioLifecycleTest : InstrumentedTest() {
 
     @Test
     fun testAudioPausesWhenScreenTurnsOff() {
-        setupCardWithAudio("test_audio_screen.mp3")
+        setupCardWithAudio("test_audio_screen.mp4")
 
         val context = ApplicationProvider.getApplicationContext<Context>()
         ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context)).use {
