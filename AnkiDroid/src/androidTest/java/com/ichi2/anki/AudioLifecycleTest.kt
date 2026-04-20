@@ -107,7 +107,7 @@ class AudioLifecycleTest : InstrumentedTest() {
         if (!mediaDir.exists()) mediaDir.mkdirs()
         val audioFile = File(mediaDir, fileName)
 
-        testContext.assets.open("anki-15872-audio-only.mp4").use { input ->
+        testContext.assets.open("anki-hello-10s.mp4").use { input ->
             audioFile.outputStream().use { output ->
                 input.copyTo(output)
             }
