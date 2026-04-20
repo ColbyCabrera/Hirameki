@@ -1,0 +1,142 @@
+/*
+ *  Copyright (c) 2024
+ *
+ *  This program is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free Software
+ *  Foundation; either version 3 of the License, or (at your option) any later
+ *  version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *  PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with
+ *  this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package com.ichi2.anki
+
+import android.content.Context
+import android.media.AudioManager
+import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
+import com.ichi2.anki.tests.InstrumentedTest
+import com.ichi2.anki.testutil.GrantStoragePermission.storagePermission
+import com.ichi2.anki.testutil.grantPermissions
+import org.junit.After
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
+
+@RunWith(AndroidJUnit4::class)
+class AudioLifecycleTest : InstrumentedTest() {
+
+    private lateinit var device: UiDevice
+    private lateinit var audioManager: AudioManager
+
+    @get:Rule
+    val runtimePermissionRule = grantPermissions(storagePermission)
+
+    @Before
+    fun setUpAudioTest() {
+        device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        
+        if (!device.isScreenOn) {
+            device.wakeUp()
+        }
+    }
+
+    @Test
+    fun testAudioPausesWhenAppGoesToBackground() {
+        setupCardWithAudio("test_audio_bg.mp3")
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val scenario = ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context))
+
+        // Trigger playback
+        replayMedia()
+
+        // Wait for audio to start
+        checkAudioPlaying(true, "Audio should be playing initially")
+
+        // Send app to background
+        device.pressHome()
+        
+        // Wait for onPause/onStop
+        Thread.sleep(2000)
+
+        // Assert audio is STOPPED
+        assertFalse("Audio should pause in background", audioManager.isMusicActive)
+        
+        scenario.close()
+    }
+
+    @Test
+    fun testAudioPausesWhenScreenTurnsOff() {
+        setupCardWithAudio("test_audio_screen.mp3")
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val scenario = ActivityScenario.launch<Reviewer>(Reviewer.getIntent(context))
+
+        replayMedia()
+
+        checkAudioPlaying(true, "Audio should be playing initially")
+
+        // Turn off the screen
+        device.sleep()
+        Thread.sleep(2000)
+
+        // Assert audio is STOPPED
+        assertFalse("Audio should pause when screen is off", audioManager.isMusicActive)
+        
+        scenario.close()
+    }
+
+    private fun setupCardWithAudio(fileName: String) {
+        // Create a dummy audio file in the media folder
+        val mediaDir = col.media.dir
+        if (!mediaDir.exists()) mediaDir.mkdirs()
+        val audioFile = File(mediaDir, fileName)
+        // We write a small valid-ish header or just enough for it to "play"
+        // In a real test, we might need a real tiny MP3.
+        audioFile.writeBytes(ByteArray(1024)) 
+
+        val note = addNoteUsingBasicNoteType("Front [sound:$fileName]", "Back")
+        val card = note.firstCard(col)
+        card.moveToReviewQueue()
+    }
+
+    private fun replayMedia() {
+        // Press 'R' to replay media
+        device.pressKeyCode(android.view.KeyEvent.KEYCODE_R)
+        Thread.sleep(500) 
+    }
+
+    private fun checkAudioPlaying(expected: Boolean, message: String) {
+        var playing = false
+        for (i in 1..20) {
+            if (audioManager.isMusicActive == expected) {
+                playing = expected
+                break
+            }
+            Thread.sleep(200)
+        }
+        assertTrue(message, playing == expected)
+    }
+
+    @After
+    fun tearDownAudioTest() {
+        if (!device.isScreenOn) {
+            device.wakeUp()
+        }
+    }
+}
+
