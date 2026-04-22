@@ -100,6 +100,7 @@ import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
+import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.settings.Prefs
@@ -190,6 +191,7 @@ fun ReviewerContent(
     val currentNoteTags by viewModel.currentNoteTags.collectAsStateWithLifecycle()
     val deckTags by viewModel.deckTags.collectAsStateWithLifecycle()
     val filterByDeck by viewModel.filterByDeck.collectAsStateWithLifecycle()
+    val javascriptCommand by viewModel.evalCommand.collectAsStateWithLifecycle()
 
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
@@ -325,6 +327,8 @@ fun ReviewerContent(
                         questionHtml = state.questionHtml,
                         answerHtml = state.answerHtml,
                         bodyClass = state.bodyClass,
+                        javascriptCommand = javascriptCommand,
+                        onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
                         onTap = { },
                         onLinkClick = {
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))

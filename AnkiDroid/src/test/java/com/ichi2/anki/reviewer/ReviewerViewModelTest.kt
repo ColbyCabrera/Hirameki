@@ -18,13 +18,18 @@ package com.ichi2.anki.reviewer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.not
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -64,6 +69,51 @@ class ReviewerViewModelTest : RobolectricTest() {
         val state = viewModel.state.first()
         assertThat("Review should not be finished when cards exist", state.isFinished, equalTo(false))
         assertThat("New count should be 1", state.newCount, equalTo(1))
+    }
+
+    @Test
+    fun `video tags render as inline video in reviewer html`() = runTest {
+        addBasicNote("Front [sound:test.mp4]", "Back")
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        val state = viewModel.state.first()
+        assertThat("Video tags should render as inline video", state.questionHtml, containsString("<video"))
+        assertThat("Video tags should include the file name for JS playback", state.questionHtml, containsString("data-file=\"test.mp4\""))
+        assertThat("Video tags should report completion through the WebView", state.questionHtml, containsString("videoended:q:0"))
+        assertThat("Video tags should not fall back to replay buttons", state.questionHtml, not(containsString("href=playsound:q:0")))
+    }
+
+    @Test
+    fun `audio tags remain replay buttons in reviewer html`() = runTest {
+        addBasicNote("Front [sound:test.mp3]", "Back")
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        val state = viewModel.state.first()
+        assertThat("Audio tags should still render replay links", state.questionHtml, containsString("playsound:q:0"))
+        assertThat("Audio tags should not render inline video", state.questionHtml, not(containsString("<video")))
+    }
+
+    @Test
+    fun `video autoplay emits javascript when autoplay is enabled`() = runTest {
+        addBasicNote("Front [sound:test.mp4]", "Back")
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        val pendingScript = async {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000) { viewModel.evalCommand.first { it != null } }
+            }
+        }
+
+        advanceRobolectricLooper()
+
+        val script = requireNotNull(pendingScript.await()).script
+        assertThat("Autoplay should wait until the DOM is ready", script, containsString("document.readyState"))
+        assertThat("Autoplay should target the inline video element", script, containsString("video.play();"))
+        assertThat("Autoplay should target the card video file", script, containsString("test.mp4"))
     }
 
     @Test

@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
+import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.themes.Themes
 import com.ichi2.utils.toRGBHex
 import kotlinx.serialization.json.Json
@@ -53,6 +54,8 @@ fun Flashcard(
     questionHtml: String,
     answerHtml: String,
     bodyClass: String,
+    javascriptCommand: ReviewerJavascriptCommand?,
+    onJavascriptCommandConsumed: (Int) -> Unit,
     onTap: () -> Unit,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -60,6 +63,7 @@ fun Flashcard(
     toolbarHeight: Int = 0
 ) {
     val currentBaseUrl by rememberUpdatedState(baseUrl)
+    val currentOnJavascriptCommandConsumed by rememberUpdatedState(onJavascriptCommandConsumed)
     val currentOnLinkClick by rememberUpdatedState(onLinkClick)
     val currentOnTap by rememberUpdatedState(onTap)
 
@@ -211,6 +215,7 @@ fun Flashcard(
                 settings.javaScriptEnabled = true
                 settings.allowFileAccess = true
                 settings.domStorageEnabled = true
+                settings.mediaPlaybackRequiresUserGesture = false
 
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
@@ -267,6 +272,13 @@ fun Flashcard(
                             payload.scriptExecuted = true
                             view.evaluateJavascript(payload.evalScript, null)
                         }
+
+                        payload.pendingJavascriptCommand?.let { command ->
+                            view.evaluateJavascript(command.script, null)
+                            payload.lastJavascriptCommandId = command.id
+                            payload.pendingJavascriptCommand = null
+                            currentOnJavascriptCommandConsumed(command.id)
+                        }
                     }
                 }
 
@@ -298,7 +310,8 @@ fun Flashcard(
                         baseUrl,
                         isNightMode,
                         composeStyle,
-                        evalScript
+                        evalScript,
+                        pendingJavascriptCommand = javascriptCommand
                     )
                     webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
                 }
@@ -310,12 +323,32 @@ fun Flashcard(
                     currentPayload.evalScript = evalScript
                     val shellScript =
                         buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
+                    if (javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id) {
+                        currentPayload.pendingJavascriptCommand = javascriptCommand
+                    }
 
                     if (currentPayload.shellLoaded) {
                         webView.evaluateJavascript(shellScript, null)
+                        currentPayload.pendingJavascriptCommand?.let { command ->
+                            webView.evaluateJavascript(command.script, null)
+                            currentPayload.lastJavascriptCommandId = command.id
+                            currentPayload.pendingJavascriptCommand = null
+                            currentOnJavascriptCommandConsumed(command.id)
+                        }
                     } else {
                         // Queue it up for when the page finishes loading
                         currentPayload.pendingShellScript = shellScript
+                    }
+                }
+
+                javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id -> {
+                    if (currentPayload.shellLoaded) {
+                        webView.evaluateJavascript(javascriptCommand.script, null)
+                        currentPayload.lastJavascriptCommandId = javascriptCommand.id
+                        currentPayload.pendingJavascriptCommand = null
+                        currentOnJavascriptCommandConsumed(javascriptCommand.id)
+                    } else {
+                        currentPayload.pendingJavascriptCommand = javascriptCommand
                     }
                 }
 
@@ -359,6 +392,8 @@ private class FlashcardPayload(
     var isNightMode: Boolean,
     var composeStyle: String,
     var evalScript: String,
+    var pendingJavascriptCommand: ReviewerJavascriptCommand? = null,
+    var lastJavascriptCommandId: Int = -1,
     var scriptExecuted: Boolean = false,
     var shellLoaded: Boolean = false,
     var pendingShellScript: String? = null
