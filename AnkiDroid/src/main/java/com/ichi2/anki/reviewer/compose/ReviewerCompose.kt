@@ -100,7 +100,6 @@ import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
-import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.settings.Prefs
