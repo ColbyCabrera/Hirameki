@@ -17,16 +17,12 @@
 
 package com.ichi2.anki.dialogs
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -87,16 +83,10 @@ class FlagAdapter(
             flagItem.isInEditMode = true
             holder.flagNameViewLayout.visibility = View.GONE
             holder.flagNameEditLayout.visibility = View.VISIBLE
-            holder.flagNameEdit.requestFocus()
-            holder.flagNameEdit.text?.let { text -> holder.flagNameEdit.setSelection(text.length) }
-            val activity = AndroidUiUtils.findActivity(holder.flagNameEdit.context)
-            if (activity != null) {
-                WindowCompat.getInsetsController(activity.window, holder.flagNameEdit)
-                    .show(WindowInsetsCompat.Type.ime())
-            } else {
-                val inputMethodManager =
-                    holder.flagNameEdit.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                inputMethodManager.showSoftInput(holder.flagNameEdit, 0)
+            AndroidUiUtils.setFocusAndOpenKeyboard(holder.flagNameEdit) {
+                holder.flagNameEdit.text?.let { text ->
+                    holder.flagNameEdit.setSelection(text.length)
+                }
             }
         }
 
