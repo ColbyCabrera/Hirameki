@@ -17,6 +17,7 @@
 
 package com.ichi2.anki.dialogs
 
+import android.app.Activity
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +26,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -44,7 +47,7 @@ import kotlinx.coroutines.launch
 class FlagAdapter(
     private val lifecycleScope: CoroutineScope,
 ) : ListAdapter<FlagItem, FlagAdapter.FlagViewHolder>(FlagItemDiffCallback()) {
-    inner class FlagViewHolder(
+    class FlagViewHolder(
         itemView: View,
     ) : RecyclerView.ViewHolder(itemView) {
         val flagImageView: ImageView = findViewById(R.id.ic_flag)
@@ -86,15 +89,22 @@ class FlagAdapter(
             holder.flagNameEditLayout.visibility = View.VISIBLE
             holder.flagNameEdit.requestFocus()
             holder.flagNameEdit.text?.let { text -> holder.flagNameEdit.setSelection(text.length) }
-            val inputMethodManager = holder.flagNameEdit.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.showSoftInput(holder.flagNameEdit, InputMethodManager.SHOW_IMPLICIT)
+            val window = (holder.flagNameEdit.context as? Activity)?.window
+            if (window != null) {
+                WindowCompat.getInsetsController(window, holder.flagNameEdit)
+                    .show(WindowInsetsCompat.Type.ime())
+            } else {
+                val inputMethodManager =
+                    holder.flagNameEdit.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                @Suppress("DEPRECATION") inputMethodManager.showSoftInput(
+                    holder.flagNameEdit,
+                    InputMethodManager.SHOW_IMPLICIT
+                )
+            }
         }
 
         holder.saveButton.setOnClickListener {
-            val updatedTextName =
-                holder.flagNameEdit.text
-                    .toString()
-                    .ifEmpty { flagItem.title }
+            val updatedTextName = holder.flagNameEdit.text.toString().ifEmpty { flagItem.title }
             holder.flagNameViewLayout.visibility = View.VISIBLE
             holder.flagNameEditLayout.visibility = View.GONE
             val updatedFlagItem = flagItem.copy(title = updatedTextName)

@@ -21,6 +21,8 @@ import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 
 object AndroidUiUtils {
     /**
@@ -31,8 +33,7 @@ object AndroidUiUtils {
      */
     fun Activity?.showSoftInput() {
         val currentFocus = this?.currentFocus ?: return
-        val imm = this.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(currentFocus, InputMethodManager.SHOW_IMPLICIT)
+        WindowCompat.getInsetsController(this.window, currentFocus).show(WindowInsetsCompat.Type.ime())
     }
 
     /**
@@ -61,8 +62,14 @@ object AndroidUiUtils {
         //  Required on some Android 9, 10 devices to show keyboard: https://stackoverflow.com/a/7784904
         view.postDelayed({
             view.requestFocus()
-            val imm = view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.ime())
+            } else {
+                val imm = view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                @Suppress("DEPRECATION")
+                imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+            }
             runnable?.run()
         }, 200)
     }

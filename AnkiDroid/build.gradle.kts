@@ -1,5 +1,3 @@
-import com.android.build.configs.NdkConfig
-
 plugins {
     id("com.android.application")
     kotlin("android")
@@ -10,7 +8,7 @@ plugins {
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 37
     namespace = "com.ichi2.anki"
 
     defaultConfig {
