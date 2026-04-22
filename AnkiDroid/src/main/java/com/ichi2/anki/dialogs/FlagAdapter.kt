@@ -17,7 +17,6 @@
 
 package com.ichi2.anki.dialogs
 
-import android.app.Activity
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -36,6 +35,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.ichi2.anki.Flag
 import com.ichi2.anki.R
 import com.ichi2.anki.utils.ext.findViewById
+import com.ichi2.utils.AndroidUiUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -89,17 +89,14 @@ class FlagAdapter(
             holder.flagNameEditLayout.visibility = View.VISIBLE
             holder.flagNameEdit.requestFocus()
             holder.flagNameEdit.text?.let { text -> holder.flagNameEdit.setSelection(text.length) }
-            val window = (holder.flagNameEdit.context as? Activity)?.window
-            if (window != null) {
-                WindowCompat.getInsetsController(window, holder.flagNameEdit)
+            val activity = AndroidUiUtils.findActivity(holder.flagNameEdit.context)
+            if (activity != null) {
+                WindowCompat.getInsetsController(activity.window, holder.flagNameEdit)
                     .show(WindowInsetsCompat.Type.ime())
             } else {
                 val inputMethodManager =
                     holder.flagNameEdit.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                @Suppress("DEPRECATION") inputMethodManager.showSoftInput(
-                    holder.flagNameEdit,
-                    InputMethodManager.SHOW_IMPLICIT
-                )
+                inputMethodManager.showSoftInput(holder.flagNameEdit, 0)
             }
         }
 
