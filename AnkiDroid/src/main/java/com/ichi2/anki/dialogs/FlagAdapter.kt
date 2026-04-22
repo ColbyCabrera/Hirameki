@@ -17,11 +17,9 @@
 
 package com.ichi2.anki.dialogs
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -33,6 +31,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.ichi2.anki.Flag
 import com.ichi2.anki.R
 import com.ichi2.anki.utils.ext.findViewById
+import com.ichi2.utils.AndroidUiUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -44,7 +43,7 @@ import kotlinx.coroutines.launch
 class FlagAdapter(
     private val lifecycleScope: CoroutineScope,
 ) : ListAdapter<FlagItem, FlagAdapter.FlagViewHolder>(FlagItemDiffCallback()) {
-    inner class FlagViewHolder(
+    class FlagViewHolder(
         itemView: View,
     ) : RecyclerView.ViewHolder(itemView) {
         val flagImageView: ImageView = findViewById(R.id.ic_flag)
@@ -84,17 +83,15 @@ class FlagAdapter(
             flagItem.isInEditMode = true
             holder.flagNameViewLayout.visibility = View.GONE
             holder.flagNameEditLayout.visibility = View.VISIBLE
-            holder.flagNameEdit.requestFocus()
-            holder.flagNameEdit.text?.let { text -> holder.flagNameEdit.setSelection(text.length) }
-            val inputMethodManager = holder.flagNameEdit.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.showSoftInput(holder.flagNameEdit, InputMethodManager.SHOW_IMPLICIT)
+            AndroidUiUtils.setFocusAndOpenKeyboard(holder.flagNameEdit) {
+                holder.flagNameEdit.text?.let { text ->
+                    holder.flagNameEdit.setSelection(text.length)
+                }
+            }
         }
 
         holder.saveButton.setOnClickListener {
-            val updatedTextName =
-                holder.flagNameEdit.text
-                    .toString()
-                    .ifEmpty { flagItem.title }
+            val updatedTextName = holder.flagNameEdit.text.toString().ifEmpty { flagItem.title }
             holder.flagNameViewLayout.visibility = View.VISIBLE
             holder.flagNameEditLayout.visibility = View.GONE
             val updatedFlagItem = flagItem.copy(title = updatedTextName)

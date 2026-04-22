@@ -1,8 +1,8 @@
 [versions]
 activityCompose = "1.13.0"
-compileSdk = "36"
+compileSdk = "37"
 composeBomVersion = "2026.03.01"
-nav3Core = "1.0.1"
+nav3Core = "1.1.0"
 lifecycleViewmodelNav3 = "2.10.0"
 
 # Changing minSdk means newer AnkiDroid versions will not support older devices.
@@ -18,11 +18,11 @@ ktlint = '1.5.0'
 #
 # Old changelogs - See 'Table of Contents' in sidebar
 # https://developer.android.com/build/releases/past-releases
-androidGradlePlugin = "9.1.1"
+androidGradlePlugin = "9.2.0"
 # https://developer.android.com/jetpack/androidx/releases/activity
 androidxActivity = "1.13.0"
 # https://developer.android.com/jetpack/androidx/releases/annotation
-androidxAnnotation = "1.9.1"
+androidxAnnotation = "1.10.0"
 # https://developer.android.com/jetpack/androidx/releases/appcompat
 androidxAppCompat = "1.7.1"
 # https://developer.android.com/jetpack/androidx/releases/browser
@@ -81,7 +81,7 @@ jacoco = "0.8.13"
 javaSemver = "0.10.2"
 jetbrainsAnnotations = "26.1.0"
 json = "20251224"
-jsoup = "1.22.1"
+jsoup = "1.22.2"
 androidTestJunit = "1.3.0"
 # https://github.com/junit-team/junit5/releases/
 junitJupiter = "6.0.3"
@@ -90,12 +90,12 @@ junitPlatformLauncher = "6.0.3"
 # https://github.com/JetBrains/kotlin/releases/
 kotlin = '2.3.20'
 # https://github.com/Kotlin/kotlinx.serialization/releases
-kotlinxSerializationJson = "1.10.0"
+kotlinxSerializationJson = "1.11.0"
 ktlintGradlePlugin = "14.2.0"
 leakcanaryAndroid = "2.14"
-lint = "32.1.1"
+lint = "32.2.0"
 material = "1.13.0"
-material3 = "1.5.0-alpha16"
+material3 = "1.5.0-alpha17"
 materialTapTargetPrompt = "3.3.2"
 
 # Only needed until mockito kotlin updates this transitive itself

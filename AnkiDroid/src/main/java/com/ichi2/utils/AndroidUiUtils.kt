@@ -17,10 +17,13 @@ package com.ichi2.utils
 
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 
 object AndroidUiUtils {
     /**
@@ -30,9 +33,10 @@ object AndroidUiUtils {
      * appropriate input field (e.g., EditText) before calling this function
      */
     fun Activity?.showSoftInput() {
-        val currentFocus = this?.currentFocus ?: return
-        val imm = this.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(currentFocus, InputMethodManager.SHOW_IMPLICIT)
+        val activity = this ?: return
+        val currentFocus = activity.currentFocus ?: return
+        WindowCompat.getInsetsController(activity.window, currentFocus)
+            .show(WindowInsetsCompat.Type.ime())
     }
 
     /**
@@ -61,9 +65,28 @@ object AndroidUiUtils {
         //  Required on some Android 9, 10 devices to show keyboard: https://stackoverflow.com/a/7784904
         view.postDelayed({
             view.requestFocus()
-            val imm = view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+            val activity = findActivity(view.context)
+            if (activity != null) {
+                WindowCompat.getInsetsController(activity.window, view)
+                    .show(WindowInsetsCompat.Type.ime())
+            } else {
+                val imm =
+                    view.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showSoftInput(view, 0)
+            }
             runnable?.run()
         }, 200)
+    }
+
+    /**
+     * Unwraps the context to find the underlying Activity.
+     */
+    fun findActivity(context: Context): Activity? {
+        var currentContext = context
+        while (currentContext is ContextWrapper) {
+            if (currentContext is Activity) return currentContext
+            currentContext = currentContext.baseContext
+        }
+        return null
     }
 }
