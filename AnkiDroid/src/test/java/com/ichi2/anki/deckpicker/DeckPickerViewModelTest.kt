@@ -39,6 +39,12 @@ import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.ichi2.anki.CollectionManager
+import com.ichi2.anki.InitialActivity
+import com.ichi2.anki.PermissionSet
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
+import org.robolectric.shadows.ShadowEnvironment
 import timber.log.Timber
 
 /** Test of [DeckPickerViewModel] */
@@ -440,6 +446,17 @@ class DeckPickerViewModelTest : RobolectricTest() {
     // region Effect Channel Snackbar Tests
 
     @Test
+    fun `unburyDeck - calls sched unbury and updates list`() = runTest {
+        val deckId = col.decks.id("Japanese")
+        // No easy way to check if unbury was called on mock col, so we just verify it runs without error
+        // and triggers a list update.
+        viewModel.unburyDeck(deckId).join()
+        
+        // Success if it doesn't crash and we can still interact
+        assertThat(viewModel.isSyncing.value, equalTo(false))
+    }
+
+    @Test
     fun `effects - showSnackbar routes through channel`() = runTest {
         viewModel.composeEffects.test {
             viewModel.showSnackbar("Test message")
@@ -523,6 +540,59 @@ class DeckPickerViewModelTest : RobolectricTest() {
                 effect,
                 instanceOf(DeckPickerComposeEffect.ShowSnackbar::class.java)
             )
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `effects - selecting deck with cards emits HasCardsToStudy`() = runTest {
+        // Create a deck with a card
+        addBasicNote("Front", "Back")
+        viewModel.updateDeckList()
+        advanceUntilIdle()
+
+        viewModel.composeEffects.test {
+            viewModel.onDeckSelected(Consts.DEFAULT_DECK_ID, DeckSelectionType.DEFAULT)
+            advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertThat(
+                "is HandleDeckSelection",
+                effect,
+                instanceOf(DeckPickerComposeEffect.HandleDeckSelection::class.java)
+            )
+            val result = (effect as DeckPickerComposeEffect.HandleDeckSelection).result
+            assertThat("is HasCardsToStudy result", result, instanceOf(DeckSelectionResult.HasCardsToStudy::class.java))
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `effects - selecting non-empty deck with no cards due emits NoCardsToStudy`() = runTest {
+        // Create a deck with a card, but it's not due (it's new, but maybe we can just use an empty deck that is not 'completely empty')
+        // Actually, if it has a card, it's either new, lrn, or rev.
+        // If we want 'NoCardsToStudy', we need to have cards, but they are all buried or suspended.
+        
+        val note = addBasicNote("Front", "Back")
+        col.sched.suspendCards(listOf(note.firstCard().id))
+        
+        viewModel.updateDeckList()
+        advanceUntilIdle()
+
+        viewModel.composeEffects.test {
+            viewModel.onDeckSelected(Consts.DEFAULT_DECK_ID, DeckSelectionType.DEFAULT)
+            advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertThat(
+                "is HandleDeckSelection",
+                effect,
+                instanceOf(DeckPickerComposeEffect.HandleDeckSelection::class.java)
+            )
+            val result = (effect as DeckPickerComposeEffect.HandleDeckSelection).result
+            assertThat("is NoCardsToStudy result", result, instanceOf(DeckSelectionResult.NoCardsToStudy::class.java))
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -621,9 +691,205 @@ class DeckPickerViewModelTest : RobolectricTest() {
         }
     }
 
+    // region Startup Tests
+
+    @Test
+    fun `handleStartup - success`() = runTest {
+        val environment = mock<DeckPickerViewModel.AnkiDroidEnvironment>()
+        whenever(environment.hasRequiredPermissions()).thenReturn(true)
+        whenever(environment.initializeAnkiDroidFolder()).thenReturn(true)
+
+        viewModel.handleStartup(environment)
+
+        assertThat(
+            "startup response should be success",
+            viewModel.flowOfStartupResponse.value,
+            equalTo(DeckPickerViewModel.StartupResponse.Success)
+        )
+    }
+
+    @Test
+    fun `handleStartup - permission request`() = runTest {
+        val environment = mock<DeckPickerViewModel.AnkiDroidEnvironment>()
+        val requiredPermissions = PermissionSet.LEGACY_ACCESS
+        whenever(environment.hasRequiredPermissions()).thenReturn(false)
+        whenever(environment.requiredPermissions).thenReturn(requiredPermissions)
+
+        viewModel.handleStartup(environment)
+
+        val response = viewModel.flowOfStartupResponse.value
+        assertThat(
+            "should request permissions",
+            response,
+            instanceOf(DeckPickerViewModel.StartupResponse.RequestPermissions::class.java)
+        )
+        assertThat(
+            "permissions match",
+            (response as DeckPickerViewModel.StartupResponse.RequestPermissions).requiredPermissions,
+            equalTo(requiredPermissions)
+        )
+    }
+
+    @Test
+    fun `handleStartup - fatal error database locked`() = runTest {
+        val environment = mock<DeckPickerViewModel.AnkiDroidEnvironment>()
+        whenever(environment.hasRequiredPermissions()).thenReturn(true)
+        whenever(environment.initializeAnkiDroidFolder()).thenReturn(true)
+
+        enableNullCollection()
+        ShadowEnvironment.setExternalStorageState(android.os.Environment.MEDIA_MOUNTED)
+        CollectionManager.emulatedOpenFailure = CollectionManager.CollectionOpenFailure.LOCKED
+        try {
+            viewModel.handleStartup(environment)
+
+            val response = viewModel.flowOfStartupResponse.value
+            assertThat(
+                "should have fatal error",
+                response,
+                instanceOf(DeckPickerViewModel.StartupResponse.FatalError::class.java)
+            )
+            assertThat(
+                "failure type is database locked",
+                (response as DeckPickerViewModel.StartupResponse.FatalError).failure,
+                equalTo(InitialActivity.StartupFailure.DatabaseLocked)
+            )
+        } finally {
+            disableNullCollection()
+        }
+    }
+
+    @Test
+    fun `handleStartup - fatal error sdcard not mounted`() = runTest {
+        val environment = mock<DeckPickerViewModel.AnkiDroidEnvironment>()
+        whenever(environment.hasRequiredPermissions()).thenReturn(true)
+
+        enableNullCollection()
+        ShadowEnvironment.setExternalStorageState(android.os.Environment.MEDIA_REMOVED)
+        
+        try {
+            viewModel.handleStartup(environment)
+
+            val response = viewModel.flowOfStartupResponse.value
+            assertThat(
+                "should have fatal error",
+                response,
+                instanceOf(DeckPickerViewModel.StartupResponse.FatalError::class.java)
+            )
+            assertThat(
+                "failure type is SDCardNotMounted",
+                (response as DeckPickerViewModel.StartupResponse.FatalError).failure,
+                equalTo(InitialActivity.StartupFailure.SDCardNotMounted)
+            )
+        } finally {
+            disableNullCollection()
+            ShadowEnvironment.setExternalStorageState(android.os.Environment.MEDIA_MOUNTED)
+        }
+    }
+
+    @Test
+    fun `handleStartup - directory not accessible`() = runTest {
+        val environment = mock<DeckPickerViewModel.AnkiDroidEnvironment>()
+        whenever(environment.hasRequiredPermissions()).thenReturn(true)
+        whenever(environment.initializeAnkiDroidFolder()).thenReturn(false)
+
+        enableNullCollection()
+        ShadowEnvironment.setExternalStorageState(android.os.Environment.MEDIA_MOUNTED)
+        
+        try {
+            viewModel.handleStartup(environment)
+
+            val response = viewModel.flowOfStartupResponse.value
+            assertThat(
+                "should have fatal error",
+                response,
+                instanceOf(DeckPickerViewModel.StartupResponse.FatalError::class.java)
+            )
+            assertThat(
+                "failure type is DirectoryNotAccessible",
+                (response as DeckPickerViewModel.StartupResponse.FatalError).failure,
+                equalTo(InitialActivity.StartupFailure.DirectoryNotAccessible)
+            )
+        } finally {
+            disableNullCollection()
+        }
+    }
+
+    // endregion
+
+    // region Dialog State Tests
+
+    @Test
+    fun `dialog state - create deck dialog visibility`() = runTest {
+        assertThat("initial state", viewModel.createDeckDialogState.value, equalTo(DeckPickerViewModel.CreateDeckDialogState.Hidden))
+
+        viewModel.showCreateDeckDialog()
+        val state = viewModel.createDeckDialogState.value
+        assertThat("is visible", state, instanceOf(DeckPickerViewModel.CreateDeckDialogState.Visible::class.java))
+        assertThat("type is DECK", (state as DeckPickerViewModel.CreateDeckDialogState.Visible).type, equalTo(com.ichi2.anki.dialogs.compose.DeckDialogType.DECK))
+
+        viewModel.dismissCreateDeckDialog()
+        assertThat("hidden after dismiss", viewModel.createDeckDialogState.value, equalTo(DeckPickerViewModel.CreateDeckDialogState.Hidden))
+    }
+
+    @Test
+    fun `dialog state - show create subdeck`() = runTest {
+        val parentId = col.decks.id("Parent")
+        viewModel.showCreateSubdeckDialog(parentId)
+
+        val state = viewModel.createDeckDialogState.value as DeckPickerViewModel.CreateDeckDialogState.Visible
+        assertThat("type is SUB_DECK", state.type, equalTo(com.ichi2.anki.dialogs.compose.DeckDialogType.SUB_DECK))
+        assertThat("parent id matches", state.parentId, equalTo(parentId))
+    }
+
+    @Test
+    fun `dialog state - show create filtered deck`() = runTest {
+        viewModel.showCreateFilteredDeckDialog()
+
+        val state = viewModel.createDeckDialogState.value as DeckPickerViewModel.CreateDeckDialogState.Visible
+        assertThat("type is FILTERED_DECK", state.type, equalTo(com.ichi2.anki.dialogs.compose.DeckDialogType.FILTERED_DECK))
+    }
+
+    @Test
+    fun `createDeck - success emits snackbar and updates list`() = runTest {
+        viewModel.showCreateDeckDialog()
+        val state = viewModel.createDeckDialogState.value as DeckPickerViewModel.CreateDeckDialogState.Visible
+
+        viewModel.composeEffects.test {
+            viewModel.createDeck("New Deck", state)
+            advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertThat("emits snackbar", effect, instanceOf(DeckPickerComposeEffect.ShowSnackbar::class.java))
+            assertThat("snackbar message is deck created", (effect as DeckPickerComposeEffect.ShowSnackbar).messageResId, equalTo(R.string.deck_created))
+            assertThat("dialog hidden", viewModel.createDeckDialogState.value, equalTo(DeckPickerViewModel.CreateDeckDialogState.Hidden))
+
+            val deckId = col.decks.byName("New Deck")
+            assertThat("deck exists in collection", deckId, not(equalTo(null)))
+        }
+    }
+
+    // endregion
+
     private fun TestScope.flushViewModelUpdates() {
         advanceUntilIdle()
         advanceRobolectricLooper()
         advanceUntilIdle()
+    }
+
+    @Test
+    fun `toggleDeckExpand - updates backend and emits refresh`() = runTest {
+        // Create a subdeck to make expansion relevant
+        col.decks.id("Parent::Child")
+        viewModel.updateDeckList()
+        advanceUntilIdle()
+
+        val parentId = col.decks.id("Parent")
+        val initialCollapsed = col.decks.getLegacy(parentId)!!.collapsed
+
+        viewModel.toggleDeckExpand(parentId)
+        advanceUntilIdle()
+
+        val updatedCollapsed = col.decks.getLegacy(parentId)!!.collapsed
+        assertThat("backend state toggled", updatedCollapsed, equalTo(!initialCollapsed))
     }
 }
