@@ -2,22 +2,15 @@
 package com.ichi2.anki
 
 import android.content.Intent
-import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.core.content.edit
-import androidx.fragment.app.FragmentManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.dialogs.BackupPromptDialog
-import com.ichi2.anki.dialogs.DeckPickerContextMenu
-import com.ichi2.anki.dialogs.DeckPickerContextMenu.DeckPickerContextMenuOption
 import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
-import com.ichi2.anki.dialogs.utils.title
-import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.testutils.BackupManagerTestUtilities
@@ -35,7 +28,6 @@ import org.robolectric.Robolectric
 import org.robolectric.Shadows
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
-import timber.log.Timber
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -49,7 +41,9 @@ class DeckPickerTest : RobolectricTest() {
 
     @Before
     fun before() {
-        setIntroductionSlidesShown(true)
+        getPreferences().edit {
+            putBoolean(IntroductionActivity.INTRODUCTION_SLIDES_SHOWN, true)
+        }
         BackupManagerTestUtilities.setupSpaceForBackup(targetContext)
         // Prevent BackupPromptDialog Compose overlay from blocking tests.
         // In Robolectric, getFirstInstallTime() returns 0 (epoch), making
@@ -249,24 +243,6 @@ class DeckPickerTest : RobolectricTest() {
     //  are now shown via Compose or FragmentManager, not the legacy AlertDialog.Builder path.
     //  Fix: assert on FragmentManager dialog fragments or Compose dialog state instead.
 
-    /** Simulates a selection in the context menu by setting the specific result in FragmentManager */
-    private fun FragmentManager.selectContextMenuOption(
-        option: DeckPickerContextMenuOption,
-        deckId: DeckId,
-    ) {
-        val arguments = Bundle().apply {
-            putLong(DeckPickerContextMenu.CONTEXT_MENU_DECK_ID, deckId)
-            putSerializable(DeckPickerContextMenu.CONTEXT_MENU_DECK_OPTION, option)
-        }
-        setFragmentResult(DeckPickerContextMenu.REQUEST_KEY_CONTEXT_MENU, arguments)
-    }
-
-    private fun assertDialogTitleEquals(expectedTitle: String) {
-        val actualTitle = (ShadowDialog.getLatestDialog() as AlertDialog).title
-        Timber.d("titles = \"$actualTitle\", \"$expectedTitle\"")
-        assertEquals(expectedTitle, actualTitle)
-    }
-
     @Test
     fun `ContextMenu starts deck options for normal deck`() = deckPicker {
         val didA = addDeck("Deck 1")
@@ -323,9 +299,4 @@ class DeckPickerTest : RobolectricTest() {
         }
     }
 
-    private fun setIntroductionSlidesShown(shown: Boolean) {
-        getPreferences().edit {
-            putBoolean(IntroductionActivity.INTRODUCTION_SLIDES_SHOWN, shown)
-        }
-    }
 }
