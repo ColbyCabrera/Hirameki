@@ -67,7 +67,11 @@ class ReviewerViewModelTest : RobolectricTest() {
         advanceRobolectricLooper()
 
         val state = viewModel.state.first()
-        assertThat("Review should not be finished when cards exist", state.isFinished, equalTo(false))
+        assertThat(
+            "Review should not be finished when cards exist",
+            state.isFinished,
+            equalTo(false)
+        )
         assertThat("New count should be 1", state.newCount, equalTo(1))
     }
 
@@ -79,10 +83,26 @@ class ReviewerViewModelTest : RobolectricTest() {
         advanceRobolectricLooper()
 
         val state = viewModel.state.first()
-        assertThat("Video tags should render as inline video", state.questionHtml, containsString("<video"))
-        assertThat("Video tags should include the file name for JS playback", state.questionHtml, containsString("data-file=\"test.mp4\""))
-        assertThat("Video tags should report completion through the WebView", state.questionHtml, containsString("videoended:q:0"))
-        assertThat("Video tags should not fall back to replay buttons", state.questionHtml, not(containsString("href=playsound:q:0")))
+        assertThat(
+            "Video tags should render as inline video",
+            state.questionHtml,
+            containsString("<video")
+        )
+        assertThat(
+            "Video tags should include the file name for JS playback",
+            state.questionHtml,
+            containsString("data-file=\"test.mp4\"")
+        )
+        assertThat(
+            "Video tags should report completion through the WebView",
+            state.questionHtml,
+            containsString("videoended:q:0")
+        )
+        assertThat(
+            "Video tags should not fall back to replay buttons",
+            state.questionHtml,
+            not(containsString("href=playsound:q:0"))
+        )
     }
 
     @Test
@@ -93,8 +113,16 @@ class ReviewerViewModelTest : RobolectricTest() {
         advanceRobolectricLooper()
 
         val state = viewModel.state.first()
-        assertThat("Audio tags should still render replay links", state.questionHtml, containsString("playsound:q:0"))
-        assertThat("Audio tags should not render inline video", state.questionHtml, not(containsString("<video")))
+        assertThat(
+            "Audio tags should still render replay links",
+            state.questionHtml,
+            containsString("playsound:q:0")
+        )
+        assertThat(
+            "Audio tags should not render inline video",
+            state.questionHtml,
+            not(containsString("<video"))
+        )
     }
 
     @Test
@@ -111,8 +139,16 @@ class ReviewerViewModelTest : RobolectricTest() {
         advanceRobolectricLooper()
 
         val script = requireNotNull(pendingScript.await()).script
-        assertThat("Autoplay should wait until the DOM is ready", script, containsString("document.readyState"))
-        assertThat("Autoplay should target the inline video element", script, containsString("video.play();"))
+        assertThat(
+            "Autoplay should wait until the DOM is ready",
+            script,
+            containsString("document.readyState")
+        )
+        assertThat(
+            "Autoplay should target the inline video element",
+            script,
+            containsString("video.play();")
+        )
         assertThat("Autoplay should target the card video file", script, containsString("test.mp4"))
     }
 
@@ -171,8 +207,16 @@ class ReviewerViewModelTest : RobolectricTest() {
         advanceRobolectricLooper()
 
         state = viewModel.state.first()
-        assertThat("Answer should be shown after ShowAnswer event", state.isAnswerShown, equalTo(true))
-        assertThat("Next times should be populated", state.nextTimes.any { it.isNotEmpty() }, equalTo(true))
+        assertThat(
+            "Answer should be shown after ShowAnswer event",
+            state.isAnswerShown,
+            equalTo(true)
+        )
+        assertThat(
+            "Next times should be populated",
+            state.nextTimes.any { it.isNotEmpty() },
+            equalTo(true)
+        )
     }
 
     @Test
@@ -210,7 +254,11 @@ class ReviewerViewModelTest : RobolectricTest() {
         advanceRobolectricLooper()
 
         val initialState = viewModel.state.first()
-        assertThat("Initial card should be loaded before deleting", initialState.questionHtml, containsString("Front1"))
+        assertThat(
+            "Initial card should be loaded before deleting",
+            initialState.questionHtml,
+            containsString("Front1")
+        )
         assertThat("Should have 2 new cards before deleting", initialState.newCount, equalTo(2))
 
         viewModel.confirmDeleteNote()
@@ -218,38 +266,43 @@ class ReviewerViewModelTest : RobolectricTest() {
 
         val state = viewModel.state.first()
         assertThat("Reviewer should continue with the next card", state.isFinished, equalTo(false))
-        assertThat("New count should decrease after deleting the current note", state.newCount, equalTo(1))
+        assertThat(
+            "New count should decrease after deleting the current note",
+            state.newCount,
+            equalTo(1)
+        )
         assertThat("The next card should be loaded", state.questionHtml, containsString("Front2"))
     }
 
     @Test
-    fun `undoDelete restores note when undo is requested immediately from delete result`() = runTest {
-        addBasicNote("Front1", "Back1")
-        addBasicNote("Front2", "Back2")
+    fun `undoDelete restores note when undo is requested immediately from delete result`() =
+        runTest {
+            addBasicNote("Front1", "Back1")
+            addBasicNote("Front2", "Back2")
 
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
-        advanceRobolectricLooper()
+            val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            advanceRobolectricLooper()
 
-        var deletedCount: Int? = null
-        launch {
-            viewModel.flowOfDeleteResult.collect { count ->
-                deletedCount = count
-                viewModel.undoDelete()
-                cancel()
+            var deletedCount: Int? = null
+            launch {
+                viewModel.flowOfDeleteResult.collect { count ->
+                    deletedCount = count
+                    viewModel.undoDelete()
+                    cancel()
+                }
             }
+            advanceUntilIdle()
+
+            viewModel.confirmDeleteNote()
+            advanceUntilIdle()
+            advanceRobolectricLooper()
+            advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertThat("Delete result should report one deleted note", deletedCount, equalTo(1))
+            assertThat("Undo should restore the deleted note", col.noteCount(), equalTo(2))
+            assertThat("Review should continue after undo", state.isFinished, equalTo(false))
         }
-        advanceUntilIdle()
-
-        viewModel.confirmDeleteNote()
-        advanceUntilIdle()
-        advanceRobolectricLooper()
-        advanceUntilIdle()
-
-        val state = viewModel.state.value
-        assertThat("Delete result should report one deleted note", deletedCount, equalTo(1))
-        assertThat("Undo should restore the deleted note", col.noteCount(), equalTo(2))
-        assertThat("Review should continue after undo", state.isFinished, equalTo(false))
-    }
 
     @Test
     fun `undoDelete restores note after deleting the final card`() = runTest {
@@ -275,7 +328,11 @@ class ReviewerViewModelTest : RobolectricTest() {
 
         val state = viewModel.state.value
         assertThat("Delete result should report one deleted note", deletedCount, equalTo(1))
-        assertThat("Undo should restore the deleted note even after finishing review", col.noteCount(), equalTo(1))
+        assertThat(
+            "Undo should restore the deleted note even after finishing review",
+            col.noteCount(),
+            equalTo(1)
+        )
         assertThat("Review should resume after undo", state.isFinished, equalTo(false))
     }
 
