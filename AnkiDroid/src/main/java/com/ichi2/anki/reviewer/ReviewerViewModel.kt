@@ -61,6 +61,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 
 sealed class MediaError(open val message: String) {
     data class PlaybackError(val uri: Uri, override val message: String) : MediaError(message)
@@ -185,11 +186,11 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
     private val _flowOfDeleteResult = MutableSharedFlow<Int>()
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
-    private var nextJavascriptCommandId = 0
+    private val nextJavascriptCommandId = AtomicInteger(0)
     internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     internal val cardMediaPlayer: CardMediaPlayer = CardMediaPlayer({ script ->
-        nextJavascriptCommandId += 1
-        _evalCommand.value = ReviewerJavascriptCommand(nextJavascriptCommandId, script)
+        _evalCommand.value =
+            ReviewerJavascriptCommand(nextJavascriptCommandId.incrementAndGet(), script)
     }, object : MediaErrorListener {
         override fun onError(uri: Uri): MediaErrorBehavior {
             Timber.w("Error playing media: %s", uri)
