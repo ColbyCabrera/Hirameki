@@ -187,36 +187,34 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
     private var nextJavascriptCommandId = 0
     internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
-    internal val cardMediaPlayer: CardMediaPlayer =
-        CardMediaPlayer({ script ->
-            nextJavascriptCommandId += 1
-            _evalCommand.value = ReviewerJavascriptCommand(nextJavascriptCommandId, script)
-        }, object : MediaErrorListener {
-            override fun onError(uri: Uri): MediaErrorBehavior {
-                Timber.w("Error playing media: %s", uri)
-                val message = getApplication<Application>().getString(R.string.media_load_failed)
-                _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
-                return MediaErrorBehavior.CONTINUE_MEDIA
-            }
+    internal val cardMediaPlayer: CardMediaPlayer = CardMediaPlayer({ script ->
+        nextJavascriptCommandId += 1
+        _evalCommand.value = ReviewerJavascriptCommand(nextJavascriptCommandId, script)
+    }, object : MediaErrorListener {
+        override fun onError(uri: Uri): MediaErrorBehavior {
+            Timber.w("Error playing media: %s", uri)
+            val message = getApplication<Application>().getString(R.string.media_load_failed)
+            _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
+            return MediaErrorBehavior.CONTINUE_MEDIA
+        }
 
-            override fun onMediaPlayerError(
-                mp: MediaPlayer?, which: Int, extra: Int, uri: Uri
-            ): MediaErrorBehavior {
-                Timber.w("Error playing media: %s", uri)
-                val message = getApplication<Application>().getString(R.string.media_load_failed)
-                _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
-                return MediaErrorBehavior.CONTINUE_MEDIA
-            }
+        override fun onMediaPlayerError(
+            mp: MediaPlayer?, which: Int, extra: Int, uri: Uri
+        ): MediaErrorBehavior {
+            Timber.w("Error playing media: %s", uri)
+            val message = getApplication<Application>().getString(R.string.media_load_failed)
+            _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
+            return MediaErrorBehavior.CONTINUE_MEDIA
+        }
 
-            override fun onTtsError(error: TtsPlayer.TtsError, isAutomaticPlayback: Boolean) {
-                Timber.w("TTS error: %s", error)
-                if (!isAutomaticPlayback) {
-                    val message =
-                        getApplication<Application>().getString(R.string.tts_playback_failed)
-                    _state.update { it.copy(mediaError = MediaError.TtsError(error, message)) }
-                }
+        override fun onTtsError(error: TtsPlayer.TtsError, isAutomaticPlayback: Boolean) {
+            Timber.w("TTS error: %s", error)
+            if (!isAutomaticPlayback) {
+                val message = getApplication<Application>().getString(R.string.tts_playback_failed)
+                _state.update { it.copy(mediaError = MediaError.TtsError(error, message)) }
             }
-        })
+        }
+    })
 
     /** A job that is running for the current card. This is used to prevent multiple actions from running at the same time. */
     private var cardActionJob: Job? = null
@@ -296,6 +294,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
                 withCol { startTimebox() }
                 loadCardSuspend()
             }
+
             is ReviewerEvent.OnTypedAnswerChanged -> onTypedAnswerChanged(event.newText)
             is ReviewerEvent.ToggleMark -> toggleMark()
             is ReviewerEvent.SetFlag -> setFlag(event.flag)
@@ -486,31 +485,32 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val renderOutput = card.renderOutput(this, reload = true)
             val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
             val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
-            val processedQuestionHtml = processHtml(questionHtml, renderOutput, this, showAudioPlayButtons)
-            val processedAnswerHtml = processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
+            val processedQuestionHtml =
+                processHtml(questionHtml, renderOutput, this, showAudioPlayButtons)
+            val processedAnswerHtml =
+                processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
 
             queue = this.sched.currentQueueState()
 
-            updatedState =
-                _state.value.copy(
-                    mediaError = null,
-                    newCount = queue?.counts?.new ?: 0,
-                    learnCount = queue?.counts?.lrn ?: 0,
-                    reviewCount = queue?.counts?.rev ?: 0,
-                    questionHtml = processedQuestionHtml,
-                    answerHtml = processedAnswerHtml,
-                    bodyClass = bodyClassForCardOrd(card.ord),
-                    baseUrl = server.baseUrl(),
-                    isAnswerShown = false,
-                    showTypeInAnswer = typeAnswer.correct != null,
-                    nextTimes = List(4) { "" },
-                    chosenAnswer = "",
-                    typedAnswer = "",
-                    isMarked = note.hasTag(this, "marked"),
-                    flag = card.userFlag(),
-                    mediaDirectory = this.media.dir,
-                    isFinished = false
-                )
+            updatedState = _state.value.copy(
+                mediaError = null,
+                newCount = queue?.counts?.new ?: 0,
+                learnCount = queue?.counts?.lrn ?: 0,
+                reviewCount = queue?.counts?.rev ?: 0,
+                questionHtml = processedQuestionHtml,
+                answerHtml = processedAnswerHtml,
+                bodyClass = bodyClassForCardOrd(card.ord),
+                baseUrl = server.baseUrl(),
+                isAnswerShown = false,
+                showTypeInAnswer = typeAnswer.correct != null,
+                nextTimes = List(4) { "" },
+                chosenAnswer = "",
+                typedAnswer = "",
+                isMarked = note.hasTag(this, "marked"),
+                flag = card.userFlag(),
+                mediaDirectory = this.media.dir,
+                isFinished = false
+            )
         }
         queue?.timeboxReached?.let { _effect.emit(ReviewerEffect.ShowTimeboxReachedDialog(it)) }
         _state.value = requireNotNull(updatedState)
@@ -617,8 +617,10 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val renderOutput = card.renderOutput(this)
             val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
             val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
-            val processedQuestionHtml = processHtml(questionHtml, renderOutput, this, showAudioPlayButtons)
-            val processedAnswerHtml = processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
+            val processedQuestionHtml =
+                processHtml(questionHtml, renderOutput, this, showAudioPlayButtons)
+            val processedAnswerHtml =
+                processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
             _state.update {
                 it.copy(
                     mediaError = null,
@@ -657,7 +659,8 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
                 typeAnswer.input = _state.value.typedAnswer
                 val renderOutput = card.renderOutput(this)
                 val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
-                val processedAnswerHtml = processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
+                val processedAnswerHtml =
+                    processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
 
                 val paddedLabels = (labels + List(4) { "" }).take(4)
 
