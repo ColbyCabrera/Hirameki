@@ -556,9 +556,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     fun onVideoPaused() = cardMediaPlayer.onVideoPaused()
 
     fun onJavascriptCommandConsumed(commandId: Int) {
-        if (_evalCommand.value?.id == commandId) {
-            _evalCommand.value = null
-        }
+        _evalCommand.update { if (it?.id == commandId) null else it }
     }
 
     private fun playAudio(side: String, index: Int) {
