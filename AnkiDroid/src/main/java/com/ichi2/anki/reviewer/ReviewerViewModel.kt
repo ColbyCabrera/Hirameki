@@ -31,6 +31,7 @@ import com.ichi2.anki.cardviewer.MediaErrorListener
 import com.ichi2.anki.cardviewer.SingleCardSide
 import com.ichi2.anki.cardviewer.TypeAnswer
 import com.ichi2.anki.dialogs.compose.TagsState
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Collection
@@ -49,6 +50,7 @@ import com.ichi2.anki.previewer.bodyClassForCardOrd
 import com.ichi2.anki.servicelayer.NoteService
 import com.ichi2.anki.utils.CollectionPreferences
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -143,7 +145,9 @@ sealed class ReviewerEffect {
     data class ShowTimeboxReachedDialog(val timebox: Collection.TimeboxReached) : ReviewerEffect()
 }
 
-class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHandler {
+class ReviewerViewModel(
+    app: Application, private val dispatcher: CoroutineDispatcher = ioDispatcher
+) : AndroidViewModel(app), PostRequestHandler {
 
     private val server = AnkiServer(this)
     var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
@@ -236,7 +240,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
      */
     private fun launchCardAction(block: suspend () -> Unit) {
         if (cardActionJob?.isActive == true || _state.value.isFinished) return
-        trackCardAction(viewModelScope.launch {
+        trackCardAction(viewModelScope.launch(dispatcher) {
             block()
         })
     }
@@ -248,11 +252,11 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun enqueueCardAction(block: suspend () -> Unit) {
         val currentJob = cardActionJob
         if (currentJob?.isActive != true) {
-            trackCardAction(viewModelScope.launch { block() })
+            trackCardAction(viewModelScope.launch(dispatcher) { block() })
             return
         }
 
-        trackCardAction(viewModelScope.launch {
+        trackCardAction(viewModelScope.launch(dispatcher) {
             currentJob.join()
             block()
         })

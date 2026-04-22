@@ -17,19 +17,18 @@ package com.ichi2.anki.reviewer
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.cash.turbine.test
 import com.ichi2.anki.RobolectricTest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.nullValue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -68,9 +67,7 @@ class ReviewerViewModelTest : RobolectricTest() {
 
         val state = viewModel.state.first()
         assertThat(
-            "Review should not be finished when cards exist",
-            state.isFinished,
-            equalTo(false)
+            "Review should not be finished when cards exist", state.isFinished, equalTo(false)
         )
         assertThat("New count should be 1", state.newCount, equalTo(1))
     }
@@ -84,9 +81,7 @@ class ReviewerViewModelTest : RobolectricTest() {
 
         val state = viewModel.state.first()
         assertThat(
-            "Video tags should render as inline video",
-            state.questionHtml,
-            containsString("<video")
+            "Video tags should render as inline video", state.questionHtml, containsString("<video")
         )
         assertThat(
             "Video tags should include the file name for JS playback",
@@ -129,27 +124,33 @@ class ReviewerViewModelTest : RobolectricTest() {
     fun `video autoplay emits javascript when autoplay is enabled`() = runTest {
         addBasicNote("Front [sound:test.mp4]", "Back")
 
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
-        val pendingScript = async {
-            withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5_000) { viewModel.evalCommand.first { it != null } }
-            }
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+
+        viewModel.evalCommand.test {
+            assertThat(awaitItem(), nullValue())
+
+            advanceRobolectricLooper()
+
+            val script = awaitItem()!!.script
+            assertThat(
+                "Autoplay should wait until the DOM is ready",
+                script,
+                containsString("document.readyState")
+            )
+            assertThat(
+                "Autoplay should target the inline video element",
+                script,
+                containsString("video.play();")
+            )
+            assertThat(
+                "Autoplay should target the card video file",
+                script,
+                containsString("test.mp4")
+            )
+            cancelAndIgnoreRemainingEvents()
         }
-
-        advanceRobolectricLooper()
-
-        val script = requireNotNull(pendingScript.await()).script
-        assertThat(
-            "Autoplay should wait until the DOM is ready",
-            script,
-            containsString("document.readyState")
-        )
-        assertThat(
-            "Autoplay should target the inline video element",
-            script,
-            containsString("video.play();")
-        )
-        assertThat("Autoplay should target the card video file", script, containsString("test.mp4"))
     }
 
     @Test
@@ -208,14 +209,10 @@ class ReviewerViewModelTest : RobolectricTest() {
 
         state = viewModel.state.first()
         assertThat(
-            "Answer should be shown after ShowAnswer event",
-            state.isAnswerShown,
-            equalTo(true)
+            "Answer should be shown after ShowAnswer event", state.isAnswerShown, equalTo(true)
         )
         assertThat(
-            "Next times should be populated",
-            state.nextTimes.any { it.isNotEmpty() },
-            equalTo(true)
+            "Next times should be populated", state.nextTimes.any { it.isNotEmpty() }, equalTo(true)
         )
     }
 
@@ -267,9 +264,7 @@ class ReviewerViewModelTest : RobolectricTest() {
         val state = viewModel.state.first()
         assertThat("Reviewer should continue with the next card", state.isFinished, equalTo(false))
         assertThat(
-            "New count should decrease after deleting the current note",
-            state.newCount,
-            equalTo(1)
+            "New count should decrease after deleting the current note", state.newCount, equalTo(1)
         )
         assertThat("The next card should be loaded", state.questionHtml, containsString("Front2"))
     }
