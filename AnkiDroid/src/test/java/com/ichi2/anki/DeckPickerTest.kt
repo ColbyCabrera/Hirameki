@@ -8,11 +8,14 @@ import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.core.content.edit
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.dialogs.BackupPromptDialog
+import com.ichi2.anki.dialogs.DeckPickerAnalyticsOptInDialog
 import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
+import com.ichi2.anki.utils.ext.getCurrentDialogFragment
 import com.ichi2.testutils.BackupManagerTestUtilities
 import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
@@ -26,7 +29,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows
-import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -128,18 +130,27 @@ class DeckPickerTest : RobolectricTest() {
     }
 
     @Test
-    fun deckPickerOpensWithHelpMakeAnkiDroidBetterDialog() = deckPicker {
+    fun deckPickerOpensWithHelpMakeAnkiDroidBetterDialog() {
         try {
             grantWritePermissions()
-            targetContext.sharedPrefs().edit { putString("lastVersion", "0.1") }
+            targetContext.sharedPrefs().edit {
+                putString("lastVersion", "0.1")
+                remove(UsageAnalytics.ANALYTICS_OPTIN_KEY)
+            }
 
-            // Recreate to trigger dialog since deckPicker already launched it
-            ActivityScenario.launch(DeckPicker::class.java).use {
+            ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
                 composeTestRule.waitForIdle()
-                val dialog = ShadowDialog.getLatestDialog()
-                assertNotNull(dialog, "Analytics opt-in should be displayed")
+                scenario.onActivity { activity ->
+                    val dialogFragment =
+                        activity.getCurrentDialogFragment<DeckPickerAnalyticsOptInDialog>()
+                    assertNotNull(dialogFragment, "Analytics opt-in should be displayed")
+                }
             }
         } finally {
+            targetContext.sharedPrefs().edit {
+                remove("lastVersion")
+                remove(UsageAnalytics.ANALYTICS_OPTIN_KEY)
+            }
             revokeWritePermissions()
         }
     }
@@ -270,19 +281,14 @@ class DeckPickerTest : RobolectricTest() {
 
     @Test
     fun `More menu 'Empty Cards' starts EmptyCardsDialogFragment`() = deckPicker {
-        // No direct way to trigger the action from ViewModel easily if it's purely in NavHost
-        // But we can check if the dialog is shown when we manually trigger the action
-        // In DeckPicker, the Compose UI is hosted, and we can use fragmentManager to check results
+        val menu = MenuBuilder(this)
+        menuInflater.inflate(R.menu.deck_picker, menu)
 
-        // This test is a bit tricky because the action is defined in DeckPickerNavHost
-        // which is part of the Compose content.
-
-        // Let's try to find if we can use the Activity to show it.
-        supportFragmentManager.beginTransaction().add(EmptyCardsDialogFragment(), "empty_cards")
-            .commitNow()
+        assertTrue(onOptionsItemSelected(menu.findItem(R.id.action_empty_cards)))
+        supportFragmentManager.executePendingTransactions()
 
         val dialogFragment =
-            supportFragmentManager.findFragmentByTag("empty_cards") as? EmptyCardsDialogFragment
+            supportFragmentManager.findFragmentByTag(EmptyCardsDialogFragment.TAG) as? EmptyCardsDialogFragment
         assertNotNull(dialogFragment, "EmptyCardsDialogFragment should be displayed")
         dismissAllDialogFragments()
     }
