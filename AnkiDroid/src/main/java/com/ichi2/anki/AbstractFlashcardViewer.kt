@@ -719,10 +719,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 return@launchCatchingTask
             }
             isSelecting = false
-            if (previousAnswerIndicator == null) {
-                // workaround for a broken ReviewerKeyboardInputTest
-                return@launchCatchingTask
-            }
             // Temporarily sets the answer indicator dots appearing below the toolbar
             previousAnswerIndicator?.displayAnswerIndicator(rating)
             currentEase = rating
@@ -736,14 +732,28 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 // A unit test (testAnswerCardCatchesCardModifiedException) enforces this behavior.
                 if (msg.contains("card was modified", ignoreCase = true)) {
                     Timber.w(e, "Card was modified by another operation. Reloading queue")
+                    if (!isAttachedToApplication()) {
+                        return@launchCatchingTask
+                    }
                     updateCardAndRedraw()
                     return@launchCatchingTask
                 }
                 throw e
             }
+            if (!isAttachedToApplication()) {
+                return@launchCatchingTask
+            }
             updateCardAndRedraw()
         }
     }
+
+    private fun isAttachedToApplication(): Boolean =
+        try {
+            viewModelStore
+            true
+        } catch (_: IllegalStateException) {
+            false
+        }
 
     open suspend fun answerCardInner(rating: Rating) {
         // Legacy tests assume they can call answerCard() even outside of Reviewer
@@ -1237,7 +1247,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     }
 
     private fun stopCardMediaPlayer() {
-        cardMediaPlayer.stop()
+        getCardMediaPlayers().forEach { it.stop() }
         ReadText.stopTts()
     }
 

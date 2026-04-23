@@ -21,7 +21,10 @@ import android.media.MediaPlayer
 import android.net.Uri
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import anki.scheduler.CardAnswer
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
@@ -806,5 +809,16 @@ class ReviewerViewModel(
             mediaDir = collection.media.dir,
         )
         return CardHtmlBuilder.wrapWithStyles(processedHtml, renderOutput.css)
+    }
+
+    companion object {
+        fun factory(dispatcher: CoroutineDispatcher = ioDispatcher): ViewModelProvider.Factory =
+            viewModelFactory {
+                initializer {
+                    val application =
+                        checkNotNull(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+                    ReviewerViewModel(application, dispatcher)
+                }
+            }
     }
 }
