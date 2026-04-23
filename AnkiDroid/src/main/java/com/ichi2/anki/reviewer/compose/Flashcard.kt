@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
@@ -93,7 +94,8 @@ fun Flashcard(
         animationSpec = tween(300),
         label = "FlashcardCrossfade"
     ) { (shown, currentHtml) ->
-        val currentStyle = if (shown) bodyLargeStyle else displayLargeStyle
+        val currentStyle =
+            if (shown) bodyLargeStyle else displayLargeStyle.copy(fontWeight = FontWeight.W500)
         val currentPadding = if (shown) 40 else 36
 
         val composeStyle = remember(
