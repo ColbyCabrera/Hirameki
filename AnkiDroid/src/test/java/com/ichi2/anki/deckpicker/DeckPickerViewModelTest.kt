@@ -761,6 +761,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
             )
         } finally {
             disableNullCollection()
+            ShadowEnvironment.setExternalStorageState(android.os.Environment.MEDIA_MOUNTED)
         }
     }
 
@@ -817,6 +818,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
             )
         } finally {
             disableNullCollection()
+            ShadowEnvironment.setExternalStorageState(android.os.Environment.MEDIA_MOUNTED)
         }
     }
 
