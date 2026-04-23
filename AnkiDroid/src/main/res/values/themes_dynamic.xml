@@ -114,7 +114,7 @@
              must be *all* present in a theme (or its parent) in order for the snackbar
              to pick up the proper layout that uses these attributes. -->
         <item name="snackbarStyle">@style/SnackbarStyle</item>
-        <item name="snackbarTextViewStyle">@style/Widget.MaterialComponents.Snackbar.TextView</item>
+        <item name="snackbarTextViewStyle">@style/Widget.Material3.Snackbar.TextView</item>
         <item name="snackbarButtonStyle">@style/SnackbarButtonStyle</item>
         <item name="snackbarBackgroundTintColor">?attr/colorSurfaceVariant</item>
         <item name="snackbarButtonTextColor">?attr/colorPrimary</item>
@@ -253,7 +253,7 @@
              must be *all* present in a theme (or its parent) in order for the snackbar
              to pick up the proper layout that uses these attributes. -->
         <item name="snackbarStyle">@style/SnackbarStyle</item>
-        <item name="snackbarTextViewStyle">@style/Widget.MaterialComponents.Snackbar.TextView</item>
+        <item name="snackbarTextViewStyle">@style/Widget.Material3.Snackbar.TextView</item>
         <item name="snackbarButtonStyle">@style/SnackbarButtonStyle</item>
         <item name="snackbarBackgroundTintColor">?attr/colorSurfaceVariant</item>
         <item name="snackbarButtonTextColor">?attr/colorPrimary</item>

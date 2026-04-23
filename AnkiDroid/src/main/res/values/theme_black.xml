@@ -115,7 +115,7 @@
         <item name="progressDialogButtonTextColor">@color/material_light_blue_400</item>
     </style>
 
-    <style name="SnackbarTextStyleBlack" parent="@style/Widget.MaterialComponents.Snackbar.TextView">
+    <style name="SnackbarTextStyleBlack" parent="@style/Widget.Material3.Snackbar.TextView">
         <item name="android:textColor">@color/white</item>
     </style>
 
