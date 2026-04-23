@@ -158,8 +158,8 @@ class ReviewerViewModel(
     private val _effect = MutableSharedFlow<ReviewerEffect>()
     val effect: SharedFlow<ReviewerEffect> = _effect.asSharedFlow()
 
-    private val _evalCommand = MutableStateFlow<ReviewerJavascriptCommand?>(null)
-    val evalCommand: StateFlow<ReviewerJavascriptCommand?> = _evalCommand.asStateFlow()
+    private val _evalCommand = MutableSharedFlow<ReviewerJavascriptCommand?>(extraBufferCapacity = 16)
+    val evalCommand: SharedFlow<ReviewerJavascriptCommand?> = _evalCommand.asSharedFlow()
 
     private val _currentCard = MutableStateFlow<Card?>(null)
     val currentCardFlow: StateFlow<Card?> = _currentCard.asStateFlow()
@@ -193,8 +193,9 @@ class ReviewerViewModel(
     private val nextJavascriptCommandId = AtomicInteger(0)
     internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     internal val cardMediaPlayer: CardMediaPlayer = CardMediaPlayer({ script ->
-        _evalCommand.value =
+        _evalCommand.tryEmit(
             ReviewerJavascriptCommand(nextJavascriptCommandId.incrementAndGet(), script)
+        )
     }, object : MediaErrorListener {
         override fun onError(uri: Uri): MediaErrorBehavior {
             Timber.w("Error playing media: %s", uri)
@@ -559,10 +560,6 @@ class ReviewerViewModel(
     fun onVideoFinished() = cardMediaPlayer.onVideoFinished()
 
     fun onVideoPaused() = cardMediaPlayer.onVideoPaused()
-
-    fun onJavascriptCommandConsumed(commandId: Int) {
-        _evalCommand.update { if (it?.id == commandId) null else it }
-    }
 
     private fun playAudio(side: String, index: Int) {
         viewModelScope.launch {

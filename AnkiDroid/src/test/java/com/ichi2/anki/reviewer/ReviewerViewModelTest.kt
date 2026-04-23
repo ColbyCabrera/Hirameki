@@ -28,7 +28,6 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
-import org.hamcrest.Matchers.nullValue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -129,8 +128,6 @@ class ReviewerViewModelTest : RobolectricTest() {
             ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
 
         viewModel.evalCommand.test {
-            assertThat(awaitItem(), nullValue())
-
             advanceRobolectricLooper()
 
             val script = awaitItem()!!.script
