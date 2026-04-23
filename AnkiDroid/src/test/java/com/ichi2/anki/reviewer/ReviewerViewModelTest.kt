@@ -28,7 +28,6 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
-import org.hamcrest.Matchers.nullValue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -76,7 +75,10 @@ class ReviewerViewModelTest : RobolectricTest() {
     fun `video tags render as inline video in reviewer html`() = runTest {
         addBasicNote("Front [sound:test.mp4]", "Back")
 
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+        testScheduler.advanceUntilIdle()
         advanceRobolectricLooper()
 
         val state = viewModel.state.first()
@@ -104,7 +106,10 @@ class ReviewerViewModelTest : RobolectricTest() {
     fun `audio tags remain replay buttons in reviewer html`() = runTest {
         addBasicNote("Front [sound:test.mp3]", "Back")
 
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+        testScheduler.advanceUntilIdle()
         advanceRobolectricLooper()
 
         val state = viewModel.state.first()
@@ -129,11 +134,11 @@ class ReviewerViewModelTest : RobolectricTest() {
             ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
 
         viewModel.evalCommand.test {
-            assertThat(awaitItem(), nullValue())
-
+            assertThat("No JavaScript should be queued before the scheduler runs", awaitItem().isEmpty(), equalTo(true))
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
-            val script = awaitItem()!!.script
+            val script = awaitItem().single().script
             assertThat(
                 "Autoplay should wait until the DOM is ready",
                 script,
