@@ -75,7 +75,10 @@ class ReviewerViewModelTest : RobolectricTest() {
     fun `video tags render as inline video in reviewer html`() = runTest {
         addBasicNote("Front [sound:test.mp4]", "Back")
 
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+        testScheduler.advanceUntilIdle()
         advanceRobolectricLooper()
 
         val state = viewModel.state.first()
@@ -103,7 +106,10 @@ class ReviewerViewModelTest : RobolectricTest() {
     fun `audio tags remain replay buttons in reviewer html`() = runTest {
         addBasicNote("Front [sound:test.mp3]", "Back")
 
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+        testScheduler.advanceUntilIdle()
         advanceRobolectricLooper()
 
         val state = viewModel.state.first()
@@ -142,9 +148,7 @@ class ReviewerViewModelTest : RobolectricTest() {
                 containsString("video.play();")
             )
             assertThat(
-                "Autoplay should target the card video file",
-                script,
-                containsString("test.mp4")
+                "Autoplay should target the card video file", script, containsString("test.mp4")
             )
             cancelAndIgnoreRemainingEvents()
         }
