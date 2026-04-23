@@ -54,6 +54,7 @@ fun Flashcard(
     questionHtml: String,
     answerHtml: String,
     bodyClass: String,
+    isMediaAutoplayEnabled: Boolean,
     javascriptCommand: ReviewerJavascriptCommand?,
     onJavascriptCommandConsumed: (Int) -> Unit,
     onTap: () -> Unit,
@@ -215,7 +216,7 @@ fun Flashcard(
                 settings.javaScriptEnabled = true
                 settings.allowFileAccess = true
                 settings.domStorageEnabled = true
-                settings.mediaPlaybackRequiresUserGesture = false
+                settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
 
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
@@ -298,6 +299,7 @@ fun Flashcard(
                 setBackgroundColor(Color.TRANSPARENT)
             }
         }, update = { webView ->
+            webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
             val currentPayload = webView.tag as? FlashcardPayload
             val shellChanged =
                 currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle

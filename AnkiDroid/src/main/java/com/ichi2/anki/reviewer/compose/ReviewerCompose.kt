@@ -326,6 +326,7 @@ fun ReviewerContent(
                         questionHtml = state.questionHtml,
                         answerHtml = state.answerHtml,
                         bodyClass = state.bodyClass,
+                        isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
                         javascriptCommand = javascriptCommand,
                         onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
                         onTap = { },
