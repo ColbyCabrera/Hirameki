@@ -445,13 +445,32 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
     @Test
     fun `unburyDeck - calls sched unbury and updates list`() = runTest {
-        val deckId = col.decks.id("Japanese")
-        // No easy way to check if unbury was called on mock col, so we just verify it runs without error
-        // and triggers a list update.
-        viewModel.unburyDeck(deckId).join()
+        // Add a card and bury it to set up the precondition
+        val note = addBasicNote("Front", "Back")
+        val cardId = note.firstCard().id
+        val deckId = Consts.DEFAULT_DECK_ID
 
-        // Success if it doesn't crash and we can still interact
-        assertThat(viewModel.isSyncing.value, equalTo(false))
+        col.sched.buryCards(listOf(cardId))
+        assertThat(
+            "card should be buried before unbury",
+            col.getCard(cardId).queue,
+            equalTo(com.ichi2.anki.libanki.QueueType.ManuallyBuried)
+        )
+
+        // Unbury the deck via the ViewModel
+        viewModel.unburyDeck(deckId).join()
+        advanceUntilIdle()
+
+        // Verify backend state: the card should no longer be buried
+        val cardAfter = col.getCard(cardId)
+        assertThat(
+            "card queue should be restored after unbury",
+            cardAfter.queue,
+            not(equalTo(com.ichi2.anki.libanki.QueueType.ManuallyBuried))
+        )
+
+        // Verify the ViewModel triggered a deck list update (undoable op)
+        assertThat("col undo status", col.undoStatus().undo, equalTo("Unbury/Unsuspend"))
     }
 
     @Test
