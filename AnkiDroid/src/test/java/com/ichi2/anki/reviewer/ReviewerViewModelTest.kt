@@ -134,9 +134,11 @@ class ReviewerViewModelTest : RobolectricTest() {
             ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
 
         viewModel.evalCommand.test {
+            assertThat("No JavaScript should be queued before the scheduler runs", awaitItem().isEmpty(), equalTo(true))
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
-            val script = awaitItem()!!.script
+            val script = awaitItem().single().script
             assertThat(
                 "Autoplay should wait until the DOM is ready",
                 script,
