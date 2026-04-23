@@ -18,7 +18,6 @@ package com.ichi2.anki
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.KeyEvent.ACTION_DOWN
-import android.view.KeyEvent.ACTION_UP
 import android.view.KeyEvent.KEYCODE_1
 import android.view.KeyEvent.KEYCODE_2
 import android.view.KeyEvent.KEYCODE_3
@@ -32,15 +31,12 @@ import android.view.KeyEvent.KEYCODE_F5
 import android.view.KeyEvent.KEYCODE_R
 import android.view.KeyEvent.KEYCODE_SPACE
 import android.view.KeyEvent.KEYCODE_Z
-import android.widget.EditText
 import androidx.annotation.CheckResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import anki.scheduler.CardAnswer.Rating
 import com.ibm.icu.impl.Assert
 import com.ichi2.anki.AnkiDroidApp.Companion.sharedPrefs
-import com.ichi2.anki.cardviewer.Gesture
 import com.ichi2.anki.cardviewer.ViewerCommand
-import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.reviewer.Binding.Companion.keyCode
 import com.ichi2.anki.reviewer.Binding.ModifierKeys
 import com.ichi2.anki.reviewer.BindingMap
@@ -49,9 +45,7 @@ import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.ReviewerBinding
 import com.ichi2.anki.utils.ext.addBinding
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.spyk
-import kotlinx.coroutines.Job
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
@@ -104,7 +98,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     /** START: DEFAULT IS "GOOD"  */
     @Test
     fun spaceAnswersThirdButtonWhenFourButtonsShowing() {
-        val underTest = KeyboardInputTestReviewer.displayingAnswer().withButtons(4)
+        val underTest = KeyboardInputTestReviewer.displayingAnswer()
         underTest.handleSpacebar()
         shadowOf(Looper.getMainLooper()).idle()
         assertThat(underTest.processedAnswer(), equalTo(Rating.GOOD))
@@ -141,7 +135,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     @Test
     fun pressingStarWillMarkCard() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
-        underTest.currentCard = addBasicNote("a", "").firstCard()
         underTest.handleUnicodeKeyPress('*')
         assertThat("Mark Card was called", underTest.markCardCalled)
     }
@@ -149,17 +142,13 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     @Test
     fun pressingEqualsWillBuryNote() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
-        underTest.currentCard = addBasicNote("a", "").firstCard()
         underTest.handleUnicodeKeyPress('=')
         assertThat("Bury Note should be called", underTest.buryNoteCalled)
     }
 
-//    override fun suspend
-
     @Test
     fun pressingAtWillSuspendCard() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
-        underTest.currentCard = addBasicNote("a", "").firstCard()
         underTest.handleUnicodeKeyPress('@')
         assertThat("Suspend Card should be called", underTest.suspendCardCalled)
     }
@@ -167,7 +156,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
     @Test
     fun pressingExclamationWillSuspendNote() {
         val underTest = KeyboardInputTestReviewer.displayingAnswer()
-        underTest.currentCard = addBasicNote("a", "").firstCard()
         underTest.handleUnicodeKeyPress('!')
         assertThat("Suspend Note should be called", underTest.suspendNoteCalled)
     }
@@ -252,10 +240,8 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         assertThat(underTest.processedAnswer(), equalTo(rating))
     }
 
-    internal class KeyboardInputTestReviewer : Reviewer(),
-        BindingProcessor<ReviewerBinding, ViewerCommand> {
+    internal class KeyboardInputTestReviewer : BindingProcessor<ReviewerBinding, ViewerCommand> {
         private var answered: Rating? = null
-        private var answerButtonCount = 4
         var editCardCalled = false
             private set
         var markCardCalled = false
@@ -265,19 +251,9 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         var replayMediaCalled = false
             private set
 
-        private var _currentCard: Card? = mockk<Card>(relaxed = true)
-        override var currentCard: Card?
-            get() = _currentCard
-            set(value) {
-                _currentCard = value
-            }
-
         private val cardFlips = mutableListOf<String>()
-        override val isDrawerOpen: Boolean
-            get() = false
-
-        private var focusedView: android.view.View? = null
-        override fun getCurrentFocus(): android.view.View? = focusedView
+        private var displayAnswer = false
+        private var isTextInputFocused = false
 
         fun displayAnswerForTest() {
             displayAnswer = true
@@ -302,17 +278,17 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             return true
         }
 
-        override fun displayCardAnswer() {
+        private fun displayCardAnswer() {
             cardFlips.add("answer")
             displayAnswer = true
         }
 
-        override fun displayCardQuestion() {
+        private fun displayCardQuestion() {
             cardFlips.add("question")
             displayAnswer = false
         }
 
-        override fun flipOrAnswerCard(cardOrdinal: Rating) {
+        private fun flipOrAnswerCard(cardOrdinal: Rating) {
             if (displayAnswer) {
                 answerCard(cardOrdinal)
                 displayCardQuestion()
@@ -326,17 +302,11 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         fun testIsDisplayingAnswer() = cardFlips.last() == "answer"
 
         fun handleUnicodeKeyPress(unicodeChar: Char) {
-            val downEvent = createUnicodeKeyEvent(ACTION_DOWN, unicodeChar)
+            val downEvent = createUnicodeKeyEvent(unicodeChar)
             try {
                 if (!processor.onKeyDown(downEvent)) {
-                    onKeyDown(0, downEvent)
+                    onUnhandledKeyDown(0)
                 }
-            } catch (e: Exception) {
-                Timber.e(e)
-            }
-            val upEvent = createUnicodeKeyEvent(ACTION_UP, unicodeChar)
-            try {
-                onKeyUp(0, upEvent)
             } catch (e: Exception) {
                 Timber.e(e)
             }
@@ -348,17 +318,11 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         ) {
             // COULD_BE_BETTER: Saves 20 seconds on tests to remove AndroidJUnit4,
             // but may let something slip through the cracks.
-            val e = createKeyEvent(ACTION_DOWN, keycode, unicodeChar)
+            val e = createKeyEvent(keycode, unicodeChar)
             try {
                 if (!processor.onKeyDown(e)) {
-                    onKeyDown(keycode, e)
+                    onUnhandledKeyDown(keycode)
                 }
-            } catch (ex: Exception) {
-                Timber.e(ex)
-            }
-            val upEvent = createKeyEvent(ACTION_UP, keycode, unicodeChar)
-            try {
-                onKeyUp(keycode, upEvent)
             } catch (ex: Exception) {
                 Timber.e(ex)
             }
@@ -366,45 +330,35 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
 
         // useful to obtain Unicode for keycode if run under AndroidJUnit4.
         fun handleAndroidKeyPress(keycode: Int) {
-            val downEvent = createKeyEvent(ACTION_DOWN, keycode)
+            val downEvent = createKeyEvent(keycode)
             try {
                 if (!processor.onKeyDown(downEvent)) {
-                    onKeyDown(keycode, downEvent)
+                    onUnhandledKeyDown(keycode)
                 }
-            } catch (ex: Exception) {
-                Timber.e(ex)
-            }
-            try {
-                onKeyUp(keycode, createKeyEvent(ACTION_UP, keycode))
             } catch (ex: Exception) {
                 Timber.e(ex)
             }
         }
 
         private fun createKeyEvent(
-            action: Int,
             keycode: Int,
             unicodeChar: Char = '\u0000',
-        ): KeyEvent = spyk(KeyEvent(action, keycode)) {
+        ): KeyEvent = spyk(KeyEvent(ACTION_DOWN, keycode)) {
             every { getUnicodeChar(any()) } returns unicodeChar.code
         }
 
         private fun createUnicodeKeyEvent(
-            action: Int,
             unicodeChar: Char,
-        ): KeyEvent = spyk(KeyEvent(action, 0)) {
+        ): KeyEvent = spyk(KeyEvent(ACTION_DOWN, 0)) {
             every { getUnicodeChar(any()) } returns unicodeChar.code
         }
 
         fun focusTextField(): KeyboardInputTestReviewer {
-            focusedView = mockk<EditText>(relaxed = true) {
-                every { onCheckIsTextEditor() } returns true
-            }
+            isTextInputFocused = true
             return this
         }
 
-        override fun answerCard(rating: Rating) {
-            super.answerCard(rating)
+        private fun answerCard(rating: Rating) {
             answered = rating
         }
 
@@ -413,11 +367,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
                 Assert.fail("No card was answered")
             }
             return answered!!
-        }
-
-        fun withButtons(answerButtonCount: Int): KeyboardInputTestReviewer {
-            this.answerButtonCount = answerButtonCount
-            return this
         }
 
         fun handleSpacebar() {
@@ -429,42 +378,14 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             handleKeyPress(buttonCode, '\u0000')
         }
 
-        override fun undo(): Job {
+        private fun undo() {
             undoCalled = true
-            return launchCatchingTask { }
         }
 
         var suspendNoteCalled: Boolean = false
         var buryNoteCalled: Boolean = false
 
-        override fun editCard(fromGesture: Gesture?) {
-            editCardCalled = true
-        }
-
-        override fun onMark(card: Card?) {
-            markCardCalled = true
-        }
-
         var suspendCardCalled: Boolean = false
-
-        override fun suspendCard(): Boolean {
-            suspendCardCalled = true
-            return true
-        }
-
-        override fun playMedia(doMediaReplay: Boolean) {
-            replayMediaCalled = true
-        }
-
-        override fun buryNote(): Boolean {
-            buryNoteCalled = true
-            return true
-        }
-
-        override fun suspendNote(): Boolean {
-            suspendNoteCalled = true
-            return true
-        }
 
         private var isUndoAvailable: Boolean = false
 
@@ -475,8 +396,84 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
 
         fun hasBeenAnswered(): Boolean = answered != null
 
-        override fun performClickWithVisualFeedback(rating: Rating) {
-            answerCard(rating)
+        private fun onUnhandledKeyDown(keyCode: Int): Boolean {
+            if (!displayAnswer && !isTextInputFocused) {
+                if (keyCode == KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+                    displayCardAnswer()
+                    return true
+                }
+            }
+            return false
+        }
+
+        private fun executeCommand(which: ViewerCommand): Boolean {
+            return when (which) {
+                ViewerCommand.SHOW_ANSWER -> {
+                    if (displayAnswer) {
+                        false
+                    } else {
+                        displayCardAnswer()
+                        true
+                    }
+                }
+
+                ViewerCommand.FLIP_OR_ANSWER_EASE1 -> {
+                    flipOrAnswerCard(Rating.AGAIN)
+                    true
+                }
+
+                ViewerCommand.FLIP_OR_ANSWER_EASE2 -> {
+                    flipOrAnswerCard(Rating.HARD)
+                    true
+                }
+
+                ViewerCommand.FLIP_OR_ANSWER_EASE3 -> {
+                    flipOrAnswerCard(Rating.GOOD)
+                    true
+                }
+
+                ViewerCommand.FLIP_OR_ANSWER_EASE4 -> {
+                    flipOrAnswerCard(Rating.EASY)
+                    true
+                }
+
+                ViewerCommand.EDIT -> {
+                    editCardCalled = true
+                    true
+                }
+
+                ViewerCommand.MARK -> {
+                    markCardCalled = true
+                    true
+                }
+
+                ViewerCommand.BURY_NOTE -> {
+                    buryNoteCalled = true
+                    true
+                }
+
+                ViewerCommand.SUSPEND_CARD -> {
+                    suspendCardCalled = true
+                    true
+                }
+
+                ViewerCommand.SUSPEND_NOTE -> {
+                    suspendNoteCalled = true
+                    true
+                }
+
+                ViewerCommand.PLAY_MEDIA -> {
+                    replayMediaCalled = true
+                    true
+                }
+
+                ViewerCommand.UNDO -> {
+                    undo()
+                    true
+                }
+
+                else -> false
+            }
         }
 
         companion object {
