@@ -87,6 +87,7 @@ data class ReviewerState(
     val typedAnswer: String = "",
     val isMarked: Boolean = false,
     val flag: Int = 0,
+    val isMediaAutoplayEnabled: Boolean = false,
     val mediaDirectory: File? = null,
     val isFinished: Boolean = false,
     val isWhiteboardEnabled: Boolean = false,
@@ -618,7 +619,11 @@ class ReviewerViewModel(
             clearPendingJavascriptCommands()
             _state.update {
                 it.copy(
-                    isFinished = true, newCount = 0, learnCount = 0, reviewCount = 0
+                    isFinished = true,
+                    newCount = 0,
+                    learnCount = 0,
+                    reviewCount = 0,
+                    isMediaAutoplayEnabled = false
                 )
             }
             _effect.emit(ReviewerEffect.NavigateToDeckPicker)
@@ -660,6 +665,7 @@ class ReviewerViewModel(
                     typedAnswer = "",
                     isMarked = note.hasTag(this, "marked"),
                     flag = card.userFlag(),
+                    isMediaAutoplayEnabled = cardMediaPlayer.config.autoplay,
                     mediaDirectory = this.media.dir,
                     isFinished = false
                 )

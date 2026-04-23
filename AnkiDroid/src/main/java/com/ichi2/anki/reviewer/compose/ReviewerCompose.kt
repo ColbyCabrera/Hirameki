@@ -326,10 +326,9 @@ fun ReviewerContent(
                         questionHtml = state.questionHtml,
                         answerHtml = state.answerHtml,
                         bodyClass = state.bodyClass,
+                        isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
                         javascriptCommand = javascriptCommands.firstOrNull(),
-                        onJavascriptCommandConsumed = { commandId ->
-                            viewModel.onJavascriptCommandConsumed(commandId)
-                        },
+                        onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
                         onTap = { },
                         onLinkClick = {
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))

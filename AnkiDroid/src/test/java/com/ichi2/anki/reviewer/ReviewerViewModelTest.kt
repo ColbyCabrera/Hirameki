@@ -278,7 +278,9 @@ class ReviewerViewModelTest : RobolectricTest() {
             addBasicNote("Front1", "Back1")
             addBasicNote("Front2", "Back2")
 
-            val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val viewModel =
+                ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
             advanceRobolectricLooper()
 
             var deletedCount: Int? = null
@@ -306,7 +308,9 @@ class ReviewerViewModelTest : RobolectricTest() {
     fun `undoDelete restores note after deleting the final card`() = runTest {
         addBasicNote("Front1", "Back1")
 
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
         advanceRobolectricLooper()
 
         var deletedCount: Int? = null
