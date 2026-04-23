@@ -61,7 +61,6 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -171,34 +170,35 @@ fun TagsDialog(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         shape = MaterialTheme.shapes.large
                     ) {
-                        val filteredTags by remember(
-                            allTags, searchQuery, isToggleChecked, deckTags
+                        val filteredTags = remember(
+                            allTags,
+                            searchQuery,
+                            isToggleChecked,
+                            deckTags,
+                            checkedTags,
+                            indeterminateTags
                         ) {
-                            derivedStateOf {
-                                allTags.tags.filter {
-                                    it.contains(
-                                        other = searchQuery, ignoreCase = true
-                                    ) && (!isToggleChecked || it in deckTags)
-                                }
+                            allTags.tags.filter {
+                                it.contains(
+                                    other = searchQuery, ignoreCase = true
+                                ) && (!isToggleChecked || it in deckTags || it in checkedTags || it in indeterminateTags)
                             }
                         }
-                        val potentialNewTag by remember(
-                            searchQuery, allTags, filteredTags, checkedTags, indeterminateTags
+                        val potentialNewTag = remember(
+                            searchQuery, allTags, checkedTags, indeterminateTags
                         ) {
-                            derivedStateOf {
-                                val trimmedQuery = searchQuery.trim()
-                                if (trimmedQuery.isEmpty()) {
-                                    null
-                                } else {
-                                    val existingTagsList = allTags.tags
-                                    // Show potential new tag only if it doesn't exist in all tags or selection
-                                    trimmedQuery.takeIf {
-                                        !isDuplicateTag(
-                                            trimmedQuery,
-                                            existingTagsList,
-                                            checkedTags + indeterminateTags
-                                        )
-                                    }
+                            val trimmedQuery = searchQuery.trim()
+                            if (trimmedQuery.isEmpty()) {
+                                null
+                            } else {
+                                val existingTagsList = allTags.tags
+                                // Show potential new tag only if it doesn't exist in all tags or selection
+                                trimmedQuery.takeIf {
+                                    !isDuplicateTag(
+                                        trimmedQuery,
+                                        existingTagsList,
+                                        checkedTags + indeterminateTags
+                                    )
                                 }
                             }
                         }
