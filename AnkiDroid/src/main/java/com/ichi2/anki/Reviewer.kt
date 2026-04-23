@@ -163,7 +163,24 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     private val flagItemIds = mutableSetOf<Int>()
 
     @VisibleForTesting
-    internal val viewModel: ReviewerViewModel by viewModels()
+    internal val viewModel: ReviewerViewModel by viewModels { ReviewerViewModel.factory() }
+
+    private inline fun <T> viewModelOrNull(
+        name: String,
+        supplier: () -> T?,
+    ): T? =
+        try {
+            supplier()
+        } catch (exception: IllegalStateException) {
+            Timber.tag(TAG).e(exception, "Failed to access %s before onCreate", name)
+            null
+        }
+
+    private fun voicePlaybackViewModelOrNull(): VoicePlaybackViewModel? =
+        viewModelOrNull("VoicePlaybackViewModel") { voicePlaybackViewModel }
+
+    private fun reviewerViewModelOrNull(): ReviewerViewModel? =
+        viewModelOrNull("ReviewerViewModel") { viewModel }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (showedActivityFailedScreen(savedInstanceState)) {
@@ -604,14 +621,14 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
         if (::whiteboardController.isInitialized) {
             whiteboardController.updateForNewCard()
         }
-        voicePlaybackViewModel.discardRecording()
+        voicePlaybackViewModelOrNull()?.discardRecording()
     }
 
     override fun closeReviewer(result: Int) {
         // Stop any pending recording
-        voicePlaybackViewModel.stopAndSaveRecording()
+        voicePlaybackViewModelOrNull()?.stopAndSaveRecording()
         // Discard the recording (which deletes the temp file)
-        voicePlaybackViewModel.discardRecording()
+        voicePlaybackViewModelOrNull()?.discardRecording()
         super.closeReviewer(result)
     }
 
@@ -944,7 +961,12 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     }
 
     override suspend fun updateCurrentCard() {
-        viewModel.loadCardSuspend()
+        val reviewerViewModel = reviewerViewModelOrNull()
+        if (reviewerViewModel == null) {
+            super.updateCurrentCard()
+            return
+        }
+        reviewerViewModel.loadCardSuspend()
     }
 
     override suspend fun answerCardInner(rating: Rating) {
@@ -1036,7 +1058,8 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     }
 
     override fun getCardMediaPlayers(): List<CardMediaPlayer> {
-        return super.getCardMediaPlayers() + viewModel.cardMediaPlayer
+        val composeCardMediaPlayer = reviewerViewModelOrNull()?.cardMediaPlayer
+        return super.getCardMediaPlayers() + listOfNotNull(composeCardMediaPlayer)
     }
 
     override fun initControls() {
@@ -1264,6 +1287,8 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
     }
 
     companion object {
+        private const val TAG = "Reviewer"
+
         /**
          * Bundle key for the deck id to review.
          */
