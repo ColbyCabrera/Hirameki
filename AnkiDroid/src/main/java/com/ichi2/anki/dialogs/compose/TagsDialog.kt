@@ -172,13 +172,13 @@ fun TagsDialog(
                         shape = MaterialTheme.shapes.large
                     ) {
                         val filteredTags by remember(
-                            allTags, searchQuery, isToggleChecked, deckTags
+                            allTags, searchQuery, isToggleChecked, deckTags, checkedTags, indeterminateTags
                         ) {
                             derivedStateOf {
                                 allTags.tags.filter {
                                     it.contains(
                                         other = searchQuery, ignoreCase = true
-                                    ) && (!isToggleChecked || it in deckTags)
+                                    ) && (!isToggleChecked || it in deckTags || it in checkedTags || it in indeterminateTags)
                                 }
                             }
                         }
