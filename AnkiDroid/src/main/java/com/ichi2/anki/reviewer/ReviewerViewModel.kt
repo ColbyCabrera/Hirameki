@@ -103,6 +103,8 @@ data class ReviewerJavascriptCommand(
     val script: String,
 )
 
+private const val MAX_PENDING_JAVASCRIPT_COMMANDS = 16
+
 sealed class ReviewerEvent {
     object ShowAnswer : ReviewerEvent()
     data class RateCard(val rating: CardAnswer.Rating) : ReviewerEvent()
@@ -158,8 +160,8 @@ class ReviewerViewModel(
     private val _effect = MutableSharedFlow<ReviewerEffect>()
     val effect: SharedFlow<ReviewerEffect> = _effect.asSharedFlow()
 
-    private val _evalCommand = MutableSharedFlow<ReviewerJavascriptCommand?>(extraBufferCapacity = 16)
-    val evalCommand: SharedFlow<ReviewerJavascriptCommand?> = _evalCommand.asSharedFlow()
+    private val _evalCommand = MutableStateFlow<List<ReviewerJavascriptCommand>>(emptyList())
+    val evalCommand: StateFlow<List<ReviewerJavascriptCommand>> = _evalCommand.asStateFlow()
 
     private val _currentCard = MutableStateFlow<Card?>(null)
     val currentCardFlow: StateFlow<Card?> = _currentCard.asStateFlow()
@@ -193,9 +195,7 @@ class ReviewerViewModel(
     private val nextJavascriptCommandId = AtomicInteger(0)
     internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
     internal val cardMediaPlayer: CardMediaPlayer = CardMediaPlayer({ script ->
-        _evalCommand.tryEmit(
-            ReviewerJavascriptCommand(nextJavascriptCommandId.incrementAndGet(), script)
-        )
+        enqueueJavascriptCommand(script)
     }, object : MediaErrorListener {
         override fun onError(uri: Uri): MediaErrorBehavior {
             Timber.w("Error playing media: %s", uri)
@@ -271,6 +271,23 @@ class ReviewerViewModel(
     override fun onCleared() {
         server.stop()
         cardMediaPlayer.close()
+    }
+
+    fun onJavascriptCommandConsumed(commandId: Int) {
+        _evalCommand.update { commands ->
+            commands.filterNot { it.id == commandId }
+        }
+    }
+
+    private fun enqueueJavascriptCommand(script: String) {
+        _evalCommand.update { commands ->
+            (commands + ReviewerJavascriptCommand(nextJavascriptCommandId.incrementAndGet(), script))
+                .takeLast(MAX_PENDING_JAVASCRIPT_COMMANDS)
+        }
+    }
+
+    private fun clearPendingJavascriptCommands() {
+        _evalCommand.value = emptyList()
     }
 
     override suspend fun handlePostRequest(uri: String, bytes: ByteArray): ByteArray =
@@ -472,6 +489,8 @@ class ReviewerViewModel(
         val card = currentCard ?: return
         val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
 
+        clearPendingJavascriptCommands()
+
         try {
             withCol { card.load(this) }
         } catch (e: CancellationException) {
@@ -527,6 +546,7 @@ class ReviewerViewModel(
     private fun editCard() {
         val card = currentCard ?: return
         viewModelScope.launch {
+            clearPendingJavascriptCommands()
             _effect.emit(ReviewerEffect.NavigateToEditCard(card.id))
         }
     }
@@ -595,6 +615,7 @@ class ReviewerViewModel(
         val cardAndQueueState = getNextCard()
         val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
         if (cardAndQueueState == null) {
+            clearPendingJavascriptCommands()
             _state.update {
                 it.copy(
                     isFinished = true, newCount = 0, learnCount = 0, reviewCount = 0
@@ -606,6 +627,7 @@ class ReviewerViewModel(
             return
         }
         val (card, queue) = cardAndQueueState
+        clearPendingJavascriptCommands()
         currentCard = card
         queueState = queue
         _queueStateFlow.value = queue

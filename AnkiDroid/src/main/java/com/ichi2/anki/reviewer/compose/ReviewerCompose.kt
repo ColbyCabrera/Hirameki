@@ -66,7 +66,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -101,7 +100,6 @@ import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
-import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.settings.Prefs
@@ -192,7 +190,7 @@ fun ReviewerContent(
     val currentNoteTags by viewModel.currentNoteTags.collectAsStateWithLifecycle()
     val deckTags by viewModel.deckTags.collectAsStateWithLifecycle()
     val filterByDeck by viewModel.filterByDeck.collectAsStateWithLifecycle()
-    val javascriptCommands = remember { mutableStateListOf<ReviewerJavascriptCommand>() }
+    val javascriptCommands by viewModel.evalCommand.collectAsStateWithLifecycle()
 
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
@@ -231,14 +229,6 @@ fun ReviewerContent(
                 else -> {
                     // All other effects are handled by the Activity
                 }
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.evalCommand.collectLatest { command ->
-            if (command != null) {
-                javascriptCommands.add(command)
             }
         }
     }
@@ -338,7 +328,7 @@ fun ReviewerContent(
                         bodyClass = state.bodyClass,
                         javascriptCommand = javascriptCommands.firstOrNull(),
                         onJavascriptCommandConsumed = { commandId ->
-                            javascriptCommands.removeAll { it.id == commandId }
+                            viewModel.onJavascriptCommandConsumed(commandId)
                         },
                         onTap = { },
                         onLinkClick = {
