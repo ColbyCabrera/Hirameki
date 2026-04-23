@@ -732,28 +732,14 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 // A unit test (testAnswerCardCatchesCardModifiedException) enforces this behavior.
                 if (msg.contains("card was modified", ignoreCase = true)) {
                     Timber.w(e, "Card was modified by another operation. Reloading queue")
-                    if (!isAttachedToApplication()) {
-                        return@launchCatchingTask
-                    }
                     updateCardAndRedraw()
                     return@launchCatchingTask
                 }
                 throw e
             }
-            if (!isAttachedToApplication()) {
-                return@launchCatchingTask
-            }
             updateCardAndRedraw()
         }
     }
-
-    private fun isAttachedToApplication(): Boolean =
-        try {
-            viewModelStore
-            true
-        } catch (_: IllegalStateException) {
-            false
-        }
 
     open suspend fun answerCardInner(rating: Rating) {
         // Legacy tests assume they can call answerCard() even outside of Reviewer
@@ -1448,10 +1434,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             cardWebView!!.pageDown(false)
             cardWebView.pageDown(false)
         }
-    }
-
-    protected open fun performClickWithVisualFeedback(rating: Rating) {
-        // Delay could potentially be lower - testing with 20 left a visible "click"
     }
 
     // ----------------------------------------------------------------------------
