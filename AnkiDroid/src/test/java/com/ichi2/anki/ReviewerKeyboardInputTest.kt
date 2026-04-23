@@ -274,8 +274,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             if (action == ViewerCommand.UNDO && !isUndoAvailable) {
                 return false
             }
-            executeCommand(action)
-            return true
+            return executeCommand(action)
         }
 
         private fun displayCardAnswer() {
