@@ -338,7 +338,12 @@ fun Flashcard(
                             currentOnJavascriptCommandConsumed(command.id)
                         }
                     } else {
-                        // Queue it up for when the page finishes loading
+                        // When FlashcardPayload.shellLoaded is false, onPageFinished runs
+                        // FlashcardPayload.pendingShellScript before
+                        // FlashcardPayload.pendingJavascriptCommand. That preserves shell-first
+                        // ordering, while currentOnJavascriptCommandConsumed only runs after the
+                        // command executes and FlashcardPayload.lastJavascriptCommandId becomes the
+                        // idempotency key for replay avoidance.
                         currentPayload.pendingShellScript = shellScript
                     }
                 }
