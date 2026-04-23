@@ -20,7 +20,6 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.core.net.toUri
-import androidx.core.text.htmlEncode
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import anki.scheduler.CardAnswer
@@ -32,6 +31,7 @@ import com.ichi2.anki.cardviewer.MediaErrorListener
 import com.ichi2.anki.cardviewer.SingleCardSide
 import com.ichi2.anki.cardviewer.TypeAnswer
 import com.ichi2.anki.dialogs.compose.TagsState
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Collection
@@ -41,13 +41,16 @@ import com.ichi2.anki.libanki.Tags
 import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.libanki.sched.CurrentQueueState
+import com.ichi2.anki.multimedia.expandSounds
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.bodyClassForCardOrd
 import com.ichi2.anki.servicelayer.NoteService
+import com.ichi2.anki.utils.CollectionPreferences
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +63,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 
 sealed class MediaError(open val message: String) {
     data class PlaybackError(val uri: Uri, override val message: String) : MediaError(message)
@@ -93,6 +97,13 @@ data class ReviewerState(
 data class AnswerFeedback(
     val rating: CardAnswer.Rating, val id: String = UUID.randomUUID().toString()
 )
+
+data class ReviewerJavascriptCommand(
+    val id: Int,
+    val script: String,
+)
+
+private const val MAX_PENDING_JAVASCRIPT_COMMANDS = 16
 
 sealed class ReviewerEvent {
     object ShowAnswer : ReviewerEvent()
@@ -136,7 +147,9 @@ sealed class ReviewerEffect {
     data class ShowTimeboxReachedDialog(val timebox: Collection.TimeboxReached) : ReviewerEffect()
 }
 
-class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHandler {
+class ReviewerViewModel(
+    app: Application, private val dispatcher: CoroutineDispatcher = ioDispatcher
+) : AndroidViewModel(app), PostRequestHandler {
 
     private val server = AnkiServer(this)
     var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
@@ -146,6 +159,9 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     private val _effect = MutableSharedFlow<ReviewerEffect>()
     val effect: SharedFlow<ReviewerEffect> = _effect.asSharedFlow()
+
+    private val _evalCommand = MutableStateFlow<List<ReviewerJavascriptCommand>>(emptyList())
+    val evalCommand: StateFlow<List<ReviewerJavascriptCommand>> = _evalCommand.asStateFlow()
 
     private val _currentCard = MutableStateFlow<Card?>(null)
     val currentCardFlow: StateFlow<Card?> = _currentCard.asStateFlow()
@@ -176,34 +192,35 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
     private val _flowOfDeleteResult = MutableSharedFlow<Int>()
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
+    private val nextJavascriptCommandId = AtomicInteger(0)
     internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
-    internal val cardMediaPlayer: CardMediaPlayer =
-        CardMediaPlayer({ }, object : MediaErrorListener {
-            override fun onError(uri: Uri): MediaErrorBehavior {
-                Timber.w("Error playing media: %s", uri)
-                val message = getApplication<Application>().getString(R.string.media_load_failed)
-                _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
-                return MediaErrorBehavior.CONTINUE_MEDIA
-            }
+    internal val cardMediaPlayer: CardMediaPlayer = CardMediaPlayer({ script ->
+        enqueueJavascriptCommand(script)
+    }, object : MediaErrorListener {
+        override fun onError(uri: Uri): MediaErrorBehavior {
+            Timber.w("Error playing media: %s", uri)
+            val message = getApplication<Application>().getString(R.string.media_load_failed)
+            _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
+            return MediaErrorBehavior.CONTINUE_MEDIA
+        }
 
-            override fun onMediaPlayerError(
-                mp: MediaPlayer?, which: Int, extra: Int, uri: Uri
-            ): MediaErrorBehavior {
-                Timber.w("Error playing media: %s", uri)
-                val message = getApplication<Application>().getString(R.string.media_load_failed)
-                _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
-                return MediaErrorBehavior.CONTINUE_MEDIA
-            }
+        override fun onMediaPlayerError(
+            mp: MediaPlayer?, which: Int, extra: Int, uri: Uri
+        ): MediaErrorBehavior {
+            Timber.w("Error playing media: %s", uri)
+            val message = getApplication<Application>().getString(R.string.media_load_failed)
+            _state.update { it.copy(mediaError = MediaError.PlaybackError(uri, message)) }
+            return MediaErrorBehavior.CONTINUE_MEDIA
+        }
 
-            override fun onTtsError(error: TtsPlayer.TtsError, isAutomaticPlayback: Boolean) {
-                Timber.w("TTS error: %s", error)
-                if (!isAutomaticPlayback) {
-                    val message =
-                        getApplication<Application>().getString(R.string.tts_playback_failed)
-                    _state.update { it.copy(mediaError = MediaError.TtsError(error, message)) }
-                }
+        override fun onTtsError(error: TtsPlayer.TtsError, isAutomaticPlayback: Boolean) {
+            Timber.w("TTS error: %s", error)
+            if (!isAutomaticPlayback) {
+                val message = getApplication<Application>().getString(R.string.tts_playback_failed)
+                _state.update { it.copy(mediaError = MediaError.TtsError(error, message)) }
             }
-        })
+        }
+    })
 
     /** A job that is running for the current card. This is used to prevent multiple actions from running at the same time. */
     private var cardActionJob: Job? = null
@@ -224,7 +241,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
      */
     private fun launchCardAction(block: suspend () -> Unit) {
         if (cardActionJob?.isActive == true || _state.value.isFinished) return
-        trackCardAction(viewModelScope.launch {
+        trackCardAction(viewModelScope.launch(dispatcher) {
             block()
         })
     }
@@ -236,11 +253,11 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun enqueueCardAction(block: suspend () -> Unit) {
         val currentJob = cardActionJob
         if (currentJob?.isActive != true) {
-            trackCardAction(viewModelScope.launch { block() })
+            trackCardAction(viewModelScope.launch(dispatcher) { block() })
             return
         }
 
-        trackCardAction(viewModelScope.launch {
+        trackCardAction(viewModelScope.launch(dispatcher) {
             currentJob.join()
             block()
         })
@@ -254,6 +271,23 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     override fun onCleared() {
         server.stop()
         cardMediaPlayer.close()
+    }
+
+    fun onJavascriptCommandConsumed(commandId: Int) {
+        _evalCommand.update { commands ->
+            commands.filterNot { it.id == commandId }
+        }
+    }
+
+    private fun enqueueJavascriptCommand(script: String) {
+        _evalCommand.update { commands ->
+            (commands + ReviewerJavascriptCommand(nextJavascriptCommandId.incrementAndGet(), script))
+                .takeLast(MAX_PENDING_JAVASCRIPT_COMMANDS)
+        }
+    }
+
+    private fun clearPendingJavascriptCommands() {
+        _evalCommand.value = emptyList()
     }
 
     override suspend fun handlePostRequest(uri: String, bytes: ByteArray): ByteArray =
@@ -283,6 +317,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
                 withCol { startTimebox() }
                 loadCardSuspend()
             }
+
             is ReviewerEvent.OnTypedAnswerChanged -> onTypedAnswerChanged(event.newText)
             is ReviewerEvent.ToggleMark -> toggleMark()
             is ReviewerEvent.SetFlag -> setFlag(event.flag)
@@ -452,6 +487,9 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     internal suspend fun reloadCardSuspend() {
         val card = currentCard ?: return
+        val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
+
+        clearPendingJavascriptCommands()
 
         try {
             withCol { card.load(this) }
@@ -472,29 +510,32 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val renderOutput = card.renderOutput(this, reload = true)
             val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
             val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
+            val processedQuestionHtml =
+                processHtml(questionHtml, renderOutput, this, showAudioPlayButtons)
+            val processedAnswerHtml =
+                processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
 
             queue = this.sched.currentQueueState()
 
-            updatedState =
-                _state.value.copy(
-                    mediaError = null,
-                    newCount = queue?.counts?.new ?: 0,
-                    learnCount = queue?.counts?.lrn ?: 0,
-                    reviewCount = queue?.counts?.rev ?: 0,
-                    questionHtml = processHtml(questionHtml, renderOutput, this),
-                    answerHtml = processHtml(answerHtml, renderOutput, this),
-                    bodyClass = bodyClassForCardOrd(card.ord),
-                    baseUrl = server.baseUrl(),
-                    isAnswerShown = false,
-                    showTypeInAnswer = typeAnswer.correct != null,
-                    nextTimes = List(4) { "" },
-                    chosenAnswer = "",
-                    typedAnswer = "",
-                    isMarked = note.hasTag(this, "marked"),
-                    flag = card.userFlag(),
-                    mediaDirectory = this.media.dir,
-                    isFinished = false
-                )
+            updatedState = _state.value.copy(
+                mediaError = null,
+                newCount = queue?.counts?.new ?: 0,
+                learnCount = queue?.counts?.lrn ?: 0,
+                reviewCount = queue?.counts?.rev ?: 0,
+                questionHtml = processedQuestionHtml,
+                answerHtml = processedAnswerHtml,
+                bodyClass = bodyClassForCardOrd(card.ord),
+                baseUrl = server.baseUrl(),
+                isAnswerShown = false,
+                showTypeInAnswer = typeAnswer.correct != null,
+                nextTimes = List(4) { "" },
+                chosenAnswer = "",
+                typedAnswer = "",
+                isMarked = note.hasTag(this, "marked"),
+                flag = card.userFlag(),
+                mediaDirectory = this.media.dir,
+                isFinished = false
+            )
         }
         queue?.timeboxReached?.let { _effect.emit(ReviewerEffect.ShowTimeboxReachedDialog(it)) }
         _state.value = requireNotNull(updatedState)
@@ -505,6 +546,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     private fun editCard() {
         val card = currentCard ?: return
         viewModelScope.launch {
+            clearPendingJavascriptCommands()
             _effect.emit(ReviewerEffect.NavigateToEditCard(card.id))
         }
     }
@@ -518,10 +560,26 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             return
         }
 
+        when {
+            url.startsWith("videoended:") -> {
+                onVideoFinished()
+                return
+            }
+
+            url.startsWith("videopause:") -> {
+                onVideoPaused()
+                return
+            }
+        }
+
         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         getApplication<Application>().startActivity(intent)
     }
+
+    fun onVideoFinished() = cardMediaPlayer.onVideoFinished()
+
+    fun onVideoPaused() = cardMediaPlayer.onVideoPaused()
 
     private fun playAudio(side: String, index: Int) {
         viewModelScope.launch {
@@ -555,7 +613,9 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
 
     internal suspend fun loadCardSuspend() {
         val cardAndQueueState = getNextCard()
+        val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
         if (cardAndQueueState == null) {
+            clearPendingJavascriptCommands()
             _state.update {
                 it.copy(
                     isFinished = true, newCount = 0, learnCount = 0, reviewCount = 0
@@ -567,6 +627,7 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             return
         }
         val (card, queue) = cardAndQueueState
+        clearPendingJavascriptCommands()
         currentCard = card
         queueState = queue
         _queueStateFlow.value = queue
@@ -578,14 +639,18 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
             val renderOutput = card.renderOutput(this)
             val questionHtml = typeAnswer.filterQuestion(renderOutput.questionText)
             val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
+            val processedQuestionHtml =
+                processHtml(questionHtml, renderOutput, this, showAudioPlayButtons)
+            val processedAnswerHtml =
+                processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
             _state.update {
                 it.copy(
                     mediaError = null,
                     newCount = queue.counts.new,
                     learnCount = queue.counts.lrn,
                     reviewCount = queue.counts.rev,
-                    questionHtml = processHtml(questionHtml, renderOutput, this),
-                    answerHtml = processHtml(answerHtml, renderOutput, this),
+                    questionHtml = processedQuestionHtml,
+                    answerHtml = processedAnswerHtml,
                     bodyClass = bodyClassForCardOrd(card.ord),
                     baseUrl = server.baseUrl(),
                     isAnswerShown = false,
@@ -610,17 +675,20 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
         val queue = queueState ?: return
 
         launchCardAction {
+            val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
             withCol {
                 val labels = this.sched.describeNextStates(queue.states)
                 typeAnswer.input = _state.value.typedAnswer
                 val renderOutput = card.renderOutput(this)
                 val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
+                val processedAnswerHtml =
+                    processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
 
                 val paddedLabels = (labels + List(4) { "" }).take(4)
 
                 _state.update {
                     it.copy(
-                        answerHtml = processHtml(answerHtml, renderOutput, this),
+                        answerHtml = processedAnswerHtml,
                         isAnswerShown = true,
                         nextTimes = paddedLabels
                     )
@@ -719,20 +787,18 @@ class ReviewerViewModel(app: Application) : AndroidViewModel(app), PostRequestHa
     }
 
     private fun processHtml(
-        html: String, renderOutput: TemplateRenderOutput, collection: Collection
+        html: String,
+        renderOutput: TemplateRenderOutput,
+        collection: Collection,
+        showAudioPlayButtons: Boolean,
     ): String {
         val escapedHtml = collection.media.escapeMediaFilenames(html)
-        val processedHtml = Sound.replaceAvRefsWith(escapedHtml, renderOutput) { avTag, avRef ->
-            when (avTag) {
-                is SoundOrVideoTag -> {
-                    val url = "playsound:${avRef.side}:${avRef.index}"
-                    val content = avTag.filename.htmlEncode()
-                    CardHtmlBuilder.createPlayButton(url, content)
-                }
-
-                else -> null
-            }
-        }
+        val processedHtml = expandSounds(
+            content = escapedHtml,
+            renderOutput = renderOutput,
+            showAudioPlayButtons = showAudioPlayButtons,
+            mediaDir = collection.media.dir,
+        )
         return CardHtmlBuilder.wrapWithStyles(processedHtml, renderOutput.css)
     }
 }

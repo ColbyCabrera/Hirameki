@@ -190,6 +190,7 @@ fun ReviewerContent(
     val currentNoteTags by viewModel.currentNoteTags.collectAsStateWithLifecycle()
     val deckTags by viewModel.deckTags.collectAsStateWithLifecycle()
     val filterByDeck by viewModel.filterByDeck.collectAsStateWithLifecycle()
+    val javascriptCommands by viewModel.evalCommand.collectAsStateWithLifecycle()
 
     // Load whiteboard state when first enabled
     // Capture isDarkMode once to prevent re-loading state on system theme changes
@@ -325,6 +326,10 @@ fun ReviewerContent(
                         questionHtml = state.questionHtml,
                         answerHtml = state.answerHtml,
                         bodyClass = state.bodyClass,
+                        javascriptCommand = javascriptCommands.firstOrNull(),
+                        onJavascriptCommandConsumed = { commandId ->
+                            viewModel.onJavascriptCommandConsumed(commandId)
+                        },
                         onTap = { },
                         onLinkClick = {
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))
