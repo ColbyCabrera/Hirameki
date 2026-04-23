@@ -14,8 +14,6 @@
  *  this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.ichi2.anki.ui.compose.shareddecks
- 
-import java.util.Locale
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -28,7 +26,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,6 +64,7 @@ import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
+import java.util.Locale
 
 /**
  * The main screen for displaying the progress of a shared deck download.
@@ -103,7 +101,7 @@ fun SharedDecksDownloadScreen(
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0), topBar = {
+        topBar = {
             AnkiTopAppBar(onNavigateUp = onNavigateUp)
         }) { innerPadding ->
         Column(
