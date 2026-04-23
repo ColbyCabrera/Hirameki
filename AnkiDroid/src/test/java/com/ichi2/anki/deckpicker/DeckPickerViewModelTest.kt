@@ -931,6 +931,8 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
             val deckId = col.decks.byName("New Deck")
             assertThat("deck exists in collection", deckId, not(equalTo(null)))
+
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
