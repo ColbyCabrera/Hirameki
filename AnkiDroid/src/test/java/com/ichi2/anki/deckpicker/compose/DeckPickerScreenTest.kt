@@ -60,34 +60,10 @@ class DeckPickerScreenTest : RobolectricTest() {
         val closeLabel = context.getString(R.string.close)
         val queryEvents = mutableListOf<String>()
 
-        composeTestRule.setContent {
-            var searchQuery by remember { mutableStateOf("") }
-
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = searchQuery,
-                    onSearchQueryChanged = {
-                        queryEvents += it
-                        searchQuery = it
-                    },
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            onSearchQueryChanged = {
+                queryEvents += it
+            })
 
         composeTestRule.onNodeWithContentDescription(searchDecksLabel).performClick()
         composeTestRule.onNodeWithText(searchDecksLabel).performTextInput("spanish")
@@ -97,42 +73,15 @@ class DeckPickerScreenTest : RobolectricTest() {
         assertEquals(listOf("spanish", ""), queryEvents)
     }
 
-
     @Test
     fun fabMenuInvokesGetSharedCallback() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = FabActions(
-                        onAddNote = {},
-                        onAddDeck = {},
-                        onAddSharedDeck = { callbackInvoked = true },
-                        onAddFilteredDeck = {},
-                        onImport = {},
-                    ),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            fabActions = emptyFabActions().copy(onAddSharedDeck = { callbackInvoked = true })
+        )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
@@ -149,35 +98,9 @@ class DeckPickerScreenTest : RobolectricTest() {
         val newDynamicDeckLabel = context.getString(R.string.new_dynamic_deck)
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = FabActions(
-                        onAddNote = {},
-                        onAddDeck = {},
-                        onAddSharedDeck = {},
-                        onAddFilteredDeck = { callbackInvoked = true },
-                        onImport = {},
-                    ),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            fabActions = emptyFabActions().copy(onAddFilteredDeck = { callbackInvoked = true })
+        )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
@@ -193,35 +116,9 @@ class DeckPickerScreenTest : RobolectricTest() {
         val fabMenuToggleLabel = context.getString(R.string.fab_menu_toggle)
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = FabActions(
-                        onAddNote = {},
-                        onAddDeck = { callbackInvoked = true },
-                        onAddSharedDeck = {},
-                        onAddFilteredDeck = {},
-                        onImport = {},
-                    ),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            fabActions = emptyFabActions().copy(onAddDeck = { callbackInvoked = true })
+        )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
@@ -238,35 +135,9 @@ class DeckPickerScreenTest : RobolectricTest() {
         val addCardLabel = context.getString(R.string.add_card)
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = FabActions(
-                        onAddNote = { callbackInvoked = true },
-                        onAddDeck = {},
-                        onAddSharedDeck = {},
-                        onAddFilteredDeck = {},
-                        onImport = {},
-                    ),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            fabActions = emptyFabActions().copy(onAddNote = { callbackInvoked = true })
+        )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
         composeTestRule.waitForIdle()
@@ -282,41 +153,9 @@ class DeckPickerScreenTest : RobolectricTest() {
         val deckName = "Japanese"
         val renameLabel = context.getString(R.string.rename_deck)
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-            }, fullDeckName = deckName
-        )
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, false)
+        setDeckPickerContent(deck = displayDeck(deckName))
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(renameLabel).assertIsDisplayed()
     }
@@ -328,42 +167,12 @@ class DeckPickerScreenTest : RobolectricTest() {
         val renameLabel = context.getString(R.string.rename_deck)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName),
+            deckRowActions = emptyDeckRowActions().copy(onRename = { callbackInvoked = true })
         )
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, false)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onRename = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(renameLabel).performClick()
         composeTestRule.waitForIdle()
@@ -378,42 +187,12 @@ class DeckPickerScreenTest : RobolectricTest() {
         val exportLabel = context.getString(R.string.export_deck)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName),
+            deckRowActions = emptyDeckRowActions().copy(onExportDeck = { callbackInvoked = true })
         )
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, false)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onExportDeck = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(exportLabel).performClick()
         composeTestRule.waitForIdle()
@@ -428,42 +207,12 @@ class DeckPickerScreenTest : RobolectricTest() {
         val customStudyLabel = context.getString(R.string.custom_study)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName),
+            deckRowActions = emptyDeckRowActions().copy(onCustomStudy = { callbackInvoked = true })
         )
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, false)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onCustomStudy = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(customStudyLabel).performClick()
         composeTestRule.waitForIdle()
@@ -478,44 +227,12 @@ class DeckPickerScreenTest : RobolectricTest() {
         val rebuildLabel = context.getString(R.string.rebuild_cram_label)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-                filtered = true
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName, filtered = true),
+            deckRowActions = emptyDeckRowActions().copy(onRebuild = { callbackInvoked = true })
         )
-        // Mark as filtered
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, true)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onRebuild = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(rebuildLabel).performClick()
         composeTestRule.waitForIdle()
@@ -530,44 +247,12 @@ class DeckPickerScreenTest : RobolectricTest() {
         val emptyLabel = context.getString(R.string.empty_cram_label)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-                filtered = true
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName, filtered = true),
+            deckRowActions = emptyDeckRowActions().copy(onEmpty = { callbackInvoked = true })
         )
-        // Mark as filtered
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, true)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onEmpty = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(emptyLabel).performClick()
         composeTestRule.waitForIdle()
@@ -582,42 +267,14 @@ class DeckPickerScreenTest : RobolectricTest() {
         val createSubdeckLabel = context.getString(R.string.create_subdeck)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName),
+            deckRowActions = emptyDeckRowActions().copy(onCreateSubdeck = {
+                callbackInvoked = true
+            })
         )
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, false)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onCreateSubdeck = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(createSubdeckLabel).performClick()
         composeTestRule.waitForIdle()
@@ -632,53 +289,12 @@ class DeckPickerScreenTest : RobolectricTest() {
         val deleteLabel = context.getString(R.string.contextmenu_deckpicker_delete_deck)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName),
+            deckRowActions = emptyDeckRowActions().copy(onDelete = { callbackInvoked = true })
         )
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, false)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = DeckRowActions(
-                        onDeckClick = {},
-                        onExpandClick = {},
-                        onDeckOptions = {},
-                        onRename = {},
-                        onCustomStudy = {},
-                        onUnbury = {},
-                        onExportDeck = {},
-                        onDelete = { callbackInvoked = true },
-                        onRebuild = {},
-                        onEmpty = {},
-                        onCreateSubdeck = {},
-                    ),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(deleteLabel).performClick()
         composeTestRule.waitForIdle()
@@ -693,42 +309,10 @@ class DeckPickerScreenTest : RobolectricTest() {
         val expandLabel = context.getString(R.string.expand)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-                collapsed = true
-                children.add(deckTreeNode { name = "Child"; deckId = 2L; level = 2 })
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName, collapsed = true),
+            deckRowActions = emptyDeckRowActions().copy(onExpandClick = { callbackInvoked = true })
         )
-        // Mark as collapsed and canCollapse
-        val deck = DisplayDeckNode.from(deckNode, true, 0L, false)
-
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onExpandClick = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
 
         composeTestRule.onNodeWithContentDescription(expandLabel).performClick()
         composeTestRule.waitForIdle()
@@ -743,43 +327,12 @@ class DeckPickerScreenTest : RobolectricTest() {
         val unburyLabel = context.getString(R.string.unbury)
         var callbackInvoked = false
 
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-            }, fullDeckName = deckName
+        setDeckPickerContent(
+            deck = displayDeck(deckName, hasBuried = true),
+            deckRowActions = emptyDeckRowActions().copy(onUnbury = { callbackInvoked = true })
         )
-        // Mark as having buried cards
-        val deck = DisplayDeckNode.from(deckNode, false, 0L, true)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = listOf(deck),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions().copy(
-                        onUnbury = { callbackInvoked = true }),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = false,
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
-        composeTestRule.waitForIdle()
+        openContextMenu(deckName)
 
         composeTestRule.onNodeWithText(unburyLabel).performClick()
         composeTestRule.waitForIdle()
@@ -794,33 +347,11 @@ class DeckPickerScreenTest : RobolectricTest() {
         val deleteEmptyCardsLabel = TR.actionsEmptyCards()
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = MoreOptionsMenuActions(
-                        onDeleteEmptyCards = { callbackInvoked = true },
-                        onCheckDatabase = {},
-                        onExport = {},
-                    ),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onDeleteEmptyCards = {
+                callbackInvoked = true
+            })
+        )
 
         composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
         composeTestRule.waitForIdle()
@@ -837,33 +368,11 @@ class DeckPickerScreenTest : RobolectricTest() {
         val checkDatabaseLabel = context.getString(R.string.check_db)
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = MoreOptionsMenuActions(
-                        onDeleteEmptyCards = {},
-                        onCheckDatabase = { callbackInvoked = true },
-                        onExport = {},
-                    ),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onCheckDatabase = {
+                callbackInvoked = true
+            })
+        )
 
         composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
         composeTestRule.waitForIdle()
@@ -880,33 +389,11 @@ class DeckPickerScreenTest : RobolectricTest() {
         val exportLabel = TR.actionsExport()
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = MoreOptionsMenuActions(
-                        onDeleteEmptyCards = {},
-                        onCheckDatabase = {},
-                        onExport = { callbackInvoked = true },
-                    ),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(
+            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onExport = {
+                callbackInvoked = true
+            })
+        )
 
         composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
         composeTestRule.waitForIdle()
@@ -921,29 +408,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val emptyMessage = context.getString(R.string.no_cards_placeholder_title)
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent()
 
         composeTestRule.onNodeWithText(emptyMessage).assertIsDisplayed()
     }
@@ -954,29 +419,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         val syncLabel = context.getString(R.string.sync_now)
         var callbackInvoked = false
 
-        composeTestRule.setContent {
-            AnkiDroidTheme {
-                DeckPickerScreen(
-                    fragmented = false,
-                    decks = emptyList(),
-                    isSyncing = false,
-                    onRefresh = { callbackInvoked = true },
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = {},
-                    onStartStudy = {},
-                    onCustomStudy = {},
-                    studyOptionsData = null,
-                    requestSearchFocus = false,
-                    onSearchFocusRequested = {},
-                    syncState = SyncIconState.Normal,
-                    isInInitialState = true,
-                )
-            }
-        }
+        setDeckPickerContent(onRefresh = { callbackInvoked = true })
 
         composeTestRule.onNodeWithContentDescription(syncLabel).performClick()
         composeTestRule.waitForIdle()
@@ -990,34 +433,80 @@ class DeckPickerScreenTest : RobolectricTest() {
         val openDrawerLabel = context.getString(R.string.navigation_drawer_open)
         var callbackInvoked = false
 
+        setDeckPickerContent(onNavigationIconClick = { callbackInvoked = true })
+
+        composeTestRule.onNodeWithContentDescription(openDrawerLabel).performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, callbackInvoked)
+    }
+
+    private fun displayDeck(
+        deckName: String,
+        filtered: Boolean = false,
+        collapsed: Boolean = false,
+        hasBuried: Boolean = false
+    ): DisplayDeckNode {
+        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
+            node = deckTreeNode {
+                name = deckName
+                deckId = 1L
+                level = 1
+                this.filtered = filtered
+                this.collapsed = collapsed
+                if (collapsed) {
+                    children.add(deckTreeNode { name = "Child"; deckId = 2L; level = 2 })
+                }
+            }, fullDeckName = deckName
+        )
+        return DisplayDeckNode.from(deckNode, collapsed, 0L, hasBuried)
+    }
+
+    private fun setDeckPickerContent(
+        deck: DisplayDeckNode? = null,
+        decks: List<DisplayDeckNode> = deck?.let { listOf(it) } ?: emptyList(),
+        deckRowActions: DeckRowActions = emptyDeckRowActions(),
+        fabActions: FabActions = emptyFabActions(),
+        moreOptionsMenuActions: MoreOptionsMenuActions = emptyMoreOptionsMenuActions(),
+        onRefresh: () -> Unit = {},
+        onNavigationIconClick: () -> Unit = {},
+        searchQuery: String = "",
+        onSearchQueryChanged: (String) -> Unit = {},
+        isInInitialState: Boolean = decks.isEmpty()
+    ) {
         composeTestRule.setContent {
+            var currentSearchQuery by remember { mutableStateOf(searchQuery) }
+
             AnkiDroidTheme {
                 DeckPickerScreen(
                     fragmented = false,
-                    decks = emptyList(),
+                    decks = decks,
                     isSyncing = false,
-                    onRefresh = {},
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    deckRowActions = emptyDeckRowActions(),
-                    fabActions = emptyFabActions(),
-                    moreOptionsMenuActions = emptyMoreOptionsMenuActions(),
-                    onNavigationIconClick = { callbackInvoked = true },
+                    onRefresh = onRefresh,
+                    searchQuery = currentSearchQuery,
+                    onSearchQueryChanged = {
+                        onSearchQueryChanged(it)
+                        currentSearchQuery = it
+                    },
+                    deckRowActions = deckRowActions,
+                    fabActions = fabActions,
+                    moreOptionsMenuActions = moreOptionsMenuActions,
+                    onNavigationIconClick = onNavigationIconClick,
                     onStartStudy = {},
                     onCustomStudy = {},
                     studyOptionsData = null,
                     requestSearchFocus = false,
                     onSearchFocusRequested = {},
                     syncState = SyncIconState.Normal,
-                    isInInitialState = true,
+                    isInInitialState = isInInitialState,
                 )
             }
         }
+    }
 
-        composeTestRule.onNodeWithContentDescription(openDrawerLabel).performClick()
+    private fun openContextMenu(deckName: String) {
+        composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
         composeTestRule.waitForIdle()
-
-        assertEquals(true, callbackInvoked)
     }
 
     private fun emptyDeckRowActions() = DeckRowActions(
