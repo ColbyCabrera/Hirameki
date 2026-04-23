@@ -26,9 +26,12 @@ import org.junit.Assert.assertEquals
 class EnvironmentTest {
     @Test
     fun testStorageState() {
-        ShadowEnvironment.setExternalStorageState(Environment.MEDIA_REMOVED)
-        println("External Storage State: ${Environment.getExternalStorageState()}")
-        println("AnkiDroidApp.isSdCardMounted: ${AnkiDroidApp.isSdCardMounted}")
-        assertEquals(false, AnkiDroidApp.isSdCardMounted)
+        val originalState = Environment.getExternalStorageState()
+        try {
+            ShadowEnvironment.setExternalStorageState(Environment.MEDIA_REMOVED)
+            assertEquals(false, AnkiDroidApp.isSdCardMounted)
+        } finally {
+            ShadowEnvironment.setExternalStorageState(originalState)
+        }
     }
 }
