@@ -179,21 +179,42 @@ fun Flashcard(
                         transform: none;
                     }
 
-                    .replay-button svg {
-                        color: ${onSurfaceColorHex}EF;
-                        display: inline-block;
-                        height: 64px;
-                        width: 64px;
+                    body.card .replay-button {
+                        --replay-button-size: 42px;
+                        --replay-button-icon-color: ${onSurfaceColorHex};
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 8px;
+                        border-radius: 8px;
+                        width: var(--replay-button-size);
+                        height: var(--replay-button-size);
+                        color: var(--replay-button-icon-color);
+                        text-decoration: none;
+                        cursor: pointer;
+                        transition: transform 0.1s, opacity 0.2s;
+                        -webkit-tap-highlight-color: transparent;
                     }
-                    .replay-button svg path {
-                        fill: ${onSurfaceColorHex}EF;
+                    body.card .replay-button:hover {
+                        opacity: 0.85;
                     }
-                    .replay-button .playImage {
+                    body.card .replay-button:active {
+                        opacity: 0.7;
+                        transform: scale(0.97);
+                    }
+                    body.card .replay-button:focus-visible {
+                        outline: 2px solid ${primaryColorHex};
+                        outline-offset: 2px;
+                    }
+                    body.card .replay-button .play-action {
                         display: block;
                         width: 100%;
                         height: 100%;
-                        fill: currentColor;
                         color: inherit;
+                        fill: currentColor;
+                    }
+                    body.card .replay-button .play-action path {
+                        fill: currentColor;
                     }
                 </style>
             """.trimIndent()

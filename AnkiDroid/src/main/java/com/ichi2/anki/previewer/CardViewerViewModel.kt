@@ -21,8 +21,10 @@ import androidx.annotation.CallSuper
 import androidx.core.net.toFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.OnErrorListener
+import com.ichi2.anki.R
 import com.ichi2.anki.cardviewer.CardMediaPlayer
 import com.ichi2.anki.cardviewer.MediaErrorBehavior
 import com.ichi2.anki.cardviewer.MediaErrorHandler
@@ -41,10 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
-abstract class CardViewerViewModel :
-    ViewModel(),
-    OnErrorListener,
-    PostRequestHandler {
+abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHandler {
     override val onError = MutableSharedFlow<String>()
     val onMediaError = MutableSharedFlow<String>()
     val onTtsError = MutableSharedFlow<TtsPlayer.TtsError>()
@@ -54,13 +53,12 @@ abstract class CardViewerViewModel :
 
     open val showingAnswer = MutableStateFlow(false)
 
-    protected val cardMediaPlayer =
-        CardMediaPlayer(
-            javascriptEvaluator = { launchCatchingIO { eval.emit(it) } },
-            mediaErrorListener = createSoundErrorListener(),
-        ).also {
-            addCloseable(it)
-        }
+    protected val cardMediaPlayer = CardMediaPlayer(
+        javascriptEvaluator = { launchCatchingIO { eval.emit(it) } },
+        mediaErrorListener = createSoundErrorListener(),
+    ).also {
+        addCloseable(it)
+    }
     abstract var currentCard: Deferred<Card>
 
     abstract val server: AnkiServer
@@ -119,7 +117,11 @@ abstract class CardViewerViewModel :
         replaceAvRefsWithPlayButtons(
             text = withCol { media.escapeMediaFilenames(text) },
             renderOutput = currentCard.await().let { card -> withCol { card.renderOutput(this) } },
+            replayButtonContentDescription = replayButtonContentDescription(),
         )
+
+    protected open fun replayButtonContentDescription(): String =
+        AnkiDroidApp.instance.getString(R.string.replay_media)
 
     protected open suspend fun showQuestion() {
         Timber.v("showQuestion")
@@ -128,8 +130,7 @@ abstract class CardViewerViewModel :
         val card = currentCard.await()
         val questionData = withCol { card.question(this) }
         val question = mungeQA(questionData)
-        val answer =
-            withCol { media.escapeMediaFilenames(card.answer(this)) }
+        val answer = withCol { media.escapeMediaFilenames(card.answer(this)) }
 
         eval.emit("_showQuestion(${Json.encodeToString(question)}, ${Json.encodeToString(answer)}, '${bodyClass()}');")
     }
@@ -194,13 +195,12 @@ abstract class CardViewerViewModel :
     override suspend fun handlePostRequest(
         uri: String,
         bytes: ByteArray,
-    ): ByteArray =
-        if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-            when (uri.substring(AnkiServer.ANKI_PREFIX.length)) {
-                "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
-                else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
-            }
-        } else {
-            throw IllegalArgumentException("Unhandled POST request: $uri")
+    ): ByteArray = if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
+        when (uri.substring(AnkiServer.ANKI_PREFIX.length)) {
+            "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
+            else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
         }
+    } else {
+        throw IllegalArgumentException("Unhandled POST request: $uri")
+    }
 }

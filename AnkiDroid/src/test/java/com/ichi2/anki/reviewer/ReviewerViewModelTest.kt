@@ -116,7 +116,27 @@ class ReviewerViewModelTest : RobolectricTest() {
         assertThat(
             "Audio tags should still render replay links",
             state.questionHtml,
-            containsString("playsound:q:0")
+            containsString("href=\"playsound:q:0\"")
+        )
+        assertThat(
+            "Audio tags should render the shared replay button wrapper",
+            state.questionHtml,
+            containsString("class=\"replay-button soundLink\"")
+        )
+        assertThat(
+            "Audio tags should render the historical triangle play icon",
+            state.questionHtml,
+            containsString("class=\"play-action\"")
+        )
+        assertThat(
+            "Audio tags should paint the icon from currentColor",
+            state.questionHtml,
+            containsString("fill=\"currentColor\"")
+        )
+        assertThat(
+            "Audio tags should not hardcode icon colors in the markup",
+            state.questionHtml,
+            not(containsString("fill=\"black\""))
         )
         assertThat(
             "Audio tags should not render inline video",
@@ -134,7 +154,11 @@ class ReviewerViewModelTest : RobolectricTest() {
             ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
 
         viewModel.evalCommand.test {
-            assertThat("No JavaScript should be queued before the scheduler runs", awaitItem().isEmpty(), equalTo(true))
+            assertThat(
+                "No JavaScript should be queued before the scheduler runs",
+                awaitItem().isEmpty(),
+                equalTo(true)
+            )
             testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 

@@ -100,7 +100,16 @@ code#typeans {
 }
 
 .replay-button {
+  --replay-button-size: 40px;
+  --replay-button-icon-color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--replay-button-size);
+  height: var(--replay-button-size);
+  color: var(--replay-button-icon-color);
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /*
@@ -124,33 +133,16 @@ preferred over using JavaScript.
 }
 
 
-/* Make sure the replay buttons look black or white unless explicitly
-changed. Use some fancy CSS to make the button align vertically, and
-scale up, but not down.  */
+/* Keep the replay icon themeable while matching the historical triangle-only shape. */
 
-.replay-button span {
-  display: inline-block;
-  vertical-align: middle;
-  padding: 5px;
+.replay-button .play-action {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  fill: currentcolor;
 }
 
-.replay-button span svg {
-  stroke: none;
-  fill: black;
-  display: inline;
-  height: 1em;
-  width: 1em;
-  min-width: 32px;
-  min-height: 32px;
-}
-
-.replay-button span img {
-  display: inline;
-  height: 1em;
-  width: 1em;
-  min-width: 32px;
-  min-height: 32px;
-}
-.night_mode .replay-button svg {
-  fill: white;
+.replay-button .play-action path {
+  fill: currentcolor;
 }
