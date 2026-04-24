@@ -285,8 +285,10 @@ class ReviewerViewModel(
 
     private fun enqueueJavascriptCommand(script: String) {
         _evalCommand.update { commands ->
-            (commands + ReviewerJavascriptCommand(nextJavascriptCommandId.incrementAndGet(), script))
-                .takeLast(MAX_PENDING_JAVASCRIPT_COMMANDS)
+            (commands + ReviewerJavascriptCommand(
+                nextJavascriptCommandId.incrementAndGet(),
+                script
+            )).takeLast(MAX_PENDING_JAVASCRIPT_COMMANDS)
         }
     }
 
@@ -807,6 +809,7 @@ class ReviewerViewModel(
             renderOutput = renderOutput,
             showAudioPlayButtons = showAudioPlayButtons,
             mediaDir = collection.media.dir,
+            replayButtonContentDescription = getApplication<Application>().getString(R.string.replay_media),
         )
         return CardHtmlBuilder.wrapWithStyles(processedHtml, renderOutput.css)
     }

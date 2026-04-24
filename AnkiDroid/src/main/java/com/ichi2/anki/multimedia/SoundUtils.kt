@@ -54,13 +54,18 @@ fun expandSounds(
     renderOutput: TemplateRenderOutput,
     showAudioPlayButtons: Boolean,
     mediaDir: File,
+    replayButtonContentDescription: String,
 ) = replaceAvRefsWith(content, renderOutput) { tag, playTag ->
 
     fun AvRef.asHtmlAudio(): String {
         if (!showAudioPlayButtons) return ""
         val playsound = "playsound:${this.side}:${this.index}"
 
-        return ReplayButtonBuilder.createReplayButton(playsound, extraClasses = "soundLink")
+        return ReplayButtonBuilder.createReplayButton(
+            url = playsound,
+            contentDescription = replayButtonContentDescription,
+            extraClasses = "soundLink",
+        )
     }
 
     fun SoundOrVideoTag.asHtmlVideo(): String {
@@ -71,12 +76,11 @@ fun expandSounds(
         val playsound = "${playTag.side}:${playTag.index}"
 
         val onEnded = """window.location.href = "videoended:$playsound";"""
-        val onPause = """if (this.currentTime != this.duration) { window.location.href = "videopause:$playsound"; }"""
+        val onPause =
+            """if (this.currentTime != this.duration) { window.location.href = "videopause:$playsound"; }"""
 
         // TODO: Make the loading screen nicer if the video doesn't autoplay
-        @Language("HTML")
-        val result =
-            """<video
+        @Language("HTML") val result = """<video
                     | src="$uri"
                     | controls
                     | data-file="${filename.htmlEncode()}"
@@ -102,25 +106,23 @@ fun expandSounds(
 suspend fun getAvTag(
     card: Card,
     url: String,
-): AvTag? =
-    AV_PLAYLINK_RE.matchEntire(url)?.let {
-        val values = it.groupValues
-        val questionSide = values[1] == "q"
-        val index = values[2].toInt()
-        val tags =
-            CollectionManager.withCol {
-                if (questionSide) {
-                    card.questionAvTags(this)
-                } else {
-                    card.answerAvTags(this)
-                }
-            }
-        if (index < tags.size) {
-            tags[index]
+): AvTag? = AV_PLAYLINK_RE.matchEntire(url)?.let {
+    val values = it.groupValues
+    val questionSide = values[1] == "q"
+    val index = values[2].toInt()
+    val tags = CollectionManager.withCol {
+        if (questionSide) {
+            card.questionAvTags(this)
         } else {
-            null
+            card.answerAvTags(this)
         }
     }
+    if (index < tags.size) {
+        tags[index]
+    } else {
+        null
+    }
+}
 
 /**
  * Return card text with play buttons added, or stripped.
@@ -133,10 +135,17 @@ suspend fun getAvTag(
 suspend fun replaceAvRefsWithPlayButtons(
     text: String,
     renderOutput: TemplateRenderOutput,
+    replayButtonContentDescription: String,
 ): String {
     val mediaDir = CollectionManager.withCol { media.dir }
     val hidePlayButtons = CollectionPreferences.getHidePlayAudioButtons()
-    return expandSounds(text, renderOutput, showAudioPlayButtons = !hidePlayButtons, mediaDir)
+    return expandSounds(
+        text,
+        renderOutput,
+        showAudioPlayButtons = !hidePlayButtons,
+        mediaDir = mediaDir,
+        replayButtonContentDescription = replayButtonContentDescription,
+    )
 }
 
 fun SoundOrVideoTag.getTagType(mediaDir: File): Type {

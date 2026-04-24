@@ -19,6 +19,7 @@ package com.ichi2.anki.cardviewer
 import android.content.Context
 import androidx.annotation.CheckResult
 import anki.config.ConfigKey
+import com.ichi2.anki.R
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
@@ -38,6 +39,7 @@ class AndroidCardRenderContext(
     private val cardAppearance: CardAppearance,
     private val cardTemplate: CardTemplate,
     private val showAudioPlayButtons: Boolean,
+    private val replayButtonContentDescription: String,
 ) {
     /**
      * Renders Android-specific functionality to produce a [RenderedCard]
@@ -49,7 +51,8 @@ class AndroidCardRenderContext(
         side: SingleCardSide,
     ): RenderedCard {
         // obtain the libAnki-rendered card
-        var content: String = if (side == SingleCardSide.FRONT) card.question(col) else card.answer(col)
+        var content: String =
+            if (side == SingleCardSide.FRONT) card.question(col) else card.answer(col)
         // IRI-encodes media: `foo bar` -> `foo%20bar`
         content = col.media.escapeMediaFilenames(content)
         // produces either an <input> or <span>...</span> to denote typed input
@@ -72,14 +75,13 @@ class AndroidCardRenderContext(
         val requiresMathjax = MathJax.textContainsMathjax(content)
 
         val style = cardAppearance.style
-        val script =
-            when (requiresMathjax) {
-                false -> ""
-                true ->
-                    """        <script src="file:///android_asset/backend/js/mathjax.js"></script>
+        val script = when (requiresMathjax) {
+            false -> ""
+            true -> """        <script src="file:///android_asset/backend/js/mathjax.js"></script>
         <script src="file:///android_asset/backend/js/vendor/mathjax/tex-chtml-full.js"></script>"""
-            }
-        val cardClass = cardAppearance.getCardClass(ord + 1) + if (requiresMathjax) " mathjax-needs-to-render" else ""
+        }
+        val cardClass =
+            cardAppearance.getCardClass(ord + 1) + if (requiresMathjax) " mathjax-needs-to-render" else ""
 
         Timber.v("content card = \n %s", content)
         Timber.v("::style:: / %s", style)
@@ -93,21 +95,19 @@ class AndroidCardRenderContext(
      * @param content The content to surround with tags.
      * @return The enriched content
      */
-    private fun enrichWithQADiv(content: String) =
-        buildString {
-            append("""<div id="qa">""")
-            append(content)
-            append("</div>")
-        }
+    private fun enrichWithQADiv(content: String) = buildString {
+        append("""<div id="qa">""")
+        append(content)
+        append("</div>")
+    }
 
     private fun filterTypeAnswer(
         content: String,
         side: SingleCardSide,
-    ): String =
-        when (side) {
-            SingleCardSide.FRONT -> typeAnswer.filterQuestion(content)
-            SingleCardSide.BACK -> typeAnswer.filterAnswer(content)
-        }
+    ): String = when (side) {
+        SingleCardSide.FRONT -> typeAnswer.filterQuestion(content)
+        SingleCardSide.BACK -> typeAnswer.filterAnswer(content)
+    }
 
     private fun expandSounds(
         content: String,
@@ -121,6 +121,7 @@ class AndroidCardRenderContext(
             renderOutput,
             showAudioPlayButtons,
             mediaDir,
+            replayButtonContentDescription,
         )
     }
 
@@ -139,6 +140,7 @@ class AndroidCardRenderContext(
                 cardAppearance,
                 cardHtmlTemplate,
                 showAudioPlayButtons,
+                context.getString(R.string.replay_media),
             )
         }
     }

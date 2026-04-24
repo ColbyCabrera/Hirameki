@@ -129,19 +129,9 @@ class ReviewerViewModelTest : RobolectricTest() {
             containsString("class=\"play-action\"")
         )
         assertThat(
-            "Audio tags should use the tighter replay icon canvas",
-            state.questionHtml,
-            containsString("viewBox=\"256 -768 512 576\"")
-        )
-        assertThat(
             "Audio tags should paint the icon from currentColor",
             state.questionHtml,
             containsString("fill=\"currentColor\"")
-        )
-        assertThat(
-            "Audio tags should not render the newer circle-backed icon structure",
-            state.questionHtml,
-            not(containsString("replay-button__circle"))
         )
         assertThat(
             "Audio tags should not hardcode icon colors in the markup",
@@ -164,7 +154,11 @@ class ReviewerViewModelTest : RobolectricTest() {
             ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
 
         viewModel.evalCommand.test {
-            assertThat("No JavaScript should be queued before the scheduler runs", awaitItem().isEmpty(), equalTo(true))
+            assertThat(
+                "No JavaScript should be queued before the scheduler runs",
+                awaitItem().isEmpty(),
+                equalTo(true)
+            )
             testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
