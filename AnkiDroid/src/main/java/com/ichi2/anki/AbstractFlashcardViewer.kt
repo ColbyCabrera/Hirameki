@@ -2243,7 +2243,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
         changes: OpChanges,
         handler: Any?,
     ) {
-        if (handler === this) return
+        if (handler === this || handler == "ToggleMark") return
         refreshRequired = ViewerRefresh.updateState(refreshRequired, changes)
         refreshIfRequired()
     }

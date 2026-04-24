@@ -755,7 +755,7 @@ class ReviewerViewModel(
             val note = withCol {
                 card.note(this)
             }
-            NoteService.toggleMark(note)
+            NoteService.toggleMark(note, handler = "ToggleMark")
             _state.update { it.copy(isMarked = !_state.value.isMarked) }
         }
     }

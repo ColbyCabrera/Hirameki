@@ -30,8 +30,13 @@ import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,29 +101,38 @@ fun ReviewerTopBar(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MarkIcon(isMarked: Boolean, onToggleMark: (Boolean) -> Unit) {
-    FilledIconToggleButton(
-        checked = isMarked,
-        onCheckedChange = onToggleMark,
-        shapes = IconButtonDefaults.toggleableShapes(),
-        colors = IconButtonDefaults.filledIconToggleButtonColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            checkedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            checkedContentColor = MaterialTheme.colorScheme.tertiary
-        )
+    val contentDescription = stringResource(if (isMarked) R.string.menu_unmark_note else R.string.menu_mark_note)
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+            positioning = TooltipAnchorPosition.Above,
+        ),
+        tooltip = { PlainTooltip { Text(contentDescription) } },
+        state = rememberTooltipState()
     ) {
-        Icon(
-            painter = if (isMarked) painterResource(R.drawable.star_shine_24px) else painterResource(
-                R.drawable.star_24px
-            ),
-            contentDescription = stringResource(if (isMarked) R.string.menu_unmark_note else R.string.menu_mark_note)
-        )
+        FilledIconToggleButton(
+            checked = isMarked,
+            onCheckedChange = onToggleMark,
+            shapes = IconButtonDefaults.toggleableShapes(),
+            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                checkedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                checkedContentColor = MaterialTheme.colorScheme.tertiary
+            )
+        ) {
+            Icon(
+                painter = if (isMarked) painterResource(R.drawable.star_shine_24px) else painterResource(
+                    R.drawable.star_24px
+                ),
+                contentDescription = contentDescription
+            )
+        }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlagIcon(currentFlag: Int, onSetFlag: (Int) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -144,21 +158,30 @@ fun FlagIcon(currentFlag: Int, onSetFlag: (Int) -> Unit) {
     )
 
     Box {
-        FilledIconButton(
-            onClick = { expanded = true },
-            shapes = IconButtonDefaults.shapes(),
-            colors = if (currentFlag in flagColors.indices && currentFlag != 0) IconButtonDefaults.filledIconButtonColors(
-                contentColor = flagColors[currentFlag],
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            ) else IconButtonDefaults.filledIconButtonColors(
-                contentColor = IconButtonDefaults.filledIconToggleButtonColors().contentColor,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            )
+        val contentDescription = stringResource(R.string.menu_flag_card)
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                positioning = TooltipAnchorPosition.Above,
+            ),
+            tooltip = { PlainTooltip { Text(contentDescription) } },
+            state = rememberTooltipState()
         ) {
-            Icon(
-                painter = painterResource(R.drawable.flag_24px),
-                contentDescription = stringResource(R.string.menu_flag_card),
-            )
+            FilledIconButton(
+                onClick = { expanded = true },
+                shapes = IconButtonDefaults.shapes(),
+                colors = if (currentFlag in flagColors.indices && currentFlag != 0) IconButtonDefaults.filledIconButtonColors(
+                    contentColor = flagColors[currentFlag],
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                ) else IconButtonDefaults.filledIconButtonColors(
+                    contentColor = IconButtonDefaults.filledIconToggleButtonColors().contentColor,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                )
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.flag_24px),
+                    contentDescription = contentDescription,
+                )
+            }
         }
         DropdownMenu(
             expanded = expanded, onDismissRequest = { expanded = false },
@@ -189,26 +212,51 @@ fun FlagIcon(currentFlag: Int, onSetFlag: (Int) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Counts(newCount: Int, learnCount: Int, reviewCount: Int, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier, horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        MorphingCardCount(
-            newCount,
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer
-        )
-        MorphingCardCount(
-            learnCount,
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer
-        )
-        MorphingCardCount(
-            reviewCount,
-            MaterialTheme.colorScheme.secondaryContainer,
-            MaterialTheme.colorScheme.onSecondaryContainer
-        )
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                positioning = TooltipAnchorPosition.Above,
+            ),
+            tooltip = { PlainTooltip { Text(stringResource(R.string.tags_dialog_option_new_cards)) } },
+            state = rememberTooltipState()
+        ) {
+            MorphingCardCount(
+                newCount,
+                MaterialTheme.colorScheme.primaryContainer,
+                MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                positioning = TooltipAnchorPosition.Above,
+            ),
+            tooltip = { PlainTooltip { Text(stringResource(R.string.learning)) } },
+            state = rememberTooltipState()
+        ) {
+            MorphingCardCount(
+                learnCount,
+                MaterialTheme.colorScheme.errorContainer,
+                MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                positioning = TooltipAnchorPosition.Above,
+            ),
+            tooltip = { PlainTooltip { Text(stringResource(R.string.review)) } },
+            state = rememberTooltipState()
+        ) {
+            MorphingCardCount(
+                reviewCount,
+                MaterialTheme.colorScheme.secondaryContainer,
+                MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        }
     }
 }
 
