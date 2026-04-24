@@ -757,7 +757,8 @@ class ReviewerViewModel(
             }
             try {
                 NoteService.toggleMark(note, handler = this@ReviewerViewModel)
-                _state.update { it.copy(isMarked = !it.isMarked) }
+                val isMarked = NoteService.isMarked(note)
+                _state.update { it.copy(isMarked = isMarked) }
             } catch (exception: CancellationException) {
                 throw exception
             } catch (exception: Exception) {

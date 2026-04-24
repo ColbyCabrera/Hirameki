@@ -219,6 +219,36 @@ class ReviewerViewModelTest : RobolectricTest() {
     }
 
     @Test
+    fun `toggleMark uses canonical mark state instead of flipping reviewer state`() = runTest {
+        val note = addBasicNote("Front", "Back")
+        NoteService.toggleMark(note)
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        assertThat("State should start marked", viewModel.state.value.isMarked, equalTo(true))
+
+        mockkObject(NoteService)
+        try {
+            coEvery {
+                NoteService.toggleMark(note = any(), handler = viewModel)
+            } answers { }
+            coEvery { NoteService.isMarked(note = any()) } returns true
+
+            viewModel.onEvent(ReviewerEvent.ToggleMark)
+            advanceRobolectricLooper()
+
+            assertThat(
+                "State should follow the canonical note mark state",
+                viewModel.state.value.isMarked,
+                equalTo(true)
+            )
+        } finally {
+            unmockkObject(NoteService)
+        }
+    }
+
+    @Test
     fun `toggleMark leaves reviewer state unchanged when note toggle fails`() = runTest {
         val note = addBasicNote("Front", "Back")
         val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
