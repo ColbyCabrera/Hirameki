@@ -60,14 +60,7 @@ fun expandSounds(
         if (!showAudioPlayButtons) return ""
         val playsound = "playsound:${this.side}:${this.index}"
 
-        @Language("HTML")
-        val result = """<a class="replay-button soundLink" href=$playsound><span>
-                        <svg class="playImage" viewBox="0 0 64 64" version="1.1">
-                            <circle cx="32" cy="32" r="29" fill="lightgrey"/>
-                            <path d="M56.502,32.301l-37.502,20.101l0.329,-40.804l37.173,20.703Z" fill="black"/>Replay
-                        </svg>
-                    </span></a>"""
-        return result
+        return ReplayButtonBuilder.createReplayButton(playsound, extraClasses = "soundLink")
     }
 
     fun SoundOrVideoTag.asHtmlVideo(): String {
