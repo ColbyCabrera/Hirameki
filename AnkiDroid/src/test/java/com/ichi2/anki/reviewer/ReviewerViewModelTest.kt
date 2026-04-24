@@ -19,6 +19,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.ichi2.anki.RobolectricTest
+import com.ichi2.anki.servicelayer.NoteService
+import io.mockk.coEvery
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -219,6 +223,76 @@ class ReviewerViewModelTest : RobolectricTest() {
 
         val state = viewModel.state.first()
         assertThat("Voice playback should be enabled", state.isVoicePlaybackEnabled, equalTo(true))
+    }
+
+    @Test
+    fun `toggleMark updates reviewer state after note is marked`() = runTest {
+        val note = addBasicNote("Front", "Back")
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        assertThat("Note should start unmarked", NoteService.isMarked(note), equalTo(false))
+        assertThat("State should start unmarked", viewModel.state.value.isMarked, equalTo(false))
+
+        viewModel.onEvent(ReviewerEvent.ToggleMark)
+        advanceRobolectricLooper()
+
+        val reloadedNote = col.getNote(note.id)
+        assertThat("Note should be marked after toggle", NoteService.isMarked(reloadedNote), equalTo(true))
+        assertThat("State should reflect marked note", viewModel.state.value.isMarked, equalTo(true))
+    }
+
+    @Test
+    fun `toggleMark uses canonical mark state instead of flipping reviewer state`() = runTest {
+        val note = addBasicNote("Front", "Back")
+        NoteService.toggleMark(note)
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        assertThat("State should start marked", viewModel.state.value.isMarked, equalTo(true))
+
+        mockkObject(NoteService)
+        try {
+            coEvery {
+                NoteService.toggleMark(note = any(), handler = viewModel)
+            } answers { }
+            coEvery { NoteService.isMarked(note = any()) } returns true
+
+            viewModel.onEvent(ReviewerEvent.ToggleMark)
+            advanceRobolectricLooper()
+
+            assertThat(
+                "State should follow the canonical note mark state",
+                viewModel.state.value.isMarked,
+                equalTo(true)
+            )
+        } finally {
+            unmockkObject(NoteService)
+        }
+    }
+
+    @Test
+    fun `toggleMark leaves reviewer state unchanged when note toggle fails`() = runTest {
+        val note = addBasicNote("Front", "Back")
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        mockkObject(NoteService)
+        try {
+            coEvery {
+                NoteService.toggleMark(note = any(), handler = viewModel)
+            } throws IllegalStateException("toggle failed")
+
+            viewModel.onEvent(ReviewerEvent.ToggleMark)
+            advanceRobolectricLooper()
+
+            val reloadedNote = col.getNote(note.id)
+            assertThat("Note should remain unmarked after failure", NoteService.isMarked(reloadedNote), equalTo(false))
+            assertThat("State should remain unchanged after failure", viewModel.state.value.isMarked, equalTo(false))
+        } finally {
+            unmockkObject(NoteService)
+        }
     }
 
     @Test

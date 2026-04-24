@@ -757,8 +757,15 @@ class ReviewerViewModel(
             val note = withCol {
                 card.note(this)
             }
-            NoteService.toggleMark(note)
-            _state.update { it.copy(isMarked = !_state.value.isMarked) }
+            try {
+                NoteService.toggleMark(note, handler = this@ReviewerViewModel)
+                val isMarked = NoteService.isMarked(note)
+                _state.update { it.copy(isMarked = isMarked) }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Timber.w(exception, "Failed to toggle note mark")
+            }
         }
     }
 
