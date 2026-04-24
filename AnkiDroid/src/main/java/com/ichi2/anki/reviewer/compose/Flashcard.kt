@@ -180,11 +180,13 @@ fun Flashcard(
                     }
 
                     body.card .replay-button {
-                        --replay-button-size: 64px;
+                        --replay-button-size: 42px;
                         --replay-button-icon-color: ${onSurfaceColorHex};
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
+                        margin: 8px;
+                        border-radius: 8px;
                         width: var(--replay-button-size);
                         height: var(--replay-button-size);
                         color: var(--replay-button-icon-color);
@@ -200,7 +202,6 @@ fun Flashcard(
                         opacity: 0.7;
                         transform: scale(0.97);
                     }
-                    body.card .replay-button:focus,
                     body.card .replay-button:focus-visible {
                         outline: 2px solid ${primaryColorHex};
                         outline-offset: 2px;

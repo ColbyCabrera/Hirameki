@@ -129,6 +129,11 @@ class ReviewerViewModelTest : RobolectricTest() {
             containsString("class=\"play-action\"")
         )
         assertThat(
+            "Audio tags should use the tighter replay icon canvas",
+            state.questionHtml,
+            containsString("viewBox=\"256 -768 512 576\"")
+        )
+        assertThat(
             "Audio tags should paint the icon from currentColor",
             state.questionHtml,
             containsString("fill=\"currentColor\"")
