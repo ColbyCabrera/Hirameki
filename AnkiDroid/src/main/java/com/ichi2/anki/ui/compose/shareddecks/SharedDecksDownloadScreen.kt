@@ -25,6 +25,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -77,13 +83,28 @@ import java.util.Locale
  * @param onNavigateUp Callback for when the user clicks the back navigation button.
  * @param onIntent Callback for processing user actions (intents) on this screen.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun SharedDecksDownloadScreen(
     state: DownloadUiState,
     onNavigateUp: () -> Unit,
     onIntent: (DownloadIntent) -> Unit,
 ) {
+
+    val context = LocalContext.current
+    var isExpanded = false
+    var currentContext = context
+    while (currentContext is android.content.ContextWrapper) {
+        if (currentContext is Activity) break
+        currentContext = currentContext.baseContext
+    }
+
+    val activity = currentContext as? Activity
+    if (activity != null) {
+        val windowSizeClass = calculateWindowSizeClass(activity)
+        isExpanded = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Expanded || windowSizeClass.widthSizeClass == WindowWidthSizeClass.Medium
+    }
+
     if (state.showCancelDialog) {
         AlertDialog(onDismissRequest = { onIntent(DownloadIntent.DismissCancelDialog) }, title = {
             Text(text = stringResource(R.string.cancel_download_question_title))
@@ -104,56 +125,120 @@ fun SharedDecksDownloadScreen(
         topBar = {
             AnkiTopAppBar(onNavigateUp = onNavigateUp)
         }) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                DownloadHero(status = state.status)
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = when (state.status) {
-                        DownloadStatus.Failed -> stringResource(R.string.download_failed)
-                        DownloadStatus.Complete -> stringResource(R.string.import_deck)
-                        else -> stringResource(R.string.downloading_file, state.fileName)
-                    },
-                    style = MaterialTheme.typography.displayMediumEmphasized,
-                    textAlign = TextAlign.Center,
-                    color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = when (state.status) {
-                        DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
-                        DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
-                        else -> stringResource(R.string.deck_download_progress_message)
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Box(
+        if (isExpanded) {
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f), contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                DownloadProgressSection(state = state)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    DownloadHero(status = state.status)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = when (state.status) {
+                            DownloadStatus.Failed -> stringResource(R.string.download_failed)
+                            DownloadStatus.Complete -> stringResource(R.string.import_deck)
+                            else -> stringResource(R.string.downloading_file, state.fileName)
+                        },
+                        style = MaterialTheme.typography.displayMediumEmphasized,
+                        textAlign = TextAlign.Center,
+                        color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = when (state.status) {
+                            DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
+                            DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
+                            else -> stringResource(R.string.deck_download_progress_message)
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(32.dp))
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f), contentAlignment = Alignment.Center
+                    ) {
+                        DownloadProgressSection(state = state)
+                    }
+
+                    DownloadActions(
+                        state = state, onIntent = onIntent
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    DownloadHero(status = state.status)
 
-            DownloadActions(
-                state = state, onIntent = onIntent
-            )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = when (state.status) {
+                            DownloadStatus.Failed -> stringResource(R.string.download_failed)
+                            DownloadStatus.Complete -> stringResource(R.string.import_deck)
+                            else -> stringResource(R.string.downloading_file, state.fileName)
+                        },
+                        style = MaterialTheme.typography.displayMediumEmphasized,
+                        textAlign = TextAlign.Center,
+                        color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = when (state.status) {
+                            DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
+                            DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
+                            else -> stringResource(R.string.deck_download_progress_message)
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f), contentAlignment = Alignment.Center
+                ) {
+                    DownloadProgressSection(state = state)
+                }
+
+                DownloadActions(
+                    state = state, onIntent = onIntent
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }
