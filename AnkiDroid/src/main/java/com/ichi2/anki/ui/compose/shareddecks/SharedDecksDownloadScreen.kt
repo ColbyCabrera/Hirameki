@@ -137,8 +137,7 @@ fun SharedDecksDownloadScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 24.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 24.dp)
             ) {
                 DownloadStatusContent(state = state, modifier = Modifier.weight(1f))
 
