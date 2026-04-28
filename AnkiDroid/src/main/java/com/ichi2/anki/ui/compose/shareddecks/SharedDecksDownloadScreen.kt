@@ -16,12 +16,9 @@
 package com.ichi2.anki.ui.compose.shareddecks
 
 import android.app.Activity
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -385,79 +382,72 @@ private fun DownloadProgressSection(
 private fun DownloadActions(
     state: DownloadUiState, onIntent: (DownloadIntent) -> Unit, modifier: Modifier = Modifier
 ) {
-
     Column(
-        modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        AnimatedVisibility(
-            visible = state.status == DownloadStatus.Complete, enter = fadeIn(), exit = fadeOut()
-        ) {
-            Button(
-                onClick = { onIntent(DownloadIntent.ImportClicked) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                shape = MaterialTheme.shapes.extraLarge
-            ) {
-                Text(
-                    text = stringResource(R.string.import_deck),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            visible = state.status == DownloadStatus.Failed, enter = fadeIn(), exit = fadeOut()
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        when (state.status) {
+            DownloadStatus.Complete -> {
                 Button(
-                    onClick = { onIntent(DownloadIntent.RetryClicked) },
+                    onClick = { onIntent(DownloadIntent.ImportClicked) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
                     shape = MaterialTheme.shapes.extraLarge
                 ) {
                     Text(
-                        text = stringResource(R.string.try_again),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-
-                FilledTonalButton(
-                    onClick = { onIntent(DownloadIntent.OpenInBrowserClicked) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    shape = MaterialTheme.shapes.extraLarge
-                ) {
-                    Text(
-                        text = stringResource(R.string.open_in_browser),
+                        text = stringResource(R.string.import_deck),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
             }
-        }
 
-        AnimatedVisibility(
-            visible = state.status != DownloadStatus.Complete && state.status != DownloadStatus.Failed,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            Button(
-                onClick = { onIntent(DownloadIntent.CancelClicked) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                colors = ButtonDefaults.buttonColors(
-                    contentColor = MaterialTheme.colorScheme.onError,
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text(
-                    text = stringResource(R.string.cancel_download),
-                    style = MaterialTheme.typography.labelLarge
-                )
+            DownloadStatus.Failed -> {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Button(
+                        onClick = { onIntent(DownloadIntent.RetryClicked) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        shape = MaterialTheme.shapes.extraLarge
+                    ) {
+                        Text(
+                            text = stringResource(R.string.try_again),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+
+                    FilledTonalButton(
+                        onClick = { onIntent(DownloadIntent.OpenInBrowserClicked) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        shape = MaterialTheme.shapes.extraLarge
+                    ) {
+                        Text(
+                            text = stringResource(R.string.open_in_browser),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                Button(
+                    onClick = { onIntent(DownloadIntent.CancelClicked) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = ButtonDefaults.buttonColors(
+                        contentColor = MaterialTheme.colorScheme.onError,
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(
+                        text = stringResource(R.string.cancel_download),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
         }
     }
