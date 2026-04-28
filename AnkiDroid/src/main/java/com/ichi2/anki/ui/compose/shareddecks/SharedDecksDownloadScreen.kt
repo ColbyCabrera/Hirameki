@@ -383,6 +383,7 @@ private fun DownloadActions(
     state: DownloadUiState, onIntent: (DownloadIntent) -> Unit, modifier: Modifier = Modifier
 ) {
     Column(
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         when (state.status) {
