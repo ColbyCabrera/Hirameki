@@ -50,11 +50,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
-import androidx.compose.ui.text.intl.Locale
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
 import kotlinx.coroutines.delay
@@ -168,7 +168,11 @@ fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUnti
                     ) {
                         Text(
                             text = String.format(
-                                Locale.current.platformLocale, "%02d:%02d:%02d", hours, minutes, seconds
+                                Locale.current.platformLocale,
+                                "%02d:%02d:%02d",
+                                hours,
+                                minutes,
+                                seconds
                             ),
                             fontFamily = RobotoMono,
                             fontSize = 70.sp,
@@ -188,8 +192,6 @@ fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUnti
 @Composable
 fun CongratsScreenPreview() {
     CongratsScreen(
-        onNavigateUp = {},
-        onDeckOptions = {},
-        timeUntilNextDay = 1000 * 60 * 60 * 4
+        onNavigateUp = {}, onDeckOptions = {}, timeUntilNextDay = 1000 * 60 * 60 * 4
     )
 }
