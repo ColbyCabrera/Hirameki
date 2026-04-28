@@ -167,12 +167,8 @@ fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUnti
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = String.format(
-                                Locale.current.platformLocale,
-                                "%02d:%02d:%02d",
-                                hours,
-                                minutes,
-                                seconds
+                            text = "%02d:%02d:%02d".format(
+                                Locale.current.platformLocale, hours, minutes, seconds
                             ),
                             fontFamily = RobotoMono,
                             fontSize = 70.sp,
