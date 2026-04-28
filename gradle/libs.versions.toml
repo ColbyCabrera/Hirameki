@@ -230,7 +230,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
 androidx-compose-animation = { group = "androidx.compose.animation", name = "animation" }
 androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit" }
-compose-material3-windowSizeClass = { group = "androidx.compose.material3", name = "material3-window-size-class" }
+androidx-compose-material3-windowsize = { group = "androidx.compose.material3", name = "material3-window-size-class", version.ref = "material3" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glanceAppWidget" }
