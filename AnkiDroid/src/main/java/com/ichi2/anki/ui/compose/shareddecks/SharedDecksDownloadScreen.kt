@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki.ui.compose.shareddecks
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -26,11 +27,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.ui.platform.LocalContext
-import android.app.Activity
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,12 +49,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,7 +84,11 @@ import java.util.Locale
  * @param onNavigateUp Callback for when the user clicks the back navigation button.
  * @param onIntent Callback for processing user actions (intents) on this screen.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalMaterial3WindowSizeClassApi::class
+)
 @Composable
 fun SharedDecksDownloadScreen(
     state: DownloadUiState,
@@ -92,18 +97,11 @@ fun SharedDecksDownloadScreen(
 ) {
 
     val context = LocalContext.current
-    var isExpanded = false
-    var currentContext = context
-    while (currentContext is android.content.ContextWrapper) {
-        if (currentContext is Activity) break
-        currentContext = currentContext.baseContext
-    }
-
-    val activity = currentContext as? Activity
-    if (activity != null) {
-        val windowSizeClass = calculateWindowSizeClass(activity)
-        isExpanded = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Expanded || windowSizeClass.widthSizeClass == WindowWidthSizeClass.Medium
-    }
+    val activity = context.findActivity()
+    val isExpanded = activity?.let {
+        val windowSizeClass = calculateWindowSizeClass(it)
+        windowSizeClass.widthSizeClass == WindowWidthSizeClass.Expanded || windowSizeClass.widthSizeClass == WindowWidthSizeClass.Medium
+    } ?: false
 
     if (state.showCancelDialog) {
         AlertDialog(onDismissRequest = { onIntent(DownloadIntent.DismissCancelDialog) }, title = {
@@ -133,39 +131,8 @@ fun SharedDecksDownloadScreen(
                     .padding(horizontal = 24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    DownloadHero(status = state.status)
+                DownloadStatusContent(state = state, modifier = Modifier.weight(1f))
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = when (state.status) {
-                            DownloadStatus.Failed -> stringResource(R.string.download_failed)
-                            DownloadStatus.Complete -> stringResource(R.string.import_deck)
-                            else -> stringResource(R.string.downloading_file, state.fileName)
-                        },
-                        style = MaterialTheme.typography.displayMediumEmphasized,
-                        textAlign = TextAlign.Center,
-                        color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = when (state.status) {
-                            DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
-                            DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
-                            else -> stringResource(R.string.deck_download_progress_message)
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
                 Spacer(modifier = Modifier.width(32.dp))
                 Column(
                     modifier = Modifier.weight(1f),
@@ -175,7 +142,8 @@ fun SharedDecksDownloadScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f), contentAlignment = Alignment.Center
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
                     ) {
                         DownloadProgressSection(state = state)
                     }
@@ -195,40 +163,13 @@ fun SharedDecksDownloadScreen(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    DownloadHero(status = state.status)
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = when (state.status) {
-                            DownloadStatus.Failed -> stringResource(R.string.download_failed)
-                            DownloadStatus.Complete -> stringResource(R.string.import_deck)
-                            else -> stringResource(R.string.downloading_file, state.fileName)
-                        },
-                        style = MaterialTheme.typography.displayMediumEmphasized,
-                        textAlign = TextAlign.Center,
-                        color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = when (state.status) {
-                            DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
-                            DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
-                            else -> stringResource(R.string.deck_download_progress_message)
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                DownloadStatusContent(state = state)
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f), contentAlignment = Alignment.Center
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
                 ) {
                     DownloadProgressSection(state = state)
                 }
@@ -240,6 +181,48 @@ fun SharedDecksDownloadScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+    }
+}
+
+/**
+ * Displays the hero icon and status text for the download.
+ */
+@Composable
+private fun DownloadStatusContent(
+    state: DownloadUiState, modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        DownloadHero(status = state.status)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = when (state.status) {
+                DownloadStatus.Failed -> stringResource(R.string.download_failed)
+                DownloadStatus.Complete -> stringResource(R.string.import_deck)
+                else -> stringResource(R.string.downloading_file, state.fileName)
+            },
+            style = MaterialTheme.typography.displayMediumEmphasized,
+            textAlign = TextAlign.Center,
+            color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = when (state.status) {
+                DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
+                DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
+                else -> stringResource(R.string.deck_download_progress_message)
+            },
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -509,14 +492,14 @@ fun DownloadProgressSectionPreview() {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DownloadProgressSectionWaitingPreview() {
-    AnkiDroidTheme {
-        DownloadProgressSection(
-            state = DownloadUiState(
-                progress = 0f, status = DownloadStatus.WaitingForNetwork
-            )
-        )
+/**
+ * Extension function to find the underlying Activity from a Context.
+ */
+private fun android.content.Context.findActivity(): Activity? {
+    var context = this
+    while (context is android.content.ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
     }
+    return null
 }
