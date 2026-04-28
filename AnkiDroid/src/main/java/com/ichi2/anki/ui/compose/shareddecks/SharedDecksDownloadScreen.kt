@@ -59,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -94,14 +95,22 @@ fun SharedDecksDownloadScreen(
     state: DownloadUiState,
     onNavigateUp: () -> Unit,
     onIntent: (DownloadIntent) -> Unit,
+    windowWidthSizeClass: WindowWidthSizeClass? = null,
 ) {
 
     val context = LocalContext.current
-    val activity = context.findActivity()
-    val isExpanded = activity?.let {
-        val windowSizeClass = calculateWindowSizeClass(it)
-        windowSizeClass.widthSizeClass == WindowWidthSizeClass.Expanded || windowSizeClass.widthSizeClass == WindowWidthSizeClass.Medium
-    } ?: false
+    val windowInfo = LocalWindowInfo.current
+
+    val widthSizeClass = windowWidthSizeClass ?: context.findActivity()?.let {
+        calculateWindowSizeClass(it).widthSizeClass
+    } ?: when {
+        windowInfo.containerDpSize.width >= 840.dp -> WindowWidthSizeClass.Expanded
+        windowInfo.containerDpSize.width >= 600.dp -> WindowWidthSizeClass.Medium
+        else -> WindowWidthSizeClass.Compact
+    }
+
+    val isExpanded =
+        widthSizeClass == WindowWidthSizeClass.Expanded || widthSizeClass == WindowWidthSizeClass.Medium
 
     if (state.showCancelDialog) {
         AlertDialog(onDismissRequest = { onIntent(DownloadIntent.DismissCancelDialog) }, title = {
@@ -145,11 +154,15 @@ fun SharedDecksDownloadScreen(
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        DownloadProgressSection(state = state)
+                        DownloadProgressSection(
+                            state = state, modifier = Modifier
+                                .aspectRatio(1f)
+                                .padding(20.dp)
+                        )
                     }
 
                     DownloadActions(
-                        state = state, onIntent = onIntent
+                        state = state, onIntent = onIntent, modifier = Modifier.fillMaxWidth()
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -171,11 +184,15 @@ fun SharedDecksDownloadScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    DownloadProgressSection(state = state)
+                    DownloadProgressSection(
+                        state = state, modifier = Modifier
+                            .aspectRatio(1f)
+                            .padding(20.dp)
+                    )
                 }
 
                 DownloadActions(
-                    state = state, onIntent = onIntent
+                    state = state, onIntent = onIntent, modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -196,7 +213,9 @@ private fun DownloadStatusContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        DownloadHero(status = state.status)
+        DownloadHero(
+            status = state.status, modifier = Modifier.size(120.dp)
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -233,7 +252,9 @@ private fun DownloadStatusContent(
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun DownloadHero(status: DownloadStatus) {
+private fun DownloadHero(
+    status: DownloadStatus, modifier: Modifier = Modifier
+) {
 
     val containerColor = when (status) {
         DownloadStatus.Failed -> MaterialTheme.colorScheme.errorContainer
@@ -259,7 +280,7 @@ private fun DownloadHero(status: DownloadStatus) {
     }
 
     Box(
-        modifier = Modifier.size(120.dp), contentAlignment = Alignment.Center
+        modifier = modifier, contentAlignment = Alignment.Center
     ) {
 
         Surface(
@@ -282,7 +303,9 @@ private fun DownloadHero(status: DownloadStatus) {
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun DownloadProgressSection(state: DownloadUiState) {
+private fun DownloadProgressSection(
+    state: DownloadUiState, modifier: Modifier = Modifier
+) {
 
     val animatedProgress by animateFloatAsState(
         targetValue = state.progress / 100f, animationSpec = spring(
@@ -290,9 +313,7 @@ private fun DownloadProgressSection(state: DownloadUiState) {
         ), label = "DownloadProgress"
     )
     Box(
-        modifier = Modifier
-            .aspectRatio(1f)
-            .padding(20.dp), contentAlignment = Alignment.Center
+        modifier = modifier, contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
@@ -363,11 +384,11 @@ private fun DownloadProgressSection(state: DownloadUiState) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadActions(
-    state: DownloadUiState, onIntent: (DownloadIntent) -> Unit
+    state: DownloadUiState, onIntent: (DownloadIntent) -> Unit, modifier: Modifier = Modifier
 ) {
 
     Column(
-        modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AnimatedVisibility(
             visible = state.status == DownloadStatus.Complete, enter = fadeIn(), exit = fadeOut()
@@ -456,6 +477,20 @@ fun SharedDecksDownloadScreenPreview() {
     }
 }
 
+@Preview(device = "spec:width=411dp,height=891dp,orientation=landscape", showBackground = true)
+@Composable
+fun SharedDecksDownloadScreenLandscapePreview() {
+    AnkiDroidTheme {
+        SharedDecksDownloadScreen(
+            state = DownloadUiState(
+            fileName = "Medical Terminology.apkg",
+            progress = 45f,
+            status = DownloadStatus.Downloading
+        ), onNavigateUp = {}, onIntent = {}, windowWidthSizeClass = WindowWidthSizeClass.Medium
+        )
+    }
+}
+
 @Preview
 @Composable
 fun SharedDecksDownloadScreenFailedPreview() {
@@ -487,7 +522,9 @@ fun DownloadProgressSectionPreview() {
         DownloadProgressSection(
             state = DownloadUiState(
                 progress = 75f, status = DownloadStatus.Downloading
-            )
+            ), modifier = Modifier
+                .aspectRatio(1f)
+                .padding(20.dp)
         )
     }
 }
