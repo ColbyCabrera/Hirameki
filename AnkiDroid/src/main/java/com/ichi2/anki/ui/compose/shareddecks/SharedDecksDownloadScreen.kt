@@ -154,11 +154,11 @@ fun SharedDecksDownloadScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         DownloadProgressSection(
-                            state = state, modifier = Modifier
-                                .aspectRatio(1f)
-                                .padding(20.dp)
+                            state = state, modifier = Modifier.aspectRatio(1f)
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     DownloadActions(
                         state = state, onIntent = onIntent, modifier = Modifier.fillMaxWidth()
