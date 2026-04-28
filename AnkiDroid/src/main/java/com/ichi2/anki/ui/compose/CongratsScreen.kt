@@ -54,10 +54,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
+import androidx.compose.ui.text.intl.Locale
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
 import kotlinx.coroutines.delay
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -168,7 +168,7 @@ fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUnti
                     ) {
                         Text(
                             text = String.format(
-                                Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds
+                                Locale.current.platformLocale, "%02d:%02d:%02d", hours, minutes, seconds
                             ),
                             fontFamily = RobotoMono,
                             fontSize = 70.sp,
