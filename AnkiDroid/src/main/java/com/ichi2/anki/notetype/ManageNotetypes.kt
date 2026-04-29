@@ -26,16 +26,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
 import anki.notetypes.copy
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardTemplateEditor
@@ -162,35 +162,34 @@ class ManageNotetypes : AnkiActivity() {
                 },
             )
             val dialog = AlertDialog.Builder(this@ManageNotetypes).show {
-                    title(R.string.rename_model)
-                    positiveButton(R.string.rename) { it ->
-                        launchCatchingTask(
-                            // TODO: Change to CardTypeException: https://github.com/ankidroid/Anki-Android-Backend/issues/537
-                            // Card template 1 in note type 'character' has a problem.
-                            // Expected to find a field replacement on the front of the card template.
-                            skipCrashReport = { it is BackendException },
-                        ) {
-                            runAndRefreshAfter {
-                                val initialNotetype = getNotetype(manageNoteTypeUiModel.id)
-                                val renamedNotetype = initialNotetype.copy {
-                                    this.name = (it as AlertDialog).getInputField().text.toString()
-                                }
-                                updateNotetype(renamedNotetype)
+                title(R.string.rename_model)
+                positiveButton(R.string.rename) { it ->
+                    launchCatchingTask(
+                        // TODO: Change to CardTypeException: https://github.com/ankidroid/Anki-Android-Backend/issues/537
+                        // Card template 1 in note type 'character' has a problem.
+                        // Expected to find a field replacement on the front of the card template.
+                        skipCrashReport = { it is BackendException },
+                    ) {
+                        runAndRefreshAfter {
+                            val initialNotetype = getNotetype(manageNoteTypeUiModel.id)
+                            val renamedNotetype = initialNotetype.copy {
+                                this.name = (it as AlertDialog).getInputField().text.toString()
                             }
+                            updateNotetype(renamedNotetype)
                         }
                     }
-                    negativeButton(R.string.dialog_cancel)
-                    setView(R.layout.dialog_generic_text_input)
-                }.input(
-                    prefill = manageNoteTypeUiModel.name,
-                    waitForPositiveButton = false,
-                    displayKeyboard = true,
-                    callback = { dialog, text ->
-                        dialog.positiveButton.isEnabled =
-                            text.isNotEmpty() && !allNotetypes.map { it.name }
-                                .contains(text.toString())
-                    },
-                )
+                }
+                negativeButton(R.string.dialog_cancel)
+                setView(R.layout.dialog_generic_text_input)
+            }.input(
+                prefill = manageNoteTypeUiModel.name,
+                waitForPositiveButton = false,
+                displayKeyboard = true,
+                callback = { dialog, text ->
+                    dialog.positiveButton.isEnabled =
+                        text.isNotEmpty() && !allNotetypes.map { it.name }.contains(text.toString())
+                },
+            )
             // start with the button disabled as dialog shows the initial name
             dialog.positiveButton.isEnabled = false
         }

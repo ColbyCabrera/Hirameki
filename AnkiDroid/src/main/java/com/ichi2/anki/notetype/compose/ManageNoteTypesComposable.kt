@@ -97,9 +97,7 @@ fun NoteTypeItem(
         supportingContent = {
             Text(
                 pluralStringResource(
-                    R.plurals.manage_notetypes_note_count,
-                    noteType.useCount,
-                    noteType.useCount
+                    R.plurals.manage_notetypes_note_count, noteType.useCount, noteType.useCount
                 )
             )
         },
