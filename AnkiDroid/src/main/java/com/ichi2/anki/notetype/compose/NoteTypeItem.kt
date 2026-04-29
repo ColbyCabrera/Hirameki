@@ -23,14 +23,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -40,6 +41,29 @@ import com.ichi2.anki.R
 import com.ichi2.anki.notetype.ManageNoteTypeUiModel
 import com.ichi2.anki.ui.compose.components.MorphingCardCount
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val MORPHING_SHAPES = listOf(
+    MaterialShapes.Circle,
+    MaterialShapes.Pill,
+    MaterialShapes.SoftBurst,
+    MaterialShapes.Pentagon,
+    MaterialShapes.Sunny,
+    MaterialShapes.Square,
+    MaterialShapes.Slanted,
+    MaterialShapes.Arch,
+    MaterialShapes.Cookie4Sided,
+    MaterialShapes.Cookie6Sided,
+    MaterialShapes.Cookie7Sided,
+    MaterialShapes.Cookie9Sided,
+    MaterialShapes.Cookie12Sided,
+    MaterialShapes.Clover4Leaf,
+    MaterialShapes.Clover8Leaf,
+    MaterialShapes.SoftBoom,
+    MaterialShapes.Ghostish,
+    MaterialShapes.Puffy,
+    MaterialShapes.Flower
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -69,10 +93,14 @@ fun NoteTypeItem(
             MorphingCardCount(
                 cardCount = noteType.useCount,
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                shapes = MORPHING_SHAPES
             )
         }, trailingContent = {
-            IconButton(onClick = onClick) {
+            IconButton(
+                onClick = onClick,
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+            ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = stringResource(id = R.string.more_options),
@@ -90,8 +118,6 @@ fun NoteTypeItem(
 fun NoteTypeItemPreview() {
     AnkiDroidTheme {
         NoteTypeItem(
-            noteType = ManageNoteTypeUiModel(0, "Basic", 10),
-            onClick = {}
-        )
+            noteType = ManageNoteTypeUiModel(0, "Basic", 10), onClick = {})
     }
 }
