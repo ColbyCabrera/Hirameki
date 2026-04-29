@@ -72,9 +72,7 @@ fun NoteTypeItem(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onClick() },
+        modifier = Modifier.clickable { onClick() },
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
