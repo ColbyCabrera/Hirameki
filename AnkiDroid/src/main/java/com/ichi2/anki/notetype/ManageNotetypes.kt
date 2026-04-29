@@ -26,7 +26,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
-import androidx.activity.compose.setContent
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -64,7 +67,8 @@ import net.ankiweb.rsdroid.BackendException
 class ManageNotetypes : AnkiActivity() {
     private lateinit var actionBar: ActionBar
 
-    private var currentNotetypes: List<ManageNoteTypeUiModel> = emptyList()
+    private var allNotetypes: List<ManageNoteTypeUiModel> = emptyList()
+    private var currentNotetypes by mutableStateOf<List<ManageNoteTypeUiModel>>(emptyList())
 
     // Store search query
     private var searchQuery: String = ""
@@ -83,8 +87,9 @@ class ManageNotetypes : AnkiActivity() {
 
         super.onCreate(savedInstanceState)
         setTitle(R.string.model_browser_label)
+        setContentView(R.layout.manage_notetypes)
         actionBar = enableToolbar()
-        setContent {
+        findViewById<ComposeView>(R.id.compose_view).setContent {
 
             ManageNoteTypesScreen(
                 noteTypes = currentNotetypes,
@@ -139,9 +144,9 @@ class ManageNotetypes : AnkiActivity() {
     @NeedsTest("verify note types list still filtered by search query after rename or delete")
     private fun filterNoteTypes(query: String) {
         currentNotetypes = if (query.isEmpty()) {
-            currentNotetypes
+            allNotetypes
         } else {
-            currentNotetypes.filter {
+            allNotetypes.filter {
                 it.name.lowercase().contains(query.lowercase())
             }
         }
@@ -236,7 +241,7 @@ class ManageNotetypes : AnkiActivity() {
             }
         }
 
-        currentNotetypes = updatedNotetypes
+        allNotetypes = updatedNotetypes
 
         filterNoteTypes(searchQuery)
         actionBar.subtitle = resources.getQuantityString(
