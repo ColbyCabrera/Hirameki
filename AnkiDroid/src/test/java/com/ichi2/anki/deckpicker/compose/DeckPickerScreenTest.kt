@@ -37,6 +37,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.deckpicker.DisplayDeckNode
+import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.ui.compose.components.ADD_DECK_FAB_TAG
 import com.ichi2.anki.ui.compose.components.GET_SHARED_FAB_TAG
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -447,7 +448,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         collapsed: Boolean = false,
         hasBuried: Boolean = false
     ): DisplayDeckNode {
-        val deckNode = com.ichi2.anki.libanki.sched.DeckNode(
+        val deckNode = DeckNode(
             node = deckTreeNode {
                 name = deckName
                 deckId = 1L
@@ -535,5 +536,6 @@ class DeckPickerScreenTest : RobolectricTest() {
         onDeleteEmptyCards = {},
         onCheckDatabase = {},
         onExport = {},
+        onManageNoteTypes = {},
     )
 }
