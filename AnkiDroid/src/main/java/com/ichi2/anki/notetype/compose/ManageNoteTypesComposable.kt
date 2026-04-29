@@ -339,15 +339,17 @@ fun PreviewManageNoteTypesScreen() {
             ManageNoteTypeUiModel(2, "Cloze", 3),
         )
     )
-    ManageNoteTypesScreen(
-        uiState = uiState,
-        onRefresh = {},
-        onSearch = {},
-        onAddNoteType = { _, _ -> },
-        onShowFields = {},
-        onEditCards = {},
-        onRename = {},
-        onDelete = {},
-        onNavigateUp = {},
-    )
+    AnkiDroidTheme {
+        ManageNoteTypesScreen(
+            uiState = uiState,
+            onRefresh = {},
+            onSearch = {},
+            onAddNoteType = { _, _ -> },
+            onShowFields = {},
+            onEditCards = {},
+            onRename = {},
+            onDelete = {},
+            onNavigateUp = {},
+        )
+    }
 }
