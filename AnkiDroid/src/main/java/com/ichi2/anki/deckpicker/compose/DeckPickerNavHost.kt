@@ -157,6 +157,7 @@ private data class DeckPickerDrawerActions(
     val onImport: () -> Unit,
     val onExport: () -> Unit,
     val onDeleteEmptyCards: () -> Unit,
+    val onManageNoteTypes: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -404,6 +405,7 @@ private fun DeckPickerMainContent(
         onImport = onImport,
         onExport = onExport,
         onDeleteEmptyCards = { viewModel.showEmptyCardsDialog() },
+        onManageNoteTypes = { viewModel.openManageNoteTypes() },
     )
 
     val deckPickerDrawerState = DeckPickerDrawerState(
@@ -539,6 +541,7 @@ private fun DeckPickerWithDrawer(
                 onDeleteEmptyCards = actions.onDeleteEmptyCards,
                 onCheckDatabase = actions.onCheckDatabase,
                 onExport = actions.onExport,
+                onManageNoteTypes = actions.onManageNoteTypes,
             ),
             onNavigationIconClick = actions.onNavigationIconClick,
             onStartStudy = actions.onStartStudy,
