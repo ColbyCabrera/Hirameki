@@ -118,16 +118,15 @@ fun ManageNoteTypesScreen(
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    if (!isSearchOpen) {
-                        Text(
-                            stringResource(R.string.model_browser_label),
-                            style = MaterialTheme.typography.displayLargeEmphasized,
-                            modifier = Modifier.graphicsLayer {
-                                alpha = 1f - searchAnim
-                            })
-                    }
-                },
-                navigationIcon = {
+                if (!isSearchOpen) {
+                    Text(
+                        stringResource(R.string.model_browser_label),
+                        style = MaterialTheme.typography.displayMediumEmphasized,
+                        modifier = Modifier.graphicsLayer {
+                            alpha = 1f - searchAnim
+                        })
+                }
+            }, navigationIcon = {
                 IconButton(
                     onClick = if (isSearchOpen) {
                     { isSearchOpen = false; onSearch("") }
