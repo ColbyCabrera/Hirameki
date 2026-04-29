@@ -66,6 +66,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.ichi2.anki.CardBrowser
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.browser.CardBrowserViewModel
@@ -82,9 +83,14 @@ import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
+import com.ichi2.anki.navigation.ManageNoteTypesDestination
+import com.ichi2.anki.navigation.NoteTypeCardsDestination
+import com.ichi2.anki.navigation.NoteTypeFieldsDestination
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
+import com.ichi2.anki.notetype.ManageNoteTypesViewModel
+import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.ui.compose.contribute.ContributeScreen
@@ -222,6 +228,30 @@ fun DeckPickerNavHost(
 
         entry<StatisticsDestination> {
             StatisticsScreen(onNavigateUp = { navigator.goBack() })
+        }
+
+        entry<ManageNoteTypesDestination> {
+            val noteTypesViewModel: ManageNoteTypesViewModel = viewModel()
+            val uiState by noteTypesViewModel.uiState.collectAsStateWithLifecycle()
+            ManageNoteTypesScreen(
+                uiState = uiState,
+                onRefresh = { noteTypesViewModel.refresh() },
+                onSearch = { noteTypesViewModel.updateSearchQuery(it) },
+                onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
+                onShowFields = { navigator.navigate(NoteTypeFieldsDestination(it.id)) },
+                onEditCards = { navigator.navigate(NoteTypeCardsDestination(it.id)) },
+                onRename = { noteTypesViewModel.renameNoteType(it.id, it.name) },
+                onDelete = { noteTypesViewModel.deleteNoteType(it.id) },
+                onNavigateUp = { navigator.goBack() }
+            )
+        }
+
+        entry<NoteTypeFieldsDestination> {
+            Text("Note Type Fields (Coming Soon)")
+        }
+
+        entry<NoteTypeCardsDestination> {
+            Text("Note Type Cards (Coming Soon)")
         }
     }
 
@@ -405,7 +435,9 @@ private fun DeckPickerMainContent(
         onImport = onImport,
         onExport = onExport,
         onDeleteEmptyCards = { viewModel.showEmptyCardsDialog() },
-        onManageNoteTypes = { viewModel.openManageNoteTypes() },
+        onManageNoteTypes = {
+            navigator.navigate(ManageNoteTypesDestination)
+        },
     )
 
     val deckPickerDrawerState = DeckPickerDrawerState(

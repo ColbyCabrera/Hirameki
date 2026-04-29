@@ -16,6 +16,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.navigation
 
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
@@ -37,5 +38,15 @@ object StatisticsDestination : NavKey
 @Serializable
 data class DeckOptionsDestination(val deckId: Long) : NavKey
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Serializable
 data class CardInfoDestination(val cardId: Long) : NavKey
+
+@Serializable
+object ManageNoteTypesDestination : NavKey
+
+@Serializable
+data class NoteTypeFieldsDestination(val noteTypeId: Long) : NavKey
+
+@Serializable
+data class NoteTypeCardsDestination(val noteTypeId: Long) : NavKey

@@ -32,10 +32,12 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.viewmodel.compose.viewModel
 import anki.notetypes.copy
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardTemplateEditor
@@ -90,13 +92,14 @@ class ManageNotetypes : AnkiActivity() {
         setContentView(R.layout.manage_notetypes)
         actionBar = enableToolbar()
         findViewById<ComposeView>(R.id.compose_view).setContent {
+            val viewModel: ManageNoteTypesViewModel = viewModel()
+            val uiState by viewModel.uiState.collectAsState()
 
             ManageNoteTypesScreen(
-                noteTypes = currentNotetypes,
-                onAddNoteType = {
-                    val addNewNotesType = AddNewNotesType(this)
-                    launchCatchingTask { addNewNotesType.showAddNewNotetypeDialog() }
-                },
+                uiState = uiState,
+                onRefresh = { viewModel.refresh() },
+                onSearch = { viewModel.updateSearchQuery(it) },
+                onAddNoteType = { name, option -> viewModel.addNoteType(name, option) },
                 onShowFields = {
                     launchForChanges<NoteTypeFieldEditor>(
                         mapOf(
@@ -106,10 +109,10 @@ class ManageNotetypes : AnkiActivity() {
                     )
                 },
                 onEditCards = { launchForChanges<CardTemplateEditor>(mapOf("noteTypeId" to it.id)) },
-                onRename = ::renameNotetype,
+                onRename = { viewModel.renameNoteType(it.id, it.name) },
                 onDelete = ::deleteNotetype,
+                onNavigateUp = { finish() }
             )
-
         }
         launchCatchingTask { runAndRefreshAfter() } // shows the initial note types list
     }
