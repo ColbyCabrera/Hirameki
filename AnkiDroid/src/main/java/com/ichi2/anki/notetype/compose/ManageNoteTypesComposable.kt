@@ -20,10 +20,12 @@
  ****************************************************************************************/
 package com.ichi2.anki.notetype.compose
 
+import android.app.Activity
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -75,6 +77,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.notetype.ManageNoteTypeUiModel
 import com.ichi2.anki.notetype.ManageNoteTypesUiState
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -92,11 +95,14 @@ fun ManageNoteTypesScreen(
     onRename: (ManageNoteTypeUiModel) -> Unit,
     onDelete: (ManageNoteTypeUiModel) -> Unit,
     onNavigateUp: () -> Unit,
+    windowWidthSizeClass: WindowWidthSizeClass? = null,
 ) {
     val context = LocalContext.current
-    val windowSizeClass = (context as? android.app.Activity)?.let { calculateWindowSizeClass(it) }
+    val widthSizeClass = windowWidthSizeClass ?: (context as? Activity)?.let {
+        calculateWindowSizeClass(it).widthSizeClass
+    }
     val isExpanded =
-        windowSizeClass?.widthSizeClass == WindowWidthSizeClass.Expanded || windowSizeClass?.widthSizeClass == WindowWidthSizeClass.Medium
+        widthSizeClass == WindowWidthSizeClass.Expanded || widthSizeClass == WindowWidthSizeClass.Medium
 
     var isSearchOpen by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
@@ -177,9 +183,9 @@ fun ManageNoteTypesScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalItemSpacing = 16.dp,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(vertical = 16.dp),
+                verticalItemSpacing = 8.dp,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(uiState.noteTypes, key = { it.id }) { noteType ->
                     NoteTypeItem(
@@ -188,9 +194,7 @@ fun ManageNoteTypesScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
+                modifier = Modifier.fillMaxSize(), contentPadding = padding
             ) {
                 items(uiState.noteTypes, key = { it.id }) { noteType ->
                     NoteTypeItem(
@@ -350,6 +354,35 @@ fun PreviewManageNoteTypesScreen() {
             onRename = {},
             onDelete = {},
             onNavigateUp = {},
+        )
+    }
+}
+
+@Preview(device = "spec:width=1280dp,height=800dp,dpi=240")
+@Composable
+fun PreviewManageNoteTypesScreenExpanded() {
+    val uiState = ManageNoteTypesUiState(
+        noteTypes = listOf(
+            ManageNoteTypeUiModel(0, "Basic", 1),
+            ManageNoteTypeUiModel(1, "Basic (and reversed card)", 2),
+            ManageNoteTypeUiModel(2, "Cloze", 3),
+            ManageNoteTypeUiModel(3, "Japanese Basic", 4),
+            ManageNoteTypeUiModel(4, "Medical Note", 5),
+            ManageNoteTypeUiModel(5, "Anatomy", 6),
+        )
+    )
+    AnkiDroidTheme {
+        ManageNoteTypesScreen(
+            uiState = uiState,
+            onRefresh = {},
+            onSearch = {},
+            onAddNoteType = { _, _ -> },
+            onShowFields = {},
+            onEditCards = {},
+            onRename = {},
+            onDelete = {},
+            onNavigateUp = {},
+            windowWidthSizeClass = WindowWidthSizeClass.Expanded
         )
     }
 }
