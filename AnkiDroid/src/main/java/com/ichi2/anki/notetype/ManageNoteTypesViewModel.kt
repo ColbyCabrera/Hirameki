@@ -21,9 +21,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import anki.notetypes.StockNotetype
 import anki.notetypes.copy
+import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
-import com.ichi2.anki.launchCatchingIO
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.addNotetype
 import com.ichi2.anki.libanki.addNotetypeLegacy
 import com.ichi2.anki.libanki.backend.BackendUtils
@@ -33,6 +34,8 @@ import com.ichi2.anki.libanki.getNotetypeNames
 import com.ichi2.anki.libanki.getStockNotetype
 import com.ichi2.anki.libanki.removeNotetype
 import com.ichi2.anki.libanki.updateNotetype
+import com.ichi2.anki.utils.getUserFriendlyErrorText
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -43,9 +46,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 sealed interface ManageNoteTypesUiEvent {
-    data class ShowError(val message: String) : ManageNoteTypesUiEvent
+    /** Message is already localized and ready to display to the user. */
+    data class ShowErrorMessage(val message: String) : ManageNoteTypesUiEvent
     data class ShowSnackbar(@StringRes val messageId: Int) : ManageNoteTypesUiEvent
     data class PromptSchemaChangeWarning(val noteType: ManageNoteTypeUiModel) :
         ManageNoteTypesUiEvent
@@ -116,13 +122,21 @@ class ManageNoteTypesViewModel : ViewModel() {
     }
 
     private fun launchManageNoteTypesAction(block: suspend CoroutineScope.() -> Unit): Job =
-        launchCatchingIO(
-            errorMessageHandler = { message ->
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                block()
+            } catch (cancellationException: CancellationException) {
+                throw cancellationException
+            } catch (exception: Exception) {
+                Timber.w(exception)
                 _isLoading.value = false
-                _uiEvents.emit(ManageNoteTypesUiEvent.ShowError(message))
-            },
-            block = block,
-        )
+                _uiEvents.emit(
+                    ManageNoteTypesUiEvent.ShowErrorMessage(
+                        AnkiDroidApp.instance.getUserFriendlyErrorText(exception),
+                    ),
+                )
+            }
+        }
 
     fun refresh() {
         launchManageNoteTypesAction {

@@ -261,7 +261,7 @@ fun DeckPickerNavHost(
             LaunchedEffect(noteTypesViewModel) {
                 noteTypesViewModel.uiEvents.collect { event ->
                     when (event) {
-                        is ManageNoteTypesUiEvent.ShowError -> {
+                        is ManageNoteTypesUiEvent.ShowErrorMessage -> {
                             activity.showSnackbar(event.message)
                         }
 
