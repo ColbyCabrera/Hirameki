@@ -55,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -104,13 +105,6 @@ fun ManageNoteTypesScreen(
         widthSizeClass == WindowWidthSizeClass.Expanded || widthSizeClass == WindowWidthSizeClass.Medium
 
     var isSearchOpen by remember { mutableStateOf(false) }
-    val searchFocusRequester = remember { FocusRequester() }
-    val searchAnim by animateFloatAsState(
-        targetValue = if (isSearchOpen) 1f else 0f,
-        animationSpec = motionScheme.defaultEffectsSpec(),
-        label = "searchAnim"
-    )
-
     var selectedNoteType by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -121,50 +115,13 @@ fun ManageNoteTypesScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
-                title = {
-                if (!isSearchOpen) {
-                    Text(
-                        stringResource(R.string.model_browser_label),
-                        style = MaterialTheme.typography.displayMediumEmphasized,
-                        modifier = Modifier.graphicsLayer {
-                            alpha = 1f - searchAnim
-                        })
-                }
-            }, navigationIcon = {
-                IconButton(
-                    onClick = if (isSearchOpen) {
-                    { isSearchOpen = false; onSearch("") }
-                } else onNavigateUp) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(id = R.string.back)
-                    )
-                }
-            }, actions = {
-                if (isSearchOpen) {
-                    AnkiSearchBar(
-                        query = uiState.searchQuery,
-                        onQueryChange = onSearch,
-                        onSearch = { /* Done as user types */ },
-                        onActiveChange = { isSearchOpen = it },
-                        placeholder = stringResource(R.string.search_decks), // Using search_decks as placeholder for now
-                        focusRequester = searchFocusRequester,
-                        searchAnim = searchAnim,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 16.dp, end = 12.dp),
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
-                } else {
-                    IconButton(onClick = { isSearchOpen = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = stringResource(id = R.string.menu_search)
-                        )
-                    }
-                }
-            }, scrollBehavior = scrollBehavior
+            ManageNoteTypesTopAppBar(
+                searchQuery = uiState.searchQuery,
+                isSearchOpen = isSearchOpen,
+                onSearchOpenChange = { isSearchOpen = it },
+                onSearchQueryChange = onSearch,
+                onNavigateUp = onNavigateUp,
+                scrollBehavior = scrollBehavior
             )
         },
         floatingActionButton = {
@@ -176,31 +133,11 @@ fun ManageNoteTypesScreen(
             }
         },
     ) { padding ->
-        if (isExpanded) {
-            LazyVerticalStaggeredGrid(
-                columns = StaggeredGridCells.Adaptive(300.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(vertical = 16.dp),
-                verticalItemSpacing = 8.dp,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(uiState.noteTypes, key = { it.id }) { noteType ->
-                    NoteTypeItem(
-                        noteType = noteType, onClick = { selectedNoteType = noteType })
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(), contentPadding = padding
-            ) {
-                items(uiState.noteTypes, key = { it.id }) { noteType ->
-                    NoteTypeItem(
-                        noteType = noteType, onClick = { selectedNoteType = noteType })
-                }
-            }
-        }
+        ManageNoteTypesContent(
+            noteTypes = uiState.noteTypes,
+            isExpanded = isExpanded,
+            padding = padding,
+            onNoteTypeClick = { selectedNoteType = it })
 
         selectedNoteType?.let { noteType ->
             NoteTypeActionBottomSheet(
@@ -214,34 +151,11 @@ fun ManageNoteTypesScreen(
         }
 
         noteTypeToRename?.let { noteType ->
-            var newName by remember { mutableStateOf(noteType.name) }
-            AlertDialog(
+            RenameNoteTypeDialog(
+                noteType = noteType,
                 onDismissRequest = { noteTypeToRename = null },
-                title = { Text(stringResource(R.string.rename_model)) },
-                text = {
-                    TextField(
-                        value = newName,
-                        onValueChange = { newName = it },
-                        label = { Text(stringResource(R.string.note_type_name)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            onRename(noteType.copy(name = newName))
-                            noteTypeToRename = null
-                        }, enabled = newName.isNotBlank() && newName != noteType.name
-                    ) {
-                        Text(stringResource(R.string.rename))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { noteTypeToRename = null }) {
-                        Text(stringResource(R.string.dialog_cancel))
-                    }
-                })
+                onRename = onRename
+            )
         }
 
         if (showAddDialog) {
@@ -253,6 +167,143 @@ fun ManageNoteTypesScreen(
                 })
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun ManageNoteTypesTopAppBar(
+    searchQuery: String,
+    isSearchOpen: Boolean,
+    onSearchOpenChange: (Boolean) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onNavigateUp: () -> Unit,
+    scrollBehavior: TopAppBarScrollBehavior
+) {
+    val searchFocusRequester = remember { FocusRequester() }
+    val searchAnim by animateFloatAsState(
+        targetValue = if (isSearchOpen) 1f else 0f,
+        animationSpec = motionScheme.defaultEffectsSpec(),
+        label = "searchAnim"
+    )
+
+    LargeFlexibleTopAppBar(
+        title = {
+        if (!isSearchOpen) {
+            Text(
+                stringResource(R.string.model_browser_label),
+                style = MaterialTheme.typography.displayMediumEmphasized,
+                modifier = Modifier.graphicsLayer {
+                    alpha = 1f - searchAnim
+                })
+        }
+    }, navigationIcon = {
+        IconButton(
+            onClick = if (isSearchOpen) {
+            {
+                onSearchOpenChange(false)
+                onSearchQueryChange("")
+            }
+        } else onNavigateUp) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(id = R.string.back)
+            )
+        }
+    }, actions = {
+        if (isSearchOpen) {
+            AnkiSearchBar(
+                query = searchQuery,
+                onQueryChange = onSearchQueryChange,
+                onSearch = { /* Done as user types */ },
+                onActiveChange = onSearchOpenChange,
+                placeholder = stringResource(R.string.search_decks), // Using search_decks as placeholder for now
+                focusRequester = searchFocusRequester,
+                searchAnim = searchAnim,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp, end = 12.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            )
+        } else {
+            IconButton(onClick = { onSearchOpenChange(true) }) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = stringResource(id = R.string.menu_search)
+                )
+            }
+        }
+    }, scrollBehavior = scrollBehavior
+    )
+}
+
+@Composable
+fun ManageNoteTypesContent(
+    noteTypes: List<ManageNoteTypeUiModel>,
+    isExpanded: Boolean,
+    padding: PaddingValues,
+    onNoteTypeClick: (ManageNoteTypeUiModel) -> Unit
+) {
+    if (isExpanded) {
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(300.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(vertical = 16.dp),
+            verticalItemSpacing = 8.dp,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(noteTypes, key = { it.id }) { noteType ->
+                NoteTypeItem(
+                    noteType = noteType, onClick = { onNoteTypeClick(noteType) })
+            }
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(), contentPadding = padding
+        ) {
+            items(noteTypes, key = { it.id }) { noteType ->
+                NoteTypeItem(
+                    noteType = noteType, onClick = { onNoteTypeClick(noteType) })
+            }
+        }
+    }
+}
+
+@Composable
+fun RenameNoteTypeDialog(
+    noteType: ManageNoteTypeUiModel,
+    onDismissRequest: () -> Unit,
+    onRename: (ManageNoteTypeUiModel) -> Unit
+) {
+    var newName by remember { mutableStateOf(noteType.name) }
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(R.string.rename_model)) },
+        text = {
+            TextField(
+                value = newName,
+                onValueChange = { newName = it },
+                label = { Text(stringResource(R.string.note_type_name)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onRename(noteType.copy(name = newName))
+                    onDismissRequest()
+                }, enabled = newName.isNotBlank() && newName != noteType.name
+            ) {
+                Text(stringResource(R.string.rename))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.dialog_cancel))
+            }
+        })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
