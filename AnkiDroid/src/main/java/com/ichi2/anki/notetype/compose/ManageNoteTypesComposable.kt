@@ -35,7 +35,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -200,22 +199,19 @@ fun ManageNoteTypesTopAppBar(
                 })
         }
     }, navigationIcon = {
-        FilledIconButton(
-            onClick = if (isSearchOpen) {
-                {
-                    onSearchOpenChange(false)
-                    onSearchQueryChange("")
-                }
-            } else onNavigateUp,
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.arrow_back_24px),
-                contentDescription = stringResource(id = R.string.back)
-            )
+        if (!isSearchOpen) {
+            FilledIconButton(
+                onClick = onNavigateUp,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.arrow_back_24px),
+                    contentDescription = stringResource(id = R.string.back)
+                )
+            }
         }
     }, actions = {
         if (isSearchOpen) {
@@ -229,13 +225,13 @@ fun ManageNoteTypesTopAppBar(
                 searchAnim = searchAnim,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 16.dp, end = 12.dp),
+                    .padding(start = 16.dp, end = 12.dp, bottom = 8.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         } else {
             IconButton(onClick = { onSearchOpenChange(true) }) {
                 Icon(
-                    imageVector = Icons.Default.Search,
+                    painter = painterResource(R.drawable.search_24px),
                     contentDescription = stringResource(id = R.string.menu_search)
                 )
             }
