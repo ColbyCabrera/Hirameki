@@ -100,9 +100,9 @@ fun NoteTypeActionBottomSheetContent(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                .padding(bottom = 12.dp),
+            shape = MaterialTheme.shapes.extraExtraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -116,7 +116,7 @@ fun NoteTypeActionBottomSheetContent(
                 )
                 Column {
                     Text(
-                        text = noteType.name, style = MaterialTheme.typography.headlineSmall
+                        text = noteType.name, style = MaterialTheme.typography.titleLargeEmphasized
                     )
                     Text(
                         text = pluralStringResource(
@@ -130,7 +130,7 @@ fun NoteTypeActionBottomSheetContent(
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ActionItem(
                 modifier = Modifier.weight(1f),
@@ -161,7 +161,7 @@ fun NoteTypeActionBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
-            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ActionItem(
                 modifier = Modifier.weight(1f),
