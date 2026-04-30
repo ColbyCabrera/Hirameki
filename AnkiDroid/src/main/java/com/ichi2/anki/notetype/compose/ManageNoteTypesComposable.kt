@@ -34,7 +34,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -44,9 +43,11 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.motionScheme
@@ -70,6 +71,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -198,15 +200,20 @@ fun ManageNoteTypesTopAppBar(
                 })
         }
     }, navigationIcon = {
-        IconButton(
+        FilledIconButton(
             onClick = if (isSearchOpen) {
-            {
-                onSearchOpenChange(false)
-                onSearchQueryChange("")
-            }
-        } else onNavigateUp) {
+                {
+                    onSearchOpenChange(false)
+                    onSearchQueryChange("")
+                }
+            } else onNavigateUp,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                painter = painterResource(R.drawable.arrow_back_24px),
                 contentDescription = stringResource(id = R.string.back)
             )
         }
@@ -250,8 +257,8 @@ fun ManageNoteTypesContent(
             columns = StaggeredGridCells.Adaptive(300.dp),
             modifier = modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(vertical = 16.dp),
+                .padding(vertical = 24.dp, horizontal = 16.dp),
+            contentPadding = padding,
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -262,7 +269,11 @@ fun ManageNoteTypesContent(
         }
     } else {
         LazyColumn(
-            modifier = modifier.fillMaxSize(), contentPadding = padding
+            modifier = modifier
+                .fillMaxSize()
+                .padding(vertical = 24.dp, horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = padding
         ) {
             items(noteTypes, key = { it.id }) { noteType ->
                 NoteTypeItem(
