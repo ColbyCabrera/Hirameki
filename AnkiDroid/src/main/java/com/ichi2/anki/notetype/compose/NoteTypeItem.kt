@@ -16,7 +16,13 @@
 package com.ichi2.anki.notetype.compose
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.padding
@@ -40,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -117,6 +124,13 @@ fun NoteTypeItem(
         label = "cornerRadius"
     )
 
+    val infiniteTransition = rememberInfiniteTransition(label = "wobble")
+    val wobbleRotation by infiniteTransition.animateFloat(
+        initialValue = -5f, targetValue = 5f, animationSpec = infiniteRepeatable(
+            animation = tween(250, easing = LinearEasing), repeatMode = RepeatMode.Reverse
+        ), label = "wobbleRotation"
+    )
+
     Surface(
         shape = RoundedCornerShape(animatedCornerRadius),
         color = animatedContainerColor,
@@ -140,6 +154,9 @@ fun NoteTypeItem(
             )
         }, leadingContent = {
             MorphingCardCount(
+                modifier = Modifier.graphicsLayer {
+                    rotationZ = if (isSelected) wobbleRotation else 0f
+                },
                 cardCount = noteType.useCount,
                 containerColor = animatedCountsContainerColor,
                 contentColor = animatedCountsContentColor,
