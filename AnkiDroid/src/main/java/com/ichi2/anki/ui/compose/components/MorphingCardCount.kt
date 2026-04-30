@@ -94,6 +94,7 @@ fun MorphingCardCount(
     modifier: Modifier = Modifier,
     shapes: List<RoundedPolygon> = MORPHING_SHAPES,
 ) {
+    val shapes = shapes.ifEmpty { MORPHING_SHAPES }
     // State for managing the morph animation.
     var currentShapeIndex by remember(shapes) { mutableIntStateOf(Random.nextInt(shapes.size)) }
     var startShape by remember(shapes) { mutableStateOf(shapes[currentShapeIndex]) }
