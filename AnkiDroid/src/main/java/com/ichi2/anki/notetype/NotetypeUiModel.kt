@@ -35,7 +35,7 @@ data class ManageNoteTypeUiModel(
 fun NotetypeNameIdUseCount.toUiModel(): ManageNoteTypeUiModel = ManageNoteTypeUiModel(id, name, useCount)
 
 /**
- * Data holder class which contains the data to display a single note type in [AddNewNotesType]'s
+ * Data holder class which contains the data to display a single note type in [ManageNoteTypesScreen]'s
  * list of notetypes.
  */
 data class AddNotetypeUiModel(
