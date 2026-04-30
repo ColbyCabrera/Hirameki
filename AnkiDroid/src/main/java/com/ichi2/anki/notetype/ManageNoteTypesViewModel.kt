@@ -36,6 +36,7 @@ import com.ichi2.anki.libanki.removeNotetype
 import com.ichi2.anki.libanki.updateNotetype
 import com.ichi2.anki.utils.getUserFriendlyErrorText
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -69,7 +70,9 @@ data class ManageNoteTypesUiState(
     val isInMultiSelectMode: Boolean = false,
 )
 
-class ManageNoteTypesViewModel : ViewModel() {
+class ManageNoteTypesViewModel(
+    private val dispatcher: CoroutineDispatcher = ioDispatcher,
+) : ViewModel() {
     private val _uiEvents = MutableSharedFlow<ManageNoteTypesUiEvent>()
     val uiEvents: SharedFlow<ManageNoteTypesUiEvent> = _uiEvents.asSharedFlow()
 
@@ -122,7 +125,7 @@ class ManageNoteTypesViewModel : ViewModel() {
     }
 
     private fun launchManageNoteTypesAction(block: suspend CoroutineScope.() -> Unit): Job =
-        viewModelScope.launch(ioDispatcher) {
+        viewModelScope.launch(dispatcher) {
             try {
                 block()
             } catch (cancellationException: CancellationException) {

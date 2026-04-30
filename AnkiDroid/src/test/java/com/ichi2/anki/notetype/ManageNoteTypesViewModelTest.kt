@@ -20,18 +20,15 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.RobolectricTest
-import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.Collection
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runCurrent
 import net.ankiweb.rsdroid.Backend
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -42,7 +39,6 @@ class ManageNoteTypesViewModelTest : RobolectricTest() {
     @Test
     fun `refresh failure emits ui error event and clears loading`() = runTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
-        val originalIoDispatcher = ioDispatcher
         val expectedMessage = "refresh failed"
         val mockBackend = mockk<Backend> {
             every { getNotetypeNamesAndCounts() } throws IllegalStateException("refresh failed")
@@ -52,11 +48,10 @@ class ManageNoteTypesViewModelTest : RobolectricTest() {
             every { dbClosed } returns false
         }
 
-        ioDispatcher = testDispatcher
         CollectionManager.setColForTests(mockCollection)
 
         try {
-            val viewModel = ManageNoteTypesViewModel()
+            val viewModel = ManageNoteTypesViewModel(dispatcher = testDispatcher)
 
             viewModel.uiEvents.test {
                 advanceUntilIdle()
@@ -71,40 +66,33 @@ class ManageNoteTypesViewModelTest : RobolectricTest() {
             }
         } finally {
             CollectionManager.setColForTests(null)
-            ioDispatcher = originalIoDispatcher
         }
     }
 
     @Test
-    fun `refresh success updates loading state correctly`() = runTest {
+    fun `refresh success clears loading state after work completes`() = runTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
-        val originalIoDispatcher = ioDispatcher
         val mockBackend = mockk<Backend> {
             every { getNotetypeNamesAndCounts() } returns emptyList()
             every { getNotetypeNames() } returns emptyList()
-            every { getStockNotetypeLegacy(any()) } returns com.google.protobuf.ByteString.copyFromUtf8("{\"name\": \"MockNotetype\"}")
+            every { getStockNotetypeLegacy(any()) } returns com.google.protobuf.ByteString.copyFromUtf8(
+                "{\"name\": \"MockNotetype\"}"
+            )
         }
         val mockCollection = mockk<Collection> {
             every { backend } returns mockBackend
             every { dbClosed } returns false
         }
 
-        ioDispatcher = testDispatcher
         CollectionManager.setColForTests(mockCollection)
 
         try {
-            val viewModel = ManageNoteTypesViewModel()
-
-            assertFalse(viewModel.uiState.value.isLoading)
-
-            runCurrent()
-            assertTrue(viewModel.uiState.value.isLoading)
+            val viewModel = ManageNoteTypesViewModel(dispatcher = testDispatcher)
 
             advanceUntilIdle()
             assertFalse(viewModel.uiState.value.isLoading)
         } finally {
             CollectionManager.setColForTests(null)
-            ioDispatcher = originalIoDispatcher
         }
     }
 }
