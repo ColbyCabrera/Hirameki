@@ -95,6 +95,7 @@ import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
 import com.ichi2.anki.notetype.ManageNoteTypesUiEvent
 import com.ichi2.anki.notetype.ManageNoteTypesViewModel
+import com.ichi2.anki.notetype.compose.DeleteSelectedNoteTypesDialog
 import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
@@ -243,6 +244,7 @@ fun DeckPickerNavHost(
             val context = LocalContext.current
             val lifecycleOwner = LocalLifecycleOwner.current
             val activity = context as AnkiActivity
+            var showBatchDeleteConfirmation by remember { mutableStateOf(false) }
 
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
@@ -267,6 +269,14 @@ fun DeckPickerNavHost(
                             activity.launchCatchingTask {
                                 if (activity.userAcceptsSchemaChange()) {
                                     noteTypesViewModel.showDeleteConfirmation(event.noteType)
+                                }
+                            }
+                        }
+
+                        is ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation -> {
+                            activity.launchCatchingTask {
+                                if (activity.userAcceptsSchemaChange()) {
+                                    showBatchDeleteConfirmation = true
                                 }
                             }
                         }
@@ -295,7 +305,22 @@ fun DeckPickerNavHost(
                 onDeleteRequest = { noteTypesViewModel.requestDeleteNoteType(it) },
                 onDeleteConfirm = { noteTypesViewModel.confirmDeleteNoteType(it.id) },
                 onDeleteDismiss = { noteTypesViewModel.dismissDeleteConfirmation() },
+                onToggleSelection = { noteTypesViewModel.toggleNoteTypeSelection(it) },
+                onSelectAll = { noteTypesViewModel.selectAllNoteTypes() },
+                onDeselectAll = { noteTypesViewModel.deselectAllNoteTypes() },
+                onDeleteSelected = { noteTypesViewModel.deleteSelectedNoteTypes() },
                 onNavigateUp = { navigator.goBack() })
+
+            if (showBatchDeleteConfirmation) {
+                DeleteSelectedNoteTypesDialog(
+                    count = uiState.selectedNoteTypeIds.size,
+                    onDismissRequest = { showBatchDeleteConfirmation = false },
+                    onConfirm = {
+                        noteTypesViewModel.confirmDeleteSelectedNoteTypes()
+                        showBatchDeleteConfirmation = false
+                    },
+                )
+            }
         }
     }
 

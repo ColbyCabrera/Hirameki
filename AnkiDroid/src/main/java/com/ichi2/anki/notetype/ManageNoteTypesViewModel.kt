@@ -47,6 +47,7 @@ sealed interface ManageNoteTypesUiEvent {
     data class ShowSnackbar(@StringRes val messageId: Int) : ManageNoteTypesUiEvent
     data class PromptSchemaChangeWarning(val noteType: ManageNoteTypeUiModel) :
         ManageNoteTypesUiEvent
+    data class PromptDeleteSelectedConfirmation(val ids: Set<Long>) : ManageNoteTypesUiEvent
 }
 
 data class ManageNoteTypesUiState(
@@ -54,7 +55,9 @@ data class ManageNoteTypesUiState(
     val addOptions: List<AddNotetypeUiModel> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
-    val deleteConfirmationNoteType: ManageNoteTypeUiModel? = null
+    val deleteConfirmationNoteType: ManageNoteTypeUiModel? = null,
+    val selectedNoteTypeIds: Set<Long> = emptySet(),
+    val isInMultiSelectMode: Boolean = false,
 )
 
 class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
@@ -68,10 +71,22 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
     private val _searchQuery = MutableStateFlow("")
     private val _isLoading = MutableStateFlow(true)
     private val _deleteConfirmationNoteType = MutableStateFlow<ManageNoteTypeUiModel?>(null)
+    private val _selectedNoteTypeIds = MutableStateFlow<Set<Long>>(emptySet())
 
     val uiState: StateFlow<ManageNoteTypesUiState> = combine(
-        _allNoteTypes, _addOptions, _searchQuery, _isLoading, _deleteConfirmationNoteType
-    ) { noteTypes, addOptions, query, isLoading, deleteConfirmationNoteType ->
+        _allNoteTypes, _addOptions, _searchQuery, _isLoading, _deleteConfirmationNoteType,
+        _selectedNoteTypeIds
+    ) { values ->
+        @Suppress("UNCHECKED_CAST")
+        val noteTypes = values[0] as List<ManageNoteTypeUiModel>
+        @Suppress("UNCHECKED_CAST")
+        val addOptions = values[1] as List<AddNotetypeUiModel>
+        val query = values[2] as String
+        val isLoading = values[3] as Boolean
+        val deleteConfirmationNoteType = values[4] as ManageNoteTypeUiModel?
+        @Suppress("UNCHECKED_CAST")
+        val selectedIds = values[5] as Set<Long>
+
         val filtered = if (query.isEmpty()) {
             noteTypes
         } else {
@@ -82,7 +97,9 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
             addOptions = addOptions,
             searchQuery = query,
             isLoading = isLoading,
-            deleteConfirmationNoteType = deleteConfirmationNoteType
+            deleteConfirmationNoteType = deleteConfirmationNoteType,
+            selectedNoteTypeIds = selectedIds,
+            isInMultiSelectMode = selectedIds.isNotEmpty(),
         )
     }.stateIn(
         scope = viewModelScope,
@@ -185,4 +202,51 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
             refresh()
         }
     }
+
+    // region Multiselect
+
+    fun toggleNoteTypeSelection(id: Long) {
+        _selectedNoteTypeIds.value = _selectedNoteTypeIds.value.let { current ->
+            if (current.contains(id)) current - id else current + id
+        }
+    }
+
+    fun selectAllNoteTypes() {
+        val visibleIds = uiState.value.noteTypes.map { it.id }.toSet()
+        _selectedNoteTypeIds.value = visibleIds
+    }
+
+    fun deselectAllNoteTypes() {
+        _selectedNoteTypeIds.value = emptySet()
+    }
+
+    fun deleteSelectedNoteTypes() {
+        launchCatchingIO {
+            val selectedIds = _selectedNoteTypeIds.value
+            if (selectedIds.isEmpty()) return@launchCatchingIO
+
+            val totalCount = withCol { getNotetypeNames().size }
+            if (totalCount - selectedIds.size < 1) {
+                _uiEvents.emit(ManageNoteTypesUiEvent.ShowSnackbar(R.string.toast_last_model))
+                return@launchCatchingIO
+            }
+            _uiEvents.emit(ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation(selectedIds))
+        }
+    }
+
+    fun confirmDeleteSelectedNoteTypes() {
+        val idsToDelete = _selectedNoteTypeIds.value
+        _selectedNoteTypeIds.value = emptySet()
+        launchCatchingIO {
+            _isLoading.value = true
+            withCol {
+                for (id in idsToDelete) {
+                    removeNotetype(id)
+                }
+            }
+            refresh()
+        }
+    }
+
+    // endregion
 }

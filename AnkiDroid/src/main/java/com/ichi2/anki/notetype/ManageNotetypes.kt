@@ -29,12 +29,16 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardTemplateEditor
 import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R
 import com.ichi2.anki.launchCatchingTask
+import com.ichi2.anki.notetype.compose.DeleteSelectedNoteTypesDialog
 import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.userAcceptsSchemaChange
@@ -60,6 +64,7 @@ class ManageNotetypes : AnkiActivity() {
         setContentView(R.layout.manage_notetypes)
         findViewById<ComposeView>(R.id.compose_view).setContent {
             val uiState by viewModel.uiState.collectAsState()
+            var showBatchDeleteConfirmation by remember { mutableStateOf(false) }
             LaunchedEffect(viewModel) {
                 viewModel.uiEvents.collect { event ->
                     when (event) {
@@ -71,6 +76,14 @@ class ManageNotetypes : AnkiActivity() {
                             launchCatchingTask {
                                 if (userAcceptsSchemaChange()) {
                                     viewModel.showDeleteConfirmation(event.noteType)
+                                }
+                            }
+                        }
+
+                        is ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation -> {
+                            launchCatchingTask {
+                                if (userAcceptsSchemaChange()) {
+                                    showBatchDeleteConfirmation = true
                                 }
                             }
                         }
@@ -95,7 +108,22 @@ class ManageNotetypes : AnkiActivity() {
                 onDeleteRequest = { viewModel.requestDeleteNoteType(it) },
                 onDeleteConfirm = { viewModel.confirmDeleteNoteType(it.id) },
                 onDeleteDismiss = { viewModel.dismissDeleteConfirmation() },
+                onToggleSelection = { viewModel.toggleNoteTypeSelection(it) },
+                onSelectAll = { viewModel.selectAllNoteTypes() },
+                onDeselectAll = { viewModel.deselectAllNoteTypes() },
+                onDeleteSelected = { viewModel.deleteSelectedNoteTypes() },
                 onNavigateUp = { finish() })
+
+            if (showBatchDeleteConfirmation) {
+                DeleteSelectedNoteTypesDialog(
+                    count = uiState.selectedNoteTypeIds.size,
+                    onDismissRequest = { showBatchDeleteConfirmation = false },
+                    onConfirm = {
+                        viewModel.confirmDeleteSelectedNoteTypes()
+                        showBatchDeleteConfirmation = false
+                    },
+                )
+            }
         }
     }
 

@@ -24,10 +24,13 @@ import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -43,18 +46,28 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.motionScheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -63,12 +76,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -94,6 +109,10 @@ fun ManageNoteTypesScreen(
     onDeleteRequest: (ManageNoteTypeUiModel) -> Unit,
     onDeleteConfirm: (ManageNoteTypeUiModel) -> Unit,
     onDeleteDismiss: () -> Unit,
+    onToggleSelection: (Long) -> Unit,
+    onSelectAll: () -> Unit,
+    onDeselectAll: () -> Unit,
+    onDeleteSelected: () -> Unit,
     onNavigateUp: () -> Unit,
     windowWidthSizeClass: WindowWidthSizeClass? = null,
 ) {
@@ -111,76 +130,185 @@ fun ManageNoteTypesScreen(
         onSearch("")
         isSearchOpen = false
     }
+
+    // Exit multiselect mode on back press
+    BackHandler(uiState.isInMultiSelectMode) {
+        onDeselectAll()
+    }
+
     val sheetState = rememberModalBottomSheetState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var noteTypeToRename by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            ManageNoteTypesTopAppBar(
-                searchQuery = uiState.searchQuery,
-                isSearchOpen = isSearchOpen,
-                onSearchOpenChange = { isSearchOpen = it },
-                onSearchQueryChange = onSearch,
-                onNavigateUp = onNavigateUp,
-                scrollBehavior = scrollBehavior
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
+                ManageNoteTypesTopAppBar(
+                    searchQuery = uiState.searchQuery,
+                    isSearchOpen = isSearchOpen,
+                    onSearchOpenChange = { isSearchOpen = it },
+                    onSearchQueryChange = onSearch,
+                    onNavigateUp = onNavigateUp,
+                    scrollBehavior = scrollBehavior
+                )
+            },
+            floatingActionButton = {
+                if (!uiState.isInMultiSelectMode) {
+                    FloatingActionButton(onClick = { showAddDialog = true }) {
+                        Icon(
+                            painter = painterResource(R.drawable.add_24px),
+                            contentDescription = stringResource(id = R.string.cd_manage_notetypes_add),
+                        )
+                    }
+                }
+            },
+        ) { padding ->
+            ManageNoteTypesContent(
+                noteTypes = uiState.noteTypes,
+                isExpanded = isExpanded,
+                padding = padding,
+                selectedNoteTypeIds = uiState.selectedNoteTypeIds,
+                isInMultiSelectMode = uiState.isInMultiSelectMode,
+                onNoteTypeClick = { noteType ->
+                    if (uiState.isInMultiSelectMode) {
+                        onToggleSelection(noteType.id)
+                    } else {
+                        selectedNoteType = noteType
+                    }
+                },
+                onNoteTypeLongClick = { noteType ->
+                    if (!uiState.isInMultiSelectMode) {
+                        onToggleSelection(noteType.id)
+                    }
+                },
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(
-                    painter = painterResource(R.drawable.add_24px),
-                    contentDescription = stringResource(id = R.string.cd_manage_notetypes_add),
+
+            if (!uiState.isInMultiSelectMode) {
+                selectedNoteType?.let { noteType ->
+                    NoteTypeActionBottomSheet(
+                        noteType = noteType,
+                        sheetState = sheetState,
+                        onDismissRequest = { selectedNoteType = null },
+                        onShowFields = { onShowFields(noteType) },
+                        onEditCards = { onEditCards(noteType) },
+                        onRename = { noteTypeToRename = noteType },
+                        onDelete = {
+                            onDeleteRequest(noteType)
+                            selectedNoteType = null
+                        })
+                }
+            }
+
+            noteTypeToRename?.let { noteType ->
+                RenameNoteTypeDialog(
+                    noteType = noteType,
+                    onDismissRequest = { noteTypeToRename = null },
+                    onRename = onRename
                 )
             }
+
+            uiState.deleteConfirmationNoteType?.let { noteType ->
+                DeleteNoteTypeDialog(
+                    noteType = noteType,
+                    onDismissRequest = onDeleteDismiss,
+                    onDelete = onDeleteConfirm
+                )
+            }
+
+            if (showAddDialog) {
+                AddNoteTypeDialog(
+                    uiState = uiState,
+                    onDismissRequest = { showAddDialog = false },
+                    onConfirm = { name, option ->
+                        onAddNoteType(name, option)
+                    })
+            }
+        }
+
+        // Floating selection toolbar — shown at bottom when in multiselect mode
+        if (uiState.isInMultiSelectMode) {
+            NoteTypeSelectionToolbar(
+                onDeselectAll = onDeselectAll,
+                onSelectAll = onSelectAll,
+                onDeleteSelected = onDeleteSelected,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = -ScreenOffset),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun NoteTypeSelectionToolbar(
+    onDeselectAll: () -> Unit,
+    onSelectAll: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    HorizontalFloatingToolbar(
+        modifier = modifier,
+        expanded = true,
+        floatingActionButton = {
+            FloatingToolbarDefaults.VibrantFloatingActionButton(
+                onClick = onDeselectAll,
+                shape = FloatingActionButtonDefaults.smallShape,
+            ) {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                        positioning = TooltipAnchorPosition.Above,
+                    ),
+                    tooltip = {
+                        PlainTooltip { Text(stringResource(R.string.deselect_all)) }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.deselect_24px),
+                        contentDescription = stringResource(R.string.deselect_all),
+                    )
+                }
+            }
         },
-    ) { padding ->
-        ManageNoteTypesContent(
-            noteTypes = uiState.noteTypes,
-            isExpanded = isExpanded,
-            padding = padding,
-            onNoteTypeClick = { selectedNoteType = it })
-
-        selectedNoteType?.let { noteType ->
-            NoteTypeActionBottomSheet(
-                noteType = noteType,
-                sheetState = sheetState,
-                onDismissRequest = { selectedNoteType = null },
-                onShowFields = { onShowFields(noteType) },
-                onEditCards = { onEditCards(noteType) },
-                onRename = { noteTypeToRename = noteType },
-                onDelete = {
-                    onDeleteRequest(noteType)
-                    selectedNoteType = null
-                })
-        }
-
-        noteTypeToRename?.let { noteType ->
-            RenameNoteTypeDialog(
-                noteType = noteType,
-                onDismissRequest = { noteTypeToRename = null },
-                onRename = onRename
-            )
-        }
-
-        uiState.deleteConfirmationNoteType?.let { noteType ->
-            DeleteNoteTypeDialog(
-                noteType = noteType,
-                onDismissRequest = onDeleteDismiss,
-                onDelete = onDeleteConfirm
-            )
-        }
-
-        if (showAddDialog) {
-            AddNoteTypeDialog(
-                uiState = uiState,
-                onDismissRequest = { showAddDialog = false },
-                onConfirm = { name, option ->
-                    onAddNoteType(name, option)
-                })
+        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                    positioning = TooltipAnchorPosition.Above,
+                ),
+                tooltip = {
+                    PlainTooltip { Text(stringResource(R.string.card_browser_select_all)) }
+                },
+                state = rememberTooltipState(),
+            ) {
+                IconButton(onClick = onSelectAll) {
+                    Icon(
+                        painter = painterResource(R.drawable.select_all_24px),
+                        contentDescription = stringResource(R.string.card_browser_select_all),
+                    )
+                }
+            }
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                    positioning = TooltipAnchorPosition.Above,
+                ),
+                tooltip = {
+                    PlainTooltip { Text(stringResource(R.string.model_browser_delete)) }
+                },
+                state = rememberTooltipState(),
+            ) {
+                IconButton(onClick = onDeleteSelected) {
+                    Icon(
+                        painter = painterResource(R.drawable.delete_24px),
+                        contentDescription = stringResource(R.string.model_browser_delete),
+                    )
+                }
+            }
         }
     }
 }
@@ -266,14 +394,17 @@ fun ManageNoteTypesContent(
     noteTypes: List<ManageNoteTypeUiModel>,
     isExpanded: Boolean,
     padding: PaddingValues,
+    selectedNoteTypeIds: Set<Long>,
+    isInMultiSelectMode: Boolean,
     onNoteTypeClick: (ManageNoteTypeUiModel) -> Unit,
+    onNoteTypeLongClick: (ManageNoteTypeUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val combinedPadding = PaddingValues(
         start = 8.dp,
         top = padding.calculateTopPadding() + 24.dp,
         end = 8.dp,
-        bottom = padding.calculateBottomPadding() + 24.dp
+        bottom = padding.calculateBottomPadding() + if (isInMultiSelectMode) 96.dp else 24.dp
     )
 
     if (isExpanded) {
@@ -286,7 +417,12 @@ fun ManageNoteTypesContent(
         ) {
             items(noteTypes, key = { it.id }) { noteType ->
                 NoteTypeItem(
-                    noteType = noteType, onClick = { onNoteTypeClick(noteType) })
+                    noteType = noteType,
+                    onClick = { onNoteTypeClick(noteType) },
+                    isSelected = selectedNoteTypeIds.contains(noteType.id),
+                    isInMultiSelectMode = isInMultiSelectMode,
+                    onLongClick = { onNoteTypeLongClick(noteType) },
+                )
             }
         }
     } else {
@@ -297,7 +433,12 @@ fun ManageNoteTypesContent(
         ) {
             items(noteTypes, key = { it.id }) { noteType ->
                 NoteTypeItem(
-                    noteType = noteType, onClick = { onNoteTypeClick(noteType) })
+                    noteType = noteType,
+                    onClick = { onNoteTypeClick(noteType) },
+                    isSelected = selectedNoteTypeIds.contains(noteType.id),
+                    isInMultiSelectMode = isInMultiSelectMode,
+                    onLongClick = { onNoteTypeLongClick(noteType) },
+                )
             }
         }
     }
@@ -359,6 +500,36 @@ fun DeleteNoteTypeDialog(
             TextButton(
                 onClick = {
                     onDelete(noteType)
+                    onDismissRequest()
+                }) {
+                Text(stringResource(R.string.dialog_positive_delete))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.dialog_cancel))
+            }
+        })
+}
+
+@Composable
+fun DeleteSelectedNoteTypesDialog(
+    count: Int,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        modifier = modifier,
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(R.string.model_browser_delete)) },
+        text = {
+            Text(pluralStringResource(R.plurals.model_delete_selected_warning, count, count))
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm()
                     onDismissRequest()
                 }) {
                 Text(stringResource(R.string.dialog_positive_delete))
@@ -471,6 +642,10 @@ fun PreviewManageNoteTypesScreen() {
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteDismiss = {},
+            onToggleSelection = {},
+            onSelectAll = {},
+            onDeselectAll = {},
+            onDeleteSelected = {},
             onNavigateUp = {},
         )
     }
@@ -500,6 +675,10 @@ fun PreviewManageNoteTypesScreenExpanded() {
             onDeleteRequest = {},
             onDeleteConfirm = {},
             onDeleteDismiss = {},
+            onToggleSelection = {},
+            onSelectAll = {},
+            onDeselectAll = {},
+            onDeleteSelected = {},
             onNavigateUp = {},
             windowWidthSizeClass = WindowWidthSizeClass.Expanded
         )

@@ -75,5 +75,10 @@
     <string name="deck_override_explanation">Select deck to place new ‘%s’ cards into</string>
     <string name="deck_picker_dialog_filter_decks" maxLength="28">Filter decks</string>
 
+    <!--Multiselect-->
+    <plurals name="model_delete_selected_warning">
+        <item quantity="one">Are you sure you wish to delete %d note type?</item>
+        <item quantity="other">Are you sure you wish to delete %d note types?</item>
+    </plurals>
 
 </resources>
