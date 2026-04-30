@@ -116,6 +116,7 @@ fun ManageNoteTypesScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var noteTypeToRename by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
+    var noteTypeToDelete by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -155,7 +156,10 @@ fun ManageNoteTypesScreen(
                 onShowFields = { onShowFields(noteType) },
                 onEditCards = { onEditCards(noteType) },
                 onRename = { noteTypeToRename = noteType },
-                onDelete = { onDelete(noteType) })
+                onDelete = {
+                    noteTypeToDelete = noteType
+                    selectedNoteType = null
+                })
         }
 
         noteTypeToRename?.let { noteType ->
@@ -163,6 +167,14 @@ fun ManageNoteTypesScreen(
                 noteType = noteType,
                 onDismissRequest = { noteTypeToRename = null },
                 onRename = onRename
+            )
+        }
+
+        noteTypeToDelete?.let { noteType ->
+            DeleteNoteTypeDialog(
+                noteType = noteType,
+                onDismissRequest = { noteTypeToDelete = null },
+                onDelete = onDelete
             )
         }
 
@@ -227,7 +239,7 @@ fun ManageNoteTypesTopAppBar(
                 onQueryChange = onSearchQueryChange,
                 onSearch = { /* Done as user types */ },
                 onActiveChange = onSearchOpenChange,
-                placeholder = stringResource(R.string.search_decks), // Using search_decks as placeholder for now
+                placeholder = stringResource(R.string.card_browser_search_hint),
                 focusRequester = searchFocusRequester,
                 searchAnim = searchAnim,
                 modifier = Modifier
@@ -327,6 +339,37 @@ fun RenameNoteTypeDialog(
         })
 }
 
+@Composable
+fun DeleteNoteTypeDialog(
+    noteType: ManageNoteTypeUiModel,
+    onDismissRequest: () -> Unit,
+    onDelete: (ManageNoteTypeUiModel) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        modifier = modifier,
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(R.string.model_browser_delete)) },
+        text = {
+            Text(stringResource(R.string.model_delete_warning))
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDelete(noteType)
+                    onDismissRequest()
+                }
+            ) {
+                Text(stringResource(R.string.dialog_positive_delete))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.dialog_cancel))
+            }
+        })
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddNoteTypeDialog(
@@ -363,12 +406,12 @@ fun AddNoteTypeDialog(
                         expanded = expanded, onDismissRequest = { expanded = false }) {
                         uiState.addOptions.forEach { option ->
                             DropdownMenuItem(text = {
-                                val prefixTemplate = if (option.isStandard) {
-                                    stringResource(R.string.model_browser_add_add)
+                                val prefixRes = if (option.isStandard) {
+                                    R.string.model_browser_add_add
                                 } else {
-                                    stringResource(R.string.model_browser_add_clone)
+                                    R.string.model_browser_add_clone
                                 }
-                                Text(prefixTemplate.replace($$"%1$s", option.name))
+                                Text(stringResource(prefixRes, option.name))
                             }, onClick = {
                                 selectedOption = option
                                 expanded = false
