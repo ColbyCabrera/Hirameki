@@ -266,7 +266,6 @@ class ManageNoteTypesViewModel(
 
     fun confirmDeleteSelectedNoteTypes() {
         val idsToDelete = _selectedNoteTypeIds.value
-        _selectedNoteTypeIds.value = emptySet()
         launchManageNoteTypesAction {
             _isLoading.value = true
             withCol {
@@ -274,6 +273,7 @@ class ManageNoteTypesViewModel(
                     removeNotetype(id)
                 }
             }
+            _selectedNoteTypeIds.value = emptySet()
             refresh()
         }
     }
