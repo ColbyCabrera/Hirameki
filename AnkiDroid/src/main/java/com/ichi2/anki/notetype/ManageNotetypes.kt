@@ -20,7 +20,6 @@
  ****************************************************************************************/
 package com.ichi2.anki.notetype
 
-import android.annotation.SuppressLint
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
@@ -28,57 +27,43 @@ import android.os.Bundle
 import android.view.Menu
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.StringRes
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.lifecycle.viewmodel.compose.viewModel
-import anki.notetypes.copy
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardTemplateEditor
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R
-import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.launchCatchingTask
-import com.ichi2.anki.libanki.getNotetype
-import com.ichi2.anki.libanki.getNotetypeNameIdUseCount
 import com.ichi2.anki.libanki.getNotetypeNames
-import com.ichi2.anki.libanki.removeNotetype
-import com.ichi2.anki.libanki.updateNotetype
 import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.userAcceptsSchemaChange
 import com.ichi2.anki.utils.Destination
 import com.ichi2.anki.withProgress
 import com.ichi2.ui.AccessibleSearchView
-import com.ichi2.utils.getInputField
-import com.ichi2.utils.input
 import com.ichi2.utils.message
 import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.title
-import net.ankiweb.rsdroid.BackendException
 
 class ManageNotetypes : AnkiActivity() {
     private lateinit var actionBar: ActionBar
 
-    private var allNotetypes: List<ManageNoteTypeUiModel> = emptyList()
-    private var currentNotetypes by mutableStateOf<List<ManageNoteTypeUiModel>>(emptyList())
-
-    // Store search query
-    private var searchQuery: String = ""
+    private val viewModel: ManageNoteTypesViewModel by viewModels()
 
     private val outsideChangesLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
             if (result.resultCode == RESULT_OK) {
-                launchCatchingTask { runAndRefreshAfter() }
+                viewModel.refresh()
             }
         }
 
@@ -92,8 +77,15 @@ class ManageNotetypes : AnkiActivity() {
         setContentView(R.layout.manage_notetypes)
         actionBar = enableToolbar()
         findViewById<ComposeView>(R.id.compose_view).setContent {
-            val viewModel: ManageNoteTypesViewModel = viewModel()
             val uiState by viewModel.uiState.collectAsState()
+
+            LaunchedEffect(uiState.noteTypes.size) {
+                actionBar.subtitle = resources.getQuantityString(
+                    R.plurals.model_browser_types_available,
+                    uiState.noteTypes.size,
+                    uiState.noteTypes.size,
+                )
+            }
 
             ManageNoteTypesScreen(
                 uiState = uiState,
@@ -111,10 +103,8 @@ class ManageNotetypes : AnkiActivity() {
                 onEditCards = { launchForChanges<CardTemplateEditor>(mapOf("noteTypeId" to it.id)) },
                 onRename = { viewModel.renameNoteType(it.id, it.name) },
                 onDelete = ::deleteNotetype,
-                onNavigateUp = { finish() }
-            )
+                onNavigateUp = { finish() })
         }
-        launchCatchingTask { runAndRefreshAfter() } // shows the initial note types list
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -131,71 +121,12 @@ class ManageNotetypes : AnkiActivity() {
                 override fun onQueryTextSubmit(query: String): Boolean = true
 
                 override fun onQueryTextChange(newText: String?): Boolean {
-                    // Update the search query
-                    searchQuery = newText.orEmpty()
-                    filterNoteTypes(searchQuery)
+                    viewModel.updateSearchQuery(newText.orEmpty())
                     return true
                 }
             },
         )
         return true
-    }
-
-    /**
-     * Filters and updates the note types list based on the query
-     */
-    @NeedsTest("verify note types list still filtered by search query after rename or delete")
-    private fun filterNoteTypes(query: String) {
-        currentNotetypes = if (query.isEmpty()) {
-            allNotetypes
-        } else {
-            allNotetypes.filter {
-                it.name.lowercase().contains(query.lowercase())
-            }
-        }
-    }
-
-    @SuppressLint("CheckResult")
-    private fun renameNotetype(manageNoteTypeUiModel: ManageNoteTypeUiModel) {
-        launchCatchingTask {
-            val allNotetypes = mutableListOf<AddNotetypeUiModel>()
-            allNotetypes.addAll(
-                withProgress {
-                    withCol { getNotetypeNames().map { it.toUiModel() } }
-                },
-            )
-            val dialog = AlertDialog.Builder(this@ManageNotetypes).show {
-                title(R.string.rename_model)
-                positiveButton(R.string.rename) { it ->
-                    launchCatchingTask(
-                        // TODO: Change to CardTypeException: https://github.com/ankidroid/Anki-Android-Backend/issues/537
-                        // Card template 1 in note type 'character' has a problem.
-                        // Expected to find a field replacement on the front of the card template.
-                        skipCrashReport = { it is BackendException },
-                    ) {
-                        runAndRefreshAfter {
-                            val initialNotetype = getNotetype(manageNoteTypeUiModel.id)
-                            val renamedNotetype = initialNotetype.copy {
-                                this.name = (it as AlertDialog).getInputField().text.toString()
-                            }
-                            updateNotetype(renamedNotetype)
-                        }
-                    }
-                }
-                negativeButton(R.string.dialog_cancel)
-                setView(R.layout.dialog_generic_text_input)
-            }.input(
-                prefill = manageNoteTypeUiModel.name,
-                waitForPositiveButton = false,
-                displayKeyboard = true,
-                callback = { dialog, text ->
-                    dialog.positiveButton.isEnabled =
-                        text.isNotEmpty() && !allNotetypes.map { it.name }.contains(text.toString())
-                },
-            )
-            // start with the button disabled as dialog shows the initial name
-            dialog.positiveButton.isEnabled = false
-        }
     }
 
     private fun deleteNotetype(manageNoteTypeUiModel: ManageNoteTypeUiModel) {
@@ -220,38 +151,13 @@ class ManageNotetypes : AnkiActivity() {
                 title(R.string.model_browser_delete)
                 message(messageResourceId)
                 positiveButton(R.string.dialog_positive_delete) {
-                    launchCatchingTask {
-                        runAndRefreshAfter { removeNotetype(manageNoteTypeUiModel.id) }
-                    }
+                    viewModel.deleteNoteType(manageNoteTypeUiModel.id)
                 }
                 negativeButton(R.string.dialog_cancel)
             }
         }
     }
 
-    /**
-     * Run the provided block on the [Collection](also displaying progress) and then refresh the list
-     * of note types to show the changes. This method expects to be called from the main thread.
-     *
-     * @param action the action to run before the notetypes refresh, if not provided simply refresh
-     */
-    suspend fun runAndRefreshAfter(action: com.ichi2.anki.libanki.Collection.() -> Unit = {}) {
-        val updatedNotetypes = withProgress {
-            withCol {
-                action()
-                getNotetypeNameIdUseCount().map { it.toUiModel() }
-            }
-        }
-
-        allNotetypes = updatedNotetypes
-
-        filterNoteTypes(searchQuery)
-        actionBar.subtitle = resources.getQuantityString(
-            R.plurals.model_browser_types_available,
-            updatedNotetypes.size,
-            updatedNotetypes.size,
-        )
-    }
 
     private inline fun <reified T : AnkiActivity> launchForChanges(extras: Map<String, Any>) {
         val targetIntent = Intent(this@ManageNotetypes, T::class.java).apply {
