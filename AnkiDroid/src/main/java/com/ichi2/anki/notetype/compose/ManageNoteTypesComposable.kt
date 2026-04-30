@@ -44,7 +44,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -244,7 +243,13 @@ fun ManageNoteTypesTopAppBar(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         } else {
-            IconButton(onClick = { onSearchOpenChange(true) }) {
+            FilledIconButton(
+                onClick = { onSearchOpenChange(true) },
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ) {
                 Icon(
                     painter = painterResource(R.drawable.search_24px),
                     contentDescription = stringResource(id = R.string.menu_search)
