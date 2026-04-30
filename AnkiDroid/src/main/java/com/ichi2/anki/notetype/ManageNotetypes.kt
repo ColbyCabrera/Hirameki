@@ -89,7 +89,6 @@ class ManageNotetypes : AnkiActivity() {
 
             ManageNoteTypesScreen(
                 uiState = uiState,
-                onRefresh = { viewModel.refresh() },
                 onSearch = { viewModel.updateSearchQuery(it) },
                 onAddNoteType = { name, option -> viewModel.addNoteType(name, option) },
                 onShowFields = {

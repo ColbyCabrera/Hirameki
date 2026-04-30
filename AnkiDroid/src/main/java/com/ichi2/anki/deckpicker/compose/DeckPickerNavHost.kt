@@ -252,7 +252,6 @@ fun DeckPickerNavHost(
 
             ManageNoteTypesScreen(
                 uiState = uiState,
-                onRefresh = { noteTypesViewModel.refresh() },
                 onSearch = { noteTypesViewModel.updateSearchQuery(it) },
                 onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
                 onShowFields = { 

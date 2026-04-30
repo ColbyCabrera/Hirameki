@@ -55,8 +55,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -89,7 +87,6 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @Composable
 fun ManageNoteTypesScreen(
     uiState: ManageNoteTypesUiState,
-    onRefresh: () -> Unit,
     onSearch: (String) -> Unit,
     onAddNoteType: (String, com.ichi2.anki.notetype.AddNotetypeUiModel) -> Unit,
     onShowFields: (ManageNoteTypeUiModel) -> Unit,
@@ -115,7 +112,6 @@ fun ManageNoteTypesScreen(
     }
     val sheetState = rememberModalBottomSheetState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val pullToRefreshState = rememberPullToRefreshState()
 
     var noteTypeToRename by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
     var noteTypeToDelete by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
@@ -142,18 +138,11 @@ fun ManageNoteTypesScreen(
             }
         },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = uiState.isLoading,
-            onRefresh = onRefresh,
-            state = pullToRefreshState,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            ManageNoteTypesContent(
-                noteTypes = uiState.noteTypes,
-                isExpanded = isExpanded,
-                padding = padding,
-                onNoteTypeClick = { selectedNoteType = it })
-        }
+        ManageNoteTypesContent(
+            noteTypes = uiState.noteTypes,
+            isExpanded = isExpanded,
+            padding = padding,
+            onNoteTypeClick = { selectedNoteType = it })
 
         selectedNoteType?.let { noteType ->
             NoteTypeActionBottomSheet(
@@ -365,8 +354,7 @@ fun DeleteNoteTypeDialog(
                 onClick = {
                     onDelete(noteType)
                     onDismissRequest()
-                }
-            ) {
+                }) {
                 Text(stringResource(R.string.dialog_positive_delete))
             }
         },
@@ -469,7 +457,6 @@ fun PreviewManageNoteTypesScreen() {
     AnkiDroidTheme {
         ManageNoteTypesScreen(
             uiState = uiState,
-            onRefresh = {},
             onSearch = {},
             onAddNoteType = { _, _ -> },
             onShowFields = {},
@@ -497,7 +484,6 @@ fun PreviewManageNoteTypesScreenExpanded() {
     AnkiDroidTheme {
         ManageNoteTypesScreen(
             uiState = uiState,
-            onRefresh = {},
             onSearch = {},
             onAddNoteType = { _, _ -> },
             onShowFields = {},
