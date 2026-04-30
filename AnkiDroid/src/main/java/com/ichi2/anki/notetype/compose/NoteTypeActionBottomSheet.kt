@@ -17,6 +17,7 @@ package com.ichi2.anki.notetype.compose
 
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,11 +34,17 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -185,6 +192,7 @@ fun NoteTypeActionBottomSheetContent(
                     onDismissRequest()
                 })
             ActionItem(
+                modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.delete_24px),
                 height = secondRowButtonHeight,
                 colors = ButtonDefaults.filledTonalButtonColors(
@@ -201,7 +209,7 @@ fun NoteTypeActionBottomSheetContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ActionItem(
     icon: Painter,
@@ -212,13 +220,9 @@ private fun ActionItem(
     colors: ButtonColors = ButtonDefaults.filledTonalButtonColors(),
     contentDescription: String? = label,
 ) {
-    FilledTonalButton(
-        onClick = onClick,
-        modifier = modifier.height(height),
-        shapes = ButtonDefaults.shapesFor(height),
-        colors = colors,
-        contentPadding = ButtonDefaults.contentPaddingFor(height),
-    ) {
+    val showTooltip = label == null && contentDescription != null
+
+    val buttonContent = @Composable {
         Icon(
             painter = icon,
             contentDescription = if (label == null) contentDescription else null,
@@ -232,6 +236,42 @@ private fun ActionItem(
                 style = ButtonDefaults.textStyleFor(height),
             )
         }
+    }
+
+    if (showTooltip) {
+        val tooltipState = rememberTooltipState()
+        DisposableEffect(Unit) {
+            onDispose {
+                tooltipState.dismiss()
+            }
+        }
+        Box(modifier = modifier) {
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                    positioning = TooltipAnchorPosition.Above
+                ),
+                tooltip = { PlainTooltip { Text(contentDescription) } },
+                state = tooltipState,
+            ) {
+                FilledTonalButton(
+                    onClick = onClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(height),
+                    shapes = ButtonDefaults.shapesFor(height),
+                    colors = colors,
+                    contentPadding = ButtonDefaults.contentPaddingFor(height),
+                    content = { buttonContent() })
+            }
+        }
+    } else {
+        FilledTonalButton(
+            onClick = onClick,
+            modifier = modifier.height(height),
+            shapes = ButtonDefaults.shapesFor(height),
+            colors = colors,
+            contentPadding = ButtonDefaults.contentPaddingFor(height),
+            content = { buttonContent() })
     }
 }
 
