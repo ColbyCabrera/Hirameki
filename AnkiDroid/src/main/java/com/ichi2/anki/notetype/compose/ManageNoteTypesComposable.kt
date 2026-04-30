@@ -166,25 +166,39 @@ fun ManageNoteTypesScreen(
                 }
             },
         ) { padding ->
-            ManageNoteTypesContent(
-                noteTypes = uiState.noteTypes,
-                isExpanded = isExpanded,
-                padding = padding,
-                selectedNoteTypeIds = uiState.selectedNoteTypeIds,
-                isInMultiSelectMode = uiState.isInMultiSelectMode,
-                onNoteTypeClick = { noteType ->
-                    if (uiState.isInMultiSelectMode) {
-                        onToggleSelection(noteType.id)
-                    } else {
-                        selectedNoteType = noteType
-                    }
-                },
-                onNoteTypeLongClick = { noteType ->
-                    if (!uiState.isInMultiSelectMode) {
-                        onToggleSelection(noteType.id)
-                    }
-                },
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (uiState.isInMultiSelectMode) {
+                    NoteTypeSelectionToolbar(
+                        onDeselectAll = onDeselectAll,
+                        onSelectAll = onSelectAll,
+                        onDeleteSelected = onDeleteSelected,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = -ScreenOffset)
+                            .padding(bottom = padding.calculateBottomPadding()),
+                    )
+                }
+
+                ManageNoteTypesContent(
+                    noteTypes = uiState.noteTypes,
+                    isExpanded = isExpanded,
+                    padding = padding,
+                    selectedNoteTypeIds = uiState.selectedNoteTypeIds,
+                    isInMultiSelectMode = uiState.isInMultiSelectMode,
+                    onNoteTypeClick = { noteType ->
+                        if (uiState.isInMultiSelectMode) {
+                            onToggleSelection(noteType.id)
+                        } else {
+                            selectedNoteType = noteType
+                        }
+                    },
+                    onNoteTypeLongClick = { noteType ->
+                        if (!uiState.isInMultiSelectMode) {
+                            onToggleSelection(noteType.id)
+                        }
+                    },
+                )
+            }
 
             if (!uiState.isInMultiSelectMode) {
                 selectedNoteType?.let { noteType ->
@@ -226,18 +240,6 @@ fun ManageNoteTypesScreen(
                         onAddNoteType(name, option)
                     })
             }
-        }
-
-        // Floating selection toolbar — shown at bottom when in multiselect mode
-        if (uiState.isInMultiSelectMode) {
-            NoteTypeSelectionToolbar(
-                onDeselectAll = onDeselectAll,
-                onSelectAll = onSelectAll,
-                onDeleteSelected = onDeleteSelected,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = -ScreenOffset),
-            )
         }
     }
 }
