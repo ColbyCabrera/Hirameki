@@ -46,6 +46,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +61,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.ichi2.anki.CardBrowser
+import com.ichi2.anki.CardTemplateEditor
+import com.ichi2.anki.NoteTypeFieldEditor
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
@@ -84,8 +88,6 @@ import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
 import com.ichi2.anki.navigation.ManageNoteTypesDestination
-import com.ichi2.anki.navigation.NoteTypeCardsDestination
-import com.ichi2.anki.navigation.NoteTypeFieldsDestination
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
@@ -233,25 +235,45 @@ fun DeckPickerNavHost(
         entry<ManageNoteTypesDestination> {
             val noteTypesViewModel: ManageNoteTypesViewModel = viewModel()
             val uiState by noteTypesViewModel.uiState.collectAsStateWithLifecycle()
+            val context = LocalContext.current
+            val lifecycleOwner = LocalLifecycleOwner.current
+
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        noteTypesViewModel.refresh()
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
+
             ManageNoteTypesScreen(
                 uiState = uiState,
                 onRefresh = { noteTypesViewModel.refresh() },
                 onSearch = { noteTypesViewModel.updateSearchQuery(it) },
                 onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
-                onShowFields = { navigator.navigate(NoteTypeFieldsDestination(it.id)) },
-                onEditCards = { navigator.navigate(NoteTypeCardsDestination(it.id)) },
+                onShowFields = { 
+                    onLaunchIntent(
+                        Intent(context, NoteTypeFieldEditor::class.java).apply {
+                            putExtra("title", it.name)
+                            putExtra("noteTypeID", it.id)
+                        }
+                    )
+                },
+                onEditCards = { 
+                    onLaunchIntent(
+                        Intent(context, CardTemplateEditor::class.java).apply {
+                            putExtra("noteTypeId", it.id)
+                        }
+                    )
+                },
                 onRename = { noteTypesViewModel.renameNoteType(it.id, it.name) },
                 onDelete = { noteTypesViewModel.deleteNoteType(it.id) },
                 onNavigateUp = { navigator.goBack() }
             )
-        }
-
-        entry<NoteTypeFieldsDestination> {
-            Text("Note Type Fields (Coming Soon)")
-        }
-
-        entry<NoteTypeCardsDestination> {
-            Text("Note Type Cards (Coming Soon)")
         }
     }
 

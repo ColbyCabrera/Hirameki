@@ -45,8 +45,3 @@ data class CardInfoDestination(val cardId: Long) : NavKey
 @Serializable
 object ManageNoteTypesDestination : NavKey
 
-@Serializable
-data class NoteTypeFieldsDestination(val noteTypeId: Long) : NavKey
-
-@Serializable
-data class NoteTypeCardsDestination(val noteTypeId: Long) : NavKey
