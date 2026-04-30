@@ -37,21 +37,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.notetype.ManageNoteTypeUiModel
@@ -141,25 +134,11 @@ fun NoteTypeActionBottomSheetContent(
             modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ActionItem(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(firstRowButtonHeight),
-                icon = painterResource(R.drawable.list_24px),
-                label = stringResource(id = R.string.fields),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                onClick = {
-                    onShowFields()
-                    onDismissRequest()
-                })
-            ActionItem(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(firstRowButtonHeight),
+                modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.cards_stack_24px),
-                label = stringResource(id = R.string.cards),
+                label = null,
+                contentDescription = stringResource(id = R.string.cards),
+                height = firstRowButtonHeight,
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -168,6 +147,19 @@ fun NoteTypeActionBottomSheetContent(
                     onEditCards()
                     onDismissRequest()
                 })
+            ActionItem(
+                icon = painterResource(R.drawable.list_24px),
+                label = stringResource(id = R.string.fields),
+                height = firstRowButtonHeight,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                onClick = {
+                    onShowFields()
+                    onDismissRequest()
+                })
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -176,11 +168,10 @@ fun NoteTypeActionBottomSheetContent(
             modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ActionItem(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(secondRowButtonHeight),
+                modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.edit_24px),
                 label = stringResource(id = R.string.rename),
+                height = secondRowButtonHeight,
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer
@@ -190,13 +181,14 @@ fun NoteTypeActionBottomSheetContent(
                     onDismissRequest()
                 })
             ActionItem(
-                modifier = Modifier.height(secondRowButtonHeight),
                 icon = painterResource(R.drawable.delete_24px),
+                height = secondRowButtonHeight,
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 ),
                 label = null,
+                contentDescription = stringResource(id = R.string.model_browser_delete),
                 onClick = {
                     onDelete()
                     onDismissRequest()
@@ -208,41 +200,32 @@ fun NoteTypeActionBottomSheetContent(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ActionItem(
-    modifier: Modifier = Modifier,
     icon: Painter,
     label: String?,
+    height: Dp,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     colors: ButtonColors = ButtonDefaults.filledTonalButtonColors(),
-    onClick: () -> Unit
+    contentDescription: String? = label,
 ) {
-    val density = LocalDensity.current
-    var intSize by remember { mutableStateOf(IntSize.Zero) }
-    val dpSize = with(density) {
-        DpSize(intSize.width.toDp(), intSize.height.toDp())
-    }
-
     FilledTonalButton(
         onClick = onClick,
-        modifier = modifier.onSizeChanged { intSize = it },
-        shapes = ButtonDefaults.shapesFor(dpSize.height),
-        colors = colors
+        modifier = modifier.height(height),
+        shapes = ButtonDefaults.shapesFor(height),
+        colors = colors,
+        contentPadding = ButtonDefaults.contentPaddingFor(height),
     ) {
         Icon(
             painter = icon,
-            contentDescription = null,
-            modifier = Modifier.size(ButtonDefaults.iconSizeFor(dpSize.height)),
+            contentDescription = if (label == null) contentDescription else null,
+            modifier = Modifier.size(ButtonDefaults.iconSizeFor(height)),
         )
 
         if (label != null) {
-            Spacer(
-                modifier = Modifier.width(
-                    ButtonDefaults.iconSpacingFor(
-                        dpSize.height
-                    )
-                )
-            )
+            Spacer(modifier = Modifier.width(ButtonDefaults.iconSpacingFor(height)))
             Text(
                 text = label,
-                style = ButtonDefaults.textStyleFor(dpSize.height),
+                style = ButtonDefaults.textStyleFor(height),
             )
         }
     }
