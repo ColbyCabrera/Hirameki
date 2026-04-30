@@ -20,16 +20,12 @@
  ****************************************************************************************/
 package com.ichi2.anki.notetype
 
-import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.ActionBar
-import androidx.appcompat.widget.SearchView
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,11 +39,8 @@ import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.userAcceptsSchemaChange
 import com.ichi2.anki.utils.Destination
-import com.ichi2.ui.AccessibleSearchView
 
 class ManageNotetypes : AnkiActivity() {
-    private lateinit var actionBar: ActionBar
-
     private val viewModel: ManageNoteTypesViewModel by viewModels()
 
     private val outsideChangesLauncher =
@@ -65,18 +58,8 @@ class ManageNotetypes : AnkiActivity() {
         super.onCreate(savedInstanceState)
         setTitle(R.string.model_browser_label)
         setContentView(R.layout.manage_notetypes)
-        actionBar = enableToolbar()
         findViewById<ComposeView>(R.id.compose_view).setContent {
             val uiState by viewModel.uiState.collectAsState()
-
-            LaunchedEffect(uiState.noteTypes.size) {
-                actionBar.subtitle = resources.getQuantityString(
-                    R.plurals.model_browser_types_available,
-                    uiState.noteTypes.size,
-                    uiState.noteTypes.size,
-                )
-            }
-
             LaunchedEffect(viewModel) {
                 viewModel.uiEvents.collect { event ->
                     when (event) {
@@ -115,29 +98,6 @@ class ManageNotetypes : AnkiActivity() {
                 onNavigateUp = { finish() })
         }
     }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.search, menu)
-
-        val searchItem = menu.findItem(R.id.search_item)
-        val searchManager = getSystemService(SEARCH_SERVICE) as SearchManager
-        val searchView = searchItem?.actionView as? AccessibleSearchView
-        searchView?.maxWidth = Integer.MAX_VALUE
-        searchView?.setSearchableInfo(searchManager.getSearchableInfo(componentName))
-
-        searchView?.setOnQueryTextListener(
-            object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String): Boolean = true
-
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    viewModel.updateSearchQuery(newText.orEmpty())
-                    return true
-                }
-            },
-        )
-        return true
-    }
-
 
     private inline fun <reified T : AnkiActivity> launchForChanges(extras: Map<String, Any>) {
         val targetIntent = Intent(this@ManageNotetypes, T::class.java).apply {
