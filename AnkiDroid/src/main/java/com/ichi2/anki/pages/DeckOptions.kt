@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2022 Brayan Oliveira <brayandso.dev@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki.pages
 
@@ -18,8 +19,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.FragmentActivity
+import anki.collection.ComputeParamsProgress
 import anki.collection.OpChanges
-import anki.collection.Progress
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CrashReportService
@@ -281,7 +282,9 @@ suspend fun FragmentActivity.updateDeckConfigsRaw(input: ByteArray): ByteArray {
         withContext(Dispatchers.Main) {
             withProgress(
                 extractProgress = {
-                    text = this.toOptimizingPresetString() ?: getString(R.string.dialog_processing)
+                    // TODO: Don't use the amount yet, unused as a progress indicator, and
+                    //  duplicates computeMemory's label
+                    text = this.toProgressText() ?: getString(R.string.dialog_processing)
                 },
             ) {
                 withContext(Dispatchers.IO) {
@@ -295,29 +298,39 @@ suspend fun FragmentActivity.updateDeckConfigsRaw(input: ByteArray): ByteArray {
 }
 
 /**
+ * Returns a string indicating progress, such as:
+ *
  * ```
  * Optimizing preset 1/20
  * 5.2% of 1000 reviews
  * ```
  *
- * @return the above string, or `null` if [ProgressContext] has no
- * [compute parameters][Progress.hasComputeParams]
+ * @return the above string, or `null` if a string could not be generated
  */
-private fun ProgressContext.toOptimizingPresetString(): String? {
-    if (!progress.hasComputeParams()) return null
+private fun ProgressContext.toProgressText(): String? =
+    when {
+        progress.hasComputeParams() -> progress.computeParams.toProgressText()
+        progress.hasComputeMemory() -> progress.computeMemory.label // Updating cards: X/Y...
+        else -> null
+    }
 
-    val value = progress.computeParams
+/**
+ * ```
+ * Optimizing preset 1/20
+ * 5.2% of 1000 reviews
+ * ```
+ */
+private fun ComputeParamsProgress.toProgressText(): String {
     val label =
         TR.deckConfigOptimizingPreset(
-            currentCount = value.currentPreset,
-            totalCount = value.totalPresets,
+            currentCount = currentPreset,
+            totalCount = totalPresets,
         )
-    val pct =
-        if (value.total > 0) (value.current.toDouble() / value.total.toDouble() * 100.0) else 0.0
+    val pct = if (total > 0) (current.toDouble() / total.toDouble() * 100.0) else 0.0
     val reviewsLabel =
         TR.deckConfigPercentOfReviews(
             pct = "%.1f".format(pct),
-            reviews = value.reviews,
+            reviews = reviews,
         )
     return label + "\n" + reviewsLabel
 }
