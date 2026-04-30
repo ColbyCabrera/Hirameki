@@ -21,6 +21,7 @@
 package com.ichi2.anki.notetype.compose
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -105,6 +106,11 @@ fun ManageNoteTypesScreen(
 
     var isSearchOpen by remember { mutableStateOf(false) }
     var selectedNoteType by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
+
+    BackHandler(isSearchOpen) {
+        onSearch("")
+        isSearchOpen = false
+    }
     val sheetState = rememberModalBottomSheetState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
