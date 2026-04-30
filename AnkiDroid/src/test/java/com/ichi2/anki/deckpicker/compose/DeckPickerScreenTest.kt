@@ -405,6 +405,27 @@ class DeckPickerScreenTest : RobolectricTest() {
     }
 
     @Test
+    fun moreOptionsMenuInvokesManageNoteTypesCallback() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val moreOptionsLabel = context.getString(R.string.more_options)
+        val manageNoteTypesLabel = context.getString(R.string.model_browser_label)
+        var callbackInvoked = false
+
+        setDeckPickerContent(
+            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onManageNoteTypes = {
+                callbackInvoked = true
+            })
+        )
+
+        composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(manageNoteTypesLabel).performClick()
+        composeTestRule.waitForIdle()
+
+        assertEquals(true, callbackInvoked)
+    }
+
+    @Test
     fun initialStateShowsEmptyCollectionMessage() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val emptyMessage = context.getString(R.string.no_cards_placeholder_title)
