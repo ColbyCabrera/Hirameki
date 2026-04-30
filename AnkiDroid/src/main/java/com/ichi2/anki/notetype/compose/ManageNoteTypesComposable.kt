@@ -177,7 +177,8 @@ fun ManageNoteTypesTopAppBar(
     onSearchOpenChange: (Boolean) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onNavigateUp: () -> Unit,
-    scrollBehavior: TopAppBarScrollBehavior
+    scrollBehavior: TopAppBarScrollBehavior,
+    modifier: Modifier = Modifier,
 ) {
     val searchFocusRequester = remember { FocusRequester() }
     val searchAnim by animateFloatAsState(
@@ -187,7 +188,7 @@ fun ManageNoteTypesTopAppBar(
     )
 
     LargeFlexibleTopAppBar(
-        title = {
+        modifier = modifier, title = {
         if (!isSearchOpen) {
             Text(
                 stringResource(R.string.model_browser_label),
@@ -241,12 +242,13 @@ fun ManageNoteTypesContent(
     noteTypes: List<ManageNoteTypeUiModel>,
     isExpanded: Boolean,
     padding: PaddingValues,
-    onNoteTypeClick: (ManageNoteTypeUiModel) -> Unit
+    onNoteTypeClick: (ManageNoteTypeUiModel) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (isExpanded) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(300.dp),
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(vertical = 16.dp),
@@ -260,7 +262,7 @@ fun ManageNoteTypesContent(
         }
     } else {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(), contentPadding = padding
+            modifier = modifier.fillMaxSize(), contentPadding = padding
         ) {
             items(noteTypes, key = { it.id }) { noteType ->
                 NoteTypeItem(
@@ -274,10 +276,12 @@ fun ManageNoteTypesContent(
 fun RenameNoteTypeDialog(
     noteType: ManageNoteTypeUiModel,
     onDismissRequest: () -> Unit,
-    onRename: (ManageNoteTypeUiModel) -> Unit
+    onRename: (ManageNoteTypeUiModel) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var newName by remember { mutableStateOf(noteType.name) }
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(stringResource(R.string.rename_model)) },
         text = {
@@ -311,13 +315,15 @@ fun RenameNoteTypeDialog(
 fun AddNoteTypeDialog(
     uiState: ManageNoteTypesUiState,
     onDismissRequest: () -> Unit,
-    onConfirm: (String, com.ichi2.anki.notetype.AddNotetypeUiModel) -> Unit
+    onConfirm: (String, com.ichi2.anki.notetype.AddNotetypeUiModel) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var newName by remember { mutableStateOf("") }
     var selectedOption by remember { mutableStateOf(uiState.addOptions.firstOrNull()) }
     var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
+        modifier = modifier,
         onDismissRequest = onDismissRequest,
         title = { Text(stringResource(R.string.add)) },
         text = {
