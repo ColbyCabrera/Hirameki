@@ -24,15 +24,12 @@ import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
@@ -123,7 +120,6 @@ fun ManageNoteTypesScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
         topBar = {
             ManageNoteTypesTopAppBar(
                 searchQuery = uiState.searchQuery,
@@ -143,11 +139,13 @@ fun ManageNoteTypesScreen(
             }
         },
     ) { padding ->
-        ManageNoteTypesContent(
-            noteTypes = uiState.noteTypes,
-            isExpanded = isExpanded,
-            padding = padding,
-            onNoteTypeClick = { selectedNoteType = it })
+        Box(modifier = Modifier.fillMaxSize()) {
+            ManageNoteTypesContent(
+                noteTypes = uiState.noteTypes,
+                isExpanded = isExpanded,
+                padding = padding,
+                onNoteTypeClick = { selectedNoteType = it })
+        }
 
         selectedNoteType?.let { noteType ->
             NoteTypeActionBottomSheet(
@@ -257,13 +255,18 @@ fun ManageNoteTypesContent(
     onNoteTypeClick: (ManageNoteTypeUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val combinedPadding = PaddingValues(
+        start = 8.dp,
+        top = padding.calculateTopPadding() + 24.dp,
+        end = 8.dp,
+        bottom = padding.calculateBottomPadding() + 24.dp
+    )
+
     if (isExpanded) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(300.dp),
-            modifier = modifier
-                .fillMaxSize()
-                .padding(vertical = 24.dp, horizontal = 16.dp),
-            contentPadding = padding,
+            modifier = modifier.fillMaxSize(),
+            contentPadding = combinedPadding,
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -274,11 +277,9 @@ fun ManageNoteTypesContent(
         }
     } else {
         LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(vertical = 24.dp, horizontal = 16.dp),
+            modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = padding
+            contentPadding = combinedPadding
         ) {
             items(noteTypes, key = { it.id }) { noteType ->
                 NoteTypeItem(
