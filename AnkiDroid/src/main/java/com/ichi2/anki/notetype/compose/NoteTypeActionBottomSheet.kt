@@ -15,6 +15,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.notetype.compose
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -117,7 +118,10 @@ fun NoteTypeActionBottomSheetContent(
                 )
                 Column {
                     Text(
-                        text = noteType.name, style = MaterialTheme.typography.titleLargeEmphasized
+                        modifier = Modifier.basicMarquee(),
+                        text = noteType.name,
+                        style = MaterialTheme.typography.titleLargeEmphasized,
+                        maxLines = 1
                     )
                     Text(
                         text = pluralStringResource(
