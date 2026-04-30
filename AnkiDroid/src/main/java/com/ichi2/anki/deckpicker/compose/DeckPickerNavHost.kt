@@ -65,12 +65,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CardTemplateEditor
 import com.ichi2.anki.NoteTypeFieldEditor
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.browser.CardBrowserViewModel
@@ -83,6 +84,7 @@ import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
+import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
@@ -91,14 +93,17 @@ import com.ichi2.anki.navigation.ManageNoteTypesDestination
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
+import com.ichi2.anki.notetype.ManageNoteTypesUiEvent
 import com.ichi2.anki.notetype.ManageNoteTypesViewModel
 import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
+import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.contribute.ContributeScreen
 import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
+import com.ichi2.anki.userAcceptsSchemaChange
 import kotlinx.coroutines.launch
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
@@ -237,6 +242,7 @@ fun DeckPickerNavHost(
             val uiState by noteTypesViewModel.uiState.collectAsStateWithLifecycle()
             val context = LocalContext.current
             val lifecycleOwner = LocalLifecycleOwner.current
+            val activity = context as AnkiActivity
 
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
@@ -250,29 +256,46 @@ fun DeckPickerNavHost(
                 }
             }
 
+            LaunchedEffect(noteTypesViewModel) {
+                noteTypesViewModel.uiEvents.collect { event ->
+                    when (event) {
+                        is ManageNoteTypesUiEvent.ShowSnackbar -> {
+                            activity.showSnackbar(activity.getString(event.messageId))
+                        }
+
+                        is ManageNoteTypesUiEvent.PromptSchemaChangeWarning -> {
+                            activity.launchCatchingTask {
+                                if (activity.userAcceptsSchemaChange()) {
+                                    noteTypesViewModel.showDeleteConfirmation(event.noteType)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ManageNoteTypesScreen(
                 uiState = uiState,
                 onSearch = { noteTypesViewModel.updateSearchQuery(it) },
                 onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
-                onShowFields = { 
+                onShowFields = {
                     onLaunchIntent(
                         Intent(context, NoteTypeFieldEditor::class.java).apply {
                             putExtra("title", it.name)
                             putExtra("noteTypeID", it.id)
-                        }
-                    )
+                        })
                 },
-                onEditCards = { 
+                onEditCards = {
                     onLaunchIntent(
                         Intent(context, CardTemplateEditor::class.java).apply {
                             putExtra("noteTypeId", it.id)
-                        }
-                    )
+                        })
                 },
                 onRename = { noteTypesViewModel.renameNoteType(it.id, it.name) },
-                onDelete = { noteTypesViewModel.deleteNoteType(it.id) },
-                onNavigateUp = { navigator.goBack() }
-            )
+                onDeleteRequest = { noteTypesViewModel.requestDeleteNoteType(it) },
+                onDeleteConfirm = { noteTypesViewModel.confirmDeleteNoteType(it.id) },
+                onDeleteDismiss = { noteTypesViewModel.dismissDeleteConfirmation() },
+                onNavigateUp = { navigator.goBack() })
         }
     }
 

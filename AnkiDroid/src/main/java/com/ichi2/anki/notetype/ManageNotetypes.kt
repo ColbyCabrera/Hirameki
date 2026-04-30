@@ -28,9 +28,7 @@ import android.view.Menu
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.annotation.StringRes
 import androidx.appcompat.app.ActionBar
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,22 +36,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardTemplateEditor
-import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R
 import com.ichi2.anki.launchCatchingTask
-import com.ichi2.anki.libanki.getNotetypeNames
 import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.userAcceptsSchemaChange
 import com.ichi2.anki.utils.Destination
-import com.ichi2.anki.withProgress
 import com.ichi2.ui.AccessibleSearchView
-import com.ichi2.utils.message
-import com.ichi2.utils.negativeButton
-import com.ichi2.utils.positiveButton
-import com.ichi2.utils.show
-import com.ichi2.utils.title
 
 class ManageNotetypes : AnkiActivity() {
     private lateinit var actionBar: ActionBar
@@ -87,6 +77,24 @@ class ManageNotetypes : AnkiActivity() {
                 )
             }
 
+            LaunchedEffect(viewModel) {
+                viewModel.uiEvents.collect { event ->
+                    when (event) {
+                        is ManageNoteTypesUiEvent.ShowSnackbar -> {
+                            showSnackbar(getString(event.messageId))
+                        }
+
+                        is ManageNoteTypesUiEvent.PromptSchemaChangeWarning -> {
+                            launchCatchingTask {
+                                if (userAcceptsSchemaChange()) {
+                                    viewModel.showDeleteConfirmation(event.noteType)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ManageNoteTypesScreen(
                 uiState = uiState,
                 onSearch = { viewModel.updateSearchQuery(it) },
@@ -101,7 +109,9 @@ class ManageNotetypes : AnkiActivity() {
                 },
                 onEditCards = { launchForChanges<CardTemplateEditor>(mapOf("noteTypeId" to it.id)) },
                 onRename = { viewModel.renameNoteType(it.id, it.name) },
-                onDelete = ::deleteNotetype,
+                onDeleteRequest = { viewModel.requestDeleteNoteType(it) },
+                onDeleteConfirm = { viewModel.confirmDeleteNoteType(it.id) },
+                onDeleteDismiss = { viewModel.dismissDeleteConfirmation() },
                 onNavigateUp = { finish() })
         }
     }
@@ -126,35 +136,6 @@ class ManageNotetypes : AnkiActivity() {
             },
         )
         return true
-    }
-
-    private fun deleteNotetype(manageNoteTypeUiModel: ManageNoteTypeUiModel) {
-        launchCatchingTask {
-            @StringRes val messageResourceId: Int? = if (userAcceptsSchemaChange()) {
-                withProgress {
-                    withCol {
-                        if (getNotetypeNames().size <= 1) {
-                            return@withCol null
-                        }
-                        R.string.model_delete_warning
-                    }
-                }
-            } else {
-                return@launchCatchingTask
-            }
-            if (messageResourceId == null) {
-                showSnackbar(getString(R.string.toast_last_model))
-                return@launchCatchingTask
-            }
-            AlertDialog.Builder(this@ManageNotetypes).show {
-                title(R.string.model_browser_delete)
-                message(messageResourceId)
-                positiveButton(R.string.dialog_positive_delete) {
-                    viewModel.deleteNoteType(manageNoteTypeUiModel.id)
-                }
-                negativeButton(R.string.dialog_cancel)
-            }
-        }
     }
 
 

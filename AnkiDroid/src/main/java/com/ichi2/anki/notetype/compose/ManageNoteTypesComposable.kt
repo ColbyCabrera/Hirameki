@@ -91,7 +91,9 @@ fun ManageNoteTypesScreen(
     onShowFields: (ManageNoteTypeUiModel) -> Unit,
     onEditCards: (ManageNoteTypeUiModel) -> Unit,
     onRename: (ManageNoteTypeUiModel) -> Unit,
-    onDelete: (ManageNoteTypeUiModel) -> Unit,
+    onDeleteRequest: (ManageNoteTypeUiModel) -> Unit,
+    onDeleteConfirm: (ManageNoteTypeUiModel) -> Unit,
+    onDeleteDismiss: () -> Unit,
     onNavigateUp: () -> Unit,
     windowWidthSizeClass: WindowWidthSizeClass? = null,
 ) {
@@ -113,7 +115,6 @@ fun ManageNoteTypesScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var noteTypeToRename by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
-    var noteTypeToDelete by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -152,7 +153,7 @@ fun ManageNoteTypesScreen(
                 onEditCards = { onEditCards(noteType) },
                 onRename = { noteTypeToRename = noteType },
                 onDelete = {
-                    noteTypeToDelete = noteType
+                    onDeleteRequest(noteType)
                     selectedNoteType = null
                 })
         }
@@ -165,11 +166,11 @@ fun ManageNoteTypesScreen(
             )
         }
 
-        noteTypeToDelete?.let { noteType ->
+        uiState.deleteConfirmationNoteType?.let { noteType ->
             DeleteNoteTypeDialog(
                 noteType = noteType,
-                onDismissRequest = { noteTypeToDelete = null },
-                onDelete = onDelete
+                onDismissRequest = onDeleteDismiss,
+                onDelete = onDeleteConfirm
             )
         }
 
@@ -467,7 +468,9 @@ fun PreviewManageNoteTypesScreen() {
             onShowFields = {},
             onEditCards = {},
             onRename = {},
-            onDelete = {},
+            onDeleteRequest = {},
+            onDeleteConfirm = {},
+            onDeleteDismiss = {},
             onNavigateUp = {},
         )
     }
@@ -494,7 +497,9 @@ fun PreviewManageNoteTypesScreenExpanded() {
             onShowFields = {},
             onEditCards = {},
             onRename = {},
-            onDelete = {},
+            onDeleteRequest = {},
+            onDeleteConfirm = {},
+            onDeleteDismiss = {},
             onNavigateUp = {},
             windowWidthSizeClass = WindowWidthSizeClass.Expanded
         )
