@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.ichi2.anki.R
 import com.ichi2.anki.notetype.ManageNoteTypeUiModel
@@ -76,7 +77,10 @@ fun NoteTypeItem(
         ListItem(
             modifier = Modifier.clickable { onClick() }, headlineContent = {
             Text(
-                text = noteType.name, style = MaterialTheme.typography.bodyLarge
+                text = noteType.name,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }, supportingContent = {
             Text(
