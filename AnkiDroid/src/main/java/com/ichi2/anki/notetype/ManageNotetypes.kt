@@ -68,6 +68,10 @@ class ManageNotetypes : AnkiActivity() {
             LaunchedEffect(viewModel) {
                 viewModel.uiEvents.collect { event ->
                     when (event) {
+                        is ManageNoteTypesUiEvent.ShowError -> {
+                            showSnackbar(event.message)
+                        }
+
                         is ManageNoteTypesUiEvent.ShowSnackbar -> {
                             showSnackbar(getString(event.messageId))
                         }

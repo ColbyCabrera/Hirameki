@@ -22,7 +22,6 @@ import androidx.lifecycle.viewModelScope
 import anki.notetypes.StockNotetype
 import anki.notetypes.copy
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.OnErrorListener
 import com.ichi2.anki.R
 import com.ichi2.anki.launchCatchingIO
 import com.ichi2.anki.libanki.addNotetype
@@ -34,6 +33,8 @@ import com.ichi2.anki.libanki.getNotetypeNames
 import com.ichi2.anki.libanki.getStockNotetype
 import com.ichi2.anki.libanki.removeNotetype
 import com.ichi2.anki.libanki.updateNotetype
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -44,9 +45,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 sealed interface ManageNoteTypesUiEvent {
+    data class ShowError(val message: String) : ManageNoteTypesUiEvent
     data class ShowSnackbar(@StringRes val messageId: Int) : ManageNoteTypesUiEvent
     data class PromptSchemaChangeWarning(val noteType: ManageNoteTypeUiModel) :
         ManageNoteTypesUiEvent
+
     data class PromptDeleteSelectedConfirmation(val ids: Set<Long>) : ManageNoteTypesUiEvent
 }
 
@@ -60,9 +63,7 @@ data class ManageNoteTypesUiState(
     val isInMultiSelectMode: Boolean = false,
 )
 
-class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
-    override val onError = MutableSharedFlow<String>()
-
+class ManageNoteTypesViewModel : ViewModel() {
     private val _uiEvents = MutableSharedFlow<ManageNoteTypesUiEvent>()
     val uiEvents: SharedFlow<ManageNoteTypesUiEvent> = _uiEvents.asSharedFlow()
 
@@ -74,18 +75,21 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
     private val _selectedNoteTypeIds = MutableStateFlow<Set<Long>>(emptySet())
 
     val uiState: StateFlow<ManageNoteTypesUiState> = combine(
-        _allNoteTypes, _addOptions, _searchQuery, _isLoading, _deleteConfirmationNoteType,
+        _allNoteTypes,
+        _addOptions,
+        _searchQuery,
+        _isLoading,
+        _deleteConfirmationNoteType,
         _selectedNoteTypeIds
     ) { values ->
-        @Suppress("UNCHECKED_CAST")
-        val noteTypes = values[0] as List<ManageNoteTypeUiModel>
-        @Suppress("UNCHECKED_CAST")
-        val addOptions = values[1] as List<AddNotetypeUiModel>
+        @Suppress("UNCHECKED_CAST") val noteTypes = values[0] as List<ManageNoteTypeUiModel>
+
+        @Suppress("UNCHECKED_CAST") val addOptions = values[1] as List<AddNotetypeUiModel>
         val query = values[2] as String
         val isLoading = values[3] as Boolean
         val deleteConfirmationNoteType = values[4] as ManageNoteTypeUiModel?
-        @Suppress("UNCHECKED_CAST")
-        val selectedIds = values[5] as Set<Long>
+
+        @Suppress("UNCHECKED_CAST") val selectedIds = values[5] as Set<Long>
 
         val filtered = if (query.isEmpty()) {
             noteTypes
@@ -111,8 +115,17 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
         refresh()
     }
 
+    private fun launchManageNoteTypesAction(block: suspend CoroutineScope.() -> Unit): Job =
+        launchCatchingIO(
+            errorMessageHandler = { message ->
+                _isLoading.value = false
+                _uiEvents.emit(ManageNoteTypesUiEvent.ShowError(message))
+            },
+            block = block,
+        )
+
     fun refresh() {
-        launchCatchingIO {
+        launchManageNoteTypesAction {
             _isLoading.value = true
             val (updated, options) = withCol {
                 val types = getNotetypeNameIdUseCount().map { it.toUiModel() }
@@ -136,7 +149,7 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
     }
 
     fun addNoteType(newName: String, selectedOption: AddNotetypeUiModel) {
-        launchCatchingIO {
+        launchManageNoteTypesAction {
             _isLoading.value = true
             withCol {
                 if (selectedOption.isStandard) {
@@ -163,11 +176,11 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
     }
 
     fun requestDeleteNoteType(noteType: ManageNoteTypeUiModel) {
-        launchCatchingIO {
+        launchManageNoteTypesAction {
             val count = withCol { getNotetypeNames().size }
             if (count <= 1) {
                 _uiEvents.emit(ManageNoteTypesUiEvent.ShowSnackbar(R.string.toast_last_model))
-                return@launchCatchingIO
+                return@launchManageNoteTypesAction
             }
             _uiEvents.emit(ManageNoteTypesUiEvent.PromptSchemaChangeWarning(noteType))
         }
@@ -183,7 +196,7 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
 
     fun confirmDeleteNoteType(id: Long) {
         _deleteConfirmationNoteType.value = null
-        launchCatchingIO {
+        launchManageNoteTypesAction {
             _isLoading.value = true
             withCol {
                 removeNotetype(id)
@@ -193,7 +206,7 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
     }
 
     fun renameNoteType(id: Long, newName: String) {
-        launchCatchingIO {
+        launchManageNoteTypesAction {
             _isLoading.value = true
             withCol {
                 val nt = getNotetype(id).toBuilder().setName(newName).build()
@@ -221,14 +234,14 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
     }
 
     fun deleteSelectedNoteTypes() {
-        launchCatchingIO {
+        launchManageNoteTypesAction {
             val selectedIds = _selectedNoteTypeIds.value
-            if (selectedIds.isEmpty()) return@launchCatchingIO
+            if (selectedIds.isEmpty()) return@launchManageNoteTypesAction
 
             val totalCount = withCol { getNotetypeNames().size }
             if (totalCount - selectedIds.size < 1) {
                 _uiEvents.emit(ManageNoteTypesUiEvent.ShowSnackbar(R.string.toast_last_model))
-                return@launchCatchingIO
+                return@launchManageNoteTypesAction
             }
             _uiEvents.emit(ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation(selectedIds))
         }
@@ -237,7 +250,7 @@ class ManageNoteTypesViewModel : ViewModel(), OnErrorListener {
     fun confirmDeleteSelectedNoteTypes() {
         val idsToDelete = _selectedNoteTypeIds.value
         _selectedNoteTypeIds.value = emptySet()
-        launchCatchingIO {
+        launchManageNoteTypesAction {
             _isLoading.value = true
             withCol {
                 for (id in idsToDelete) {
