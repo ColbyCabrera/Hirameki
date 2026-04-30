@@ -70,12 +70,11 @@ fun NoteTypeItem(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier.clickable { onClick() },
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         ListItem(
-            headlineContent = {
+            modifier = Modifier.clickable { onClick() }, headlineContent = {
             Text(
                 text = noteType.name, style = MaterialTheme.typography.bodyLarge
             )
