@@ -81,12 +81,9 @@ fun NoDecks(
     onGetSharedDecks: () -> Unit,
 ) {
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        visible = true
-    }
-
     val animatableShift = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
+        visible = true
         animatableShift.animateTo(
             targetValue = 1f, animationSpec = spring(
                 dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessVeryLow
