@@ -691,6 +691,94 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
+    fun `fields fall back to index when names do not match`() {
+        addStandardNoteType(
+            "Prompt Answer", arrayOf("Prompt", "Answer"), "{{Prompt}}", "{{Answer}}"
+        )
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "hello")
+        editor.setFieldValueFromUi(1, "world")
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Prompt Answer")
+        idleMainLooper()
+
+        val fields = editor.viewModel.noteEditorState.value.fields
+        assertThat("Prompt field keeps index 0 value", fields[0].value.text, equalTo("hello"))
+        assertThat("Answer field keeps index 1 value", fields[1].value.text, equalTo("world"))
+    }
+
+    @Test
+    fun `fields use name matches before index fallback`() {
+        addStandardNoteType(
+            "Front Response", arrayOf("Front", "Response"), "{{Front}}", "{{Response}}"
+        )
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "front-val")
+        editor.setFieldValueFromUi(1, "back-val")
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Front Response")
+        idleMainLooper()
+
+        val fields = editor.viewModel.noteEditorState.value.fields
+        assertThat("Front field keeps name-based match", fields[0].value.text, equalTo("front-val"))
+        assertThat(
+            "Response field receives unmatched back field by index",
+            fields[1].value.text,
+            equalTo("back-val")
+        )
+    }
+
+    @Test
+    fun `name matching takes precedence over conflicting index fallback`() {
+        addStandardNoteType("Back Prompt", arrayOf("Back", "Prompt"), "{{Back}}", "{{Prompt}}")
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "front-val")
+        editor.setFieldValueFromUi(1, "back-val")
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Back Prompt")
+        idleMainLooper()
+
+        val fields = editor.viewModel.noteEditorState.value.fields
+        assertThat("Back field keeps the name-based match", fields[0].value.text, equalTo("back-val"))
+        assertThat("Prompt field stays blank", fields[1].value.text, equalTo(""))
+    }
+
+    @Test
+    fun `index fallback skips fields past destination size`() {
+        createThreeFieldNoteType()
+        addStandardNoteType(
+            "Prompt Pair", arrayOf("Prompt", "Response"), "{{Prompt}}", "{{Response}}"
+        )
+        val editor = getNoteEditorAdding(NoteType.BASIC).build()
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("ThreeField")
+        idleMainLooper()
+
+        editor.setFieldValueFromUi(0, "front-val")
+        editor.setFieldValueFromUi(1, "back-val")
+        editor.setFieldValueFromUi(2, "extra-val")
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Prompt Pair")
+        idleMainLooper()
+
+        val fields = editor.viewModel.noteEditorState.value.fields
+        assertThat("destination has only 2 fields", fields.size, equalTo(2))
+        assertThat("Prompt gets index 0 value", fields[0].value.text, equalTo("front-val"))
+        assertThat("Response gets index 1 value", fields[1].value.text, equalTo("back-val"))
+    }
+
+    @Test
     fun `field content with newlines survives note type round-trip`() {
         createBasic2NoteType()
         val editor = getNoteEditorAdding(NoteType.BASIC).build()
