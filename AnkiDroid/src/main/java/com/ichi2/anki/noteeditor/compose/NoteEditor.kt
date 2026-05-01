@@ -26,6 +26,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -76,6 +77,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -164,6 +166,7 @@ fun NoteEditorScreen(
     noClozeDialogMessage: String?,
     onSaveAnywayClick: () -> Unit,
     onDismissNoClozeDialog: () -> Unit,
+    capitalizeSentences: Boolean = true,
 ) {
     // Observe keyboard state for auto-scrolling
     val imeState = rememberImeState()
@@ -304,6 +307,7 @@ fun NoteEditorScreen(
                             showStickyButton = state.isAddingNote,
                             onFocus = { onFieldFocus(field.index) },
                             isFocused = state.focusedFieldIndex == field.index,
+                            capitalizeSentences = capitalizeSentences,
                         )
                     }
                 }
@@ -583,6 +587,7 @@ fun NoteFieldEditor(
     showStickyButton: Boolean,
     onFocus: () -> Unit,
     isFocused: Boolean,
+    capitalizeSentences: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -630,6 +635,7 @@ fun NoteFieldEditor(
         OutlinedTextField(
             value = field.value,
             onValueChange = onValueChange,
+            keyboardOptions = if (capitalizeSentences) KeyboardOptions(capitalization = KeyboardCapitalization.Sentences) else KeyboardOptions.Default,
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { focusState ->
@@ -754,6 +760,7 @@ fun NoteEditorScreenPreview() {
             noClozeDialogMessage = null,
             onSaveAnywayClick = {},
             onDismissNoClozeDialog = {},
+            capitalizeSentences = true,
         )
     }
 }

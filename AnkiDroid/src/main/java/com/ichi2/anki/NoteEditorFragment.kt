@@ -819,6 +819,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     onDismissNoClozeDialog = {
                         noteEditorViewModel.dismissNoClozeDialog()
                     },
+                    capitalizeSentences = capitalizeChecked,
                 )
 
                 // Toolbar Item Dialog (Add/Edit)
