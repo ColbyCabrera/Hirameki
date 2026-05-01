@@ -108,6 +108,9 @@ import com.ichi2.anki.userAcceptsSchemaChange
 import kotlinx.coroutines.launch
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
+/**
+ * Snapshot of the UI state consumed by [DeckPickerWithDrawer].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 private data class DeckPickerDrawerState(
     val fragmented: Boolean,
@@ -174,6 +177,14 @@ private data class DeckPickerDrawerActions(
     val onManageNoteTypes: () -> Unit,
 )
 
+/**
+ * Top-level navigation host for the deck picker Compose experience.
+ *
+ * This owns the navigation graph for the deck picker, tablet card browser, statistics/help flows,
+ * and note-type management screen while delegating business state to [DeckPickerViewModel].
+ *
+ * @param fragmented Whether the deck picker is currently shown in the split tablet layout.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DeckPickerNavHost(
@@ -340,6 +351,12 @@ fun DeckPickerNavHost(
         predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() })
 }
 
+/**
+ * Bridges deck picker state from [DeckPickerViewModel] into the drawer-based UI shell.
+ *
+ * This is the composition boundary where activity callbacks, navigator actions, dialog state, and
+ * collected flows are translated into the simple state/action objects consumed by the screen layer.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DeckPickerMainContent(
@@ -568,6 +585,10 @@ private fun DeckPickerMainContent(
     )
 }
 
+/**
+ * Wraps [DeckPickerScreen] in a modal navigation drawer and adapts drawer-level actions into the
+ * row, FAB, and overflow action models used by the screen.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckPickerWithDrawer(
@@ -661,6 +682,12 @@ private fun DeckPickerWithDrawer(
     }
 }
 
+/**
+ * Collects one-shot flows that must be handled from Compose rather than from the view model.
+ *
+ * Snackbar presentation and navigation side effects live here because they require Compose runtime
+ * state such as [SnackbarHostState] and the current [Navigator].
+ */
 @Composable
 private fun SetupFlows(
     navigator: Navigator,
@@ -739,6 +766,9 @@ private fun SetupFlows(
     }
 }
 
+/**
+ * Shows an undo snackbar and invokes [onUndo] only when the action is pressed.
+ */
 private suspend fun showUndoSnackbar(
     snackbarHostState: SnackbarHostState, message: String, undoLabel: String, onUndo: () -> Unit
 ) {
