@@ -132,7 +132,7 @@ fun DeckPickerTabletCardBrowser(
                 onOpenNoteEditor(row.id)
             }
         },
-        onAddNote = { onAddNote() },
+        onAddNote = onAddNote,
         onPreview = { /* ActionHandler handled by Activity */ }, // This might need a callback
         onFilter = cardBrowserViewModel::search,
         onSelectAll = { cardBrowserViewModel.toggleSelectAllOrNone() },
