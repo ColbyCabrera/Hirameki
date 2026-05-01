@@ -35,6 +35,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 
+/**
+ * Progress dialog used for longer running deck picker operations such as sync.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckPickerProgressDialog(

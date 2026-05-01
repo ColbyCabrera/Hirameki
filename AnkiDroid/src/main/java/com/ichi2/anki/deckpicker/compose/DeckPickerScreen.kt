@@ -107,6 +107,12 @@ private val expandedDeckCardRadius = 24.dp
 private val collapsedDeckCardRadius = 70.dp
 private val subDeckPadding = 16.dp
 
+/**
+ * Recursively renders one deck node and its visible descendants.
+ *
+ * Child rows keep the last expanded child list in memory so collapse animations can finish without
+ * immediately dropping the subtree from composition.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RenderDeck(
@@ -120,6 +126,7 @@ private fun RenderDeck(
         animationSpec = motionScheme.defaultEffectsSpec(),
     )
 
+    // Preserve the last expanded subtree long enough for AnimatedVisibility to animate it away.
     var rememberedChildren by remember { mutableStateOf<List<DisplayDeckNode>?>(null) }
     if (!deck.collapsed) {
         rememberedChildren = children
@@ -199,6 +206,14 @@ private fun RenderDeck(
     }
 }
 
+/**
+ * Displays the deck list area, including pull-to-refresh, loading, empty, and populated states.
+ *
+ * @param decks Flattened deck rows from the view model.
+ * @param deckRowActions Row callbacks forwarded into each rendered deck node.
+ * @param isInInitialState `true` when the collection is still in the empty initial state,
+ * `false` after a non-empty load, and `null` while the first load is unresolved.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckPickerContent(
@@ -226,9 +241,7 @@ fun DeckPickerContent(
         )
     }
 
-    // Build the deck tree
-    // We remember the result to avoid rebuilding the tree on every recomposition
-    // if the deck list hasn't changed.
+    // Rebuild the parent -> children lookup only when the flattened deck list changes.
     val (deckToChildrenMap, rootDecks) = remember(decks) {
         val deckToChildrenMap = mutableMapOf<DisplayDeckNode, MutableList<DisplayDeckNode>>()
         val rootDecks = mutableListOf<DisplayDeckNode>()
@@ -440,6 +453,9 @@ private fun DeckPickerTopBar(
     )
 }
 
+/**
+ * Overflow menu used by the deck picker top app bar.
+ */
 @Composable
 fun MoreOptionsMenu(
     isMoreOptionsMenuOpen: Boolean,
@@ -521,6 +537,16 @@ fun MoreOptionsMenu(
     }
 }
 
+/**
+ * Primary deck picker surface for both phone and tablet layouts.
+ *
+ * When [fragmented] is `true`, the deck list and study options are shown side by side. Otherwise,
+ * the study options surface is reached through deck selection and other navigation flows.
+ *
+ * @param fragmented Whether the deck picker is currently using the split tablet layout.
+ * @param studyOptionsData The currently selected deck summary for the study options panel.
+ * @param requestSearchFocus One-shot flag used by outer navigation state to reopen deck search.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckPickerScreen(
@@ -634,6 +660,9 @@ fun DeckPickerScreen(
     }
 }
 
+/**
+ * Hosts the expandable floating action button and its dismiss scrim.
+ */
 @Composable
 private fun DeckPickerFab(
     expanded: Boolean,

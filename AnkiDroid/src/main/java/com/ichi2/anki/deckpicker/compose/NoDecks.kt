@@ -71,21 +71,19 @@ import androidx.graphics.shapes.Morph
 import com.ichi2.anki.R
 import com.ichi2.utils.MorphShape
 
+/**
+ * Empty-collection state shown when the user has no decks to study yet.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NoDecks(
     onCreateDeck: () -> Unit,
     onGetSharedDecks: () -> Unit,
 ) {
-    // Idea 1: Shape Morphing & Idea 2: Spring-Based "Enter" Animations
     var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        visible = true
-    }
-
     val animatableShift = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        // Morph animation loop or entry
+        visible = true
         animatableShift.animateTo(
             targetValue = 1f, animationSpec = spring(
                 dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessVeryLow
@@ -93,7 +91,6 @@ fun NoDecks(
         )
     }
 
-    // Slow left rotation animation
     val infiniteTransition = rememberInfiniteTransition(label = "rotation")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f, targetValue = -360f, animationSpec = infiniteRepeatable(
@@ -102,7 +99,7 @@ fun NoDecks(
         ), label = "rotation"
     )
 
-    // Create Morph once - this can be expensive due to path calculations
+    // Remember the morph because generating the shape path is relatively expensive.
     val morph = remember {
         Morph(
             start = MaterialShapes.Pentagon,
@@ -115,21 +112,18 @@ fun NoDecks(
     Box(
         modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
     ) {
-        // Background Morphing Shape (Idea 1)
-        Box(
-            modifier = Modifier
-                .size(300.dp)
-                .scale(scaleX = 1.2f, scaleY = 1.2f) // Make it large
-                .graphicsLayer {
-                    this.alpha = 0.1f // Subtle background
-                    this.shadowElevation = 0f
-                    this.shape = morphShape
-                    this.clip = true
-                    this.rotationZ = rotation
-                }
-                .background(MaterialTheme.colorScheme.tertiaryContainer))
+        Box(modifier = Modifier
+            .size(300.dp)
+            .scale(scaleX = 1.2f, scaleY = 1.2f)
+            .graphicsLayer {
+                this.alpha = 0.1f
+                this.shadowElevation = 0f
+                this.shape = morphShape
+                this.clip = true
+                this.rotationZ = rotation
+            }
+            .background(MaterialTheme.colorScheme.tertiaryContainer))
 
-        // Content
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -138,7 +132,6 @@ fun NoDecks(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Animated Icon (Idea 2 - Pop in)
             AnimatedVisibility(
                 visible = visible, enter = scaleIn(
                     animationSpec = spring(
@@ -165,7 +158,6 @@ fun NoDecks(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Text with Editorial Typography (Idea 3)
             AnimatedVisibility(
                 visible = visible, enter = slideInVertically(
                     initialOffsetY = { 50 }, animationSpec = spring(
@@ -175,9 +167,9 @@ fun NoDecks(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = stringResource(id = R.string.no_cards_placeholder_title), // "Collection is empty" or similar
+                        text = stringResource(id = R.string.no_cards_placeholder_title),
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.displayMedium, // Bold, Editorial
+                        style = MaterialTheme.typography.displayMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
@@ -193,7 +185,6 @@ fun NoDecks(
                 }
             }
 
-            // Buttons (Idea 2 - Staggered entry)
             AnimatedVisibility(
                 visible = visible, enter = slideInVertically(
                     initialOffsetY = { 100 }, animationSpec = spring(
@@ -206,7 +197,7 @@ fun NoDecks(
                         onClick = onCreateDeck,
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
-                            .height(56.dp), // Larger touch target
+                            .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
