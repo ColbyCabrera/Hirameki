@@ -46,6 +46,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +61,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardBrowser
+import com.ichi2.anki.CardTemplateEditor
+import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.browser.CardBrowserViewModel
@@ -78,19 +84,27 @@ import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
+import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
+import com.ichi2.anki.navigation.ManageNoteTypesDestination
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
+import com.ichi2.anki.notetype.ManageNoteTypesUiEvent
+import com.ichi2.anki.notetype.ManageNoteTypesViewModel
+import com.ichi2.anki.notetype.compose.DeleteSelectedNoteTypesDialog
+import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
+import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.contribute.ContributeScreen
 import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
+import com.ichi2.anki.userAcceptsSchemaChange
 import kotlinx.coroutines.launch
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
@@ -157,6 +171,7 @@ private data class DeckPickerDrawerActions(
     val onImport: () -> Unit,
     val onExport: () -> Unit,
     val onDeleteEmptyCards: () -> Unit,
+    val onManageNoteTypes: () -> Unit,
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -221,6 +236,95 @@ fun DeckPickerNavHost(
 
         entry<StatisticsDestination> {
             StatisticsScreen(onNavigateUp = { navigator.goBack() })
+        }
+
+        entry<ManageNoteTypesDestination> {
+            val noteTypesViewModel: ManageNoteTypesViewModel = viewModel()
+            val uiState by noteTypesViewModel.uiState.collectAsStateWithLifecycle()
+            val context = LocalContext.current
+            val lifecycleOwner = LocalLifecycleOwner.current
+            val activity = context as AnkiActivity
+            var showBatchDeleteConfirmation by remember { mutableStateOf(false) }
+
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        noteTypesViewModel.refresh()
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
+
+            LaunchedEffect(noteTypesViewModel) {
+                noteTypesViewModel.uiEvents.collect { event ->
+                    when (event) {
+                        is ManageNoteTypesUiEvent.ShowErrorMessage -> {
+                            activity.showSnackbar(event.message)
+                        }
+
+                        is ManageNoteTypesUiEvent.ShowSnackbar -> {
+                            activity.showSnackbar(activity.getString(event.messageId))
+                        }
+
+                        is ManageNoteTypesUiEvent.PromptSchemaChangeWarning -> {
+                            activity.launchCatchingTask {
+                                if (activity.userAcceptsSchemaChange()) {
+                                    noteTypesViewModel.showDeleteConfirmation(event.noteType)
+                                }
+                            }
+                        }
+
+                        is ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation -> {
+                            activity.launchCatchingTask {
+                                if (activity.userAcceptsSchemaChange()) {
+                                    showBatchDeleteConfirmation = true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ManageNoteTypesScreen(
+                uiState = uiState,
+                onSearch = { noteTypesViewModel.updateSearchQuery(it) },
+                onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
+                onShowFields = {
+                    onLaunchIntent(
+                        Intent(context, NoteTypeFieldEditor::class.java).apply {
+                            putExtra("title", it.name)
+                            putExtra("noteTypeID", it.id)
+                        })
+                },
+                onEditCards = {
+                    onLaunchIntent(
+                        Intent(context, CardTemplateEditor::class.java).apply {
+                            putExtra("noteTypeId", it.id)
+                        })
+                },
+                onRename = { noteTypesViewModel.renameNoteType(it.id, it.name) },
+                onDeleteRequest = { noteTypesViewModel.requestDeleteNoteType(it) },
+                onDeleteConfirm = { noteTypesViewModel.confirmDeleteNoteType(it.id) },
+                onDeleteDismiss = { noteTypesViewModel.dismissDeleteConfirmation() },
+                onToggleSelection = { noteTypesViewModel.toggleNoteTypeSelection(it) },
+                onSelectAll = { noteTypesViewModel.selectAllNoteTypes() },
+                onDeselectAll = { noteTypesViewModel.deselectAllNoteTypes() },
+                onDeleteSelected = { noteTypesViewModel.deleteSelectedNoteTypes() },
+                onNavigateUp = { navigator.goBack() })
+
+            if (showBatchDeleteConfirmation) {
+                DeleteSelectedNoteTypesDialog(
+                    count = uiState.selectedNoteTypeIds.size,
+                    onDismissRequest = { showBatchDeleteConfirmation = false },
+                    onConfirm = {
+                        noteTypesViewModel.confirmDeleteSelectedNoteTypes()
+                        showBatchDeleteConfirmation = false
+                    },
+                )
+            }
         }
     }
 
@@ -404,6 +508,9 @@ private fun DeckPickerMainContent(
         onImport = onImport,
         onExport = onExport,
         onDeleteEmptyCards = { viewModel.showEmptyCardsDialog() },
+        onManageNoteTypes = {
+            navigator.navigate(ManageNoteTypesDestination)
+        },
     )
 
     val deckPickerDrawerState = DeckPickerDrawerState(
@@ -539,6 +646,7 @@ private fun DeckPickerWithDrawer(
                 onDeleteEmptyCards = actions.onDeleteEmptyCards,
                 onCheckDatabase = actions.onCheckDatabase,
                 onExport = actions.onExport,
+                onManageNoteTypes = actions.onManageNoteTypes,
             ),
             onNavigationIconClick = actions.onNavigationIconClick,
             onStartStudy = actions.onStartStudy,

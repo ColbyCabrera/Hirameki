@@ -47,13 +47,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.RoundedPolygon
 import com.ichi2.utils.MorphShape
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 // A list of interesting shapes to cycle through for the morph animation.
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val MORPHING_SHAPES = listOf(
+val MORPHING_SHAPES = listOf(
     MaterialShapes.Circle,
     MaterialShapes.Pill,
     MaterialShapes.SoftBurst,
@@ -91,11 +92,13 @@ fun MorphingCardCount(
     containerColor: Color,
     contentColor: Color,
     modifier: Modifier = Modifier,
+    shapes: List<RoundedPolygon> = MORPHING_SHAPES,
 ) {
+    val shapes = shapes.ifEmpty { MORPHING_SHAPES }
     // State for managing the morph animation.
-    var currentShapeIndex by remember { mutableIntStateOf(Random.nextInt(MORPHING_SHAPES.size)) }
-    var startShape by remember { mutableStateOf(MORPHING_SHAPES[currentShapeIndex]) }
-    var endShape by remember { mutableStateOf(MORPHING_SHAPES[currentShapeIndex]) }
+    var currentShapeIndex by remember(shapes) { mutableIntStateOf(Random.nextInt(shapes.size)) }
+    var startShape by remember(shapes) { mutableStateOf(shapes[currentShapeIndex]) }
+    var endShape by remember(shapes) { mutableStateOf(shapes[currentShapeIndex]) }
     val morphProgress = remember { Animatable(0f) }
 
     // State for the rotation animation.
@@ -112,9 +115,9 @@ fun MorphingCardCount(
         val rotationDirection = if (cardCount > previousCardCount) 1f else -1f
 
         // Set up the shapes for the upcoming morph.
-        startShape = MORPHING_SHAPES[currentShapeIndex]
-        currentShapeIndex = (currentShapeIndex + 1) % MORPHING_SHAPES.size
-        endShape = MORPHING_SHAPES[currentShapeIndex]
+        startShape = shapes[currentShapeIndex]
+        currentShapeIndex = (currentShapeIndex + 1) % shapes.size
+        endShape = shapes[currentShapeIndex]
 
         // Reset progress and rotation before starting new animations.
         morphProgress.snapTo(0f)

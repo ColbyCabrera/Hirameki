@@ -479,6 +479,19 @@ fun MoreOptionsMenu(
                 },
             )
             DropdownMenuItem(
+                text = { Text(stringResource(R.string.model_browser_label)) },
+                onClick = {
+                    onMoreOptionsMenuOpenChange(false)
+                    moreOptionsMenuActions.onManageNoteTypes()
+                },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.list_24px),
+                        contentDescription = null,
+                    )
+                },
+            )
+            DropdownMenuItem(
                 text = { Text(text = TR.actionsExport()) },
                 onClick = {
                     onMoreOptionsMenuOpenChange(false)
@@ -664,7 +677,8 @@ fun DeckPickerTopBarPreview() {
             moreOptionsMenuActions = MoreOptionsMenuActions(
                 onDeleteEmptyCards = {},
                 onCheckDatabase = {},
-                onExport = {}),
+                onExport = {},
+                onManageNoteTypes = {}),
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         )
     }
@@ -687,7 +701,8 @@ fun DeckPickerTopBarSearchOpenPreview() {
             moreOptionsMenuActions = MoreOptionsMenuActions(
                 onDeleteEmptyCards = {},
                 onCheckDatabase = {},
-                onExport = {}),
+                onExport = {},
+                onManageNoteTypes = {}),
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         )
     }
