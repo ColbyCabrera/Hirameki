@@ -66,6 +66,12 @@ import com.ichi2.anki.ui.compose.theme.RobotoMono
 import org.jsoup.Jsoup
 import org.jsoup.safety.Safelist
 
+/**
+ * UI-ready study summary for the currently selected deck.
+ *
+ * This aggregates deck metadata, visible counts, buried counts, and filtered-deck state so the
+ * study options pane can render without reaching back into deck or scheduler APIs.
+ */
 data class StudyOptionsData(
     val deckId: Long,
     val deckName: String,
@@ -82,6 +88,12 @@ data class StudyOptionsData(
     val haveBuried: Boolean,
 )
 
+/**
+ * Chooses the appropriate tablet-side study options content for the selected deck.
+ *
+ * A `null` [studyOptionsData] value represents the transient loading state before a selection is
+ * available.
+ */
 @Composable
 fun StudyOptionsScreen(
     studyOptionsData: StudyOptionsData?,
@@ -118,6 +130,9 @@ fun StudyOptionsScreen(
     }
 }
 
+/**
+ * Full study options view for a deck that still has cards available today.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StudyOptionsView(
@@ -140,6 +155,7 @@ fun StudyOptionsView(
         if (studyOptionsData.deckDescription.isNotEmpty()) {
             val linkColor = MaterialTheme.colorScheme.primary
             val annotatedString = remember(studyOptionsData.deckDescription, linkColor) {
+                // Sanitize stored HTML before converting it into clickable Compose text spans.
                 val cleanDescription =
                     Jsoup.clean(studyOptionsData.deckDescription, Safelist.basic())
                 val spanned = HtmlCompat.fromHtml(
@@ -302,6 +318,9 @@ fun StudyOptionsView(
     }
 }
 
+/**
+ * Empty-state study options content for a deck that contains no cards.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EmptyDeckView(
@@ -329,6 +348,9 @@ fun EmptyDeckView(
     }
 }
 
+/**
+ * Post-study state shown when the selected deck has no cards left for the day.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CongratsView(
@@ -373,6 +395,9 @@ fun CongratsView(
     }
 }
 
+/**
+ * Displays a labeled study count badge used throughout the study options pane.
+ */
 @Composable
 fun StudyOptionCardCount(
     label: String,
