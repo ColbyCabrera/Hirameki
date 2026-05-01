@@ -80,7 +80,10 @@ private val CloverShape = RoundedPolygonShape(MaterialShapes.Clover4Leaf)
 private val GhostishShape = RoundedPolygonShape(MaterialShapes.Ghostish)
 
 /**
- * Actions for a single deck item, already bound to a specific deck.
+ * Deck row interactions after they have been bound to a specific deck.
+ *
+ * [RenderDeck] creates this scoped action set so [DeckItem] can stay focused on presentation and
+ * menu wiring.
  */
 data class DeckItemActions(
     val onDeckClick: () -> Unit,
@@ -96,6 +99,16 @@ data class DeckItemActions(
     val onCreateSubdeck: () -> Unit,
 )
 
+/**
+ * Renders a single deck row, including counts, expand/collapse affordance, and the long-press
+ * context menu.
+ *
+ * Top-level decks, first-level subdecks, and deeper descendants intentionally use different
+ * container treatments so hierarchy remains visible without extra indentation chrome.
+ *
+ * @param deck The deck node to render.
+ * @param actions Callbacks already scoped to [deck].
+ */
 @OptIn(
     ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class
 )
@@ -319,6 +332,12 @@ fun DeckItem(
 }
 
 
+/**
+ * Displays one numeric deck count inside a shaped badge.
+ *
+ * The semantic [contentDescription] is provided separately so screen readers can announce the badge
+ * with its label instead of only the raw number.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CardCountsContainer(
