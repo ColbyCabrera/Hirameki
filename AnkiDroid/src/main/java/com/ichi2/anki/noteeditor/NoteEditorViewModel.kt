@@ -769,19 +769,7 @@ class NoteEditorViewModel(
                         // continues to reference the same database row.
                         newNote.id = currentNote.id
 
-                        // Build a name→index lookup for the *new* note type's fields
-                        // so we can match old fields to new fields by their display
-                        // name, regardless of position or total count.
-                        val newFieldIndexByName =
-                            freshNotetype.fields.withIndex().associate { it.value.name to it.index }
-
-                        currentNote.notetype.fields.zip(currentNote.fields)
-                            .forEach { (oldField, oldValue) ->
-                                val newIndex = newFieldIndexByName[oldField.name] ?: -1
-                                if (newIndex in newNote.fields.indices) {
-                                    newNote.fields[newIndex] = oldValue
-                                }
-                            }
+                        migrateFieldsForNoteTypeSwitch(currentNote, newNote, freshNotetype)
 
                         // Carry over any tags the user has set during this session.
                         newNote.setTagsFromStr(col, noteEditorState.tags.joinToString(" "))
@@ -1072,6 +1060,56 @@ class NoteEditorViewModel(
             hint = "",
             index = index,
         )
+    }
+
+    /**
+     * Migrate field content during a note type switch.
+     *
+     * The first pass keeps the existing name-based mapping so reordered fields with
+     * matching names land in the correct destination slots. A second pass falls back
+     * to index-to-index migration only for source fields that had no name match.
+     */
+    private fun migrateFieldsForNoteTypeSwitch(
+        oldNote: Note,
+        newNote: Note,
+        newNotetype: NotetypeJson,
+    ) {
+        val oldNotetype = oldNote.notetype
+        val newFieldIndexByName =
+            newNotetype.fields.withIndex().associate { it.value.name to it.index }
+        val sourceIndexesMappedByName = mutableSetOf<Int>()
+        val destinationIndexesMappedByName = mutableSetOf<Int>()
+
+        (0 until oldNotetype.fields.length()).forEach { oldIndex ->
+            val oldValue = oldNote.fields.getOrNull(oldIndex) ?: return@forEach
+            val oldFieldName = oldNotetype.fields[oldIndex].name
+            val newIndex = newFieldIndexByName[oldFieldName] ?: return@forEach
+
+            if (newIndex !in newNote.fields.indices) {
+                return@forEach
+            }
+
+            newNote.fields[newIndex] = oldValue
+            sourceIndexesMappedByName += oldIndex
+            destinationIndexesMappedByName += newIndex
+        }
+
+        (0 until oldNotetype.fields.length()).forEach { oldIndex ->
+            if (oldIndex in sourceIndexesMappedByName) {
+                return@forEach
+            }
+
+            val oldValue = oldNote.fields.getOrNull(oldIndex) ?: return@forEach
+            if (oldIndex !in newNote.fields.indices) {
+                return@forEach
+            }
+
+            if (oldIndex in destinationIndexesMappedByName) {
+                return@forEach
+            }
+
+            newNote.fields[oldIndex] = oldValue
+        }
     }
 
     /**
