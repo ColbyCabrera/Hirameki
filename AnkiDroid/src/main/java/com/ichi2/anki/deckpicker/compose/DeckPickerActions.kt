@@ -18,8 +18,10 @@ package com.ichi2.anki.deckpicker.compose
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 
 /**
- * Actions for deck row items (context menu, click, expand).
- * These traverse the entire composable tree from [DeckPickerScreen] down to [DeckItem].
+ * Deck-level interactions that are threaded from [DeckPickerScreen] down to each rendered deck row.
+ *
+ * Each callback receives the currently bound [DisplayDeckNode], which keeps row rendering code free
+ * of navigation and view-model dependencies.
  */
 data class DeckRowActions(
     val onDeckClick: (DisplayDeckNode) -> Unit,
@@ -36,7 +38,7 @@ data class DeckRowActions(
 )
 
 /**
- * Actions for the more options menu
+ * Actions exposed through the top app bar overflow menu in the deck picker.
  */
 data class MoreOptionsMenuActions(
     val onCheckDatabase: () -> Unit,
@@ -46,7 +48,10 @@ data class MoreOptionsMenuActions(
 )
 
 /**
- * Actions for the floating action button menu.
+ * Actions exposed through the expandable floating action button menu.
+ *
+ * These callbacks map to collection-level creation and import flows rather than deck-specific
+ * actions.
  */
 data class FabActions(
     val onAddNote: () -> Unit,
