@@ -518,10 +518,17 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
             } else {
                 val changes = undoableOp { decks.remove(listOf(did)) }
+                // Capture the undo step so we can merge any subsequent backend
+                // operations (e.g. deck selection) into this single undo entry.
+                val undoStep = withCol { undoStatus().lastStep }
                 // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
                 // to match and avoid unnecessary scrolls in `renderPage()`.
                 focusedDeck = Consts.DEFAULT_DECK_ID
                 updateDeckList()
+                // Merge any undo entries created by deck selection (triggered by
+                // focusedDeck assignment above) so that "Undo" restores the deleted
+                // deck, not an intermediate setCurrentDeck operation.
+                withCol { mergeUndoEntries(undoStep) }
 
                 val deletionResult =
                     DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
