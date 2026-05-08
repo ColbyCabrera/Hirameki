@@ -563,6 +563,45 @@ class DeckPickerViewModelTest : RobolectricTest() {
     }
 
     @Test
+    fun `deleteDeck - undo status targets deck removal after deletion`() = runTest {
+        val deckId = col.decks.id("Deck To Delete")
+
+        viewModel.deleteDeck(deckId).join()
+
+        // The undo status should reference the deck removal, not a subsequent
+        // setCurrentDeck or other intermediate operation.
+        val undoAction = col.undoStatus().undo
+        assertThat("undo should be available after deletion", undoAction != null, equalTo(true))
+        assertThat(
+            "undo action should reference deck removal, not an intermediate operation",
+            undoAction,
+            not(equalTo("Set Deck"))
+        )
+    }
+
+    @Test
+    fun `deleteDeck - undo restores the deleted deck`() = runTest {
+        val deckId = col.decks.id("Restorable Deck")
+        addBasicNote("Front", "Back").moveToDeck("Restorable Deck")
+
+        viewModel.deleteDeck(deckId).join()
+
+        assertThat(
+            "deck should not exist after deletion",
+            withCol { decks.getLegacy(deckId) },
+            equalTo(null)
+        )
+
+        // Undo the deletion
+        withCol { undo() }
+
+        assertThat(
+            "deck should be restored after undo",
+            withCol { decks.getLegacy(deckId) } != null,
+            equalTo(true))
+    }
+
+    @Test
     fun `effects - selecting deck with cards emits HasCardsToStudy`() = runTest {
         // Create a deck with a card
         addBasicNote("Front", "Back")
