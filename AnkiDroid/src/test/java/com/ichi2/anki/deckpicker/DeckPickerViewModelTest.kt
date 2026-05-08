@@ -575,7 +575,7 @@ class DeckPickerViewModelTest : RobolectricTest() {
         assertThat(
             "undo action should reference deck removal, not an intermediate operation",
             undoAction,
-            not(equalTo("Set Deck"))
+            equalTo("Delete Deck")
         )
     }
 
