@@ -135,6 +135,7 @@ sealed class ReviewerEvent {
     object DeckOptions : ReviewerEvent()
     object MediaErrorHandled : ReviewerEvent()
     object AnswerFeedbackShown : ReviewerEvent()
+    object Undo : ReviewerEvent()
 }
 
 sealed class ReviewerEffect {
@@ -346,6 +347,7 @@ class ReviewerViewModel(
             is ReviewerEvent.DeckOptions -> deckOptions()
             is ReviewerEvent.MediaErrorHandled -> onMediaErrorHandled()
             is ReviewerEvent.AnswerFeedbackShown -> onAnswerFeedbackShown()
+            is ReviewerEvent.Undo -> undoAction()
         }
     }
 
@@ -396,6 +398,10 @@ class ReviewerViewModel(
     }
 
     fun undoDelete() {
+        undoAction()
+    }
+
+    private fun undoAction() {
         enqueueCardAction {
             undoableOp(this@ReviewerViewModel) {
                 undo()
