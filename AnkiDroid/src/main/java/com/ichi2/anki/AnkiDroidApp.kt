@@ -34,6 +34,7 @@ import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.MutableLiveData
 import anki.collection.OpChanges
+import com.ichi2.anki.AnkiDroidApp.Companion.sharedPreferencesTestingOverride
 import com.ichi2.anki.CrashReportService.sendExceptionReport
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.browser.SharedPreferencesLastDeckIdRepository
@@ -44,6 +45,7 @@ import com.ichi2.anki.common.utils.isRunningAsUnitTest
 import com.ichi2.anki.contextmenu.AnkiCardContextMenu
 import com.ichi2.anki.contextmenu.CardBrowserContextMenu
 import com.ichi2.anki.exception.StorageAccessException
+import com.ichi2.anki.exception.SystemStorageException
 import com.ichi2.anki.logging.FragmentLifecycleLogger
 import com.ichi2.anki.logging.LogType
 import com.ichi2.anki.logging.ProductionCrashReportingTree
@@ -73,11 +75,9 @@ import java.util.Locale
  * Application class.
  */
 @KotlinCleanup("IDE Lint")
-open class AnkiDroidApp :
-    Application(),
-    ChangeManager.Subscriber {
-    /** An exception if the WebView subsystem fails to load  */
-    private var webViewError: Throwable? = null
+open class AnkiDroidApp : Application(), ChangeManager.Subscriber {
+    /** An exception if AnkiDroidApp fails to load  */
+    private var fatalInitializationError: FatalInitializationError? = null
 
     @LegacyNotifications("The widget triggers notifications by posting null to this, but we plan to stop relying on the widget")
     private val notifications = MutableLiveData<Void?>()
@@ -189,20 +189,7 @@ open class AnkiDroidApp :
         CardBrowser.clearLastDeckId()
         LanguageUtil.setDefaultBackendLanguages()
 
-        // Create the AnkiDroid directory if missing. Send exception report if inaccessible.
-        if (Permissions.hasLegacyStorageAccessPermission(this)) {
-            try {
-                val dir = CollectionHelper.getCurrentAnkiDroidDirectory(this)
-                CollectionHelper.initializeAnkiDroidDirectory(dir)
-            } catch (e: StorageAccessException) {
-                Timber.e(e, "Could not initialize AnkiDroid directory")
-                val defaultDir = CollectionHelper.getDefaultAnkiDroidDirectory(this)
-                if (isSdCardMounted && CollectionHelper.getCurrentAnkiDroidDirectory(this) == defaultDir) {
-                    // Don't send report if the user is using a custom directory as SD cards trip up here a lot
-                    sendExceptionReport(e, "AnkiDroidApp.onCreate")
-                }
-            }
-        }
+        initializeAnkiDroidDirectory()
 
         if (Prefs.newReviewRemindersEnabled) {
             Timber.i("Setting review reminder notifications if they have not already been set")
@@ -229,9 +216,7 @@ open class AnkiDroidApp :
                     savedInstanceState: Bundle?,
                 ) {
                     Timber.i("${activity::class.simpleName}::onCreate")
-                    (activity as? FragmentActivity)
-                        ?.supportFragmentManager
-                        ?.registerFragmentLifecycleCallbacks(
+                    (activity as? FragmentActivity)?.supportFragmentManager?.registerFragmentLifecycleCallbacks(
                             FragmentLifecycleLogger(activity),
                             true,
                         )
@@ -301,19 +286,50 @@ open class AnkiDroidApp :
     }
 
     @Suppress("deprecation") // 7109: setAcceptFileSchemeCookies
-    protected fun acceptFileSchemeCookies(): Boolean =
-        try {
-            CookieManager.setAcceptFileSchemeCookies(true)
-            true
-        } catch (e: Throwable) {
-            // 5794: Errors occur if the WebView fails to load
-            // android.webkit.WebViewFactory.MissingWebViewPackageException.MissingWebViewPackageException
-            // Error may be excessive, but I expect a UnsatisfiedLinkError to be possible here.
-            webViewError = e
-            sendExceptionReport(e, "setAcceptFileSchemeCookies")
-            Timber.e(e, "setAcceptFileSchemeCookies")
-            false
+    protected fun acceptFileSchemeCookies(): Boolean = try {
+        CookieManager.setAcceptFileSchemeCookies(true)
+        true
+    } catch (e: Throwable) {
+        // 5794: Errors occur if the WebView fails to load
+        // android.webkit.WebViewFactory.MissingWebViewPackageException.MissingWebViewPackageException
+        // Error may be excessive, but I expect a UnsatisfiedLinkError to be possible here.
+        fatalInitializationError = FatalInitializationError.WebViewError(e)
+        sendExceptionReport(e, "setAcceptFileSchemeCookies")
+        Timber.e(e, "setAcceptFileSchemeCookies")
+        false
+    }
+
+    /**
+     * Manually initializes the collection directory and `.nomedia` if
+     * [Permissions.hasLegacyStorageAccessPermission] is set
+     *
+     * On failure, sets [fatalInitializationError] to [FatalInitializationError.StorageError]
+     */
+    private fun initializeAnkiDroidDirectory() {
+        // #13207: `getCurrentAnkiDroidDirectory` failing is unconditionally a fatal error
+        val ankiDroidDir = try {
+            CollectionHelper.getCurrentAnkiDroidDirectory(this)
+        } catch (e: SystemStorageException) {
+            fatalInitializationError = FatalInitializationError.StorageError(e)
+            return
         }
+
+        if (!Permissions.hasLegacyStorageAccessPermission(this)) return
+
+        try {
+            CollectionHelper.initializeAnkiDroidDirectory(ankiDroidDir)
+        } catch (e: StorageAccessException) {
+            Timber.e(e, "Could not initialize AnkiDroid directory")
+            try {
+                val defaultDir = CollectionHelper.getDefaultAnkiDroidDirectory(this)
+                if (isSdCardMounted && CollectionHelper.getCurrentAnkiDroidDirectory(this) == defaultDir) {
+                    sendExceptionReport(e, "AnkiDroidApp.onCreate")
+                }
+            } catch (e: SystemStorageException) {
+                fatalInitializationError = FatalInitializationError.StorageError(e)
+            }
+        }
+    }
 
     /**
      * Callback method invoked when operations that affect the app state are executed.
@@ -473,16 +489,43 @@ open class AnkiDroidApp :
                     else -> appResources.getString(R.string.link_manual)
                 }
 
-        fun webViewFailedToLoad(): Boolean = instance.webViewError != null
+        /** (optional) set if an unrecoverable error occurs during Application startup */
+        val fatalError: FatalInitializationError?
+            get() = instance.fatalInitializationError
 
-        val webViewErrorMessage: String?
-            get() {
-                val error = instance.webViewError
-                if (error == null) {
-                    Timber.w("getWebViewExceptionMessage called without webViewFailedToLoad check")
-                    return null
-                }
-                return ExceptionUtil.getExceptionMessage(error)
-            }
+        /**
+         * Clears the fatal error state. Used exclusively in tests to reset
+         * [fatalInitializationError] between test runs.
+         */
+        @VisibleForTesting
+        fun clearFatalError() {
+            instance.fatalInitializationError = null
+        }
     }
+}
+
+/**
+ * Types of unrecoverable errors which we want to inform the user of
+ */
+sealed class FatalInitializationError {
+    data class WebViewError(
+        val error: Throwable,
+    ) : FatalInitializationError()
+
+    data class StorageError(
+        val error: SystemStorageException,
+    ) : FatalInitializationError()
+
+    /** Advanced/developer-facing string representing the error */
+    val errorDetail: String
+        get() = when (this) {
+            is WebViewError -> ExceptionUtil.getExceptionMessage(error)
+            is StorageError -> error.message
+        }
+
+    val infoLink: android.net.Uri?
+        get() = when (this) {
+            is WebViewError -> null
+            is StorageError -> error.infoUri?.let { android.net.Uri.parse(it) }
+        }
 }

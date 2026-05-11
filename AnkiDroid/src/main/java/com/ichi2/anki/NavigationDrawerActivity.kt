@@ -123,7 +123,7 @@ abstract class NavigationDrawerActivity :
 
     fun navDrawerIsReady(): Boolean = navigationView != null
 
-    // Navigation drawer initialisation
+    // Navigation drawer initialization
     @Suppress("deprecation", "API35 properly handle edge-to-edge")
     protected fun initNavigationDrawer(mainView: View = findViewById(android.R.id.content)) {
         // Create inherited navigation drawer layout here so that it can be used by parent class
@@ -153,7 +153,7 @@ abstract class NavigationDrawerActivity :
             toolbar.setNavigationOnClickListener { onNavigationPressed() }
         }
         setupBackPressedCallbacks()
-        // ActionBarDrawerToggle ties together the the proper interactions
+        // ActionBarDrawerToggle ties together the proper interactions
         // between the sliding drawer and the action bar app icon
         drawerToggle =
             object : ActionBarDrawerToggle(
@@ -252,7 +252,7 @@ abstract class NavigationDrawerActivity :
     }
 
     /**
-     * This function locks the navigation drawer closed in regards to swipes,
+     * This function locks the navigation drawer closed in regard to swipes,
      * but continues to allow it to be opened via its indicator button. This
      * function is a no-op if the drawer hasn't been initialized.
      */
@@ -298,7 +298,7 @@ abstract class NavigationDrawerActivity :
 
     /**
      * Called, when navigation button of the action bar is pressed.
-     * Design pattern: template method. Subclasses can override this to define their own behaviour.
+     * Design pattern: template method. Subclasses can override this to define their own behavior.
      */
     open fun onNavigationPressed() {
         if (navButtonGoesBack) {
@@ -451,13 +451,13 @@ abstract class NavigationDrawerActivity :
 
         // The main reason to use dynamic shortcut is that it ensures that they are only available when permission is granted to access the collection.
         // Even if we were going to ensure that all shortcut can deal nicely with missing permission, we probably would still need to use dynamic shortcuts because:
-        // * this ensure we don't offer shortcut until we have permission to access the collection
+        // * this ensures we don't offer shortcut until we have permission to access the collection
         // * to use static shortcut, the package name must be given in res/shortcuts.xml. See https://developer.android.com/develop/ui/views/launch/shortcuts/creating-shortcuts#static
         // * AnkiDroid package name is not constant. For example in debug variant, it is com.ichi2.anki.debug
         // * having variables in shortcuts used to be doable with https://plugins.gradle.org/plugin/de.timfreiheit.resourceplaceholders, however
-        // * after manually testing it, and looking at open issue https://github.com/timfreiheit/ResourcePlaceholdersPlugin/issues/13 , it seems this was broken with recent version of gradle
+        // * after manually testing it, and looking at open issue https://github.com/timfreiheit/ResourcePlaceholdersPlugin/issues/13 , it seems this was broken with recent version of Gradle
         fun enablePostShortcut(context: Context) {
-            if (!IntentHandler.grantedStoragePermissions(context, showToast = false)) {
+            if (runCatching { IntentHandler.grantedStoragePermissions(context, showToast = false) }.getOrNull() != true) {
                 Timber.w("No storage access, not enabling shortcuts")
                 return
             }

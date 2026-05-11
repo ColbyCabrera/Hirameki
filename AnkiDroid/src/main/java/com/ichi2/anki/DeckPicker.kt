@@ -78,7 +78,7 @@ import com.ichi2.anki.InitialActivity.StartupFailure.DirectoryNotAccessible
 import com.ichi2.anki.InitialActivity.StartupFailure.DiskFull
 import com.ichi2.anki.InitialActivity.StartupFailure.FutureAnkidroidVersion
 import com.ichi2.anki.InitialActivity.StartupFailure.SDCardNotMounted
-import com.ichi2.anki.InitialActivity.StartupFailure.WebviewFailed
+import com.ichi2.anki.InitialActivity.StartupFailure.InitializationError
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.android.input.ShortcutGroup
 import com.ichi2.anki.android.input.shortcut
@@ -99,6 +99,7 @@ import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.ConfirmationDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.CustomExceptionData
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
+import com.ichi2.anki.dialogs.FatalErrorDialog
 import com.ichi2.anki.dialogs.DeckPickerAnalyticsOptInDialog
 import com.ichi2.anki.dialogs.DeckPickerBackupNoSpaceLeftDialog
 import com.ichi2.anki.dialogs.DeckPickerConfirmDeleteDeckDialog
@@ -414,7 +415,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         super.onCreate(savedInstanceState)
 
         // handle the first load: display the app introduction
-        if (!hasShownAppIntro()) {
+        if (!hasShownAppIntro() && AnkiDroidApp.fatalError == null) {
             Timber.i("Displaying app intro")
             val appIntro = Intent(this, IntroductionActivity::class.java)
             appIntro.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -669,19 +670,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_DB_LOCKED)
             }
 
-            is WebviewFailed -> AlertDialog.Builder(this).show {
-                title(R.string.ankidroid_init_failed_webview_title)
-                message(
-                    text = getString(
-                        R.string.ankidroid_init_failed_webview,
-                        AnkiDroidApp.webViewErrorMessage,
-                    ),
-                )
-                positiveButton(R.string.close) {
-                    closeCollectionAndFinish()
-                }
-                cancelable(false)
-            }
+            is InitializationError -> FatalErrorDialog.build(this, failure).show()
 
             is DiskFull -> displayNoStorageError()
             is DBError -> displayDatabaseFailure(CustomExceptionData.fromException(failure.exception))
