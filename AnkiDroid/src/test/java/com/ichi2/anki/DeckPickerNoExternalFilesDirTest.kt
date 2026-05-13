@@ -38,6 +38,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 @Config(shadows = [ShadowNullExternalFilesDir::class])
@@ -51,7 +52,7 @@ class DeckPickerNoExternalFilesDirTest : RobolectricTest() {
         // IntroductionActivity should be skipped by our code so we can show the error
         // without user interaction
         ActivityScenario.launch(DeckPicker::class.java).use {
-            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val dialog = getLatestAlertDialog()
             val message =
                 dialog.findViewById<android.widget.TextView>(android.R.id.message)?.text?.toString()
                     ?: ""
@@ -65,7 +66,7 @@ class DeckPickerNoExternalFilesDirTest : RobolectricTest() {
         // IntroductionActivity should be skipped by our code so we can show the error
         // without user interaction
         ActivityScenario.launch(DeckPicker::class.java).use {
-            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val dialog = getLatestAlertDialog()
             val message =
                 dialog.findViewById<android.widget.TextView>(android.R.id.message)?.text?.toString()
                     ?: ""
@@ -73,6 +74,11 @@ class DeckPickerNoExternalFilesDirTest : RobolectricTest() {
         }
     }
 }
+
+private fun getLatestAlertDialog(): AlertDialog = assertNotNull(
+    ShadowDialog.getLatestDialog() as? AlertDialog,
+    "An AlertDialog should be displayed"
+)
 
 /**
  * A shadow which makes [Context.getExternalFilesDir] return `null`
