@@ -23,7 +23,6 @@ import android.os.Build
 import android.os.Environment
 import android.os.Parcelable
 import androidx.annotation.CheckResult
-import androidx.annotation.RequiresApi
 import androidx.core.content.edit
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.servicelayer.PreferenceUpgradeService
@@ -48,9 +47,8 @@ object InitialActivity {
     /** Returns null on success  */
     @CheckResult
     fun getStartupFailureType(initializeAnkiDroidDirectory: () -> Boolean): StartupFailure? {
-        // A WebView failure means that we skip `AnkiDroidApp`, and therefore haven't loaded the collection
-        if (AnkiDroidApp.webViewFailedToLoad()) {
-            return StartupFailure.WebviewFailed
+        AnkiDroidApp.fatalError?.let {
+            return StartupFailure.InitializationError(it)
         }
 
         val failure =
@@ -150,7 +148,28 @@ object InitialActivity {
 
         data object DatabaseLocked : StartupFailure()
 
-        data object WebviewFailed : StartupFailure()
+        /**
+         * [AnkiDroidApp] encountered a fatal error
+         */
+        data class InitializationError(
+            val error: FatalInitializationError,
+        ) : StartupFailure() {
+            val infoLink get() = error.infoLink
+
+            fun toHumanReadableString(context: Context): String =
+                when (error) {
+                    is FatalInitializationError.WebViewError ->
+                        context.getString(
+                            R.string.ankidroid_init_failed_webview,
+                            error.errorDetail,
+                        )
+                    is FatalInitializationError.StorageError ->
+                        context.getString(
+                            R.string.ankidroid_init_failed_storage,
+                            error.errorDetail,
+                        )
+                }
+        }
 
         data object DiskFull : StartupFailure()
     }
@@ -216,7 +235,7 @@ internal fun selectAnkiDroidFolder(
     return if (canManageExternalStorage) {
         AnkiDroidFolder.PublicFolder(PermissionSet.EXTERNAL_MANAGER)
     } else {
-        return AnkiDroidFolder.AppPrivateFolder
+        AnkiDroidFolder.AppPrivateFolder
     }
 }
 

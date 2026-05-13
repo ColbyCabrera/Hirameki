@@ -259,6 +259,7 @@
     <!-- Deck Picker -->
     <string name="ankidroid_init_failed_webview_title">Fatal Error</string>
     <string name="ankidroid_init_failed_webview">Hirameki relies on the System WebView which is unavailable. This can happen if the system is installing updates. Please try again in a few minutes.\n\n%s</string>
+    <string name="ankidroid_init_failed_storage">Hirameki cannot access storage due to an Android error.\n\n%s</string>
 
     <!-- A Menu item to change the Font Size (currently in the Note Editor) -->
     <string name="menu_font_size" maxLength="28">Font size</string>
