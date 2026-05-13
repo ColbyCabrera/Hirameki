@@ -76,8 +76,7 @@ class DeckPickerNoExternalFilesDirTest : RobolectricTest() {
 }
 
 private fun getLatestAlertDialog(): AlertDialog = assertNotNull(
-    ShadowDialog.getLatestDialog() as? AlertDialog,
-    "An AlertDialog should be displayed"
+    ShadowDialog.getLatestDialog() as? AlertDialog, "An AlertDialog should be displayed"
 )
 
 /**
@@ -118,6 +117,8 @@ fun <T> withTempDir(
     return try {
         block(dir)
     } finally {
-        dir.toFile().deleteRecursively()
+        if (!dir.toFile().deleteRecursively()) {
+            System.err.println("Warning: Failed to delete temp directory: $dir")
+        }
     }
 }
