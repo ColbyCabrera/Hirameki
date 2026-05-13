@@ -16,7 +16,6 @@
 
 package com.ichi2.anki.dialogs
 
-import android.content.Context
 import androidx.appcompat.app.AlertDialog
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.InitialActivity.StartupFailure.InitializationError
@@ -34,11 +33,10 @@ object FatalErrorDialog {
         activity: AnkiActivity,
         failure: InitializationError,
     ): AlertDialog {
-        val context: Context = activity
         Timber.i("Displaying 'Fatal error'")
-        return AlertDialog.Builder(context).create {
+        return AlertDialog.Builder(activity).create {
             title(R.string.ankidroid_init_failed_webview_title)
-            message(text = failure.toHumanReadableString(context))
+            message(text = failure.toHumanReadableString(activity))
             positiveButton(R.string.close) {
                 activity.closeCollectionAndFinish()
             }
