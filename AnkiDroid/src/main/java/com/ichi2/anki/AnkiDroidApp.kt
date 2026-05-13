@@ -526,6 +526,6 @@ sealed class FatalInitializationError {
     val infoLink: android.net.Uri?
         get() = when (this) {
             is WebViewError -> null
-            is StorageError -> error.infoUri?.let { android.net.Uri.parse(it) }
+            is StorageError -> error.infoUri?.toUri()
         }
 }
