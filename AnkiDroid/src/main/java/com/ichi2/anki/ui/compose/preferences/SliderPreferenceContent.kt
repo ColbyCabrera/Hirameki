@@ -276,6 +276,26 @@ fun PreviewSliderPreferenceContent() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+fun PreviewSliderPreferenceContentDisabled() {
+    AnkiDroidTheme {
+        SliderPreferenceContent(
+            title = "Text Size",
+            summary = "Adjust the text size for readability",
+            value = 100,
+            valueFrom = 50,
+            valueTo = 200,
+            stepSize = 10f,
+            displayValue = true,
+            displayFormat = "%d%%",
+            onValueChange = {},
+            isIconSpaceReserved = true,
+            enabled = false
+        )
+    }
+}
+
 
 
 @Preview(showBackground = true)
