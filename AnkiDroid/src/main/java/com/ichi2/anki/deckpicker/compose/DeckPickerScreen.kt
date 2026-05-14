@@ -17,6 +17,8 @@
  ****************************************************************************************/
 package com.ichi2.anki.deckpicker.compose
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -82,7 +84,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -228,6 +233,29 @@ fun DeckPickerContent(
     isInInitialState: Boolean?,
 ) {
     val state = rememberPullToRefreshState()
+    val haptic = LocalHapticFeedback.current
+    val view = LocalView.current
+
+    var hapticTriggered by remember { mutableStateOf(false) }
+    LaunchedEffect(state.distanceFraction) {
+        val canUseGestureThresholdHaptic =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
+        if (state.distanceFraction >= 1f && !hapticTriggered) {
+            if (canUseGestureThresholdHaptic) {
+                view.performHapticFeedback(HapticFeedbackConstants.GESTURE_THRESHOLD_ACTIVATE)
+            } else {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+            hapticTriggered = true
+        } else if (state.distanceFraction < 1f && hapticTriggered) {
+            if (canUseGestureThresholdHaptic) {
+                view.performHapticFeedback(HapticFeedbackConstants.GESTURE_THRESHOLD_DEACTIVATE)
+            }
+            hapticTriggered = false
+        }
+    }
+
     val morph = remember {
         Morph(
             start = MaterialShapes.Pentagon,
@@ -266,7 +294,10 @@ fun DeckPickerContent(
     ) {
         PullToRefreshBox(
             isRefreshing = false, // Always false to prevent pinning and allow immediate retraction animation
-            onRefresh = onRefresh,
+            onRefresh = {
+                onRefresh()
+                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            },
             state = state,
             modifier = Modifier.fillMaxSize(),
             indicator = {
