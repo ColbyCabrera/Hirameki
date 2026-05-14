@@ -47,6 +47,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -97,6 +99,7 @@ fun BrushOptionsContent(
     val brush = brushes.getOrNull(activeIndex) ?: return
 
     var showColorPicker by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     if (showColorPicker) {
         ColorPickerDialog(
@@ -148,9 +151,16 @@ fun BrushOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
+            var lastBrushWidth by remember { mutableStateOf(brush.width) }
             Slider(
                 value = brush.width,
-                onValueChange = { viewModel.setActiveStrokeWidth(it) },
+                onValueChange = {
+                    viewModel.setActiveStrokeWidth(it)
+                    if (it.toInt() != lastBrushWidth.toInt()) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        lastBrushWidth = it
+                    }
+                },
                 valueRange = 1f..70f,
                 steps = 7,
             )
@@ -190,6 +200,7 @@ fun EraserOptionsContent(
 ) {
     val mode by viewModel.eraserMode.collectAsStateWithLifecycle()
     val width by viewModel.eraserDisplayWidth.collectAsStateWithLifecycle()
+    val haptic = LocalHapticFeedback.current
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -228,9 +239,16 @@ fun EraserOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
+            var lastWidth by remember { mutableStateOf(width) }
             Slider(
                 value = width,
-                onValueChange = { viewModel.setActiveStrokeWidth(it) },
+                onValueChange = {
+                    viewModel.setActiveStrokeWidth(it)
+                    if (it.toInt() != lastWidth.toInt()) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        lastWidth = it
+                    }
+                },
                 valueRange = 5f..200f,
                 steps = 8,
             )

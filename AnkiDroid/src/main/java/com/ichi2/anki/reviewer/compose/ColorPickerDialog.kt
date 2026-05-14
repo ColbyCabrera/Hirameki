@@ -39,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
@@ -180,6 +182,7 @@ private fun ColorSliderRow(
     onValueChange: (Float) -> Unit,
     gradientColors: List<ComposeColor>,
 ) {
+    val haptic = LocalHapticFeedback.current
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = label,
@@ -194,9 +197,18 @@ private fun ColorSliderRow(
                     .clip(MaterialTheme.shapes.small)
                     .background(Brush.horizontalGradient(gradientColors)),
         ) {
+            var lastValue by remember { mutableFloatStateOf(value) }
             Slider(
                 value = value,
-                onValueChange = onValueChange,
+                onValueChange = {
+                    onValueChange(it)
+                    // Haptic feedback when the value changes significantly (e.g., 5%)
+                    val rangeSpan = valueRange.endInclusive - valueRange.start
+                    if (kotlin.math.abs(it - lastValue) > rangeSpan * 0.05f) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        lastValue = it
+                    }
+                },
                 valueRange = valueRange,
                 modifier = Modifier.fillMaxWidth(),
                 colors =

@@ -63,6 +63,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -290,6 +292,7 @@ fun DrawingBrushOptionsDialog(
     onColorPickerRequest: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -338,9 +341,16 @@ fun DrawingBrushOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
+                    var lastBrushWidth by remember { mutableStateOf(brush.width) }
                     Slider(
                         value = brush.width,
-                        onValueChange = onWidthChange,
+                        onValueChange = {
+                            onWidthChange(it)
+                            if (it.toInt() != lastBrushWidth.toInt()) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                lastBrushWidth = it
+                            }
+                        },
                         valueRange = 1f..70f,
                         steps = 7,
                     )
@@ -360,6 +370,7 @@ fun DrawingEraserOptionsDialog(
     onClearCanvas: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -388,9 +399,16 @@ fun DrawingEraserOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
+                    var lastEraserWidth by remember { mutableStateOf(eraserWidth) }
                     Slider(
                         value = eraserWidth,
-                        onValueChange = onWidthChange,
+                        onValueChange = {
+                            onWidthChange(it)
+                            if (it.toInt() != lastEraserWidth.toInt()) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                lastEraserWidth = it
+                            }
+                        },
                         valueRange = 5f..200f,
                         steps = 8,
                     )

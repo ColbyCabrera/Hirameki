@@ -34,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -61,6 +63,7 @@ fun ExpandableFab(
     onImport: () -> Unit,
 ) {
     val focusRequester = remember { FocusRequester() }
+    val haptic = LocalHapticFeedback.current
 
     val onMenuItemClick = { action: () -> Unit ->
         {
@@ -82,9 +85,10 @@ fun ExpandableFab(
                         if (expanded) fabMenuExpandedStateDescription else fabMenuCollapsedStateDescription
                     contentDescription = fabMenuToggleContentDescription
                 }
-                .focusRequester(focusRequester),
-                checked = expanded,
-                onCheckedChange = { onExpandedChange(it) }) {
+                .focusRequester(focusRequester), checked = expanded, onCheckedChange = {
+                onExpandedChange(it)
+                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            }) {
                 val fabIcon by remember {
                     derivedStateOf {
                         if (checkedProgress > 0.5f) R.drawable.close_24px else R.drawable.add_24px

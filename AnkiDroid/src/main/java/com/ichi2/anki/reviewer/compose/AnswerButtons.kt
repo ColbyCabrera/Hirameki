@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki.reviewer.compose
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.border
@@ -55,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -84,6 +86,8 @@ fun AnswerButtons(
     nextTimes: List<String>,
     onMoreOptionsClick: () -> Unit
 ) {
+    val view = LocalView.current
+
     Column(
         modifier = modifier.imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -143,7 +147,10 @@ fun AnswerButtons(
                             motionScheme.fastSpatialSpec()
                         )
                         Button(
-                            onClick = onShowAnswer,
+                            onClick = {
+                                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                onShowAnswer()
+                            },
                             modifier = Modifier.height(56.dp),
                             interactionSource = interactionSource,
                             contentPadding = PaddingValues(horizontal = horizontalPadding),
@@ -173,7 +180,12 @@ fun AnswerButtons(
                                             contentAlignment = Alignment.BottomCenter
                                         ) {
                                             Button(
-                                                onClick = { onRateCard(rating) },
+                                                onClick = {
+                                                    view.performHapticFeedback(
+                                                        HapticFeedbackConstants.KEYBOARD_TAP
+                                                    )
+                                                    onRateCard(rating)
+                                                },
                                                 modifier = Modifier
                                                     .height(56.dp)
                                                     .fillMaxWidth()

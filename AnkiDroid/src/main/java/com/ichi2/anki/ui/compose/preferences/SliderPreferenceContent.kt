@@ -1,3 +1,18 @@
+/* **************************************************************************************
+ * Copyright (c) 2026 Colby Cabrera <colbycabrera@gmail.com>                            *
+ *                                                                                      *
+ * This program is free software; you can redistribute it and/or modify it under        *
+ * the terms of the GNU General Public License as published by the Free Software        *
+ * Foundation; either version 3 of the License, or (at your option) any later           *
+ * version.                                                                             *
+ *                                                                                      *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY      *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A      *
+ * PARTICULAR PURPOSE. See the GNU General Public License for more details.             *
+ *                                                                                      *
+ * You should have received a copy of the GNU General Public License along with         *
+ * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
+ ****************************************************************************************/
 package com.ichi2.anki.ui.compose.preferences
 
 import androidx.compose.foundation.background
@@ -25,12 +40,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -45,14 +61,16 @@ fun SliderPreferenceContent(
     displayValue: Boolean,
     displayFormat: String?,
     onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
     icon: Painter? = null,
     isIconSpaceReserved: Boolean = false,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    enabled: Boolean = true
 ) {
     // We use a local state for the slider to ensure smooth dragging,
     // and only commit the change when dragging stops (or as needed).
     var sliderPosition by remember(value) { mutableFloatStateOf(value.toFloat()) }
+    var lastHapticValue by remember(value) { mutableFloatStateOf(value.toFloat()) }
+    val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isDragged by interactionSource.collectIsDraggedAsState()
 
@@ -131,6 +149,20 @@ fun SliderPreferenceContent(
                 value = sliderPosition,
                 onValueChange = {
                     sliderPosition = it
+                    if (stepSize > 0) {
+                        val steps = ((it - valueFrom) / stepSize).roundToInt()
+                        val roundedValue = valueFrom + (steps * stepSize)
+                        if (roundedValue != lastHapticValue) {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            lastHapticValue = roundedValue
+                        }
+                    } else {
+                        val rangeSpan = (valueTo - valueFrom).toFloat()
+                        if (kotlin.math.abs(it - lastHapticValue) > rangeSpan * 0.05f) {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            lastHapticValue = it
+                        }
+                    }
                 },
                 onValueChangeFinished = {
                     // M3 slider distributes steps evenly across the whole range, which may
