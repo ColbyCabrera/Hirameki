@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
@@ -462,7 +463,9 @@ fun ReviewerContent(
                 val menuOptions =
                     remember(state.isWhiteboardEnabled, state.isVoicePlaybackEnabled) {
                         listOf(
-                            Triple(
+                            Triple(R.string.undo, Icons.AutoMirrored.Filled.Undo) {
+                            viewModel.onEvent(ReviewerEvent.Undo)
+                        }, Triple(
                             if (state.isWhiteboardEnabled) R.string.disable_whiteboard else R.string.enable_whiteboard,
                             Icons.Filled.Edit
                         ) {
