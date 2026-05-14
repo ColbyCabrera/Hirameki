@@ -38,6 +38,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.HapticFeedbackConstants
 import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.view.ViewParent
@@ -742,6 +743,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
     }
 
     open suspend fun answerCardInner(rating: Rating) {
+        findViewById<View>(android.R.id.content)?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         // Legacy tests assume they can call answerCard() even outside of Reviewer
         withCol {
             sched.answerCard(currentCard!!, rating)
@@ -963,6 +965,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     open fun displayCardAnswer() {
+        findViewById<View>(android.R.id.content)?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         // #7294 Required in case the animation end action does not fire:
         Timber.d("displayCardAnswer()")
         mediaErrorHandler.onCardSideChange()

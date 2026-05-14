@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.Layout
@@ -53,6 +55,8 @@ fun SliderPreferenceContent(
     // We use a local state for the slider to ensure smooth dragging,
     // and only commit the change when dragging stops (or as needed).
     var sliderPosition by remember(value) { mutableFloatStateOf(value.toFloat()) }
+    var lastHapticValue by remember(value) { mutableFloatStateOf(value.toFloat()) }
+    val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isDragged by interactionSource.collectIsDraggedAsState()
 
@@ -131,6 +135,17 @@ fun SliderPreferenceContent(
                 value = sliderPosition,
                 onValueChange = {
                     sliderPosition = it
+                    if (stepSize > 0) {
+                        val steps = ((it - valueFrom) / stepSize).roundToInt()
+                        val roundedValue = valueFrom + (steps * stepSize)
+                        if (roundedValue != lastHapticValue) {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            lastHapticValue = roundedValue
+                        }
+                    } else if (it.toInt() != lastHapticValue.toInt()) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        lastHapticValue = it.toInt().toFloat()
+                    }
                 },
                 onValueChangeFinished = {
                     // M3 slider distributes steps evenly across the whole range, which may
