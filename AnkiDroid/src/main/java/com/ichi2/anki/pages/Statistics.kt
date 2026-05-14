@@ -24,7 +24,6 @@ import android.view.View
 import android.widget.AdapterView.INVALID_POSITION
 import android.widget.Spinner
 import androidx.core.content.ContextCompat.getSystemService
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.withCol
@@ -55,11 +54,6 @@ class Statistics :
         webView.isNestedScrollingEnabled = true
 
         spinner = view.findViewById(R.id.deck_selector)
-        view
-            .findViewById<AppBarLayout>(R.id.app_bar)
-            .addLiftOnScrollListener { _, backgroundColor ->
-                activity?.window?.statusBarColor = backgroundColor
-            }
 
         view.findViewById<MaterialToolbar>(R.id.toolbar).apply {
             menu.findItem(R.id.action_export_stats).title = CollectionManager.TR.statisticsSavePdf()

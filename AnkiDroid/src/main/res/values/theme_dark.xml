@@ -114,13 +114,6 @@
         <item name="popupBackgroundColor">?attr/colorSurface</item>
         <item name="editTextDisabled">@color/material_grey_500</item>
         <item name="overflowAndPopupMenuIconColor">?attr/colorOnSurfaceVariant</item>
-        <!-- StatusBar and Navbar for Edge-to-Edge -->
-        <item name="android:statusBarColor" >@color/statusBarScrim</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor" >@android:color/transparent</item>
-        <item name="android:enforceNavigationBarContrast">false</item>
-        <item name="android:enforceStatusBarContrast">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
 
         <!-- Snackbar. Attributes snackbarStyle, snackbarTextViewStyle and snackbarButtonStyle
              must be *all* present in a theme (or its parent) in order for the snackbar

@@ -42,7 +42,6 @@ import androidx.core.view.size
 import androidx.drawerlayout.widget.ClosableDrawerLayout
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.navigation.NavigationView
 import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.dialogs.help.HelpDialog
@@ -130,15 +129,6 @@ abstract class NavigationDrawerActivity :
         drawerLayout = mainView.findViewById(R.id.drawer_layout)
         // set a custom shadow that overlays the main content when the drawer opens
         drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START)
-        // Force transparent status bar with primary dark color underlaid so that the drawer displays under status bar
-        window.statusBarColor = getColor(R.color.transparent)
-        drawerLayout.setStatusBarBackgroundColor(
-            MaterialColors.getColor(
-                this,
-                R.attr.appBarColor,
-                0,
-            ),
-        )
         // Setup toolbar and hamburger
         navigationView = drawerLayout.findViewById(R.id.navdrawer_items_container)
         navigationView!!.setNavigationItemSelectedListener(this)

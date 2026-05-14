@@ -93,9 +93,6 @@
         <item name="alertDialogTheme">@style/ThemeOverlay.AnkiDroid.AlertDialog.Black</item>
         <!--Custom Tabs colors-->
         <item name="popupBackgroundColor">?attr/colorSurface</item>
-        <!-- StatusBar and Navbar for Edge-to-Edge -->
-        <item name="android:statusBarColor">@color/statusBarScrim</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
 
         <item name="editTextDisabled">@color/material_grey_700</item>
 

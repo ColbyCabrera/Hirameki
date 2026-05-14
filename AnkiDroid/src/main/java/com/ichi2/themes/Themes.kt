@@ -155,7 +155,6 @@ object Themes {
 fun FragmentActivity.setTransparentStatusBar() {
     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars =
         !Themes.currentTheme.isNightMode
-    window.statusBarColor = Color.TRANSPARENT
 }
 
 fun FragmentActivity.setTransparentBackground() {
