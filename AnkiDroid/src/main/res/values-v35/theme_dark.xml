@@ -16,7 +16,6 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="DuplicateCrowdInStrings">
     <style name="Base.V35.Dark" parent="Base.Theme.Dark">
-        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
     </style>
 
     <style name="Theme_Dark" parent="Base.V35.Dark"/>

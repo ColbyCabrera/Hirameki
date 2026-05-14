@@ -104,10 +104,6 @@
         <!--Custom Tabs colors-->
         <item name="popupBackgroundColor">?attr/colorSurface</item>
         <item name="overflowAndPopupMenuIconColor">?attr/colorOnSurfaceVariant</item>
-        <!-- StatusBar and Navbar for Edge-to-Edge -->
-        <item name="android:statusBarColor" >@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightNavigationBar">true</item>
         <item name="editTextDisabled">?attr/colorOnSurfaceVariant</item>
 
         <!-- Snackbar. Attributes snackbarStyle, snackbarTextViewStyle and snackbarButtonStyle
@@ -243,10 +239,6 @@
         <!--Custom Tabs colors-->
         <item name="popupBackgroundColor">?attr/colorSurface</item>
         <item name="overflowAndPopupMenuIconColor">?attr/colorOnSurfaceVariant</item>
-        <!-- StatusBar and Navbar for Edge-to-Edge -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightNavigationBar">false</item>
         <item name="editTextDisabled">?attr/colorOnSurfaceVariant</item>
 
         <!-- Snackbar. Attributes snackbarStyle, snackbarTextViewStyle and snackbarButtonStyle

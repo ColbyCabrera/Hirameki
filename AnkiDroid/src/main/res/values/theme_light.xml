@@ -107,13 +107,6 @@
         <!--Custom Tabs colors-->
         <item name="popupBackgroundColor">?attr/colorSurface</item>
         <item name="overflowAndPopupMenuIconColor">?attr/colorOnSurfaceVariant</item>
-        <!-- StatusBar and Navbar for Edge-to-Edge -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:enforceNavigationBarContrast">false</item>
-        <item name="android:enforceStatusBarContrast">false</item>
-        <item name="android:windowLightNavigationBar">true</item>
         <item name="editTextDisabled">@color/material_grey_500</item>
 
         <!-- Snackbar. Attributes snackbarStyle, snackbarTextViewStyle and snackbarButtonStyle
