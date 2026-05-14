@@ -1,4 +1,4 @@
-/* **************************************************************************************
+/***************************************************************************************
  * Copyright (c) 2026 Colby Cabrera <colbycabrera@gmail.com>                            *
  *                                                                                      *
  * This program is free software; you can redistribute it and/or modify it under        *
@@ -32,6 +32,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +48,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -66,15 +69,31 @@ fun SliderPreferenceContent(
     isIconSpaceReserved: Boolean = false,
     enabled: Boolean = true
 ) {
-    // We use a local state for the slider to ensure smooth dragging,
-    // and only commit the change when dragging stops (or as needed).
+    // We use a local state for the slider to ensure smooth dragging.
+    // Sync with the external value when it changes.
     var sliderPosition by remember(value) { mutableFloatStateOf(value.toFloat()) }
     var lastHapticValue by remember(value) { mutableFloatStateOf(value.toFloat()) }
+
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isDragged by interactionSource.collectIsDraggedAsState()
 
-    // XML ComposeView handles horizontal padding (?attr/listPreferredItemPaddingStart/End)
+    // Derived state for display text to avoid redundant formatting calls
+    val displayText by remember(displayFormat, sliderPosition) {
+        derivedStateOf {
+            val roundedValue = sliderPosition.roundToInt()
+            displayFormat?.let { String.format(it, roundedValue) } ?: roundedValue.toString()
+        }
+    }
+
+    val disabledAlpha = 0.38f
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+
+    // Colors based on enabled state
+    val titleColor = if (enabled) onSurface else onSurface.copy(alpha = disabledAlpha)
+    val secondaryColor = if (enabled) onSurfaceVariant else onSurface.copy(alpha = disabledAlpha)
+
     Row(
         modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
     ) {
@@ -82,11 +101,9 @@ fun SliderPreferenceContent(
             Icon(
                 painter = icon,
                 contentDescription = null,
-                tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(
-                    alpha = 0.38f
-                ),
+                tint = secondaryColor,
                 modifier = Modifier
-                    .padding(end = 16.dp) // Standard icon padding
+                    .padding(end = 16.dp)
                     .size(24.dp)
             )
         } else if (isIconSpaceReserved) {
@@ -109,9 +126,7 @@ fun SliderPreferenceContent(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(
-                            alpha = 0.38f
-                        ),
+                        color = titleColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -119,9 +134,7 @@ fun SliderPreferenceContent(
                         Text(
                             text = summary,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(
-                                alpha = 0.38f
-                            ),
+                            color = secondaryColor,
                             modifier = Modifier.padding(top = 2.dp),
                             maxLines = 4,
                             overflow = TextOverflow.Ellipsis
@@ -130,27 +143,21 @@ fun SliderPreferenceContent(
                 }
 
                 if (displayValue && !isDragged) {
-                    val displayText =
-                        displayFormat?.let { String.format(it, sliderPosition.toInt()) }
-                            ?: sliderPosition.toInt().toString()
                     Text(
                         text = displayText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface.copy(
-                            alpha = 0.38f
-                        ),
+                        color = secondaryColor,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
             }
 
-            // Material3 Slider with Label for value indicator
             Slider(
                 value = sliderPosition,
-                onValueChange = {
-                    sliderPosition = it
+                onValueChange = { newValue ->
+                    sliderPosition = newValue
                     if (stepSize > 0) {
-                        val steps = ((it - valueFrom) / stepSize).roundToInt()
+                        val steps = ((newValue - valueFrom) / stepSize).roundToInt()
                         val roundedValue = valueFrom + (steps * stepSize)
                         if (roundedValue != lastHapticValue) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -158,23 +165,20 @@ fun SliderPreferenceContent(
                         }
                     } else {
                         val rangeSpan = (valueTo - valueFrom).toFloat()
-                        if (kotlin.math.abs(it - lastHapticValue) > rangeSpan * 0.05f) {
+                        if (abs(newValue - lastHapticValue) > rangeSpan * 0.05f) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            lastHapticValue = it
+                            lastHapticValue = newValue
                         }
                     }
                 },
                 onValueChangeFinished = {
-                    // M3 slider distributes steps evenly across the whole range, which may
-                    // result in values that are not exact multiples of stepSize if the range is not evenly divisible.
-                    // We enforce discrete values by rounding to the nearest step.
-                    if (stepSize > 0) {
+                    val finalValue = if (stepSize > 0) {
                         val steps = ((sliderPosition - valueFrom) / stepSize).roundToInt()
-                        val roundedValue = valueFrom + (steps * stepSize).toInt()
-                        onValueChange(roundedValue.coerceIn(valueFrom, valueTo))
+                        valueFrom + (steps * stepSize).roundToInt()
                     } else {
-                        onValueChange(sliderPosition.toInt())
+                        sliderPosition.roundToInt()
                     }
+                    onValueChange(finalValue.coerceIn(valueFrom, valueTo))
                 },
                 valueRange = valueFrom.toFloat()..valueTo.toFloat(),
                 steps = if (stepSize > 0) maxOf(
@@ -182,12 +186,8 @@ fun SliderPreferenceContent(
                 ) else 0,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
-
                 interactionSource = interactionSource,
                 thumb = {
-                    val displayText =
-                        displayFormat?.let { String.format(it, sliderPosition.toInt()) }
-                            ?: sliderPosition.toInt().toString()
                     SliderThumbWithLabel(
                         isDragged = isDragged,
                         displayText = displayText,
@@ -260,7 +260,7 @@ fun SliderThumbWithLabel(
 @Preview(showBackground = true)
 @Composable
 fun PreviewSliderPreferenceContent() {
-    MaterialTheme {
+    AnkiDroidTheme {
         SliderPreferenceContent(
             title = "Text Size",
             summary = "Adjust the text size for readability",
@@ -276,11 +276,15 @@ fun PreviewSliderPreferenceContent() {
     }
 }
 
+
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewSliderThumbWithLabel() {
-    MaterialTheme {
-        Box(modifier = Modifier.padding(top = 40.dp, start = 40.dp)) {
+    AnkiDroidTheme {
+        Box(
+            modifier = Modifier.size(140.dp), contentAlignment = Alignment.Center
+        ) {
             SliderThumbWithLabel(
                 isDragged = true,
                 displayText = "100%",
