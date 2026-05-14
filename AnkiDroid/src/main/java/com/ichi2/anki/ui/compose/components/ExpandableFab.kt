@@ -85,12 +85,10 @@ fun ExpandableFab(
                         if (expanded) fabMenuExpandedStateDescription else fabMenuCollapsedStateDescription
                     contentDescription = fabMenuToggleContentDescription
                 }
-                .focusRequester(focusRequester),
-                checked = expanded,
-                onCheckedChange = {
-                    onExpandedChange(it)
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                }) {
+                .focusRequester(focusRequester), checked = expanded, onCheckedChange = {
+                onExpandedChange(it)
+                haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            }) {
                 val fabIcon by remember {
                     derivedStateOf {
                         if (checkedProgress > 0.5f) R.drawable.close_24px else R.drawable.add_24px
