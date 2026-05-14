@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki.reviewer.compose
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.border
@@ -53,7 +54,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import android.view.HapticFeedbackConstants
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
@@ -86,6 +86,8 @@ fun AnswerButtons(
     nextTimes: List<String>,
     onMoreOptionsClick: () -> Unit
 ) {
+    val view = LocalView.current
+
     Column(
         modifier = modifier.imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -133,7 +135,6 @@ fun AnswerButtons(
                 Box(
                     modifier = Modifier.animateContentSize(motionScheme.fastSpatialSpec())
                 ) {
-                    val view = LocalView.current
                     if (!isAnswerShown) {
                         val interactionSource = remember { MutableInteractionSource() }
                         val isPressed by interactionSource.collectIsPressedAsState()
@@ -180,7 +181,9 @@ fun AnswerButtons(
                                         ) {
                                             Button(
                                                 onClick = {
-                                                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                                                    view.performHapticFeedback(
+                                                        HapticFeedbackConstants.KEYBOARD_TAP
+                                                    )
                                                     onRateCard(rating)
                                                 },
                                                 modifier = Modifier
