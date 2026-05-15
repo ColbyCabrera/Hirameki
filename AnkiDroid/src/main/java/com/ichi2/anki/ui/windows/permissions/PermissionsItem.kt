@@ -21,7 +21,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.FrameLayout
 import android.widget.ImageView
-import androidx.appcompat.widget.SwitchCompat
+import com.ichi2.anki.ui.compose.components.AnkiToggleView
 import androidx.core.content.withStyledAttributes
 import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.R
@@ -56,7 +56,7 @@ class PermissionsItem(
     context: Context,
     attrs: AttributeSet,
 ) : FrameLayout(context, attrs) {
-    private val switch: SwitchCompat
+    private val switch: AnkiToggleView
 
     /**
      * The value of either app:permissions or app:permission.
@@ -68,7 +68,7 @@ class PermissionsItem(
         LayoutInflater.from(context).inflate(R.layout.permissions_item, this, true)
 
         switch =
-            findViewById<SwitchCompat>(R.id.switch_widget).apply {
+            findViewById<AnkiToggleView>(R.id.switch_widget).apply {
                 isEnabled = true
                 setOnCheckedChangeListener { button, _ ->
                     button.isChecked = areGranted
