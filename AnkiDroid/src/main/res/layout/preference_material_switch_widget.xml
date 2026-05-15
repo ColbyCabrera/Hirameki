@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.materialswitch.MaterialSwitch
+<com.ichi2.anki.ui.compose.components.AnkiToggleView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/switchWidget"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:thumbIcon="@drawable/thumb_icon_selector" />
+    android:layout_height="wrap_content" />

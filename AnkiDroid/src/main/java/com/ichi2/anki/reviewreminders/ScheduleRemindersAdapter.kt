@@ -25,7 +25,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.materialswitch.MaterialSwitch
+import com.ichi2.anki.ui.compose.components.AnkiToggleView
 import com.ichi2.anki.R
 
 class ScheduleRemindersAdapter(
@@ -40,7 +40,7 @@ class ScheduleRemindersAdapter(
         val context: Context = holder.context
         val deckTextView: TextView = holder.findViewById(R.id.reminders_list_deck_text)
         val timeTextView: TextView = holder.findViewById(R.id.reminders_list_time_text)
-        val switchView: MaterialSwitch = holder.findViewById(R.id.reminders_list_switch)
+        val switchView: AnkiToggleView = holder.findViewById(R.id.reminders_list_switch)
     }
 
     override fun onCreateViewHolder(
@@ -68,7 +68,7 @@ class ScheduleRemindersAdapter(
         holder.itemView.setOnClickListener { editReminder(reminder) }
 
         holder.switchView.isChecked = reminder.enabled
-        holder.switchView.setOnClickListener { toggleReminderEnabled(reminder.id, reminder.scope) }
+        holder.switchView.setOnCheckedChangeListener { _, _ -> toggleReminderEnabled(reminder.id, reminder.scope) }
     }
 
     companion object {

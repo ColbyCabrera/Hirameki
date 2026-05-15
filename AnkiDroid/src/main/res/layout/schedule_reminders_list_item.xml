@@ -38,7 +38,7 @@
 
     </LinearLayout>
 
-    <com.google.android.material.materialswitch.MaterialSwitch
+    <com.ichi2.anki.ui.compose.components.AnkiToggleView
         android:id="@+id/reminders_list_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />

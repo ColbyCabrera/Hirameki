@@ -49,7 +49,7 @@
         tools:maxLines="4"
         tools:text="A summary about why the permission should be given" />
 
-    <com.google.android.material.materialswitch.MaterialSwitch
+    <com.ichi2.anki.ui.compose.components.AnkiToggleView
         android:id="@+id/switch_widget"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
