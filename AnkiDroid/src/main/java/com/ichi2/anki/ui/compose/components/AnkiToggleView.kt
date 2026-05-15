@@ -16,6 +16,8 @@
 package com.ichi2.anki.ui.compose.components
 
 import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
 import android.util.AttributeSet
 import android.widget.Checkable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -62,6 +64,26 @@ class AnkiToggleView @JvmOverloads constructor(
         isEnabledState = enabled
     }
 
+    override fun onSaveInstanceState(): Parcelable {
+        val superState = super.onSaveInstanceState()
+        return SavedState(superState).also {
+            it.isChecked = isCheckedState
+            it.isEnabled = isEnabledState
+        }
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        if (state !is SavedState) {
+            super.onRestoreInstanceState(state)
+            return
+        }
+
+        super.onRestoreInstanceState(state.superState)
+        isCheckedState = state.isChecked
+        isEnabledState = state.isEnabled
+        super.setEnabled(state.isEnabled)
+    }
+
     fun setOnCheckedChangeListener(listener: ((AnkiToggleView, Boolean) -> Unit)?) {
         onCheckedChangeListener = listener
     }
@@ -76,6 +98,34 @@ class AnkiToggleView @JvmOverloads constructor(
                     performClick()
                 }, interactionSource = interactionSource, enabled = isEnabledState
             )
+        }
+    }
+
+    private class SavedState : BaseSavedState {
+        var isChecked = false
+        var isEnabled = true
+
+        constructor(superState: Parcelable?) : super(superState)
+
+        private constructor(source: Parcel) : super(source) {
+            isChecked = source.readInt() != 0
+            isEnabled = source.readInt() != 0
+        }
+
+        override fun writeToParcel(out: Parcel, flags: Int) {
+            super.writeToParcel(out, flags)
+            out.writeInt(if (isChecked) 1 else 0)
+            out.writeInt(if (isEnabled) 1 else 0)
+        }
+
+        companion object {
+            @JvmField
+            @Suppress("unused")
+            val CREATOR: Parcelable.Creator<SavedState> = object : Parcelable.Creator<SavedState> {
+                override fun createFromParcel(source: Parcel): SavedState = SavedState(source)
+
+                override fun newArray(size: Int): Array<SavedState?> = arrayOfNulls(size)
+            }
         }
     }
 }
