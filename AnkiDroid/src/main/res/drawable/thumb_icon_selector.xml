@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Icon when switch is ON -->
+    <item android:drawable="@drawable/check_24px" android:state_checked="true" />
+    <!-- Icon when switch is OFF -->
+    <item android:drawable="@drawable/close_24px" />
+</selector>
