@@ -33,9 +33,7 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
  * This is used to interop with XML-based layouts and Preferences.
  */
 class AnkiToggleView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : AbstractComposeView(context, attrs, defStyleAttr), Checkable {
 
     private var isCheckedState by mutableStateOf(false)
@@ -49,14 +47,14 @@ class AnkiToggleView @JvmOverloads constructor(
     override fun setChecked(checked: Boolean) {
         if (isCheckedState != checked) {
             isCheckedState = checked
+            onCheckedChangeListener?.invoke(this, checked)
         }
     }
 
     override fun isChecked(): Boolean = isCheckedState
 
     override fun toggle() {
-        setChecked(!isCheckedState)
-        onCheckedChangeListener?.invoke(this, isCheckedState)
+        isChecked = !isCheckedState
     }
 
     override fun setEnabled(enabled: Boolean) {
@@ -73,15 +71,10 @@ class AnkiToggleView @JvmOverloads constructor(
         AnkiDroidTheme {
             val interactionSource = remember { MutableInteractionSource() }
             AnkiToggle(
-                checked = isCheckedState,
-                onCheckedChange = { newChecked ->
-                    setChecked(newChecked)
-                    onCheckedChangeListener?.invoke(this, newChecked)
-                    // Trigger standard click listeners registered via setOnClickListener
+                checked = isCheckedState, onCheckedChange = { newChecked ->
+                    isChecked = newChecked
                     performClick()
-                },
-                interactionSource = interactionSource,
-                enabled = isEnabledState
+                }, interactionSource = interactionSource, enabled = isEnabledState
             )
         }
     }
