@@ -18,14 +18,13 @@ package com.ichi2.anki.cardviewer
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
-import androidx.media.AudioFocusRequestCompat
-import androidx.media.AudioManagerCompat
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -47,10 +46,7 @@ class SoundTagPlayer(
     private var mediaPlayer: MediaPlayer? = null
 
     private val music =
-        AudioAttributes
-            .Builder()
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-            .build()
+        AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
 
     /**
      * AudioManager to request/release audio focus
@@ -58,12 +54,10 @@ class SoundTagPlayer(
     private var audioManager: AudioManager =
         AnkiDroidApp.instance.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-    // the same instance of an AudioFocusRequestCompat must be used to cancel focus
-    private val audioFocusRequest: AudioFocusRequestCompat by lazy {
-        AudioFocusRequestCompat
-            .Builder(AudioManagerCompat.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-            .setOnAudioFocusChangeListener { }
-            .build()
+    // the same instance of an AudioFocusRequest must be used to cancel focus
+    private val audioFocusRequest: AudioFocusRequest by lazy {
+        AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            .setAudioAttributes(music).setOnAudioFocusChangeListener { }.build()
     }
 
     /**
@@ -112,18 +106,18 @@ class SoundTagPlayer(
                 }
             }
             val tagUri = tag.filename.toUri()
-            val soundUri =
-                if (tagUri.scheme != null) {
-                    tagUri
-                } else {
-                    (soundUriBase + Uri.encode(tag.filename)).toUri()
-                }
+            val soundUri = if (tagUri.scheme != null) {
+                tagUri
+            } else {
+                (soundUriBase + Uri.encode(tag.filename)).toUri()
+            }
             setAudioAttributes(music)
             setOnErrorListener { mp, what, extra ->
                 Timber.w("Media error %d", what)
                 abandonAudioFocus()
                 val continuationBehavior =
-                    mediaErrorListener?.onMediaPlayerError(mp, what, extra, soundUri) ?: MediaErrorBehavior.CONTINUE_MEDIA
+                    mediaErrorListener?.onMediaPlayerError(mp, what, extra, soundUri)
+                        ?: MediaErrorBehavior.CONTINUE_MEDIA
                 // 15103: setOnErrorListener can be invoked after task cancellation
                 if (!continuation.isCompleted) {
                     continuation.resumeWithException(MediaException(continuationBehavior))
@@ -135,7 +129,8 @@ class SoundTagPlayer(
                 awaitSetDataSource(soundUri.toString())
             } catch (e: Exception) {
                 continuation.ensureActive()
-                val continuationBehavior = mediaErrorListener?.onError(soundUri) ?: MediaErrorBehavior.CONTINUE_MEDIA
+                val continuationBehavior =
+                    mediaErrorListener?.onError(soundUri) ?: MediaErrorBehavior.CONTINUE_MEDIA
                 val exception = MediaException(continuationBehavior, e)
                 return continuation.resumeWithException(exception)
             }
@@ -204,12 +199,12 @@ class SoundTagPlayer(
     @CheckResult
     private fun requestAudioFocus(): Int {
         Timber.d("Requesting audio focus")
-        return AudioManagerCompat.requestAudioFocus(audioManager, audioFocusRequest)
+        return audioManager.requestAudioFocus(audioFocusRequest)
     }
 
     private fun abandonAudioFocus(): Int {
         Timber.d("Abandoning audio focus")
-        return AudioManagerCompat.abandonAudioFocusRequest(audioManager, audioFocusRequest)
+        return audioManager.abandonAudioFocusRequest(audioFocusRequest)
     }
 }
 

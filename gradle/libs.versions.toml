@@ -1,8 +1,8 @@
 [versions]
 activityCompose = "1.13.0"
 compileSdk = "37"
-composeBomVersion = "2026.03.01"
-nav3Core = "1.1.0"
+composeBomVersion = "2026.05.00"
+nav3Core = "1.1.1"
 lifecycleViewmodelNav3 = "2.10.0"
 
 # Changing minSdk means newer AnkiDroid versions will not support older devices.
@@ -38,9 +38,9 @@ androidxExifinterface = "1.4.2"
 # https://developer.android.com/jetpack/androidx/releases/fragment
 androidxFragmentKtx = "1.8.9"
 # https://developer.android.com/jetpack/androidx/releases/media
-androidxMedia = "1.7.1"
+androidxMedia = "1.8.0"
 # https://developer.android.com/jetpack/androidx/releases/media3
-androidxMedia3 = "1.10.0"
+androidxMedia3 = "1.10.1"
 # https://developer.android.com/jetpack/androidx/releases/preference
 androidxPreferenceKtx = "1.2.1"
 # https://developer.android.com/jetpack/androidx/releases/recyclerview
@@ -56,7 +56,7 @@ androidxTestUiAutomator = "2.3.0"
 # https://developer.android.com/jetpack/androidx/releases/viewpager2
 androidxViewpager2 = "1.1.0"
 # https://developer.android.com/jetpack/androidx/releases/webkit
-androidxWebkit = "1.15.0"
+androidxWebkit = "1.16.0"
 # https://developer.android.com/jetpack/androidx/releases/work
 androidxWork = "2.11.2"
 ankiBackend = '0.1.61-anki25.09'
@@ -69,8 +69,8 @@ commonsCollections4 = "4.5.0"
 # https://commons.apache.org/proper/commons-compress/changes-report.html
 commonsCompress = "1.28.0"
 # https://commons.apache.org/proper/commons-io/changes.html
-commonsIo = "2.21.0"
-coroutines = '1.10.2'
+commonsIo = "2.22.0"
+coroutines = '1.11.0'
 desugar-jdk-libs-nio = "2.1.5"
 drawer = "1.0.3"
 espresso = '3.7.0'
@@ -88,14 +88,14 @@ junitJupiter = "6.0.3"
 # https://github.com/junit-team/junit5/releases/ - version numbers differ; changelogs in bundle
 junitPlatformLauncher = "6.0.3"
 # https://github.com/JetBrains/kotlin/releases/
-kotlin = '2.3.20'
+kotlin = '2.3.21'
 # https://github.com/Kotlin/kotlinx.serialization/releases
 kotlinxSerializationJson = "1.11.0"
 ktlintGradlePlugin = "14.2.0"
 leakcanaryAndroid = "2.14"
 lint = "32.2.1"
-material = "1.13.0"
-material3 = "1.5.0-alpha17"
+material = "1.14.0"
+material3 = "1.5.0-alpha19"
 materialTapTargetPrompt = "3.3.2"
 
 # Only needed until mockito kotlin updates this transitive itself
