@@ -22,6 +22,9 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Looper
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
@@ -34,6 +37,7 @@ import com.ichi2.anki.multimedia.getTagType
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
+import java.util.concurrent.CountDownLatch
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -45,8 +49,19 @@ class SoundTagPlayer(
 ) {
     private var mediaPlayer: MediaPlayer? = null
 
-    private val music =
-        AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
+    @Volatile
+    private var isReleased = false
+    private val releaseLock = Any()
+
+    // MediaPlayer callbacks require a looper-backed thread, and MediaPlayer access must stay
+    // on the same thread that created the instance.
+    private val mediaPlayerThread = HandlerThread("SoundTagPlayer").apply {
+        start()
+    }
+    private val mediaPlayerHandler = Handler(mediaPlayerThread.looper)
+
+    private val music = AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .setUsage(AudioAttributes.USAGE_MEDIA).build()
 
     /**
      * AudioManager to request/release audio focus
@@ -57,7 +72,7 @@ class SoundTagPlayer(
     // the same instance of an AudioFocusRequest must be used to cancel focus
     private val audioFocusRequest: AudioFocusRequest by lazy {
         AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-            .setAudioAttributes(music).setOnAudioFocusChangeListener { }.build()
+            .setAudioAttributes(music).build()
     }
 
     /**
@@ -72,7 +87,10 @@ class SoundTagPlayer(
         suspendCancellableCoroutine { continuation ->
             Timber.d("Playing SoundOrVideoTag")
             when (tagType) {
-                SoundOrVideoTag.Type.AUDIO -> playSound(continuation, tag, mediaErrorListener)
+                SoundOrVideoTag.Type.AUDIO -> postToMediaPlayerThread(continuation) {
+                    playSound(continuation, tag, mediaErrorListener)
+                }
+
                 SoundOrVideoTag.Type.VIDEO -> playVideo(continuation, tag)
             }
         }
@@ -150,24 +168,35 @@ class SoundTagPlayer(
      * Releases the media players.
      */
     fun release() {
-        Timber.d("Releasing sounds and abandoning audio focus")
-        mediaPlayer?.let {
-            // Required to remove warning: "mediaplayer went away with unhandled events"
-            // https://stackoverflow.com/questions/9609479/android-mediaplayer-went-away-with-unhandled-events
-            it.reset()
-            it.release()
-            mediaPlayer = null
+        runOnMediaPlayerThreadBlocking {
+            Timber.d("Releasing sounds and abandoning audio focus")
+            mediaPlayer?.let {
+                // Required to remove warning: "mediaplayer went away with unhandled events"
+                // https://stackoverflow.com/questions/9609479/android-mediaplayer-went-away-with-unhandled-events
+                it.reset()
+                it.release()
+                mediaPlayer = null
+            }
+            abandonAudioFocus()
+            isReleased = true
         }
-        abandonAudioFocus()
+
+        synchronized(releaseLock) {
+            if (mediaPlayerThread.isAlive) {
+                mediaPlayerThread.quitSafely()
+            }
+        }
     }
 
     fun stop() {
-        try {
-            mediaPlayer?.stop()
-        } catch (e: Exception) {
-            Timber.w(e, "stopSounds()")
+        runOnMediaPlayerThreadBlocking {
+            try {
+                mediaPlayer?.stop()
+            } catch (e: Exception) {
+                Timber.w(e, "stopSounds()")
+            }
+            abandonAudioFocus()
         }
-        abandonAudioFocus()
     }
 
     /**
@@ -205,6 +234,96 @@ class SoundTagPlayer(
     private fun abandonAudioFocus(): Int {
         Timber.d("Abandoning audio focus")
         return audioManager.abandonAudioFocusRequest(audioFocusRequest)
+    }
+
+    private fun postToMediaPlayerThread(
+        continuation: CancellableContinuation<Unit>,
+        action: () -> Unit,
+    ) {
+        if (Looper.myLooper() == mediaPlayerHandler.looper) {
+            if (isReleased) {
+                if (!continuation.isCompleted) {
+                    continuation.resumeWithException(IllegalStateException("SoundTagPlayer released"))
+                }
+                return
+            }
+
+            action()
+            return
+        }
+
+        val isPosted = synchronized(releaseLock) {
+            if (isReleased) {
+                false
+            } else {
+                mediaPlayerHandler.post {
+                    if (isReleased) {
+                        if (!continuation.isCompleted) {
+                            continuation.resumeWithException(IllegalStateException("SoundTagPlayer released"))
+                        }
+                        return@post
+                    }
+
+                    action()
+                }
+            }
+        }
+
+        if (!isPosted) {
+            if (!continuation.isCompleted) {
+                val exception = if (isReleased) {
+                    IllegalStateException("SoundTagPlayer released")
+                } else {
+                    IllegalStateException("SoundTagPlayer thread unavailable")
+                }
+                continuation.resumeWithException(exception)
+            }
+        }
+    }
+
+    private fun runOnMediaPlayerThreadBlocking(action: () -> Unit) {
+        if (isReleased) {
+            return
+        }
+
+        if (Looper.myLooper() == mediaPlayerHandler.looper) {
+            if (isReleased) {
+                return
+            }
+
+            action()
+            return
+        }
+
+        val completionLatch = CountDownLatch(1)
+        var failure: Throwable? = null
+        val isPosted = synchronized(releaseLock) {
+            if (isReleased) {
+                false
+            } else {
+                mediaPlayerHandler.post {
+                    try {
+                        if (isReleased) {
+                            return@post
+                        }
+
+                        action()
+                    } catch (e: Throwable) {
+                        failure = e
+                    } finally {
+                        completionLatch.countDown()
+                    }
+                }
+            }
+        }
+
+        if (!isPosted) {
+            check(isReleased) { "SoundTagPlayer thread unavailable" }
+            return
+        }
+
+        completionLatch.await()
+        failure?.let { throw it }
     }
 }
 
