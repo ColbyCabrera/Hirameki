@@ -30,7 +30,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.ensureActive
 import com.ichi2.anki.libanki.SoundOrVideoTag
 import com.ichi2.anki.multimedia.getTagType
@@ -42,7 +41,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /** Player for (`[sound:...]`): [SoundOrVideoTag]  */
-@NeedsTest("CardSoundConfig.autoplay should mean that video also isn't played automatically")
 class SoundTagPlayer(
     private val soundUriBase: String,
     val videoPlayer: VideoPlayer,
