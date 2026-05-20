@@ -19,6 +19,7 @@ package com.ichi2.anki
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -512,6 +513,25 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
 
         assertThat(editor.viewModel.noteEditorState.value.selectedNoteTypeName, equalTo(type1Name))
+    }
+
+    @Test
+    fun `starts with image occlusion note type when caller is IMG_OCCLUSION`() {
+        val ioNotetype = col.notetypes.all().find { it.isImageOcclusion }
+        org.junit.Assume.assumeTrue("Image Occlusion note type required", ioNotetype != null)
+
+        // Set another note type as current, to prove it switches to Image Occlusion
+        val basicType = col.notetypes.byName("Basic")!!
+        col.notetypes.setCurrent(basicType)
+
+        val bundle = NoteEditorLauncher.ImageOcclusion(Uri.parse("content://media/external/images/media/1")).toBundle()
+        val editor = openNoteEditorWithArgs(bundle)
+        idleMainLooper()
+
+        assertThat(
+            editor.viewModel.noteEditorState.value.selectedNoteTypeName,
+            equalTo(ioNotetype!!.name)
+        )
     }
 
     @Test

@@ -384,7 +384,11 @@ class NoteEditorViewModel(
                         _deckId.value = card.currentDeckId()
                     } else {
                         // Adding a new note - use the provided deckId or calculate it
-                        val notetype = col.notetypes.current()
+                        val notetype = if (_caller.value == NoteEditorCaller.IMG_OCCLUSION) {
+                            col.notetypes.all().find { it.isImageOcclusion } ?: col.notetypes.current()
+                        } else {
+                            col.notetypes.current()
+                        }
                         ensureActive() // Check cancellation after DB access
                         val newNote = Note.fromNotetypeId(col, notetype.id)
 

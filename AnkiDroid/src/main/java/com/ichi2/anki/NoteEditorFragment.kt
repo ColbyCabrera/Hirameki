@@ -289,6 +289,12 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 if (!addNote) {
                     reloadRequired = true
                     closeNoteEditor(RESULT_UPDATED_IO_NOTE, null)
+                } else if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                    closeNoteEditor()
+                }
+            } else {
+                if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                    closeNoteEditor()
                 }
             }
         },
@@ -519,6 +525,19 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                             currentEditedCard?.currentDeckId() ?: 0L
                         }
                     } ?: 0L
+
+                    if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                        val imageUri = BundleCompat.getParcelable(
+                            requireArguments(),
+                            EXTRA_IMG_OCCLUSION,
+                            Uri::class.java
+                        )
+                        if (imageUri != null) {
+                            ImportUtils.getFileCachedCopy(requireContext(), imageUri)?.let { path ->
+                                setupImageOcclusionEditor(path)
+                            }
+                        }
+                    }
                 }
                 // Update cards info for the selected note type
                 if (editorNote != null) {
