@@ -320,7 +320,11 @@ class SoundTagPlayer(
             return
         }
 
-        completionLatch.await()
+        try {
+            completionLatch.await()
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
         failure?.let { throw it }
     }
 }
