@@ -682,9 +682,7 @@ class ReviewerViewModel(
                 )
             }
         }
-        if (cardMediaPlayer.config.autoplay) {
-            cardMediaPlayer.playAllForSide(SingleCardSide.FRONT.toCardSide())
-        }
+        cardMediaPlayer.autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
     }
 
     private fun showAnswer() {
@@ -711,9 +709,7 @@ class ReviewerViewModel(
                     )
                 }
             }
-            if (cardMediaPlayer.config.autoplay) {
-                cardMediaPlayer.playAllForSide(SingleCardSide.BACK.toCardSide())
-            }
+            cardMediaPlayer.autoplayAllForSide(SingleCardSide.BACK.toCardSide())
         }
     }
 

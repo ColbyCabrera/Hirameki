@@ -1066,7 +1066,6 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
             Timber.w("media is not played as cardMediaPlayer is not initialized")
             return
         }
-        if (!cardMediaPlayer.config.autoplay && !doMediaReplay) return
         // Use TTS if TTS preference enabled and no other media source
         val useTTS = tts.enabled && !cardMediaPlayer.hasMedia(displayAnswer)
         // We need to play the media from the proper side of the card
@@ -1075,7 +1074,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                 val side = if (displayAnswer) SingleCardSide.BACK else SingleCardSide.FRONT
                 when (doMediaReplay) {
                     true -> cardMediaPlayer.replayAll(side)
-                    false -> cardMediaPlayer.playAllForSide(side.toCardSide())
+                    false -> cardMediaPlayer.autoplayAllForSide(side.toCardSide())
                 }
             }
             return

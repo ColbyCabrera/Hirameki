@@ -164,19 +164,21 @@ class CardMediaPlayer : Closeable {
     }
 
     suspend fun autoplayAllForSide(cardSide: CardSide) {
-        if (config.autoplay) {
-            playAllForSide(cardSide)
-        }
+        playAllForSide(cardSide, isAutomaticPlayback = true)
     }
 
-    suspend fun playAllForSide(cardSide: CardSide) {
+    suspend fun playAllForSide(cardSide: CardSide, isAutomaticPlayback: Boolean) {
         if (!isEnabled) return
+        if (isAutomaticPlayback && !config.autoplay) {
+            onMediaGroupCompleted?.invoke()
+            return
+        }
         playAvTagsJob =
             playbackMutex.withLock {
                 playAvTagsJob?.cancelAndJoin()
                 scope.launch {
                     Timber.i("playing sounds for %s", cardSide)
-                    playAllAvTagsInternal(cardSide, isAutomaticPlayback = true)
+                    playAllAvTagsInternal(cardSide, isAutomaticPlayback)
                     playAvTagsJob = null
                 }
             }
@@ -326,8 +328,8 @@ class CardMediaPlayer : Closeable {
      */
     suspend fun replayAll(side: SingleCardSide) =
         when (side) {
-            SingleCardSide.BACK -> if (config.replayQuestion) playAllForSide(CardSide.BOTH) else playAllForSide(CardSide.ANSWER)
-            SingleCardSide.FRONT -> playAllForSide(CardSide.QUESTION)
+            SingleCardSide.BACK -> if (config.replayQuestion) playAllForSide(CardSide.BOTH, isAutomaticPlayback = false) else playAllForSide(CardSide.ANSWER, isAutomaticPlayback = false)
+            SingleCardSide.FRONT -> playAllForSide(CardSide.QUESTION, isAutomaticPlayback = false)
         }
 
     private suspend fun awaitTtsPlayer(isAutomaticPlayback: Boolean): TtsPlayer? {

@@ -196,6 +196,52 @@ class CardMediaPlayerTest : JvmTest() {
         }
     }
 
+    @Test
+    fun `video respects autoplay off`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("video.mp4")),
+        autoplay = false,
+    ) {
+        autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
+        playAvTagsJob?.join()
+
+        coVerify(exactly = 0) { tagPlayer.play(any(), any()) }
+        ensureOnMediaGroupCompletedCalled()
+    }
+
+    @Test
+    fun `video respects autoplay on`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("video.mp4")),
+        autoplay = true,
+    ) {
+        autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
+        playAvTagsJob?.join()
+
+        coVerify(exactly = 1) { tagPlayer.play(SoundOrVideoTag("video.mp4"), any()) }
+        ensureOnMediaGroupCompletedCalled()
+    }
+
+    @Test
+    fun `manual replay plays video even if autoplay is off`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("video.mp4")),
+        autoplay = false,
+    ) {
+        replayAllAndWait(SingleCardSide.FRONT)
+
+        coVerify(exactly = 1) { tagPlayer.play(SoundOrVideoTag("video.mp4"), any()) }
+        ensureOnMediaGroupCompletedCalled()
+    }
+
+    @Test
+    fun `playAllForSide manual plays video even if autoplay is off`() = runSoundPlayerTest(
+        questions = listOf(SoundOrVideoTag("video.mp4")),
+        autoplay = false,
+    ) {
+        playAllAndWait(SingleCardSide.FRONT, isAutomaticPlayback = false)
+
+        coVerify(exactly = 1) { tagPlayer.play(SoundOrVideoTag("video.mp4"), any()) }
+        ensureOnMediaGroupCompletedCalled()
+    }
+
     private fun verifyNoSoundsPlayed() {
         coVerify(exactly = 0) { tagPlayer.play(any(), any()) }
         coVerify(exactly = 0) { ttsPlayer.play(any()) }
@@ -206,8 +252,11 @@ class CardMediaPlayerTest : JvmTest() {
         verify(exactly = 1) { onMediaGroupCompleted.invoke() }
     }
 
-    private suspend fun CardMediaPlayer.playAllAndWait(side: SingleCardSide = SingleCardSide.FRONT) {
-        this.playAllForSide(side.toCardSide())
+    private suspend fun CardMediaPlayer.playAllAndWait(
+        side: SingleCardSide = SingleCardSide.FRONT,
+        isAutomaticPlayback: Boolean = false,
+    ) {
+        this.playAllForSide(side.toCardSide(), isAutomaticPlayback)
         playAvTagsJob?.join()
     }
 
