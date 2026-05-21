@@ -92,6 +92,7 @@ import com.ichi2.anki.multimediacard.fields.MediaClipField
 import com.ichi2.anki.multimediacard.impl.MultimediaEditableNote
 import com.ichi2.anki.noteeditor.ClozeInsertionMode
 import com.ichi2.anki.noteeditor.CustomToolbarButton
+import com.ichi2.anki.noteeditor.ImageOcclusionNotetypeMissingException
 import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.noteeditor.NoteEditorCaller.Companion.fromValue
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
@@ -578,10 +579,9 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 }
             } else {
                 Timber.e("NoteEditorFragment init failed: %s", error)
-                val message = if (error == "image_occlusion_notetype_missing") {
-                    getString(R.string.image_occlusion_notetype_missing)
-                } else {
-                    getString(R.string.something_wrong)
+                val message = when (error) {
+                    is ImageOcclusionNotetypeMissingException -> getString(R.string.image_occlusion_notetype_missing)
+                    else -> getString(R.string.something_wrong)
                 }
                 noteEditorViewModel.showSnackbar(message)
                 closeNoteEditor()

@@ -54,6 +54,8 @@ import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
+class ImageOcclusionNotetypeMissingException : IllegalStateException()
+
 enum class ClozeInsertionMode {
     SAME_NUMBER, INCREMENT_NUMBER,
 }
@@ -325,9 +327,9 @@ class NoteEditorViewModel(
 
     private var isInitialized = false
     private var initializeJob: Job? = null
-    private val pendingInitCallbacks = mutableListOf<(Boolean, String?) -> Unit>()
+    private val pendingInitCallbacks = mutableListOf<(Boolean, Throwable?) -> Unit>()
 
-    private fun flushInitCallbacks(success: Boolean, error: String?) {
+    private fun flushInitCallbacks(success: Boolean, error: Throwable?) {
         val callbacks = pendingInitCallbacks.toList()
         pendingInitCallbacks.clear()
         callbacks.forEach { callback ->
@@ -348,7 +350,7 @@ class NoteEditorViewModel(
         deckId: Long? = null,
         isAddingNote: Boolean = true,
         initialFieldText: String? = null,
-        onComplete: ((success: Boolean, error: String?) -> Unit)? = null,
+        onComplete: ((success: Boolean, error: Throwable?) -> Unit)? = null,
     ) {
         onComplete?.let { pendingInitCallbacks += it }
 
@@ -386,7 +388,7 @@ class NoteEditorViewModel(
                         // Adding a new note - use the provided deckId or calculate it
                         val notetype = if (_caller.value == NoteEditorCaller.IMG_OCCLUSION) {
                             col.notetypes.all().find { it.isImageOcclusion }
-                                ?: throw IllegalStateException("image_occlusion_notetype_missing")
+                                ?: throw ImageOcclusionNotetypeMissingException()
                         } else {
                             col.notetypes.current()
                         }
@@ -464,7 +466,7 @@ class NoteEditorViewModel(
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Error initializing note editor")
-                flushInitCallbacks(false, e.message)
+                flushInitCallbacks(false, e)
             } finally {
                 initializeJob = null
             }
