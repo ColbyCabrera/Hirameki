@@ -507,7 +507,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             deckId = requireArguments().getLong(EXTRA_DID, 0L),
             isAddingNote = addNote,
             initialFieldText = initialFieldText,
-        ) { success, _ ->
+        ) { success, error ->
             if (success) {
                 // Sync Fragment's deckId with ViewModel's deckId after initialization
                 // This ensures the hasUnsavedChanges() deck comparison works correctly
@@ -535,6 +535,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         if (imageUri == null) {
                             Timber.w("Could not load image for image occlusion: missing URI")
                             noteEditorViewModel.showSnackbar(imageOcclusionLoadFailedMessage)
+                            closeNoteEditor()
                         } else {
                             val path = ImportUtils.getFileCachedCopy(requireContext(), imageUri)
                             if (path == null) {
@@ -543,6 +544,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                                     imageUri,
                                 )
                                 noteEditorViewModel.showSnackbar(imageOcclusionLoadFailedMessage)
+                                closeNoteEditor()
                             } else {
                                 setupImageOcclusionEditor(path)
                             }
@@ -574,6 +576,15 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         noteEditorViewModel.updateTags(tags.toSet())
                     }
                 }
+            } else {
+                Timber.e("NoteEditorFragment init failed: %s", error)
+                val message = if (error == "image_occlusion_notetype_missing") {
+                    getString(R.string.image_occlusion_notetype_missing)
+                } else {
+                    getString(R.string.something_wrong)
+                }
+                noteEditorViewModel.showSnackbar(message)
+                closeNoteEditor()
             }
         }
         return true

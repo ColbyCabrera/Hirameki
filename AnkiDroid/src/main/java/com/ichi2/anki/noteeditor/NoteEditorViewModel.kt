@@ -385,7 +385,8 @@ class NoteEditorViewModel(
                     } else {
                         // Adding a new note - use the provided deckId or calculate it
                         val notetype = if (_caller.value == NoteEditorCaller.IMG_OCCLUSION) {
-                            col.notetypes.all().find { it.isImageOcclusion } ?: col.notetypes.current()
+                            col.notetypes.all().find { it.isImageOcclusion }
+                                ?: throw IllegalStateException("image_occlusion_notetype_missing")
                         } else {
                             col.notetypes.current()
                         }
@@ -668,8 +669,8 @@ class NoteEditorViewModel(
      *
      * 1. **Resolve & validate** – Look up the target note type by [noteTypeName] and
      *    short-circuit if it is already active.
-    * 2. **Persist to collection** – Set the new note type as current, associate it
-    *    with the deck the editor will use after the switch (`mid` key), and invalidate the notetype cache so
+     * 2. **Persist to collection** – Set the new note type as current, associate it
+     *    with the deck the editor will use after the switch (`mid` key), and invalidate the notetype cache so
      *    subsequent reads return up-to-date JSON.
      * 3. **Determine target deck** – Honor the user's
      *    [ConfigKey.Bool.ADDING_DEFAULTS_TO_CURRENT_DECK] preference: either keep the
@@ -696,7 +697,7 @@ class NoteEditorViewModel(
             try {
                 val col = collectionProvider()
                 ensureActive()
-                
+
                 val currentNote = _currentNote.value
                 val currentDeckId = _deckId.value
                 val noteEditorState = _noteEditorState.value
@@ -739,14 +740,13 @@ class NoteEditorViewModel(
 
                     // Associate the note type with the deck the editor is actually using
                     // after this switch so deck-specific model memory stays in sync.
-                    val targetDeck =
-                        col.decks.getLegacy(newDeckId) ?: run {
-                            Timber.w(
-                                "Deck %d missing while updating note type preference; falling back to current deck",
-                                newDeckId,
-                            )
-                            col.decks.current()
-                        }
+                    val targetDeck = col.decks.getLegacy(newDeckId) ?: run {
+                        Timber.w(
+                            "Deck %d missing while updating note type preference; falling back to current deck",
+                            newDeckId,
+                        )
+                        col.decks.current()
+                    }
                     targetDeck.put("mid", freshNotetype.id)
                     col.decks.save(targetDeck)
 
