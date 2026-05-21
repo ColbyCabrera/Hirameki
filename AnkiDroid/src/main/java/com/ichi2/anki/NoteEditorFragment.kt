@@ -527,13 +527,23 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                     } ?: 0L
 
                     if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                        val imageOcclusionLoadFailedMessage =
+                            getString(R.string.image_occlusion_load_failed)
                         val imageUri = BundleCompat.getParcelable(
-                            requireArguments(),
-                            EXTRA_IMG_OCCLUSION,
-                            Uri::class.java
+                            requireArguments(), EXTRA_IMG_OCCLUSION, Uri::class.java
                         )
-                        if (imageUri != null) {
-                            ImportUtils.getFileCachedCopy(requireContext(), imageUri)?.let { path ->
+                        if (imageUri == null) {
+                            Timber.w("Could not load image for image occlusion: missing URI")
+                            noteEditorViewModel.showSnackbar(imageOcclusionLoadFailedMessage)
+                        } else {
+                            val path = ImportUtils.getFileCachedCopy(requireContext(), imageUri)
+                            if (path == null) {
+                                Timber.w(
+                                    "Could not load image for image occlusion: failed to cache %s",
+                                    imageUri,
+                                )
+                                noteEditorViewModel.showSnackbar(imageOcclusionLoadFailedMessage)
+                            } else {
                                 setupImageOcclusionEditor(path)
                             }
                         }

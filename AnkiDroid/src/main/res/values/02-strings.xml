@@ -318,6 +318,7 @@
     <string name="downloading_file">Downloading %s</string>
     <string name="import_deck">Import Deck</string>
     <string name="something_wrong">Something went wrong, please try again</string>
+    <string name="image_occlusion_load_failed">Could not load image for image occlusion</string>
     <string name="download_failed">Download failed</string>
     <string name="deck_download_failed_message">Check your internet connection and try again</string>
     <string name="deck_download_progress_message">You can use other apps while the download is running</string>
