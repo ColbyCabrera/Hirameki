@@ -54,7 +54,8 @@ import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
 
-class ImageOcclusionNotetypeMissingException : IllegalStateException()
+class ImageOcclusionNotetypeMissingException :
+    IllegalStateException("Image occlusion notetype is missing")
 
 enum class ClozeInsertionMode {
     SAME_NUMBER, INCREMENT_NUMBER,
