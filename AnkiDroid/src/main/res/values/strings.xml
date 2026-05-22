@@ -109,4 +109,5 @@
         <item>https://ankiweb.net/decks</item>
         <item>https://ankiweb.net/account/verify-email</item>
     </string-array>
+    <string name="image_occlusion_notetype_missing">No Image Occlusion note type found</string>
 </resources>

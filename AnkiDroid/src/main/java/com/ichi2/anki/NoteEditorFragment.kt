@@ -92,6 +92,7 @@ import com.ichi2.anki.multimediacard.fields.MediaClipField
 import com.ichi2.anki.multimediacard.impl.MultimediaEditableNote
 import com.ichi2.anki.noteeditor.ClozeInsertionMode
 import com.ichi2.anki.noteeditor.CustomToolbarButton
+import com.ichi2.anki.noteeditor.ImageOcclusionNotetypeMissingException
 import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.noteeditor.NoteEditorCaller.Companion.fromValue
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
@@ -289,6 +290,12 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                 if (!addNote) {
                     reloadRequired = true
                     closeNoteEditor(RESULT_UPDATED_IO_NOTE, null)
+                } else if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                    closeNoteEditor()
+                }
+            } else {
+                if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                    closeNoteEditor()
                 }
             }
         },
@@ -501,7 +508,7 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
             deckId = requireArguments().getLong(EXTRA_DID, 0L),
             isAddingNote = addNote,
             initialFieldText = initialFieldText,
-        ) { success, _ ->
+        ) { success, error ->
             if (success) {
                 // Sync Fragment's deckId with ViewModel's deckId after initialization
                 // This ensures the hasUnsavedChanges() deck comparison works correctly
@@ -519,6 +526,31 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                             currentEditedCard?.currentDeckId() ?: 0L
                         }
                     } ?: 0L
+
+                    if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                        val imageOcclusionLoadFailedMessage =
+                            getString(R.string.image_occlusion_load_failed)
+                        val imageUri = BundleCompat.getParcelable(
+                            requireArguments(), EXTRA_IMG_OCCLUSION, Uri::class.java
+                        )
+                        if (imageUri == null) {
+                            Timber.w("Could not load image for image occlusion: missing URI")
+                            noteEditorViewModel.showSnackbar(imageOcclusionLoadFailedMessage)
+                            closeNoteEditor()
+                        } else {
+                            val path = ImportUtils.getFileCachedCopy(requireContext(), imageUri)
+                            if (path == null) {
+                                Timber.w(
+                                    "Could not load image for image occlusion: failed to cache %s",
+                                    imageUri,
+                                )
+                                noteEditorViewModel.showSnackbar(imageOcclusionLoadFailedMessage)
+                                closeNoteEditor()
+                            } else {
+                                setupImageOcclusionEditor(path)
+                            }
+                        }
+                    }
                 }
                 // Update cards info for the selected note type
                 if (editorNote != null) {
@@ -545,6 +577,14 @@ class NoteEditorFragment : Fragment(R.layout.note_editor_fragment), DeckSelectio
                         noteEditorViewModel.updateTags(tags.toSet())
                     }
                 }
+            } else {
+                Timber.e("NoteEditorFragment init failed: %s", error)
+                val message = when (error) {
+                    is ImageOcclusionNotetypeMissingException -> getString(R.string.image_occlusion_notetype_missing)
+                    else -> getString(R.string.something_wrong)
+                }
+                noteEditorViewModel.showSnackbar(message)
+                closeNoteEditor()
             }
         }
         return true

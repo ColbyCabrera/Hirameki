@@ -19,6 +19,7 @@ package com.ichi2.anki
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -515,6 +516,83 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     @Test
+    fun `starts with image occlusion note type when caller is IMG_OCCLUSION`() {
+        val ioNotetype = col.notetypes.all().find { it.isImageOcclusion }
+        org.junit.Assume.assumeTrue("Image Occlusion note type required", ioNotetype != null)
+
+        // Set another note type as current, to prove it switches to Image Occlusion
+        val basicType = col.notetypes.byName("Basic")!!
+        col.notetypes.setCurrent(basicType)
+
+        val bundle =
+            NoteEditorLauncher.ImageOcclusion(Uri.parse("content://media/external/images/media/1"))
+                .toBundle()
+        val editor = openNoteEditorWithArgs(bundle)
+        idleMainLooper()
+
+        assertThat(
+            editor.viewModel.noteEditorState.value.selectedNoteTypeName, equalTo(ioNotetype!!.name)
+        )
+    }
+
+    @Test
+    fun `launching with IMG_OCCLUSION and missing imageUri closes the editor`() {
+        val bundle = NoteEditorLauncher.ImageOcclusion(imageUri = null).toBundle()
+        ActivityScenario.launchActivityForResult<NoteEditorActivity>(
+            NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
+        ).use { scenario ->
+            idleMainLooper()
+            scenario.onNoteEditor { noteEditor ->
+                assertThat(
+                    "Missing image URI should cause the activity to finish",
+                    noteEditor.requireActivity().isFinishing
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `launching with IMG_OCCLUSION when image cached copy path is null closes the editor`() {
+        val bundle =
+            NoteEditorLauncher.ImageOcclusion(imageUri = Uri.parse("content://invalid-provider/image"))
+                .toBundle()
+        ActivityScenario.launchActivityForResult<NoteEditorActivity>(
+            NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
+        ).use { scenario ->
+            idleMainLooper()
+            scenario.onNoteEditor { noteEditor ->
+                assertThat(
+                    "Null image cached copy path should cause the activity to finish",
+                    noteEditor.requireActivity().isFinishing
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `launching with IMG_OCCLUSION when no image occlusion note type is found closes the editor`() {
+        val ioNotetype = col.notetypes.all().find { it.isImageOcclusion }
+        if (ioNotetype != null) {
+            col.notetypes.remove(ioNotetype.id)
+        }
+
+        val bundle =
+            NoteEditorLauncher.ImageOcclusion(Uri.parse("content://media/external/images/media/1"))
+                .toBundle()
+        ActivityScenario.launchActivityForResult<NoteEditorActivity>(
+            NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
+        ).use { scenario ->
+            idleMainLooper()
+            scenario.onNoteEditor { noteEditor ->
+                assertThat(
+                    "Missing image occlusion note type should cause the activity to finish",
+                    noteEditor.requireActivity().isFinishing
+                )
+            }
+        }
+    }
+
+    @Test
     fun `edit note in filtered deck from reviewer - 15919`() {
         idleMainLooper()
         addDeck("A")
@@ -748,7 +826,11 @@ class NoteEditorTest : RobolectricTest() {
         idleMainLooper()
 
         val fields = editor.viewModel.noteEditorState.value.fields
-        assertThat("Back field keeps the name-based match", fields[0].value.text, equalTo("back-val"))
+        assertThat(
+            "Back field keeps the name-based match",
+            fields[0].value.text,
+            equalTo("back-val")
+        )
         assertThat("Prompt field stays blank", fields[1].value.text, equalTo(""))
     }
 
@@ -1033,11 +1115,11 @@ class NoteEditorTest : RobolectricTest() {
         col.notetypes.save(alternateNoteType)
 
         addBasicNote("Initial Front", "Initial Back").update {
-                setTagsFromStr(col, "initial-only-tag")
-            }.updateCards { did = initialDeckId }
+            setTagsFromStr(col, "initial-only-tag")
+        }.updateCards { did = initialDeckId }
         addBasicNote("Preferred Front", "Preferred Back").update {
-                setTagsFromStr(col, "preferred-only-tag")
-            }.updateCards { did = preferredDeckId }
+            setTagsFromStr(col, "preferred-only-tag")
+        }.updateCards { did = preferredDeckId }
 
         val editor = getNoteEditorAdding(NoteType.BASIC).build()
         idleMainLooper()
