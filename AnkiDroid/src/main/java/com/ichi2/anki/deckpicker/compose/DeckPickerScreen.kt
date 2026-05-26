@@ -663,6 +663,7 @@ fun DeckPickerScreen(
                     }
                     Box(modifier = Modifier.weight(1f)) {
                         StudyOptionsScreen(
+                            modifier = Modifier.padding(start = 4.dp, end = 12.dp, bottom = 12.dp),
                             studyOptionsData = studyOptionsData,
                             onStartStudy = onStartStudy,
                             onCustomStudy = onCustomStudy,

@@ -102,7 +102,7 @@ fun StudyOptionsScreen(
     onCustomStudy: (Long) -> Unit,
 ) {
     Surface(
-        modifier.padding(start = 4.dp, end = 12.dp, bottom = 12.dp),
+        modifier = modifier,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLowest
     ) {
