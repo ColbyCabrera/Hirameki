@@ -29,9 +29,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.ichi2.anki.CollectionManager.withCol
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
 import com.ichi2.anki.deckpicker.compose.StudyOptionsScreen
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.ext.showDialogFragment
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -83,15 +88,20 @@ class StudyOptionsComposeActivity : AnkiActivity() {
                 }
             }
 
-            StudyOptionsScreen(
-                studyOptionsData = studyOptionsData,
-                onStartStudy = {
-                    startActivity(Reviewer.getIntent(this))
-                },
-                onCustomStudy = { deckId ->
-                    showDialogFragment(CustomStudyDialog.createInstance(deckId))
-                },
-            )
+            AnkiDroidTheme {
+                Scaffold { innerPadding ->
+                    StudyOptionsScreen(
+                        modifier = Modifier.padding(innerPadding).fillMaxSize(),
+                        studyOptionsData = studyOptionsData,
+                        onStartStudy = {
+                            startActivity(Reviewer.getIntent(this))
+                        },
+                        onCustomStudy = { deckId ->
+                            showDialogFragment(CustomStudyDialog.createInstance(deckId))
+                        },
+                    )
+                }
+            }
         }
     }
 

@@ -102,28 +102,28 @@ fun StudyOptionsScreen(
     onCustomStudy: (Long) -> Unit,
 ) {
     Surface(
-        modifier.padding(start = 4.dp, end = 12.dp, bottom = 12.dp),
+        modifier = modifier,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLowest
     ) {
         if (studyOptionsData == null) {
             // Show a loading indicator or an empty state
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
 
         } else {
             when {
                 studyOptionsData.totalCards == 0 && !studyOptionsData.isFiltered -> {
-                    EmptyDeckView(studyOptionsData, modifier)
+                    EmptyDeckView(studyOptionsData, modifier = Modifier)
                 }
 
                 studyOptionsData.newCount + studyOptionsData.lrnCount + studyOptionsData.revCount == 0 -> {
-                    CongratsView(studyOptionsData, onCustomStudy, modifier)
+                    CongratsView(studyOptionsData, onCustomStudy, modifier = Modifier)
                 }
 
                 else -> {
-                    StudyOptionsView(studyOptionsData, onStartStudy, modifier)
+                    StudyOptionsView(studyOptionsData, onStartStudy, modifier = Modifier)
                 }
             }
         }
@@ -168,8 +168,10 @@ fun StudyOptionsView(
                         val start = spanned.getSpanStart(span)
                         val end = spanned.getSpanEnd(span)
                         val url = span.url
-                        if (url.startsWith("http://", ignoreCase = true) ||
-                            url.startsWith("https://", ignoreCase = true)
+                        if (url.startsWith(
+                                "http://",
+                                ignoreCase = true
+                            ) || url.startsWith("https://", ignoreCase = true)
                         ) {
                             addLink(LinkAnnotation.Url(url), start, end)
                             addStyle(
