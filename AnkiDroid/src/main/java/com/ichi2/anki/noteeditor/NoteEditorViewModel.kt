@@ -1095,14 +1095,7 @@ class NoteEditorViewModel(
         (0 until notetype.fields.length()).map { index ->
             val field = notetype.fields[index]
             val value = if (index < note.fields.size) note.fields[index] else ""
-            val editableValue =
-                value
-                    .replace("<br>", "\n")
-                    .replace("<br/>", "\n")
-                    .replace("<br />", "\n")
-                    .replace("<BR>", "\n")
-                    .replace("<BR/>", "\n")
-                    .replace("<BR />", "\n")
+            val editableValue = value.replace(Regex("(?i)<br\\s*/?>"), "\n")
             NoteFieldState(
                 name = field.name,
                 value = TextFieldValue(editableValue),
@@ -1252,24 +1245,7 @@ class NoteEditorViewModel(
         // This ensures we get the correct number of fields
         val fields = mapFieldsFromNote(note, notetype)
 
-        val deckName =
-            try {
-                if (_deckId.value == 0L) {
-                    // If deckId is not set, use the default deck
-                    col.decks.name(1L)
-                } else {
-                    col.decks.name(_deckId.value)
-                }
-            } catch (e: Exception) {
-                Timber.w(e, "Error getting deck name for deck ID ${_deckId.value}, using default deck")
-                try {
-                    // Fall back to the default deck (ID 1)
-                    col.decks.name(1L)
-                } catch (e2: Exception) {
-                    Timber.e(e2, "Error getting default deck name")
-                    "Default"
-                }
-            }
+        val deckName = getDeckNameSafely(col, _deckId.value)
 
         Timber.d(
             "updateStateFromNoteWithNotetype: Updating state with note type '%s', %d fields",
