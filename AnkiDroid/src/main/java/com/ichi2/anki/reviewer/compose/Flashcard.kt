@@ -40,6 +40,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
+import android.content.SharedPreferences
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
@@ -70,6 +75,23 @@ fun Flashcard(
     val currentOnTap by rememberUpdatedState(onTap)
 
     val context = LocalContext.current
+    val sharedPrefs = remember(context) { context.sharedPrefs() }
+    var applyHiramekiCssMode by remember {
+        mutableStateOf(sharedPrefs.getString("applyHiramekiCss", "all") ?: "all")
+    }
+
+    DisposableEffect(sharedPrefs) {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "applyHiramekiCss") {
+                applyHiramekiCssMode = sharedPrefs.getString("applyHiramekiCss", "all") ?: "all"
+            }
+        }
+        sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose {
+            sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
     val isNightMode = Themes.currentTheme.isNightMode
     val surfaceColor = MaterialTheme.colorScheme.surface
     val surfaceColorHex = surfaceColor.toArgb().toRGBHex()
@@ -106,9 +128,23 @@ fun Flashcard(
             outlineColorHex,
             currentStyle,
             currentPadding,
-            toolbarHeight
+            toolbarHeight,
+            applyHiramekiCssMode
         ) {
-            """
+            if (applyHiramekiCssMode == "disabled") {
+                """<style id="compose-styles"></style>"""
+            } else {
+                val fontSizeStyles = if (applyHiramekiCssMode == "no_font_size") {
+                    ""
+                } else {
+                    """
+                        font-size: ${currentStyle.fontSize.value}px;
+                        line-height: ${currentStyle.lineHeight.value}px;
+                        letter-spacing: ${currentStyle.letterSpacing.value}px;
+                    """.trimIndent()
+                }
+
+                """
                 <style id="compose-styles">
                     @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
                     html {
@@ -118,10 +154,8 @@ fun Flashcard(
                     body.card {
                         text-align: center;
                         font-family: "Roboto", sans-serif;
-                        font-size: ${currentStyle.fontSize.value}px;
+                        $fontSizeStyles
                         font-weight: ${currentStyle.fontWeight?.weight ?: 400};
-                        line-height: ${currentStyle.lineHeight.value}px;
-                        letter-spacing: ${currentStyle.letterSpacing.value}px;
                         text-wrap: pretty;
                         padding-top: ${currentPadding}px;
                         padding-bottom: ${toolbarHeight}px;
@@ -217,7 +251,8 @@ fun Flashcard(
                         fill: currentColor;
                     }
                 </style>
-            """.trimIndent()
+                """.trimIndent()
+            }
         }
         val styledHtml = remember(context, isNightMode, composeStyle) {
             buildStyledHtml(context, isNightMode, composeStyle)

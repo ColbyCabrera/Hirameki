@@ -323,4 +323,14 @@
     <string name="post_notification_permission">android.permission.POST_NOTIFICATIONS</string>
     <string name="record_audio_permission">android.permission.RECORD_AUDIO</string>
 
+    <string-array name="apply_hirameki_css_labels">
+        <item>@string/apply_hirameki_css_all</item>
+        <item>@string/apply_hirameki_css_no_font_size</item>
+        <item>@string/apply_hirameki_css_disabled</item>
+    </string-array>
+    <string-array name="apply_hirameki_css_values">
+        <item>all</item>
+        <item>no_font_size</item>
+        <item>disabled</item>
+    </string-array>
 </resources>

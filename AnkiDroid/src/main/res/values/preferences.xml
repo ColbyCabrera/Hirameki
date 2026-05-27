@@ -245,5 +245,5 @@
     <string name="reviewer_menu_settings_key">reviewerMenuSettings</string>
     <string name="reviewer_frame_style_key">reviewerFrameStyle</string>
     <string name="reviewer_toolbar_position_key">reviewerToolbarPosition</string>
-
+    <string name="apply_hirameki_css_preference">applyHiramekiCss</string>
 </resources>
