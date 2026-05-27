@@ -234,7 +234,7 @@ object UsageAnalytics {
         if (!optIn) {
             return
         }
-        val event  = sAnalytics!!.event().eventCategory(category).eventAction(action)
+        val event = sAnalytics!!.event().eventCategory(category).eventAction(action)
         if (label != null) {
             event.eventLabel(label)
         }
@@ -343,7 +343,7 @@ object UsageAnalytics {
             this.customDimension(3, Build.MODEL) // model e.g. "ONEPLUS A6013" for the 6T
             this.customDimension(4, Build.BOARD) // deviceId e.g. "sdm845" for the 6T
 
-            // This is important for google to auto-fingerprint us for default reporting
+            // This is important for Google to auto-fingerprint us for default reporting
             // It is not possible to set operating system explicitly, there is no API or analytics parameter for it
             // Instead they respond that they auto-parse User-Agent strings for analytics attribution
             // For maximum analytics built-in report compatibility we will send the official WebView User-Agent string
@@ -512,7 +512,6 @@ object UsageAnalytics {
             // ******************************** Controls *********************************************
             R.string.gestures_preference, // Enable gestures
             R.string.gestures_corner_touch_preference, // 9-point touch
-            R.string.nav_drawer_gesture_key, // Full screen navigation drawer
             R.string.pref_swipe_sensitivity_key, // Swipe sensitivity
             R.string.show_answer_command_key,
             R.string.answer_again_command_key,
@@ -566,9 +565,7 @@ object UsageAnalytics {
             // ******************************** Accessibility ******************************************
             R.string.card_zoom_preference,
             R.string.image_zoom_preference,
-            R.string.answer_button_size_preference,
             R.string.show_large_answer_buttons_preference,
-            R.string.pref_card_browser_font_scale_key,
             R.string.pref_card_minimal_click_time,
             R.string.show_answer_button_badges_key,
             // ******************************** Advanced ***********************************************

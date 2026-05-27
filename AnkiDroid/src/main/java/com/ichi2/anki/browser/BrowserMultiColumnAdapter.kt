@@ -21,7 +21,6 @@ import android.content.res.ColorStateList
 import android.graphics.Paint
 import android.graphics.drawable.RippleDrawable
 import android.text.TextUtils
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -37,7 +36,6 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import anki.search.BrowserRow.Color
-import com.ichi2.anki.AnkiDroidApp.Companion.sharedPrefs
 import com.ichi2.anki.Flag
 import com.ichi2.anki.R
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -47,7 +45,6 @@ import com.ichi2.anki.utils.ext.findViewById
 import com.ichi2.utils.removeChildren
 import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
-import kotlin.math.abs
 
 typealias RowIsSelected = Boolean
 
@@ -65,13 +62,8 @@ class BrowserMultiColumnAdapter(
     private val onTap: (CardOrNoteId) -> Unit,
     private val onRightClick: (CardOrNoteId) -> Unit = onLongPress,
 ) : RecyclerView.Adapter<BrowserMultiColumnAdapter.MultiColumnViewHolder>() {
-    val fontSizeScalePercent =
-        sharedPrefs().getInt("relativeCardBrowserFontSize", DEFAULT_FONT_SIZE_RATIO)
-
     private val rowCollection: BrowserRowCollection
         get() = viewModel.cards
-
-    private var originalTextSize = -1.0f
 
     inner class MultiColumnViewHolder(
         holder: View,
@@ -105,8 +97,6 @@ class BrowserMultiColumnAdapter(
                         columnViews.add(this as TextView)
                     }
                 }
-
-                columnViews.forEach { it.setupTextSize() }
             }
 
         init {
@@ -124,9 +114,7 @@ class BrowserMultiColumnAdapter(
             }
 
             this.itemView.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_DOWN &&
-                    event.buttonState and MotionEvent.BUTTON_SECONDARY != 0
-                ) {
+                if (event.action == MotionEvent.ACTION_DOWN && event.buttonState and MotionEvent.BUTTON_SECONDARY != 0) {
                     return@setOnTouchListener onRightClick()
                 }
                 return@setOnTouchListener false
@@ -212,19 +200,6 @@ class BrowserMultiColumnAdapter(
                     paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                 }
         }
-
-        private fun TextView.setupTextSize() {
-            // Set the font and font size for a TextView v
-            val currentSize = textSize
-            if (originalTextSize < 0) {
-                originalTextSize = currentSize
-            }
-            // do nothing when pref is 100% and apply scaling only once
-            if (fontSizeScalePercent != 100 && abs(originalTextSize - currentSize) < 0.1) {
-                // getTextSize returns value in absolute PX so use that in the setter
-                setTextSize(TypedValue.COMPLEX_UNIT_PX, originalTextSize * (fontSizeScalePercent / 100.0f))
-            }
-        }
     }
 
     override fun onCreateViewHolder(
@@ -232,9 +207,7 @@ class BrowserMultiColumnAdapter(
         viewType: Int,
     ): MultiColumnViewHolder {
         val view =
-            LayoutInflater
-                .from(parent.context)
-                .inflate(R.layout.card_item_browser, parent, false)
+            LayoutInflater.from(parent.context).inflate(R.layout.card_item_browser, parent, false)
         return MultiColumnViewHolder(view)
     }
 
@@ -304,7 +277,10 @@ class BrowserMultiColumnAdapter(
             Color.COLOR_BURIED -> ThemeUtils.getThemeAttrColor(context, R.attr.buriedColor)
 
             Color.COLOR_DEFAULT, Color.UNRECOGNIZED ->
-                ThemeUtils.getThemeAttrColor(context, android.R.attr.colorBackground)
+                ThemeUtils.getThemeAttrColor(
+                    context,
+                    android.R.attr.colorBackground,
+                )
         }
 
     companion object {
@@ -321,8 +297,6 @@ class BrowserMultiColumnAdapter(
             if (showMediaFilenames) return input
             return mediaFilenameRegex.replace(input, "")
         }
-
-        private const val DEFAULT_FONT_SIZE_RATIO = 100
 
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         const val LINES_VISIBLE_WHEN_COLLAPSED = 3
