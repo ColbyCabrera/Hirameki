@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import com.ichi2.anki.CollectionManager.withCol
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -36,7 +37,9 @@ import androidx.compose.ui.Modifier
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
 import com.ichi2.anki.deckpicker.compose.StudyOptionsScreen
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
+import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.ext.showDialogFragment
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -50,10 +53,21 @@ class StudyOptionsComposeActivity : AnkiActivity() {
             return
         }
         super.onCreate(savedInstanceState)
+
         setContent {
             var studyOptionsData by remember { mutableStateOf<StudyOptionsData?>(null) }
+            var refreshCounter by remember { mutableIntStateOf(0) }
 
-            LaunchedEffect(Unit) {
+            setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
+                when (CustomStudyAction.fromBundle(bundle)) {
+                    CustomStudyAction.CUSTOM_STUDY_SESSION -> finish()
+                    CustomStudyAction.EXTEND_STUDY_LIMITS -> {
+                        refreshCounter++
+                    }
+                }
+            }
+
+            LaunchedEffect(refreshCounter) {
                 studyOptionsData = withContext(collectionDispatcher) {
                     withCol {
                         val deckId = intent.getLongExtra(DECK_ID, decks.current().id)
