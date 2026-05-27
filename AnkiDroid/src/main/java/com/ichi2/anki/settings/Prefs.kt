@@ -241,7 +241,6 @@ object Prefs {
     val showAnswerButtons by booleanPref(R.string.show_answer_buttons_key, true)
 
     val doubleTapInterval by intPref(R.string.double_tap_timeout_pref_key, defaultValue = 200)
-    val newStudyScreenAnswerButtonSize by intPref(R.string.answer_button_size_pref_key, defaultValue = 100)
 
     val swipeSensitivity: Float
         get() = getInt(R.string.pref_swipe_sensitivity_key, 100) / 100F
@@ -268,7 +267,6 @@ object Prefs {
     //endregion
     // ************************************** Accessibility ************************************* //
 
-    val answerButtonsSize: Int by intPref(R.string.answer_button_size_preference, 100)
     val cardZoom: Int by intPref(R.string.card_zoom_preference, 100)
 
     // **************************************** Advanced **************************************** //
@@ -288,8 +286,6 @@ object Prefs {
     var isDevOptionsEnabled: Boolean
         get() = getBoolean(R.string.dev_options_enabled_by_user_key, false) || BuildConfig.DEBUG
         set(value) = putBoolean(R.string.dev_options_enabled_by_user_key, value)
-
-
 
     val devUsingCardBrowserSearchView: Boolean by booleanPref(R.string.dev_card_browser_search_view, false)
 

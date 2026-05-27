@@ -43,13 +43,12 @@ import androidx.drawerlayout.widget.ClosableDrawerLayout
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.google.android.material.navigation.NavigationView
-import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.dialogs.help.HelpDialog
 import com.ichi2.anki.libanki.CardId
+import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.utils.ext.showDialogFragment
-import com.ichi2.anki.workarounds.FullDraggableContainerFix
 import com.ichi2.utils.HandlerUtils
 import com.ichi2.utils.IntentUtil
 import timber.log.Timber
@@ -100,16 +99,8 @@ abstract class NavigationDrawerActivity :
             LayoutInflater
                 .from(this)
                 .inflate(layoutResID, closableDrawerLayout, false) as CoordinatorLayout
-        if (preferences.getBoolean(FULL_SCREEN_NAVIGATION_DRAWER, false)) {
-            // If full screen navigation drawer is needed, then add FullDraggableContainer as a child view of closableDrawerLayout.
-            // Then add coordinatorLayout as a child view of fullDraggableContainer.
-            val fullDraggableContainer = FullDraggableContainerFix(this)
-            fullDraggableContainer.addView(coordinatorLayout)
-            closableDrawerLayout.addView(fullDraggableContainer, 0)
-        } else {
-            // If full screen navigation drawer is not needed, then directly add coordinatorLayout as the child view.
-            closableDrawerLayout.addView(coordinatorLayout, 0)
-        }
+        // Directly add coordinatorLayout as the child view.
+        closableDrawerLayout.addView(coordinatorLayout, 0)
         setContentView(closableDrawerLayout)
     }
 
@@ -435,7 +426,6 @@ abstract class NavigationDrawerActivity :
     companion object {
         // Intent request codes
         const val REQUEST_PREFERENCES_UPDATE = 100
-        const val FULL_SCREEN_NAVIGATION_DRAWER = "gestureFullScreenNavigationDrawer"
 
         const val EXTRA_STARTED_WITH_SHORTCUT = "com.ichi2.anki.StartedWithShortcut"
 

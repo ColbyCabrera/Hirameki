@@ -33,8 +33,6 @@ class AccessibilitySettingsFragment : SettingsFragment() {
 
     private fun setupNewStudyScreenSettings() {
         // New study screen is always enabled, so always show new settings and hide legacy ones
-        requirePreference<Preference>(R.string.answer_button_size_pref_key).isVisible = true
-
         for (key in legacyStudyScreenSettings) {
             val keyString = getString(key)
             findPreference<Preference>(keyString)?.isVisible = false
@@ -47,7 +45,6 @@ class AccessibilitySettingsFragment : SettingsFragment() {
                 R.string.image_zoom_preference,
                 R.string.show_large_answer_buttons_preference,
                 R.string.pref_card_minimal_click_time,
-                R.string.answer_button_size_preference,
             )
     }
 }

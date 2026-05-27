@@ -89,8 +89,6 @@ class PreferencesAnalyticsTest : RobolectricTest() {
             R.string.custom_sync_server_collection_url_key, // syncBaseUrl
             R.string.pref_language_key, // language
             R.string.custom_sync_certificate_key, // customSyncCertificate
-            // Experimental settings
-            R.string.answer_button_size_pref_key, // answerBtnSize
         ).toStringResourceSet()
 
     @Test
