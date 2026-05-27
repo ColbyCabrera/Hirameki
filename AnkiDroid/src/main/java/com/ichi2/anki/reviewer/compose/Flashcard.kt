@@ -45,6 +45,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.ichi2.anki.preferences.sharedPrefs
+import com.ichi2.anki.R
+import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.previewer.stdHtml
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
@@ -76,16 +78,20 @@ fun Flashcard(
 
     val context = LocalContext.current
     val sharedPrefs = remember(context) { context.sharedPrefs() }
+    val prefKey = remember(context) { context.getString(R.string.apply_hirameki_css_preference) }
     var applyHiramekiCssMode by remember {
-        mutableStateOf(sharedPrefs.getString("applyHiramekiCss", "all") ?: "all")
+        mutableStateOf(sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL)
     }
 
-    DisposableEffect(sharedPrefs) {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "applyHiramekiCss") {
-                applyHiramekiCssMode = sharedPrefs.getString("applyHiramekiCss", "all") ?: "all"
+    val listener = remember {
+        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == prefKey) {
+                applyHiramekiCssMode = sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL
             }
         }
+    }
+
+    DisposableEffect(sharedPrefs, listener) {
         sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
         onDispose {
             sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
@@ -131,10 +137,10 @@ fun Flashcard(
             toolbarHeight,
             applyHiramekiCssMode
         ) {
-            if (applyHiramekiCssMode == "disabled") {
+            if (applyHiramekiCssMode == Prefs.HIRAMEKI_CSS_DISABLED) {
                 """<style id="compose-styles"></style>"""
             } else {
-                val fontSizeStyles = if (applyHiramekiCssMode == "no_font_size") {
+                val fontSizeStyles = if (applyHiramekiCssMode == Prefs.HIRAMEKI_CSS_NO_FONT_SIZE) {
                     ""
                 } else {
                     """

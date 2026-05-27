@@ -61,7 +61,7 @@
             android:title="@string/show_answer_button_badges"
             android:summary="@string/show_answer_button_badges_summ" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="Reviewer CSS styling" android:key="reviewer_css_category">
+    <PreferenceCategory android:title="@string/reviewer_css_styling" android:key="reviewer_css_category">
         <ListPreference
             android:defaultValue="all"
             android:entries="@array/apply_hirameki_css_labels"
