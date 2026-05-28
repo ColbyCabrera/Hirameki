@@ -54,18 +54,19 @@ class StudyOptionsComposeActivity : AnkiActivity() {
         }
         super.onCreate(savedInstanceState)
 
-        setContent {
-            var studyOptionsData by remember { mutableStateOf<StudyOptionsData?>(null) }
-            var refreshCounter by remember { mutableIntStateOf(0) }
+        var refreshCounter by mutableIntStateOf(0)
 
-            setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
-                when (CustomStudyAction.fromBundle(bundle)) {
-                    CustomStudyAction.CUSTOM_STUDY_SESSION -> finish()
-                    CustomStudyAction.EXTEND_STUDY_LIMITS -> {
-                        refreshCounter++
-                    }
+        setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
+            when (CustomStudyAction.fromBundle(bundle)) {
+                CustomStudyAction.CUSTOM_STUDY_SESSION -> finish()
+                CustomStudyAction.EXTEND_STUDY_LIMITS -> {
+                    refreshCounter++
                 }
             }
+        }
+
+        setContent {
+            var studyOptionsData by remember { mutableStateOf<StudyOptionsData?>(null) }
 
             LaunchedEffect(refreshCounter) {
                 studyOptionsData = withContext(collectionDispatcher) {
