@@ -208,6 +208,10 @@ class CardBrowserActionHandler(
     }
 
     fun onPreview() {
+        if (viewModel.rowCount == 0) {
+            viewModel.emitSnackbarMessage(activity.getString(R.string.card_browser_no_cards_to_preview))
+            return
+        }
         activity.launchCatchingTask {
             val intentData = viewModel.queryPreviewIntentData()
             val intent = PreviewerFragment.getIntent(

@@ -113,6 +113,7 @@
     <string name="note_editor_tags_title" comment="Tags title for note editor. Duplicated in card_details_tags for card browser context">Tags</string>
 
     <string name="card_browser_no_cards_selected">No cards selected</string>
+    <string name="card_browser_no_cards_to_preview">No cards to preview</string>
     <string name="card_browser_reposition_invalid_bounds">Could not determine card range</string>
     <plurals name="delete_notes_confirmation">
         <item quantity="one">Delete this note and all of its cards?</item>
