@@ -35,6 +35,7 @@ import anki.config.ConfigKey
 import com.ichi2.anim.ActivityTransitionAnimation.Direction.DEFAULT
 import com.ichi2.anki.api.AddContentApi.Companion.DEFAULT_DECK_ID
 import com.ichi2.anki.common.annotations.DuplicatedCode
+import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Decks.Companion.CURRENT_DECK
@@ -1180,6 +1181,42 @@ class NoteEditorTest : RobolectricTest() {
 
         assertThat("card 2 should be deleted", col.findCards("cid:$card2Id"), empty())
     }
+
+    @Test
+    fun `change note type of existing note when editing deleted card falls back to remaining card`() =
+        runTest {
+            val note = addBasicAndReversedNote("front-val", "back-val")
+            assertThat("note has 2 cards", note.cards().size, equalTo(2))
+            val card1Id = note.cards()[0].id
+            val card2Id = note.cards()[1].id
+
+            // Edit the second card, which gets deleted when switching "Basic (and reversed)" -> "Basic"
+            val bundle = NoteEditorLauncher.EditCard(card2Id, DEFAULT).toBundle()
+            val editor = openNoteEditorWithArgs(bundle)
+            idleMainLooper()
+
+            editor.viewModel.selectNoteType("Basic")
+            idleMainLooper()
+
+            editor.saveNote()
+            idleMainLooper()
+
+            val updatedNote = col.getNote(note.id)
+            assertThat(updatedNote.notetype.name, equalTo("Basic"))
+
+            val remainingCards = updatedNote.cards()
+            assertThat("remaining cards count", remainingCards.size, equalTo(1))
+            assertThat("remaining card is card 1", remainingCards[0].id, equalTo(card1Id))
+            assertThat("card 2 should be deleted", col.findCards("cid:$card2Id"), empty())
+
+            // Verify the fallback loader logic picked card 1
+            val currentCardField = NoteEditorViewModel::class.java.getDeclaredField("_currentCard")
+            currentCardField.isAccessible = true
+            val currentCardFlow =
+                currentCardField.get(editor.viewModel) as kotlinx.coroutines.flow.StateFlow<*>
+            val finalCard = currentCardFlow.value as Card?
+            assertThat("fallback card is loaded", finalCard?.id, equalTo(card1Id))
+        }
 
     // ---- Helper Methods ----
 
