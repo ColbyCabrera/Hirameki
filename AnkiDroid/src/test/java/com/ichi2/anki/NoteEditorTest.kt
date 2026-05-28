@@ -19,11 +19,11 @@ package com.ichi2.anki
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -50,6 +50,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsInAnyOrder
+import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.junit.After
@@ -525,7 +526,7 @@ class NoteEditorTest : RobolectricTest() {
         col.notetypes.setCurrent(basicType)
 
         val bundle =
-            NoteEditorLauncher.ImageOcclusion(Uri.parse("content://media/external/images/media/1"))
+            NoteEditorLauncher.ImageOcclusion("content://media/external/images/media/1".toUri())
                 .toBundle()
         val editor = openNoteEditorWithArgs(bundle)
         idleMainLooper()
@@ -554,7 +555,7 @@ class NoteEditorTest : RobolectricTest() {
     @Test
     fun `launching with IMG_OCCLUSION when image cached copy path is null closes the editor`() {
         val bundle =
-            NoteEditorLauncher.ImageOcclusion(imageUri = Uri.parse("content://invalid-provider/image"))
+            NoteEditorLauncher.ImageOcclusion(imageUri = "content://invalid-provider/image".toUri())
                 .toBundle()
         ActivityScenario.launchActivityForResult<NoteEditorActivity>(
             NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
@@ -577,7 +578,7 @@ class NoteEditorTest : RobolectricTest() {
         }
 
         val bundle =
-            NoteEditorLauncher.ImageOcclusion(Uri.parse("content://media/external/images/media/1"))
+            NoteEditorLauncher.ImageOcclusion("content://media/external/images/media/1".toUri())
                 .toBundle()
         ActivityScenario.launchActivityForResult<NoteEditorActivity>(
             NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
@@ -827,9 +828,7 @@ class NoteEditorTest : RobolectricTest() {
 
         val fields = editor.viewModel.noteEditorState.value.fields
         assertThat(
-            "Back field keeps the name-based match",
-            fields[0].value.text,
-            equalTo("back-val")
+            "Back field keeps the name-based match", fields[0].value.text, equalTo("back-val")
         )
         assertThat("Prompt field stays blank", fields[1].value.text, equalTo(""))
     }
@@ -1154,6 +1153,34 @@ class NoteEditorTest : RobolectricTest() {
             equalTo(false)
         )
     }
+
+    @Test
+    fun `change note type of existing note deletes orphaned cards and migrates fields`() = runTest {
+        val note = addBasicAndReversedNote("front-val", "back-val")
+        assertThat("note has 2 cards", note.cards().size, equalTo(2))
+        val card1Id = note.cards()[0].id
+        val card2Id = note.cards()[1].id
+
+        val bundle = NoteEditorLauncher.EditCard(note.firstCard().id, DEFAULT).toBundle()
+        val editor = openNoteEditorWithArgs(bundle)
+        idleMainLooper()
+
+        editor.viewModel.selectNoteType("Basic")
+        idleMainLooper()
+
+        editor.saveNote()
+        idleMainLooper()
+
+        val updatedNote = col.getNote(note.id)
+        assertThat(updatedNote.notetype.name, equalTo("Basic"))
+
+        val remainingCards = updatedNote.cards()
+        assertThat("remaining cards count", remainingCards.size, equalTo(1))
+        assertThat("remaining card is card 1", remainingCards[0].id, equalTo(card1Id))
+
+        assertThat("card 2 should be deleted", col.findCards("cid:$card2Id"), empty())
+    }
+
     // ---- Helper Methods ----
 
     private fun moveToDynamicDeck(note: Note): DeckId {
@@ -1181,7 +1208,7 @@ class NoteEditorTest : RobolectricTest() {
     private fun createBasic2NoteType(): String =
         addStandardNoteType("Basic 2", arrayOf("Front", "Back"), "{{Front}}", "{{Back}}")
 
-    /** Creates a "ThreeField" note type with Front, Back, and an extra Extra field */
+    /** Creates a "ThreeField" note type with Front, Back, and an Extra field */
     private fun createThreeFieldNoteType(): String = addStandardNoteType(
         "ThreeField", arrayOf("Front", "Back", "Extra"), "{{Front}}", "{{Back}}<br>{{Extra}}"
     )
