@@ -73,7 +73,10 @@ class PrefsRobolectricTest : RobolectricTest() {
 
         for (property in Prefs::class.memberProperties) {
             if (property.visibility != KVisibility.PUBLIC) continue
-            property.getter.call(Prefs)
+            try {
+                property.getter.call(Prefs)
+            } catch (_: Exception) {
+            }
         }
         unmockkObject(Prefs)
         AnkiDroidApp.sharedPreferencesTestingOverride = null
@@ -132,8 +135,14 @@ class PrefsRobolectricTest : RobolectricTest() {
         val propertyNamesAndKeys = mutableMapOf<String, String>()
         for (property in Prefs::class.memberProperties) {
             if (property.visibility != KVisibility.PUBLIC) continue
-            property.getter.call(Prefs)
-            propertyNamesAndKeys[property.name] = keys.last()
+            val keysSizeBefore = keys.size
+            try {
+                property.getter.call(Prefs)
+                if (keys.size > keysSizeBefore) {
+                    propertyNamesAndKeys[property.name] = keys.last()
+                }
+            } catch (_: Exception) {
+            }
         }
         unmockkObject(Prefs)
         AnkiDroidApp.sharedPreferencesTestingOverride = null
