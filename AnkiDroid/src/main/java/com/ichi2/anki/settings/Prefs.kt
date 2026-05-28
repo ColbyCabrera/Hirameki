@@ -34,6 +34,10 @@ import kotlin.reflect.KProperty
 // TODO move this to `com.ichi2.anki.preferences`
 //  after the UI classes of that package are moved to `com.ichi2.anki.ui.preferences`
 object Prefs {
+    const val HIRAMEKI_CSS_ALL = "all"
+    const val HIRAMEKI_CSS_NO_FONT_SIZE = "no_font_size"
+    const val HIRAMEKI_CSS_DISABLED = "disabled"
+
     private val sharedPrefs get() = AnkiDroidApp.sharedPrefs()
 
     @VisibleForTesting
@@ -239,6 +243,7 @@ object Prefs {
     val showAnswerFeedback by booleanPref(R.string.show_answer_feedback_key, defaultValue = true)
     val showAnswerButtonBadges by booleanPref(R.string.show_answer_button_badges_key, defaultValue = true)
     val showAnswerButtons by booleanPref(R.string.show_answer_buttons_key, true)
+    val applyHiramekiCss by stringPref(R.string.apply_hirameki_css_preference, defaultValue = HIRAMEKI_CSS_ALL)
 
     val doubleTapInterval by intPref(R.string.double_tap_timeout_pref_key, defaultValue = 200)
 

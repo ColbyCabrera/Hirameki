@@ -472,4 +472,10 @@ this formatter is used if the bind only applies to the answer">A: %s</string>
 
     <!--Keyboard shortcuts dialog-->
     <string name="open_settings" comment="Description of the shortcut that opens the app settings">Open settings</string>
+
+    <string name="reviewer_css_styling">Reviewer CSS styling</string>
+    <string name="apply_hirameki_css">Apply Hirameki CSS in the reviewer</string>
+    <string name="apply_hirameki_css_all">Apply all custom CSS</string>
+    <string name="apply_hirameki_css_no_font_size">Disable font size changes</string>
+    <string name="apply_hirameki_css_disabled">Disable all custom CSS</string>
 </resources>
