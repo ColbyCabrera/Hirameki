@@ -17,6 +17,7 @@ package com.ichi2.anki.reviewer.compose
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -32,24 +33,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
-import android.content.SharedPreferences
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.R
-import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ViewerResourceHandler
+import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.stdHtml
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
+import com.ichi2.anki.settings.Prefs
 import com.ichi2.themes.Themes
 import com.ichi2.utils.toRGBHex
 import kotlinx.serialization.json.Json
@@ -78,15 +79,18 @@ fun Flashcard(
 
     val context = LocalContext.current
     val sharedPrefs = remember(context) { context.sharedPrefs() }
-    val prefKey = remember(context) { context.getString(R.string.apply_hirameki_css_preference) }
+    val prefKey = stringResource(R.string.apply_hirameki_css_preference)
     var applyHiramekiCssMode by remember {
-        mutableStateOf(sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL)
+        mutableStateOf(
+            sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL
+        )
     }
 
-    val listener = remember {
+    val listener = remember(sharedPrefs, prefKey) {
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == prefKey) {
-                applyHiramekiCssMode = sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL
+                applyHiramekiCssMode =
+                    sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL
             }
         }
     }
