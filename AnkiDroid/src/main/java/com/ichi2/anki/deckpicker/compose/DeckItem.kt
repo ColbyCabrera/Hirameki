@@ -189,6 +189,7 @@ fun DeckItem(
                 ) {
                     val rotation by animateFloatAsState(
                         targetValue = if (deck.collapsed) -90f else 0f,
+                        animationSpec = motionScheme.defaultSpatialSpec(),
                         label = "ExpandCollapseIconRotation"
                     )
                     Icon(
