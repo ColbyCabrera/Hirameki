@@ -1062,15 +1062,14 @@ class NoteEditorViewModel(
     ): Map<Int, Int?> {
         val oldFields = oldNotetype.fields
         val newFields = newNotetype.fields
-        val newFieldIndexByName =
-            (0 until newFields.length()).associateBy { newFields[it].name }
+        val newFieldIndexByName = newFields.withIndex().associate { it.value.name to it.index }
 
         val result = mutableMapOf<Int, Int?>()
         val claimedNewIndices = mutableSetOf<Int>()
 
         // Pass 1: name-based matching
-        for (oldIdx in 0 until oldFields.length()) {
-            val newIdx = newFieldIndexByName[oldFields[oldIdx].name]
+        for ((oldIdx, oldField) in oldFields.withIndex()) {
+            val newIdx = newFieldIndexByName[oldField.name]
             if (newIdx != null) {
                 result[oldIdx] = newIdx
                 claimedNewIndices += newIdx
@@ -1078,9 +1077,10 @@ class NoteEditorViewModel(
         }
 
         // Pass 2: positional fallback for unmapped old fields
-        for (oldIdx in 0 until oldFields.length()) {
+        val newFieldsCount = newFields.length()
+        for ((oldIdx, _) in oldFields.withIndex()) {
             if (oldIdx in result) continue
-            if (oldIdx < newFields.length() && oldIdx !in claimedNewIndices) {
+            if (oldIdx < newFieldsCount && oldIdx !in claimedNewIndices) {
                 result[oldIdx] = oldIdx
                 claimedNewIndices += oldIdx
             } else {
