@@ -16,6 +16,7 @@
 package com.ichi2.anki.settings
 
 import android.content.res.Resources
+import androidx.core.content.edit
 import com.github.ivanshafran.sharedpreferencesmock.SPMockBuilder
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.R
@@ -57,7 +58,11 @@ class PrefsTest {
             }
             val setterKey = lastKey
 
-            assertThat("The getter and setter of '${property.name}' use the same key", getterKey, equalTo(setterKey))
+            assertThat(
+                "The getter and setter of '${property.name}' use the same key",
+                getterKey,
+                equalTo(setterKey)
+            )
         }
         unmockkObject(Prefs)
         AnkiDroidApp.sharedPreferencesTestingOverride = null
@@ -67,20 +72,30 @@ class PrefsTest {
     fun `applyHiramekiCss setting reads from shared preferences`() {
         val sharedPrefs = SPMockBuilder().createSharedPreferences()
         AnkiDroidApp.sharedPreferencesTestingOverride = sharedPrefs
-        val mockResources = mockk<Resources>()
-        every { mockResources.getString(R.string.apply_hirameki_css_preference) } returns "applyHiramekiCss"
-        mockkObject(Prefs)
-        every { Prefs.resources } returns mockResources
+        try {
+            val mockResources = mockk<Resources>()
+            every { mockResources.getString(R.string.apply_hirameki_css_preference) } returns "applyHiramekiCss"
+            mockkObject(Prefs)
+            every { Prefs.resources } returns mockResources
 
-        assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_ALL))
+            assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_ALL))
 
-        sharedPrefs.edit().putString("applyHiramekiCss", Prefs.HIRAMEKI_CSS_NO_FONT_SIZE).commit()
-        assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_NO_FONT_SIZE))
+            sharedPrefs.edit(commit = true) {
+                putString(
+                    "applyHiramekiCss", Prefs.HIRAMEKI_CSS_NO_FONT_SIZE
+                )
+            }
+            assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_NO_FONT_SIZE))
 
-        sharedPrefs.edit().putString("applyHiramekiCss", Prefs.HIRAMEKI_CSS_DISABLED).commit()
-        assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_DISABLED))
-
-        unmockkObject(Prefs)
-        AnkiDroidApp.sharedPreferencesTestingOverride = null
+            sharedPrefs.edit(commit = true) {
+                putString(
+                    "applyHiramekiCss", Prefs.HIRAMEKI_CSS_DISABLED
+                )
+            }
+            assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_DISABLED))
+        } finally {
+            unmockkObject(Prefs)
+            AnkiDroidApp.sharedPreferencesTestingOverride = null
+        }
     }
 }
