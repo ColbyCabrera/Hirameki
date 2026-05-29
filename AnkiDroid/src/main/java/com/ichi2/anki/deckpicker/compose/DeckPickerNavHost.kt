@@ -216,10 +216,25 @@ fun DeckPickerNavHost(
             CustomStudyDialog.CustomStudyAction.REQUEST_KEY, fragmentActivity
         ) { _, bundle ->
             val action = CustomStudyDialog.CustomStudyAction.fromBundle(bundle)
-            if (action == CustomStudyDialog.CustomStudyAction.CUSTOM_STUDY_SESSION || action == CustomStudyDialog.CustomStudyAction.EXTEND_STUDY_LIMITS) {
-                val currentStack = navigator.state.backStacks[navigator.state.topLevelRoute]
-                if (currentStack?.lastOrNull() is CongratsScreen) {
-                    navigator.goBack()
+            val currentStack = navigator.state.backStacks[navigator.state.topLevelRoute]
+            val isOnCongratsScreen = currentStack?.lastOrNull() is CongratsScreen
+            when (action) {
+                CustomStudyDialog.CustomStudyAction.CUSTOM_STUDY_SESSION -> {
+                    if (isOnCongratsScreen) {
+                        navigator.goBack()
+                    }
+                    // Replicate DeckPicker.kt behavior: update list and open study options
+                    viewModel.updateDeckList()
+                    if (!fragmented) {
+                        viewModel.openStudyOptionsActivity()
+                    }
+                }
+
+                CustomStudyDialog.CustomStudyAction.EXTEND_STUDY_LIMITS -> {
+                    if (isOnCongratsScreen) {
+                        navigator.goBack()
+                    }
+                    viewModel.updateDeckList()
                 }
             }
         }
