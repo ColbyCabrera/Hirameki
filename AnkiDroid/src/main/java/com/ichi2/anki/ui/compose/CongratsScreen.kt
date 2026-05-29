@@ -197,18 +197,11 @@ fun CongratsScreen(
 fun StudyMoreClickableText(
     onCustomStudy: () -> Unit, modifier: Modifier = Modifier
 ) {
-    val studyMoreText = stringResource(id = R.string.study_more)
     val customStudyText = stringResource(id = R.string.custom_study)
+    val studyMoreText = stringResource(id = R.string.study_more, customStudyText)
 
     val range = remember(studyMoreText, customStudyText) {
-        var r = findSubstringRange(studyMoreText, customStudyText)
-        if (r == null) {
-            r = findSubstringRange(studyMoreText, "custom study")
-        }
-        if (r == null && studyMoreText.length >= 12) {
-            r = (studyMoreText.length - 12) until studyMoreText.length
-        }
-        r
+        findSubstringRange(studyMoreText, customStudyText)
     }
 
     val primaryColor = MaterialTheme.colorScheme.primary
