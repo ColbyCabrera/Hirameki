@@ -24,9 +24,14 @@ import android.webkit.WebViewClient
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -410,12 +415,20 @@ fun LoggedOutContent(
                     .padding(horizontal = 32.dp, vertical = 32.dp)
 
             ) {
-                if (loginError != null) {
-                    LoginErrorCard(
-                        error = loginError,
-                        onResetPasswordClick = onResetPasswordClick,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                AnimatedVisibility(
+                    visible = loginError != null,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
+                    Column {
+                        if (loginError != null) {
+                            LoginErrorCard(
+                                error = loginError,
+                                onResetPasswordClick = onResetPasswordClick,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
 
                 OutlinedTextField(
