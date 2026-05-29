@@ -22,18 +22,19 @@ package com.ichi2.anki
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableIntStateOf
-import com.ichi2.anki.CollectionManager.withCol
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
 import com.ichi2.anki.deckpicker.compose.StudyOptionsScreen
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
@@ -47,6 +48,15 @@ import kotlinx.coroutines.withContext
 class StudyOptionsComposeActivity : AnkiActivity() {
     @VisibleForTesting
     internal var collectionDispatcher: CoroutineDispatcher = ioDispatcher
+
+    private val reviewerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == AbstractFlashcardViewer.RESULT_NO_MORE_CARDS || result.resultCode == DeckPicker.RESULT_DB_ERROR || result.resultCode == DeckPicker.RESULT_MEDIA_EJECTED) {
+            setResult(result.resultCode)
+            finish()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (showedActivityFailedScreen(savedInstanceState)) {
@@ -106,10 +116,12 @@ class StudyOptionsComposeActivity : AnkiActivity() {
             AnkiDroidTheme {
                 Scaffold { innerPadding ->
                     StudyOptionsScreen(
-                        modifier = Modifier.padding(innerPadding).fillMaxSize(),
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize(),
                         studyOptionsData = studyOptionsData,
                         onStartStudy = {
-                            startActivity(Reviewer.getIntent(this))
+                            reviewerLauncher.launch(Reviewer.getIntent(this))
                         },
                         onCustomStudy = { deckId ->
                             showDialogFragment(CustomStudyDialog.createInstance(deckId))
