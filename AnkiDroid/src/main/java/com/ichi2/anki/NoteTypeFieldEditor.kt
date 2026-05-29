@@ -31,6 +31,7 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.snackbar.Snackbar
@@ -208,7 +209,7 @@ class NoteTypeFieldEditor : AnkiActivity() {
             }
         fieldNameInput?.let { fieldNameInput ->
             fieldNameInput.isSingleLine = true
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 customView(view = fieldNameInput, paddingStart = 64, paddingEnd = 64, paddingTop = 32)
                 title(R.string.model_field_editor_add)
                 positiveButton(R.string.dialog_ok) {
@@ -335,7 +336,7 @@ class NoteTypeFieldEditor : AnkiActivity() {
             fieldNameInput.isSingleLine = true
             fieldNameInput.setText(fieldsLabels[currentPos])
             fieldNameInput.setSelection(fieldNameInput.text!!.length)
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 customView(view = fieldNameInput, paddingStart = 64, paddingEnd = 64, paddingTop = 32)
                 title(R.string.model_field_editor_rename)
                 positiveButton(R.string.rename) {
@@ -384,8 +385,7 @@ class NoteTypeFieldEditor : AnkiActivity() {
             numberOfTemplates: Int,
             result: (Int) -> Unit,
         ) {
-            AlertDialog
-                .Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .show {
                     positiveButton(R.string.dialog_ok) {
                         val input = (it as AlertDialog).getInputField()

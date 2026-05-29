@@ -24,6 +24,7 @@ import android.widget.EditText
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.widget.doAfterTextChanged
 import com.ichi2.anki.dialogs.DiscardChangesDialog
 import com.ichi2.anki.libanki.CardTemplate
@@ -113,7 +114,7 @@ class CardTemplateBrowserAppearanceEditor : AnkiActivity() {
     }
 
     private fun showRestoreDefaultDialog() {
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             positiveButton(R.string.dialog_ok) {
                 restoreDefaultAndClose()
             }

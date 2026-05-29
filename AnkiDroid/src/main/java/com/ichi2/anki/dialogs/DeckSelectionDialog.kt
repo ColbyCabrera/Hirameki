@@ -28,6 +28,7 @@ import android.widget.Filterable
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.BundleCompat
@@ -115,7 +116,7 @@ open class DeckSelectionDialog : AnalyticsDialogFragment() {
         val adapter = DecksArrayAdapter(decks)
         recyclerView.adapter = adapter
         adjustToolbar(dialogView, adapter)
-        dialog = AlertDialog.Builder(requireActivity()).create {
+        dialog = MaterialAlertDialogBuilder(requireActivity()).create {
             negativeButton(R.string.dialog_cancel)
             customView(view = dialogView)
             if (arguments.getBoolean(KEEP_RESTORE_DEFAULT_BUTTON)) {

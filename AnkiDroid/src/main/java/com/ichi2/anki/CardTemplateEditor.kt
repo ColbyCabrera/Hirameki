@@ -42,6 +42,7 @@ import androidx.annotation.CheckResult
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
@@ -973,7 +974,7 @@ open class CardTemplateEditor : AnkiActivity(), DeckSelectionListener {
          * it displays a warning for the user when they attempt to delete a card type that
             would leave some notes without any cards (orphan notes) */
         private fun showOrphanNoteDialog() {
-            val builder = AlertDialog.Builder(requireContext()).setTitle(R.string.orphan_note_title)
+            val builder = MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.orphan_note_title)
                 .setMessage(R.string.orphan_note_message)
                 .setPositiveButton(android.R.string.ok, null)
 
@@ -1154,7 +1155,7 @@ open class CardTemplateEditor : AnkiActivity(), DeckSelectionListener {
                     Timber.i("CardTemplateEditor:: Restore to default button pressed")
 
                     fun askUser(kind: StockNotetype.Kind? = null) {
-                        AlertDialog.Builder(requireContext()).show {
+                        MaterialAlertDialogBuilder(requireContext()).show {
                             setTitle(TR.cardTemplatesRestoreToDefault())
                             setMessage(TR.cardTemplatesRestoreToDefaultConfirmation())
                             setPositiveButton(R.string.dialog_ok) { _, _ ->
@@ -1179,7 +1180,7 @@ open class CardTemplateEditor : AnkiActivity(), DeckSelectionListener {
                         val stockNotetypesNames = withCol {
                             stockNotetypeKinds.map { getStockNotetype(it).name }
                         }
-                        AlertDialog.Builder(requireContext()).show {
+                        MaterialAlertDialogBuilder(requireContext()).show {
                             setTitle(TR.cardTemplatesRestoreToDefault())
                             setNegativeButton(R.string.dialog_cancel) { _, _ -> }
                             listItems(stockNotetypesNames) { _: DialogInterface, index: Int ->

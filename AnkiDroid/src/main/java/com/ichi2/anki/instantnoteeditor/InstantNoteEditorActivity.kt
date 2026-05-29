@@ -35,6 +35,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -222,7 +223,7 @@ class InstantNoteEditorActivity :
         setLayoutVisibility()
 
         instantAlertDialog =
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 setView(dialogView)
                 setCancelable(false)
                 setFinishOnTouchOutside(false)
@@ -478,7 +479,7 @@ class InstantNoteEditorActivity :
     /** Show a dialog when there is no cloze note type is found, allowing user either to cancel or to open
      * AnkiDroid Note Editor **/
     private fun noClozeNoteTypesFoundDialog() {
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             title(R.string.cloze_note_required)
             message(R.string.cloze_not_found_message)
             positiveButton(R.string.open) {
@@ -495,8 +496,7 @@ class InstantNoteEditorActivity :
         viewModel.onError
             .flowWithLifecycle(lifecycle)
             .onEach { errorMessage ->
-                AlertDialog
-                    .Builder(this)
+                MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.vague_error)
                     .setMessage(errorMessage)
                     .show()
@@ -523,7 +523,7 @@ class InstantNoteEditorActivity :
 
     /** In case saving the note fails we, want to allow user to cancel and try again, or exist the activity **/
     private fun savingErrorDialog(message: String) {
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             message(text = message)
             positiveButton(R.string.dialog_cancel) {
                 instantAlertDialog.dismiss()
@@ -535,7 +535,7 @@ class InstantNoteEditorActivity :
     /** Warns the user for no cloze in the cloze field, and provide the choice to proceed or
      * to abort save and go back to the editor  **/
     private fun noClozeDialog(errorMessage: String) {
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             message(text = errorMessage)
             positiveButton(text = TR.actionsSave()) {
                 saveNoteWithProgress(skipClozeCheck = true)

@@ -25,6 +25,7 @@ import androidx.activity.addCallback
 import androidx.annotation.CheckResult
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.app.ActivityCompat
 import androidx.core.os.BundleCompat
 import androidx.lifecycle.lifecycleScope
@@ -90,7 +91,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         super.onCreateDialog(savedInstanceState)
         val res = res()
-        val alertDialog = AlertDialog.Builder(requireActivity())
+        val alertDialog = MaterialAlertDialogBuilder(requireActivity())
         val isLoggedIn = isLoggedIn()
         alertDialog
             .cancelable(true)
@@ -259,7 +260,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
                                 requireActivity().dismissAllDialogFragments()
                             } else {
                                 // otherwise show an error dialog
-                                AlertDialog.Builder(requireActivity()).show {
+                                MaterialAlertDialogBuilder(requireActivity()).show {
                                     title(R.string.vague_error)
                                     message(R.string.backup_invalid_file_error)
                                     positiveButton(R.string.dialog_ok)
@@ -501,7 +502,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
         companion object {
             /** A dialog which creates a new collection in an unsafe location */
             fun displayResetToNewDirectoryDialog(context: AnkiActivity) {
-                AlertDialog.Builder(context).show {
+                MaterialAlertDialogBuilder(context).show {
                     title(R.string.backup_new_collection)
                     setIcon(R.drawable.ic_warning)
                     message(R.string.new_unsafe_collection)

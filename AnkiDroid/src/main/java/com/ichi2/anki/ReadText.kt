@@ -24,6 +24,7 @@ import android.view.WindowManager.BadTokenException
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.cardviewer.SingleCardSide
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.libanki.Card
@@ -110,7 +111,7 @@ object ReadText {
         ReadText.did = did
         ReadText.ord = ord
         val res = flashCardViewer.get()!!.resources
-        val dialog = AlertDialog.Builder(flashCardViewer.get()!!)
+        val dialog = MaterialAlertDialogBuilder(flashCardViewer.get()!!)
         if (availableLocales().isEmpty()) {
             Timber.w("ReadText.textToSpeech() no TTS languages available")
             dialog
@@ -152,7 +153,7 @@ object ReadText {
     }
 
     private fun showDialogAfterDelay(
-        dialog: AlertDialog.Builder,
+        dialog: MaterialAlertDialogBuilder,
         delayMillis: Int,
     ) {
         postDelayedOnNewHandler({

@@ -19,6 +19,7 @@ package com.ichi2.anki.dialogs
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.FragmentActivity
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.DeckPicker
@@ -29,7 +30,7 @@ import com.ichi2.utils.create
 class SimpleMessageDialog : AsyncDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
         super.onCreateDialog(savedInstanceState)
-        return AlertDialog.Builder(requireContext()).create {
+        return MaterialAlertDialogBuilder(requireContext()).create {
             setTitle(notificationTitle)
             setMessage(notificationMessage)
             setPositiveButton(R.string.dialog_ok) { _, _ ->

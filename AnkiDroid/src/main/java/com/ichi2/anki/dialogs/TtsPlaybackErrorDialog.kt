@@ -19,6 +19,7 @@ package com.ichi2.anki.dialogs
 import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.FragmentManager
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
@@ -36,7 +37,7 @@ object TtsPlaybackErrorDialog {
     ) {
         Timber.i("Dialog is shown to guide users correctly to troubleshoot the Tts error: Missing voice error")
         activity.runOnUiThread {
-            AlertDialog.Builder(activity).show {
+            MaterialAlertDialogBuilder(activity).show {
                 setTitle(activity.getString(R.string.tts_error_dialog_title))
                 setMessage(activity.getString(R.string.tts_error_dialog_reason_text, TtsVoices.ttsEngine, ttsTag?.lang))
                 setNegativeButton(context.getString(R.string.tts_error_dialog_change_button_text)) { _, _ -> openSettings(activity) }
