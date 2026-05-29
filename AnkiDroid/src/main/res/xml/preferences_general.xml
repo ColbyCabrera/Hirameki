@@ -39,11 +39,6 @@
             android:key="@string/error_reporting_mode_key"
             android:title="@string/error_reporting_choice"
             app:useSimpleSummaryProvider="true"/>
-        <SwitchPreferenceCompat
-            android:defaultValue="false"
-            android:key="@string/analytics_opt_in_key"
-            android:summary="@string/analytics_summ"
-            android:title="@string/analytics_title" />
     <PreferenceCategory android:title="@string/pref_cat_editing">
         <SwitchPreferenceCompat
             android:defaultValue="true"

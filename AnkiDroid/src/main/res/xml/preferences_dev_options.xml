@@ -37,10 +37,6 @@
         android:summary="Touch here for an immediate test crash"
         android:key="@string/pref_trigger_crash_key"/>
     <Preference
-        android:title="Switch Analytics to dev mode"
-        android:summary="Touch here to use Analytics dev tag and 100% sample rate"
-        android:key="@string/pref_analytics_debug_key"/>
-    <Preference
         android:title="Lock database"
         android:summary="Touch here to lock the database (all threads block in-process, exception if using second process)"
         android:key="@string/pref_lock_database_key"/>
