@@ -60,6 +60,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -84,6 +85,7 @@ import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
+import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.ContributeScreen
@@ -207,6 +209,23 @@ fun DeckPickerNavHost(
     val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
+    val context = LocalContext.current
+    val fragmentActivity = context as? FragmentActivity
+    LaunchedEffect(fragmentActivity, navigator) {
+        fragmentActivity?.supportFragmentManager?.setFragmentResultListener(
+            CustomStudyDialog.CustomStudyAction.REQUEST_KEY, fragmentActivity
+        ) { _, bundle ->
+            val action = CustomStudyDialog.CustomStudyAction.fromBundle(bundle)
+            if (action == CustomStudyDialog.CustomStudyAction.CUSTOM_STUDY_SESSION || action == CustomStudyDialog.CustomStudyAction.EXTEND_STUDY_LIMITS) {
+                val currentStack = navigator.state.backStacks[navigator.state.topLevelRoute]
+                if (currentStack?.lastOrNull() is CongratsScreen) {
+                    navigator.goBack()
+                }
+            }
+        }
+    }
+
+
     val entryProvider = entryProvider {
         entry<DeckPickerScreen> {
             DeckPickerMainContent(
@@ -241,6 +260,7 @@ fun DeckPickerNavHost(
             CongratsComposable(
                 onNavigateUp = { navigator.goBack() },
                 onDeckOptions = { viewModel.openDeckOptions(key.deckId) },
+                onCustomStudy = { viewModel.showCustomStudyDialog(key.deckId) },
                 timeUntilNextDay = timeUntilNextDay
             )
         }
