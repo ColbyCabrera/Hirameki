@@ -22,21 +22,25 @@ package com.ichi2.anki
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.ichi2.anki.CollectionManager.withCol
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
 import com.ichi2.anki.deckpicker.compose.StudyOptionsScreen
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
+import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.ext.showDialogFragment
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -45,15 +49,38 @@ class StudyOptionsComposeActivity : AnkiActivity() {
     @VisibleForTesting
     internal var collectionDispatcher: CoroutineDispatcher = ioDispatcher
 
+    private var refreshCounter by mutableIntStateOf(0)
+
+    private val reviewerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == AbstractFlashcardViewer.RESULT_NO_MORE_CARDS || result.resultCode == DeckPicker.RESULT_DB_ERROR || result.resultCode == DeckPicker.RESULT_MEDIA_EJECTED) {
+            setResult(result.resultCode)
+            finish()
+        } else {
+            refreshCounter++
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (showedActivityFailedScreen(savedInstanceState)) {
             return
         }
         super.onCreate(savedInstanceState)
+
+        setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
+            when (CustomStudyAction.fromBundle(bundle)) {
+                CustomStudyAction.CUSTOM_STUDY_SESSION -> finish()
+                CustomStudyAction.EXTEND_STUDY_LIMITS -> {
+                    refreshCounter++
+                }
+            }
+        }
+
         setContent {
             var studyOptionsData by remember { mutableStateOf<StudyOptionsData?>(null) }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(refreshCounter) {
                 studyOptionsData = withContext(collectionDispatcher) {
                     withCol {
                         val deckId = intent.getLongExtra(DECK_ID, decks.current().id)
@@ -91,10 +118,12 @@ class StudyOptionsComposeActivity : AnkiActivity() {
             AnkiDroidTheme {
                 Scaffold { innerPadding ->
                     StudyOptionsScreen(
-                        modifier = Modifier.padding(innerPadding).fillMaxSize(),
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize(),
                         studyOptionsData = studyOptionsData,
                         onStartStudy = {
-                            startActivity(Reviewer.getIntent(this))
+                            reviewerLauncher.launch(Reviewer.getIntent(this))
                         },
                         onCustomStudy = { deckId ->
                             showDialogFragment(CustomStudyDialog.createInstance(deckId))
