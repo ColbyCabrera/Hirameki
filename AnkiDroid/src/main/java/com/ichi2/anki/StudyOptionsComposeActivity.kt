@@ -20,6 +20,7 @@
  ****************************************************************************************/
 package com.ichi2.anki
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -70,7 +71,20 @@ class StudyOptionsComposeActivity : AnkiActivity() {
 
         setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
             when (CustomStudyAction.fromBundle(bundle)) {
-                CustomStudyAction.CUSTOM_STUDY_SESSION -> finish()
+                CustomStudyAction.CUSTOM_STUDY_SESSION -> {
+                    launchCatchingTask {
+                        val deckId = withCol { decks.selected() }
+                        val intent = Intent(
+                            this@StudyOptionsComposeActivity,
+                            StudyOptionsComposeActivity::class.java
+                        ).apply {
+                            putExtra(DECK_ID, deckId)
+                        }
+                        startActivity(intent)
+                        finish()
+                    }
+                }
+
                 CustomStudyAction.EXTEND_STUDY_LIMITS -> {
                     refreshCounter++
                 }

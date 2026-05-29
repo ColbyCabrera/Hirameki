@@ -49,8 +49,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,7 +66,12 @@ import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUntilNextDay: Long) {
+fun CongratsScreen(
+    onNavigateUp: () -> Unit,
+    onDeckOptions: () -> Unit,
+    onCustomStudy: () -> Unit,
+    timeUntilNextDay: Long
+) {
     BackHandler { onNavigateUp() }
     AnkiDroidTheme {
         Scaffold(topBar = {
@@ -122,9 +131,8 @@ fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUnti
                     text = stringResource(R.string.daily_limit_reached),
                     style = MaterialTheme.typography.bodyLarge
                 )
-                Text(
-                    text = stringResource(R.string.study_more),
-                    style = MaterialTheme.typography.bodyLarge
+                StudyMoreClickableText(
+                    onCustomStudy = onCustomStudy
                 )
 
                 Column(
@@ -184,10 +192,64 @@ fun CongratsScreen(onNavigateUp: () -> Unit, onDeckOptions: () -> Unit, timeUnti
     }
 }
 
+
+@Composable
+fun StudyMoreClickableText(
+    onCustomStudy: () -> Unit, modifier: Modifier = Modifier
+) {
+    val customStudyText = stringResource(id = R.string.custom_study)
+    val studyMoreText = stringResource(id = R.string.study_more, customStudyText)
+
+    val range = remember(studyMoreText, customStudyText) {
+        findSubstringRange(studyMoreText, customStudyText)
+    }
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val annotatedString = remember(studyMoreText, range, primaryColor) {
+        buildAnnotatedString {
+            append(studyMoreText)
+            if (range != null) {
+                addLink(
+                    LinkAnnotation.Clickable(tag = "custom_study") { onCustomStudy() },
+                    range.first,
+                    range.last + 1
+                )
+                addStyle(
+                    style = SpanStyle(
+                        color = primaryColor,
+                        textDecoration = TextDecoration.Underline,
+                        fontWeight = FontWeight.Bold
+                    ), range.first, range.last + 1
+                )
+            }
+        }
+    }
+
+    Text(
+        text = annotatedString,
+        modifier = modifier,
+        style = MaterialTheme.typography.bodyLarge.copy(
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    )
+}
+
+
 @Preview
 @Composable
 fun CongratsScreenPreview() {
     CongratsScreen(
-        onNavigateUp = {}, onDeckOptions = {}, timeUntilNextDay = 1000 * 60 * 60 * 4
-    )
+        onNavigateUp = {},
+        onDeckOptions = {},
+        timeUntilNextDay = 1000 * 60 * 60 * 4,
+        onCustomStudy = { })
+}
+
+private fun findSubstringRange(mainString: String, subString: String): IntRange? {
+    val index = mainString.indexOf(subString, ignoreCase = true)
+    return if (index != -1) {
+        index until (index + subString.length)
+    } else {
+        null
+    }
 }

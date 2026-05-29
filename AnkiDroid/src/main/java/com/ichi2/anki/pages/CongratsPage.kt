@@ -148,11 +148,14 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
     )
 
     private fun openStudyOptionsAndFinish() {
-        val intent = Intent(requireContext(), StudyOptionsComposeActivity::class.java).apply {
-            putExtra("withDeckOptions", false)
+        launchCatchingTask {
+            val deckId = withCol { decks.selected() }
+            val intent = Intent(requireContext(), StudyOptionsComposeActivity::class.java).apply {
+                putExtra(StudyOptionsComposeActivity.DECK_ID, deckId)
+            }
+            startActivity(intent, null)
+            requireActivity().finish()
         }
-        startActivity(intent, null)
-        requireActivity().finish()
     }
 
     private fun onStudyMore() {
