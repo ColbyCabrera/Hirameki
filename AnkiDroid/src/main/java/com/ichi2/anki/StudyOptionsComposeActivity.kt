@@ -49,12 +49,16 @@ class StudyOptionsComposeActivity : AnkiActivity() {
     @VisibleForTesting
     internal var collectionDispatcher: CoroutineDispatcher = ioDispatcher
 
+    private var refreshCounter by mutableIntStateOf(0)
+
     private val reviewerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == AbstractFlashcardViewer.RESULT_NO_MORE_CARDS || result.resultCode == DeckPicker.RESULT_DB_ERROR || result.resultCode == DeckPicker.RESULT_MEDIA_EJECTED) {
             setResult(result.resultCode)
             finish()
+        } else {
+            refreshCounter++
         }
     }
 
@@ -63,8 +67,6 @@ class StudyOptionsComposeActivity : AnkiActivity() {
             return
         }
         super.onCreate(savedInstanceState)
-
-        var refreshCounter by mutableIntStateOf(0)
 
         setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
             when (CustomStudyAction.fromBundle(bundle)) {
