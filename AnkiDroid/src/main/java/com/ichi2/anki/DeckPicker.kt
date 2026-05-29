@@ -115,8 +115,7 @@ import com.ichi2.anki.dialogs.SyncErrorDialog
 import com.ichi2.anki.dialogs.SyncErrorDialog.Companion.newInstance
 import com.ichi2.anki.dialogs.SyncErrorDialog.SyncErrorDialogListener
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
-import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction
-import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction.Companion.REQUEST_KEY
+
 import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.introduction.CollectionPermissionScreenLauncher
@@ -146,7 +145,7 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
-import com.ichi2.anki.utils.ext.setFragmentResultListener
+
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.worker.SyncMediaWorker
 import com.ichi2.anki.worker.SyncWorker
@@ -439,23 +438,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         registerReceiver()
 
         checkWebviewVersion(this)
-
-        setFragmentResultListener(REQUEST_KEY) { _, bundle ->
-            when (CustomStudyAction.fromBundle(bundle)) {
-                CustomStudyAction.CUSTOM_STUDY_SESSION -> {
-                    Timber.d("Custom study created")
-                    updateDeckList()
-                    if (!fragmented) {
-                        openStudyOptionsActivity()
-                    }
-                }
-
-                CustomStudyAction.EXTEND_STUDY_LIMITS -> {
-                    Timber.d("Study limits updated")
-                    updateDeckList()
-                }
-            }
-        }
 
         ViewCompat.setOnReceiveContentListener(
             window.decorView,

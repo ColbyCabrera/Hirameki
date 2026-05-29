@@ -149,9 +149,10 @@ open class SingleFragmentActivity : AnkiActivity() {
     // Begin - implementation of CustomStudyListener methods here for crash fix
     // TODO - refactor https://github.com/ankidroid/Anki-Android/pull/17508#pullrequestreview-2465561993
     private fun openStudyOptionsAndFinish() {
+        val col = CollectionManager.getColUnsafe()
         val intent =
             Intent(this, StudyOptionsComposeActivity::class.java).apply {
-                putExtra("withDeckOptions", false)
+                putExtra(StudyOptionsComposeActivity.DECK_ID, col.decks.current().id)
             }
         startActivity(intent, null)
         this.finish()

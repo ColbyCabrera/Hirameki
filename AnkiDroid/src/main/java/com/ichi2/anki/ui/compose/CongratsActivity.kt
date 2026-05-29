@@ -74,8 +74,9 @@ class CongratsActivity : AnkiActivity() {
     }
 
     private fun openStudyOptionsAndFinish() {
+        val col = CollectionManager.getColUnsafe()
         val intent = Intent(this, StudyOptionsComposeActivity::class.java).apply {
-            putExtra("withDeckOptions", false)
+            putExtra(StudyOptionsComposeActivity.DECK_ID, col.decks.current().id)
         }
         startActivity(intent)
         finish()

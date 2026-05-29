@@ -72,10 +72,12 @@ class StudyOptionsComposeActivity : AnkiActivity() {
         setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
             when (CustomStudyAction.fromBundle(bundle)) {
                 CustomStudyAction.CUSTOM_STUDY_SESSION -> {
+                    val col = CollectionManager.getColUnsafe()
                     val intent = Intent(
-                        this@StudyOptionsComposeActivity,
-                        StudyOptionsComposeActivity::class.java
-                    )
+                        this@StudyOptionsComposeActivity, StudyOptionsComposeActivity::class.java
+                    ).apply {
+                        putExtra(DECK_ID, col.decks.current().id)
+                    }
                     startActivity(intent)
                     finish()
                 }
