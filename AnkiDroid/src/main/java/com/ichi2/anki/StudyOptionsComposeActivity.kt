@@ -75,10 +75,9 @@ class StudyOptionsComposeActivity : AnkiActivity() {
                     val intent = Intent(
                         this@StudyOptionsComposeActivity,
                         StudyOptionsComposeActivity::class.java
-                    ).apply {
-                        putExtra("withDeckOptions", false)
-                    }
-                    reviewerLauncher.launch(intent)
+                    )
+                    startActivity(intent)
+                    finish()
                 }
 
                 CustomStudyAction.EXTEND_STUDY_LIMITS -> {

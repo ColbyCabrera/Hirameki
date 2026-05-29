@@ -211,9 +211,11 @@ fun DeckPickerNavHost(
 
     val context = LocalContext.current
     val fragmentActivity = context as? FragmentActivity
-    LaunchedEffect(fragmentActivity, navigator) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(fragmentActivity, lifecycleOwner, navigator) {
         fragmentActivity?.supportFragmentManager?.setFragmentResultListener(
-            CustomStudyDialog.CustomStudyAction.REQUEST_KEY, fragmentActivity
+            CustomStudyDialog.CustomStudyAction.REQUEST_KEY, lifecycleOwner
         ) { _, bundle ->
             val action = CustomStudyDialog.CustomStudyAction.fromBundle(bundle)
             val currentStack = navigator.state.backStacks[navigator.state.topLevelRoute]
@@ -237,6 +239,11 @@ fun DeckPickerNavHost(
                     viewModel.updateDeckList()
                 }
             }
+        }
+        onDispose {
+            fragmentActivity?.supportFragmentManager?.clearFragmentResultListener(
+                CustomStudyDialog.CustomStudyAction.REQUEST_KEY
+            )
         }
     }
 
