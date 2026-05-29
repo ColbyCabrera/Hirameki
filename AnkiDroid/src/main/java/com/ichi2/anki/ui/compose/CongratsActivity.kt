@@ -25,11 +25,13 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.ichi2.anki.AnkiActivity
-import com.ichi2.anki.CollectionManager
+import com.ichi2.anki.CollectionManager.getColUnsafe
+import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.StudyOptionsComposeActivity
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction
+import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.pages.DeckOptions
 import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -40,14 +42,13 @@ class CongratsActivity : AnkiActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         try {
-            val col = CollectionManager.getColUnsafe()
+            val col = getColUnsafe()
             val timeUntilNextDay =
                 (col.sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
 
             setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
                 when (CustomStudyAction.fromBundle(bundle)) {
-                    CustomStudyAction.CUSTOM_STUDY_SESSION,
-                    CustomStudyAction.EXTEND_STUDY_LIMITS -> {
+                    CustomStudyAction.CUSTOM_STUDY_SESSION, CustomStudyAction.EXTEND_STUDY_LIMITS -> {
                         openStudyOptionsAndFinish()
                     }
                 }
@@ -55,16 +56,13 @@ class CongratsActivity : AnkiActivity() {
 
             setContent {
                 CongratsScreen(
-                    onNavigateUp = { finish() },
-                    onDeckOptions = {
-                        val intent = DeckOptions.getIntent(this, col.decks.current().id)
-                        startActivity(intent)
-                    },
-                    onCustomStudy = {
-                        val customStudy = CustomStudyDialog.createInstance(col.decks.current().id)
-                        showDialogFragment(customStudy)
-                    },
-                    timeUntilNextDay = timeUntilNextDay
+                    onNavigateUp = { finish() }, onDeckOptions = {
+                    val intent = DeckOptions.getIntent(this, col.decks.current().id)
+                    startActivity(intent)
+                }, onCustomStudy = {
+                    val customStudy = CustomStudyDialog.createInstance(col.decks.current().id)
+                    showDialogFragment(customStudy)
+                }, timeUntilNextDay = timeUntilNextDay
                 )
             }
         } catch (e: Exception) {
@@ -74,11 +72,14 @@ class CongratsActivity : AnkiActivity() {
     }
 
     private fun openStudyOptionsAndFinish() {
-        val col = CollectionManager.getColUnsafe()
-        val intent = Intent(this, StudyOptionsComposeActivity::class.java).apply {
-            putExtra(StudyOptionsComposeActivity.DECK_ID, col.decks.current().id)
+        launchCatchingTask {
+            val deckId = withCol { decks.selected() }
+            val intent =
+                Intent(this@CongratsActivity, StudyOptionsComposeActivity::class.java).apply {
+                    putExtra(StudyOptionsComposeActivity.DECK_ID, deckId)
+                }
+            startActivity(intent)
+            finish()
         }
-        startActivity(intent)
-        finish()
     }
 }

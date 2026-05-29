@@ -27,6 +27,7 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
 import com.ichi2.anki.android.input.ShortcutGroup
 import com.ichi2.anki.android.input.ShortcutGroupProvider
+import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction
 import com.ichi2.anki.ui.windows.managespace.ManageSpaceActivity
 import com.ichi2.anki.utils.ext.setFragmentResultListener
@@ -149,13 +150,15 @@ open class SingleFragmentActivity : AnkiActivity() {
     // Begin - implementation of CustomStudyListener methods here for crash fix
     // TODO - refactor https://github.com/ankidroid/Anki-Android/pull/17508#pullrequestreview-2465561993
     private fun openStudyOptionsAndFinish() {
-        val col = CollectionManager.getColUnsafe()
-        val intent =
-            Intent(this, StudyOptionsComposeActivity::class.java).apply {
-                putExtra(StudyOptionsComposeActivity.DECK_ID, col.decks.current().id)
-            }
-        startActivity(intent, null)
-        this.finish()
+        launchCatchingTask {
+            val deckId = withCol { decks.selected() }
+            val intent =
+                Intent(this@SingleFragmentActivity, StudyOptionsComposeActivity::class.java).apply {
+                    putExtra(StudyOptionsComposeActivity.DECK_ID, deckId)
+                }
+            startActivity(intent, null)
+            finish()
+        }
     }
 
     // END CustomStudyListener temporary implementation - should refactor out

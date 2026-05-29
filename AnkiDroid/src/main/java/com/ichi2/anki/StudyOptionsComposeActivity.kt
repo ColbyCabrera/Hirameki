@@ -72,14 +72,17 @@ class StudyOptionsComposeActivity : AnkiActivity() {
         setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
             when (CustomStudyAction.fromBundle(bundle)) {
                 CustomStudyAction.CUSTOM_STUDY_SESSION -> {
-                    val col = CollectionManager.getColUnsafe()
-                    val intent = Intent(
-                        this@StudyOptionsComposeActivity, StudyOptionsComposeActivity::class.java
-                    ).apply {
-                        putExtra(DECK_ID, col.decks.current().id)
+                    launchCatchingTask {
+                        val deckId = withCol { decks.selected() }
+                        val intent = Intent(
+                            this@StudyOptionsComposeActivity,
+                            StudyOptionsComposeActivity::class.java
+                        ).apply {
+                            putExtra(DECK_ID, deckId)
+                        }
+                        startActivity(intent)
+                        finish()
                     }
-                    startActivity(intent)
-                    finish()
                 }
 
                 CustomStudyAction.EXTEND_STUDY_LIMITS -> {
