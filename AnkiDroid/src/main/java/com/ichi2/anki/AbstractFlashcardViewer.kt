@@ -1066,13 +1066,12 @@ abstract class AbstractFlashcardViewer :
 
     private fun updateCard(content: RenderedCard) {
         Timber.d("updateCard()")
-        // TODO: This doesn't need to be blocking
-        runBlocking {
-            cardMediaPlayer.loadCardAvTags(currentCard!!)
-        }
         cardContent = content.html
         fillFlashcard()
-        playMedia(false) // Play media if appropriate
+        launchCatchingTask {
+            cardMediaPlayer.loadCardAvTags(currentCard!!)
+            playMedia(false) // Play media if appropriate
+        }
     }
 
     /**
@@ -1180,7 +1179,10 @@ abstract class AbstractFlashcardViewer :
         content: String,
     ) {
         if (card != null) {
-            card.settings.mediaPlaybackRequiresUserGesture = !cardMediaPlayer.config.autoplay
+            // Note: `mediaPlaybackRequiresUserGesture` uses cardMediaPlayer.config but this is initialized asynchronously now
+            // To ensure safety, we'll try to set it but default to false if not initialized (though usually we don't autoplay videos by default)
+            val autoPlay = if (this::cardMediaPlayer.isInitialized && cardMediaPlayer.hasConfig) cardMediaPlayer.config.autoplay else false
+            card.settings.mediaPlaybackRequiresUserGesture = !autoPlay
             card.loadDataWithBaseURL(
                 server.baseUrl(),
                 content,

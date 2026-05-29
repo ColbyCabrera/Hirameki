@@ -113,6 +113,8 @@ class CardMediaPlayer : Closeable {
     private lateinit var answerAvTags: List<AvTag>
 
     lateinit var config: CardSoundConfig
+    val hasConfig: Boolean
+        get() = this::config.isInitialized
 
     var isEnabled: Boolean = true
         private set
