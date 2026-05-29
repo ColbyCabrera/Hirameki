@@ -19,6 +19,7 @@ package com.ichi2.anki.dialogs
 import android.os.Bundle
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_ADD_CONFIRM
 import com.ichi2.anki.dialogs.ImportDialog.Type.DIALOG_IMPORT_REPLACE_CONFIRM
@@ -43,7 +44,7 @@ class ImportDialog : AsyncDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
         super.onCreate(savedInstanceState)
-        val dialog = AlertDialog.Builder(requireActivity())
+        val dialog = MaterialAlertDialogBuilder(requireActivity())
         dialog.setCancelable(true)
         val displayFileName = filenameFromPath(convertToDisplayName(packagePath))
 

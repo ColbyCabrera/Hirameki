@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.RecyclerView
 import com.ichi2.anki.CardTemplateEditor
@@ -65,7 +66,7 @@ class InsertFieldDialog : DialogFragment() {
 
                 override fun getItemCount(): Int = fieldList.size
             }
-        return AlertDialog.Builder(requireContext()).create {
+        return MaterialAlertDialogBuilder(requireContext()).create {
             title(R.string.card_template_editor_select_field)
             negativeButton(R.string.dialog_cancel)
             customListAdapter(adapter)

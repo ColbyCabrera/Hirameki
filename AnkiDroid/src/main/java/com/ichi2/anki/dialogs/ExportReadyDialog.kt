@@ -19,6 +19,7 @@ package com.ichi2.anki.dialogs
 import android.os.Bundle
 import android.os.Message
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -31,7 +32,7 @@ class ExportReadyDialog : AsyncDialogFragment() {
             ?: error("Missing required argument: exportPath!")
 
     override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
-        val dialog = AlertDialog.Builder(requireActivity())
+        val dialog = MaterialAlertDialogBuilder(requireActivity())
 
         dialog.setTitle(notificationTitle).positiveButton(R.string.export_choice_save_to) {
                 parentFragmentManager.setFragmentResult(

@@ -22,6 +22,7 @@ import android.view.WindowManager
 import android.widget.CheckBox
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.setFragmentResult
 import com.google.android.material.textfield.TextInputEditText
@@ -78,7 +79,7 @@ class RepositionCardFragment : DialogFragment() {
                 .browsingRepositionNewCards()
                 .toSentenceCase(requireContext(), R.string.sentence_reposition_new_cards)
         val dialog =
-            AlertDialog.Builder(requireContext()).create {
+            MaterialAlertDialogBuilder(requireContext()).create {
                 title(text = title)
                 customView(dialogView)
                 negativeButton(R.string.dialog_cancel)

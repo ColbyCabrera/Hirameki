@@ -265,7 +265,7 @@
         <item name="shapeAppearance">@style/ShapeAppearance.Anki.ExpressiveCard</item>
     </style>
 
-    <style name="Theme.AppCompat.Transparent.NoActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="Theme.AppCompat.Transparent.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsFloating">true</item>

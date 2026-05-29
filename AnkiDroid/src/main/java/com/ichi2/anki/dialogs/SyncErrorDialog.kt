@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.os.Message
 import androidx.annotation.CheckResult
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.ConflictResolution
 import com.ichi2.anki.R
@@ -63,7 +64,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         super.onCreate(savedInstanceState)
-        val dialog = AlertDialog.Builder(requireContext()).setTitle(title).setMessage(message)
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setTitle(title).setMessage(message)
         return when (dialogType) {
             @Suppress("DEPRECATION") Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> {
                 dialog.setIcon(R.drawable.ic_sync_problem)

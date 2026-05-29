@@ -22,6 +22,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.recyclerview.widget.RecyclerView
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.R
@@ -70,8 +71,7 @@ class SavedBrowserSearchesDialogFragment : AnalyticsDialogFragment() {
                     removeSearch(searchName)
                 },
             )
-        return AlertDialog
-            .Builder(requireContext())
+        return MaterialAlertDialogBuilder(requireContext())
             .title(text = resources.getString(R.string.card_browser_list_my_searches_title))
             .negativeButton(R.string.dialog_cancel)
             .apply { customListAdapter(adapter) }
@@ -79,7 +79,7 @@ class SavedBrowserSearchesDialogFragment : AnalyticsDialogFragment() {
     }
 
     private fun removeSearch(searchName: String) {
-        AlertDialog.Builder(requireActivity()).show {
+        MaterialAlertDialogBuilder(requireActivity()).show {
             message(text = resources.getString(R.string.card_browser_list_my_searches_remove_content, searchName))
             positiveButton(android.R.string.ok) {
                 parentFragmentManager.setFragmentResult(

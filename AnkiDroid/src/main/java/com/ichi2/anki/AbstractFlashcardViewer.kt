@@ -62,6 +62,7 @@ import androidx.annotation.CheckResult
 import androidx.annotation.IdRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
@@ -682,7 +683,7 @@ abstract class AbstractFlashcardViewer :
 
     protected fun showDeleteNoteDialog() {
         Timber.i("Displaying 'delete note' dialog")
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             title(R.string.delete_card_title)
             setIcon(R.drawable.ic_warning)
             message(
@@ -2019,7 +2020,7 @@ abstract class AbstractFlashcardViewer :
                 val actionNumber = url.substringAfter(":")
                 val message = getString(R.string.missing_user_action_dialog_message, actionNumber)
                 Timber.i("showing 'missing user action' dialog")
-                AlertDialog.Builder(this@AbstractFlashcardViewer).show {
+                MaterialAlertDialogBuilder(this@AbstractFlashcardViewer).show {
                     setTitle(R.string.vague_error)
                     setMessage(message)
                     setPositiveButton(R.string.dialog_ok) { _, _ -> }
