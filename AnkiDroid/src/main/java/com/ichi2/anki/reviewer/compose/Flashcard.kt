@@ -29,6 +29,13 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +65,7 @@ import timber.log.Timber
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
+@OptIn(androidx.compose.animation.ExperimentalAnimationApi::class, androidx.compose.animation.core.ExperimentalTransitionApi::class)
 fun Flashcard(
     baseUrl: String,
     questionHtml: String,
@@ -121,10 +129,14 @@ fun Flashcard(
         FlashcardContentKey(questionHtml.hashCode(), answerHtml.hashCode())
     }
 
-    Crossfade(
+    var snapshot by remember { mutableStateOf<ImageBitmap?>(null) }
+    val transition = updateTransition(
         targetState = Pair(isAnswerShown, if (isAnswerShown) answerHtml else questionHtml),
-        animationSpec = tween(300),
         label = "FlashcardCrossfade"
+    )
+
+    transition.Crossfade(
+        animationSpec = tween(300)
     ) { (shown, currentHtml) ->
         val currentStyle =
             if (shown) bodyLargeStyle else displayLargeStyle.copy(fontWeight = FontWeight.W500)
@@ -278,6 +290,9 @@ fun Flashcard(
                 )
             }
 
+        if (transition.isRunning && snapshot != null && shown != isAnswerShown) {
+            Image(bitmap = snapshot!!, contentDescription = null, modifier = modifier.fillMaxSize())
+        } else {
         AndroidView(
             factory = { context ->
             WebView(context).apply {
@@ -367,6 +382,18 @@ fun Flashcard(
                 setBackgroundColor(Color.TRANSPARENT)
             }
         }, update = { webView ->
+            if (!transition.isRunning) {
+                if (webView.width > 0 && webView.height > 0) {
+                    try {
+                        val bitmap = Bitmap.createBitmap(webView.width, webView.height, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(bitmap)
+                        webView.draw(canvas)
+                        snapshot = bitmap.asImageBitmap()
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+                }
+            }
             webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
             val currentPayload = webView.tag as? FlashcardPayload
             val shellChanged =
@@ -450,6 +477,7 @@ fun Flashcard(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
         )
+        }
     }
 }
 
