@@ -1067,18 +1067,17 @@ abstract class AbstractFlashcardViewer :
         cardContent = content.html
         fillFlashcard()
 
-        val card = currentCard
-        val isDisplayingAnswer = displayAnswer
-        if (card != null) {
-            launchCatchingTask {
-                cardMediaPlayer.loadCardAvTags(card)
-                if (card != currentCard || isDisplayingAnswer != displayAnswer) {
-                    return@launchCatchingTask
-                }
+        val card = currentCard ?: return
+        val wasDisplayingAnswer = displayAnswer
 
-                webView?.settings?.mediaPlaybackRequiresUserGesture = !cardMediaPlayer.config.autoplay
-                playMedia(false) // Play media if appropriate
+        launchCatchingTask {
+            cardMediaPlayer.loadCardAvTags(card)
+            if (card != currentCard || wasDisplayingAnswer != displayAnswer) {
+                return@launchCatchingTask
             }
+
+            webView?.settings?.mediaPlaybackRequiresUserGesture = !cardMediaPlayer.config.autoplay
+            playMedia(false) // Play media if appropriate
         }
     }
 
