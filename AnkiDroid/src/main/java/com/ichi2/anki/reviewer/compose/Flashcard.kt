@@ -296,11 +296,6 @@ fun Flashcard(
             Image(
                 bitmap = snapshot!!,
                 contentDescription = null,
-                alpha = 0.5f,
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier.background(
-                    MaterialTheme.colorScheme.inverseSurface
-                )
             )
         } else {
         AndroidView(
