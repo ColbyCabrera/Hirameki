@@ -61,6 +61,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CheckResult
 import androidx.annotation.IdRes
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
@@ -69,7 +71,6 @@ import androidx.lifecycle.Lifecycle.State.RESUMED
 import anki.collection.OpChanges
 import anki.scheduler.CardAnswer.Rating
 import com.drakeet.drawer.FullDraggableContainer
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.AbstractFlashcardViewer.Signal.Companion.toSignal
@@ -152,6 +153,7 @@ import com.ichi2.utils.show
 import com.ichi2.utils.title
 import com.squareup.seismic.ShakeDetector
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
 import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
 import java.io.File
@@ -1186,9 +1188,11 @@ abstract class AbstractFlashcardViewer :
         content: String,
     ) {
         if (card != null) {
-            // Note: `mediaPlaybackRequiresUserGesture` is updated asynchronously once the card's config is loaded.
-            // We default to requiring a user gesture here to avoid using stale config from the previous card.
-            card.settings.mediaPlaybackRequiresUserGesture = true
+            // Note: `mediaPlaybackRequiresUserGesture` uses cardMediaPlayer.config but this is initialized asynchronously now
+            // To ensure safety, we'll try to set it but default to false if not initialized (though usually we don't autoplay videos by default)
+            val autoPlay =
+                if (this::cardMediaPlayer.isInitialized && cardMediaPlayer.hasConfig) cardMediaPlayer.config.autoplay else false
+            card.settings.mediaPlaybackRequiresUserGesture = !autoPlay
             card.loadDataWithBaseURL(
                 server.baseUrl(),
                 content,
