@@ -33,11 +33,10 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -48,9 +47,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.R
 import com.ichi2.anki.ViewerResourceHandler
@@ -62,6 +63,7 @@ import com.ichi2.themes.Themes
 import com.ichi2.utils.toRGBHex
 import kotlinx.serialization.json.Json
 import timber.log.Timber
+import androidx.core.graphics.createBitmap
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -291,7 +293,15 @@ fun Flashcard(
             }
 
         if (transition.isRunning && snapshot != null && shown != isAnswerShown) {
-            Image(bitmap = snapshot!!, contentDescription = null, modifier = modifier.fillMaxSize())
+            Image(
+                bitmap = snapshot!!,
+                contentDescription = null,
+                alpha = 0.5f,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.background(
+                    MaterialTheme.colorScheme.inverseSurface
+                )
+            )
         } else {
         AndroidView(
             factory = { context ->
@@ -385,12 +395,15 @@ fun Flashcard(
             if (!transition.isRunning) {
                 if (webView.width > 0 && webView.height > 0) {
                     try {
-                        val bitmap = Bitmap.createBitmap(webView.width, webView.height, Bitmap.Config.ARGB_8888)
+                        val bitmap = createBitmap(webView.width, webView.height)
                         val canvas = Canvas(bitmap)
                         webView.draw(canvas)
                         snapshot = bitmap.asImageBitmap()
                     } catch (e: Exception) {
-                        // Ignore
+                        Timber.e(e, "Failed to capture WebView snapshot")
+                    } catch (e: OutOfMemoryError) {
+                        System.gc()
+                        Timber.e(e, "Failed to capture WebView snapshot")
                     }
                 }
             }
