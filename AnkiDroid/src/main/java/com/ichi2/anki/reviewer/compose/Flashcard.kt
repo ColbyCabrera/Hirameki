@@ -173,7 +173,7 @@ fun Flashcard(
                     @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
                     html {
                         color: ${onSurfaceColorHex}EF;
-                        background-color: $surfaceColorHex;
+                        background-color: gray;
                     }
                     body.card {
                         text-align: center;
@@ -183,9 +183,9 @@ fun Flashcard(
                         text-wrap: pretty;
                         padding-top: ${currentPadding}px;
                         padding-bottom: ${toolbarHeight}px;
-                        margin-left: 10px;
-                        margin-right: 10px;
-                        background-color: $surfaceColorHex;
+                        margin-left: 0px;
+                        margin-right: 0px;
+                        background-color: gray;
                         color: ${onSurfaceColorHex}EF;
                     }
                     body.card .back {
@@ -296,6 +296,11 @@ fun Flashcard(
             Image(
                 bitmap = snapshot!!,
                 contentDescription = null,
+                alpha = 0.5f,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.inverseSurface)
             )
         } else {
         AndroidView(
@@ -390,7 +395,9 @@ fun Flashcard(
             if (!transition.isRunning) {
                 if (webView.width > 0 && webView.height > 0) {
                     try {
-                        val bitmap = createBitmap(webView.width, webView.height)
+                        val bitmap = createBitmap(webView.width, webView.height).apply {
+                            density = webView.resources.displayMetrics.densityDpi
+                        }
                         val canvas = Canvas(bitmap)
                         webView.draw(canvas)
                         snapshot = bitmap.asImageBitmap()
