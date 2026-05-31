@@ -145,6 +145,7 @@ class NoteEditorViewModel(
         private const val KEY_TAGS = "note_editor_tags"
         private const val KEY_SELECTED_DECK_NAME = "note_editor_selected_deck_name"
         private const val KEY_FOCUSED_FIELD_INDEX = "note_editor_focused_field_index"
+        private val HTML_LINE_BREAK_REGEX = Regex("<br\\s*/?>", RegexOption.IGNORE_CASE)
 
         // Keys for caller/result state (migrated from Fragment)
         private const val KEY_CALLER = "note_editor_caller"
@@ -509,13 +510,13 @@ class NoteEditorViewModel(
 
                     // Collect all tags from the notes
                     noteIds.asSequence().mapNotNull { noteId ->
-                            try {
-                                col.getNote(noteId).tags
-                            } catch (e: Exception) {
-                                Timber.w(e, "Error getting note tags for note $noteId")
-                                null
-                            }
-                        }.flatten().toSet()
+                        try {
+                            col.getNote(noteId).tags
+                        } catch (e: Exception) {
+                            Timber.w(e, "Error getting note tags for note $noteId")
+                            null
+                        }
+                    }.flatten().toSet()
                 } else {
                     emptySet()
                 }
@@ -1169,10 +1170,8 @@ class NoteEditorViewModel(
         notetype: NotetypeJson,
     ): List<NoteFieldState> = (0 until notetype.fields.length()).map { index ->
         val field = notetype.fields[index]
-        val value = if (index < note.fields.size) note.fields[index] else ""
-        val editableValue =
-            value.replace("<br>", "\n").replace("<br/>", "\n").replace("<br />", "\n")
-                .replace("<BR>", "\n").replace("<BR/>", "\n").replace("<BR />", "\n")
+        val value = note.fields.getOrNull(index).orEmpty()
+        val editableValue = value.replace(HTML_LINE_BREAK_REGEX, "\n")
         NoteFieldState(
             name = field.name,
             value = TextFieldValue(editableValue),
