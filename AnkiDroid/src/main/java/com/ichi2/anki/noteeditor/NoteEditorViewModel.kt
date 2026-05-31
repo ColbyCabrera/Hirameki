@@ -510,13 +510,13 @@ class NoteEditorViewModel(
 
                     // Collect all tags from the notes
                     noteIds.asSequence().mapNotNull { noteId ->
-                            try {
-                                col.getNote(noteId).tags
-                            } catch (e: Exception) {
-                                Timber.w(e, "Error getting note tags for note $noteId")
-                                null
-                            }
-                        }.flatten().toSet()
+                        try {
+                            col.getNote(noteId).tags
+                        } catch (e: Exception) {
+                            Timber.w(e, "Error getting note tags for note $noteId")
+                            null
+                        }
+                    }.flatten().toSet()
                 } else {
                     emptySet()
                 }
@@ -1168,19 +1168,18 @@ class NoteEditorViewModel(
     private fun mapFieldsFromNote(
         note: Note,
         notetype: NotetypeJson,
-    ): List<NoteFieldState> =
-        (0 until notetype.fields.length()).map { index ->
-            val field = notetype.fields[index]
-            val value = note.fields.getOrNull(index).orEmpty()
-            val editableValue = value.replace(HTML_LINE_BREAK_REGEX, "\n")
-            NoteFieldState(
-                name = field.name,
-                value = TextFieldValue(editableValue),
-                isSticky = field.sticky,
-                hint = "",
-                index = index,
-            )
-        }
+    ): List<NoteFieldState> = (0 until notetype.fields.length()).map { index ->
+        val field = notetype.fields[index]
+        val value = note.fields.getOrNull(index).orEmpty()
+        val editableValue = value.replace(HTML_LINE_BREAK_REGEX, "\n")
+        NoteFieldState(
+            name = field.name,
+            value = TextFieldValue(editableValue),
+            isSticky = field.sticky,
+            hint = "",
+            index = index,
+        )
+    }
 
     /**
      * Migrate field content during a note type switch.
