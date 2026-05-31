@@ -143,7 +143,7 @@ class SoundTagPlayer(
             try {
                 awaitSetDataSource(soundUri.toString())
             } catch (e: Exception) {
-                if (continuation.isCancelled) {
+                if (continuation.isCompleted) {
                     return
                 }
                 val continuationBehavior =
@@ -152,12 +152,12 @@ class SoundTagPlayer(
                 return continuation.resumeWithException(exception)
             }
 
-            if (continuation.isCancelled) {
+            if (continuation.isCompleted) {
                 return
             }
 
             if (requestAudioFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                if (continuation.isCancelled) {
+                if (continuation.isCompleted) {
                     abandonAudioFocus()
                     return
                 }
@@ -165,7 +165,9 @@ class SoundTagPlayer(
                 start()
             } else {
                 Timber.d("unable to get audio focus, cancelling work")
-                continuation.cancel()
+                if (!continuation.isCompleted) {
+                    continuation.cancel()
+                }
             }
         }
     }
