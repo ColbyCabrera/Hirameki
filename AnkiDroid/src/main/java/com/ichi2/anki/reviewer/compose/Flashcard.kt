@@ -34,9 +34,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import android.graphics.Canvas
+import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
+import android.view.PixelCopy
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -51,7 +54,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.R
 import com.ichi2.anki.ViewerResourceHandler
@@ -60,6 +62,7 @@ import com.ichi2.anki.previewer.stdHtml
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.themes.Themes
+import com.ichi2.utils.AndroidUiUtils
 import com.ichi2.utils.toRGBHex
 import kotlinx.serialization.json.Json
 import timber.log.Timber
@@ -88,6 +91,7 @@ fun Flashcard(
     val currentOnTap by rememberUpdatedState(onTap)
 
     val context = LocalContext.current
+    val activity = remember(context) { AndroidUiUtils.findActivity(context) }
     val sharedPrefs = remember(context) { context.sharedPrefs() }
     val prefKey = stringResource(R.string.apply_hirameki_css_preference)
     var applyHiramekiCssMode by remember {
@@ -173,7 +177,7 @@ fun Flashcard(
                     @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
                     html {
                         color: ${onSurfaceColorHex}EF;
-                        background-color: gray;
+                        background-color: $surfaceColorHex;
                     }
                     body.card {
                         text-align: center;
@@ -185,7 +189,7 @@ fun Flashcard(
                         padding-bottom: ${toolbarHeight}px;
                         margin-left: 10px;
                         margin-right: 10px;
-                        background-color: gray;
+                        background-color: $surfaceColorHex;
                         color: ${onSurfaceColorHex}EF;
                     }
                     body.card .back {
@@ -296,11 +300,7 @@ fun Flashcard(
             Image(
                 bitmap = snapshot!!,
                 contentDescription = null,
-                alpha = 0.5f,
                 contentScale = ContentScale.FillBounds,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.inverseSurface)
             )
         } else {
         AndroidView(
@@ -394,18 +394,51 @@ fun Flashcard(
         }, update = { webView ->
             if (!transition.isRunning) {
                 if (webView.width > 0 && webView.height > 0) {
-                    try {
-                        val bitmap = createBitmap(webView.width, webView.height).apply {
-                            density = webView.resources.displayMetrics.densityDpi
+                    if (activity != null) {
+                        try {
+                            val bitmap = createBitmap(webView.width, webView.height)
+                            val location = IntArray(2)
+                            webView.getLocationInWindow(location)
+                            val rect = Rect(
+                                location[0],
+                                location[1],
+                                location[0] + webView.width,
+                                location[1] + webView.height
+                            )
+                            PixelCopy.request(
+                                activity.window,
+                                rect,
+                                bitmap,
+                                { copyResult ->
+                                    if (copyResult == PixelCopy.SUCCESS) {
+                                        snapshot = bitmap.asImageBitmap()
+                                    } else {
+                                        // Fallback to software draw
+                                        try {
+                                            val fallbackBitmap = createBitmap(webView.width, webView.height)
+                                            val canvas = Canvas(fallbackBitmap)
+                                            webView.draw(canvas)
+                                            snapshot = fallbackBitmap.asImageBitmap()
+                                        } catch (e: Exception) {
+                                            Timber.e(e, "Failed to capture WebView snapshot via fallback inside callback")
+                                        }
+                                    }
+                                },
+                                Handler(Looper.getMainLooper())
+                            )
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to capture WebView snapshot via PixelCopy")
                         }
-                        val canvas = Canvas(bitmap)
-                        webView.draw(canvas)
-                        snapshot = bitmap.asImageBitmap()
-                    } catch (e: Exception) {
-                        Timber.e(e, "Failed to capture WebView snapshot")
-                    } catch (e: OutOfMemoryError) {
-                        System.gc()
-                        Timber.e(e, "Failed to capture WebView snapshot")
+                    } else {
+                        // Fallback to software draw if no activity found
+                        try {
+                            val bitmap = createBitmap(webView.width, webView.height)
+                            val canvas = Canvas(bitmap)
+                            webView.draw(canvas)
+                            snapshot = bitmap.asImageBitmap()
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to capture WebView snapshot via fallback")
+                        }
                     }
                 }
             }
