@@ -145,7 +145,7 @@ class NoteEditorViewModel(
         private const val KEY_TAGS = "note_editor_tags"
         private const val KEY_SELECTED_DECK_NAME = "note_editor_selected_deck_name"
         private const val KEY_FOCUSED_FIELD_INDEX = "note_editor_focused_field_index"
-        private val HTML_LINE_BREAK_REGEX = Regex("(?i)<br\\s*/?>")
+        private val HTML_LINE_BREAK_REGEX = Regex("<br\\s*/?>", RegexOption.IGNORE_CASE)
 
         // Keys for caller/result state (migrated from Fragment)
         private const val KEY_CALLER = "note_editor_caller"
