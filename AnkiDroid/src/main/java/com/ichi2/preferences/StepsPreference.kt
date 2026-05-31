@@ -30,8 +30,7 @@ import timber.log.Timber
 
 @Suppress("deprecation", "OVERRIDE_DEPRECATION") // TODO Tracked in https://github.com/ankidroid/Anki-Android/issues/5019
 class StepsPreference :
-    android.preference.EditTextPreference,
-    AutoFocusable {
+    android.preference.EditTextPreference {
     private val allowEmpty: Boolean
 
     @Suppress("unused")
@@ -55,6 +54,10 @@ class StepsPreference :
     override fun onBindDialogView(view: View?) {
         super.onBindDialogView(view)
         autoFocusAndMoveCursorToEnd(editText)
+    }
+
+    private fun autoFocusAndMoveCursorToEnd(editText: android.widget.EditText) {
+        com.ichi2.utils.AndroidUiUtils.setFocusAndOpenKeyboard(editText) { editText.setSelection(editText.text.length) }
     }
 
     /**
