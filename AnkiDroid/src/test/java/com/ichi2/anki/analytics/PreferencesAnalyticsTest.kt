@@ -67,6 +67,7 @@ class PreferencesAnalyticsTest : RobolectricTest() {
             R.string.pref_cat_plugins_key, // category_plugins
             R.string.pref_cat_workarounds_key, // category_workarounds
             R.string.pref_controls_tab_layout_key, // controlsTabLayout
+            R.string.reviewer_css_category, // reviewer_css_category
             // Preferences that only click: don't have a value
             R.string.tts_key, // tts
             R.string.pref_reset_languages_key, // resetLanguages
@@ -89,6 +90,7 @@ class PreferencesAnalyticsTest : RobolectricTest() {
             R.string.custom_sync_server_collection_url_key, // syncBaseUrl
             R.string.pref_language_key, // language
             R.string.custom_sync_certificate_key, // customSyncCertificate
+            R.string.apply_hirameki_css_preference, // applyHiramekiCss
         ).toStringResourceSet()
 
     @Test

@@ -23,6 +23,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.RecyclerView
@@ -57,7 +58,7 @@ class LocaleSelectionDialog : AnalyticsDialogFragment() {
         dialogView
             .findViewById<Toolbar>(R.id.locale_dialog_selection_toolbar)
             .setupMenuWith(localeAdapter)
-        return AlertDialog.Builder(requireContext()).show {
+        return MaterialAlertDialogBuilder(requireContext()).show {
             cancelable(true)
             customView(dialogView)
         }

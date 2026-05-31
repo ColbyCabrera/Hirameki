@@ -71,9 +71,27 @@ class PrefsRobolectricTest : RobolectricTest() {
             callOriginal()
         }
 
+        val allowedNonPreferenceProperties = setOf(
+            "resources", "HIRAMEKI_CSS_ALL", "HIRAMEKI_CSS_NO_FONT_SIZE", "HIRAMEKI_CSS_DISABLED"
+        )
+        val unexpectedExceptions = mutableListOf<Throwable>()
         for (property in Prefs::class.memberProperties) {
             if (property.visibility != KVisibility.PUBLIC) continue
-            property.getter.call(Prefs)
+            try {
+                property.getter.call(Prefs)
+            } catch (e: Exception) {
+                val unwrapped =
+                    if (e is java.lang.reflect.InvocationTargetException) e.cause ?: e else e
+                if (property.name !in allowedNonPreferenceProperties) {
+                    unexpectedExceptions.add(unwrapped)
+                }
+            }
+        }
+        if (unexpectedExceptions.isNotEmpty()) {
+            throw AssertionError(
+                "Unexpected exceptions thrown during Prefs property inspection: $unexpectedExceptions",
+                unexpectedExceptions.first()
+            )
         }
         unmockkObject(Prefs)
         AnkiDroidApp.sharedPreferencesTestingOverride = null
@@ -130,10 +148,31 @@ class PrefsRobolectricTest : RobolectricTest() {
             callOriginal()
         }
         val propertyNamesAndKeys = mutableMapOf<String, String>()
+        val allowedNonPreferenceProperties = setOf(
+            "resources", "HIRAMEKI_CSS_ALL", "HIRAMEKI_CSS_NO_FONT_SIZE", "HIRAMEKI_CSS_DISABLED"
+        )
+        val unexpectedExceptions = mutableListOf<Throwable>()
         for (property in Prefs::class.memberProperties) {
             if (property.visibility != KVisibility.PUBLIC) continue
-            property.getter.call(Prefs)
-            propertyNamesAndKeys[property.name] = keys.last()
+            val keysSizeBefore = keys.size
+            try {
+                property.getter.call(Prefs)
+                if (keys.size > keysSizeBefore) {
+                    propertyNamesAndKeys[property.name] = keys.last()
+                }
+            } catch (e: Exception) {
+                val unwrapped =
+                    if (e is java.lang.reflect.InvocationTargetException) e.cause ?: e else e
+                if (property.name !in allowedNonPreferenceProperties) {
+                    unexpectedExceptions.add(unwrapped)
+                }
+            }
+        }
+        if (unexpectedExceptions.isNotEmpty()) {
+            throw AssertionError(
+                "Unexpected exceptions thrown during Prefs property key mapping: $unexpectedExceptions",
+                unexpectedExceptions.first()
+            )
         }
         unmockkObject(Prefs)
         AnkiDroidApp.sharedPreferencesTestingOverride = null

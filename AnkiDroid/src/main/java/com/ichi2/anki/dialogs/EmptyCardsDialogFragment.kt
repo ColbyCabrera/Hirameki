@@ -37,6 +37,7 @@ import android.widget.CheckBox
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
@@ -94,8 +95,7 @@ class EmptyCardsDialogFragment : DialogFragment() {
             TR.emptyCardsPreserveNotesCheckbox()
         dialogView.findViewById<TextView>(R.id.report).movementMethod = LinkMovementMethod.getInstance()
 
-        return AlertDialog
-            .Builder(requireContext())
+        return MaterialAlertDialogBuilder(requireContext())
             .show {
                 setTitle(
                     TR
@@ -170,7 +170,7 @@ class EmptyCardsDialogFragment : DialogFragment() {
                         is EmptyCardsSearchFailure -> {
                             // the dialog is informational so there's nothing to do but show the
                             // error and exit
-                            AlertDialog.Builder(requireActivity()).show {
+                            MaterialAlertDialogBuilder(requireActivity()).show {
                                 title(R.string.vague_error)
                                 message(text = state.throwable.toString())
                                 positiveButton(R.string.dialog_ok) { }

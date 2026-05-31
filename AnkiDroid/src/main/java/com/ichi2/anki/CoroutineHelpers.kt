@@ -25,6 +25,7 @@ import android.view.WindowManager
 import android.view.WindowManager.BadTokenException
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -274,8 +275,7 @@ fun Context.showError(
     Timber.i("Error dialog displayed")
 
     try {
-        AlertDialog
-            .Builder(this)
+        MaterialAlertDialogBuilder(this)
             .create {
                 title(R.string.vague_error)
                 message(text = message)
@@ -560,7 +560,7 @@ suspend fun AnkiActivity.userAcceptsSchemaChange(col: Collection): Boolean {
         return true
     }
     return suspendCoroutine { coroutine ->
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             message(text = col.tr.deckConfigWillRequireFullSync()) // generic message
             positiveButton(R.string.dialog_ok) {
                 col.modSchemaNoCheck()
@@ -584,7 +584,7 @@ suspend fun AnkiActivity.userAcceptsSchemaChange(): Boolean {
     }
     val hasAcceptedSchemaChange =
         suspendCoroutine { coroutine ->
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 message(text = TR.deckConfigWillRequireFullSync().replace("\\s+".toRegex(), " "))
                 positiveButton(R.string.dialog_ok) { coroutine.resume(true) }
                 negativeButton(R.string.dialog_cancel) { coroutine.resume(false) }

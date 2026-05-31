@@ -28,6 +28,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
@@ -149,7 +150,7 @@ class TtsVoicesDialogFragment : DialogFragment() {
         viewModel.availableVoicesFlow.observe {
             if (it is TtsVoicesViewModel.VoiceLoadingState.Failure) {
                 progressBar.visibility = View.VISIBLE
-                AlertDialog.Builder(requireContext()).setMessage(it.exception.localizedMessage)
+                MaterialAlertDialogBuilder(requireContext()).setMessage(it.exception.localizedMessage)
                     .setOnDismissListener { this@TtsVoicesDialogFragment.dismiss() }.show()
             }
 

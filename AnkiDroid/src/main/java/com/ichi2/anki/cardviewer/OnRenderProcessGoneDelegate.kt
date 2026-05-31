@@ -19,6 +19,7 @@ import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.Lifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AbstractFlashcardViewer
 import com.ichi2.anki.R
 import com.ichi2.anki.libanki.CardId
@@ -146,7 +147,7 @@ open class OnRenderProcessGoneDelegate(
         } else {
             res.getString(R.string.webview_crash_oom_details)
         }
-        AlertDialog.Builder(target).show {
+        MaterialAlertDialogBuilder(target).show {
             title(R.string.webview_crash_loop_dialog_title)
             message(
                 text = res.getString(

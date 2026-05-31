@@ -48,6 +48,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -114,8 +115,7 @@ import com.ichi2.anki.dialogs.SyncErrorDialog
 import com.ichi2.anki.dialogs.SyncErrorDialog.Companion.newInstance
 import com.ichi2.anki.dialogs.SyncErrorDialog.SyncErrorDialogListener
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
-import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction
-import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyAction.Companion.REQUEST_KEY
+
 import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.introduction.CollectionPermissionScreenLauncher
@@ -145,7 +145,7 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
-import com.ichi2.anki.utils.ext.setFragmentResultListener
+
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.worker.SyncMediaWorker
 import com.ichi2.anki.worker.SyncWorker
@@ -439,23 +439,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
         checkWebviewVersion(this)
 
-        setFragmentResultListener(REQUEST_KEY) { _, bundle ->
-            when (CustomStudyAction.fromBundle(bundle)) {
-                CustomStudyAction.CUSTOM_STUDY_SESSION -> {
-                    Timber.d("Custom study created")
-                    updateDeckList()
-                    if (!fragmented) {
-                        openStudyOptionsActivity()
-                    }
-                }
-
-                CustomStudyAction.EXTEND_STUDY_LIMITS -> {
-                    Timber.d("Study limits updated")
-                    updateDeckList()
-                }
-            }
-        }
-
         ViewCompat.setOnReceiveContentListener(
             window.decorView,
             IMPORT_MIME_TYPES,
@@ -686,7 +669,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 getString(R.string.link_full_storage_access),
             )
         }
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             title(R.string.directory_inaccessible)
             customView(
                 contentView,
@@ -954,7 +937,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
     private fun showMediaCheckDialog() {
         Timber.i("showing media check dialog")
-        AlertDialog.Builder(this).show {
+        MaterialAlertDialogBuilder(this).show {
             title(text = getString(R.string.check_media_title))
             message(text = getString(R.string.check_media_warning))
             positiveButton(R.string.dialog_ok) {
@@ -1404,7 +1387,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 Timber.i("showStartupScreensAndDialogs() running integrityCheck()")
                 // #5852 - since we may have a warning about disk space, we don't want to force a check database
                 // and show a warning before the user knows what is happening.
-                AlertDialog.Builder(this).show {
+                MaterialAlertDialogBuilder(this).show {
                     title(R.string.integrity_check_startup_title)
                     message(R.string.integrity_check_startup_content)
                     positiveButton(R.string.check_db) {
@@ -1555,7 +1538,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         val status = CollectionIntegrityStorageCheck.createInstance(this)
         if (status.shouldWarnOnIntegrityCheck()) {
             Timber.d("Displaying File Size confirmation")
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 title(R.string.check_db_title)
                 message(text = status.getWarningDetails(this@DeckPicker))
                 positiveButton(R.string.integrity_check_continue_anyway) {
@@ -1634,7 +1617,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         }
         // Warn the user in case the connection is metered
         if (!Prefs.allowSyncOnMeteredConnections && isActiveNetworkMetered()) {
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 message(R.string.metered_sync_data_warning)
                 positiveButton(R.string.dialog_continue) { doSync() }
                 negativeButton(R.string.dialog_cancel) { viewModel.isSyncing.value = false }

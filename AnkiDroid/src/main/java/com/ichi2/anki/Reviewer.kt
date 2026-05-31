@@ -37,6 +37,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.IntDef
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.ThemeUtils
 import androidx.appcompat.widget.TooltipCompat
@@ -964,7 +965,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             resources.getQuantityString(R.plurals.timebox_reached, nCards, nCards, mins)
         suspendCancellableCoroutine { coroutines ->
             Timber.i("Showing timebox reached dialog")
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 title(R.string.timebox_reached_title)
                 message(text = timeboxMessage)
                 positiveButton(R.string.dialog_continue) {

@@ -158,7 +158,10 @@ fun ManageNoteTypesScreen(
             },
             floatingActionButton = {
                 if (!uiState.isInMultiSelectMode) {
-                    FloatingActionButton(onClick = { showAddDialog = true }) {
+                    FloatingActionButton(
+                        onClick = { showAddDialog = true },
+                        shape = FloatingActionButtonDefaults.smallShape
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.add_24px),
                             contentDescription = stringResource(id = R.string.cd_manage_notetypes_add),

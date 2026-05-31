@@ -37,6 +37,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -943,7 +944,7 @@ class NoteEditorFragment :
 
     private fun displayFontSizeDialog() {
         val sizeCodes = resources.getStringArray(R.array.html_size_codes)
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             setItems(R.array.html_size_code_labels) { _, index ->
                 val size = sizeCodes.getOrNull(index) ?: return@setItems
                 applyFormatter("<span style=\"font-size:$size\">", "</span>")
@@ -954,7 +955,7 @@ class NoteEditorFragment :
 
     private fun displayInsertHeadingDialog() {
         val headingTags = arrayOf("h1", "h2", "h3", "h4", "h5")
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             setItems(headingTags) { _, index ->
                 val tag = headingTags.getOrNull(index) ?: return@setItems
                 applyFormatter("<$tag>", "</$tag>")
@@ -976,7 +977,7 @@ class NoteEditorFragment :
                 MathJaxOption(TR.editingMathjaxChemistry(), prefix = "\\( \\ce{", suffix = "} \\)"),
             )
 
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             setItems(options.map(MathJaxOption::label).toTypedArray()) { _, index ->
                 val option = options.getOrNull(index) ?: return@setItems
                 applyFormatter(option.prefix, option.suffix)
@@ -1757,7 +1758,7 @@ class NoteEditorFragment :
         button: CustomToolbarButton,
         editToolbarItemDialog: AlertDialog,
     ) {
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             title(R.string.remove_toolbar_item)
             positiveButton(R.string.dialog_positive_delete) {
                 editToolbarItemDialog.dismiss()

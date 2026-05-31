@@ -148,7 +148,7 @@ fun NoteTypeActionBottomSheetContent(
                 modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.cards_stack_24px),
                 label = null,
-                contentDescription = stringResource(id = R.string.cards),
+                contentDescription = stringResource(id = R.string.title_activity_template_editor),
                 height = firstRowButtonHeight,
                 colors = ButtonDefaults.filledTonalButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,

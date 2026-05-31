@@ -21,6 +21,7 @@ import android.content.Context
 import android.view.ViewGroup
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -260,7 +261,7 @@ class BackupPromptDialog private constructor(
                 return
             }
 
-            AlertDialog.Builder(context).show {
+            MaterialAlertDialogBuilder(context).show {
                 title(R.string.dismiss_backup_warning_title)
                 message(message)
                 setIcon(R.drawable.ic_warning)

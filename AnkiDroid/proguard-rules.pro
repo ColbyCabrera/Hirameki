@@ -24,11 +24,16 @@
 # -dontobfuscate
 
 # Used through Reflection
--keep class com.ichi2.anki.**.*Fragment { *; }
--keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
--keep class androidx.core.app.ActivityCompat$* { *; }
--keep class androidx.concurrent.futures.** { *; }
--keep class androidx.appcompat.view.menu.MenuItemImpl { *; } # .utils.ext.MenuItemImpl
+-keep class com.ichi2.anki.**.*Fragment { <init>(); }
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite { <fields>; }
+-keepclassmembers class androidx.appcompat.view.menu.MenuItemImpl {
+    *** mMenu;
+    *** mSubMenu;
+}
+# AndroidX libraries bundle their own consumer Proguard rules. These custom rules are redundant/unused.
+# -keep class androidx.core.app.ActivityCompat$* { *; }
+# -keep class androidx.concurrent.futures.** { *; }
+-dontwarn androidx.concurrent.futures.**
 
 # Ignore unused packages
 -dontwarn javax.naming.**

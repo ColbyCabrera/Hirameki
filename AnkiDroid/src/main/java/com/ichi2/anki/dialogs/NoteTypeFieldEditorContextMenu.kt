@@ -8,6 +8,7 @@ import android.os.Bundle
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R
 import com.ichi2.anki.analytics.AnalyticsDialogFragment
@@ -23,7 +24,7 @@ class NoteTypeFieldEditorContextMenu : AnalyticsDialogFragment() {
         super.onCreate(savedInstanceState)
         val availableItems = NoteTypeFieldEditorContextMenuAction.entries.sortedBy { it.order }
 
-        return AlertDialog.Builder(requireActivity()).create {
+        return MaterialAlertDialogBuilder(requireActivity()).create {
             setTitle(requireArguments().getString(KEY_LABEL))
             setItems(availableItems.map { resources.getString(it.actionTextId) }.toTypedArray()) { _, index ->
                 (activity as? NoteTypeFieldEditor)?.run { handleAction(availableItems[index]) }
