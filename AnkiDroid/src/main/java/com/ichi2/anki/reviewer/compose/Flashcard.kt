@@ -183,8 +183,8 @@ fun Flashcard(
                         text-wrap: pretty;
                         padding-top: ${currentPadding}px;
                         padding-bottom: ${toolbarHeight}px;
-                        margin-left: 0px;
-                        margin-right: 0px;
+                        margin-left: 10px;
+                        margin-right: 10px;
                         background-color: gray;
                         color: ${onSurfaceColorHex}EF;
                     }
