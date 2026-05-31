@@ -30,7 +30,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.ensureActive
 import com.ichi2.anki.libanki.SoundOrVideoTag
 import com.ichi2.anki.multimedia.getTagType
 import kotlinx.coroutines.CancellableContinuation
@@ -144,15 +143,24 @@ class SoundTagPlayer(
             try {
                 awaitSetDataSource(soundUri.toString())
             } catch (e: Exception) {
-                continuation.ensureActive()
+                if (continuation.isCancelled) {
+                    return
+                }
                 val continuationBehavior =
                     mediaErrorListener?.onError(soundUri) ?: MediaErrorBehavior.CONTINUE_MEDIA
                 val exception = MediaException(continuationBehavior, e)
                 return continuation.resumeWithException(exception)
             }
 
+            if (continuation.isCancelled) {
+                return
+            }
+
             if (requestAudioFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                continuation.ensureActive()
+                if (continuation.isCancelled) {
+                    abandonAudioFocus()
+                    return
+                }
                 Timber.d("starting sound tag")
                 start()
             } else {
