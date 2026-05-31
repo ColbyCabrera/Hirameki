@@ -61,7 +61,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CheckResult
 import androidx.annotation.IdRes
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.net.toFile
 import androidx.core.net.toUri
@@ -153,7 +152,6 @@ import com.ichi2.utils.show
 import com.ichi2.utils.title
 import com.squareup.seismic.ShakeDetector
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.runBlocking
 import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
 import java.io.File
@@ -1066,13 +1064,21 @@ abstract class AbstractFlashcardViewer :
 
     private fun updateCard(content: RenderedCard) {
         Timber.d("updateCard()")
-        // TODO: This doesn't need to be blocking
-        runBlocking {
-            cardMediaPlayer.loadCardAvTags(currentCard!!)
-        }
         cardContent = content.html
         fillFlashcard()
-        playMedia(false) // Play media if appropriate
+
+        val card = currentCard ?: return
+        val wasDisplayingAnswer = displayAnswer
+
+        launchCatchingTask {
+            cardMediaPlayer.loadCardAvTags(card)
+            if (card != currentCard || wasDisplayingAnswer != displayAnswer) {
+                return@launchCatchingTask
+            }
+
+            webView?.settings?.mediaPlaybackRequiresUserGesture = !cardMediaPlayer.config.autoplay
+            playMedia(false) // Play media if appropriate
+        }
     }
 
     /**
@@ -1180,7 +1186,11 @@ abstract class AbstractFlashcardViewer :
         content: String,
     ) {
         if (card != null) {
-            card.settings.mediaPlaybackRequiresUserGesture = !cardMediaPlayer.config.autoplay
+            // Note: `mediaPlaybackRequiresUserGesture` uses cardMediaPlayer.config but this is initialized asynchronously now
+            // To ensure safety, we'll try to set it but default to false if not initialized (though usually we don't autoplay videos by default)
+            val autoPlay =
+                if (this::cardMediaPlayer.isInitialized && cardMediaPlayer.hasConfig) cardMediaPlayer.config.autoplay else false
+            card.settings.mediaPlaybackRequiresUserGesture = !autoPlay
             card.loadDataWithBaseURL(
                 server.baseUrl(),
                 content,
