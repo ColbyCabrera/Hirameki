@@ -40,6 +40,7 @@ import timber.log.Timber
 @KotlinCleanup("see if we can make variables lazy, or properties without the `s` prefix")
 object UsageAnalytics {
     const val ANALYTICS_OPTIN_KEY = "analytics_opt_in"
+    const val isAvailable = false
 
     @KotlinCleanup("lateinit")
     private var sAnalytics: GoogleAnalytics? = null
@@ -70,6 +71,16 @@ object UsageAnalytics {
      */
     @Synchronized
     fun initialize(context: Context): GoogleAnalytics? {
+        if (!isAvailable) {
+            Timber.i("Analytics disabled for this fork; skipping initialization")
+            sOptIn = false
+            runCatching {
+                context.sharedPrefs().edit {
+                    putBoolean(ANALYTICS_OPTIN_KEY, false)
+                }
+            }
+            return null
+        }
         Timber.i("initialize()")
         if (sAnalytics == null) {
             Timber.d("App tracking id 'tid' = %s", getAnalyticsTag(context))
@@ -124,6 +135,10 @@ object UsageAnalytics {
     }
 
     fun setDevMode() {
+        if (!isAvailable) {
+            Timber.i("Analytics disabled for this fork; ignoring dev mode request")
+            return
+        }
         Timber.d("setDevMode() re-configuring for development analytics tagging")
         sAnalyticsTrackingId = "UA-125800786-2"
         sAnalyticsSamplePercentage = 100
@@ -184,6 +199,17 @@ object UsageAnalytics {
      */
     @Synchronized
     fun reInitialize() {
+        if (!isAvailable) {
+            Timber.i("Analytics disabled for this fork; skipping re-initialization")
+            sAnalytics = null
+            sOptIn = false
+            runCatching {
+                AnkiDroidApp.sharedPrefs().edit {
+                    putBoolean(ANALYTICS_OPTIN_KEY, false)
+                }
+            }
+            return
+        }
         // send any pending async hits, re-chain default exception handlers and re-init
         Timber.i("reInitialize()")
         sAnalytics!!.flush()
@@ -210,10 +236,11 @@ object UsageAnalytics {
      */
     fun sendAnalyticsScreenView(screenName: String) {
         Timber.d("sendAnalyticsScreenView(): %s", screenName)
-        if (!optIn) {
+        val analytics = sAnalytics
+        if (!isAvailable || !optIn || analytics == null) {
             return
         }
-        sAnalytics!!.screenView().screenName(screenName).sendAsync()
+        analytics.screenView().screenName(screenName).sendAsync()
     }
 
     /**
@@ -231,10 +258,11 @@ object UsageAnalytics {
         label: String? = null,
     ) {
         Timber.d("sendAnalyticsEvent() category/action/value/label: %s/%s/%s/%s", category, action, value, label)
-        if (!optIn) {
+        val analytics = sAnalytics
+        if (!isAvailable || !optIn || analytics == null) {
             return
         }
-        val event = sAnalytics!!.event().eventCategory(category).eventAction(action)
+        val event = analytics.event().eventCategory(category).eventAction(action)
         if (label != null) {
             event.eventLabel(label)
         }
@@ -278,10 +306,11 @@ object UsageAnalytics {
         fatal: Boolean,
     ) {
         Timber.d("sendAnalyticsException() description/fatal: %s/%s", description, fatal)
-        if (!sOptIn) {
+        val analytics = sAnalytics
+        if (!isAvailable || !sOptIn || analytics == null) {
             return
         }
-        sAnalytics!!
+        analytics
             .exception()
             .exceptionDescription(description)
             .exceptionFatal(fatal)
@@ -304,20 +333,22 @@ object UsageAnalytics {
 
     // A listener on this preference handles the rest
     var isEnabled: Boolean
-        get() {
-            val userPrefs = AnkiDroidApp.instance.sharedPrefs()
-            return userPrefs.getBoolean(ANALYTICS_OPTIN_KEY, false)
-        }
+        get() = false
         set(value) {
-            // A listener on this preference handles the rest
-            AnkiDroidApp.instance.sharedPrefs().edit {
-                putBoolean(ANALYTICS_OPTIN_KEY, value)
+            if (value) {
+                Timber.i("Analytics disabled for this fork; ignoring opt-in request")
+            }
+            runCatching {
+                AnkiDroidApp.sharedPrefs().edit {
+                    putBoolean(ANALYTICS_OPTIN_KEY, false)
+                }
             }
         }
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
     fun resetForTests() {
         sAnalytics = null
+        sOptIn = false
     }
 
     /**

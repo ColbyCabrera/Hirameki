@@ -130,7 +130,7 @@ class DeckPickerTest : RobolectricTest() {
     }
 
     @Test
-    fun deckPickerOpensWithHelpMakeAnkiDroidBetterDialog() {
+    fun deckPickerSkipsAnalyticsOptInDialogWhenAnalyticsDisabled() {
         try {
             grantWritePermissions()
             targetContext.sharedPrefs().edit {
@@ -143,7 +143,7 @@ class DeckPickerTest : RobolectricTest() {
                 scenario.onActivity { activity ->
                     val dialogFragment =
                         activity.getCurrentDialogFragment<DeckPickerAnalyticsOptInDialog>()
-                    assertNotNull(dialogFragment, "Analytics opt-in should be displayed")
+                    assertNull(dialogFragment, "Analytics opt-in should not be displayed")
                 }
             }
         } finally {

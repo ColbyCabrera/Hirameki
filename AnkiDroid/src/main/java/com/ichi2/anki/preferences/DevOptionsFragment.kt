@@ -75,16 +75,6 @@ class DevOptionsFragment : SettingsFragment() {
             Timber.w("Crash triggered on purpose from advanced preferences in debug mode")
             throw RuntimeException("This is a test crash")
         }
-        // Make it possible to test analytics
-        requirePreference<Preference>(R.string.pref_analytics_debug_key).setOnPreferenceClickListener {
-            if (UsageAnalytics.isEnabled) {
-                showSnackbar("Analytics set to dev mode")
-            } else {
-                showSnackbar("Done! Enable Analytics in 'General' settings to use.")
-            }
-            UsageAnalytics.setDevMode()
-            false
-        }
         // Lock database
         requirePreference<Preference>(R.string.pref_lock_database_key).setOnPreferenceClickListener {
             Timber.w("Toggling database lock")
