@@ -51,25 +51,24 @@ import timber.log.Timber
 private typealias CardSelectionOrder = Deck.Filtered.SearchTerm.Order
 
 @NeedsTest("construction + onCreate - do this after converting to fragment-based preferences.")
-class FilteredDeckOptions :
-    AppCompatPreferenceActivity<FilteredDeckOptions.DeckPreferenceHack>(),
+class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.DeckPreferenceHack>(),
     SharedPreferences.OnSharedPreferenceChangeListener {
     private var allowCommit = true
 
     // TODO: not anymore used in libanki?
-    private val dynExamples =
-        arrayOf(
-            null,
-            "{'search'=\"is:new\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
-            "{'search'=\"added:1\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
-            "{'search'=\"rated:1:1\", 'order'=4}",
-            "{'search'=\"prop:due<=2\", 'order'=6}",
-            "{'search'=\"is:due tag:TAG\", 'order'=6}",
-            "{'search'=\"is:due\", 'order'=3}",
-            "{'search'=\"\", 'steps'=\"1 10 20\", 'order'=0}",
-        )
+    private val dynExamples = arrayOf(
+        null,
+        "{'search'=\"is:new\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
+        "{'search'=\"added:1\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
+        "{'search'=\"rated:1:1\", 'order'=4}",
+        "{'search'=\"prop:due<=2\", 'order'=6}",
+        "{'search'=\"is:due tag:TAG\", 'order'=6}",
+        "{'search'=\"is:due\", 'order'=3}",
+        "{'search'=\"\", 'steps'=\"1 10 20\", 'order'=0}",
+    )
 
-    inner class DeckPreferenceHack : AppCompatPreferenceActivity<FilteredDeckOptions.DeckPreferenceHack>.AbstractPreferenceHack() {
+    inner class DeckPreferenceHack :
+        AppCompatPreferenceActivity<DeckPreferenceHack>.AbstractPreferenceHack() {
         var secondFilter = false
 
         override fun cacheValues() {
@@ -100,7 +99,21 @@ class FilteredDeckOptions :
             values["previewGoodSecs"] = deck.getString("previewGoodSecs")
         }
 
-        inner class Editor : AppCompatPreferenceActivity<FilteredDeckOptions.DeckPreferenceHack>.AbstractPreferenceHack.Editor() {
+        inner class Editor :
+            AppCompatPreferenceActivity<DeckPreferenceHack>.AbstractPreferenceHack.Editor() {
+            private fun Any?.toBoundedIntOrCurrent(
+                current: Int,
+                min: Int,
+                max: Int = 99999,
+            ): Int {
+                val parsed = when (this) {
+                    is Int -> this
+                    is String -> this.toIntOrNull()
+                    else -> this?.toString()?.toIntOrNull()
+                } ?: return current
+                return parsed.coerceIn(min, max)
+            }
+
             override fun commit(): Boolean {
                 Timber.d("commit() changes back to database")
                 for ((key, value) in update.valueSet()) {
@@ -111,9 +124,15 @@ class FilteredDeckOptions :
                             "search_2" -> {
                                 ar.getJSONArray(1).put(0, value)
                             }
+
                             "limit_2" -> {
-                                ar.getJSONArray(1).put(1, value)
+                                val secondFilter = ar.getJSONArray(1)
+                                secondFilter.put(
+                                    1,
+                                    value.toBoundedIntOrCurrent(secondFilter.optInt(1, 20), min = 1)
+                                )
                             }
+
                             "order_2" -> {
                                 ar.getJSONArray(1).put(2, (value as String).toInt())
                             }
@@ -125,23 +144,51 @@ class FilteredDeckOptions :
                         }
 
                         "limit" -> {
-                            ar.getJSONArray(0).put(1, value)
+                            val firstFilter = ar.getJSONArray(0)
+                            firstFilter.put(
+                                1,
+                                value.toBoundedIntOrCurrent(firstFilter.optInt(1, 20), min = 1)
+                            )
                         }
+
                         "order" -> {
                             ar.getJSONArray(0).put(2, (value as String).toInt())
                         }
+
                         "resched" -> {
                             deck.put("resched", value)
                         }
+
                         "previewAgainSecs" -> {
-                            deck.put("previewAgainSecs", value)
+                            deck.put(
+                                "previewAgainSecs",
+                                value.toBoundedIntOrCurrent(
+                                    deck.optInt("previewAgainSecs", 1),
+                                    min = 1
+                                ),
+                            )
                         }
+
                         "previewHardSecs" -> {
-                            deck.put("previewHardSecs", value)
+                            deck.put(
+                                "previewHardSecs",
+                                value.toBoundedIntOrCurrent(
+                                    deck.optInt("previewHardSecs", 0),
+                                    min = 0
+                                ),
+                            )
                         }
+
                         "previewGoodSecs" -> {
-                            deck.put("previewGoodSecs", value)
+                            deck.put(
+                                "previewGoodSecs",
+                                value.toBoundedIntOrCurrent(
+                                    deck.optInt("previewGoodSecs", 0),
+                                    min = 0
+                                ),
+                            )
                         }
+
                         "stepsOn" -> {
                             val on = value as Boolean
                             if (on) {
@@ -153,9 +200,11 @@ class FilteredDeckOptions :
                                 deck.put("delays", JSONObject.NULL)
                             }
                         }
+
                         "steps" -> {
                             deck.put("delays", convertToJSON((value as String)))
                         }
+
                         "preset" -> {
                             val i: Int = (value as String).toInt()
                             if (i > 0) {
@@ -167,7 +216,8 @@ class FilteredDeckOptions :
                                     }
                                     if ("resched" == name) {
                                         update.put(name, presetValues.getBoolean(name))
-                                        values[name] = java.lang.Boolean.toString(presetValues.getBoolean(name))
+                                        values[name] =
+                                            java.lang.Boolean.toString(presetValues.getBoolean(name))
                                     } else {
                                         update.put(name, presetValues.getString(name))
                                         values[name] = presetValues.getString(name)
@@ -246,13 +296,12 @@ class FilteredDeckOptions :
         // Set the activity title to include the name of the deck
         var title = resources.getString(R.string.deckpreferences_title)
         if (title.contains("XXX")) {
-            title =
-                try {
-                    title.replace("XXX", deck.getString("name"))
-                } catch (e: JSONException) {
-                    Timber.w(e)
-                    title.replace("XXX", "???")
-                }
+            title = try {
+                title.replace("XXX", deck.getString("name"))
+            } catch (e: JSONException) {
+                Timber.w(e)
+                title.replace("XXX", "???")
+            }
         }
         this.title = title
 
@@ -261,7 +310,7 @@ class FilteredDeckOptions :
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
-    @Suppress("deprecation") // Tracked as #5019 on github: addPreferencesFromResource
+    @Suppress("deprecation") // Tracked as #5019 on GitHub: addPreferencesFromResource
     private fun addPreferences(col: Collection) {
         addPreferencesFromResource(R.xml.cram_deck_options)
         if (col.schedVer() != 1) {
@@ -275,7 +324,7 @@ class FilteredDeckOptions :
         }
     }
 
-    @Suppress("deprecation") // Tracked as #5019 on github: findPreference
+    @Suppress("deprecation") // Tracked as #5019 on GitHub: findPreference
     private fun removePreference(category: PreferenceCategory?, key: String) {
         val preference = findPreference(key)
         if (category == null || preference == null) {
@@ -300,24 +349,23 @@ class FilteredDeckOptions :
         finish()
     }
 
-    @Suppress("deprecation") // conversion to fragments tracked in github as #5019
+    @Suppress("deprecation") // conversion to fragments tracked in GitHub as #5019
     override fun updateSummaries() {
         allowCommit = false
         // for all text preferences, set summary as current database value
         val keys: Set<String> = pref.values.keys
         for (key in keys) {
             val pref = findPreference(key)
-            val value: String? =
-                if (pref == null) {
-                    continue
-                } else if (pref is CheckBoxPreference) {
-                    continue
-                } else if (pref is ListPreference) {
-                    val entry = pref.entry
-                    entry?.toString() ?: ""
-                } else {
-                    this.pref.getString(key, "")
-                }
+            val value: String? = if (pref == null) {
+                continue
+            } else if (pref is CheckBoxPreference) {
+                continue
+            } else if (pref is ListPreference) {
+                val entry = pref.entry
+                entry?.toString() ?: ""
+            } else {
+                this.pref.getString(key, "")
+            }
             // update value for EditTexts
             if (pref is EditTextPreference) {
                 pref.text = value
@@ -337,7 +385,7 @@ class FilteredDeckOptions :
         allowCommit = true
     }
 
-    @Suppress("deprecation") // Tracked as #5019 on github
+    @Suppress("deprecation") // Tracked as #5019 on GitHub
     private fun buildLists() {
         val selectionOrderValues = CardSelectionOrder.entries - CardSelectionOrder.UNRECOGNIZED
 
@@ -347,7 +395,8 @@ class FilteredDeckOptions :
         (findPreference("order") as ListPreference).apply {
             entries = displayStrings
             entryValues = values
-            value = pref.getString("order", CardSelectionOrder.OLDEST_REVIEWED_FIRST.number.toString())
+            value =
+                pref.getString("order", CardSelectionOrder.OLDEST_REVIEWED_FIRST.number.toString())
         }
 
         (findPreference("order_2") as ListPreference).apply {
@@ -391,8 +440,10 @@ class FilteredDeckOptions :
 
     @Suppress("deprecation")
     private fun setupPreviewDelaysListener() {
-        val reschedPref = findPreference(getString(R.string.filtered_deck_resched_key)) as CheckBoxPreference
-        val delaysPrefCategory = findPreference(getString(R.string.filtered_deck_previewDelays_key)) as PreferenceCategory
+        val reschedPref =
+            findPreference(getString(R.string.filtered_deck_resched_key)) as CheckBoxPreference
+        val delaysPrefCategory =
+            findPreference(getString(R.string.filtered_deck_previewDelays_key)) as PreferenceCategory
         delaysPrefCategory.isEnabled = !reschedPref.isChecked
         reschedPref.onPreferenceChangeListener =
             Preference.OnPreferenceChangeListener { _: Preference?, newValue: Any? ->

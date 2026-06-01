@@ -20,22 +20,29 @@ import android.content.Context
 import android.text.InputType
 import android.util.AttributeSet
 import android.view.View
+import android.widget.EditText
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.R
 import com.ichi2.anki.common.utils.ext.stringIterable
 import com.ichi2.anki.showThemedToast
+import com.ichi2.utils.AndroidUiUtils.setFocusAndOpenKeyboard
 import org.json.JSONArray
 import org.json.JSONException
 import timber.log.Timber
 
-@Suppress("deprecation", "OVERRIDE_DEPRECATION") // TODO Tracked in https://github.com/ankidroid/Anki-Android/issues/5019
-class StepsPreference :
-    android.preference.EditTextPreference,
-    AutoFocusable {
+@Suppress(
+    "deprecation",
+    "OVERRIDE_DEPRECATION"
+) // TODO Tracked in https://github.com/ankidroid/Anki-Android/issues/5019
+class StepsPreference : android.preference.EditTextPreference {
     private val allowEmpty: Boolean
 
     @Suppress("unused")
-    constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle) {
+    constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(
+        context,
+        attrs,
+        defStyle
+    ) {
         allowEmpty = getAllowEmptyFromAttributes(attrs)
         updateSettings()
     }
@@ -55,6 +62,10 @@ class StepsPreference :
     override fun onBindDialogView(view: View?) {
         super.onBindDialogView(view)
         autoFocusAndMoveCursorToEnd(editText)
+    }
+
+    private fun autoFocusAndMoveCursorToEnd(editText: EditText) {
+        setFocusAndOpenKeyboard(editText) { editText.setSelection(editText.text.length) }
     }
 
     /**
