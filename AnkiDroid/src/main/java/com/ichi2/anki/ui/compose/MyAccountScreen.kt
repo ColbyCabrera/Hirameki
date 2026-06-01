@@ -22,9 +22,9 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -149,10 +149,11 @@ fun MyAccountScreen(
                         FilledIconButton(
                             modifier = Modifier.padding(end = 8.dp),
                             onClick = onBack,
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
+                            colors =
+                                IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.arrow_back_24px),
@@ -164,13 +165,14 @@ fun MyAccountScreen(
                 contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
             ) { padding ->
                 when (state.isLoggedIn) {
-                    true -> LoggedInContent(
-                        modifier = Modifier.padding(padding),
-                        username = state.username ?: "",
-                        onLogoutClick = onLogoutClick,
-                        onRemoveAccountClick = onRemoveAccountClick,
-                        onPrivacyPolicyClick = onPrivacyPolicyClick,
-                    )
+                    true ->
+                        LoggedInContent(
+                            modifier = Modifier.padding(padding),
+                            username = state.username ?: "",
+                            onLogoutClick = onLogoutClick,
+                            onRemoveAccountClick = onRemoveAccountClick,
+                            onPrivacyPolicyClick = onPrivacyPolicyClick,
+                        )
 
                     false -> {
                         var password by remember { mutableStateOf("") }
@@ -228,10 +230,11 @@ fun RemoveAccountContent(onBack: () -> Unit) {
                 FilledIconButton(
                     modifier = Modifier.padding(end = 8.dp),
                     onClick = onBack,
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.arrow_back_24px),
@@ -243,9 +246,10 @@ fun RemoveAccountContent(onBack: () -> Unit) {
         contentWindowInsets = WindowInsets.systemBars.exclude(WindowInsets.navigationBars),
     ) { padding ->
         Box(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
         ) {
             RemoveAccountWebView(
                 removeAccountUrl,
@@ -280,62 +284,63 @@ private fun RemoveAccountWebView(
 
                 var redirectCount = 0
 
-                webViewClient = object : WebViewClient() {
-                    private fun isUrlAllowed(url: String?): Boolean {
-                        if (url == null) return false
-                        val uri = url.toUri()
-                        val host = uri.host ?: return false
-                        return host == "ankiweb.net" || host.endsWith(".ankiweb.net")
-                    }
+                webViewClient =
+                    object : WebViewClient() {
+                        private fun isUrlAllowed(url: String?): Boolean {
+                            if (url == null) return false
+                            val uri = url.toUri()
+                            val host = uri.host ?: return false
+                            return host == "ankiweb.net" || host.endsWith(".ankiweb.net")
+                        }
 
-                    private fun maybeRedirect(url: String?): Boolean {
-                        if (url == null) return false
-                        if (urlsToRedirect.any { url.startsWith(it) }) {
-                            redirectCount++
-                            if (redirectCount <= 3) {
-                                loadUrl(removeAccountUrl)
-                                return true
+                        private fun maybeRedirect(url: String?): Boolean {
+                            if (url == null) return false
+                            if (urlsToRedirect.any { url.startsWith(it) }) {
+                                redirectCount++
+                                if (redirectCount <= 3) {
+                                    loadUrl(removeAccountUrl)
+                                    return true
+                                }
                             }
+                            return false
                         }
-                        return false
-                    }
 
-                    override fun shouldInterceptRequest(
-                        view: WebView?,
-                        request: WebResourceRequest?,
-                    ): WebResourceResponse? {
-                        if (!isUrlAllowed(request?.url?.toString())) {
-                            return WebResourceResponse("text/plain", "utf-8", null)
+                        override fun shouldInterceptRequest(
+                            view: WebView?,
+                            request: WebResourceRequest?,
+                        ): WebResourceResponse? {
+                            if (!isUrlAllowed(request?.url?.toString())) {
+                                return WebResourceResponse("text/plain", "utf-8", null)
+                            }
+                            return super.shouldInterceptRequest(view, request)
                         }
-                        return super.shouldInterceptRequest(view, request)
-                    }
 
-                    override fun onReceivedSslError(
-                        view: WebView?,
-                        handler: SslErrorHandler?,
-                        error: SslError?,
-                    ) {
-                        handler?.cancel()
-                    }
+                        override fun onReceivedSslError(
+                            view: WebView?,
+                            handler: SslErrorHandler?,
+                            error: SslError?,
+                        ) {
+                            handler?.cancel()
+                        }
 
-                    override fun shouldOverrideUrlLoading(
-                        view: WebView?,
-                        request: WebResourceRequest?,
-                    ): Boolean {
-                        val url = request?.url?.toString()
-                        if (maybeRedirect(url)) return true
+                        override fun shouldOverrideUrlLoading(
+                            view: WebView?,
+                            request: WebResourceRequest?,
+                        ): Boolean {
+                            val url = request?.url?.toString()
+                            if (maybeRedirect(url)) return true
 
-                        return !isUrlAllowed(url)
-                    }
+                            return !isUrlAllowed(url)
+                        }
 
-                    override fun onPageFinished(
-                        view: WebView?,
-                        url: String?,
-                    ) {
-                        super.onPageFinished(view, url)
-                        maybeRedirect(url)
+                        override fun onPageFinished(
+                            view: WebView?,
+                            url: String?,
+                        ) {
+                            super.onPageFinished(view, url)
+                            maybeRedirect(url)
+                        }
                     }
-                }
                 loadUrl(removeAccountUrl)
             }
         },
@@ -369,9 +374,10 @@ fun LoggedOutContent(
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(9000, easing = LinearEasing),
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(9000, easing = LinearEasing),
+            ),
         label = "LogInIconRotationAngle",
     )
 
@@ -384,21 +390,22 @@ fun LoggedOutContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
-                modifier = Modifier
-                    .padding(top = 24.dp, bottom = 64.dp)
-                    .size(124.dp),
+                modifier =
+                    Modifier
+                        .padding(top = 24.dp, bottom = 64.dp)
+                        .size(124.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            rotationZ = rotation
-                        }
-                        .background(
-                            MaterialTheme.colorScheme.tertiaryContainer,
-                            shape = SoftBurstShape,
-                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                rotationZ = rotation
+                            }.background(
+                                MaterialTheme.colorScheme.tertiaryContainer,
+                                shape = SoftBurstShape,
+                            ),
                 )
                 Image(
                     modifier = Modifier.size(60.dp),
@@ -412,12 +419,11 @@ fun LoggedOutContent(
                 Modifier
                     .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .padding(horizontal = 32.dp, vertical = 32.dp)
-
+                    .padding(horizontal = 32.dp, vertical = 32.dp),
             ) {
                 var lastError by remember { mutableStateOf(loginError) }
-                if (loginError != null) {
-                    lastError = loginError
+                LaunchedEffect(loginError) {
+                    if (loginError != null) lastError = loginError
                 }
 
                 AnimatedVisibility(
@@ -447,16 +453,19 @@ fun LoggedOutContent(
                             contentDescription = null,
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics { contentType = ContentType.EmailAddress },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next,
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { passwordFocusRequester.requestFocus() },
-                    ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .semantics { contentType = ContentType.EmailAddress },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next,
+                        ),
+                    keyboardActions =
+                        KeyboardActions(
+                            onNext = { passwordFocusRequester.requestFocus() },
+                        ),
                     singleLine = true,
                     shape = MaterialTheme.shapes.small,
                 )
@@ -476,27 +485,36 @@ fun LoggedOutContent(
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                painter = painterResource(if (passwordVisible) R.drawable.visibility_off_24px else R.drawable.visibility_24px),
-                                contentDescription = stringResource(if (passwordVisible) R.string.hide_password else R.string.show_password),
+                                painter =
+                                    painterResource(
+                                        if (passwordVisible) R.drawable.visibility_off_24px else R.drawable.visibility_24px,
+                                    ),
+                                contentDescription =
+                                    stringResource(
+                                        if (passwordVisible) R.string.hide_password else R.string.show_password,
+                                    ),
                             )
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(passwordFocusRequester)
-                        .semantics { contentType = ContentType.Password },
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .focusRequester(passwordFocusRequester)
+                            .semantics { contentType = ContentType.Password },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done,
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            if (isLoginEnabled) {
-                                onLoginClick()
-                            }
-                        },
-                    ),
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                    keyboardActions =
+                        KeyboardActions(
+                            onDone = {
+                                if (isLoginEnabled) {
+                                    onLoginClick()
+                                }
+                            },
+                        ),
                     singleLine = true,
                     shape = MaterialTheme.shapes.small,
                 )
@@ -508,9 +526,10 @@ fun LoggedOutContent(
 
                 Button(
                     onClick = onLoginClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(loginButtonHeight),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(loginButtonHeight),
                     shapes = ButtonDefaults.shapesFor(loginButtonHeight),
                     contentPadding = ButtonDefaults.contentPaddingFor(loginButtonHeight),
                     enabled = isLoginEnabled,
@@ -528,11 +547,12 @@ fun LoggedOutContent(
                             modifier = Modifier.size(ButtonDefaults.iconSizeFor(loginButtonHeight)),
                         )
                         Spacer(
-                            modifier = Modifier.width(
-                                ButtonDefaults.iconSpacingFor(
-                                    loginButtonHeight
-                                )
-                            )
+                            modifier =
+                                Modifier.width(
+                                    ButtonDefaults.iconSpacingFor(
+                                        loginButtonHeight,
+                                    ),
+                                ),
                         )
                         Text(
                             stringResource(R.string.log_in),
@@ -545,9 +565,10 @@ fun LoggedOutContent(
 
                 FilledTonalButton(
                     onClick = onResetPasswordClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(resetPasswordButtonHeight),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(resetPasswordButtonHeight),
                     shapes = ButtonDefaults.shapesFor(resetPasswordButtonHeight),
                     contentPadding = ButtonDefaults.contentPaddingFor(resetPasswordButtonHeight),
                 ) {
@@ -564,7 +585,7 @@ fun LoggedOutContent(
 
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     if (showNoAccountText) {
                         Text(
@@ -619,14 +640,16 @@ private fun AccountLinkItem(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraExtraLarge,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 2.dp,
-        ),
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        elevation =
+            CardDefaults.elevatedCardElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 2.dp,
+            ),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -634,12 +657,13 @@ private fun AccountLinkItem(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        shape = SoftBurstShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                            shape = SoftBurstShape,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -680,16 +704,18 @@ fun LoggedInContent(
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(9000, easing = LinearEasing),
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(9000, easing = LinearEasing),
+            ),
         label = "AccountIconRotationAngle",
     )
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
@@ -697,21 +723,22 @@ fun LoggedInContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
-                modifier = Modifier
-                    .padding(top = 64.dp, bottom = 64.dp)
-                    .size(124.dp),
+                modifier =
+                    Modifier
+                        .padding(top = 64.dp, bottom = 64.dp)
+                        .size(124.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            rotationZ = rotation
-                        }
-                        .background(
-                            MaterialTheme.colorScheme.tertiaryContainer,
-                            shape = SoftBurstShape,
-                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                rotationZ = rotation
+                            }.background(
+                                MaterialTheme.colorScheme.tertiaryContainer,
+                                shape = SoftBurstShape,
+                            ),
                 )
                 Image(
                     modifier = Modifier.size(60.dp),
@@ -728,7 +755,6 @@ fun LoggedInContent(
                     .padding(horizontal = 32.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-
                 Text(
                     text = stringResource(R.string.logged_as),
                     style = MaterialTheme.typography.titleMedium,
