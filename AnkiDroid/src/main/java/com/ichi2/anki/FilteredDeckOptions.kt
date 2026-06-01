@@ -101,6 +101,19 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
 
         inner class Editor :
             AppCompatPreferenceActivity<DeckPreferenceHack>.AbstractPreferenceHack.Editor() {
+            private fun Any?.toBoundedIntOrCurrent(
+                current: Int,
+                min: Int,
+                max: Int = 99999,
+            ): Int {
+                val parsed = when (this) {
+                    is Int -> this
+                    is String -> this.toIntOrNull()
+                    else -> this?.toString()?.toIntOrNull()
+                } ?: return current
+                return parsed.coerceIn(min, max)
+            }
+
             override fun commit(): Boolean {
                 Timber.d("commit() changes back to database")
                 for ((key, value) in update.valueSet()) {
@@ -113,7 +126,11 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                             }
 
                             "limit_2" -> {
-                                ar.getJSONArray(1).put(1, (value as String).toInt())
+                                val secondFilter = ar.getJSONArray(1)
+                                secondFilter.put(
+                                    1,
+                                    value.toBoundedIntOrCurrent(secondFilter.optInt(1, 20), min = 1)
+                                )
                             }
 
                             "order_2" -> {
@@ -127,7 +144,11 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                         }
 
                         "limit" -> {
-                            ar.getJSONArray(0).put(1, (value as String).toInt())
+                            val firstFilter = ar.getJSONArray(0)
+                            firstFilter.put(
+                                1,
+                                value.toBoundedIntOrCurrent(firstFilter.optInt(1, 20), min = 1)
+                            )
                         }
 
                         "order" -> {
@@ -139,15 +160,33 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                         }
 
                         "previewAgainSecs" -> {
-                            deck.put("previewAgainSecs", (value as String).toInt())
+                            deck.put(
+                                "previewAgainSecs",
+                                value.toBoundedIntOrCurrent(
+                                    deck.optInt("previewAgainSecs", 1),
+                                    min = 1
+                                ),
+                            )
                         }
 
                         "previewHardSecs" -> {
-                            deck.put("previewHardSecs", (value as String).toInt())
+                            deck.put(
+                                "previewHardSecs",
+                                value.toBoundedIntOrCurrent(
+                                    deck.optInt("previewHardSecs", 0),
+                                    min = 0
+                                ),
+                            )
                         }
 
                         "previewGoodSecs" -> {
-                            deck.put("previewGoodSecs", (value as String).toInt())
+                            deck.put(
+                                "previewGoodSecs",
+                                value.toBoundedIntOrCurrent(
+                                    deck.optInt("previewGoodSecs", 0),
+                                    min = 0
+                                ),
+                            )
                         }
 
                         "stepsOn" -> {
