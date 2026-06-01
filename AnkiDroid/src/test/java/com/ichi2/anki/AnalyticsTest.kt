@@ -16,6 +16,7 @@
 package com.ichi2.anki
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.Resources
 import androidx.core.content.edit
 import com.github.ivanshafran.sharedpreferencesmock.SPMockBuilder
@@ -24,14 +25,13 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.validateMockitoUsage
-import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AnalyticsTest {
     @Mock
@@ -40,14 +40,15 @@ class AnalyticsTest {
     @Mock
     private lateinit var mockResources: Resources
 
-    private val sharedPreferences = SPMockBuilder().createSharedPreferences().apply {
-        edit {
-            putBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, true)
-        }
-    }
+    private lateinit var sharedPreferences: SharedPreferences
 
     @Before
     fun setUp() {
+        sharedPreferences = SPMockBuilder().createSharedPreferences().apply {
+            edit {
+                putBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, true)
+            }
+        }
         UsageAnalytics.resetForTests()
         AnkiDroidApp.sharedPreferencesTestingOverride = sharedPreferences
         MockitoAnnotations.openMocks(this)
@@ -60,8 +61,7 @@ class AnalyticsTest {
         whenever(mockContext.packageName).thenReturn("mock_context")
         whenever(
             mockContext.getSharedPreferences(
-                "mock_context_preferences",
-                Context.MODE_PRIVATE
+                "mock_context_preferences", Context.MODE_PRIVATE
             )
         ).thenReturn(sharedPreferences)
     }
@@ -75,8 +75,26 @@ class AnalyticsTest {
     @Test
     fun initializeDoesNotBuildAnalyticsForFork() {
         assertFalse(UsageAnalytics.isAvailable)
+
+        // Persisted flag should start as true (consent given pre-fork / pre-disablement)
+        assertTrue(sharedPreferences.getBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, false))
+
         assertNull(mockContext.let { UsageAnalytics.initialize(it) })
+
+        // Assert that initialization cleared the opt-in flag in SharedPreferences since it's disabled
+        assertFalse(sharedPreferences.getBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, false))
         assertFalse(UsageAnalytics.isEnabled)
+
+        // Reset to true to test reInitialize clearing behavior
+        sharedPreferences.edit {
+            putBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, true)
+        }
+        assertTrue(sharedPreferences.getBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, false))
+
+        UsageAnalytics.reInitialize()
+
+        // Assert that re-initialization cleared the opt-in flag in SharedPreferences
+        assertFalse(sharedPreferences.getBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, false))
 
         UsageAnalytics.isEnabled = true
 
@@ -85,12 +103,12 @@ class AnalyticsTest {
 
     @Test
     fun getCauseReturnsRootCauseWhenAnalyticsDisabled() {
-        val exception = mock(Exception::class.java)
-        whenever(exception.cause).thenReturn(null)
+        val rootCause = Exception("root cause")
+        val parent = Exception("parent exception", rootCause)
+        val grandparent = Exception("grandparent exception", parent)
 
-        val cause = UsageAnalytics.getCause(exception)
+        val cause = UsageAnalytics.getCause(grandparent)
 
-        verify(exception).cause
-        assertEquals(exception, cause)
+        assertEquals(rootCause, cause)
     }
 }

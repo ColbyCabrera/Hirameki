@@ -40,7 +40,7 @@ import timber.log.Timber
 @KotlinCleanup("see if we can make variables lazy, or properties without the `s` prefix")
 object UsageAnalytics {
     const val ANALYTICS_OPTIN_KEY = "analytics_opt_in"
-    val isAvailable: Boolean = false
+    const val isAvailable = false
 
     @KotlinCleanup("lateinit")
     private var sAnalytics: GoogleAnalytics? = null
@@ -74,6 +74,11 @@ object UsageAnalytics {
         if (!isAvailable) {
             Timber.i("Analytics disabled for this fork; skipping initialization")
             sOptIn = false
+            runCatching {
+                context.sharedPrefs().edit {
+                    putBoolean(ANALYTICS_OPTIN_KEY, false)
+                }
+            }
             return null
         }
         Timber.i("initialize()")
@@ -198,6 +203,11 @@ object UsageAnalytics {
             Timber.i("Analytics disabled for this fork; skipping re-initialization")
             sAnalytics = null
             sOptIn = false
+            runCatching {
+                AnkiDroidApp.sharedPrefs().edit {
+                    putBoolean(ANALYTICS_OPTIN_KEY, false)
+                }
+            }
             return
         }
         // send any pending async hits, re-chain default exception handlers and re-init
@@ -226,10 +236,11 @@ object UsageAnalytics {
      */
     fun sendAnalyticsScreenView(screenName: String) {
         Timber.d("sendAnalyticsScreenView(): %s", screenName)
-        if (!isAvailable || !optIn || sAnalytics == null) {
+        val analytics = sAnalytics
+        if (!isAvailable || !optIn || analytics == null) {
             return
         }
-        sAnalytics!!.screenView().screenName(screenName).sendAsync()
+        analytics.screenView().screenName(screenName).sendAsync()
     }
 
     /**
@@ -247,10 +258,11 @@ object UsageAnalytics {
         label: String? = null,
     ) {
         Timber.d("sendAnalyticsEvent() category/action/value/label: %s/%s/%s/%s", category, action, value, label)
-        if (!isAvailable || !optIn || sAnalytics == null) {
+        val analytics = sAnalytics
+        if (!isAvailable || !optIn || analytics == null) {
             return
         }
-        val event = sAnalytics!!.event().eventCategory(category).eventAction(action)
+        val event = analytics.event().eventCategory(category).eventAction(action)
         if (label != null) {
             event.eventLabel(label)
         }
@@ -294,10 +306,11 @@ object UsageAnalytics {
         fatal: Boolean,
     ) {
         Timber.d("sendAnalyticsException() description/fatal: %s/%s", description, fatal)
-        if (!isAvailable || !sOptIn || sAnalytics == null) {
+        val analytics = sAnalytics
+        if (!isAvailable || !sOptIn || analytics == null) {
             return
         }
-        sAnalytics!!
+        analytics
             .exception()
             .exceptionDescription(description)
             .exceptionFatal(fatal)
