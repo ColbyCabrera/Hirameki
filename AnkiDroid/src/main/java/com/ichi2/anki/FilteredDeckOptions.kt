@@ -112,7 +112,7 @@ class FilteredDeckOptions :
                                 ar.getJSONArray(1).put(0, value)
                             }
                             "limit_2" -> {
-                                ar.getJSONArray(1).put(1, value)
+                                ar.getJSONArray(1).put(1, (value as String).toInt())
                             }
                             "order_2" -> {
                                 ar.getJSONArray(1).put(2, (value as String).toInt())
@@ -125,7 +125,7 @@ class FilteredDeckOptions :
                         }
 
                         "limit" -> {
-                            ar.getJSONArray(0).put(1, value)
+                            ar.getJSONArray(0).put(1, (value as String).toInt())
                         }
                         "order" -> {
                             ar.getJSONArray(0).put(2, (value as String).toInt())
@@ -134,13 +134,13 @@ class FilteredDeckOptions :
                             deck.put("resched", value)
                         }
                         "previewAgainSecs" -> {
-                            deck.put("previewAgainSecs", value)
+                            deck.put("previewAgainSecs", (value as String).toInt())
                         }
                         "previewHardSecs" -> {
-                            deck.put("previewHardSecs", value)
+                            deck.put("previewHardSecs", (value as String).toInt())
                         }
                         "previewGoodSecs" -> {
-                            deck.put("previewGoodSecs", value)
+                            deck.put("previewGoodSecs", (value as String).toInt())
                         }
                         "stepsOn" -> {
                             val on = value as Boolean
