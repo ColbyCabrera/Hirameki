@@ -415,15 +415,21 @@ fun LoggedOutContent(
                     .padding(horizontal = 32.dp, vertical = 32.dp)
 
             ) {
+                var lastError by remember { mutableStateOf(loginError) }
+                if (loginError != null) {
+                    lastError = loginError
+                }
+
                 AnimatedVisibility(
                     visible = loginError != null,
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically(),
                 ) {
                     Column {
-                        if (loginError != null) {
+                        val currentError = lastError
+                        if (currentError != null) {
                             LoginErrorCard(
-                                error = loginError,
+                                error = currentError,
                                 onResetPasswordClick = onResetPasswordClick,
                             )
                         }
