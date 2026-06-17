@@ -166,7 +166,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
 
     private var sourceText: Array<String?>? = null
 
-    var clipboard: ClipboardManager? = null
+    private var clipboard: ClipboardManager? = null
 
     val arguments: Bundle
         get() {
@@ -311,10 +311,13 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
 
     @VisibleForTesting
     val snackbarErrorText: String
-        get() = when {
-            addNoteErrorMessage != null -> addNoteErrorMessage!!
-            allFieldsHaveContent() -> resources.getString(R.string.note_editor_no_cards_created_all_fields)
-            else -> resources.getString(R.string.note_editor_no_cards_created)
+        get() {
+            val error = addNoteErrorMessage
+            return when {
+                error != null -> error
+                allFieldsHaveContent() -> resources.getString(R.string.note_editor_no_cards_created_all_fields)
+                else -> resources.getString(R.string.note_editor_no_cards_created)
+            }
         }
 
     private fun allFieldsHaveContent() = currentFieldStrings.none { it.isEmpty() }
@@ -445,8 +448,9 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     "EXTRA_CARD_ID is required for $caller"
                 }
                 val cardId = arguments.getLong(EXTRA_CARD_ID)
-                currentEditedCard = col.getCard(cardId)
-                editorNote = currentEditedCard!!.note(col)
+                val card = col.getCard(cardId)
+                currentEditedCard = card
+                editorNote = card.note(col)
                 addNote = false
             }
 
@@ -454,11 +458,12 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             NoteEditorCaller.INSTANT_NOTE_EDITOR,
                 -> {
                 fetchIntentInformation(intent)
-                if (sourceText == null) {
+                val text = sourceText
+                if (text == null) {
                     finish()
                     return false
                 }
-                if ("Aedict Notepad" == sourceText!![0] && addFromAedict(sourceText!![1])) {
+                if ("Aedict Notepad" == text[0] && addFromAedict(text[1])) {
                     finish()
                     return false
                 }
@@ -470,10 +475,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             }
         }
 
-        val initialFieldText: String? = when {
-            sourceText != null && sourceText!![0] != null -> sourceText!![0]
-            else -> null
-        }
+        val initialFieldText: String? = sourceText?.getOrNull(0)
 
         noteEditorViewModel.initializeEditor(
             col = col,
@@ -1047,14 +1049,17 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     }
 
     private fun addFromAedict(extraText: String?): Boolean {
+        if (extraText == null) {
+            return false
+        }
         var category: String
-        val notepadLines = extraText!!.split("\n".toRegex()).toTypedArray()
+        val notepadLines = extraText.split("\n")
         for (i in notepadLines.indices) {
             if (notepadLines[i].startsWith("[") && notepadLines[i].endsWith("]")) {
                 category = notepadLines[i].substring(1, notepadLines[i].length - 1)
                 if ("default" == category) {
                     if (notepadLines.size > i + 1) {
-                        val entryLines = notepadLines[i + 1].split(":".toRegex()).toTypedArray()
+                        val entryLines = notepadLines[i + 1].split(":")
                         if (entryLines.size > 1) {
                             sourceText!![0] = entryLines[1]
                             sourceText!![1] = entryLines[0]
@@ -1177,11 +1182,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
 
         val tags = noteEditorViewModel.noteEditorState.value.tags.toMutableList()
 
-        val notetype = if (editorNote != null) {
-            editorNote!!.notetype
-        } else {
-            withCol { notetypes.current() }
-        }
+        val notetype = editorNote?.notetype ?: withCol { notetypes.current() }
 
         val noteId = editorNote?.id ?: 0L
 
@@ -1320,11 +1321,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     }
 
     private suspend fun getCurrentMultimediaEditableNote(): MultimediaEditableNote {
-        val notetype = if (editorNote != null) {
-            editorNote!!.notetype
-        } else {
-            withCol { notetypes.current() }
-        }
+        val notetype = editorNote?.notetype ?: withCol { notetypes.current() }
 
         val note = NoteService.createEmptyNote(notetype)
 
@@ -1631,9 +1628,11 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         Timber.d("updateCards()")
         val tmpls = noteType.templates
         var cardsList = StringBuilder()
+        val note = editorNote
+        val card = currentEditedCard
         for ((i, tmpl) in tmpls.withIndex()) {
             var name = tmpl.jsonObject.optString("name")
-            if (!addNote && tmpls.length() > 1 && noteType.jsonObject === editorNote!!.notetype.jsonObject && currentEditedCard != null && currentEditedCard!!.template(
+            if (!addNote && tmpls.length() > 1 && note != null && noteType.jsonObject === note.notetype.jsonObject && card != null && card.template(
                     getColUnsafe,
                 ).jsonObject.optString("name") == name
             ) {
@@ -1644,7 +1643,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                 cardsList.append(", ")
             }
         }
-        if (!addNote && tmpls.length() < editorNote!!.notetype.templates.length()) {
+        if (!addNote && note != null && tmpls.length() < note.notetype.templates.length()) {
             cardsList = StringBuilder("<font color='red'>$cardsList</font>")
         }
 
