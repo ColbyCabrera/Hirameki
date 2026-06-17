@@ -39,7 +39,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -104,7 +103,6 @@ import com.ichi2.anki.noteeditor.compose.NoteEditorScreen
 import com.ichi2.anki.noteeditor.compose.NoteEditorSimpleOverflowItem
 import com.ichi2.anki.noteeditor.compose.NoteEditorToggleOverflowItem
 import com.ichi2.anki.noteeditor.compose.NoteEditorTopAppBar
-import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.ImageOcclusion
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.TemplatePreviewerArguments
@@ -118,8 +116,6 @@ import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import com.ichi2.utils.ClipboardUtil
 import com.ichi2.utils.HashUtil
 import com.ichi2.utils.ImportUtils
-import com.ichi2.utils.negativeButton
-import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.title
 import com.ichi2.widget.WidgetStatus
@@ -1078,24 +1074,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     @VisibleForTesting
     fun hasUnsavedChanges(): Boolean = noteEditorViewModel.hasUnsavedChanges()
 
-    private suspend fun saveNoteWithProgress() {
-        val note = editorNote
-        if (note == null) {
-            Timber.w("saveNoteWithProgress() called without an editor note")
-            noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
-            return
-        }
-        withProgress(resources.getString(R.string.saving_facts)) {
-            undoableOp {
-                notetypes.save(note.notetype)
-                addNote(note, deckId)
-            }
-        }
-        changed = true
-        sourceText = null
-        noteEditorViewModel.showSnackbar(TR.addingAdded())
-    }
-
     @VisibleForTesting
     @NeedsTest("14664: 'first field must not be empty' no longer applies after saving the note")
     suspend fun saveNote() {
@@ -1208,7 +1186,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         val noteId = editorNote?.id ?: 0L
 
         val ord = if (notetype.isCloze) {
-            val tempNote = withCol { Note.fromNotetypeId(this@withCol, notetype.id) }
+            val tempNote = withCol { Note.fromNotetypeId(this, notetype.id) }
             tempNote.fields = fields
             val clozeNumbers = withCol { clozeNumbersInNote(tempNote) }
             if (clozeNumbers.isNotEmpty()) {
@@ -1349,13 +1327,12 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
 
         val note = NoteService.createEmptyNote(notetype)
-        val fields = currentFieldStrings
 
         val noteTypeId = editorNote?.noteTypeId ?: notetype.id
         withCol {
             NoteService.updateMultimediaNoteFromFields(
-                this@withCol,
-                fields,
+                this,
+                currentFieldStrings,
                 noteTypeId,
                 note,
             )
@@ -1618,27 +1595,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         updateToolbar()
     }
 
-    private fun suggestRemoveButton(
-        button: CustomToolbarButton,
-        editToolbarItemDialog: AlertDialog,
-    ) {
-        MaterialAlertDialogBuilder(this).show {
-            title(R.string.remove_toolbar_item)
-            positiveButton(R.string.dialog_positive_delete) {
-                editToolbarItemDialog.dismiss()
-                removeButton(button)
-            }
-            negativeButton(R.string.dialog_cancel)
-        }
-    }
-
-    private fun removeButton(button: CustomToolbarButton) {
-        val toolbarButtons = toolbarButtons
-        toolbarButtons.removeAt(button.index)
-        saveToolbarButtons(toolbarButtons)
-        updateToolbar()
-    }
-
     private fun displayAddToolbarDialog() {
         noteEditorViewModel.showAddToolbarDialog()
     }
@@ -1723,8 +1679,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     companion object {
         const val FRAGMENT_ARGS_EXTRA = "fragmentArgs"
         const val FRAGMENT_NAME_EXTRA = "fragmentName"
-        const val FRAGMENT_TAG = "NoteEditorFragmentTag"
-
         const val SOURCE_TEXT = "SOURCE_TEXT"
         const val TARGET_TEXT = "TARGET_TEXT"
         const val EXTRA_CALLER = "CALLER"
@@ -1741,16 +1695,13 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         const val RELOAD_REQUIRED_EXTRA_KEY = "reloadRequired"
         const val EXTRA_IMG_OCCLUSION = "image_uri"
         const val IN_CARD_BROWSER_ACTIVITY = "inCardBrowserActivity"
-
         const val RESULT_UPDATED_IO_NOTE = 11
-
         const val PREF_NOTE_EDITOR_SCROLL_TOOLBAR = "noteEditorScrollToolbar"
         const val PREF_NOTE_EDITOR_SHOW_TOOLBAR = "noteEditorShowToolbar"
         const val PREF_NOTE_EDITOR_NEWLINE_REPLACE = "noteEditorNewlineReplace"
 
         @VisibleForTesting
         internal const val PREF_NOTE_EDITOR_CAPITALIZE = "note_editor_capitalize"
-        private const val PREF_NOTE_EDITOR_FONT_SIZE = "note_editor_font_size"
         private const val PREF_NOTE_EDITOR_CUSTOM_BUTTONS = "note_editor_custom_buttons"
 
         fun getIntent(
