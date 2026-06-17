@@ -116,8 +116,7 @@ class NoteEditorTest : RobolectricTest() {
             scenario.onNoteEditor { noteEditor ->
                 noteEditor.onBackPressedDispatcher.onBackPressed()
                 assertThat(
-                    "Pressing back should finish the activity",
-                    noteEditor.isFinishing
+                    "Pressing back should finish the activity", noteEditor.isFinishing
                 )
             }
             val result = scenario.result
@@ -459,8 +458,7 @@ class NoteEditorTest : RobolectricTest() {
         val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
-        val prefs =
-            androidx.preference.PreferenceManager.getDefaultSharedPreferences(editor)
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(editor)
 
         // Verify the default is true when the preference is not set
         prefs.edit { remove(NoteEditorActivity.PREF_NOTE_EDITOR_CAPITALIZE) }
@@ -555,16 +553,14 @@ class NoteEditorTest : RobolectricTest() {
                     isFinished = true
                     break
                 }
-            } catch (e: Exception) {
+            } catch (_: IllegalStateException) {
                 isFinished = true
                 break
             }
             Thread.sleep(50)
         }
         assertThat(
-            "Activity should be finishing or destroyed",
-            isFinished,
-            equalTo(true)
+            "Activity should be finishing or destroyed", isFinished, equalTo(true)
         )
     }
 
