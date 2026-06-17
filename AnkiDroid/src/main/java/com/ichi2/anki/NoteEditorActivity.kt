@@ -552,7 +552,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     }
                 }
             } else {
-                Timber.e(error, "NoteEditorActivity init failed: %s")
+                Timber.e(error, "NoteEditorActivity init failed")
                 val message = when (error) {
                     is ImageOcclusionNotetypeMissingException -> getString(R.string.image_occlusion_notetype_missing)
                     else -> getString(R.string.something_wrong)
