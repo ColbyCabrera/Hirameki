@@ -321,7 +321,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             else -> resources.getString(R.string.note_editor_no_cards_created)
         }
 
-    private fun allFieldsHaveContent() = currentFieldStrings.none { it.isNullOrEmpty() }
+    private fun allFieldsHaveContent() = currentFieldStrings.none { it.isEmpty() }
 
     @VisibleForTesting
     val noteEditorViewModel: NoteEditorViewModel by viewModels()
@@ -1349,7 +1349,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
 
         val note = NoteService.createEmptyNote(notetype)
-        val fields = currentFieldStrings.requireNoNulls()
+        val fields = currentFieldStrings
 
         val noteTypeId = editorNote?.noteTypeId ?: notetype.id
         withCol {
@@ -1365,7 +1365,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     }
 
     @get:CheckResult
-    val currentFieldStrings: Array<String?>
+    val currentFieldStrings: Array<String>
         get() {
             val fields = noteEditorViewModel.noteEditorState.value.fields
             return Array(fields.size) { i -> fields[i].value.text }
