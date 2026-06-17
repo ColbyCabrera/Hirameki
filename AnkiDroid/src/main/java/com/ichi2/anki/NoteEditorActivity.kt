@@ -445,7 +445,10 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             }
 
             NoteEditorCaller.EDIT, NoteEditorCaller.PREVIEWER_EDIT -> {
-                val cardId = requireNotNull(arguments.getLong(EXTRA_CARD_ID)) { "EXTRA_CARD_ID" }
+                require(arguments.containsKey(EXTRA_CARD_ID)) {
+                    "EXTRA_CARD_ID is required for $caller"
+                }
+                val cardId = arguments.getLong(EXTRA_CARD_ID)
                 currentEditedCard = col.getCard(cardId)
                 editorNote = currentEditedCard!!.note(col)
                 addNote = false
@@ -1076,10 +1079,16 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     fun hasUnsavedChanges(): Boolean = noteEditorViewModel.hasUnsavedChanges()
 
     private suspend fun saveNoteWithProgress() {
+        val note = editorNote
+        if (note == null) {
+            Timber.w("saveNoteWithProgress() called without an editor note")
+            noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
+            return
+        }
         withProgress(resources.getString(R.string.saving_facts)) {
             undoableOp {
-                notetypes.save(editorNote!!.notetype)
-                addNote(editorNote!!, deckId)
+                notetypes.save(note.notetype)
+                addNote(note, deckId)
             }
         }
         changed = true
@@ -1128,7 +1137,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                         }
                         closeNoteEditor(closeIntent ?: Intent())
                     } else {
-                        updateCards(noteEditorViewModel.currentNote.value?.notetype)
+                        noteEditorViewModel.currentNote.value?.notetype?.let(::updateCards)
                     }
                 } else {
                     closeNoteEditor()
@@ -1662,15 +1671,15 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         updateToolbar()
     }
 
-    private fun updateCards(noteType: NotetypeJson?) {
+    private fun updateCards(noteType: NotetypeJson) {
         Timber.d("updateCards()")
-        val tmpls = noteType!!.templates
+        val tmpls = noteType.templates
         var cardsList = StringBuilder()
         for ((i, tmpl) in tmpls.withIndex()) {
             var name = tmpl.jsonObject.optString("name")
             if (!addNote && tmpls.length() > 1 && noteType.jsonObject === editorNote!!.notetype.jsonObject && currentEditedCard != null && currentEditedCard!!.template(
-                        getColUnsafe,
-                    ).jsonObject.optString("name") == name
+                    getColUnsafe,
+                ).jsonObject.optString("name") == name
             ) {
                 name = "<u>$name</u>"
             }
@@ -1696,7 +1705,8 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             id = noteEditorViewModel.currentNote.value?.noteTypeId ?: 0L
         } else {
             kind = "edit"
-            id = editorNote?.id!!
+            id =
+                requireNotNull(editorNote) { "editorNote is required when editing image occlusion" }.id
         }
         val intent = ImageOcclusion.getIntent(this, kind, id, imagePath, deckId)
         requestIOEditorCloser.launch(intent)
