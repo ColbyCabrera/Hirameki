@@ -30,13 +30,7 @@ fun ActivityScenario<NoteEditorActivity>.onNoteEditor(block: (NoteEditorActivity
     val wrapped = AtomicReference<Throwable?>(null)
     this.onActivity { activity: NoteEditorActivity ->
         try {
-            activity.runOnUiThread {
-                try {
-                    block(activity)
-                } catch (t: Throwable) {
-                    wrapped.set(t)
-                }
-            }
+            block(activity)
         } catch (t: Throwable) {
             wrapped.set(t)
         }
