@@ -62,7 +62,6 @@ import androidx.glance.unit.ColorProvider
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.IntentHandler
 import com.ichi2.anki.NoteEditorActivity
-import com.ichi2.anki.NoteEditorFragment
 import com.ichi2.anki.R
 import com.ichi2.anki.noteeditor.NoteEditorCaller
 import timber.log.Timber
@@ -264,7 +263,7 @@ class HeatmapWidget : GlanceAppWidget() {
                             actionStartActivity(
                                 NoteEditorActivity::class.java,
                                 actionParametersOf(
-                                    ActionParameters.Key<Int>(NoteEditorFragment.EXTRA_CALLER) to NoteEditorCaller.DECKPICKER.value,
+                                    ActionParameters.Key<Int>(NoteEditorActivity.EXTRA_CALLER) to NoteEditorCaller.DECKPICKER.value,
                                 ),
                             ),
                         ),

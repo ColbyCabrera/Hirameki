@@ -64,10 +64,10 @@ class NoteEditorTabOrderTest : NoteEditorTest() {
     }
 
     private fun sendKeyDownUp(
-        editor: NoteEditorFragment,
+        editor: NoteEditorActivity,
         keyCode: Int,
     ) {
-        val focusedView = editor.requireActivity().currentFocus ?: return
+        val focusedView = editor.currentFocus ?: return
         val inputConnection = BaseInputConnection(focusedView, true)
         inputConnection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         inputConnection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))

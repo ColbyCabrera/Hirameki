@@ -215,14 +215,14 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
             val animation = gesture.toAnimationTransition().invert()
             val bundle =
                 Bundle().apply {
-                    putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.EDIT.value)
-                    putLong(NoteEditorFragment.EXTRA_CARD_ID, viewer.currentCard!!.id)
+                    putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.EDIT.value)
+                    putLong(NoteEditorActivity.EXTRA_CARD_ID, viewer.currentCard!!.id)
                     putParcelable(FINISH_ANIMATION_EXTRA, animation as Parcelable)
                 }
             val noteEditor = NoteEditorTest().openNoteEditorWithArgs(bundle)
             val actualInverseAnimation =
                 BundleCompat.getParcelable(
-                    noteEditor.requireArguments(),
+                    noteEditor.arguments,
                     FINISH_ANIMATION_EXTRA,
                     Direction::class.java,
                 )

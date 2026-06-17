@@ -465,7 +465,7 @@ abstract class NavigationDrawerActivity :
             val intentAddNote = Intent(context, IntentHandler2::class.java)
             intentAddNote.action = Intent.ACTION_VIEW
             intentAddNote.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
-            intentAddNote.putExtra(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.DECKPICKER.value)
+            intentAddNote.putExtra(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.DECKPICKER.value)
             val noteEditorShortcut =
                 ShortcutInfoCompat
                     .Builder(context, "noteEditorShortcutId")

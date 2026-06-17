@@ -121,8 +121,8 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber,
             }
             val data = result.data
             if (data != null && (data.getBooleanExtra(
-                    NoteEditorFragment.RELOAD_REQUIRED_EXTRA_KEY, false
-                ) || data.getBooleanExtra(NoteEditorFragment.NOTE_CHANGED_EXTRA_KEY, false))
+                    NoteEditorActivity.RELOAD_REQUIRED_EXTRA_KEY, false
+                ) || data.getBooleanExtra(NoteEditorActivity.NOTE_CHANGED_EXTRA_KEY, false))
             ) {
                 viewModel.search(viewModel.searchQuery.value)
             }

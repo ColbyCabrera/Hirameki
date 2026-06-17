@@ -8,7 +8,6 @@
  *
  *  This program is distributed in the hope that it will be useful, but WITHOUT ANY
  *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-
  *  PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along with
@@ -25,14 +24,13 @@ import android.os.Parcelable
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.NoteEditorActivity
-import com.ichi2.anki.NoteEditorFragment
 import com.ichi2.anki.browser.CardBrowserViewModel
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.utils.Destination
 
 /**
- * Defines various configurations for opening the NoteEditor fragment with specific data or actions.
+ * Defines various configurations for opening the NoteEditor with specific data or actions.
  */
 sealed interface NoteEditorLauncher : Destination {
     override fun toIntent(context: Context): Intent = toIntent(context, action = null)
@@ -42,7 +40,7 @@ sealed interface NoteEditorLauncher : Destination {
      *
      * @param context The context from which the intent is launched.
      * @param action Optional action string for the intent.
-     * @return Intent configured to launch the NoteEditor  activity.
+     * @return Intent configured to launch the NoteEditor activity.
      */
     fun toIntent(
         context: Context,
@@ -53,7 +51,7 @@ sealed interface NoteEditorLauncher : Destination {
     }
 
     /**
-     * Converts the configuration into a Bundle to pass arguments to the NoteEditor fragment.
+     * Converts the configuration into a Bundle to pass arguments to the NoteEditor.
      *
      * @return Bundle containing arguments specific to this configuration.
      */
@@ -70,28 +68,17 @@ sealed interface NoteEditorLauncher : Destination {
          * [NoteEditorLauncher] to use. It handles various ways the NoteEditor can be launched,
          * including from different parts of the app (like DeckPicker, CardBrowser) and from external
          * intents.
-         *
-         * The logic is as follows:
-         * 1.  If the intent specifies a fragment class name for [NoteEditorFragment], it expects the arguments
-         *     to be in [NoteEditorActivity.FRAGMENT_ARGS_EXTRA].
-         * 2.  If not, it checks for arguments directly in [NoteEditorActivity.FRAGMENT_ARGS_EXTRA].
-         * 3.  It then checks for arguments nested within the main `extras` bundle.
-         * 4.  Finally, it considers the entire `extras` bundle as the arguments.
-         * 5.  If no arguments are found, it defaults to a simple [AddNote] launcher.
-         *
-         * @param intent The intent to parse.
-         * @return The appropriate [NoteEditorLauncher].
          */
         fun fromIntent(intent: Intent): NoteEditorLauncher {
             // Case 1: The intent has FRAGMENT_NAME_EXTRA - handle this as a special case.
             if (intent.hasExtra(NoteEditorActivity.FRAGMENT_NAME_EXTRA)) {
-                if (intent.getStringExtra(NoteEditorActivity.FRAGMENT_NAME_EXTRA) == NoteEditorFragment::class.java.name) {
+                val fragmentName = intent.getStringExtra(NoteEditorActivity.FRAGMENT_NAME_EXTRA)
+                if (fragmentName == "com.ichi2.anki.NoteEditorFragment" || fragmentName == NoteEditorActivity::class.java.name) {
                     val args = intent.getBundleExtra(NoteEditorActivity.FRAGMENT_ARGS_EXTRA)
                     if (args != null) {
                         return PassArguments(args)
                     }
                 }
-                // If FRAGMENT_NAME_EXTRA is present but doesn't match or has no args, default to AddNote
                 return AddNote()
             }
 
@@ -121,8 +108,8 @@ sealed interface NoteEditorLauncher : Destination {
         val imageUri: Uri?,
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle = Bundle().apply {
-            putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.IMG_OCCLUSION.value)
-            putParcelable(NoteEditorFragment.EXTRA_IMG_OCCLUSION, imageUri)
+            putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.IMG_OCCLUSION.value)
+            putParcelable(NoteEditorActivity.EXTRA_IMG_OCCLUSION, imageUri)
         }
     }
 
@@ -144,8 +131,8 @@ sealed interface NoteEditorLauncher : Destination {
         val deckId: DeckId? = null,
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle = Bundle().apply {
-            putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.DECKPICKER.value)
-            deckId?.let { putLong(NoteEditorFragment.EXTRA_DID, it) }
+            putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.DECKPICKER.value)
+            deckId?.let { putLong(NoteEditorActivity.EXTRA_DID, it) }
         }
     }
 
@@ -159,10 +146,10 @@ sealed interface NoteEditorLauncher : Destination {
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle {
             val fragmentArgs = Bundle().apply {
-                putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.CARDBROWSER_ADD.value)
-                putString(NoteEditorFragment.EXTRA_TEXT_FROM_SEARCH_VIEW, viewModel.searchTerms)
-                putBoolean(NoteEditorFragment.IN_CARD_BROWSER_ACTIVITY, inCardBrowserActivity)
-                viewModel.lastDeckId?.let { if (it > 0) putLong(NoteEditorFragment.EXTRA_DID, it) }
+                putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.CARDBROWSER_ADD.value)
+                putString(NoteEditorActivity.EXTRA_TEXT_FROM_SEARCH_VIEW, viewModel.searchTerms)
+                putBoolean(NoteEditorActivity.IN_CARD_BROWSER_ACTIVITY, inCardBrowserActivity)
+                viewModel.lastDeckId?.let { if (it > 0) putLong(NoteEditorActivity.EXTRA_DID, it) }
             }
             return Bundle().apply {
                 putBundle(NoteEditorActivity.FRAGMENT_ARGS_EXTRA, fragmentArgs)
@@ -179,7 +166,7 @@ sealed interface NoteEditorLauncher : Destination {
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle {
             val fragmentArgs = Bundle().apply {
-                putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.REVIEWER_ADD.value)
+                putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.REVIEWER_ADD.value)
                 animation?.let {
                     putParcelable(AnkiActivity.FINISH_ANIMATION_EXTRA, it as Parcelable)
                 }
@@ -200,7 +187,7 @@ sealed interface NoteEditorLauncher : Destination {
         val sharedText: String,
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle = Bundle().apply {
-            putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.INSTANT_NOTE_EDITOR.value)
+            putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.INSTANT_NOTE_EDITOR.value)
             putString(Intent.EXTRA_TEXT, sharedText)
         }
     }
@@ -216,10 +203,10 @@ sealed interface NoteEditorLauncher : Destination {
         val inCardBrowserActivity: Boolean = false,
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle = Bundle().apply {
-            putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.EDIT.value)
-            putLong(NoteEditorFragment.EXTRA_CARD_ID, cardId)
+            putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.EDIT.value)
+            putLong(NoteEditorActivity.EXTRA_CARD_ID, cardId)
             putParcelable(AnkiActivity.FINISH_ANIMATION_EXTRA, animation as Parcelable)
-            putBoolean(NoteEditorFragment.IN_CARD_BROWSER_ACTIVITY, inCardBrowserActivity)
+            putBoolean(NoteEditorActivity.IN_CARD_BROWSER_ACTIVITY, inCardBrowserActivity)
         }
     }
 
@@ -231,8 +218,8 @@ sealed interface NoteEditorLauncher : Destination {
         val cardId: CardId,
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle = Bundle().apply {
-            putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.PREVIEWER_EDIT.value)
-            putLong(NoteEditorFragment.EXTRA_EDIT_FROM_CARD_ID, cardId)
+            putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.PREVIEWER_EDIT.value)
+            putLong(NoteEditorActivity.EXTRA_EDIT_FROM_CARD_ID, cardId)
         }
     }
 
@@ -248,10 +235,10 @@ sealed interface NoteEditorLauncher : Destination {
         val tags: List<String>? = null,
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle = Bundle().apply {
-            putInt(NoteEditorFragment.EXTRA_CALLER, NoteEditorCaller.NOTEEDITOR.value)
-            putLong(NoteEditorFragment.EXTRA_DID, deckId)
-            putString(NoteEditorFragment.EXTRA_CONTENTS, fieldsText)
-            tags?.let { putStringArray(NoteEditorFragment.EXTRA_TAGS, it.toTypedArray()) }
+            putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.NOTEEDITOR.value)
+            putLong(NoteEditorActivity.EXTRA_DID, deckId)
+            putString(NoteEditorActivity.EXTRA_CONTENTS, fieldsText)
+            tags?.let { putStringArray(NoteEditorActivity.EXTRA_TAGS, it.toTypedArray()) }
         }
     }
 }
