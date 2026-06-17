@@ -1687,7 +1687,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         const val EXTRA_ID = "ID"
         const val EXTRA_DID = "DECK_ID"
         const val EXTRA_TEXT_FROM_SEARCH_VIEW = "SEARCH"
-        const val EXTRA_EDIT_FROM_CARD_ID = "editCid"
         const val ACTION_CREATE_FLASHCARD = "org.openintents.action.CREATE_FLASHCARD"
         const val ACTION_CREATE_FLASHCARD_SEND = "android.intent.action.SEND"
         const val NOTE_CHANGED_EXTRA_KEY = "noteChanged"

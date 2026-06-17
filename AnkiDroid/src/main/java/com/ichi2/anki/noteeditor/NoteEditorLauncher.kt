@@ -219,7 +219,7 @@ sealed interface NoteEditorLauncher : Destination {
     ) : NoteEditorLauncher {
         override fun toBundle(): Bundle = Bundle().apply {
             putInt(NoteEditorActivity.EXTRA_CALLER, NoteEditorCaller.PREVIEWER_EDIT.value)
-            putLong(NoteEditorActivity.EXTRA_EDIT_FROM_CARD_ID, cardId)
+            putLong(NoteEditorActivity.EXTRA_CARD_ID, cardId)
         }
     }
 
