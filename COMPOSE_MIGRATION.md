@@ -333,7 +333,7 @@ Examples of the desired direction:
 - loading reviewer state should not depend on activity-owned orchestration
 - browser actions should stop routing through `supportFragmentManager` where a Compose dialog or route can own the interaction
 
-### Phase 4: Replace DialogFragment Dependencies In Compose Flows
+### Phase 4: Replace DialogFragment Dependencies In Compose Flows [PARTIALLY COMPLETED]
 
 This is a major unlock for a real app shell.
 
@@ -343,11 +343,15 @@ Deliverables:
 2. Route composables own dialog visibility state.
 3. `onShowDialogFragment` style callbacks disappear from Nav3 route APIs.
 
-This phase should focus first on the most common dialogs in:
+Status by screen:
 
-- DeckPicker
-- CardBrowser
-- NoteEditor
+- **DeckPicker [COMPLETED]**: Migrated all common `DialogFragment`s to Compose dialogs. Legacy dialog files removed, and state management resides in `DeckPickerNavHost` and `DeckPickerViewModel`:
+  - `DeckPickerNoSpaceLeftDialog` -> `NoSpaceLeftDialog`
+  - `DeckPickerBackupNoSpaceLeftDialog` -> `BackupNoSpaceLeftDialog`
+  - `DeckPickerAnalyticsOptInDialog` -> `AnalyticsOptInDialog`
+  - `DeckPickerConfirmDeleteDeckDialog` -> `ConfirmDeleteDeckDialog`
+- **CardBrowser**: Pending dialog migration.
+- **NoteEditor**: Pending dialog migration.
 
 ### Phase 5: Expand Nav3 From DeckPicker To App-Level Navigation
 
@@ -383,7 +387,7 @@ If we want the migration to move materially toward the target architecture, the 
 
 1. Make NoteEditor direct-Compose and remove its fragment wrapper [COMPLETED].
 2. Standardize DeckPicker and CardBrowser around Route + Screen + ViewModel contracts.
-3. Replace the most common DeckPicker and CardBrowser dialog fragments with Compose dialogs.
+3. Replace the most common DeckPicker and CardBrowser dialog fragments with Compose dialogs [DeckPicker dialogs completed].
 4. Move remaining business operations out of `DeckPicker.kt` and `CardBrowser.kt`.
 5. Start an app-level Compose shell only after those feature seams are in place.
 

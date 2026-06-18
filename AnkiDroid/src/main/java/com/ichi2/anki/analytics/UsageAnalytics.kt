@@ -40,7 +40,7 @@ import timber.log.Timber
 @KotlinCleanup("see if we can make variables lazy, or properties without the `s` prefix")
 object UsageAnalytics {
     const val ANALYTICS_OPTIN_KEY = "analytics_opt_in"
-    const val isAvailable = false
+    val isAvailable = false
 
     @KotlinCleanup("lateinit")
     private var sAnalytics: GoogleAnalytics? = null

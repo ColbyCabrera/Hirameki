@@ -101,10 +101,6 @@ import com.ichi2.anki.dialogs.ConfirmationDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.CustomExceptionData
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.FatalErrorDialog
-import com.ichi2.anki.dialogs.DeckPickerAnalyticsOptInDialog
-import com.ichi2.anki.dialogs.DeckPickerBackupNoSpaceLeftDialog
-import com.ichi2.anki.dialogs.DeckPickerConfirmDeleteDeckDialog
-import com.ichi2.anki.dialogs.DeckPickerNoSpaceLeftDialog
 import com.ichi2.anki.dialogs.DeckSelectionDialog
 import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
 import com.ichi2.anki.dialogs.ImportDialog.ImportDialogListener
@@ -456,7 +452,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     startRoute = DeckPickerScreen, topLevelRoutes = setOf(DeckPickerScreen)
                 )
                 val navigator = remember { Navigator(navigationState) }
-
                 DeckPickerNavHost(
                     navigator = navigator,
                     viewModel = viewModel,
@@ -478,6 +473,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     onLoginToAnkiWeb = { loginToSyncServer() },
                     onImport = { showImportDialog() },
                     onExport = { exportCollection() },
+                    onFinish = { finish() },
                 )
             }
         }
@@ -1244,26 +1240,12 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     /**
      * Displays a confirmation dialog for deleting deck.
      */
-    private fun showDeleteDeckConfirmationDialog() = launchCatchingTask {
+    private fun showDeleteDeckConfirmationDialog() {
         val focusedDeck = viewModel.focusedDeck ?: run {
             Timber.w("no focused deck")
-            return@launchCatchingTask
+            return
         }
-
-        val (deckName, totalCards, isFilteredDeck) = withCol {
-            Triple(
-                decks.name(focusedDeck),
-                decks.cardCount(focusedDeck, includeSubdecks = true),
-                decks.isFiltered(focusedDeck),
-            )
-        }
-        val confirmDeleteDeckDialog = DeckPickerConfirmDeleteDeckDialog.newInstance(
-            deckName = deckName,
-            deckId = focusedDeck,
-            totalCards = totalCards,
-            isFilteredDeck = isFilteredDeck,
-        )
-        showDialogFragment(confirmDeleteDeckDialog)
+        viewModel.showDeleteDeckConfirmation(focusedDeck)
     }
 
     /**
@@ -1318,10 +1300,11 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     ) {
         if (!BackupManager.enoughDiscSpace(CollectionHelper.getCurrentAnkiDroidDirectory(this))) {
             Timber.i("Not enough space to do backup")
-            showDialogFragment(DeckPickerNoSpaceLeftDialog.newInstance())
+            viewModel.setShowNoSpaceLeftDialog(true)
         } else if (preferences.getBoolean("noSpaceLeft", false)) {
             Timber.i("No space left")
-            showDialogFragment(DeckPickerBackupNoSpaceLeftDialog.newInstance())
+            val space = BackupManager.getFreeDiscSpace(CollectionHelper.getCollectionPath(this))
+            viewModel.setShowBackupNoSpaceLeftDialog(space)
             preferences.edit { remove("noSpaceLeft") }
         } else if (InitialActivity.performSetupFromFreshInstallOrClearedPreferences(preferences)) {
             onFinishedStartup()
@@ -1329,7 +1312,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
             Timber.i("AnkiDroid is being updated and a collection already exists.")
             // The user might appreciate us now, see if they will help us get better?
             if (UsageAnalytics.isAvailable && !preferences.contains(UsageAnalytics.ANALYTICS_OPTIN_KEY)) {
-                displayAnalyticsOptInDialog()
+                viewModel.setShowAnalyticsOptInDialog(true)
             }
 
             // For upgrades, we check if we are upgrading
@@ -1436,10 +1419,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         }
     }
 
-    @VisibleForTesting
-    protected open fun displayAnalyticsOptInDialog() {
-        showDialogFragment(DeckPickerAnalyticsOptInDialog.newInstance())
-    }
+
 
     @SuppressLint("UseKtx") // keep SharedPreferences.edit() instead of edit {} fot tests
     fun getPreviousVersion(
