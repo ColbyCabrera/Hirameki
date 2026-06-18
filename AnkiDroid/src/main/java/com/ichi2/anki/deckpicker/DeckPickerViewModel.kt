@@ -165,6 +165,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 totalCards = totalCards,
                 isFiltered = isFilteredDeck
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to load properties for deleting deck %d", deckId)
         }
