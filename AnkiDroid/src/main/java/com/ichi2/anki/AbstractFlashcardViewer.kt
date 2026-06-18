@@ -303,7 +303,7 @@ abstract class AbstractFlashcardViewer : NavigationDrawerActivity(), ViewerComma
                The card could have been rescheduled, the deck could have changed, or a change of
                note type could have lead to the card being deleted */
             val reloadRequired = result.data?.getBooleanExtra(
-                NoteEditorFragment.RELOAD_REQUIRED_EXTRA_KEY,
+                NoteEditorActivity.RELOAD_REQUIRED_EXTRA_KEY,
                 false,
             ) == true
             if (reloadRequired) {

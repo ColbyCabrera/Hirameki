@@ -20,11 +20,10 @@ import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.ichi2.anki.NoteEditorFragment.Companion.intentLaunchedWithImage
+import com.ichi2.anki.NoteEditorActivity.Companion.intentLaunchedWithImage
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission
-import com.ichi2.anki.testutil.getNoteEditorFragment
 import com.ichi2.testutils.common.Flaky
 import com.ichi2.testutils.common.OS
 import com.ichi2.utils.AssetHelper.TEXT_PLAIN
@@ -41,25 +40,21 @@ class NoteEditorIntentTest : InstrumentedTest() {
     @get:Rule
     var runtimePermissionRule: TestRule? = GrantStoragePermission.instance
 
-    @get:Rule
-    var activityRuleIntent: ActivityScenarioRule<NoteEditorActivity>? =
-        ActivityScenarioRule(
-            noteEditorTextIntent,
-        )
+    // No activityRuleIntent rule here to avoid launching the activity before the collection is initialized.
 
     @Test
     @Flaky(OS.ALL, "Issue 15707 - java.lang.ArrayIndexOutOfBoundsException: length=0; index=0")
     fun launchActivityWithIntent() {
         col
-        val scenario = activityRuleIntent!!.scenario
-        scenario.moveToState(Lifecycle.State.RESUMED)
+        androidx.test.core.app.ActivityScenario.launch<NoteEditorActivity>(noteEditorTextIntent).use { scenario ->
+            scenario.moveToState(Lifecycle.State.RESUMED)
 
-        var currentFieldStrings: String? = null
-        scenario.onActivity { activity ->
-            val editor = activity.getNoteEditorFragment()
-            currentFieldStrings = editor.currentFieldStrings[0]
+            var currentFieldStrings: String? = null
+            scenario.onActivity { activity ->
+                currentFieldStrings = activity.currentFieldStrings[0]
+            }
+            MatcherAssert.assertThat(currentFieldStrings!!, Matchers.equalTo("sample text"))
         }
-        MatcherAssert.assertThat(currentFieldStrings!!, Matchers.equalTo("sample text"))
     }
 
     @Test

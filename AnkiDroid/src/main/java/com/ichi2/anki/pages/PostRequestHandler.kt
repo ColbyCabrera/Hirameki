@@ -24,7 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import anki.collection.OpChanges
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.NoteEditorFragment
+import com.ichi2.anki.NoteEditorActivity
 import com.ichi2.anki.importAnkiPackageUndoable
 import com.ichi2.anki.importCsvRaw
 import com.ichi2.anki.launchCatchingTask
@@ -177,7 +177,7 @@ suspend fun FragmentActivity?.handleUiPostRequest(
             launchCatchingTask {
                 // Allow time for toast message to appear before closing editor
                 delay(1000)
-                setResult(NoteEditorFragment.RESULT_UPDATED_IO_NOTE)
+                setResult(NoteEditorActivity.RESULT_UPDATED_IO_NOTE)
                 finish()
             }
         }

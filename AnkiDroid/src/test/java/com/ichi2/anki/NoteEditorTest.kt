@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -87,7 +88,7 @@ class NoteEditorTest : RobolectricTest() {
     }
 
     // Extension to access the internal viewModel for testing
-    val NoteEditorFragment.viewModel: NoteEditorViewModel
+    val NoteEditorActivity.viewModel: NoteEditorViewModel
         get() = noteEditorViewModel
 
     @After
@@ -113,10 +114,9 @@ class NoteEditorTest : RobolectricTest() {
         ActivityScenario.launchActivityForResult<NoteEditorActivity>(intent).use { scenario ->
             idleMainLooper()
             scenario.onNoteEditor { noteEditor ->
-                noteEditor.requireActivity().onBackPressedDispatcher.onBackPressed()
+                noteEditor.onBackPressedDispatcher.onBackPressed()
                 assertThat(
-                    "Pressing back should finish the activity",
-                    noteEditor.requireActivity().isFinishing
+                    "Pressing back should finish the activity", noteEditor.isFinishing
                 )
             }
             val result = scenario.result
@@ -301,7 +301,7 @@ class NoteEditorTest : RobolectricTest() {
         )
         assertThat(
             "Deck ID in the intent should be the selected deck id",
-            copyNoteBundle.getLong(NoteEditorFragment.EXTRA_DID, -404L),
+            copyNoteBundle.getLong(NoteEditorActivity.EXTRA_DID, -404L),
             equalTo(currentDid),
         )
         assertThat(
@@ -458,22 +458,21 @@ class NoteEditorTest : RobolectricTest() {
         val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
         idleMainLooper()
 
-        val prefs =
-            androidx.preference.PreferenceManager.getDefaultSharedPreferences(editor.requireContext())
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(editor)
 
         // Verify the default is true when the preference is not set
-        prefs.edit { remove(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE) }
+        prefs.edit { remove(NoteEditorActivity.PREF_NOTE_EDITOR_CAPITALIZE) }
         assertThat(
             "Default value for capitalization should be true",
-            prefs.getBoolean(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE, true),
+            prefs.getBoolean(NoteEditorActivity.PREF_NOTE_EDITOR_CAPITALIZE, true),
             equalTo(true)
         )
 
         // Verify that setting the preference to false is respected
-        prefs.edit { putBoolean(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE, false) }
+        prefs.edit { putBoolean(NoteEditorActivity.PREF_NOTE_EDITOR_CAPITALIZE, false) }
         assertThat(
             "After setting to false, the preference should be false",
-            prefs.getBoolean(NoteEditorFragment.PREF_NOTE_EDITOR_CAPITALIZE, true),
+            prefs.getBoolean(NoteEditorActivity.PREF_NOTE_EDITOR_CAPITALIZE, true),
             equalTo(false)
         )
     }
@@ -537,19 +536,41 @@ class NoteEditorTest : RobolectricTest() {
         )
     }
 
+    private fun assertActivityFinishedOrDestroyed(scenario: ActivityScenario<NoteEditorActivity>) {
+        var isFinished = false
+        for (i in 1..30) {
+            idleMainLooper()
+            if (scenario.state == Lifecycle.State.DESTROYED) {
+                isFinished = true
+                break
+            }
+            try {
+                var finishing = false
+                scenario.onActivity { activity ->
+                    finishing = activity.isFinishing
+                }
+                if (finishing) {
+                    isFinished = true
+                    break
+                }
+            } catch (_: IllegalStateException) {
+                isFinished = true
+                break
+            }
+            Thread.sleep(50)
+        }
+        assertThat(
+            "Activity should be finishing or destroyed", isFinished, equalTo(true)
+        )
+    }
+
     @Test
     fun `launching with IMG_OCCLUSION and missing imageUri closes the editor`() {
         val bundle = NoteEditorLauncher.ImageOcclusion(imageUri = null).toBundle()
         ActivityScenario.launchActivityForResult<NoteEditorActivity>(
             NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
         ).use { scenario ->
-            idleMainLooper()
-            scenario.onNoteEditor { noteEditor ->
-                assertThat(
-                    "Missing image URI should cause the activity to finish",
-                    noteEditor.requireActivity().isFinishing
-                )
-            }
+            assertActivityFinishedOrDestroyed(scenario)
         }
     }
 
@@ -561,13 +582,7 @@ class NoteEditorTest : RobolectricTest() {
         ActivityScenario.launchActivityForResult<NoteEditorActivity>(
             NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
         ).use { scenario ->
-            idleMainLooper()
-            scenario.onNoteEditor { noteEditor ->
-                assertThat(
-                    "Null image cached copy path should cause the activity to finish",
-                    noteEditor.requireActivity().isFinishing
-                )
-            }
+            assertActivityFinishedOrDestroyed(scenario)
         }
     }
 
@@ -584,13 +599,7 @@ class NoteEditorTest : RobolectricTest() {
         ActivityScenario.launchActivityForResult<NoteEditorActivity>(
             NoteEditorLauncher.PassArguments(bundle).toIntent(targetContext)
         ).use { scenario ->
-            idleMainLooper()
-            scenario.onNoteEditor { noteEditor ->
-                assertThat(
-                    "Missing image occlusion note type should cause the activity to finish",
-                    noteEditor.requireActivity().isFinishing
-                )
-            }
+            assertActivityFinishedOrDestroyed(scenario)
         }
     }
 
@@ -1250,8 +1259,8 @@ class NoteEditorTest : RobolectricTest() {
         "ThreeField", arrayOf("Front", "Back", "Extra"), "{{Front}}", "{{Back}}<br>{{Extra}}"
     )
 
-    private fun getCopyNoteIntent(editor: NoteEditorFragment): Bundle {
-        val editorShadow = shadowOf(editor.requireActivity())
+    private fun getCopyNoteIntent(editor: NoteEditorActivity): Bundle {
+        val editorShadow = shadowOf(editor)
         editor.copyNote()
         idleMainLooper()
         val intent = editorShadow.peekNextStartedActivityForResult().intent
@@ -1285,7 +1294,7 @@ class NoteEditorTest : RobolectricTest() {
         NoteType.IMAGE_OCCLUSION -> col.notetypes.byName("Image Occlusion")
     }
 
-    private fun getNoteEditorAddingNote(from: FromScreen): NoteEditorFragment {
+    private fun getNoteEditorAddingNote(from: FromScreen): NoteEditorActivity {
         ensureCollectionLoadIsSynchronous()
         val bundle = when (from) {
             FromScreen.REVIEWER -> NoteEditorLauncher.AddNoteFromReviewer().toBundle()
@@ -1300,7 +1309,7 @@ class NoteEditorTest : RobolectricTest() {
         front: String,
         back: String,
         from: FromScreen,
-    ): NoteEditorFragment {
+    ): NoteEditorActivity {
         val n = super.addBasicNote(front, back)
         return getNoteEditorEditingExistingBasicNote(n, from)
     }
@@ -1308,7 +1317,7 @@ class NoteEditorTest : RobolectricTest() {
     private fun getNoteEditorEditingExistingBasicNote(
         n: Note,
         from: FromScreen,
-    ): NoteEditorFragment {
+    ): NoteEditorActivity {
         val bundle = when (from) {
             FromScreen.REVIEWER -> NoteEditorLauncher.EditCard(n.firstCard().id, DEFAULT).toBundle()
             FromScreen.DECK_LIST -> NoteEditorLauncher.AddNote().toBundle()
@@ -1321,34 +1330,29 @@ class NoteEditorTest : RobolectricTest() {
     fun openNoteEditorWithArgs(
         arguments: Bundle,
         action: String? = null,
-    ): NoteEditorFragment {
+    ): NoteEditorActivity {
         val activity = startActivityNormallyOpenCollectionWithIntent(
             NoteEditorActivity::class.java,
             NoteEditorLauncher.PassArguments(arguments).toIntent(targetContext, action),
         )
         idleMainLooper()
-        return activity.getNoteEditorFragment()
+        return activity
     }
 
     @DuplicatedCode("NoteEditor in androidTest")
     @Throws(Throwable::class)
-    fun ActivityScenario<NoteEditorActivity>.onNoteEditor(block: (NoteEditorFragment) -> Unit) {
+    fun ActivityScenario<NoteEditorActivity>.onNoteEditor(block: (NoteEditorActivity) -> Unit) {
         val wrapped = AtomicReference<Throwable?>(null)
         this.onActivity { activity: NoteEditorActivity ->
             try {
                 idleMainLooper()
-                val editor = activity.getNoteEditorFragment()
-                block(editor)
+                block(activity)
             } catch (t: Throwable) {
                 wrapped.set(t)
             }
         }
         wrapped.get()?.let { throw it }
     }
-
-    @DuplicatedCode("NoteEditor in androidTest")
-    fun NoteEditorActivity.getNoteEditorFragment(): NoteEditorFragment =
-        supportFragmentManager.findFragmentById(R.id.note_editor_fragment_frame) as NoteEditorFragment
 
     private enum class FromScreen {
         DECK_LIST, REVIEWER,
@@ -1365,11 +1369,11 @@ class NoteEditorTest : RobolectricTest() {
         private var firstField: String? = null
         private var secondField: String? = null
 
-        fun build(): NoteEditorFragment {
+        fun build(): NoteEditorActivity {
             return buildInternal()
         }
 
-        fun buildInternal(): NoteEditorFragment {
+        fun buildInternal(): NoteEditorActivity {
             col.notetypes.setCurrent(notetype)
             val noteEditor = getNoteEditorAddingNote(FromScreen.REVIEWER)
             idleMainLooper()

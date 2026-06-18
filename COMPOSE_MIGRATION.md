@@ -47,14 +47,13 @@ The repository already contains real progress, but the app is still hybrid.
     - DeckPicker
     - CardBrowser
     - Reviewer
-    - NoteEditor
+    - NoteEditor (Now a direct Compose host inside `NoteEditorActivity.kt`, with the fragment wrapper removed)
     - Drawing
     - Page/WebView-backed screens
 
 ### What is still preventing the target architecture
 
 1. Major screens are still hosted by activities or fragments.
-     - `NoteEditorActivity.kt` still hosts `NoteEditorFragment.kt`, which then hosts Compose.
      - `CardBrowser.kt` is still a standalone activity even though tablet mode already embeds browser content.
      - `Reviewer.kt` is Compose-hosted, but the activity still owns significant workflow and framework behavior.
 
@@ -253,21 +252,21 @@ Migration role:
 - likely the hardest high-value migration
 - should move only after DeckPicker/CardBrowser and NoteEditor patterns are proven
 
-### NoteEditor
+### NoteEditor [COMPLETED]
 
 Current strengths:
 
-- Compose UI already exists
-- ViewModel is already substantial
+- `NoteEditorActivity` directly hosts the Compose screen via `setContent`
+- `NoteEditorFragment` wrapper has been completely removed
+- Clear state representation using `NoteEditorScreen`
 
 Current blockers:
 
-- `NoteEditorActivity -> NoteEditorFragment -> ComposeView` layering remains
-- toolbar, launcher, and fragment scoping still complicate the feature
+- None (migration is completed)
 
 Migration role:
 
-- the best immediate win for removing a fragment wrapper without requiring app-wide navigation changes
+- Served as the successful reference implementation for removing fragment wrappers from Compose-first activities
 
 ## Incremental Migration Plan
 
@@ -298,19 +297,19 @@ Why this phase matters:
 - It enables migration without needing the final app shell first.
 - It reduces coupling before we move destinations into a shared Nav3 root.
 
-### Phase 2: Remove Fragment Wrappers From Compose-First Features
+### Phase 2: Remove Fragment Wrappers From Compose-First Features [PARTIALLY COMPLETED]
 
 Priority order:
 
-1. NoteEditor
+1. NoteEditor [COMPLETED]
 2. Remaining Compose-first dialog flows
 3. Any other `Fragment -> ComposeView` containers used only as wrappers
 
 Deliverables:
 
-- `NoteEditorActivity` becomes a direct Compose host
-- `NoteEditorFragment` goes away
-- related XML container layouts become removable
+- `NoteEditorActivity` becomes a direct Compose host [COMPLETED]
+- `NoteEditorFragment` goes away [COMPLETED]
+- related XML container layouts become removable [COMPLETED]
 
 This phase is intentionally local. It improves architecture without depending on a full single-activity rewrite.
 
@@ -382,7 +381,7 @@ This phase may still keep separate activities for isolated platform-heavy flows 
 
 If we want the migration to move materially toward the target architecture, the highest-value sequence is:
 
-1. Make NoteEditor direct-Compose and remove its fragment wrapper.
+1. Make NoteEditor direct-Compose and remove its fragment wrapper [COMPLETED].
 2. Standardize DeckPicker and CardBrowser around Route + Screen + ViewModel contracts.
 3. Replace the most common DeckPicker and CardBrowser dialog fragments with Compose dialogs.
 4. Move remaining business operations out of `DeckPicker.kt` and `CardBrowser.kt`.
