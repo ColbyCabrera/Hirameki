@@ -24,7 +24,6 @@ import com.ichi2.anki.dialogs.SimpleMessageDialog
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.CardId
-import com.ichi2.anki.model.CardStateFilter
 import com.ichi2.anki.model.CardsOrNotes
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.previewer.PreviewerFragment
@@ -41,30 +40,6 @@ class CardBrowserActionHandler(
     private val launchAddNote: (Intent) -> Unit,
     private val launchPreview: (Intent) -> Unit
 ) {
-
-    private suspend fun <T> withProgress(block: suspend () -> T): T {
-        try {
-            activity.showProgressBar()
-            return block()
-        } finally {
-            activity.hideProgressBar()
-        }
-    }
-
-    fun onSelectedTags(
-        selectedTags: List<String>,
-        @Suppress("UNUSED_PARAMETER") indeterminateTags: List<String>,
-        @Suppress("UNUSED_PARAMETER") stateFilter: CardStateFilter
-    ) {
-        // _indeterminateTags and _stateFilter are used in the TagSelectionDialog to update UI state,
-        // but they are not needed here in the action handler because viewModel.updateTags()
-        // only requires the list of selected tags to perform the bulk update on the backend.
-        // We suppress the UNUSED_PARAMETER warning instead of removing them to maintain consistency
-        // with the TagsDialogListener interface, which this method signature mirrors.
-        viewModel.updateTags(selectedTags)
-    }
-
-
     fun openNoteEditorForCard(cardId: CardId) {
         viewModel.currentCardId = cardId
         val launcher = NoteEditorLauncher.EditCard(cardId, Direction.DEFAULT, false)
