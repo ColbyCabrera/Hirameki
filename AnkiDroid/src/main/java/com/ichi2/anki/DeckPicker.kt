@@ -204,8 +204,7 @@ import com.ichi2.utils.dp as viewDp
 open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogListener,
     OnRequestPermissionsResultCallback, ChangeManager.Subscriber, ImportColpkgListener,
     ApkgImportResultLauncherProvider, CsvImportResultLauncherProvider,
-    CollectionPermissionScreenLauncher, DeckSelectionDialog.DeckSelectionListener,
-    TagsDialogListener {
+    CollectionPermissionScreenLauncher {
     val viewModel: DeckPickerViewModel by viewModels()
 
     var fragmented: Boolean
@@ -554,8 +553,12 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 is DeckPickerEffect.CheckDatabase -> {
                     showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK)
                 }
+
                 is DeckPickerEffect.ShowEmptyCardsDialog -> {
-                    EmptyCardsDialogFragment().show(supportFragmentManager, EmptyCardsDialogFragment.TAG)
+                    EmptyCardsDialogFragment().show(
+                        supportFragmentManager,
+                        EmptyCardsDialogFragment.TAG
+                    )
                 }
             }
         }
@@ -1420,7 +1423,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
 
-
     @SuppressLint("UseKtx") // keep SharedPreferences.edit() instead of edit {} fot tests
     fun getPreviousVersion(
         preferences: SharedPreferences,
@@ -1729,18 +1731,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     }
 
     // CardBrowser Helpers
-
-    override fun onSelectedTags(
-        selectedTags: List<String>,
-        indeterminateTags: List<String>,
-        stateFilter: CardStateFilter,
-    ) {
-        actionHandler.onSelectedTags(selectedTags, indeterminateTags, stateFilter)
-    }
-
-    override fun onDeckSelected(deck: SelectableDeck?) {
-        actionHandler.onDeckSelected(deck)
-    }
 
     override val shortcuts
         get() = ShortcutGroup(

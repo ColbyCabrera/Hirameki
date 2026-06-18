@@ -51,7 +51,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.AnkiActivity
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.browser.BrowserRowWithId
 import com.ichi2.anki.browser.CardBrowserViewModel
@@ -60,6 +62,7 @@ import com.ichi2.anki.dialogs.help.HelpDialog
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.pages.Statistics
 import com.ichi2.anki.preferences.PreferencesActivity
+import com.ichi2.anki.scheduling.SetDueDateViewModel
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.DeckSelector
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
@@ -141,6 +144,96 @@ fun CardBrowserLayout(
         }
 
         CardBrowserViewModel.CreateDeckDialogState.Hidden -> {}
+    }
+
+    // Deck Selection Dialog
+    val showDeckSelectionDialog by viewModel.showDeckSelectionDialog.collectAsStateWithLifecycle()
+    if (showDeckSelectionDialog) {
+        CardBrowserDeckSelectionDialog(availableDecks = availableDecks, onDeckSelected = { deck ->
+            viewModel.showDeckSelectionDialog(false)
+            val did = deck.deckId
+            coroutineScope.launch {
+                val changed = viewModel.moveSelectedCardsToDeck(did).await()
+                viewModel.launchSearchForCards()
+                val message = activity?.resources?.getQuantityString(
+                    R.plurals.card_browser_cards_moved, changed.count, changed.count
+                ) ?: ""
+                viewModel.emitSnackbarMessage(
+                    message, activity?.getString(R.string.undo)
+                ) {
+                    viewModel.undo()
+                }
+            }
+        }, onDismissRequest = { viewModel.showDeckSelectionDialog(false) }, onCreateDeck = {
+            viewModel.showDeckSelectionDialog(false)
+            viewModel.showCreateDeckDialog()
+        }, onCreateSubDeck = { parentId ->
+            viewModel.showDeckSelectionDialog(false)
+            viewModel.showCreateSubDeckDialog(parentId)
+        })
+    }
+
+    // Set Due Date Dialog
+    val showSetDueDateDialog by viewModel.showSetDueDateDialog.collectAsStateWithLifecycle()
+    if (showSetDueDateDialog) {
+        val setDueDateViewModel = viewModel<SetDueDateViewModel>()
+        LaunchedEffect(Unit) {
+            val cardIds = viewModel.queryAllSelectedCardIds()
+            val fsrsEnabled = com.ichi2.anki.servicelayer.getFSRSStatus() ?: false
+            setDueDateViewModel.init(cardIds.toLongArray(), fsrsEnabled)
+        }
+
+        SetDueDateDialog(viewModel = setDueDateViewModel, onHelpClicked = {
+            (activity as? AnkiActivity)?.openUrl(R.string.link_set_due_date_help)
+        }, onDismissRequest = { viewModel.showSetDueDateDialog(false) }, onConfirm = {
+            coroutineScope.launch {
+                val count = setDueDateViewModel.updateDueDateAsync().await()
+                if (count != null) {
+                    val message = TR.schedulingSetDueDateDone(count)
+                    viewModel.emitSnackbarMessage(message)
+                    viewModel.launchSearchForCards()
+                }
+            }
+        })
+    }
+
+    // Forget Cards Dialog
+    val showForgetCardsDialog by viewModel.showForgetCardsDialog.collectAsStateWithLifecycle()
+    if (showForgetCardsDialog) {
+        ForgetCardsDialog(
+            onHelpClicked = {
+            (activity as? AnkiActivity)?.openUrl(R.string.link_help_forget_cards)
+        },
+            onDismissRequest = { viewModel.showForgetCardsDialog(false) },
+            onConfirm = { restorePosition, resetCounts ->
+                viewModel.forgetSelectedCards(restorePosition, resetCounts)
+            })
+    }
+
+    // Grade Now Dialog
+    val showGradeNowDialog by viewModel.showGradeNowDialog.collectAsStateWithLifecycle()
+    if (showGradeNowDialog) {
+        GradeNowDialog(onConfirm = { rating ->
+            viewModel.gradeSelectedCards(rating)
+        }, onDismissRequest = { viewModel.showGradeNowDialog(false) })
+    }
+
+    // Reposition Cards Dialog
+    val repositionDialogState by viewModel.repositionDialogState.collectAsStateWithLifecycle()
+    when (val state = repositionDialogState) {
+        is CardBrowserViewModel.RepositionDialogState.Visible -> {
+            RepositionCardDialog(
+                queueTop = state.queueTop,
+                queueBottom = state.queueBottom,
+                initialRandom = state.random,
+                initialShift = state.shift,
+                onConfirm = { position, step, random, shift ->
+                    viewModel.repositionSelectedCards(position, step, random, shift)
+                },
+                onDismissRequest = { viewModel.showRepositionDialog(CardBrowserViewModel.RepositionDialogState.Hidden) })
+        }
+
+        CardBrowserViewModel.RepositionDialogState.Hidden -> {}
     }
 
     Row(modifier = Modifier.fillMaxSize()) {

@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import anki.collection.OpChanges
 import anki.collection.OpChangesWithCount
 import anki.config.ConfigKey
+import anki.scheduler.CardAnswer.Rating
 import anki.search.BrowserColumns
 import anki.search.BrowserRow
 import com.ichi2.anki.AnkiDroidApp
@@ -280,6 +281,137 @@ class CardBrowserViewModel(
         _createDeckDialogState.value = CreateDeckDialogState.Hidden
     }
 
+    // New Compose dialog states
+    private val _showDeckSelectionDialog = MutableStateFlow(false)
+    val showDeckSelectionDialog = _showDeckSelectionDialog.asStateFlow()
+
+    private val _showSetDueDateDialog = MutableStateFlow(false)
+    val showSetDueDateDialog = _showSetDueDateDialog.asStateFlow()
+
+    private val _showForgetCardsDialog = MutableStateFlow(false)
+    val showForgetCardsDialog = _showForgetCardsDialog.asStateFlow()
+
+    private val _showGradeNowDialog = MutableStateFlow(false)
+    val showGradeNowDialog = _showGradeNowDialog.asStateFlow()
+
+    private val _showExportDialog = MutableStateFlow(false)
+    val showExportDialog = _showExportDialog.asStateFlow()
+
+    sealed interface RepositionDialogState {
+        data object Hidden : RepositionDialogState
+        data class Visible(
+            val queueTop: Int,
+            val queueBottom: Int,
+            val random: Boolean,
+            val shift: Boolean,
+        ) : RepositionDialogState
+    }
+
+    private val _repositionDialogState =
+        MutableStateFlow<RepositionDialogState>(RepositionDialogState.Hidden)
+    val repositionDialogState = _repositionDialogState.asStateFlow()
+
+    fun showDeckSelectionDialog(show: Boolean) {
+        _showDeckSelectionDialog.value = show
+    }
+
+    fun showSetDueDateDialog(show: Boolean) {
+        _showSetDueDateDialog.value = show
+    }
+
+    fun showForgetCardsDialog(show: Boolean) {
+        _showForgetCardsDialog.value = show
+    }
+
+    fun showGradeNowDialog(show: Boolean) {
+        _showGradeNowDialog.value = show
+    }
+
+    fun showExportDialog(show: Boolean) {
+        _showExportDialog.value = show
+    }
+
+    fun showRepositionDialog(state: RepositionDialogState) {
+        _repositionDialogState.value = state
+    }
+
+    // Compose database operations
+    fun forgetSelectedCards(restorePosition: Boolean, resetCounts: Boolean) {
+        viewModelScope.launch {
+            val cardsIds = queryAllSelectedCardIds()
+            Timber.i(
+                "forgetting %d cards, restorePosition = %b, resetCounts = %b",
+                cardsIds.size,
+                restorePosition,
+                resetCounts
+            )
+            try {
+                undoableOp {
+                    sched.forgetCards(
+                        cardsIds,
+                        restorePosition = restorePosition,
+                        resetCounts = resetCounts
+                    )
+                }
+                Timber.d("forgot %d cards", cardsIds.size)
+                val resources = AnkiDroidApp.instance.resources
+                emitSnackbarMessage(
+                    resources.getQuantityString(
+                        R.plurals.reset_cards_dialog_acknowledge, cardsIds.size, cardsIds.size
+                    )
+                )
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to forget cards")
+                emitSnackbarMessage(AnkiDroidApp.instance.getString(R.string.something_wrong))
+            }
+        }
+    }
+
+    fun gradeSelectedCards(rating: Rating) {
+        viewModelScope.launch {
+            val ids = queryAllSelectedCardIds()
+            if (!ids.any()) {
+                Timber.w("no selected cards to grade")
+                return@launch
+            }
+            Timber.d("Grading %d cards as %s", ids.size, rating.name)
+            try {
+                undoableOp { backend.gradeNow(ids, rating) }
+                val resources = AnkiDroidApp.instance.resources
+                emitSnackbarMessage(
+                    TR.schedulingGradedCardsDone(ids.size), resources.getString(R.string.undo)
+                ) {
+                    viewModelScope.launch {
+                        undo()
+                        launchSearchForCards()
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to grade cards")
+                emitSnackbarMessage(AnkiDroidApp.instance.getString(R.string.something_wrong))
+            }
+        }
+    }
+
+    fun repositionSelectedCards(
+        position: Int,
+        step: Int,
+        shuffle: Boolean,
+        shift: Boolean,
+    ) {
+        viewModelScope.launch {
+            try {
+                val count = repositionSelectedRows(
+                    position = position, step = step, shuffle = shuffle, shift = shift
+                )
+                emitSnackbarMessage(TR.browsingChangedNewPosition(count))
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to reposition cards")
+                emitSnackbarMessage(AnkiDroidApp.instance.getString(R.string.something_wrong))
+            }
+        }
+    }
+
     suspend fun validateDeckName(
         name: String, dialogState: CreateDeckDialogState.Visible
     ): DeckPickerViewModel.DeckNameError? {
@@ -456,9 +588,7 @@ class CardBrowserViewModel(
     val flowOfSnackbarString = MutableSharedFlow<SnackbarMessageEvent>()
 
     fun emitSnackbarMessage(
-        message: String,
-        actionLabel: String? = null,
-        action: (() -> Unit)? = null
+        message: String, actionLabel: String? = null, action: (() -> Unit)? = null
     ) {
         viewModelScope.launch {
             flowOfSnackbarString.emit(SnackbarMessageEvent(message, actionLabel, action))

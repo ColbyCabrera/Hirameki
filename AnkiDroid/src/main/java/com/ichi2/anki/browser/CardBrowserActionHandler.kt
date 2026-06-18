@@ -20,21 +20,14 @@ import android.content.Intent
 import com.ichi2.anim.ActivityTransitionAnimation.Direction
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
-import com.ichi2.anki.dialogs.DeckSelectionDialog
-import com.ichi2.anki.dialogs.GradeNowDialog
 import com.ichi2.anki.dialogs.SimpleMessageDialog
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.CardId
-import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.model.CardStateFilter
 import com.ichi2.anki.model.CardsOrNotes
-import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.previewer.PreviewerFragment
-import com.ichi2.anki.scheduling.ForgetCardsDialog
-import com.ichi2.anki.scheduling.SetDueDateDialog
-import com.ichi2.anki.undoAndShowSnackbar
 import timber.log.Timber
 
 /**
@@ -71,26 +64,6 @@ class CardBrowserActionHandler(
         viewModel.updateTags(selectedTags)
     }
 
-    fun onDeckSelected(deck: SelectableDeck?) {
-        val did = (deck as? SelectableDeck.Deck)?.deckId ?: return
-        moveSelectedCardsToDeck(did)
-    }
-
-    private fun moveSelectedCardsToDeck(did: DeckId) = activity.launchCatchingTask {
-        val changed = withProgress { viewModel.moveSelectedCardsToDeck(did).await() }
-        viewModel.launchSearchForCards()
-        val message = activity.resources.getQuantityString(
-            R.plurals.card_browser_cards_moved, changed.count, changed.count
-        )
-        viewModel.emitSnackbarMessage(
-            message, activity.getString(R.string.undo)
-        ) {
-            activity.launchCatchingTask {
-                activity.undoAndShowSnackbar()
-                viewModel.launchSearchForCards()
-            }
-        }
-    }
 
     fun openNoteEditorForCard(cardId: CardId) {
         viewModel.currentCardId = cardId
@@ -98,24 +71,15 @@ class CardBrowserActionHandler(
         launchEditCard(launcher.toIntent(activity))
     }
 
-    fun showChangeDeckDialog() = activity.launchCatchingTask {
-        if (!ensureSelection("Change Deck")) return@launchCatchingTask
-        val selectableDecks = viewModel.getAvailableDecks()
-        val dialog = DeckSelectionDialog.newInstance(
-            activity.getString(R.string.move_all_to_deck), null, false, selectableDecks
-        )
-        dialog.show(activity.supportFragmentManager, "deck_selection_dialog")
+    fun showChangeDeckDialog() {
+        if (!ensureSelection("Change Deck")) return
+        viewModel.showDeckSelectionDialog(true)
     }
 
     fun rescheduleSelectedCards() {
         if (!ensureSelection("reschedule")) return
         if (warnUserIfInNotesOnlyMode()) return
-
-        activity.launchCatchingTask {
-            val allCardIds = viewModel.queryAllSelectedCardIds()
-            SetDueDateDialog.newInstance(allCardIds)
-                .show(activity.supportFragmentManager, "set_due_date_dialog")
-        }
+        viewModel.showSetDueDateDialog(true)
     }
 
     fun repositionSelectedCards() {
@@ -147,13 +111,14 @@ class CardBrowserActionHandler(
                         )
                         return@launchCatchingTask
                     }
-                    val repositionDialog = RepositionCardFragment.newInstance(
-                        queueTop = top,
-                        queueBottom = bottom,
-                        random = repositionCardsResult.random,
-                        shift = repositionCardsResult.shift
+                    viewModel.showRepositionDialog(
+                        CardBrowserViewModel.RepositionDialogState.Visible(
+                            queueTop = top,
+                            queueBottom = bottom,
+                            random = repositionCardsResult.random,
+                            shift = repositionCardsResult.shift
+                        )
                     )
-                    repositionDialog.show(activity.supportFragmentManager, "reposition_dialog")
                 }
             }
         }
@@ -162,16 +127,13 @@ class CardBrowserActionHandler(
     fun onResetProgress() {
         if (!ensureSelection("reset progress")) return
         if (warnUserIfInNotesOnlyMode()) return
-        ForgetCardsDialog().show(activity.supportFragmentManager, "reset_progress_dialog")
+        viewModel.showForgetCardsDialog(true)
     }
 
     fun onGradeNow() {
         if (!ensureSelection("grade now")) return
         if (warnUserIfInNotesOnlyMode()) return
-        activity.launchCatchingTask {
-            val cids = viewModel.queryAllSelectedCardIds()
-            GradeNowDialog.showDialog(activity, cids)
-        }
+        viewModel.showGradeNowDialog(true)
     }
 
     fun exportSelected() {
