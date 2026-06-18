@@ -102,6 +102,8 @@ fun CardBrowserLayout(
     val isSearchOpen by viewModel.flowOfSearchQueryExpanded.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     var availableDecks by remember { mutableStateOf<List<SelectableDeck.Deck>>(emptyList()) }
+    val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
+    val showDeckSelectionDialog by viewModel.showDeckSelectionDialog.collectAsStateWithLifecycle()
     val searchAnim by animateFloatAsState(
         targetValue = if (isSearchOpen) 1f else 0f,
         animationSpec = motionScheme.defaultEffectsSpec(),
@@ -122,8 +124,10 @@ fun CardBrowserLayout(
         }
     }
 
-    LaunchedEffect(Unit) {
-        availableDecks = viewModel.getAvailableDecks()
+    LaunchedEffect(showDeckSelectionDialog, createDeckDialogState) {
+        if (showDeckSelectionDialog) {
+            availableDecks = viewModel.getAvailableDecks()
+        }
     }
 
     BackHandler(isSearchOpen) {
@@ -131,7 +135,6 @@ fun CardBrowserLayout(
     }
 
     // Create Deck Dialog
-    val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
     when (val state = createDeckDialogState) {
         is CardBrowserViewModel.CreateDeckDialogState.Visible -> {
             CreateDeckDialog(
@@ -148,7 +151,6 @@ fun CardBrowserLayout(
     }
 
     // Deck Selection Dialog
-    val showDeckSelectionDialog by viewModel.showDeckSelectionDialog.collectAsStateWithLifecycle()
     if (showDeckSelectionDialog) {
         CardBrowserDeckSelectionDialog(availableDecks = availableDecks, onDeckSelected = { deck ->
             viewModel.showDeckSelectionDialog(false)
@@ -169,7 +171,6 @@ fun CardBrowserLayout(
             viewModel.showDeckSelectionDialog(false)
             viewModel.showCreateDeckDialog()
         }, onCreateSubDeck = { parentId ->
-            viewModel.showDeckSelectionDialog(false)
             viewModel.showCreateSubDeckDialog(parentId)
         })
     }

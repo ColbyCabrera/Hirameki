@@ -15,7 +15,9 @@
  */
 package com.ichi2.anki.browser.compose
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -151,6 +153,7 @@ fun CardBrowserDeckSelectionDialog(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DeckHierarchyList(
     deckHierarchy: Map<String, List<SelectableDeck.Deck>>,
@@ -171,8 +174,11 @@ private fun DeckHierarchyList(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onDeckSelected(deck) }
-                    .padding(vertical = 4.dp),
+                    .combinedClickable(
+                        onClick = { onDeckSelected(deck) },
+                        onLongClick = { onCreateSubDeck(deck.deckId) }
+                    )
+                    .padding(vertical = 8.dp, horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Spacer(modifier = Modifier.width((depth * 16).dp))
@@ -199,14 +205,6 @@ private fun DeckHierarchyList(
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge
                 )
-
-                IconButton(onClick = { onCreateSubDeck(deck.deckId) }) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.create_subdeck),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
 
             if (isExpanded && hasChildren) {
