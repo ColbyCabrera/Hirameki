@@ -61,7 +61,7 @@ abstract class SettingsFragment :
         sharedPreferences: SharedPreferences,
         key: String?,
     ) {
-        if (key !in UsageAnalytics.preferencesWhoseChangesShouldBeReported) {
+        if (!UsageAnalytics.isAvailable || key !in UsageAnalytics.preferencesWhoseChangesShouldBeReported) {
             return
         }
         if (key != null) {

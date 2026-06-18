@@ -107,12 +107,71 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     private val _showNetworkErrorDialog = MutableStateFlow(false)
     val showNetworkErrorDialog: StateFlow<Boolean> = _showNetworkErrorDialog.asStateFlow()
 
+    private val _showNoSpaceLeftDialog = MutableStateFlow(false)
+    val showNoSpaceLeftDialog: StateFlow<Boolean> = _showNoSpaceLeftDialog.asStateFlow()
+
+    private val _showBackupNoSpaceLeftDialog = MutableStateFlow<Long?>(null)
+    val showBackupNoSpaceLeftDialog: StateFlow<Long?> = _showBackupNoSpaceLeftDialog.asStateFlow()
+
+    private val _showAnalyticsOptInDialog = MutableStateFlow(false)
+    val showAnalyticsOptInDialog: StateFlow<Boolean> = _showAnalyticsOptInDialog.asStateFlow()
+
+    data class DeleteDeckConfirmationState(
+        val deckId: DeckId, val deckName: String, val totalCards: Int, val isFiltered: Boolean
+    )
+
+    private val _showDeleteDeckConfirmation = MutableStateFlow<DeleteDeckConfirmationState?>(null)
+    val showDeleteDeckConfirmation: StateFlow<DeleteDeckConfirmationState?> =
+        _showDeleteDeckConfirmation.asStateFlow()
+
     fun setShowLoginToAnkiWebDialog(show: Boolean) {
         _showLoginToAnkiWebDialog.value = show
     }
 
     fun setShowNetworkErrorDialog(show: Boolean) {
         _showNetworkErrorDialog.value = show
+    }
+
+    fun setShowNoSpaceLeftDialog(show: Boolean) {
+        _showNoSpaceLeftDialog.value = show
+    }
+
+    fun setShowBackupNoSpaceLeftDialog(space: Long?) {
+        _showBackupNoSpaceLeftDialog.value = space
+    }
+
+    fun setShowAnalyticsOptInDialog(show: Boolean) {
+        _showAnalyticsOptInDialog.value = show
+    }
+
+    fun setAnalyticsOptIn(enabled: Boolean) {
+        com.ichi2.anki.analytics.UsageAnalytics.isEnabled = enabled
+        _showAnalyticsOptInDialog.value = false
+    }
+
+    fun showDeleteDeckConfirmation(deckId: DeckId) = viewModelScope.launch {
+        try {
+            val (deckName, totalCards, isFilteredDeck) = withCol {
+                val deck = decks.getLegacy(deckId) ?: return@withCol null
+                Triple(
+                    decks.name(deckId),
+                    decks.cardCount(deckId, includeSubdecks = true),
+                    deck.isFiltered
+                )
+            } ?: return@launch
+            _showDeleteDeckConfirmation.value = DeleteDeckConfirmationState(
+                deckId = deckId,
+                deckName = deckName,
+                totalCards = totalCards,
+                isFiltered = isFilteredDeck
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to load properties for deleting deck %d", deckId)
+        }
+    }
+
+    fun dismissDeleteDeckConfirmation() {
+        _showDeleteDeckConfirmation.value = null
     }
 
     fun showSyncDialog(title: String, message: String, onCancel: () -> Unit) {
@@ -604,6 +663,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     fun undo() = launchCatchingIO {
         val message = undoAndGetSnackbarMessage()
+        updateDeckList()
         _composeEffects.send(DeckPickerComposeEffect.ShowSnackbarMessage(message))
     }
 

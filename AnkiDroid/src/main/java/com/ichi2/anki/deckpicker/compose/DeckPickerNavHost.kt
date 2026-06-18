@@ -81,10 +81,14 @@ import com.ichi2.anki.deckpicker.DeckPickerViewModel
 import com.ichi2.anki.deckpicker.DeckSelectionResult
 import com.ichi2.anki.deckpicker.DeckSelectionType
 import com.ichi2.anki.deckpicker.DisplayDeckNode
+import com.ichi2.anki.dialogs.compose.AnalyticsOptInDialog
+import com.ichi2.anki.dialogs.compose.BackupNoSpaceLeftDialog
+import com.ichi2.anki.dialogs.compose.ConfirmDeleteDeckDialog
 import com.ichi2.anki.dialogs.compose.CreateDeckDialog
 import com.ichi2.anki.dialogs.compose.ErrorDialog
 import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
+import com.ichi2.anki.dialogs.compose.NoSpaceLeftDialog
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.navigation.CongratsScreen
@@ -205,6 +209,7 @@ fun DeckPickerNavHost(
     onLoginToAnkiWeb: () -> Unit,
     onImport: () -> Unit,
     onExport: () -> Unit,
+    onFinish: () -> Unit = {},
 ) {
     val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -266,7 +271,8 @@ fun DeckPickerNavHost(
                 onLoginToAnkiWeb = onLoginToAnkiWeb,
                 onImport = onImport,
                 onExport = onExport,
-                lifecycle = lifecycle
+                lifecycle = lifecycle,
+                onFinish = onFinish
             )
         }
 
@@ -417,7 +423,8 @@ private fun DeckPickerMainContent(
     onLoginToAnkiWeb: () -> Unit,
     onImport: () -> Unit,
     onExport: () -> Unit,
-    lifecycle: Lifecycle
+    lifecycle: Lifecycle,
+    onFinish: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -432,6 +439,10 @@ private fun DeckPickerMainContent(
     val showLoginToAnkiWebDialog by viewModel.showLoginToAnkiWebDialog.collectAsStateWithLifecycle()
     val showNetworkErrorDialog by viewModel.showNetworkErrorDialog.collectAsStateWithLifecycle()
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
+    val showNoSpaceLeftDialog by viewModel.showNoSpaceLeftDialog.collectAsStateWithLifecycle()
+    val showBackupNoSpaceLeftDialog by viewModel.showBackupNoSpaceLeftDialog.collectAsStateWithLifecycle()
+    val showAnalyticsOptInDialog by viewModel.showAnalyticsOptInDialog.collectAsStateWithLifecycle()
+    val showDeleteDeckConfirmation by viewModel.showDeleteDeckConfirmation.collectAsStateWithLifecycle()
 
     val errorMessageState = viewModel.onError.collectAsStateWithLifecycle(initialValue = null)
     var errorMessage by remember(errorMessageState.value) { mutableStateOf(errorMessageState.value) }
@@ -478,6 +489,39 @@ private fun DeckPickerMainContent(
         }
 
         DeckPickerViewModel.CreateDeckDialogState.Hidden -> {}
+    }
+
+    if (showNoSpaceLeftDialog) {
+        NoSpaceLeftDialog(
+            onDismissRequest = { viewModel.setShowNoSpaceLeftDialog(false) })
+    }
+
+    showBackupNoSpaceLeftDialog?.let { space ->
+        BackupNoSpaceLeftDialog(
+            space = space, onConfirm = {
+                viewModel.setShowBackupNoSpaceLeftDialog(null)
+                onFinish()
+            })
+    }
+
+    if (showAnalyticsOptInDialog) {
+        AnalyticsOptInDialog(
+            onDismissRequest = { viewModel.setShowAnalyticsOptInDialog(false) },
+            onConfirm = { optIn ->
+                viewModel.setAnalyticsOptIn(optIn)
+            })
+    }
+
+    showDeleteDeckConfirmation?.let { state ->
+        ConfirmDeleteDeckDialog(
+            deckName = state.deckName,
+            totalCards = state.totalCards,
+            isFiltered = state.isFiltered,
+            onDismissRequest = { viewModel.dismissDeleteDeckConfirmation() },
+            onConfirm = {
+                viewModel.deleteDeck(state.deckId)
+                viewModel.dismissDeleteDeckConfirmation()
+            })
     }
 
     var searchQuery by remember { mutableStateOf("") }
@@ -544,7 +588,7 @@ private fun DeckPickerMainContent(
         onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
         onRename = { viewModel.showRenameDeckDialog(it) },
         onExportDeck = { viewModel.exportDeck(it) },
-        onDelete = { deckId -> viewModel.deleteDeck(deckId) },
+        onDelete = { deckId -> viewModel.showDeleteDeckConfirmation(deckId) },
         onRebuild = { viewModel.rebuildFilteredDeck(it) },
         onEmpty = { viewModel.emptyFilteredDeck(it) },
         onStartStudy = { viewModel.openReviewer() },

@@ -11,17 +11,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.dialogs.BackupPromptDialog
-import com.ichi2.anki.dialogs.DeckPickerAnalyticsOptInDialog
 import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
-import com.ichi2.anki.utils.ext.getCurrentDialogFragment
 import com.ichi2.testutils.BackupManagerTestUtilities
 import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
 import kotlinx.coroutines.test.advanceUntilIdle
 import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -141,9 +140,10 @@ class DeckPickerTest : RobolectricTest() {
             ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
                 composeTestRule.waitForIdle()
                 scenario.onActivity { activity ->
-                    val dialogFragment =
-                        activity.getCurrentDialogFragment<DeckPickerAnalyticsOptInDialog>()
-                    assertNull(dialogFragment, "Analytics opt-in should not be displayed")
+                    assertFalse(
+                        "Analytics opt-in should not be displayed",
+                        activity.viewModel.showAnalyticsOptInDialog.value
+                    )
                 }
             }
         } finally {
