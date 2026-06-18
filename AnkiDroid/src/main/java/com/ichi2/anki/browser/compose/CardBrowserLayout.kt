@@ -63,6 +63,7 @@ import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.pages.Statistics
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.scheduling.SetDueDateViewModel
+import com.ichi2.anki.servicelayer.getFSRSStatus
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.DeckSelector
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
@@ -179,7 +180,7 @@ fun CardBrowserLayout(
         val setDueDateViewModel = viewModel<SetDueDateViewModel>()
         LaunchedEffect(Unit) {
             val cardIds = viewModel.queryAllSelectedCardIds()
-            val fsrsEnabled = com.ichi2.anki.servicelayer.getFSRSStatus() ?: false
+            val fsrsEnabled = getFSRSStatus() ?: false
             setDueDateViewModel.init(cardIds.toLongArray(), fsrsEnabled)
         }
 
