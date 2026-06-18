@@ -26,7 +26,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
@@ -140,10 +140,7 @@ fun NoteEditorScreen(
     onItalicClick: () -> Unit,
     onUnderlineClick: () -> Unit,
     onHorizontalRuleClick: () -> Unit = {},
-    onHeadingClick: () -> Unit = {},
-    onFontSizeClick: () -> Unit = {},
     onMathjaxClick: () -> Unit = {},
-    onMathjaxLongClick: (() -> Unit)? = null,
     onClozeClick: () -> Unit,
     onClozeIncrementClick: () -> Unit,
     onCustomButtonClick: (ToolbarButtonModel) -> Unit,
@@ -166,20 +163,30 @@ fun NoteEditorScreen(
     noClozeDialogMessage: String?,
     onSaveAnywayClick: () -> Unit,
     onDismissNoClozeDialog: () -> Unit,
+    showTagsDialog: Boolean,
+    onShowTagsDialogChange: (Boolean) -> Unit,
+    showFontSizeDialog: Boolean,
+    onShowFontSizeDialogChange: (Boolean) -> Unit,
+    showHeadingDialog: Boolean,
+    onShowHeadingDialogChange: (Boolean) -> Unit,
+    showMathJaxDialog: Boolean,
+    onShowMathJaxDialogChange: (Boolean) -> Unit,
+    showDeckSelectionDialog: Boolean,
+    onShowDeckSelectionDialogChange: (Boolean) -> Unit,
+    onApplyFormatter: (String, String) -> Unit,
     capitalizeSentences: Boolean = true,
 ) {
     // Observe keyboard state for auto-scrolling
     val imeState = rememberImeState()
     val scrollState = rememberScrollState()
-    var showTagsDialog by remember { mutableStateOf(false) }
     var filterByDeck by remember(deckTags) { mutableStateOf(deckTags.isNotEmpty()) }
 
     if (showTagsDialog) {
         TagsDialog(
-            onDismissRequest = { showTagsDialog = false },
+            onDismissRequest = { onShowTagsDialogChange(false) },
             onConfirm = { checked, _ ->
                 onUpdateTags(checked)
-                showTagsDialog = false
+                onShowTagsDialogChange(false)
             },
             allTags = allTags,
             initialSelection = state.tags.toSet(),
@@ -193,6 +200,24 @@ fun NoteEditorScreen(
             onFilterByDeckChanged = { filterByDeck = it },
         )
     }
+
+    FontSizeDialog(show = showFontSizeDialog, onSizeSelected = { size ->
+        onApplyFormatter("<span style=\"font-size:$size\">", "</span>")
+    }, onDismissRequest = { onShowFontSizeDialogChange(false) })
+
+    InsertHeadingDialog(show = showHeadingDialog, onHeadingSelected = { tag ->
+        onApplyFormatter("<$tag>", "</$tag>")
+    }, onDismissRequest = { onShowHeadingDialogChange(false) })
+
+    InsertMathJaxDialog(show = showMathJaxDialog, onOptionSelected = { prefix, suffix ->
+        onApplyFormatter(prefix, suffix)
+    }, onDismissRequest = { onShowMathJaxDialogChange(false) })
+
+    DeckSelectionDialog(
+        show = showDeckSelectionDialog,
+        decks = availableDecks,
+        onDeckSelected = onDeckSelected,
+        onDismissRequest = { onShowDeckSelectionDialogChange(false) })
 
     if (showDiscardChangesDialog) {
         DiscardChangesDialog(
@@ -239,10 +264,10 @@ fun NoteEditorScreen(
                 onItalicClick = onItalicClick,
                 onUnderlineClick = onUnderlineClick,
                 onHorizontalRuleClick = onHorizontalRuleClick,
-                onHeadingClick = onHeadingClick,
-                onFontSizeClick = onFontSizeClick,
+                onHeadingClick = { onShowHeadingDialogChange(true) },
+                onFontSizeClick = { onShowFontSizeDialogChange(true) },
                 onMathjaxClick = onMathjaxClick,
-                onMathjaxLongClick = onMathjaxLongClick,
+                onMathjaxLongClick = { onShowMathJaxDialogChange(true) },
                 onClozeClick = onClozeClick,
                 onClozeIncrementClick = onClozeIncrementClick,
                 onCustomButtonClick = onCustomButtonClick,
@@ -334,7 +359,7 @@ fun NoteEditorScreen(
             Row(modifier = Modifier.fillMaxWidth()) {
                 // Tags Button
                 Button(
-                    onClick = { showTagsDialog = true },
+                    onClick = { onShowTagsDialogChange(true) },
                     modifier = Modifier
                         .height(52.dp)
                         .weight(1f),
@@ -738,10 +763,7 @@ fun NoteEditorScreenPreview() {
             onItalicClick = {},
             onUnderlineClick = {},
             onHorizontalRuleClick = {},
-            onHeadingClick = {},
-            onFontSizeClick = {},
             onMathjaxClick = {},
-            onMathjaxLongClick = {},
             onClozeClick = {},
             onClozeIncrementClick = {},
             onCustomButtonClick = {},
@@ -760,6 +782,17 @@ fun NoteEditorScreenPreview() {
             noClozeDialogMessage = null,
             onSaveAnywayClick = {},
             onDismissNoClozeDialog = {},
+            showTagsDialog = false,
+            onShowTagsDialogChange = {},
+            showFontSizeDialog = false,
+            onShowFontSizeDialogChange = {},
+            showHeadingDialog = false,
+            onShowHeadingDialogChange = {},
+            showMathJaxDialog = false,
+            onShowMathJaxDialogChange = {},
+            showDeckSelectionDialog = false,
+            onShowDeckSelectionDialogChange = {},
+            onApplyFormatter = { _, _ -> },
             capitalizeSentences = true,
         )
     }

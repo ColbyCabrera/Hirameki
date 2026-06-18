@@ -53,7 +53,6 @@ import androidx.core.content.edit
 import androidx.core.os.BundleCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
@@ -61,11 +60,6 @@ import com.ichi2.anki.android.input.ShortcutGroup
 import com.ichi2.anki.android.input.ShortcutGroupProvider
 import com.ichi2.anki.android.input.shortcut
 import com.ichi2.anki.common.annotations.NeedsTest
-import com.ichi2.anki.dialogs.DeckSelectionDialog
-import com.ichi2.anki.dialogs.DeckSelectionDialog.DeckSelectionListener
-import com.ichi2.anki.dialogs.tags.TagsDialog
-import com.ichi2.anki.dialogs.tags.TagsDialogFactory
-import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.DeckId
@@ -73,7 +67,6 @@ import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.libanki.Utils
 import com.ichi2.anki.libanki.clozeNumbersInNote
-import com.ichi2.anki.model.CardStateFilter
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.multimedia.AudioRecordingFragment
 import com.ichi2.anki.multimedia.AudioVideoFragment
@@ -111,13 +104,10 @@ import com.ichi2.anki.servicelayer.NoteService
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
-import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import com.ichi2.utils.ClipboardUtil
 import com.ichi2.utils.HashUtil
 import com.ichi2.utils.ImportUtils
-import com.ichi2.utils.show
-import com.ichi2.utils.title
 import com.ichi2.widget.WidgetStatus
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -127,7 +117,7 @@ import timber.log.Timber
 import java.util.function.Consumer
 
 class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, DispatchKeyEventListener,
-    ShortcutGroupProvider, DeckSelectionListener, TagsDialogListener {
+    ShortcutGroupProvider {
 
     override val baseSnackbarBuilder: SnackbarBuilder = { }
 
@@ -142,7 +132,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         get() = noteEditorViewModel.reloadRequired.value
         set(value) = noteEditorViewModel.setReloadRequired(value)
 
-    private var tagsDialogFactory: TagsDialogFactory? = null
 
     private var editorNote: Note? = null
 
@@ -280,7 +269,9 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
     }
 
-    override fun onDeckSelected(deck: SelectableDeck?) {
+
+    @VisibleForTesting
+    fun onDeckSelected(deck: SelectableDeck?) {
         if (deck == null) {
             return
         }
@@ -334,10 +325,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         if (!ensureStoragePermissions()) {
             return
         }
-
-        tagsDialogFactory = TagsDialogFactory(this).attachToFragmentManager<TagsDialogFactory>(
-            supportFragmentManager
-        )
 
         if (savedInstanceState != null) {
             addNote = savedInstanceState.getBoolean("addNote")
@@ -575,6 +562,11 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                 val showDiscardChangesDialog by noteEditorViewModel.showDiscardChangesDialog.collectAsStateWithLifecycle()
                 val noClozeDialogMessage by noteEditorViewModel.noClozeDialogState.collectAsStateWithLifecycle()
                 val toolbarDialogState by noteEditorViewModel.toolbarDialogState.collectAsStateWithLifecycle()
+                val showTagsDialog by noteEditorViewModel.showTagsDialog.collectAsStateWithLifecycle()
+                val showFontSizeDialog by noteEditorViewModel.showFontSizeDialog.collectAsStateWithLifecycle()
+                val showHeadingDialog by noteEditorViewModel.showHeadingDialog.collectAsStateWithLifecycle()
+                val showMathJaxDialog by noteEditorViewModel.showMathJaxDialog.collectAsStateWithLifecycle()
+                val showDeckSelectionDialog by noteEditorViewModel.showDeckSelectionDialog.collectAsStateWithLifecycle()
                 val snackbarHostState = remember { SnackbarHostState() }
                 var capitalizeChecked by remember {
                     mutableStateOf(
@@ -661,17 +653,8 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     onHorizontalRuleClick = {
                         applyFormatter("<hr>", "")
                     },
-                    onHeadingClick = {
-                        displayInsertHeadingDialog()
-                    },
-                    onFontSizeClick = {
-                        displayFontSizeDialog()
-                    },
                     onMathjaxClick = {
                         applyFormatter("\\(", "\\)")
-                    },
-                    onMathjaxLongClick = {
-                        displayInsertMathJaxEquationsDialog()
                     },
                     onClozeClick = {
                         handleClozeInsertion(ClozeInsertionMode.SAME_NUMBER)
@@ -730,7 +713,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                                 id = "font_size",
                                 title = stringResource(R.string.menu_font_size),
                             ) {
-                                displayFontSizeDialog()
+                                noteEditorViewModel.showFontSizeDialog(true)
                             },
                             NoteEditorToggleOverflowItem(
                                 id = "show_toolbar",
@@ -828,6 +811,19 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     onDismissNoClozeDialog = {
                         noteEditorViewModel.dismissNoClozeDialog()
                     },
+                    showTagsDialog = showTagsDialog,
+                    onShowTagsDialogChange = { noteEditorViewModel.showTagsDialog(it) },
+                    showFontSizeDialog = showFontSizeDialog,
+                    onShowFontSizeDialogChange = { noteEditorViewModel.showFontSizeDialog(it) },
+                    showHeadingDialog = showHeadingDialog,
+                    onShowHeadingDialogChange = { noteEditorViewModel.showHeadingDialog(it) },
+                    showMathJaxDialog = showMathJaxDialog,
+                    onShowMathJaxDialogChange = { noteEditorViewModel.showMathJaxDialog(it) },
+                    showDeckSelectionDialog = showDeckSelectionDialog,
+                    onShowDeckSelectionDialogChange = {
+                        noteEditorViewModel.showDeckSelectionDialog(it)
+                    },
+                    onApplyFormatter = { prefix, suffix -> applyFormatter(prefix, suffix) },
                     capitalizeSentences = capitalizeChecked,
                 )
 
@@ -882,48 +878,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         noteEditorViewModel.formatSelection(prefix, suffix)
     }
 
-    private fun displayFontSizeDialog() {
-        val sizeCodes = resources.getStringArray(R.array.html_size_codes)
-        MaterialAlertDialogBuilder(this).show {
-            setItems(R.array.html_size_code_labels) { _, index ->
-                val size = sizeCodes.getOrNull(index) ?: return@setItems
-                applyFormatter("<span style=\"font-size:$size\">", "</span>")
-            }
-            title(R.string.menu_font_size)
-        }
-    }
-
-    private fun displayInsertHeadingDialog() {
-        val headingTags = arrayOf("h1", "h2", "h3", "h4", "h5")
-        MaterialAlertDialogBuilder(this).show {
-            setItems(headingTags) { _, index ->
-                val tag = headingTags.getOrNull(index) ?: return@setItems
-                applyFormatter("<$tag>", "</$tag>")
-            }
-            title(R.string.insert_heading)
-        }
-    }
-
-    private fun displayInsertMathJaxEquationsDialog() {
-        data class MathJaxOption(
-            val label: String,
-            val prefix: String,
-            val suffix: String,
-        )
-
-        val options = arrayOf(
-            MathJaxOption(TR.editingMathjaxBlock(), prefix = "\\[\\", suffix = "\\]"),
-            MathJaxOption(TR.editingMathjaxChemistry(), prefix = "\\( \\ce{", suffix = "} \\)"),
-        )
-
-        MaterialAlertDialogBuilder(this).show {
-            setItems(options.map(MathJaxOption::label).toTypedArray()) { _, index ->
-                val option = options.getOrNull(index) ?: return@setItems
-                applyFormatter(option.prefix, option.suffix)
-            }
-            title(R.string.insert_mathjax)
-        }
-    }
 
     private fun handleClozeInsertion(mode: ClozeInsertionMode) {
         val isClozeType = noteEditorViewModel.noteEditorState.value.isClozeType
@@ -949,7 +903,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             }
 
             KeyEvent.KEYCODE_D -> if (event.isCtrlPressed) {
-                showDeckSelectionDialog()
+                noteEditorViewModel.showDeckSelectionDialog(true)
                 return true
             }
 
@@ -959,7 +913,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             }
 
             KeyEvent.KEYCODE_T -> if (event.isCtrlPressed && event.isShiftPressed) {
-                showTagsDialog()
+                noteEditorViewModel.showTagsDialog(true)
                 return true
             }
 
@@ -1263,41 +1217,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
     }
 
-    private fun showDeckSelectionDialog() {
-        launchCatchingTask {
-            val selectableDecks = withCol {
-                decks.allNamesAndIds().map { SelectableDeck.Deck(it.id, it.name) }
-            }
-
-            val dialog = DeckSelectionDialog.newInstance(
-                title = getString(R.string.select_deck_title),
-                summaryMessage = null,
-                keepRestoreDefaultButton = false,
-                decks = selectableDecks,
-            )
-            dialog.show(supportFragmentManager, "deck_selection_dialog")
-        }
-    }
-
-    private fun showTagsDialog() {
-        val currentTags = noteEditorViewModel.noteEditorState.value.tags
-        val selTags = ArrayList(currentTags)
-
-        val dialog = tagsDialogFactory!!.newTagsDialog().withArguments(
-            context = this,
-            type = TagsDialog.DialogType.EDIT_TAGS,
-            checkedTags = selTags,
-        )
-        showDialogFragment(dialog)
-    }
-
-    override fun onSelectedTags(
-        selectedTags: List<String>,
-        indeterminateTags: List<String>,
-        stateFilter: CardStateFilter,
-    ) {
-        noteEditorViewModel.updateTags(selectedTags.toSet())
-    }
 
     private fun showCardTemplateEditor() {
         val intent = Intent(this, CardTemplateEditor::class.java)
