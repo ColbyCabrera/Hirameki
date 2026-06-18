@@ -235,6 +235,21 @@ class NoteEditorViewModel(
      */
     val toolbarDialogState: StateFlow<ToolbarItemDialogState> = _toolbarDialogState.asStateFlow()
 
+    private val _showTagsDialog = MutableStateFlow(false)
+    val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
+
+    private val _showFontSizeDialog = MutableStateFlow(false)
+    val showFontSizeDialog: StateFlow<Boolean> = _showFontSizeDialog.asStateFlow()
+
+    private val _showHeadingDialog = MutableStateFlow(false)
+    val showHeadingDialog: StateFlow<Boolean> = _showHeadingDialog.asStateFlow()
+
+    private val _showMathJaxDialog = MutableStateFlow(false)
+    val showMathJaxDialog: StateFlow<Boolean> = _showMathJaxDialog.asStateFlow()
+
+    private val _showDeckSelectionDialog = MutableStateFlow(false)
+    val showDeckSelectionDialog: StateFlow<Boolean> = _showDeckSelectionDialog.asStateFlow()
+
     private val _currentNote = MutableStateFlow<Note?>(null)
 
     /** The underlying Note being edited (null when creating a new, not yet initialized). */
@@ -1544,6 +1559,26 @@ class NoteEditorViewModel(
      */
     fun dismissToolbarDialog() {
         _toolbarDialogState.value = ToolbarItemDialogState()
+    }
+
+    fun showTagsDialog(show: Boolean) {
+        _showTagsDialog.value = show
+    }
+
+    fun showFontSizeDialog(show: Boolean) {
+        _showFontSizeDialog.value = show
+    }
+
+    fun showHeadingDialog(show: Boolean) {
+        _showHeadingDialog.value = show
+    }
+
+    fun showMathJaxDialog(show: Boolean) {
+        _showMathJaxDialog.value = show
+    }
+
+    fun showDeckSelectionDialog(show: Boolean) {
+        _showDeckSelectionDialog.value = show
     }
 
     /**

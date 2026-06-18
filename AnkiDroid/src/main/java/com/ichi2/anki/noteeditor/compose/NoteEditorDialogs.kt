@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -31,9 +34,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
@@ -224,4 +230,201 @@ private fun EditToolbarItemDialogPreview() {
             onHelpClick = {},
         )
     }
+}
+
+@Composable
+fun FontSizeDialog(
+    show: Boolean,
+    onSizeSelected: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    if (!show) return
+
+    val sizeLabels = stringArrayResource(R.array.html_size_code_labels)
+    val sizeCodes = stringArrayResource(R.array.html_size_codes)
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(text = stringResource(R.string.menu_font_size)) },
+        text = {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp)
+            ) {
+                items(sizeLabels.zip(sizeCodes)) { (label, code) ->
+                    TextButton(
+                        onClick = {
+                            onSizeSelected(code)
+                            onDismissRequest()
+                        }, modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = label,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        })
+}
+
+@Composable
+fun InsertHeadingDialog(
+    show: Boolean,
+    onHeadingSelected: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    if (!show) return
+
+    val headingTags = remember { arrayOf("h1", "h2", "h3", "h4", "h5") }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(text = stringResource(R.string.insert_heading)) },
+        text = {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp)
+            ) {
+                items(headingTags) { tag ->
+                    TextButton(
+                        onClick = {
+                            onHeadingSelected(tag)
+                            onDismissRequest()
+                        }, modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = tag,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        })
+}
+
+data class MathJaxOption(
+    val label: String,
+    val prefix: String,
+    val suffix: String,
+)
+
+@Composable
+fun InsertMathJaxDialog(
+    show: Boolean,
+    onOptionSelected: (String, String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    if (!show) return
+
+    val options = remember {
+        listOf(
+            MathJaxOption(TR.editingMathjaxBlock(), prefix = "\\[\\", suffix = "\\]"),
+            MathJaxOption(TR.editingMathjaxChemistry(), prefix = "\\( \\ce{", suffix = "} \\)"),
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(text = stringResource(R.string.insert_mathjax)) },
+        text = {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 200.dp)
+            ) {
+                items(options) { option ->
+                    TextButton(
+                        onClick = {
+                            onOptionSelected(option.prefix, option.suffix)
+                            onDismissRequest()
+                        }, modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = option.label,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        })
+}
+
+@Composable
+fun DeckSelectionDialog(
+    show: Boolean,
+    decks: List<String>,
+    onDeckSelected: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    if (!show) return
+
+    var searchQueryParams by remember { mutableStateOf("") }
+    val filteredDecks = remember(decks, searchQueryParams) {
+        if (searchQueryParams.isBlank()) {
+            decks
+        } else {
+            decks.filter { it.contains(searchQueryParams, ignoreCase = true) }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(text = stringResource(R.string.select_deck_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = searchQueryParams,
+                    onValueChange = { searchQueryParams = it },
+                    placeholder = { Text(stringResource(R.string.search_deck)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                ) {
+                    items(filteredDecks) { deckName ->
+                        TextButton(
+                            onClick = {
+                                onDeckSelected(deckName)
+                                onDismissRequest()
+                            }, modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = deckName,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Start
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        })
 }

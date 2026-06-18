@@ -351,7 +351,7 @@ Status by screen:
   - `DeckPickerAnalyticsOptInDialog` -> `AnalyticsOptInDialog`
   - `DeckPickerConfirmDeleteDeckDialog` -> `ConfirmDeleteDeckDialog`
 - **CardBrowser**: Pending dialog migration.
-- **NoteEditor**: Pending dialog migration.
+- **NoteEditor [COMPLETED]**: Migrated all remaining dialogs (Font Size, Insert Heading, Insert MathJax, and Deck Selection) to Jetpack Compose dialogs with state management in `NoteEditorViewModel`.
 
 ### Phase 5: Expand Nav3 From DeckPicker To App-Level Navigation
 
