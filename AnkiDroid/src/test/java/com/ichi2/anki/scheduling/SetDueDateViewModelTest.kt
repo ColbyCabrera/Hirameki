@@ -173,9 +173,9 @@ class SetDueDateViewModelTest : JvmTest() {
             setNextDateRangeStart(2)
             setNextDateRangeEnd(4)
             currentTab = Tab.DATE_RANGE
-            singleDayText.value = "5"
-            startText.value = "2"
-            endText.value = "4"
+            setSingleDayText("5")
+            setStartText("2")
+            setEndText("4")
             updateIntervalToMatchDueDate = true
 
             // Re-init

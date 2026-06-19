@@ -380,7 +380,7 @@ fun SetDueDateDialog(
                     value = singleDayText,
                     onValueChange = { newValue ->
                         if (newValue.all { it.isDigit() }) {
-                            viewModel.singleDayText.value = newValue
+                            viewModel.setSingleDayText(newValue)
                             viewModel.nextSingleDayDueDate = newValue.toIntOrNull()
                         }
                     },
@@ -420,7 +420,7 @@ fun SetDueDateDialog(
                             value = startText,
                             onValueChange = { newValue ->
                                 if (newValue.all { it.isDigit() }) {
-                                    viewModel.startText.value = newValue
+                                    viewModel.setStartText(newValue)
                                     viewModel.setNextDateRangeStart(newValue.toIntOrNull())
                                 }
                             },
@@ -441,7 +441,7 @@ fun SetDueDateDialog(
                             value = endText,
                             onValueChange = { newValue ->
                                 if (newValue.all { it.isDigit() }) {
-                                    viewModel.endText.value = newValue
+                                    viewModel.setEndText(newValue)
                                     viewModel.setNextDateRangeEnd(newValue.toIntOrNull())
                                 }
                             },

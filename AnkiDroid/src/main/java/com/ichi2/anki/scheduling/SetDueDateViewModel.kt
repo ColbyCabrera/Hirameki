@@ -27,6 +27,7 @@ import com.ichi2.anki.libanki.sched.SetDueDateDays
 import com.ichi2.anki.observability.undoableOp
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -52,9 +53,14 @@ class SetDueDateViewModel : ViewModel() {
     /** Whether the value may be submitted */
     val isValidFlow = MutableStateFlow(false)
 
-    val singleDayText = MutableStateFlow("")
-    val startText = MutableStateFlow("")
-    val endText = MutableStateFlow("")
+    private val _singleDayText = MutableStateFlow("")
+    val singleDayText = _singleDayText.asStateFlow()
+
+    private val _startText = MutableStateFlow("")
+    val startText = _startText.asStateFlow()
+
+    private val _endText = MutableStateFlow("")
+    val endText = _endText.asStateFlow()
 
     /** The cards to change the due date of */
     var cardIds: List<CardId> = emptyList()
@@ -145,9 +151,9 @@ class SetDueDateViewModel : ViewModel() {
         this.nextSingleDayDueDate = null
         this.dateRange = DateRange()
         this.currentTab = Tab.SINGLE_DAY
-        this.singleDayText.value = ""
-        this.startText.value = ""
-        this.endText.value = ""
+        this._singleDayText.value = ""
+        this._startText.value = ""
+        this._endText.value = ""
         this.updateIntervalToMatchDueDate = fsrsEnabled
 
         initCurrentInterval(cardIds)
@@ -180,6 +186,18 @@ class SetDueDateViewModel : ViewModel() {
         Timber.d("updated date range end to %s", value)
         dateRange.end = value
         refreshIsValid()
+    }
+
+    fun setSingleDayText(text: String) {
+        _singleDayText.value = text
+    }
+
+    fun setStartText(text: String) {
+        _startText.value = text
+    }
+
+    fun setEndText(text: String) {
+        _endText.value = text
     }
 
     private fun refreshIsValid() {
