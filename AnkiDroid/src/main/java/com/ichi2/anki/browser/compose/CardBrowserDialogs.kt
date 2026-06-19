@@ -42,8 +42,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -88,10 +89,9 @@ fun CardBrowserDeckSelectionDialog(
     var searchQuery by remember { mutableStateOf("") }
     val expandedDecks = remember { mutableStateMapOf<String, Boolean>() }
 
-    val deckHierarchy =
-        remember(availableDecks, searchQuery) {
-            buildDeckHierarchyForDialog(availableDecks, searchQuery)
-        }
+    val deckHierarchy = remember(availableDecks, searchQuery) {
+        buildDeckHierarchyForDialog(availableDecks, searchQuery)
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -132,21 +132,19 @@ fun CardBrowserDeckSelectionDialog(
             )
 
             val rootChildren = deckHierarchy[""] ?: emptyList()
-            val flatDeckList =
-                remember(deckHierarchy, expandedDecks.toMap(), searchQuery) {
-                    buildFlatDeckList(
-                        deckHierarchy = deckHierarchy,
-                        children = rootChildren,
-                        expandedDecks = expandedDecks,
-                        searchQuery = searchQuery,
-                    )
-                }
+            val flatDeckList = remember(deckHierarchy, expandedDecks.toMap(), searchQuery) {
+                buildFlatDeckList(
+                    deckHierarchy = deckHierarchy,
+                    children = rootChildren,
+                    expandedDecks = expandedDecks,
+                    searchQuery = searchQuery,
+                )
+            }
 
             LazyColumn(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp),
             ) {
                 items(
                     items = flatDeckList,
@@ -223,35 +221,32 @@ private fun DeckRow(
 ) {
     val deck = flatItem.deck
     Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .combinedClickable(
-                    onClick = { onDeckSelected(deck) },
-                    onLongClick = { onCreateSubDeck(deck.deckId) },
-                ).padding(vertical = 8.dp, horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { onDeckSelected(deck) },
+                onLongClick = { onCreateSubDeck(deck.deckId) },
+            )
+            .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(modifier = Modifier.width((flatItem.depth * 16).dp))
 
         if (flatItem.hasChildren) {
             Icon(
-                painter =
-                    painterResource(
-                        if (flatItem.isExpanded) {
-                            R.drawable.keyboard_arrow_down_24px
-                        } else {
-                            R.drawable.keyboard_arrow_right_24px
-                        },
-                    ),
-                contentDescription =
-                    stringResource(
-                        if (flatItem.isExpanded) R.string.collapse else R.string.expand,
-                    ),
-                modifier =
-                    Modifier
-                        .clickable { onToggleExpand(deck.name) }
-                        .padding(4.dp),
+                painter = painterResource(
+                    if (flatItem.isExpanded) {
+                        R.drawable.keyboard_arrow_down_24px
+                    } else {
+                        R.drawable.keyboard_arrow_right_24px
+                    },
+                ),
+                contentDescription = stringResource(
+                    if (flatItem.isExpanded) R.string.collapse else R.string.expand,
+                ),
+                modifier = Modifier
+                    .clickable { onToggleExpand(deck.name) }
+                    .padding(4.dp),
             )
         } else {
             Spacer(modifier = Modifier.width(32.dp))
@@ -272,24 +267,23 @@ private fun buildDeckHierarchyForDialog(
     val hierarchy = mutableMapOf<String, MutableList<SelectableDeck.Deck>>()
     val topLevelDecks = mutableListOf<SelectableDeck.Deck>()
 
-    val decksToShow =
-        if (searchQuery.isEmpty()) {
-            decks
-        } else {
-            val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
-            val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
-            val allDecksByName = decks.associateBy { it.name }
+    val decksToShow = if (searchQuery.isEmpty()) {
+        decks
+    } else {
+        val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
+        val allDecksByName = decks.associateBy { it.name }
 
-            for (deck in matchingDecks) {
-                requiredDecks.add(deck)
-                var currentName = deck.name
-                while (currentName.contains("::")) {
-                    currentName = currentName.substringBeforeLast("::")
-                    allDecksByName[currentName]?.let { requiredDecks.add(it) }
-                }
+        for (deck in matchingDecks) {
+            requiredDecks.add(deck)
+            var currentName = deck.name
+            while (currentName.contains("::")) {
+                currentName = currentName.substringBeforeLast("::")
+                allDecksByName[currentName]?.let { requiredDecks.add(it) }
             }
-            requiredDecks.toList()
         }
+        requiredDecks.toList()
+    }
 
     for (deck in decksToShow) {
         val parts = deck.name.split("::")
@@ -306,7 +300,6 @@ private fun buildDeckHierarchyForDialog(
 }
 
 @Composable
-@Suppress("DEPRECATION")
 fun SetDueDateDialog(
     viewModel: SetDueDateViewModel,
     onHelpClicked: () -> Unit,
@@ -323,12 +316,11 @@ fun SetDueDateDialog(
     var updateInterval by remember { mutableStateOf(viewModel.updateIntervalToMatchDueDate) }
 
     LaunchedEffect(selectedTabIndex) {
-        viewModel.currentTab =
-            if (selectedTabIndex == 0) {
-                SetDueDateViewModel.Tab.SINGLE_DAY
-            } else {
-                SetDueDateViewModel.Tab.DATE_RANGE
-            }
+        viewModel.currentTab = if (selectedTabIndex == 0) {
+            SetDueDateViewModel.Tab.SINGLE_DAY
+        } else {
+            SetDueDateViewModel.Tab.DATE_RANGE
+        }
     }
 
     AlertDialog(onDismissRequest = onDismissRequest, title = {
@@ -350,19 +342,37 @@ fun SetDueDateDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.verticalScroll(rememberScrollState()),
         ) {
-            TabRow(selectedTabIndex = selectedTabIndex) {
-                Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }, icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.calendar_single_day),
-                        contentDescription = stringResource(R.string.single_day),
-                    )
-                }, text = { Text(stringResource(R.string.single_day)) })
-                Tab(selected = selectedTabIndex == 1, onClick = { selectedTabIndex = 1 }, icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.calendar_date_range),
-                        contentDescription = stringResource(R.string.date_range),
-                    )
-                }, text = { Text(stringResource(R.string.date_range)) })
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                    icon = {
+                        SegmentedButtonDefaults.Icon(active = selectedTabIndex == 0) {
+                            Icon(
+                                painter = painterResource(R.drawable.calendar_single_day),
+                                contentDescription = null,
+                            )
+                        }
+                    },
+                ) {
+                    Text(stringResource(R.string.single_day))
+                }
+                SegmentedButton(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                    icon = {
+                        SegmentedButtonDefaults.Icon(active = selectedTabIndex == 1) {
+                            Icon(
+                                painter = painterResource(R.drawable.calendar_date_range),
+                                contentDescription = null,
+                            )
+                        }
+                    },
+                ) {
+                    Text(stringResource(R.string.date_range))
+                }
             }
 
             if (selectedTabIndex == 0) {
@@ -398,12 +408,11 @@ fun SetDueDateDialog(
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text =
-                            pluralStringResource(
-                                R.plurals.set_due_date_range_label,
-                                viewModel.cardCount,
-                                viewModel.cardCount,
-                            ),
+                        text = pluralStringResource(
+                            R.plurals.set_due_date_range_label,
+                            viewModel.cardCount,
+                            viewModel.cardCount,
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -472,12 +481,11 @@ fun SetDueDateDialog(
 
             currentInterval?.let { interval ->
                 Text(
-                    text =
-                        pluralStringResource(
-                            R.plurals.set_due_date_current_interval,
-                            interval,
-                            interval,
-                        ),
+                    text = pluralStringResource(
+                        R.plurals.set_due_date_current_interval,
+                        interval,
+                        interval,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -526,14 +534,14 @@ fun ForgetCardsDialog(
         val isInspection = LocalInspectionMode.current
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .toggleable(
-                            value = restorePosition,
-                            role = Role.Checkbox,
-                            onValueChange = { restorePosition = it },
-                        ).padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = restorePosition,
+                        role = Role.Checkbox,
+                        onValueChange = { restorePosition = it },
+                    )
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(
@@ -545,14 +553,14 @@ fun ForgetCardsDialog(
             }
 
             Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .toggleable(
-                            value = resetCounts,
-                            role = Role.Checkbox,
-                            onValueChange = { resetCounts = it },
-                        ).padding(vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = resetCounts,
+                        role = Role.Checkbox,
+                        onValueChange = { resetCounts = it },
+                    )
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(
@@ -589,44 +597,42 @@ fun GradeNowDialog(
     onDismissRequest: () -> Unit,
 ) {
     val isInspection = LocalInspectionMode.current
-    val options =
-        remember(isInspection) {
-            if (isInspection) {
-                listOf(
-                    GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, "Again"),
-                    GradeOption(Rating.HARD, R.drawable.ic_ease_hard, "Hard"),
-                    GradeOption(Rating.GOOD, R.drawable.ic_ease_good, "Good"),
-                    GradeOption(Rating.EASY, R.drawable.ic_ease_easy, "Easy"),
-                )
-            } else {
-                listOf(
-                    GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
-                    GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
-                    GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
-                    GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy()),
-                )
-            }
+    val options = remember(isInspection) {
+        if (isInspection) {
+            listOf(
+                GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, "Again"),
+                GradeOption(Rating.HARD, R.drawable.ic_ease_hard, "Hard"),
+                GradeOption(Rating.GOOD, R.drawable.ic_ease_good, "Good"),
+                GradeOption(Rating.EASY, R.drawable.ic_ease_easy, "Easy"),
+            )
+        } else {
+            listOf(
+                GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
+                GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
+                GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
+                GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy()),
+            )
         }
+    }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.sentence_grade_now)) },
         text = {
             LazyColumn(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 250.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 250.dp),
             ) {
                 items(options) { option ->
                     Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onConfirm(option.rating)
-                                    onDismissRequest()
-                                }.padding(vertical = 12.dp, horizontal = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onConfirm(option.rating)
+                                onDismissRequest()
+                            }
+                            .padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
@@ -675,12 +681,11 @@ fun RepositionCardDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text =
-                        if (isInspection) {
-                            "Queue top: $queueTop\nQueue bottom: $queueBottom"
-                        } else {
-                            "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueBottom(queueBottom)}"
-                        },
+                    text = if (isInspection) {
+                        "Queue top: $queueTop\nQueue bottom: $queueBottom"
+                    } else {
+                        "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueBottom(queueBottom)}"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -697,9 +702,7 @@ fun RepositionCardDialog(
                             if (isInspection) {
                                 "Start position"
                             } else {
-                                TR
-                                    .browsingStartPosition()
-                                    .removeSuffix(":")
+                                TR.browsingStartPosition().removeSuffix(":")
                             },
                         )
                     },
@@ -781,14 +784,13 @@ fun RepositionCardDialog(
 private fun CardBrowserDeckSelectionDialogPreview() {
     AnkiDroidTheme {
         CardBrowserDeckSelectionDialog(
-            availableDecks =
-                listOf(
-                    SelectableDeck.Deck(1L, "Default"),
-                    SelectableDeck.Deck(2L, "Languages"),
-                    SelectableDeck.Deck(3L, "Languages::Spanish"),
-                    SelectableDeck.Deck(4L, "Languages::French"),
-                    SelectableDeck.Deck(5L, "Geography"),
-                ),
+            availableDecks = listOf(
+                SelectableDeck.Deck(1L, "Default"),
+                SelectableDeck.Deck(2L, "Languages"),
+                SelectableDeck.Deck(3L, "Languages::Spanish"),
+                SelectableDeck.Deck(4L, "Languages::French"),
+                SelectableDeck.Deck(5L, "Geography"),
+            ),
             onDeckSelected = {},
             onDismissRequest = {},
             onCreateDeck = {},
@@ -805,14 +807,13 @@ private fun CardBrowserDeckSelectionDialogPreview() {
 )
 @Composable
 private fun SetDueDateDialogSingleDayPreview() {
-    val viewModel =
-        remember {
-            SetDueDateViewModel().apply {
-                cardIds = listOf(1L)
-                currentInterval.value = 14
-                nextSingleDayDueDate = 5
-            }
+    val viewModel = remember {
+        SetDueDateViewModel().apply {
+            cardIds = listOf(1L)
+            currentInterval.value = 14
+            nextSingleDayDueDate = 5
         }
+    }
     AnkiDroidTheme {
         SetDueDateDialog(
             viewModel = viewModel,
@@ -831,15 +832,14 @@ private fun SetDueDateDialogSingleDayPreview() {
 )
 @Composable
 private fun SetDueDateDialogDateRangePreview() {
-    val viewModel =
-        remember {
-            SetDueDateViewModel().apply {
-                cardIds = listOf(1L, 2L, 3L)
-                currentTab = SetDueDateViewModel.Tab.DATE_RANGE
-                setNextDateRangeStart(3)
-                setNextDateRangeEnd(7)
-            }
+    val viewModel = remember {
+        SetDueDateViewModel().apply {
+            cardIds = listOf(1L, 2L, 3L)
+            currentTab = SetDueDateViewModel.Tab.DATE_RANGE
+            setNextDateRangeStart(3)
+            setNextDateRangeEnd(7)
         }
+    }
     AnkiDroidTheme {
         SetDueDateDialog(
             viewModel = viewModel,
