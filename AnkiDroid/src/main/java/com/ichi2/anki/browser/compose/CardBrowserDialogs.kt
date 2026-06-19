@@ -32,9 +32,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -49,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,8 +59,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -81,9 +82,10 @@ fun CardBrowserDeckSelectionDialog(
     var searchQuery by remember { mutableStateOf("") }
     val expandedDecks = remember { mutableStateMapOf<String, Boolean>() }
 
-    val deckHierarchy = remember(availableDecks, searchQuery) {
-        buildDeckHierarchyForDialog(availableDecks, searchQuery)
-    }
+    val deckHierarchy =
+        remember(availableDecks, searchQuery) {
+            buildDeckHierarchyForDialog(availableDecks, searchQuery)
+        }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -98,13 +100,13 @@ fun CardBrowserDeckSelectionDialog(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = stringResource(R.string.select_deck_title))
                 IconButton(onClick = onCreateDeck) {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.new_deck)
+                        contentDescription = stringResource(R.string.new_deck),
                     )
                 }
             }
@@ -123,13 +125,14 @@ fun CardBrowserDeckSelectionDialog(
                                 Icon(Icons.Default.Close, contentDescription = null)
                             }
                         }
-                    }
+                    },
                 )
 
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp),
                 ) {
                     val rootChildren = deckHierarchy[""] ?: emptyList()
                     item {
@@ -139,7 +142,7 @@ fun CardBrowserDeckSelectionDialog(
                             expandedDecks = expandedDecks,
                             onDeckSelected = onDeckSelected,
                             onCreateSubDeck = onCreateSubDeck,
-                            searchQuery = searchQuery
+                            searchQuery = searchQuery,
                         )
                     }
                 }
@@ -149,7 +152,7 @@ fun CardBrowserDeckSelectionDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        }
+        },
     )
 }
 
@@ -162,7 +165,7 @@ private fun DeckHierarchyList(
     onDeckSelected: (SelectableDeck.Deck) -> Unit,
     onCreateSubDeck: (DeckId) -> Unit,
     searchQuery: String,
-    parentName: String = ""
+    parentName: String = "",
 ) {
     Column {
         for (deck in children) {
@@ -172,29 +175,35 @@ private fun DeckHierarchyList(
             val depth = parts.size - 1
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = { onDeckSelected(deck) },
-                        onLongClick = { onCreateSubDeck(deck.deckId) }
-                    )
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = { onDeckSelected(deck) },
+                            onLongClick = { onCreateSubDeck(deck.deckId) },
+                        ).padding(vertical = 8.dp, horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Spacer(modifier = Modifier.width((depth * 16).dp))
 
                 if (hasChildren) {
                     Icon(
-                        painter = painterResource(
-                            if (isExpanded) R.drawable.keyboard_arrow_down_24px
-                            else R.drawable.keyboard_arrow_right_24px
-                        ),
-                        contentDescription = stringResource(
-                            if (isExpanded) R.string.collapse else R.string.expand
-                        ),
-                        modifier = Modifier
-                            .clickable { expandedDecks[deck.name] = !isExpanded }
-                            .padding(4.dp)
+                        painter =
+                            painterResource(
+                                if (isExpanded) {
+                                    R.drawable.keyboard_arrow_down_24px
+                                } else {
+                                    R.drawable.keyboard_arrow_right_24px
+                                },
+                            ),
+                        contentDescription =
+                            stringResource(
+                                if (isExpanded) R.string.collapse else R.string.expand,
+                            ),
+                        modifier =
+                            Modifier
+                                .clickable { expandedDecks[deck.name] = !isExpanded }
+                                .padding(4.dp),
                     )
                 } else {
                     Spacer(modifier = Modifier.width(32.dp))
@@ -203,7 +212,7 @@ private fun DeckHierarchyList(
                 Text(
                     text = deck.getDisplayName(LocalContext.current),
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
                 )
             }
 
@@ -216,7 +225,7 @@ private fun DeckHierarchyList(
                     onDeckSelected = onDeckSelected,
                     onCreateSubDeck = onCreateSubDeck,
                     searchQuery = searchQuery,
-                    parentName = deck.name
+                    parentName = deck.name,
                 )
             }
         }
@@ -224,28 +233,30 @@ private fun DeckHierarchyList(
 }
 
 private fun buildDeckHierarchyForDialog(
-    decks: List<SelectableDeck.Deck>, searchQuery: String
+    decks: List<SelectableDeck.Deck>,
+    searchQuery: String,
 ): Map<String, List<SelectableDeck.Deck>> {
     val hierarchy = mutableMapOf<String, MutableList<SelectableDeck.Deck>>()
     val topLevelDecks = mutableListOf<SelectableDeck.Deck>()
 
-    val decksToShow = if (searchQuery.isEmpty()) {
-        decks
-    } else {
-        val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
-        val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
-        val allDecksByName = decks.associateBy { it.name }
+    val decksToShow =
+        if (searchQuery.isEmpty()) {
+            decks
+        } else {
+            val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
+            val allDecksByName = decks.associateBy { it.name }
 
-        for (deck in matchingDecks) {
-            requiredDecks.add(deck)
-            var currentName = deck.name
-            while (currentName.contains("::")) {
-                currentName = currentName.substringBeforeLast("::")
-                allDecksByName[currentName]?.let { requiredDecks.add(it) }
+            for (deck in matchingDecks) {
+                requiredDecks.add(deck)
+                var currentName = deck.name
+                while (currentName.contains("::")) {
+                    currentName = currentName.substringBeforeLast("::")
+                    allDecksByName[currentName]?.let { requiredDecks.add(it) }
+                }
             }
+            requiredDecks.toList()
         }
-        requiredDecks.toList()
-    }
 
     for (deck in decksToShow) {
         val parts = deck.name.split("::")
@@ -269,10 +280,9 @@ fun SetDueDateDialog(
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-
     val isValid by viewModel.isValidFlow.collectAsStateWithLifecycle()
     val currentInterval by viewModel.currentInterval.collectAsStateWithLifecycle()
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     var singleDayText by remember { mutableStateOf("") }
     var startText by remember { mutableStateOf("") }
@@ -280,11 +290,12 @@ fun SetDueDateDialog(
     var updateInterval by remember { mutableStateOf(viewModel.updateIntervalToMatchDueDate) }
 
     LaunchedEffect(selectedTabIndex) {
-        viewModel.currentTab = if (selectedTabIndex == 0) {
-            SetDueDateViewModel.Tab.SINGLE_DAY
-        } else {
-            SetDueDateViewModel.Tab.DATE_RANGE
-        }
+        viewModel.currentTab =
+            if (selectedTabIndex == 0) {
+                SetDueDateViewModel.Tab.SINGLE_DAY
+            } else {
+                SetDueDateViewModel.Tab.DATE_RANGE
+            }
     }
 
     AlertDialog(
@@ -293,13 +304,13 @@ fun SetDueDateDialog(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = stringResource(R.string.sentence_set_due_date))
                 IconButton(onClick = onHelpClicked) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                        contentDescription = stringResource(R.string.help)
+                        contentDescription = stringResource(R.string.help),
                     )
                 }
             }
@@ -307,7 +318,7 @@ fun SetDueDateDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState())
+                modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 TabRow(selectedTabIndex = selectedTabIndex) {
                     Tab(
@@ -316,10 +327,10 @@ fun SetDueDateDialog(
                         icon = {
                             Icon(
                                 painter = painterResource(R.drawable.calendar_single_day),
-                                contentDescription = "Single Day"
+                                contentDescription = "Single Day",
                             )
                         },
-                        text = { Text("Single Day") }
+                        text = { Text("Single Day") },
                     )
                     Tab(
                         selected = selectedTabIndex == 1,
@@ -327,10 +338,10 @@ fun SetDueDateDialog(
                         icon = {
                             Icon(
                                 painter = painterResource(R.drawable.calendar_date_range),
-                                contentDescription = "Date Range"
+                                contentDescription = "Date Range",
                             )
                         },
-                        text = { Text("Date Range") }
+                        text = { Text("Date Range") },
                     )
                 }
 
@@ -346,31 +357,32 @@ fun SetDueDateDialog(
                                 pluralStringResource(
                                     R.plurals.set_due_date_single_day_label,
                                     viewModel.cardCount,
-                                    viewModel.cardCount
-                                )
+                                    viewModel.cardCount,
+                                ),
                             )
                         },
                         suffix = {
                             Text(
                                 pluralStringResource(
                                     R.plurals.set_due_date_label_suffix,
-                                    singleDayText.toIntOrNull() ?: 0
-                                )
+                                    singleDayText.toIntOrNull() ?: 0,
+                                ),
                             )
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
                     )
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = pluralStringResource(
-                                R.plurals.set_due_date_range_label,
-                                viewModel.cardCount,
-                                viewModel.cardCount
-                            ),
-                            style = MaterialTheme.typography.bodyMedium
+                            text =
+                                pluralStringResource(
+                                    R.plurals.set_due_date_range_label,
+                                    viewModel.cardCount,
+                                    viewModel.cardCount,
+                                ),
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedTextField(
@@ -384,13 +396,13 @@ fun SetDueDateDialog(
                                     Text(
                                         pluralStringResource(
                                             R.plurals.set_due_date_label_suffix,
-                                            startText.toIntOrNull() ?: 0
-                                        )
+                                            startText.toIntOrNull() ?: 0,
+                                        ),
                                     )
                                 },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
-                                singleLine = true
+                                singleLine = true,
                             )
                             OutlinedTextField(
                                 value = endText,
@@ -403,13 +415,13 @@ fun SetDueDateDialog(
                                     Text(
                                         pluralStringResource(
                                             R.plurals.set_due_date_label_suffix,
-                                            endText.toIntOrNull() ?: 0
-                                        )
+                                            endText.toIntOrNull() ?: 0,
+                                        ),
                                     )
                                 },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
-                                singleLine = true
+                                singleLine = true,
                             )
                         }
                     }
@@ -418,14 +430,14 @@ fun SetDueDateDialog(
                 if (viewModel.canSetUpdateIntervalToMatchDueDate) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Checkbox(
                             checked = updateInterval,
                             onCheckedChange = {
                                 updateInterval = it
                                 viewModel.updateIntervalToMatchDueDate = it
-                            }
+                            },
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = stringResource(R.string.set_due_date_match_interval))
@@ -434,13 +446,14 @@ fun SetDueDateDialog(
 
                 currentInterval?.let { interval ->
                     Text(
-                        text = LocalContext.current.resources.getQuantityString(
-                            R.plurals.set_due_date_current_interval,
-                            interval,
-                            interval
-                        ),
+                        text =
+                            pluralStringResource(
+                                R.plurals.set_due_date_current_interval,
+                                interval,
+                                interval,
+                            ),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -451,7 +464,7 @@ fun SetDueDateDialog(
                     onConfirm()
                     onDismissRequest()
                 },
-                enabled = isValid
+                enabled = isValid,
             ) {
                 Text(text = stringResource(R.string.dialog_ok))
             }
@@ -460,7 +473,7 @@ fun SetDueDateDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        }
+        },
     )
 }
 
@@ -470,7 +483,6 @@ fun ForgetCardsDialog(
     onDismissRequest: () -> Unit,
     onConfirm: (restorePosition: Boolean, resetCounts: Boolean) -> Unit,
 ) {
-
     var restorePosition by remember { mutableStateOf(true) }
     var resetCounts by remember { mutableStateOf(false) }
 
@@ -480,13 +492,13 @@ fun ForgetCardsDialog(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = stringResource(R.string.reset_card_dialog_title))
                 IconButton(onClick = onHelpClicked) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                        contentDescription = stringResource(R.string.help)
+                        contentDescription = stringResource(R.string.help),
                     )
                 }
             }
@@ -495,11 +507,11 @@ fun ForgetCardsDialog(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = restorePosition,
-                        onCheckedChange = { restorePosition = it }
+                        onCheckedChange = { restorePosition = it },
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = TR.schedulingRestorePosition())
@@ -507,11 +519,11 @@ fun ForgetCardsDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = resetCounts,
-                        onCheckedChange = { resetCounts = it }
+                        onCheckedChange = { resetCounts = it },
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = TR.schedulingResetCounts())
@@ -530,7 +542,7 @@ fun ForgetCardsDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        }
+        },
     )
 }
 
@@ -545,45 +557,46 @@ fun GradeNowDialog(
     onConfirm: (Rating) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-
-    val options = remember {
-        listOf(
-            GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
-            GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
-            GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
-            GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy())
-        )
-    }
+    val options =
+        remember {
+            listOf(
+                GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
+                GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
+                GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
+                GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy()),
+            )
+        }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.sentence_grade_now)) },
         text = {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 250.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 250.dp),
             ) {
                 items(options) { option ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onConfirm(option.rating)
-                                onDismissRequest()
-                            }
-                            .padding(vertical = 12.dp, horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onConfirm(option.rating)
+                                    onDismissRequest()
+                                }.padding(vertical = 12.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             painter = painterResource(option.iconRes),
                             contentDescription = null,
-                            tint = Color.Unspecified
+                            tint = Color.Unspecified,
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = option.label,
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
                         )
                     }
                 }
@@ -593,7 +606,7 @@ fun GradeNowDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        }
+        },
     )
 }
 
@@ -606,7 +619,6 @@ fun RepositionCardDialog(
     onConfirm: (position: Int, step: Int, random: Boolean, shift: Boolean) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-
     var startPositionText by remember { mutableStateOf(queueTop.toString()) }
     var stepText by remember { mutableStateOf("1") }
     var randomizeOrder by remember { mutableStateOf(initialRandom) }
@@ -618,12 +630,12 @@ fun RepositionCardDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState())
+                modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 Text(
                     text = "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueTop(queueBottom)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 OutlinedTextField(
@@ -632,7 +644,7 @@ fun RepositionCardDialog(
                     label = { Text(TR.browsingStartPosition().removeSuffix(":")) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
 
                 OutlinedTextField(
@@ -641,16 +653,16 @@ fun RepositionCardDialog(
                     label = { Text(TR.browsingStep().removeSuffix(":")) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = randomizeOrder,
-                        onCheckedChange = { randomizeOrder = it }
+                        onCheckedChange = { randomizeOrder = it },
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = TR.browsingRandomizeOrder())
@@ -658,11 +670,11 @@ fun RepositionCardDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = shiftPosition,
-                        onCheckedChange = { shiftPosition = it }
+                        onCheckedChange = { shiftPosition = it },
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = TR.browsingShiftPositionOfExistingCards())
@@ -677,7 +689,7 @@ fun RepositionCardDialog(
                     onConfirm(pos, step, randomizeOrder, shiftPosition)
                     onDismissRequest()
                 },
-                enabled = startPositionText.toIntOrNull() != null && stepText.toIntOrNull() != null
+                enabled = startPositionText.toIntOrNull() != null && stepText.toIntOrNull() != null,
             ) {
                 Text(text = stringResource(R.string.dialog_ok))
             }
@@ -686,6 +698,6 @@ fun RepositionCardDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        }
+        },
     )
 }
