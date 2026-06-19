@@ -166,6 +166,31 @@ class SetDueDateViewModelTest : JvmTest() {
         }
     }
 
+    @Test
+    fun `init resets state`() =
+        runViewModelTest {
+            nextSingleDayDueDate = 5
+            setNextDateRangeStart(2)
+            setNextDateRangeEnd(4)
+            currentTab = Tab.DATE_RANGE
+            singleDayText.value = "5"
+            startText.value = "2"
+            endText.value = "4"
+            updateIntervalToMatchDueDate = true
+
+            // Re-init
+            init(longArrayOf(1, 2), fsrsEnabled = false)
+
+            assertThat(nextSingleDayDueDate, equalTo(null))
+            assertThat(dateRange.start, equalTo(null))
+            assertThat(dateRange.end, equalTo(null))
+            assertThat(currentTab, equalTo(Tab.SINGLE_DAY))
+            assertThat(singleDayText.value, equalTo(""))
+            assertThat(startText.value, equalTo(""))
+            assertThat(endText.value, equalTo(""))
+            assertThat(updateIntervalToMatchDueDate, equalTo(false))
+        }
+
     private fun runViewModelTest(
         cardIds: List<CardId> = listOf(1, 2, 3),
         fsrsEnabled: Boolean = false,
