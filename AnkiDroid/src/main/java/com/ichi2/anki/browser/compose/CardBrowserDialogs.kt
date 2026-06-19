@@ -306,15 +306,15 @@ fun SetDueDateDialog(
                 Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }, icon = {
                     Icon(
                         painter = painterResource(R.drawable.calendar_single_day),
-                        contentDescription = "Single Day"
+                        contentDescription = stringResource(R.string.single_day)
                     )
-                }, text = { Text("Single Day") })
+                }, text = { Text(stringResource(R.string.single_day)) })
                 Tab(selected = selectedTabIndex == 1, onClick = { selectedTabIndex = 1 }, icon = {
                     Icon(
                         painter = painterResource(R.drawable.calendar_date_range),
-                        contentDescription = "Date Range"
+                        contentDescription = stringResource(R.string.date_range)
                     )
-                }, text = { Text("Date Range") })
+                }, text = { Text(stringResource(R.string.date_range)) })
             }
 
             if (selectedTabIndex == 0) {
@@ -594,7 +594,7 @@ fun RepositionCardDialog(
                     text = if (isInspection) {
                         "Queue top: $queueTop\nQueue bottom: $queueBottom"
                     } else {
-                        "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueTop(queueBottom)}"
+                        "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueBottom(queueBottom)}"
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -689,10 +689,7 @@ private fun CardBrowserDeckSelectionDialogPreview() {
 }
 
 @Preview(
-    name = "Set Due Date Dialog - Single Day",
-    widthDp = 400,
-    heightDp = 450,
-    showBackground = true
+    name = "Set Due Date Dialog - Single Day", widthDp = 400, heightDp = 450, showBackground = true
 )
 @Composable
 private fun SetDueDateDialogSingleDayPreview() {
@@ -713,10 +710,7 @@ private fun SetDueDateDialogSingleDayPreview() {
 }
 
 @Preview(
-    name = "Set Due Date Dialog - Date Range",
-    widthDp = 400,
-    heightDp = 450,
-    showBackground = true
+    name = "Set Due Date Dialog - Date Range", widthDp = 400, heightDp = 450, showBackground = true
 )
 @Composable
 private fun SetDueDateDialogDateRangePreview() {
