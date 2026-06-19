@@ -176,6 +176,9 @@ fun CardBrowserDeckSelectionDialog(
                         searchQuery = searchQuery,
                     )
                 }
+                val hasAnySubDecks = remember(flatDeckList) {
+                    flatDeckList.any { it.depth > 0 || it.hasChildren }
+                }
 
                 LazyColumn(
                     modifier = Modifier
@@ -188,6 +191,7 @@ fun CardBrowserDeckSelectionDialog(
                     ) { flatItem ->
                         DeckRow(
                             flatItem = flatItem,
+                            hasAnySubDecks = hasAnySubDecks,
                             onDeckSelected = onDeckSelected,
                             onCreateSubDeck = onCreateSubDeck,
                             onToggleExpand = { deckName ->
@@ -252,6 +256,7 @@ private fun buildFlatDeckList(
 @Composable
 private fun DeckRow(
     flatItem: FlatDeckItem,
+    hasAnySubDecks: Boolean,
     onDeckSelected: (SelectableDeck.Deck) -> Unit,
     onCreateSubDeck: (DeckId) -> Unit,
     onToggleExpand: (String) -> Unit,
@@ -260,6 +265,7 @@ private fun DeckRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .clip(MaterialTheme.shapes.medium)
             .combinedClickable(
                 onClick = { onDeckSelected(deck) },
@@ -268,33 +274,38 @@ private fun DeckRow(
             .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.width((flatItem.depth * 16).dp))
 
-        if (flatItem.hasChildren) {
-            Icon(
-                painter = painterResource(
-                    if (flatItem.isExpanded) {
-                        R.drawable.keyboard_arrow_down_24px
-                    } else {
-                        R.drawable.keyboard_arrow_right_24px
-                    },
-                ),
-                contentDescription = stringResource(
-                    if (flatItem.isExpanded) R.string.collapse else R.string.expand,
-                ),
-                modifier = Modifier
-                    .clickable { onToggleExpand(deck.name) }
-                    .padding(4.dp),
-            )
-        } else {
-            Spacer(modifier = Modifier.width(32.dp))
-        }
+
+        Spacer(modifier = Modifier.width((flatItem.depth * 16).dp))
 
         Text(
             text = deck.getDisplayName(LocalContext.current),
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyLarge,
         )
+
+        if (hasAnySubDecks) {
+            if (flatItem.hasChildren) {
+                Icon(
+                    painter = painterResource(
+                        if (flatItem.isExpanded) {
+                            R.drawable.keyboard_arrow_down_24px
+                        } else {
+                            R.drawable.keyboard_arrow_right_24px
+                        },
+                    ),
+                    contentDescription = stringResource(
+                        if (flatItem.isExpanded) R.string.collapse else R.string.expand,
+                    ),
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable { onToggleExpand(deck.name) }
+                        .padding(4.dp),
+                )
+            } else if (flatItem.depth > 0) {
+                Spacer(modifier = Modifier.size(32.dp))
+            }
+        }
     }
 }
 
