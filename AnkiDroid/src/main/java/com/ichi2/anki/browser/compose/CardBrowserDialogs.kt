@@ -487,7 +487,6 @@ fun SetDueDateDialog(
         TextButton(
             onClick = {
                 onConfirm()
-                onDismissRequest()
             },
             enabled = isValid,
         ) {

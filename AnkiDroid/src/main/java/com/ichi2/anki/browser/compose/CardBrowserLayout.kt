@@ -169,6 +169,7 @@ fun CardBrowserLayout(
             viewModel.showDeckSelectionDialog(false)
             viewModel.showCreateDeckDialog()
         }, onCreateSubDeck = { parentId ->
+            viewModel.showDeckSelectionDialog(false)
             viewModel.showCreateSubDeckDialog(parentId)
         })
     }
@@ -192,6 +193,7 @@ fun CardBrowserLayout(
                     val message = TR.schedulingSetDueDateDone(count)
                     viewModel.emitSnackbarMessage(message)
                     viewModel.launchSearchForCards()
+                    viewModel.showSetDueDateDialog(false)
                 }
             }
         })

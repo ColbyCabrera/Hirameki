@@ -294,8 +294,6 @@ class CardBrowserViewModel(
     private val _showGradeNowDialog = MutableStateFlow(false)
     val showGradeNowDialog = _showGradeNowDialog.asStateFlow()
 
-    private val _showExportDialog = MutableStateFlow(false)
-    val showExportDialog = _showExportDialog.asStateFlow()
 
     sealed interface RepositionDialogState {
         data object Hidden : RepositionDialogState
@@ -327,9 +325,6 @@ class CardBrowserViewModel(
         _showGradeNowDialog.value = show
     }
 
-    fun showExportDialog(show: Boolean) {
-        _showExportDialog.value = show
-    }
 
     fun showRepositionDialog(state: RepositionDialogState) {
         _repositionDialogState.value = state
