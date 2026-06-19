@@ -125,9 +125,7 @@ fun CardBrowserLayout(
     }
 
     LaunchedEffect(showDeckSelectionDialog, createDeckDialogState) {
-        if (showDeckSelectionDialog) {
-            availableDecks = viewModel.getAvailableDecks()
-        }
+        availableDecks = viewModel.getAvailableDecks()
     }
 
     BackHandler(isSearchOpen) {
