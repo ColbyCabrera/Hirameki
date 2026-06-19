@@ -19,7 +19,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -274,8 +273,6 @@ private fun DeckRow(
             .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-
-
         Spacer(modifier = Modifier.width((flatItem.depth * 16).dp))
 
         Text(
@@ -286,22 +283,20 @@ private fun DeckRow(
 
         if (hasAnySubDecks) {
             if (flatItem.hasChildren) {
-                Icon(
-                    painter = painterResource(
-                        if (flatItem.isExpanded) {
-                            R.drawable.keyboard_arrow_down_24px
-                        } else {
-                            R.drawable.keyboard_arrow_right_24px
-                        },
-                    ),
-                    contentDescription = stringResource(
-                        if (flatItem.isExpanded) R.string.collapse else R.string.expand,
-                    ),
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable { onToggleExpand(deck.name) }
-                        .padding(4.dp),
-                )
+                IconButton(onClick = { onToggleExpand(deck.name) }) {
+                    Icon(
+                        painter = painterResource(
+                            if (flatItem.isExpanded) {
+                                R.drawable.keyboard_arrow_down_24px
+                            } else {
+                                R.drawable.keyboard_arrow_right_24px
+                            },
+                        ),
+                        contentDescription = stringResource(
+                            if (flatItem.isExpanded) R.string.collapse else R.string.expand,
+                        ),
+                    )
+                }
             } else if (flatItem.depth > 0) {
                 Spacer(modifier = Modifier.size(32.dp))
             }
