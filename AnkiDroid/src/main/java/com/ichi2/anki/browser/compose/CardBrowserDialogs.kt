@@ -58,10 +58,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.scheduler.CardAnswer.Rating
@@ -70,6 +72,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.scheduling.SetDueDateViewModel
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 @Composable
 fun CardBrowserDeckSelectionDialog(
@@ -173,7 +176,8 @@ private fun DeckHierarchyList(
                         onClick = { onDeckSelected(deck) },
                         onLongClick = { onCreateSubDeck(deck.deckId) })
                     .padding(vertical = 8.dp, horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically) {
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Spacer(modifier = Modifier.width((depth * 16).dp))
 
                 if (hasChildren) {
@@ -299,26 +303,18 @@ fun SetDueDateDialog(
             modifier = Modifier.verticalScroll(rememberScrollState())
         ) {
             TabRow(selectedTabIndex = selectedTabIndex) {
-                Tab(
-                    selected = selectedTabIndex == 0,
-                    onClick = { selectedTabIndex = 0 },
-                    icon = {
-                        Icon(
-                            painter = painterResource(R.drawable.calendar_single_day),
-                            contentDescription = "Single Day"
-                        )
-                    },
-                    text = { Text("Single Day") })
-                Tab(
-                    selected = selectedTabIndex == 1,
-                    onClick = { selectedTabIndex = 1 },
-                    icon = {
-                        Icon(
-                            painter = painterResource(R.drawable.calendar_date_range),
-                            contentDescription = "Date Range"
-                        )
-                    },
-                    text = { Text("Date Range") })
+                Tab(selected = selectedTabIndex == 0, onClick = { selectedTabIndex = 0 }, icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.calendar_single_day),
+                        contentDescription = "Single Day"
+                    )
+                }, text = { Text("Single Day") })
+                Tab(selected = selectedTabIndex == 1, onClick = { selectedTabIndex = 1 }, icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.calendar_date_range),
+                        contentDescription = "Date Range"
+                    )
+                }, text = { Text("Date Range") })
             }
 
             if (selectedTabIndex == 0) {
@@ -467,25 +463,24 @@ fun ForgetCardsDialog(
             }
         }
     }, text = {
+        val isInspection = LocalInspectionMode.current
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = restorePosition, onCheckedChange = { restorePosition = it })
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = TR.schedulingRestorePosition())
+                Text(text = if (isInspection) "Restore position" else TR.schedulingRestorePosition())
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = resetCounts, onCheckedChange = { resetCounts = it })
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = TR.schedulingResetCounts())
+                Text(text = if (isInspection) "Reset counts" else TR.schedulingResetCounts())
             }
         }
     }, confirmButton = {
@@ -514,13 +509,23 @@ fun GradeNowDialog(
     onDismissRequest: () -> Unit,
 ) {
 
-    val options = remember {
-        listOf(
-            GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
-            GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
-            GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
-            GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy())
-        )
+    val isInspection = LocalInspectionMode.current
+    val options = remember(isInspection) {
+        if (isInspection) {
+            listOf(
+                GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, "Again"),
+                GradeOption(Rating.HARD, R.drawable.ic_ease_hard, "Hard"),
+                GradeOption(Rating.GOOD, R.drawable.ic_ease_good, "Good"),
+                GradeOption(Rating.EASY, R.drawable.ic_ease_easy, "Easy")
+            )
+        } else {
+            listOf(
+                GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
+                GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
+                GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
+                GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy())
+            )
+        }
     }
 
     AlertDialog(
@@ -571,6 +576,7 @@ fun RepositionCardDialog(
     onDismissRequest: () -> Unit,
 ) {
 
+    val isInspection = LocalInspectionMode.current
     var startPositionText by remember { mutableStateOf(queueTop.toString()) }
     var stepText by remember { mutableStateOf("1") }
     var randomizeOrder by remember { mutableStateOf(initialRandom) }
@@ -585,7 +591,11 @@ fun RepositionCardDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueTop(queueBottom)}",
+                    text = if (isInspection) {
+                        "Queue top: $queueTop\nQueue bottom: $queueBottom"
+                    } else {
+                        "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueTop(queueBottom)}"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -593,7 +603,12 @@ fun RepositionCardDialog(
                 OutlinedTextField(
                     value = startPositionText,
                     onValueChange = { startPositionText = it },
-                    label = { Text(TR.browsingStartPosition().removeSuffix(":")) },
+                    label = {
+                        Text(
+                            if (isInspection) "Start position" else TR.browsingStartPosition()
+                                .removeSuffix(":")
+                        )
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -602,7 +617,11 @@ fun RepositionCardDialog(
                 OutlinedTextField(
                     value = stepText,
                     onValueChange = { stepText = it },
-                    label = { Text(TR.browsingStep().removeSuffix(":")) },
+                    label = {
+                        Text(
+                            if (isInspection) "Step" else TR.browsingStep().removeSuffix(":")
+                        )
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -615,7 +634,7 @@ fun RepositionCardDialog(
                     Checkbox(
                         checked = randomizeOrder, onCheckedChange = { randomizeOrder = it })
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = TR.browsingRandomizeOrder())
+                    Text(text = if (isInspection) "Randomize order" else TR.browsingRandomizeOrder())
                 }
 
                 Row(
@@ -625,7 +644,7 @@ fun RepositionCardDialog(
                     Checkbox(
                         checked = shiftPosition, onCheckedChange = { shiftPosition = it })
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = TR.browsingShiftPositionOfExistingCards())
+                    Text(text = if (isInspection) "Shift position of existing cards" else TR.browsingShiftPositionOfExistingCards())
                 }
             }
         },
@@ -647,4 +666,103 @@ fun RepositionCardDialog(
                 Text(text = stringResource(R.string.dialog_cancel))
             }
         })
+}
+
+@Preview(
+    name = "Card Browser Deck Selection Dialog",
+    widthDp = 400,
+    heightDp = 600,
+    showBackground = true
+)
+@Composable
+private fun CardBrowserDeckSelectionDialogPreview() {
+    AnkiDroidTheme {
+        CardBrowserDeckSelectionDialog(
+            availableDecks = listOf(
+            SelectableDeck.Deck(1L, "Default"),
+            SelectableDeck.Deck(2L, "Languages"),
+            SelectableDeck.Deck(3L, "Languages::Spanish"),
+            SelectableDeck.Deck(4L, "Languages::French"),
+            SelectableDeck.Deck(5L, "Geography")
+        ), onDeckSelected = {}, onDismissRequest = {}, onCreateDeck = {}, onCreateSubDeck = {})
+    }
+}
+
+@Preview(
+    name = "Set Due Date Dialog - Single Day",
+    widthDp = 400,
+    heightDp = 450,
+    showBackground = true
+)
+@Composable
+private fun SetDueDateDialogSingleDayPreview() {
+    val viewModel = remember {
+        SetDueDateViewModel().apply {
+            cardIds = listOf(1L)
+            currentInterval.value = 14
+            nextSingleDayDueDate = 5
+        }
+    }
+    AnkiDroidTheme {
+        SetDueDateDialog(
+            viewModel = viewModel,
+            onHelpClicked = {},
+            onDismissRequest = {},
+            onConfirm = {})
+    }
+}
+
+@Preview(
+    name = "Set Due Date Dialog - Date Range",
+    widthDp = 400,
+    heightDp = 450,
+    showBackground = true
+)
+@Composable
+private fun SetDueDateDialogDateRangePreview() {
+    val viewModel = remember {
+        SetDueDateViewModel().apply {
+            cardIds = listOf(1L, 2L, 3L)
+            currentTab = SetDueDateViewModel.Tab.DATE_RANGE
+            setNextDateRangeStart(3)
+            setNextDateRangeEnd(7)
+        }
+    }
+    AnkiDroidTheme {
+        SetDueDateDialog(
+            viewModel = viewModel,
+            onHelpClicked = {},
+            onDismissRequest = {},
+            onConfirm = {})
+    }
+}
+
+@Preview(name = "Forget Cards Dialog", widthDp = 400, heightDp = 250, showBackground = true)
+@Composable
+private fun ForgetCardsDialogPreview() {
+    AnkiDroidTheme {
+        ForgetCardsDialog(onHelpClicked = {}, onDismissRequest = {}, onConfirm = { _, _ -> })
+    }
+}
+
+@Preview(name = "Grade Now Dialog", widthDp = 400, heightDp = 400, showBackground = true)
+@Composable
+private fun GradeNowDialogPreview() {
+    AnkiDroidTheme {
+        GradeNowDialog(onConfirm = {}, onDismissRequest = {})
+    }
+}
+
+@Preview(name = "Reposition Card Dialog", widthDp = 400, heightDp = 600, showBackground = true)
+@Composable
+private fun RepositionCardDialogPreview() {
+    AnkiDroidTheme {
+        RepositionCardDialog(
+            queueTop = 1,
+            queueBottom = 100,
+            initialRandom = true,
+            initialShift = false,
+            onConfirm = { _, _, _, _ -> },
+            onDismissRequest = {})
+    }
 }
