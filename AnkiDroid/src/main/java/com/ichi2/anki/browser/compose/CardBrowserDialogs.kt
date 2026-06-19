@@ -15,17 +15,26 @@
  */
 package com.ichi2.anki.browser.compose
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,8 +49,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -66,6 +77,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
@@ -75,6 +87,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.RoundedPolygon
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.scheduler.CardAnswer.Rating
 import com.ichi2.anki.CollectionManager.TR
@@ -83,6 +97,7 @@ import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.scheduling.SetDueDateViewModel
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.utils.MorphShape
 
 @Composable
 fun CardBrowserDeckSelectionDialog(
@@ -665,6 +680,14 @@ private data class GradeOption(
     val label: String,
 )
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private class RatingVisuals(
+    val shape: RoundedPolygon,
+    val containerColor: @Composable () -> Color,
+    val contentColor: @Composable () -> Color,
+)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun GradeNowDialog(
     onConfirm: (Rating) -> Unit,
@@ -689,6 +712,27 @@ fun GradeNowDialog(
         }
     }
 
+    val ratingVisuals = remember {
+        mapOf(
+            Rating.AGAIN to RatingVisuals(
+                shape = MaterialShapes.Arch,
+                containerColor = { MaterialTheme.colorScheme.errorContainer },
+                contentColor = { MaterialTheme.colorScheme.onErrorContainer }),
+            Rating.HARD to RatingVisuals(
+                shape = MaterialShapes.Slanted,
+                containerColor = { MaterialTheme.colorScheme.tertiaryContainer },
+                contentColor = { MaterialTheme.colorScheme.onTertiaryContainer }),
+            Rating.GOOD to RatingVisuals(
+                shape = MaterialShapes.Ghostish,
+                containerColor = { MaterialTheme.colorScheme.secondaryContainer },
+                contentColor = { MaterialTheme.colorScheme.onSecondaryContainer }),
+            Rating.EASY to RatingVisuals(
+                shape = MaterialShapes.Clover4Leaf,
+                containerColor = { MaterialTheme.colorScheme.primaryContainer },
+                contentColor = { MaterialTheme.colorScheme.onPrimaryContainer })
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismissRequest,
         shape = MaterialTheme.shapes.extraLarge,
@@ -699,33 +743,29 @@ fun GradeNowDialog(
             )
         },
         text = {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 250.dp),
+                    .heightIn(max = 300.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(options) { option ->
+                options.chunked(2).forEach { rowOptions ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable {
-                                onConfirm(option.rating)
-                                onDismissRequest()
-                            }
-                            .padding(vertical = 12.dp, horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            painter = painterResource(option.iconRes),
-                            contentDescription = null,
-                            tint = Color.Unspecified,
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = option.label,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
+                        rowOptions.forEach { option ->
+                            val visuals = ratingVisuals[option.rating]
+                            if (visuals != null) {
+                                GradeCard(
+                                    option = option,
+                                    visuals = visuals,
+                                    modifier = Modifier.weight(1f),
+                                    onConfirm = onConfirm,
+                                    onDismissRequest = onDismissRequest
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -736,6 +776,90 @@ fun GradeNowDialog(
             }
         },
     )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun GradeCard(
+    option: GradeOption,
+    visuals: RatingVisuals,
+    modifier: Modifier = Modifier,
+    onConfirm: (Rating) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val slowSpatialSpec = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
+
+    // Intro animation state
+    val mountProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        mountProgress.animateTo(targetValue = 1f, animationSpec = slowSpatialSpec)
+    }
+
+    // Dynamic scale/morph state based on press interactions
+    val animatedScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1.0f,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "GradeCardScale"
+    )
+
+    val animatedMorphProgress by animateFloatAsState(
+        targetValue = 1f, animationSpec = slowSpatialSpec, label = "GradeCardMorph"
+    )
+
+    // Combined morph progress (intro animation scaled by interaction factor)
+    val finalMorphProgress = mountProgress.value * animatedMorphProgress
+
+    // Set up normalized Morph from Circle to target shape
+    val morph = remember(visuals.shape) {
+        Morph(MaterialShapes.Circle.normalized(), visuals.shape.normalized())
+    }
+    val morphingShape = MorphShape(morph, finalMorphProgress)
+
+    Surface(
+        onClick = {
+            onConfirm(option.rating)
+            onDismissRequest()
+        },
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = animatedScale
+                scaleY = animatedScale
+            }
+            .aspectRatio(1.1f),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        interactionSource = interactionSource,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(morphingShape)
+                    .background(visuals.containerColor()), contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(option.iconRes),
+                    contentDescription = null,
+                    tint = visuals.contentColor(),
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = option.label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 private enum class HelpTopic {
