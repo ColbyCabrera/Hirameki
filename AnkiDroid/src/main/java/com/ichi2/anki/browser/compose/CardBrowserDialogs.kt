@@ -126,21 +126,30 @@ fun CardBrowserDeckSelectionDialog(
                     }
                 })
 
+            val rootChildren = deckHierarchy[""] ?: emptyList()
+            val flatDeckList = remember(deckHierarchy, expandedDecks.toMap(), searchQuery) {
+                buildFlatDeckList(
+                    deckHierarchy = deckHierarchy,
+                    children = rootChildren,
+                    expandedDecks = expandedDecks,
+                    searchQuery = searchQuery
+                )
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 300.dp)
             ) {
-                val rootChildren = deckHierarchy[""] ?: emptyList()
-                item {
-                    DeckHierarchyList(
-                        deckHierarchy = deckHierarchy,
-                        children = rootChildren,
-                        expandedDecks = expandedDecks,
+                items(
+                    items = flatDeckList, key = { it.deck.deckId }) { flatItem ->
+                    DeckRow(
+                        flatItem = flatItem,
                         onDeckSelected = onDeckSelected,
                         onCreateSubDeck = onCreateSubDeck,
-                        searchQuery = searchQuery
-                    )
+                        onToggleExpand = { deckName ->
+                            expandedDecks[deckName] = !flatItem.isExpanded
+                        })
                 }
             }
         }
@@ -151,71 +160,82 @@ fun CardBrowserDeckSelectionDialog(
     })
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun DeckHierarchyList(
+private data class FlatDeckItem(
+    val deck: SelectableDeck.Deck, val depth: Int, val hasChildren: Boolean, val isExpanded: Boolean
+)
+
+private fun buildFlatDeckList(
     deckHierarchy: Map<String, List<SelectableDeck.Deck>>,
     children: List<SelectableDeck.Deck>,
-    expandedDecks: MutableMap<String, Boolean>,
+    expandedDecks: Map<String, Boolean>,
+    searchQuery: String,
+    flatList: MutableList<FlatDeckItem> = mutableListOf()
+): List<FlatDeckItem> {
+    for (deck in children) {
+        val isExpanded = expandedDecks[deck.name] ?: (searchQuery.isNotEmpty())
+        val hasChildren = deckHierarchy.containsKey(deck.name)
+        val parts = deck.name.split("::")
+        val depth = parts.size - 1
+
+        flatList.add(
+            FlatDeckItem(
+                deck = deck, depth = depth, hasChildren = hasChildren, isExpanded = isExpanded
+            )
+        )
+
+        if (isExpanded && hasChildren) {
+            val subChildren = deckHierarchy[deck.name] ?: emptyList()
+            buildFlatDeckList(
+                deckHierarchy = deckHierarchy,
+                children = subChildren,
+                expandedDecks = expandedDecks,
+                searchQuery = searchQuery,
+                flatList = flatList
+            )
+        }
+    }
+    return flatList
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DeckRow(
+    flatItem: FlatDeckItem,
     onDeckSelected: (SelectableDeck.Deck) -> Unit,
     onCreateSubDeck: (DeckId) -> Unit,
-    searchQuery: String,
-    parentName: String = ""
+    onToggleExpand: (String) -> Unit
 ) {
-    Column {
-        for (deck in children) {
-            val isExpanded = expandedDecks[deck.name] ?: (searchQuery.isNotEmpty())
-            val hasChildren = deckHierarchy.containsKey(deck.name)
-            val parts = deck.name.split("::")
-            val depth = parts.size - 1
+    val deck = flatItem.deck
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { onDeckSelected(deck) },
+                onLongClick = { onCreateSubDeck(deck.deckId) })
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(modifier = Modifier.width((flatItem.depth * 16).dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = { onDeckSelected(deck) },
-                        onLongClick = { onCreateSubDeck(deck.deckId) })
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(modifier = Modifier.width((depth * 16).dp))
-
-                if (hasChildren) {
-                    Icon(
-                        painter = painterResource(
-                        if (isExpanded) R.drawable.keyboard_arrow_down_24px
-                        else R.drawable.keyboard_arrow_right_24px
-                    ),
-                        contentDescription = stringResource(
-                            if (isExpanded) R.string.collapse else R.string.expand
-                        ),
-                        modifier = Modifier
-                            .clickable { expandedDecks[deck.name] = !isExpanded }
-                            .padding(4.dp))
-                } else {
-                    Spacer(modifier = Modifier.width(32.dp))
-                }
-
-                Text(
-                    text = deck.getDisplayName(LocalContext.current),
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-
-            if (isExpanded && hasChildren) {
-                val subChildren = deckHierarchy[deck.name] ?: emptyList()
-                DeckHierarchyList(
-                    deckHierarchy = deckHierarchy,
-                    children = subChildren,
-                    expandedDecks = expandedDecks,
-                    onDeckSelected = onDeckSelected,
-                    onCreateSubDeck = onCreateSubDeck,
-                    searchQuery = searchQuery,
-                    parentName = deck.name
-                )
-            }
+        if (flatItem.hasChildren) {
+            Icon(
+                painter = painterResource(
+                if (flatItem.isExpanded) R.drawable.keyboard_arrow_down_24px
+                else R.drawable.keyboard_arrow_right_24px
+            ), contentDescription = stringResource(
+                if (flatItem.isExpanded) R.string.collapse else R.string.expand
+            ), modifier = Modifier
+                    .clickable { onToggleExpand(deck.name) }
+                    .padding(4.dp))
+        } else {
+            Spacer(modifier = Modifier.width(32.dp))
         }
+
+        Text(
+            text = deck.getDisplayName(LocalContext.current),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
