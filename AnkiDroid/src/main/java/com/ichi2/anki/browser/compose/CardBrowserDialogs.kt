@@ -109,9 +109,10 @@ fun CardBrowserDeckSelectionDialog(
     var searchQuery by remember { mutableStateOf("") }
     val expandedDecks = remember { mutableStateMapOf<String, Boolean>() }
 
-    val deckHierarchy = remember(availableDecks, searchQuery) {
-        buildDeckHierarchyForDialog(availableDecks, searchQuery)
-    }
+    val deckHierarchy =
+        remember(availableDecks, searchQuery) {
+            buildDeckHierarchyForDialog(availableDecks, searchQuery)
+        }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -151,12 +152,13 @@ fun CardBrowserDeckSelectionDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent,
-                    ),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.Transparent,
+                        ),
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = "" }) {
@@ -167,22 +169,25 @@ fun CardBrowserDeckSelectionDialog(
                 )
 
                 val rootChildren = deckHierarchy[""] ?: emptyList()
-                val flatDeckList = remember(deckHierarchy, expandedDecks.toMap(), searchQuery) {
-                    buildFlatDeckList(
-                        deckHierarchy = deckHierarchy,
-                        children = rootChildren,
-                        expandedDecks = expandedDecks,
-                        searchQuery = searchQuery,
-                    )
-                }
-                val hasAnySubDecks = remember(flatDeckList) {
-                    flatDeckList.any { it.depth > 0 || it.hasChildren }
-                }
+                val flatDeckList =
+                    remember(deckHierarchy, expandedDecks.toMap(), searchQuery) {
+                        buildFlatDeckList(
+                            deckHierarchy = deckHierarchy,
+                            children = rootChildren,
+                            expandedDecks = expandedDecks,
+                            searchQuery = searchQuery,
+                        )
+                    }
+                val hasAnySubDecks =
+                    remember(flatDeckList) {
+                        flatDeckList.any { it.depth > 0 || it.hasChildren }
+                    }
 
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp),
                 ) {
                     items(
                         items = flatDeckList,
@@ -205,7 +210,8 @@ fun CardBrowserDeckSelectionDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 private data class FlatDeckItem(
@@ -262,15 +268,15 @@ private fun DeckRow(
 ) {
     val deck = flatItem.deck
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .combinedClickable(
-                onClick = { onDeckSelected(deck) },
-                onLongClick = { onCreateSubDeck(deck.deckId) },
-            )
-            .padding(vertical = 8.dp, horizontal = 16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .combinedClickable(
+                    onClick = { onDeckSelected(deck) },
+                    onLongClick = { onCreateSubDeck(deck.deckId) },
+                ).padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(modifier = Modifier.width((flatItem.depth * 16).dp))
@@ -285,16 +291,18 @@ private fun DeckRow(
             if (flatItem.hasChildren) {
                 IconButton(onClick = { onToggleExpand(deck.name) }) {
                     Icon(
-                        painter = painterResource(
-                            if (flatItem.isExpanded) {
-                                R.drawable.keyboard_arrow_down_24px
-                            } else {
-                                R.drawable.keyboard_arrow_right_24px
-                            },
-                        ),
-                        contentDescription = stringResource(
-                            if (flatItem.isExpanded) R.string.collapse else R.string.expand,
-                        ),
+                        painter =
+                            painterResource(
+                                if (flatItem.isExpanded) {
+                                    R.drawable.keyboard_arrow_down_24px
+                                } else {
+                                    R.drawable.keyboard_arrow_right_24px
+                                },
+                            ),
+                        contentDescription =
+                            stringResource(
+                                if (flatItem.isExpanded) R.string.collapse else R.string.expand,
+                            ),
                     )
                 }
             } else if (flatItem.depth > 0) {
@@ -311,23 +319,24 @@ private fun buildDeckHierarchyForDialog(
     val hierarchy = mutableMapOf<String, MutableList<SelectableDeck.Deck>>()
     val topLevelDecks = mutableListOf<SelectableDeck.Deck>()
 
-    val decksToShow = if (searchQuery.isEmpty()) {
-        decks
-    } else {
-        val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
-        val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
-        val allDecksByName = decks.associateBy { it.name }
+    val decksToShow =
+        if (searchQuery.isEmpty()) {
+            decks
+        } else {
+            val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
+            val allDecksByName = decks.associateBy { it.name }
 
-        for (deck in matchingDecks) {
-            requiredDecks.add(deck)
-            var currentName = deck.name
-            while (currentName.contains("::")) {
-                currentName = currentName.substringBeforeLast("::")
-                allDecksByName[currentName]?.let { requiredDecks.add(it) }
+            for (deck in matchingDecks) {
+                requiredDecks.add(deck)
+                var currentName = deck.name
+                while (currentName.contains("::")) {
+                    currentName = currentName.substringBeforeLast("::")
+                    allDecksByName[currentName]?.let { requiredDecks.add(it) }
+                }
             }
+            requiredDecks.toList()
         }
-        requiredDecks.toList()
-    }
 
     for (deck in decksToShow) {
         val parts = deck.name.split("::")
@@ -360,11 +369,12 @@ fun SetDueDateDialog(
     var updateInterval by remember { mutableStateOf(viewModel.updateIntervalToMatchDueDate) }
 
     LaunchedEffect(selectedTabIndex) {
-        viewModel.currentTab = if (selectedTabIndex == 0) {
-            SetDueDateViewModel.Tab.SINGLE_DAY
-        } else {
-            SetDueDateViewModel.Tab.DATE_RANGE
-        }
+        viewModel.currentTab =
+            if (selectedTabIndex == 0) {
+                SetDueDateViewModel.Tab.SINGLE_DAY
+            } else {
+                SetDueDateViewModel.Tab.DATE_RANGE
+            }
     }
 
     AlertDialog(
@@ -457,21 +467,23 @@ fun SetDueDateDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = Color.Transparent,
-                        ),
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = Color.Transparent,
+                            ),
                     )
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = pluralStringResource(
-                                R.plurals.set_due_date_range_label,
-                                viewModel.cardCount,
-                                viewModel.cardCount,
-                            ),
+                            text =
+                                pluralStringResource(
+                                    R.plurals.set_due_date_range_label,
+                                    viewModel.cardCount,
+                                    viewModel.cardCount,
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -496,12 +508,13 @@ fun SetDueDateDialog(
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 shape = MaterialTheme.shapes.medium,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = Color.Transparent,
-                                ),
+                                colors =
+                                    OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = Color.Transparent,
+                                    ),
                             )
                             OutlinedTextField(
                                 value = endText,
@@ -524,12 +537,13 @@ fun SetDueDateDialog(
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 shape = MaterialTheme.shapes.medium,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = Color.Transparent,
-                                ),
+                                colors =
+                                    OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = Color.Transparent,
+                                    ),
                             )
                         }
                     }
@@ -537,18 +551,18 @@ fun SetDueDateDialog(
 
                 if (viewModel.canSetUpdateIntervalToMatchDueDate) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .toggleable(
-                                value = updateInterval,
-                                role = Role.Checkbox,
-                                onValueChange = {
-                                    updateInterval = it
-                                    viewModel.updateIntervalToMatchDueDate = it
-                                },
-                            )
-                            .padding(vertical = 8.dp, horizontal = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.medium)
+                                .toggleable(
+                                    value = updateInterval,
+                                    role = Role.Checkbox,
+                                    onValueChange = {
+                                        updateInterval = it
+                                        viewModel.updateIntervalToMatchDueDate = it
+                                    },
+                                ).padding(vertical = 8.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Checkbox(
@@ -562,11 +576,12 @@ fun SetDueDateDialog(
 
                 currentInterval?.let { interval ->
                     Text(
-                        text = pluralStringResource(
-                            R.plurals.set_due_date_current_interval,
-                            interval,
-                            interval,
-                        ),
+                        text =
+                            pluralStringResource(
+                                R.plurals.set_due_date_current_interval,
+                                interval,
+                                interval,
+                            ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -587,7 +602,8 @@ fun SetDueDateDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 @Composable
@@ -625,15 +641,15 @@ fun ForgetCardsDialog(
             val isInspection = LocalInspectionMode.current
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .toggleable(
-                            value = restorePosition,
-                            role = Role.Checkbox,
-                            onValueChange = { restorePosition = it },
-                        )
-                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .toggleable(
+                                value = restorePosition,
+                                role = Role.Checkbox,
+                                onValueChange = { restorePosition = it },
+                            ).padding(vertical = 8.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
@@ -645,15 +661,15 @@ fun ForgetCardsDialog(
                 }
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .toggleable(
-                            value = resetCounts,
-                            role = Role.Checkbox,
-                            onValueChange = { resetCounts = it },
-                        )
-                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .toggleable(
+                                value = resetCounts,
+                                role = Role.Checkbox,
+                                onValueChange = { resetCounts = it },
+                            ).padding(vertical = 8.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
@@ -677,7 +693,8 @@ fun ForgetCardsDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 private data class GradeOption(
@@ -700,44 +717,54 @@ fun GradeNowDialog(
     onDismissRequest: () -> Unit,
 ) {
     val isInspection = LocalInspectionMode.current
-    val options = remember(isInspection) {
-        if (isInspection) {
-            listOf(
-                GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, "Again"),
-                GradeOption(Rating.HARD, R.drawable.ic_ease_hard, "Hard"),
-                GradeOption(Rating.GOOD, R.drawable.ic_ease_good, "Good"),
-                GradeOption(Rating.EASY, R.drawable.ic_ease_easy, "Easy"),
-            )
-        } else {
-            listOf(
-                GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
-                GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
-                GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
-                GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy()),
+    val options =
+        remember(isInspection) {
+            if (isInspection) {
+                listOf(
+                    GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, "Again"),
+                    GradeOption(Rating.HARD, R.drawable.ic_ease_hard, "Hard"),
+                    GradeOption(Rating.GOOD, R.drawable.ic_ease_good, "Good"),
+                    GradeOption(Rating.EASY, R.drawable.ic_ease_easy, "Easy"),
+                )
+            } else {
+                listOf(
+                    GradeOption(Rating.AGAIN, R.drawable.ic_ease_again, TR.studyingAgain()),
+                    GradeOption(Rating.HARD, R.drawable.ic_ease_hard, TR.studyingHard()),
+                    GradeOption(Rating.GOOD, R.drawable.ic_ease_good, TR.studyingGood()),
+                    GradeOption(Rating.EASY, R.drawable.ic_ease_easy, TR.studyingEasy()),
+                )
+            }
+        }
+
+    val ratingVisuals =
+        remember {
+            mapOf(
+                Rating.AGAIN to
+                    RatingVisuals(
+                        shape = MaterialShapes.Arch,
+                        containerColor = { MaterialTheme.colorScheme.errorContainer },
+                        contentColor = { MaterialTheme.colorScheme.onErrorContainer },
+                    ),
+                Rating.HARD to
+                    RatingVisuals(
+                        shape = MaterialShapes.Slanted,
+                        containerColor = { MaterialTheme.colorScheme.tertiaryContainer },
+                        contentColor = { MaterialTheme.colorScheme.onTertiaryContainer },
+                    ),
+                Rating.GOOD to
+                    RatingVisuals(
+                        shape = MaterialShapes.Ghostish,
+                        containerColor = { MaterialTheme.colorScheme.secondaryContainer },
+                        contentColor = { MaterialTheme.colorScheme.onSecondaryContainer },
+                    ),
+                Rating.EASY to
+                    RatingVisuals(
+                        shape = MaterialShapes.Clover4Leaf,
+                        containerColor = { MaterialTheme.colorScheme.primaryContainer },
+                        contentColor = { MaterialTheme.colorScheme.onPrimaryContainer },
+                    ),
             )
         }
-    }
-
-    val ratingVisuals = remember {
-        mapOf(
-            Rating.AGAIN to RatingVisuals(
-                shape = MaterialShapes.Arch,
-                containerColor = { MaterialTheme.colorScheme.errorContainer },
-                contentColor = { MaterialTheme.colorScheme.onErrorContainer }),
-            Rating.HARD to RatingVisuals(
-                shape = MaterialShapes.Slanted,
-                containerColor = { MaterialTheme.colorScheme.tertiaryContainer },
-                contentColor = { MaterialTheme.colorScheme.onTertiaryContainer }),
-            Rating.GOOD to RatingVisuals(
-                shape = MaterialShapes.Ghostish,
-                containerColor = { MaterialTheme.colorScheme.secondaryContainer },
-                contentColor = { MaterialTheme.colorScheme.onSecondaryContainer }),
-            Rating.EASY to RatingVisuals(
-                shape = MaterialShapes.Clover4Leaf,
-                containerColor = { MaterialTheme.colorScheme.primaryContainer },
-                contentColor = { MaterialTheme.colorScheme.onPrimaryContainer })
-        )
-    }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -750,15 +777,16 @@ fun GradeNowDialog(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 options.chunked(2).forEach { rowOptions ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         rowOptions.forEach { option ->
                             val visuals = ratingVisuals[option.rating]
@@ -768,7 +796,7 @@ fun GradeNowDialog(
                                     visuals = visuals,
                                     modifier = Modifier.weight(1f),
                                     onConfirm = onConfirm,
-                                    onDismissRequest = onDismissRequest
+                                    onDismissRequest = onDismissRequest,
                                 )
                             }
                         }
@@ -807,20 +835,23 @@ private fun GradeCard(
     val animatedScale by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1.0f,
         animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
-        label = "GradeCardScale"
+        label = "GradeCardScale",
     )
 
     val animatedMorphProgress by animateFloatAsState(
-        targetValue = 1f, animationSpec = slowSpatialSpec, label = "GradeCardMorph"
+        targetValue = 1f,
+        animationSpec = slowSpatialSpec,
+        label = "GradeCardMorph",
     )
 
     // Combined morph progress (intro animation scaled by interaction factor)
     val finalMorphProgress = mountProgress.value * animatedMorphProgress
 
     // Set up normalized Morph from Circle to target shape
-    val morph = remember(visuals.shape) {
-        Morph(MaterialShapes.Circle.normalized(), visuals.shape.normalized())
-    }
+    val morph =
+        remember(visuals.shape) {
+            Morph(MaterialShapes.Circle.normalized(), visuals.shape.normalized())
+        }
     val morphingShape = MorphShape(morph, finalMorphProgress)
 
     Surface(
@@ -828,48 +859,52 @@ private fun GradeCard(
             onConfirm(option.rating)
             onDismissRequest()
         },
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = animatedScale
-                scaleY = animatedScale
-            }
-            .aspectRatio(1.1f),
+        modifier =
+            modifier
+                .graphicsLayer {
+                    scaleX = animatedScale
+                    scaleY = animatedScale
+                }.aspectRatio(1.1f),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceVariant,
         interactionSource = interactionSource,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(morphingShape)
-                    .background(visuals.containerColor()), contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(56.dp)
+                        .clip(morphingShape)
+                        .background(visuals.containerColor()),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = painterResource(option.iconRes),
                     contentDescription = null,
                     tint = visuals.contentColor(),
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(28.dp),
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = option.label,
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
 private enum class HelpTopic {
-    RANDOMIZE_ORDER, SHIFT_POSITION
+    RANDOMIZE_ORDER,
+    SHIFT_POSITION,
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -904,7 +939,7 @@ fun RepositionCardDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = "Change when these new cards will be shown for review. Cards with lower queue numbers are shown sooner.",
+                    text = stringResource(R.string.reposition_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -912,25 +947,26 @@ fun RepositionCardDialog(
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "Current Queue Bounds",
+                            text = stringResource(R.string.reposition_current_queue_bounds),
                             style = MaterialTheme.typography.labelLargeEmphasized,
                             color = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (isInspection) {
-                                "Queue top: $queueTop\nQueue bottom: $queueBottom"
-                            } else {
-                                "${TR.browsingQueueTop(queueTop)}\n${
-                                    TR.browsingQueueBottom(
-                                        queueBottom
-                                    )
-                                }"
-                            },
+                            text =
+                                if (isInspection) {
+                                    "Queue top: $queueTop\nQueue bottom: $queueBottom"
+                                } else {
+                                    "${TR.browsingQueueTop(queueTop)}\n${
+                                        TR.browsingQueueBottom(
+                                            queueBottom,
+                                        )
+                                    }"
+                                },
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }
@@ -953,18 +989,19 @@ fun RepositionCardDialog(
                         )
                     },
                     supportingText = {
-                        Text("The queue position assigned to the first card. Values closer to $queueTop appear sooner.")
+                        Text(stringResource(R.string.reposition_start_position_help, queueTop))
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent,
-                    ),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.Transparent,
+                        ),
                 )
 
                 OutlinedTextField(
@@ -980,30 +1017,31 @@ fun RepositionCardDialog(
                         )
                     },
                     supportingText = {
-                        Text("Spacing between cards in the queue. 1 places them next to each other; higher numbers spread them out.")
+                        Text(stringResource(R.string.reposition_step_help))
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent,
-                    ),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.Transparent,
+                        ),
                 )
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .toggleable(
-                            value = randomizeOrder,
-                            role = Role.Checkbox,
-                            onValueChange = { randomizeOrder = it },
-                        )
-                        .padding(top = 8.dp, start = 8.dp, end = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .toggleable(
+                                value = randomizeOrder,
+                                role = Role.Checkbox,
+                                onValueChange = { randomizeOrder = it },
+                            ).padding(top = 8.dp, start = 8.dp, end = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
@@ -1017,7 +1055,8 @@ fun RepositionCardDialog(
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(
-                        onClick = { activeHelpTopic = HelpTopic.RANDOMIZE_ORDER }) {
+                        onClick = { activeHelpTopic = HelpTopic.RANDOMIZE_ORDER },
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                             contentDescription = stringResource(R.string.help),
@@ -1026,15 +1065,15 @@ fun RepositionCardDialog(
                 }
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .toggleable(
-                            value = shiftPosition,
-                            role = Role.Checkbox,
-                            onValueChange = { shiftPosition = it },
-                        )
-                        .padding(horizontal = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .toggleable(
+                                value = shiftPosition,
+                                role = Role.Checkbox,
+                                onValueChange = { shiftPosition = it },
+                            ).padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
@@ -1048,7 +1087,8 @@ fun RepositionCardDialog(
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(
-                        onClick = { activeHelpTopic = HelpTopic.SHIFT_POSITION }) {
+                        onClick = { activeHelpTopic = HelpTopic.SHIFT_POSITION },
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                             contentDescription = stringResource(R.string.help),
@@ -1084,22 +1124,43 @@ fun RepositionCardDialog(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp, top = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp, top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                val title = when (activeHelpTopic) {
-                    HelpTopic.RANDOMIZE_ORDER -> if (isInspection) "Randomize order" else TR.browsingRandomizeOrder()
-                    HelpTopic.SHIFT_POSITION -> if (isInspection) "Shift position of existing cards" else TR.browsingShiftPositionOfExistingCards()
-                    null -> ""
-                }
-                val description = when (activeHelpTopic) {
-                    HelpTopic.RANDOMIZE_ORDER -> "Shuffle cards randomly instead of keeping their current sequence."
-                    HelpTopic.SHIFT_POSITION -> "Push existing cards down the queue to insert these cards cleanly. Otherwise, positions are shared."
-                    null -> ""
-                }
+                val title =
+                    when (activeHelpTopic) {
+                        HelpTopic.RANDOMIZE_ORDER -> if (isInspection) "Randomize order" else TR.browsingRandomizeOrder()
+                        HelpTopic.SHIFT_POSITION ->
+                            if (isInspection) {
+                                "Shift position of existing cards"
+                            } else {
+                                TR
+                                    .browsingShiftPositionOfExistingCards()
+                            }
+                        null -> ""
+                    }
+                val description =
+                    when (activeHelpTopic) {
+                        HelpTopic.RANDOMIZE_ORDER ->
+                            if (isInspection) {
+                                "Shuffle cards randomly instead of keeping their current sequence."
+                            } else {
+                                stringResource(R.string.reposition_randomize_order_help)
+                            }
+
+                        HelpTopic.SHIFT_POSITION ->
+                            if (isInspection) {
+                                "Push existing cards down the queue to insert these cards cleanly. Otherwise, positions are shared."
+                            } else {
+                                stringResource(R.string.reposition_shift_position_help)
+                            }
+
+                        null -> ""
+                    }
 
                 Text(
                     text = title,
@@ -1126,13 +1187,14 @@ fun RepositionCardDialog(
 private fun CardBrowserDeckSelectionDialogPreview() {
     AnkiDroidTheme {
         CardBrowserDeckSelectionDialog(
-            availableDecks = listOf(
-                SelectableDeck.Deck(1L, "Default"),
-                SelectableDeck.Deck(2L, "Languages"),
-                SelectableDeck.Deck(3L, "Languages::Spanish"),
-                SelectableDeck.Deck(4L, "Languages::French"),
-                SelectableDeck.Deck(5L, "Geography"),
-            ),
+            availableDecks =
+                listOf(
+                    SelectableDeck.Deck(1L, "Default"),
+                    SelectableDeck.Deck(2L, "Languages"),
+                    SelectableDeck.Deck(3L, "Languages::Spanish"),
+                    SelectableDeck.Deck(4L, "Languages::French"),
+                    SelectableDeck.Deck(5L, "Geography"),
+                ),
             onDeckSelected = {},
             onDismissRequest = {},
             onCreateDeck = {},
@@ -1149,13 +1211,14 @@ private fun CardBrowserDeckSelectionDialogPreview() {
 )
 @Composable
 private fun SetDueDateDialogSingleDayPreview() {
-    val viewModel = remember {
-        SetDueDateViewModel().apply {
-            cardIds = listOf(1L)
-            currentInterval.value = 14
-            nextSingleDayDueDate = 5
+    val viewModel =
+        remember {
+            SetDueDateViewModel().apply {
+                cardIds = listOf(1L)
+                currentInterval.value = 14
+                nextSingleDayDueDate = 5
+            }
         }
-    }
     AnkiDroidTheme {
         SetDueDateDialog(
             viewModel = viewModel,
@@ -1174,14 +1237,15 @@ private fun SetDueDateDialogSingleDayPreview() {
 )
 @Composable
 private fun SetDueDateDialogDateRangePreview() {
-    val viewModel = remember {
-        SetDueDateViewModel().apply {
-            cardIds = listOf(1L, 2L, 3L)
-            currentTab = SetDueDateViewModel.Tab.DATE_RANGE
-            setNextDateRangeStart(3)
-            setNextDateRangeEnd(7)
+    val viewModel =
+        remember {
+            SetDueDateViewModel().apply {
+                cardIds = listOf(1L, 2L, 3L)
+                currentTab = SetDueDateViewModel.Tab.DATE_RANGE
+                setNextDateRangeStart(3)
+                setNextDateRangeEnd(7)
+            }
         }
-    }
     AnkiDroidTheme {
         SetDueDateDialog(
             viewModel = viewModel,

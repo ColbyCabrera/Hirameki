@@ -70,6 +70,7 @@ import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import com.ichi2.anki.utils.ext.showDialogFragment
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -154,15 +155,30 @@ fun CardBrowserLayout(
             viewModel.showDeckSelectionDialog(false)
             val did = deck.deckId
             coroutineScope.launch {
-                val changed = viewModel.moveSelectedCardsToDeck(did).await()
-                viewModel.launchSearchForCards()
-                val message = activity?.resources?.getQuantityString(
-                    R.plurals.card_browser_cards_moved, changed.count, changed.count
-                ) ?: ""
-                viewModel.emitSnackbarMessage(
-                    message, activity?.getString(R.string.undo)
-                ) {
-                    viewModel.undo()
+                try {
+                    val changed = viewModel.moveSelectedCardsToDeck(did).await()
+                    viewModel.launchSearchForCards()
+                    if (activity != null) {
+                        val message =
+                            activity.resources.getQuantityString(
+                                R.plurals.card_browser_cards_moved,
+                                changed.count,
+                                changed.count,
+                            )
+                        viewModel.emitSnackbarMessage(
+                            message,
+                            activity.getString(R.string.undo),
+                        ) {
+                            viewModel.undo()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to move cards to deck")
+                    if (activity != null) {
+                        viewModel.emitSnackbarMessage(
+                            activity.getString(R.string.card_browser_move_cards_failed),
+                        )
+                    }
                 }
             }
         }, onDismissRequest = { viewModel.showDeckSelectionDialog(false) }, onCreateDeck = {
@@ -204,12 +220,13 @@ fun CardBrowserLayout(
     if (showForgetCardsDialog) {
         ForgetCardsDialog(
             onHelpClicked = {
-            (activity as? AnkiActivity)?.openUrl(R.string.link_help_forget_cards)
-        },
+                (activity as? AnkiActivity)?.openUrl(R.string.link_help_forget_cards)
+            },
             onDismissRequest = { viewModel.showForgetCardsDialog(false) },
             onConfirm = { restorePosition, resetCounts ->
                 viewModel.forgetSelectedCards(restorePosition, resetCounts)
-            })
+            },
+        )
     }
 
     // Grade Now Dialog
@@ -232,7 +249,8 @@ fun CardBrowserLayout(
                 onConfirm = { position, step, random, shift ->
                     viewModel.repositionSelectedCards(position, step, random, shift)
                 },
-                onDismissRequest = { viewModel.showRepositionDialog(CardBrowserViewModel.RepositionDialogState.Hidden) })
+                onDismissRequest = { viewModel.showRepositionDialog(CardBrowserViewModel.RepositionDialogState.Hidden) },
+            )
         }
 
         CardBrowserViewModel.RepositionDialogState.Hidden -> {}
@@ -248,21 +266,24 @@ fun CardBrowserLayout(
                         AppNavigationItem.CardBrowser -> { // Already here
                         }
 
-                        AppNavigationItem.Statistics -> activity?.startActivity(
-                            Statistics.getIntent(
-                                activity,
-                            ),
-                        )
+                        AppNavigationItem.Statistics ->
+                            activity?.startActivity(
+                                Statistics.getIntent(
+                                    activity,
+                                ),
+                            )
 
-                        AppNavigationItem.Settings -> activity?.startActivity(
-                            PreferencesActivity.getIntent(
-                                activity,
-                            ),
-                        )
+                        AppNavigationItem.Settings ->
+                            activity?.startActivity(
+                                PreferencesActivity.getIntent(
+                                    activity,
+                                ),
+                            )
 
-                        AppNavigationItem.Help -> (activity as? AnkiActivity)?.showDialogFragment(
-                            HelpDialog.newHelpInstance(),
-                        )
+                        AppNavigationItem.Help ->
+                            (activity as? AnkiActivity)?.showDialogFragment(
+                                HelpDialog.newHelpInstance(),
+                            )
 
                         AppNavigationItem.Support -> {
                             val uri =
@@ -278,14 +299,17 @@ fun CardBrowserLayout(
             topBar = {
                 TopAppBar(title = {
                     Row(
-                        modifier = Modifier.graphicsLayer {
-                            alpha = 1f - searchAnim
-                        },
+                        modifier =
+                            Modifier.graphicsLayer {
+                                alpha = 1f - searchAnim
+                            },
                     ) {
                         DeckSelector(
-                            selectedDeck = viewModel.flowOfDeckSelection.collectAsStateWithLifecycle(
-                                null,
-                            ).value,
+                            selectedDeck =
+                                viewModel.flowOfDeckSelection
+                                    .collectAsStateWithLifecycle(
+                                        null,
+                                    ).value,
                             availableDecks = availableDecks,
                             onDeckSelected = { deck ->
                                 coroutineScope.launch {
@@ -298,10 +322,11 @@ fun CardBrowserLayout(
                     if (!isSearchOpen) {
                         FilledIconButton(
                             onClick = onNavigateUp,
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
+                            colors =
+                                IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.arrow_back_24px),
@@ -324,10 +349,11 @@ fun CardBrowserLayout(
                             placeholder = stringResource(R.string.card_browser_search_hint),
                             focusRequester = focusRequester,
                             searchAnim = searchAnim,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 10.dp, end = 6.dp, bottom = 16.dp),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 10.dp, end = 6.dp, bottom = 16.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         )
                     } else {
                         FilledTonalIconButton(
