@@ -42,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -59,6 +60,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -100,72 +102,88 @@ fun CardBrowserDeckSelectionDialog(
         }
     }
 
-    AlertDialog(onDismissRequest = onDismissRequest, title = {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = stringResource(R.string.select_deck_title))
-            IconButton(onClick = onCreateDeck) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.new_deck),
-                )
-            }
-        }
-    }, text = {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text(stringResource(R.string.search_deck)) },
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        shape = MaterialTheme.shapes.extraLarge,
+        title = {
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = null)
-                        }
-                    }
-                },
-            )
-
-            val rootChildren = deckHierarchy[""] ?: emptyList()
-            val flatDeckList = remember(deckHierarchy, expandedDecks.toMap(), searchQuery) {
-                buildFlatDeckList(
-                    deckHierarchy = deckHierarchy,
-                    children = rootChildren,
-                    expandedDecks = expandedDecks,
-                    searchQuery = searchQuery,
-                )
-            }
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                items(
-                    items = flatDeckList,
-                    key = { it.deck.deckId },
-                ) { flatItem ->
-                    DeckRow(
-                        flatItem = flatItem,
-                        onDeckSelected = onDeckSelected,
-                        onCreateSubDeck = onCreateSubDeck,
-                        onToggleExpand = { deckName ->
-                            expandedDecks[deckName] = !flatItem.isExpanded
-                        },
+                Text(
+                    text = stringResource(R.string.select_deck_title),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                IconButton(onClick = onCreateDeck) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.new_deck),
                     )
                 }
             }
-        }
-    }, confirmButton = {
-        TextButton(onClick = onDismissRequest) {
-            Text(text = stringResource(R.string.dialog_cancel))
-        }
-    })
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(R.string.search_deck)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Transparent,
+                    ),
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = null)
+                            }
+                        }
+                    },
+                )
+
+                val rootChildren = deckHierarchy[""] ?: emptyList()
+                val flatDeckList = remember(deckHierarchy, expandedDecks.toMap(), searchQuery) {
+                    buildFlatDeckList(
+                        deckHierarchy = deckHierarchy,
+                        children = rootChildren,
+                        expandedDecks = expandedDecks,
+                        searchQuery = searchQuery,
+                    )
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                ) {
+                    items(
+                        items = flatDeckList,
+                        key = { it.deck.deckId },
+                    ) { flatItem ->
+                        DeckRow(
+                            flatItem = flatItem,
+                            onDeckSelected = onDeckSelected,
+                            onCreateSubDeck = onCreateSubDeck,
+                            onToggleExpand = { deckName ->
+                                expandedDecks[deckName] = !flatItem.isExpanded
+                            },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        })
 }
 
 private data class FlatDeckItem(
@@ -223,6 +241,7 @@ private fun DeckRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
             .combinedClickable(
                 onClick = { onDeckSelected(deck) },
                 onLongClick = { onCreateSubDeck(deck.deckId) },
@@ -323,188 +342,227 @@ fun SetDueDateDialog(
         }
     }
 
-    AlertDialog(onDismissRequest = onDismissRequest, title = {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = stringResource(R.string.sentence_set_due_date))
-            IconButton(onClick = onHelpClicked) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                    contentDescription = stringResource(R.string.help),
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        shape = MaterialTheme.shapes.extraLarge,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.sentence_set_due_date),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
                 )
-            }
-        }
-    }, text = {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.verticalScroll(rememberScrollState()),
-        ) {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = selectedTabIndex == 0,
-                    onClick = { selectedTabIndex = 0 },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    icon = {
-                        SegmentedButtonDefaults.Icon(active = selectedTabIndex == 0) {
-                            Icon(
-                                painter = painterResource(R.drawable.calendar_single_day),
-                                contentDescription = null,
-                            )
-                        }
-                    },
-                ) {
-                    Text(stringResource(R.string.single_day))
-                }
-                SegmentedButton(
-                    selected = selectedTabIndex == 1,
-                    onClick = { selectedTabIndex = 1 },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    icon = {
-                        SegmentedButtonDefaults.Icon(active = selectedTabIndex == 1) {
-                            Icon(
-                                painter = painterResource(R.drawable.calendar_date_range),
-                                contentDescription = null,
-                            )
-                        }
-                    },
-                ) {
-                    Text(stringResource(R.string.date_range))
-                }
-            }
-
-            if (selectedTabIndex == 0) {
-                OutlinedTextField(
-                    value = singleDayText,
-                    onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() }) {
-                            viewModel.setSingleDayText(newValue)
-                            viewModel.nextSingleDayDueDate = newValue.toIntOrNull()
-                        }
-                    },
-                    label = {
-                        Text(
-                            pluralStringResource(
-                                R.plurals.set_due_date_single_day_label,
-                                viewModel.cardCount,
-                                viewModel.cardCount,
-                            ),
-                        )
-                    },
-                    suffix = {
-                        Text(
-                            pluralStringResource(
-                                R.plurals.set_due_date_label_suffix,
-                                singleDayText.toIntOrNull() ?: 0,
-                            ),
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.set_due_date_range_label,
-                            viewModel.cardCount,
-                            viewModel.cardCount,
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
+                IconButton(onClick = onHelpClicked) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                        contentDescription = stringResource(R.string.help),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = startText,
-                            onValueChange = { newValue ->
-                                if (newValue.all { it.isDigit() }) {
-                                    viewModel.setStartText(newValue)
-                                    viewModel.setNextDateRangeStart(newValue.toIntOrNull())
-                                }
-                            },
-                            label = { Text(stringResource(R.string.set_due_date_range_start)) },
-                            suffix = {
-                                Text(
-                                    pluralStringResource(
-                                        R.plurals.set_due_date_label_suffix,
-                                        startText.toIntOrNull() ?: 0,
-                                    ),
+                }
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = selectedTabIndex == 0,
+                        onClick = { selectedTabIndex = 0 },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        icon = {
+                            SegmentedButtonDefaults.Icon(active = selectedTabIndex == 0) {
+                                Icon(
+                                    painter = painterResource(R.drawable.calendar_single_day),
+                                    contentDescription = null,
                                 )
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                        )
-                        OutlinedTextField(
-                            value = endText,
-                            onValueChange = { newValue ->
-                                if (newValue.all { it.isDigit() }) {
-                                    viewModel.setEndText(newValue)
-                                    viewModel.setNextDateRangeEnd(newValue.toIntOrNull())
-                                }
-                            },
-                            label = { Text(stringResource(R.string.set_due_date_range_end)) },
-                            suffix = {
-                                Text(
-                                    pluralStringResource(
-                                        R.plurals.set_due_date_label_suffix,
-                                        endText.toIntOrNull() ?: 0,
-                                    ),
+                            }
+                        },
+                    ) {
+                        Text(stringResource(R.string.single_day))
+                    }
+                    SegmentedButton(
+                        selected = selectedTabIndex == 1,
+                        onClick = { selectedTabIndex = 1 },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        icon = {
+                            SegmentedButtonDefaults.Icon(active = selectedTabIndex == 1) {
+                                Icon(
+                                    painter = painterResource(R.drawable.calendar_date_range),
+                                    contentDescription = null,
                                 )
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                        )
+                            }
+                        },
+                    ) {
+                        Text(stringResource(R.string.date_range))
                     }
                 }
-            }
 
-            if (viewModel.canSetUpdateIntervalToMatchDueDate) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(
-                        checked = updateInterval,
-                        onCheckedChange = {
-                            updateInterval = it
-                            viewModel.updateIntervalToMatchDueDate = it
+                if (selectedTabIndex == 0) {
+                    OutlinedTextField(
+                        value = singleDayText,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() }) {
+                                viewModel.setSingleDayText(newValue)
+                                viewModel.nextSingleDayDueDate = newValue.toIntOrNull()
+                            }
                         },
+                        label = {
+                            Text(
+                                pluralStringResource(
+                                    R.plurals.set_due_date_single_day_label,
+                                    viewModel.cardCount,
+                                    viewModel.cardCount,
+                                ),
+                            )
+                        },
+                        suffix = {
+                            Text(
+                                pluralStringResource(
+                                    R.plurals.set_due_date_label_suffix,
+                                    singleDayText.toIntOrNull() ?: 0,
+                                ),
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.Transparent,
+                        ),
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(R.string.set_due_date_match_interval))
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = pluralStringResource(
+                                R.plurals.set_due_date_range_label,
+                                viewModel.cardCount,
+                                viewModel.cardCount,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = startText,
+                                onValueChange = { newValue ->
+                                    if (newValue.all { it.isDigit() }) {
+                                        viewModel.setStartText(newValue)
+                                        viewModel.setNextDateRangeStart(newValue.toIntOrNull())
+                                    }
+                                },
+                                label = { Text(stringResource(R.string.set_due_date_range_start)) },
+                                suffix = {
+                                    Text(
+                                        pluralStringResource(
+                                            R.plurals.set_due_date_label_suffix,
+                                            startText.toIntOrNull() ?: 0,
+                                        ),
+                                    )
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                shape = MaterialTheme.shapes.medium,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = Color.Transparent,
+                                ),
+                            )
+                            OutlinedTextField(
+                                value = endText,
+                                onValueChange = { newValue ->
+                                    if (newValue.all { it.isDigit() }) {
+                                        viewModel.setEndText(newValue)
+                                        viewModel.setNextDateRangeEnd(newValue.toIntOrNull())
+                                    }
+                                },
+                                label = { Text(stringResource(R.string.set_due_date_range_end)) },
+                                suffix = {
+                                    Text(
+                                        pluralStringResource(
+                                            R.plurals.set_due_date_label_suffix,
+                                            endText.toIntOrNull() ?: 0,
+                                        ),
+                                    )
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                shape = MaterialTheme.shapes.medium,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = Color.Transparent,
+                                ),
+                            )
+                        }
+                    }
+                }
+
+                if (viewModel.canSetUpdateIntervalToMatchDueDate) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .toggleable(
+                                value = updateInterval,
+                                role = Role.Checkbox,
+                                onValueChange = {
+                                    updateInterval = it
+                                    viewModel.updateIntervalToMatchDueDate = it
+                                },
+                            )
+                            .padding(vertical = 8.dp, horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(
+                            checked = updateInterval,
+                            onCheckedChange = null,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(R.string.set_due_date_match_interval))
+                    }
+                }
+
+                currentInterval?.let { interval ->
+                    Text(
+                        text = pluralStringResource(
+                            R.plurals.set_due_date_current_interval,
+                            interval,
+                            interval,
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-
-            currentInterval?.let { interval ->
-                Text(
-                    text = pluralStringResource(
-                        R.plurals.set_due_date_current_interval,
-                        interval,
-                        interval,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm()
+                },
+                enabled = isValid,
+            ) {
+                Text(text = stringResource(R.string.dialog_ok))
             }
-        }
-    }, confirmButton = {
-        TextButton(
-            onClick = {
-                onConfirm()
-            },
-            enabled = isValid,
-        ) {
-            Text(text = stringResource(R.string.dialog_ok))
-        }
-    }, dismissButton = {
-        TextButton(onClick = onDismissRequest) {
-            Text(text = stringResource(R.string.dialog_cancel))
-        }
-    })
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        })
 }
 
 @Composable
@@ -516,73 +574,85 @@ fun ForgetCardsDialog(
     var restorePosition by remember { mutableStateOf(true) }
     var resetCounts by remember { mutableStateOf(false) }
 
-    AlertDialog(onDismissRequest = onDismissRequest, title = {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = stringResource(R.string.reset_card_dialog_title))
-            IconButton(onClick = onHelpClicked) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                    contentDescription = stringResource(R.string.help),
-                )
-            }
-        }
-    }, text = {
-        val isInspection = LocalInspectionMode.current
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        shape = MaterialTheme.shapes.extraLarge,
+        title = {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .toggleable(
-                        value = restorePosition,
-                        role = Role.Checkbox,
-                        onValueChange = { restorePosition = it },
-                    )
-                    .padding(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Checkbox(
-                    checked = restorePosition,
-                    onCheckedChange = null,
+                Text(
+                    text = stringResource(R.string.reset_card_dialog_title),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleLarge,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = if (isInspection) "Restore position" else TR.schedulingRestorePosition())
+                IconButton(onClick = onHelpClicked) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                        contentDescription = stringResource(R.string.help),
+                    )
+                }
             }
+        },
+        text = {
+            val isInspection = LocalInspectionMode.current
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .toggleable(
+                            value = restorePosition,
+                            role = Role.Checkbox,
+                            onValueChange = { restorePosition = it },
+                        )
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = restorePosition,
+                        onCheckedChange = null,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = if (isInspection) "Restore position" else TR.schedulingRestorePosition())
+                }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .toggleable(
-                        value = resetCounts,
-                        role = Role.Checkbox,
-                        onValueChange = { resetCounts = it },
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .toggleable(
+                            value = resetCounts,
+                            role = Role.Checkbox,
+                            onValueChange = { resetCounts = it },
+                        )
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = resetCounts,
+                        onCheckedChange = null,
                     )
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = resetCounts,
-                    onCheckedChange = null,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = if (isInspection) "Reset counts" else TR.schedulingResetCounts())
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = if (isInspection) "Reset counts" else TR.schedulingResetCounts())
+                }
             }
-        }
-    }, confirmButton = {
-        TextButton(onClick = {
-            onConfirm(restorePosition, resetCounts)
-            onDismissRequest()
-        }) {
-            Text(text = stringResource(R.string.dialog_ok))
-        }
-    }, dismissButton = {
-        TextButton(onClick = onDismissRequest) {
-            Text(text = stringResource(R.string.dialog_cancel))
-        }
-    })
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(restorePosition, resetCounts)
+                onDismissRequest()
+            }) {
+                Text(text = stringResource(R.string.dialog_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_cancel))
+            }
+        })
 }
 
 private data class GradeOption(
@@ -617,7 +687,13 @@ fun GradeNowDialog(
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(text = stringResource(R.string.sentence_grade_now)) },
+        shape = MaterialTheme.shapes.extraLarge,
+        title = {
+            Text(
+                text = stringResource(R.string.sentence_grade_now),
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
         text = {
             LazyColumn(
                 modifier = Modifier
@@ -628,11 +704,12 @@ fun GradeNowDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
                             .clickable {
                                 onConfirm(option.rating)
                                 onDismissRequest()
                             }
-                            .padding(vertical = 12.dp, horizontal = 8.dp),
+                            .padding(vertical = 12.dp, horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
@@ -674,7 +751,13 @@ fun RepositionCardDialog(
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(text = stringResource(R.string.sentence_reposition_new_cards)) },
+        shape = MaterialTheme.shapes.extraLarge,
+        title = {
+            Text(
+                text = stringResource(R.string.sentence_reposition_new_cards),
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -709,6 +792,13 @@ fun RepositionCardDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Transparent,
+                    ),
                 )
 
                 OutlinedTextField(
@@ -726,27 +816,50 @@ fun RepositionCardDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Transparent,
+                    ),
                 )
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .toggleable(
+                            value = randomizeOrder,
+                            role = Role.Checkbox,
+                            onValueChange = { randomizeOrder = it },
+                        )
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = randomizeOrder,
-                        onCheckedChange = { randomizeOrder = it },
+                        onCheckedChange = null,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = if (isInspection) "Randomize order" else TR.browsingRandomizeOrder())
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .toggleable(
+                            value = shiftPosition,
+                            role = Role.Checkbox,
+                            onValueChange = { shiftPosition = it },
+                        )
+                        .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
                         checked = shiftPosition,
-                        onCheckedChange = { shiftPosition = it },
+                        onCheckedChange = null,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = if (isInspection) "Shift position of existing cards" else TR.browsingShiftPositionOfExistingCards())
