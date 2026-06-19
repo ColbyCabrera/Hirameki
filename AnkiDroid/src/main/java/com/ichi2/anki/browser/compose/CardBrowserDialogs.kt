@@ -830,14 +830,7 @@ private fun GradeCard(
         label = "GradeCardScale",
     )
 
-    val animatedMorphProgress by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = slowSpatialSpec,
-        label = "GradeCardMorph",
-    )
-
-    // Combined morph progress (intro animation scaled by interaction factor)
-    val finalMorphProgress = mountProgress.value * animatedMorphProgress
+    val finalMorphProgress = mountProgress.value
 
     // Set up normalized Morph from Circle to target shape
     val morph =
