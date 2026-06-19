@@ -963,7 +963,7 @@ private fun SetDueDateDialogDateRangePreview() {
     }
 }
 
-@Preview(name = "Forget Cards Dialog", widthDp = 400, heightDp = 250, showBackground = true)
+@Preview(name = "Forget Cards Dialog", widthDp = 400, heightDp = 400, showBackground = true)
 @Composable
 private fun ForgetCardsDialogPreview() {
     AnkiDroidTheme {
