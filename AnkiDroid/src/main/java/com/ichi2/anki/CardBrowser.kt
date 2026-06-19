@@ -46,12 +46,8 @@ import com.ichi2.anki.browser.compose.CardBrowserLayout
 import com.ichi2.anki.browser.compose.FilterByTagsDialog
 import com.ichi2.anki.browser.toCardBrowserLaunchOptions
 import com.ichi2.anki.dialogs.BrowserOptionsDialog
-import com.ichi2.anki.dialogs.DeckSelectionDialog
 import com.ichi2.anki.dialogs.compose.FlagRenameDialog
-import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.libanki.Collection
-import com.ichi2.anki.model.CardStateFilter
-import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -65,8 +61,7 @@ import timber.log.Timber
  * Composable, which is responsible for rendering the UI. It retains the [CardBrowserViewModel]
  * for state management and business logic.
  */
-open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber,
-    DeckSelectionDialog.DeckSelectionListener, TagsDialogListener, SnackbarForwarder {
+open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwarder {
 
     val fragmented: Boolean
         get() = resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK == Configuration.SCREENLAYOUT_SIZE_XLARGE
@@ -340,17 +335,6 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber,
 
     companion object {
         fun clearLastDeckId() = SharedPreferencesLastDeckIdRepository.clearLastDeckId()
-    }
-
-    override fun onSelectedTags(
-        selectedTags: List<String>, indeterminateTags: List<String>, stateFilter: CardStateFilter
-    ) {
-        actionHandler.onSelectedTags(selectedTags, indeterminateTags, stateFilter)
-    }
-
-
-    override fun onDeckSelected(deck: SelectableDeck?) {
-        actionHandler.onDeckSelected(deck)
     }
 
 }

@@ -496,4 +496,11 @@ opening the system text to speech settings fails">Failed to open text to speech 
     <string name="history">History</string>
     <string name="heatmap_widget_description">A widget displaying your review heatmap.</string>
     <string name="heatmap_widget_label">Review Heatmap</string>
+    <string name="reposition_description">Change when these new cards will be shown for review. Cards with lower queue numbers are shown sooner.</string>
+    <string name="reposition_current_queue_bounds">Current Queue Bounds</string>
+    <string name="reposition_start_position_help">The queue position assigned to the first card. Values closer to %1$d appear sooner.</string>
+    <string name="reposition_step_help">Spacing between cards in the queue. 1 places them next to each other; higher numbers spread them out.</string>
+    <string name="reposition_randomize_order_help">Shuffle cards randomly instead of keeping their current sequence.</string>
+    <string name="reposition_shift_position_help">Push existing cards down the queue to insert these cards cleanly. Otherwise, positions are shared.</string>
+    <string name="card_browser_move_cards_failed">Failed to move cards to deck</string>
 </resources>

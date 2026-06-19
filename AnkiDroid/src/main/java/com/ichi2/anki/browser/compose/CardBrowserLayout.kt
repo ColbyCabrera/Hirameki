@@ -51,7 +51,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.AnkiActivity
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.browser.BrowserRowWithId
 import com.ichi2.anki.browser.CardBrowserViewModel
@@ -60,12 +62,15 @@ import com.ichi2.anki.dialogs.help.HelpDialog
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.pages.Statistics
 import com.ichi2.anki.preferences.PreferencesActivity
+import com.ichi2.anki.scheduling.SetDueDateViewModel
+import com.ichi2.anki.servicelayer.getFSRSStatus
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.DeckSelector
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import com.ichi2.anki.utils.ext.showDialogFragment
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -98,6 +103,8 @@ fun CardBrowserLayout(
     val isSearchOpen by viewModel.flowOfSearchQueryExpanded.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     var availableDecks by remember { mutableStateOf<List<SelectableDeck.Deck>>(emptyList()) }
+    val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
+    val showDeckSelectionDialog by viewModel.showDeckSelectionDialog.collectAsStateWithLifecycle()
     val searchAnim by animateFloatAsState(
         targetValue = if (isSearchOpen) 1f else 0f,
         animationSpec = motionScheme.defaultEffectsSpec(),
@@ -118,7 +125,7 @@ fun CardBrowserLayout(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(showDeckSelectionDialog, createDeckDialogState) {
         availableDecks = viewModel.getAvailableDecks()
     }
 
@@ -127,7 +134,6 @@ fun CardBrowserLayout(
     }
 
     // Create Deck Dialog
-    val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
     when (val state = createDeckDialogState) {
         is CardBrowserViewModel.CreateDeckDialogState.Visible -> {
             CreateDeckDialog(
@@ -143,6 +149,113 @@ fun CardBrowserLayout(
         CardBrowserViewModel.CreateDeckDialogState.Hidden -> {}
     }
 
+    // Deck Selection Dialog
+    if (showDeckSelectionDialog) {
+        CardBrowserDeckSelectionDialog(availableDecks = availableDecks, onDeckSelected = { deck ->
+            viewModel.showDeckSelectionDialog(false)
+            val did = deck.deckId
+            coroutineScope.launch {
+                try {
+                    val changed = viewModel.moveSelectedCardsToDeck(did).await()
+                    viewModel.launchSearchForCards()
+                    if (activity != null) {
+                        val message =
+                            activity.resources.getQuantityString(
+                                R.plurals.card_browser_cards_moved,
+                                changed.count,
+                                changed.count,
+                            )
+                        viewModel.emitSnackbarMessage(
+                            message,
+                            activity.getString(R.string.undo),
+                        ) {
+                            viewModel.undo()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to move cards to deck")
+                    if (activity != null) {
+                        viewModel.emitSnackbarMessage(
+                            activity.getString(R.string.card_browser_move_cards_failed),
+                        )
+                    }
+                }
+            }
+        }, onDismissRequest = { viewModel.showDeckSelectionDialog(false) }, onCreateDeck = {
+            viewModel.showDeckSelectionDialog(false)
+            viewModel.showCreateDeckDialog()
+        }, onCreateSubDeck = { parentId ->
+            viewModel.showDeckSelectionDialog(false)
+            viewModel.showCreateSubDeckDialog(parentId)
+        })
+    }
+
+    // Set Due Date Dialog
+    val showSetDueDateDialog by viewModel.showSetDueDateDialog.collectAsStateWithLifecycle()
+    if (showSetDueDateDialog) {
+        val setDueDateViewModel = viewModel<SetDueDateViewModel>()
+        LaunchedEffect(Unit) {
+            val cardIds = viewModel.queryAllSelectedCardIds()
+            val fsrsEnabled = getFSRSStatus() ?: false
+            setDueDateViewModel.init(cardIds.toLongArray(), fsrsEnabled)
+        }
+
+        SetDueDateDialog(viewModel = setDueDateViewModel, onHelpClicked = {
+            (activity as? AnkiActivity)?.openUrl(R.string.link_set_due_date_help)
+        }, onDismissRequest = { viewModel.showSetDueDateDialog(false) }, onConfirm = {
+            coroutineScope.launch {
+                val count = setDueDateViewModel.updateDueDateAsync().await()
+                if (count != null) {
+                    val message = TR.schedulingSetDueDateDone(count)
+                    viewModel.emitSnackbarMessage(message)
+                    viewModel.launchSearchForCards()
+                    viewModel.showSetDueDateDialog(false)
+                }
+            }
+        })
+    }
+
+    // Forget Cards Dialog
+    val showForgetCardsDialog by viewModel.showForgetCardsDialog.collectAsStateWithLifecycle()
+    if (showForgetCardsDialog) {
+        ForgetCardsDialog(
+            onHelpClicked = {
+                (activity as? AnkiActivity)?.openUrl(R.string.link_help_forget_cards)
+            },
+            onDismissRequest = { viewModel.showForgetCardsDialog(false) },
+            onConfirm = { restorePosition, resetCounts ->
+                viewModel.forgetSelectedCards(restorePosition, resetCounts)
+            },
+        )
+    }
+
+    // Grade Now Dialog
+    val showGradeNowDialog by viewModel.showGradeNowDialog.collectAsStateWithLifecycle()
+    if (showGradeNowDialog) {
+        GradeNowDialog(onConfirm = { rating ->
+            viewModel.gradeSelectedCards(rating)
+        }, onDismissRequest = { viewModel.showGradeNowDialog(false) })
+    }
+
+    // Reposition Cards Dialog
+    val repositionDialogState by viewModel.repositionDialogState.collectAsStateWithLifecycle()
+    when (val state = repositionDialogState) {
+        is CardBrowserViewModel.RepositionDialogState.Visible -> {
+            RepositionCardDialog(
+                queueTop = state.queueTop,
+                queueBottom = state.queueBottom,
+                initialRandom = state.random,
+                initialShift = state.shift,
+                onConfirm = { position, step, random, shift ->
+                    viewModel.repositionSelectedCards(position, step, random, shift)
+                },
+                onDismissRequest = { viewModel.showRepositionDialog(CardBrowserViewModel.RepositionDialogState.Hidden) },
+            )
+        }
+
+        CardBrowserViewModel.RepositionDialogState.Hidden -> {}
+    }
+
     Row(modifier = Modifier.fillMaxSize()) {
         if (fragmented) {
             AnkiNavigationRail(
@@ -153,21 +266,24 @@ fun CardBrowserLayout(
                         AppNavigationItem.CardBrowser -> { // Already here
                         }
 
-                        AppNavigationItem.Statistics -> activity?.startActivity(
-                            Statistics.getIntent(
-                                activity,
-                            ),
-                        )
+                        AppNavigationItem.Statistics ->
+                            activity?.startActivity(
+                                Statistics.getIntent(
+                                    activity,
+                                ),
+                            )
 
-                        AppNavigationItem.Settings -> activity?.startActivity(
-                            PreferencesActivity.getIntent(
-                                activity,
-                            ),
-                        )
+                        AppNavigationItem.Settings ->
+                            activity?.startActivity(
+                                PreferencesActivity.getIntent(
+                                    activity,
+                                ),
+                            )
 
-                        AppNavigationItem.Help -> (activity as? AnkiActivity)?.showDialogFragment(
-                            HelpDialog.newHelpInstance(),
-                        )
+                        AppNavigationItem.Help ->
+                            (activity as? AnkiActivity)?.showDialogFragment(
+                                HelpDialog.newHelpInstance(),
+                            )
 
                         AppNavigationItem.Support -> {
                             val uri =
@@ -183,14 +299,17 @@ fun CardBrowserLayout(
             topBar = {
                 TopAppBar(title = {
                     Row(
-                        modifier = Modifier.graphicsLayer {
-                            alpha = 1f - searchAnim
-                        },
+                        modifier =
+                            Modifier.graphicsLayer {
+                                alpha = 1f - searchAnim
+                            },
                     ) {
                         DeckSelector(
-                            selectedDeck = viewModel.flowOfDeckSelection.collectAsStateWithLifecycle(
-                                null,
-                            ).value,
+                            selectedDeck =
+                                viewModel.flowOfDeckSelection
+                                    .collectAsStateWithLifecycle(
+                                        null,
+                                    ).value,
                             availableDecks = availableDecks,
                             onDeckSelected = { deck ->
                                 coroutineScope.launch {
@@ -203,10 +322,11 @@ fun CardBrowserLayout(
                     if (!isSearchOpen) {
                         FilledIconButton(
                             onClick = onNavigateUp,
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
+                            colors =
+                                IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.arrow_back_24px),
@@ -229,10 +349,11 @@ fun CardBrowserLayout(
                             placeholder = stringResource(R.string.card_browser_search_hint),
                             focusRequester = focusRequester,
                             searchAnim = searchAnim,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 10.dp, end = 6.dp, bottom = 16.dp),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 10.dp, end = 6.dp, bottom = 16.dp),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         )
                     } else {
                         FilledTonalIconButton(
