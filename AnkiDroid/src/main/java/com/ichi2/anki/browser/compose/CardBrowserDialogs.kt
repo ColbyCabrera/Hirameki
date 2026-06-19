@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -38,14 +39,17 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -734,6 +738,11 @@ fun GradeNowDialog(
     )
 }
 
+private enum class HelpTopic {
+    RANDOMIZE_ORDER, SHIFT_POSITION
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepositionCardDialog(
     queueTop: Int,
@@ -748,6 +757,7 @@ fun RepositionCardDialog(
     var stepText by rememberSaveable { mutableStateOf("1") }
     var randomizeOrder by rememberSaveable { mutableStateOf(initialRandom) }
     var shiftPosition by rememberSaveable { mutableStateOf(initialShift) }
+    var activeHelpTopic by remember { mutableStateOf<HelpTopic?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -764,14 +774,37 @@ fun RepositionCardDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = if (isInspection) {
-                        "Queue top: $queueTop\nQueue bottom: $queueBottom"
-                    } else {
-                        "${TR.browsingQueueTop(queueTop)}\n${TR.browsingQueueBottom(queueBottom)}"
-                    },
+                    text = "Change when these new cards will be shown for review. Cards with lower queue numbers are shown sooner.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Current Queue Bounds",
+                            style = MaterialTheme.typography.labelLargeEmphasized,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (isInspection) {
+                                "Queue top: $queueTop\nQueue bottom: $queueBottom"
+                            } else {
+                                "${TR.browsingQueueTop(queueTop)}\n${
+                                    TR.browsingQueueBottom(
+                                        queueBottom
+                                    )
+                                }"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
 
                 OutlinedTextField(
                     value = startPositionText,
@@ -788,6 +821,9 @@ fun RepositionCardDialog(
                                 TR.browsingStartPosition().removeSuffix(":")
                             },
                         )
+                    },
+                    supportingText = {
+                        Text("The queue position assigned to the first card. Values closer to $queueTop appear sooner.")
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -813,6 +849,9 @@ fun RepositionCardDialog(
                             if (isInspection) "Step" else TR.browsingStep().removeSuffix(":"),
                         )
                     },
+                    supportingText = {
+                        Text("Spacing between cards in the queue. 1 places them next to each other; higher numbers spread them out.")
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
@@ -834,7 +873,7 @@ fun RepositionCardDialog(
                             role = Role.Checkbox,
                             onValueChange = { randomizeOrder = it },
                         )
-                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                        .padding(top = 8.dp, start = 8.dp, end = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(
@@ -842,7 +881,18 @@ fun RepositionCardDialog(
                         onCheckedChange = null,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = if (isInspection) "Randomize order" else TR.browsingRandomizeOrder())
+                    Text(
+                        text = if (isInspection) "Randomize order" else TR.browsingRandomizeOrder(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = { activeHelpTopic = HelpTopic.RANDOMIZE_ORDER }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = stringResource(R.string.help),
+                        )
+                    }
                 }
 
                 Row(
@@ -862,7 +912,18 @@ fun RepositionCardDialog(
                         onCheckedChange = null,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = if (isInspection) "Shift position of existing cards" else TR.browsingShiftPositionOfExistingCards())
+                    Text(
+                        text = if (isInspection) "Shift position of existing cards" else TR.browsingShiftPositionOfExistingCards(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = { activeHelpTopic = HelpTopic.SHIFT_POSITION }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = stringResource(R.string.help),
+                        )
+                    }
                 }
             }
         },
@@ -885,6 +946,44 @@ fun RepositionCardDialog(
             }
         },
     )
+
+    if (activeHelpTopic != null) {
+        ModalBottomSheet(
+            onDismissRequest = { activeHelpTopic = null },
+            shape = MaterialTheme.shapes.extraLarge,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp, top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                val title = when (activeHelpTopic) {
+                    HelpTopic.RANDOMIZE_ORDER -> if (isInspection) "Randomize order" else TR.browsingRandomizeOrder()
+                    HelpTopic.SHIFT_POSITION -> if (isInspection) "Shift position of existing cards" else TR.browsingShiftPositionOfExistingCards()
+                    null -> ""
+                }
+                val description = when (activeHelpTopic) {
+                    HelpTopic.RANDOMIZE_ORDER -> "Shuffle cards randomly instead of keeping their current sequence."
+                    HelpTopic.SHIFT_POSITION -> "Push existing cards down the queue to insert these cards cleanly. Otherwise, positions are shared."
+                    null -> ""
+                }
+
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
 }
 
 @Preview(
@@ -979,7 +1078,7 @@ private fun GradeNowDialogPreview() {
     }
 }
 
-@Preview(name = "Reposition Card Dialog", widthDp = 400, heightDp = 600, showBackground = true)
+@Preview(name = "Reposition Card Dialog", widthDp = 400, heightDp = 700, showBackground = true)
 @Composable
 private fun RepositionCardDialogPreview() {
     AnkiDroidTheme {
