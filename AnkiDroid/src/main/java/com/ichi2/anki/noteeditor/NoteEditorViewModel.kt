@@ -32,6 +32,7 @@ import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.Note.ClozeUtils
 import com.ichi2.anki.libanki.NotetypeJson
+import com.ichi2.anki.libanki.exception.ConfirmModSchemaException
 import com.ichi2.anki.noteeditor.compose.NoteEditorState
 import com.ichi2.anki.noteeditor.compose.NoteFieldState
 import com.ichi2.anki.noteeditor.compose.ToolbarItemDialogState
@@ -882,6 +883,7 @@ class NoteEditorViewModel(
             clearDraftState()
             NoteFieldsCheckResult.Success
         } catch (e: Exception) {
+            if (e is ConfirmModSchemaException) throw e
             Timber.e(e, "Error saving note")
             NoteFieldsCheckResult.Failure(null)
         }
@@ -965,6 +967,7 @@ class NoteEditorViewModel(
         if (note.notetype.id != initialNoteTypeId) {
             val oldNotetype = col.notetypes.get(initialNoteTypeId) ?: note.notetype
             val newNotetype = note.notetype
+            col.modSchema()
             col.notetypes.change(
                 oldNotetype,
                 note.id,
