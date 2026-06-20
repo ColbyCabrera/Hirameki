@@ -57,6 +57,9 @@ import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.android.input.ShortcutGroup
+import com.ichi2.anki.dialogs.ConfirmationDialog
+import com.ichi2.anki.libanki.exception.ConfirmModSchemaException
+import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.android.input.ShortcutGroupProvider
 import com.ichi2.anki.android.input.shortcut
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -636,7 +639,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                         noteEditorViewModel.toggleStickyField(index)
                     },
                     onSaveClick = {
-                        launchCatchingTask { saveNote() }
+                        saveNoteWithSchemaConfirmation()
                     },
                     onPreviewClick = {
                         launchCatchingTask { performPreview() }
@@ -755,7 +758,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                             showSaveAction = allowSaveAndPreview,
                             saveEnabled = allowSaveAndPreview,
                             onSaveClick = {
-                                launchCatchingTask { saveNote() }
+                                saveNoteWithSchemaConfirmation()
                             },
                             showPreviewAction = allowSaveAndPreview,
                             previewEnabled = allowSaveAndPreview,
@@ -806,7 +809,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     noClozeDialogMessage = noClozeDialogMessage,
                     onSaveAnywayClick = {
                         noteEditorViewModel.dismissNoClozeDialog()
-                        launchCatchingTask { saveNote() }
+                        saveNoteWithSchemaConfirmation()
                     },
                     onDismissNoClozeDialog = {
                         noteEditorViewModel.dismissNoClozeDialog()
@@ -897,7 +900,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         when (keyCode) {
             KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_ENTER -> if (event.isCtrlPressed) {
                 if (allowSaveAndPreview()) {
-                    launchCatchingTask { saveNote() }
+                    saveNoteWithSchemaConfirmation()
                     return true
                 }
             }
@@ -1084,6 +1087,25 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             is NoteFieldsCheckResult.Failure -> {
                 addNoteErrorMessage = result.localizedMessage
                 displayErrorSavingNote()
+            }
+        }
+    }
+
+    private fun saveNoteWithSchemaConfirmation() {
+        launchCatchingTask {
+            try {
+                saveNote()
+            } catch (e: ConfirmModSchemaException) {
+                Timber.w(e, "Schema confirmation required before saving note")
+                val dialog = ConfirmationDialog()
+                dialog.setArgs(getString(R.string.full_sync_confirmation))
+                dialog.setConfirm {
+                    launchCatchingTask {
+                        withCol { modSchemaNoCheck() }
+                        saveNote()
+                    }
+                }
+                showDialogFragment(dialog)
             }
         }
     }
