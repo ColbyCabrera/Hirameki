@@ -713,6 +713,10 @@ fun MoreOptionsBottomSheet(
                     headlineContent = { Text(stringResource(R.string.cardeditor_title_edit_card)) },
                     modifier = Modifier.clickable { onEditNote() },
                 )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.card_info_title)) },
+                    modifier = Modifier.clickable { onCardInfo() },
+                )
             }
             ListItem(
                 headlineContent = {
@@ -723,10 +727,6 @@ fun MoreOptionsBottomSheet(
                     )
                 },
                 modifier = Modifier.clickable { onDeleteNote() },
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.card_info_title)) },
-                modifier = Modifier.clickable { onCardInfo() },
             )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.sentence_toggle_suspend)) },
