@@ -21,10 +21,10 @@ import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.net.Uri
+import android.text.format.Formatter
 import android.view.WindowManager
 import android.view.WindowManager.BadTokenException
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -68,6 +68,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import net.ankiweb.rsdroid.Backend
@@ -80,8 +81,8 @@ import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Overridable reference to [Dispatchers.IO]. Useful if tests can't use it */
 // COULD_BE_BETTER: this shouldn't be necessary, but TestClass::runWith needs it
@@ -288,7 +289,7 @@ fun Context.showError(
                     setOnDismissListener { crashReportData.sendCrashReport() }
                 }
             }.apply {
-                // setup the help link. Link is non-null if neutralButton exists.
+                // set up the help link. Link is non-null if neutralButton exists.
                 setOnShowListener {
                     neutralButton?.setOnClickListener {
                         lifecycle.coroutineScope.launch {
@@ -334,6 +335,7 @@ suspend fun HelpAction.execute(context: Context): Boolean {
  * progress UI.
  */
 suspend fun <T> Backend.withProgress(
+    progressContext: ProgressContext = ProgressContext(),
     extractProgress: ProgressContext.() -> Unit,
     updateUi: ProgressContext.() -> Unit,
     block: suspend CoroutineScope.() -> T,
@@ -341,7 +343,7 @@ suspend fun <T> Backend.withProgress(
     coroutineScope {
         val monitor =
             launch {
-                monitorProgress(this@withProgress, extractProgress, updateUi)
+                progressContext.monitorProgress(this@withProgress, extractProgress, updateUi)
             }
         try {
             block()
@@ -358,6 +360,7 @@ suspend fun <T> Backend.withProgress(
  * flashes of a dialog.
  */
 suspend fun <T> FragmentActivity.withProgress(
+    progressContext: ProgressContext = ProgressContext(),
     extractProgress: ProgressContext.() -> Unit,
     onCancel: ((Backend) -> Unit)? = { it.setWantsAbort() },
     @StringRes manualCancelButton: Int? = null,
@@ -377,6 +380,7 @@ suspend fun <T> FragmentActivity.withProgress(
         manualCancelButton = manualCancelButton,
     ) { dialog ->
         backend.withProgress(
+            progressContext = progressContext,
             extractProgress = extractProgress,
             updateUi = { updateDialog(dialog) },
         ) {
@@ -456,7 +460,7 @@ suspend fun <T> withProgressDialog(
         var dialogIsOurs = false
         val dialogJob =
             launch {
-                delay(delayMillis)
+                delay(delayMillis.milliseconds)
                 if (!AnkiDroidApp.instance.progressDialogShown) {
                     Timber.i(
                         """Displaying progress dialog: ${delayMillis}ms elapsed; 
@@ -506,48 +510,84 @@ private fun dismissDialogIfShowing(dialog: Dialog) {
  * [ProgressContext]. Calls updateUi() to update the UI with the extracted
  * progress.
  */
-private suspend fun monitorProgress(
+private suspend fun ProgressContext.monitorProgress(
     backend: Backend,
     extractProgress: ProgressContext.() -> Unit,
     updateUi: ProgressContext.() -> Unit,
+    ioDispatcher: CoroutineDispatcher = com.ichi2.anki.ioDispatcher,
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
-    val state = ProgressContext(Progress.getDefaultInstance())
+    val state = this
     while (true) {
         state.progress =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 backend.latestProgress()
             }
         state.extractProgress()
         // on main thread, so op can update UI
-        withContext(Dispatchers.Main) {
+        withContext(mainDispatcher) {
             state.updateUi()
         }
-        delay(100)
+        delay(100.milliseconds)
     }
 }
 
-/** Holds the current backend progress, and text/amount properties
+/**
+ * Holds the current backend progress, and text/amount properties
  * that can be written to in order to update the UI.
  */
 data class ProgressContext(
-    var progress: Progress,
-    var text: String = "",
-    /** If set, shows progress bar with a of b complete. */
-    var amount: Pair<Int, Int>? = null,
-)
-
-@Suppress("Deprecation") // ProgressDialog deprecation
-private fun ProgressContext.updateDialog(dialog: android.app.ProgressDialog) {
-    // ideally this would show a progress bar, but MaterialDialog does not support
-    // setting progress after starting with indeterminate progress, so we just use
-    // this for now
-    // this code has since been updated to ProgressDialog, and the above not rechecked
-    val progressText =
-        amount?.let {
-            " ${it.first}/${it.second}"
-        } ?: ""
+    var progress: Progress = Progress.getDefaultInstance(),
+    var text: String? = null,
+    /** If set, shows a progress bar with `current` of `max` complete. */
+    var amount: Amount? = null,
+    val formatAmount: (Amount) -> String = { (current, max) -> "$current/$max" },
+    /** Separator between [text] and [amount] */
+    val separator: String = " ",
+) {
     @Suppress("Deprecation") // ProgressDialog deprecation
-    dialog.setMessage(text + progressText)
+    fun updateDialog(dialog: android.app.ProgressDialog) {
+        val message =
+            listOfNotNull(
+                text,
+                amount?.let { formatAmount(it) },
+            ).joinToString(separator)
+        dialog.setMessage(message)
+    }
+
+    companion object {
+        /**
+         * A [com.ichi2.anki.ProgressContext] which formats progress as bytes:
+         *
+         * `28 MB/141 MB`
+         */
+        fun ofBytes(context: Context): ProgressContext {
+            val appContext = context.applicationContext
+            return ProgressContext(
+                formatAmount = { (current, max) ->
+                    // replace spaces with NBSP so newlines are handled better
+                    val curStr = Formatter.formatShortFileSize(appContext, current)
+                        .replace(' ', '\u00A0')
+                        .replace('\u202F', '\u00A0')
+                    val maxStr = Formatter.formatShortFileSize(appContext, max)
+                        .replace(' ', '\u00A0')
+                        .replace('\u202F', '\u00A0')
+                    appContext.getString(R.string.progress_amount_bytes, curStr, maxStr)
+                },
+            )
+        }
+    }
+
+    /**
+     * Represents a progress value and a maximum limit.
+     *
+     * @see ProgressContext
+     */
+    // values are 'Long' as this can represent bytes.
+    data class Amount(
+        val current: Long,
+        val max: Long,
+    )
 }
 
 /**
@@ -559,7 +599,7 @@ suspend fun AnkiActivity.userAcceptsSchemaChange(col: Collection): Boolean {
     if (col.schemaChanged()) {
         return true
     }
-    return suspendCoroutine { coroutine ->
+    return suspendCancellableCoroutine { coroutine ->
         MaterialAlertDialogBuilder(this).show {
             message(text = col.tr.deckConfigWillRequireFullSync()) // generic message
             positiveButton(R.string.dialog_ok) {
@@ -583,7 +623,7 @@ suspend fun AnkiActivity.userAcceptsSchemaChange(): Boolean {
         return true
     }
     val hasAcceptedSchemaChange =
-        suspendCoroutine { coroutine ->
+        suspendCancellableCoroutine { coroutine ->
             MaterialAlertDialogBuilder(this).show {
                 message(text = TR.deckConfigWillRequireFullSync().replace("\\s+".toRegex(), " "))
                 positiveButton(R.string.dialog_ok) { coroutine.resume(true) }
