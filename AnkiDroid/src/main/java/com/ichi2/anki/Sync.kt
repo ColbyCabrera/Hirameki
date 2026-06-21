@@ -45,6 +45,7 @@ import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val SYNC_DIALOG_MINIMUM_INTERVAL_SECONDS = 5L
 
@@ -198,7 +199,7 @@ private suspend fun handleNormalSync(
                     val removed = progress.normalSync.removed
                     viewModel.updateSyncDialog("$added\n$removed")
                 }
-                delay(100)
+                delay(100.milliseconds)
             }
         }
     } else {
