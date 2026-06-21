@@ -35,6 +35,7 @@ import androidx.lifecycle.viewModelScope
 import anki.collection.Progress
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.dialogs.compose.ProgressDialogFragment
 import com.ichi2.anki.CrashReportData.Companion.throwIfDialogUnusable
 import com.ichi2.anki.CrashReportData.Companion.toCrashReportData
 import com.ichi2.anki.CrashReportData.HelpAction
@@ -396,7 +397,7 @@ suspend fun <T> FragmentActivity.withProgress(
  * Starts the progress dialog after 600ms so that quick operations don't just show
  * flashes of a dialog.
  */
-suspend fun <T> Activity.withProgress(
+suspend fun <T> FragmentActivity.withProgress(
     message: String = resources.getString(R.string.dialog_processing),
     op: suspend () -> T,
 ): T =
@@ -404,7 +405,6 @@ suspend fun <T> Activity.withProgress(
         context = this@withProgress,
         onCancel = null,
     ) { dialog ->
-        @Suppress("Deprecation") // ProgressDialog deprecation
         dialog.setMessage(message)
         op()
     }
@@ -416,7 +416,7 @@ suspend fun <T> Fragment.withProgress(
 ): T = requireActivity().withProgress(message, block)
 
 /** @see withProgress(String, ...) */
-suspend fun <T> Activity.withProgress(
+suspend fun <T> FragmentActivity.withProgress(
     @StringRes messageId: Int,
     block: suspend () -> T,
 ): T = withProgress(resources.getString(messageId), block)
@@ -427,33 +427,23 @@ suspend fun <T> Fragment.withProgress(
     block: suspend () -> T,
 ): T = requireActivity().withProgress(messageId, block)
 
-@Suppress("Deprecation") // ProgressDialog deprecation
 suspend fun <T> withProgressDialog(
-    context: Activity,
+    context: FragmentActivity,
     onCancel: (() -> Unit)?,
     delayMillis: Long = 600,
     @StringRes manualCancelButton: Int? = null,
-    op: suspend (android.app.ProgressDialog) -> T,
+    op: suspend (ProgressDialogControl) -> T,
 ): T =
     coroutineScope {
-        val dialog =
-            android.app.ProgressDialog(context, R.style.AppCompatProgressDialogStyle).apply {
-                setCancelable(onCancel != null)
-                if (manualCancelButton != null) {
-                    setCancelable(false)
-                    setButton(DialogInterface.BUTTON_NEGATIVE, context.getString(manualCancelButton)) { _, _ ->
-                        Timber.i("Progress dialog cancelled via cancel button")
-                        onCancel?.let { it() }
-                    }
-                } else {
-                    onCancel?.let {
-                        setOnCancelListener {
-                            Timber.i("Progress dialog cancelled via cancel listener")
-                            it()
-                        }
-                    }
-                }
+        val dialog = ProgressDialogFragment().apply {
+            setOnCancel(onCancel)
+            manualCancelButton?.let { setCancelButton(it) }
+        }
+        val control = object : ProgressDialogControl {
+            override fun setMessage(message: CharSequence) {
+                dialog.message = message.toString()
             }
+        }
         // disable taps immediately
         context.window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE, WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
         // reveal the dialog after 600ms
@@ -469,7 +459,7 @@ suspend fun <T> withProgressDialog(
                 |
                         """.trimMargin(),
                     )
-                    dialog.show()
+                    dialog.show(context.supportFragmentManager, "progress_dialog")
                     AnkiDroidApp.instance.progressDialogShown = true
                     dialogIsOurs = true
                 } else {
@@ -483,26 +473,22 @@ suspend fun <T> withProgressDialog(
                 }
             }
         try {
-            op(dialog)
+            op(control)
         } finally {
             dialogJob.cancel()
-            dismissDialogIfShowing(dialog)
+            if (dialog.isAdded || dialog.isVisible) {
+                try {
+                    dialog.dismissAllowingStateLoss()
+                } catch (e: Exception) {
+                    Timber.w(e, "failed to dismiss progress dialog")
+                }
+            }
             context.window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             if (dialogIsOurs) {
                 AnkiDroidApp.instance.progressDialogShown = false
             }
         }
     }
-
-private fun dismissDialogIfShowing(dialog: Dialog) {
-    try {
-        if (dialog.isShowing) {
-            dialog.dismiss()
-        }
-    } catch (e: Exception) {
-        Timber.w(e)
-    }
-}
 
 /**
  * Poll the backend for progress info every 100ms until cancelled by caller.
@@ -545,8 +531,7 @@ data class ProgressContext(
     /** Separator between [text] and [amount] */
     val separator: String = " ",
 ) {
-    @Suppress("Deprecation") // ProgressDialog deprecation
-    fun updateDialog(dialog: android.app.ProgressDialog) {
+    fun updateDialog(dialog: ProgressDialogControl) {
         val message =
             listOfNotNull(
                 text,
