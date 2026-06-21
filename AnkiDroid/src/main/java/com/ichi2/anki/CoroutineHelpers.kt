@@ -63,6 +63,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -471,7 +472,7 @@ suspend fun <T> withProgressDialog(
     try {
         op(control)
     } finally {
-        dialogJob.cancel()
+        dialogJob.cancelAndJoin()
         if (dialog.isAdded || dialog.isVisible) {
             try {
                 dialog.dismissAllowingStateLoss()
