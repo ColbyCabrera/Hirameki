@@ -31,10 +31,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -114,12 +114,17 @@ fun AnswerButtons(
                 shape = MaterialTheme.shapes.extraLargeIncreased,
                 interactionSource = interactionSource,
                 readOnly = isAnswerShown, // when answer shown, don't allow typing
+                singleLine = true,
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onShowAnswer() }),
+                keyboardActions = KeyboardActions(onDone = {
+                    if (!isAnswerShown) {
+                        onShowAnswer()
+                    }
+                }),
             )
         }
 
