@@ -281,8 +281,10 @@ private suspend fun handleNormalSync(
 private fun fullDownloadProgress(title: String): ProgressContext.() -> Unit = {
     fun Progress.FullSync.toAmount() = ProgressContext.Amount(transferred.toLong(), total.toLong())
     text = title
-    if (progress.hasFullSync() && progress.fullSync.total > 0) {
-        amount = progress.fullSync.toAmount()
+    amount = if (progress.hasFullSync() && progress.fullSync.total > 0) {
+        progress.fullSync.toAmount()
+    } else {
+        null
     }
 }
 
@@ -384,7 +386,7 @@ suspend fun monitorMediaSync(deckPicker: DeckPicker) {
                 }
                 val text = resp.progress.run { "$added\n$removed\n$checked" }
                 viewModel.updateSyncDialog(text)
-                delay(100)
+                delay(100.milliseconds)
             }
             showMessage(TR.syncMediaComplete())
         } catch (_: BackendInterruptedException) {

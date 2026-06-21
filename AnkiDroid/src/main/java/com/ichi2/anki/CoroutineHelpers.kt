@@ -335,7 +335,7 @@ suspend fun HelpAction.execute(context: Context): Boolean {
  * progress UI.
  */
 suspend fun <T> Backend.withProgress(
-    progressContext: ProgressContext,
+    progressContext: ProgressContext = ProgressContext(),
     extractProgress: ProgressContext.() -> Unit,
     updateUi: ProgressContext.() -> Unit,
     block: suspend CoroutineScope.() -> T,
@@ -559,15 +559,21 @@ data class ProgressContext(
          *
          * `28 MB/141 MB`
          */
-        fun ofBytes(context: Context) =
-            ProgressContext(
+        fun ofBytes(context: Context): ProgressContext {
+            val appContext = context.applicationContext
+            return ProgressContext(
                 formatAmount = { (current, max) ->
                     // replace spaces with NBSP so newlines are handled better
-                    val curStr = Formatter.formatShortFileSize(context, current).replace(' ', '\u00A0')
-                    val maxStr = Formatter.formatShortFileSize(context, max).replace(' ', '\u00A0')
-                    context.getString(R.string.progress_amount_bytes, curStr, maxStr)
+                    val curStr = Formatter.formatShortFileSize(appContext, current)
+                        .replace(' ', '\u00A0')
+                        .replace('\u202F', '\u00A0')
+                    val maxStr = Formatter.formatShortFileSize(appContext, max)
+                        .replace(' ', '\u00A0')
+                        .replace('\u202F', '\u00A0')
+                    appContext.getString(R.string.progress_amount_bytes, curStr, maxStr)
                 },
             )
+        }
     }
 
     /**
