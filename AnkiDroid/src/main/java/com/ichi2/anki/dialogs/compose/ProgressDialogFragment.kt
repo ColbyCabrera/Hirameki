@@ -54,6 +54,7 @@ class ProgressDialogFragment : DialogFragment() {
     private val mainThreadHandler = Handler(Looper.getMainLooper())
     private var onCancelCallback: (() -> Unit)? = null
     private var cancelLabelResId: Int? = null
+    private var isCancelButtonSet = false
 
     var title: String
         get() = titleState.value
@@ -90,6 +91,7 @@ class ProgressDialogFragment : DialogFragment() {
 
     fun setCancelButton(labelResId: Int) {
         cancelLabelResId = labelResId
+        isCancelButtonSet = true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,6 +125,7 @@ class ProgressDialogFragment : DialogFragment() {
                         onCancel = onCancelCallback,
                         cancelLabelResId = cancelLabelResId,
                         isCancelable = isCancelable,
+                        showCancelButton = isCancelButtonSet,
                         onDismiss = { dismissAllowingStateLoss() })
                 }
             }
@@ -139,6 +142,7 @@ internal fun ProgressDialogContent(
     onCancel: (() -> Unit)?,
     cancelLabelResId: Int?,
     isCancelable: Boolean,
+    showCancelButton: Boolean,
     onDismiss: () -> Unit
 ) {
     AlertDialog(onDismissRequest = {
@@ -162,7 +166,7 @@ internal fun ProgressDialogContent(
             Text(text = message)
         }
     }, confirmButton = {}, dismissButton = {
-        if (onCancel != null) {
+        if (onCancel != null && showCancelButton) {
             val label = cancelLabelResId?.let { stringResource(id = it) }
                 ?: stringResource(id = R.string.dialog_cancel)
             TextButton(onClick = {
@@ -185,6 +189,7 @@ private fun ProgressDialogContentPreview() {
             onCancel = {},
             cancelLabelResId = null,
             isCancelable = true,
+            showCancelButton = true,
             onDismiss = {})
     }
 }
@@ -199,6 +204,7 @@ private fun ProgressDialogContentMessageOnlyPreview() {
             onCancel = null,
             cancelLabelResId = null,
             isCancelable = false,
+            showCancelButton = false,
             onDismiss = {})
     }
 }
