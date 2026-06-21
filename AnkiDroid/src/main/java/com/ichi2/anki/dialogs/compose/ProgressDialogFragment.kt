@@ -47,6 +47,8 @@ class ProgressDialogFragment : DialogFragment() {
     private companion object {
         const val STATE_TITLE = "title"
         const val STATE_MESSAGE = "message"
+        const val STATE_CANCEL_LABEL_RES_ID = "cancelLabelResId"
+        const val STATE_IS_CANCEL_BUTTON_SET = "isCancelButtonSet"
     }
 
     private val titleState = mutableStateOf("")
@@ -99,6 +101,12 @@ class ProgressDialogFragment : DialogFragment() {
         if (savedInstanceState != null) {
             titleState.value = savedInstanceState.getString(STATE_TITLE).orEmpty()
             messageState.value = savedInstanceState.getString(STATE_MESSAGE).orEmpty()
+            isCancelButtonSet = savedInstanceState.getBoolean(STATE_IS_CANCEL_BUTTON_SET)
+            cancelLabelResId = if (savedInstanceState.containsKey(STATE_CANCEL_LABEL_RES_ID)) {
+                savedInstanceState.getInt(STATE_CANCEL_LABEL_RES_ID)
+            } else {
+                null
+            }
         }
         // Dialog should be non-dismissable if cancel button is present or if onCancelCallback is null
         isCancelable = onCancelCallback != null && cancelLabelResId == null
@@ -108,6 +116,8 @@ class ProgressDialogFragment : DialogFragment() {
         super.onSaveInstanceState(outState)
         outState.putString(STATE_TITLE, title)
         outState.putString(STATE_MESSAGE, message)
+        outState.putBoolean(STATE_IS_CANCEL_BUTTON_SET, isCancelButtonSet)
+        cancelLabelResId?.let { outState.putInt(STATE_CANCEL_LABEL_RES_ID, it) }
     }
 
     override fun onCreateView(
