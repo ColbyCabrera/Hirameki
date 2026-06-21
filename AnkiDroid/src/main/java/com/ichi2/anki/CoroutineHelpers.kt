@@ -21,6 +21,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.net.Uri
+import android.text.format.Formatter
 import android.view.WindowManager
 import android.view.WindowManager.BadTokenException
 import androidx.annotation.StringRes
@@ -334,6 +335,7 @@ suspend fun HelpAction.execute(context: Context): Boolean {
  * progress UI.
  */
 suspend fun <T> Backend.withProgress(
+    progressContext: ProgressContext,
     extractProgress: ProgressContext.() -> Unit,
     updateUi: ProgressContext.() -> Unit,
     block: suspend CoroutineScope.() -> T,
@@ -341,7 +343,7 @@ suspend fun <T> Backend.withProgress(
     coroutineScope {
         val monitor =
             launch {
-                monitorProgress(this@withProgress, extractProgress, updateUi)
+                progressContext.monitorProgress(this@withProgress, extractProgress, updateUi)
             }
         try {
             block()
@@ -358,6 +360,7 @@ suspend fun <T> Backend.withProgress(
  * flashes of a dialog.
  */
 suspend fun <T> FragmentActivity.withProgress(
+    progressContext: ProgressContext = ProgressContext(),
     extractProgress: ProgressContext.() -> Unit,
     onCancel: ((Backend) -> Unit)? = { it.setWantsAbort() },
     @StringRes manualCancelButton: Int? = null,
@@ -377,6 +380,7 @@ suspend fun <T> FragmentActivity.withProgress(
         manualCancelButton = manualCancelButton,
     ) { dialog ->
         backend.withProgress(
+            progressContext = progressContext,
             extractProgress = extractProgress,
             updateUi = { updateDialog(dialog) },
         ) {
@@ -506,12 +510,12 @@ private fun dismissDialogIfShowing(dialog: Dialog) {
  * [ProgressContext]. Calls updateUi() to update the UI with the extracted
  * progress.
  */
-private suspend fun monitorProgress(
+private suspend fun ProgressContext.monitorProgress(
     backend: Backend,
     extractProgress: ProgressContext.() -> Unit,
     updateUi: ProgressContext.() -> Unit,
 ) {
-    val state = ProgressContext(Progress.getDefaultInstance())
+    val state = this
     while (true) {
         state.progress =
             withContext(Dispatchers.IO) {
@@ -526,28 +530,56 @@ private suspend fun monitorProgress(
     }
 }
 
-/** Holds the current backend progress, and text/amount properties
+/**
+ * Holds the current backend progress, and text/amount properties
  * that can be written to in order to update the UI.
  */
 data class ProgressContext(
-    var progress: Progress,
-    var text: String = "",
-    /** If set, shows progress bar with a of b complete. */
-    var amount: Pair<Int, Int>? = null,
-)
-
-@Suppress("Deprecation") // ProgressDialog deprecation
-private fun ProgressContext.updateDialog(dialog: android.app.ProgressDialog) {
-    // ideally this would show a progress bar, but MaterialDialog does not support
-    // setting progress after starting with indeterminate progress, so we just use
-    // this for now
-    // this code has since been updated to ProgressDialog, and the above not rechecked
-    val progressText =
-        amount?.let {
-            " ${it.first}/${it.second}"
-        } ?: ""
+    var progress: Progress = Progress.getDefaultInstance(),
+    var text: String? = null,
+    /** If set, shows a progress bar with `current` of `max` complete. */
+    var amount: Amount? = null,
+    val formatAmount: (Amount) -> String = { (current, max) -> "$current/$max" },
+    /** Separator between [text] and [amount] */
+    val separator: String = " ",
+) {
     @Suppress("Deprecation") // ProgressDialog deprecation
-    dialog.setMessage(text + progressText)
+    fun updateDialog(dialog: android.app.ProgressDialog) {
+        val message =
+            listOfNotNull(
+                text,
+                amount?.let { formatAmount(it) },
+            ).joinToString(separator)
+        dialog.setMessage(message)
+    }
+
+    companion object {
+        /**
+         * A [com.ichi2.anki.ProgressContext] which formats progress as bytes:
+         *
+         * `28 MB/141 MB`
+         */
+        fun ofBytes(context: Context) =
+            ProgressContext(
+                formatAmount = { (current, max) ->
+                    // replace spaces with NBSP so newlines are handled better
+                    val curStr = Formatter.formatShortFileSize(context, current).replace(' ', '\u00A0')
+                    val maxStr = Formatter.formatShortFileSize(context, max).replace(' ', '\u00A0')
+                    context.getString(R.string.progress_amount_bytes, curStr, maxStr)
+                },
+            )
+    }
+
+    /**
+     * Represents a progress value and a maximum limit.
+     *
+     * @see ProgressContext
+     */
+    // values are 'Long' as this can represent bytes.
+    data class Amount(
+        val current: Long,
+        val max: Long,
+    )
 }
 
 /**

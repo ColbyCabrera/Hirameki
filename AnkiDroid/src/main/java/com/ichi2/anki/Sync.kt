@@ -19,6 +19,7 @@ package com.ichi2.anki
 import androidx.annotation.StringRes
 import androidx.lifecycle.lifecycleScope
 import anki.backend.backendError
+import anki.collection.Progress
 import anki.sync.SyncAuth
 import anki.sync.SyncCollectionResponse
 import anki.sync.SyncStatusResponse
@@ -278,9 +279,10 @@ private suspend fun handleNormalSync(
 }
 
 private fun fullDownloadProgress(title: String): ProgressContext.() -> Unit = {
-    if (progress.hasFullSync()) {
-        text = title
-        amount = progress.fullSync.run { Pair(transferred, total) }
+    fun Progress.FullSync.toAmount() = ProgressContext.Amount(transferred.toLong(), total.toLong())
+    text = title
+    if (progress.hasFullSync() && progress.fullSync.total > 0) {
+        amount = progress.fullSync.toAmount()
     }
 }
 
@@ -291,8 +293,10 @@ private suspend fun handleDownload(
 ) {
     Timber.i("Sync: Full collection download requested")
     deckPicker.withProgress(
+        progressContext = ProgressContext.ofBytes(context = deckPicker).copy(separator = "\n"),
         extractProgress = fullDownloadProgress(TR.syncDownloadingFromAnkiweb()),
         onCancel = ::cancelSync,
+        manualCancelButton = R.string.dialog_cancel,
     ) {
         withCol {
             try {
@@ -323,8 +327,10 @@ private suspend fun handleUpload(
 ) {
     Timber.i("Sync: Full collection upload requested")
     deckPicker.withProgress(
+        progressContext = ProgressContext.ofBytes(context = deckPicker).copy(separator = "\n"),
         extractProgress = fullDownloadProgress(TR.syncUploadingToAnkiweb()),
         onCancel = ::cancelSync,
+        manualCancelButton = R.string.dialog_cancel,
     ) {
         withCol {
             close(downgrade = false, forFullSync = true)
