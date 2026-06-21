@@ -25,7 +25,6 @@ import android.text.format.Formatter
 import android.view.WindowManager
 import android.view.WindowManager.BadTokenException
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -69,6 +68,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import net.ankiweb.rsdroid.Backend
@@ -81,8 +81,8 @@ import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Overridable reference to [Dispatchers.IO]. Useful if tests can't use it */
 // COULD_BE_BETTER: this shouldn't be necessary, but TestClass::runWith needs it
@@ -289,7 +289,7 @@ fun Context.showError(
                     setOnDismissListener { crashReportData.sendCrashReport() }
                 }
             }.apply {
-                // setup the help link. Link is non-null if neutralButton exists.
+                // set up the help link. Link is non-null if neutralButton exists.
                 setOnShowListener {
                     neutralButton?.setOnClickListener {
                         lifecycle.coroutineScope.launch {
@@ -460,7 +460,7 @@ suspend fun <T> withProgressDialog(
         var dialogIsOurs = false
         val dialogJob =
             launch {
-                delay(delayMillis)
+                delay(delayMillis.milliseconds)
                 if (!AnkiDroidApp.instance.progressDialogShown) {
                     Timber.i(
                         """Displaying progress dialog: ${delayMillis}ms elapsed; 
@@ -526,7 +526,7 @@ private suspend fun ProgressContext.monitorProgress(
         withContext(Dispatchers.Main) {
             state.updateUi()
         }
-        delay(100)
+        delay(100.milliseconds)
     }
 }
 
@@ -591,7 +591,7 @@ suspend fun AnkiActivity.userAcceptsSchemaChange(col: Collection): Boolean {
     if (col.schemaChanged()) {
         return true
     }
-    return suspendCoroutine { coroutine ->
+    return suspendCancellableCoroutine { coroutine ->
         MaterialAlertDialogBuilder(this).show {
             message(text = col.tr.deckConfigWillRequireFullSync()) // generic message
             positiveButton(R.string.dialog_ok) {
@@ -615,7 +615,7 @@ suspend fun AnkiActivity.userAcceptsSchemaChange(): Boolean {
         return true
     }
     val hasAcceptedSchemaChange =
-        suspendCoroutine { coroutine ->
+        suspendCancellableCoroutine { coroutine ->
             MaterialAlertDialogBuilder(this).show {
                 message(text = TR.deckConfigWillRequireFullSync().replace("\\s+".toRegex(), " "))
                 positiveButton(R.string.dialog_ok) { coroutine.resume(true) }
