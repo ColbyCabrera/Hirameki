@@ -17,6 +17,8 @@
 package com.ichi2.anki.dialogs.compose
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -49,6 +51,7 @@ class ProgressDialogFragment : DialogFragment() {
 
     private val titleState = mutableStateOf("")
     private val messageState = mutableStateOf("")
+    private val mainThreadHandler = Handler(Looper.getMainLooper())
     private var onCancelCallback: (() -> Unit)? = null
     private var cancelLabelResId: Int? = null
 
@@ -61,15 +64,25 @@ class ProgressDialogFragment : DialogFragment() {
     var message: String
         get() = messageState.value
         set(value) {
-            val lines = value.split('\n')
-            if (lines.size > 1) {
-                titleState.value = lines[0]
-                messageState.value = lines.subList(1, lines.size).joinToString("\n")
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                updateMessageState(value)
             } else {
-                titleState.value = ""
-                messageState.value = value
+                mainThreadHandler.post {
+                    updateMessageState(value)
+                }
             }
         }
+
+    private fun updateMessageState(value: String) {
+        val lines = value.split('\n')
+        if (lines.size > 1) {
+            titleState.value = lines[0]
+            messageState.value = lines.subList(1, lines.size).joinToString("\n")
+        } else {
+            titleState.value = ""
+            messageState.value = value
+        }
+    }
 
     fun setOnCancel(onCancel: (() -> Unit)?) {
         onCancelCallback = onCancel
