@@ -203,7 +203,7 @@ suspend fun <T> FragmentActivity.runCatching(
                 // these exceptions do not generate worthwhile crash reports
                 Timber.i("Showing error dialog but not sending a crash report.")
                 showError(
-                    exc.localizedMessage!!,
+                    exc.localizedMessage ?: exc.toString(),
                     exc.toCrashReportData(this, reportException = false)
                 )
             }
@@ -211,7 +211,7 @@ suspend fun <T> FragmentActivity.runCatching(
             is BackendException -> {
                 Timber.e(exc, errorMessage)
                 if (callerTrace != null) Timber.e(callerTrace)
-                showError(exc.localizedMessage!!, exc.toCrashReportData(this))
+                showError(exc.localizedMessage ?: exc.toString(), exc.toCrashReportData(this))
             }
 
             else -> {
