@@ -84,6 +84,8 @@ import kotlin.coroutines.resume
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
+private const val COROUTINE_HELPERS_STACK_CLASS_PREFIX = "com.ichi2.anki.CoroutineHelpersKt"
+
 /** Overridable reference to [Dispatchers.IO]. Useful if tests can't use it */
 // COULD_BE_BETTER: this shouldn't be necessary, but TestClass::runWith needs it
 @VisibleForTesting
@@ -164,7 +166,11 @@ suspend fun <T> FragmentActivity.runCatching(
     // at com.ichi2.anki.BackendBackupsKt.performBackupInBackground(BackendBackups.kt:26)
     //  This is only performed in DEBUG mode to reduce performance impact
     val callerTrace = if (BuildConfig.DEBUG) {
-        Thread.currentThread().stackTrace.drop(14)
+        Thread.currentThread().stackTrace
+            .dropWhile { frame ->
+                frame.className == Thread::class.java.name ||
+                    frame.className.startsWith(COROUTINE_HELPERS_STACK_CLASS_PREFIX)
+            }
             .joinToString(prefix = "\tat ", separator = "\n\tat ")
     } else {
         null
