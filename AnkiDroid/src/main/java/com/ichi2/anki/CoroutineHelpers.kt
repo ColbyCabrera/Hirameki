@@ -181,7 +181,7 @@ suspend fun <T> FragmentActivity.runCatching(
     } catch (exc: Exception) {
         if (skipCrashReport?.invoke(exc) == true) {
             Timber.i("Showing error dialog but not sending a crash report.")
-            showError(exc.localizedMessage!!, exc.toCrashReportData(this, reportException = false))
+            showError(exc.localizedMessage ?: exc.toString(), exc.toCrashReportData(this, reportException = false))
             return null
         }
         when (exc) {
