@@ -42,6 +42,10 @@ import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 class ProgressDialogFragment : DialogFragment() {
+    private companion object {
+        const val STATE_TITLE = "title"
+        const val STATE_MESSAGE = "message"
+    }
 
     private val titleState = mutableStateOf("")
     private val messageState = mutableStateOf("")
@@ -77,8 +81,18 @@ class ProgressDialogFragment : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) {
+            titleState.value = savedInstanceState.getString(STATE_TITLE).orEmpty()
+            messageState.value = savedInstanceState.getString(STATE_MESSAGE).orEmpty()
+        }
         // Dialog should be non-dismissable if cancel button is present or if onCancelCallback is null
         isCancelable = onCancelCallback != null && cancelLabelResId == null
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_TITLE, title)
+        outState.putString(STATE_MESSAGE, message)
     }
 
     override fun onCreateView(
