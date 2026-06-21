@@ -514,16 +514,18 @@ private suspend fun ProgressContext.monitorProgress(
     backend: Backend,
     extractProgress: ProgressContext.() -> Unit,
     updateUi: ProgressContext.() -> Unit,
+    ioDispatcher: CoroutineDispatcher = com.ichi2.anki.ioDispatcher,
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
     val state = this
     while (true) {
         state.progress =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 backend.latestProgress()
             }
         state.extractProgress()
         // on main thread, so op can update UI
-        withContext(Dispatchers.Main) {
+        withContext(mainDispatcher) {
             state.updateUi()
         }
         delay(100.milliseconds)
