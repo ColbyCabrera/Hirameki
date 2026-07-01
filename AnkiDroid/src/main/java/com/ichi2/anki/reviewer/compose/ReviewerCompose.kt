@@ -96,7 +96,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.AnkiActivity
-import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.browser.compose.SetDueDateDialog
 import com.ichi2.anki.dialogs.compose.DeleteConfirmationDialog
@@ -116,6 +115,7 @@ import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 private val WhiteboardToolbarWidth = 56.dp
 private val WhiteboardBottomBarOffset = 48.dp
@@ -577,19 +577,20 @@ fun ReviewerContent(
                 }
             }
 
-            SetDueDateDialog(viewModel = setDueDateViewModel, onHelpClicked = {
-                (currentContext as? AnkiActivity)?.openUrl(R.string.link_set_due_date_help)
-            }, onDismissRequest = { viewModel.showSetDueDateDialog(false) }, onConfirm = {
-                scope.launch {
-                    val count = setDueDateViewModel.updateDueDateAsync().await()
-                    if (count != null) {
-                        val message = TR.schedulingSetDueDateDone(count)
-                        snackbarHostState.showSnackbar(message)
-                        viewModel.onEvent(ReviewerEvent.ReloadCard)
-                        viewModel.showSetDueDateDialog(false)
+            SetDueDateDialog(
+                viewModel = setDueDateViewModel,
+                onHelpClicked = {
+                    (currentContext as? AnkiActivity)?.openUrl(R.string.link_set_due_date_help)
+                },
+                onDismissRequest = { viewModel.onEvent(ReviewerEvent.DismissSetDueDateDialog) },
+                onConfirm = {
+                    scope.launch {
+                        val count = setDueDateViewModel.updateDueDateAsync().await()
+                        if (count != null) {
+                            viewModel.onEvent(ReviewerEvent.SetDueDateConfirmed(count))
+                        }
                     }
-                }
-            })
+                })
         }
 
         // Tags dialog
@@ -623,7 +624,7 @@ fun AnswerIndicator(
     LaunchedEffect(feedback) {
         if (feedback != null) {
             lastFeedback = feedback
-            delay(AnswerIndicatorDuration)
+            delay(AnswerIndicatorDuration.milliseconds)
             currentOnDismissed()
         }
     }
