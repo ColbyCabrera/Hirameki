@@ -193,7 +193,7 @@ fun ReviewerContent(
     val undoLabel = stringResource(R.string.undo)
 
     // Tags dialog state
-    val showSetDueDateDialog by viewModel.showSetDueDateDialog.collectAsStateWithLifecycle()
+    val setDueDateCardId by viewModel.setDueDateCardId.collectAsStateWithLifecycle()
     val showTagsDialog by viewModel.showTagsDialog.collectAsStateWithLifecycle()
     val tagsState by viewModel.tagsState.collectAsStateWithLifecycle()
     val currentNoteTags by viewModel.currentNoteTags.collectAsStateWithLifecycle()
@@ -567,14 +567,11 @@ fun ReviewerContent(
         }
 
         // Set Due Date Dialog
-        if (showSetDueDateDialog) {
+        setDueDateCardId?.let { cardId ->
             val setDueDateViewModel = viewModel<SetDueDateViewModel>()
-            LaunchedEffect(Unit) {
-                val cardId = viewModel.currentCardFlow.value?.id
-                if (cardId != null) {
-                    val fsrsEnabled = getFSRSStatus() ?: false
-                    setDueDateViewModel.init(longArrayOf(cardId), fsrsEnabled)
-                }
+            LaunchedEffect(cardId) {
+                val fsrsEnabled = getFSRSStatus() ?: false
+                setDueDateViewModel.init(longArrayOf(cardId), fsrsEnabled)
             }
 
             SetDueDateDialog(

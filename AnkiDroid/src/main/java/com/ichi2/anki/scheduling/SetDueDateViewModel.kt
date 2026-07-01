@@ -155,6 +155,8 @@ class SetDueDateViewModel : ViewModel() {
         this._startText.value = ""
         this._endText.value = ""
         this.updateIntervalToMatchDueDate = fsrsEnabled
+        this.isValidFlow.value = false
+        this.currentInterval.value = null
 
         initCurrentInterval(cardIds)
     }

@@ -198,8 +198,8 @@ class ReviewerViewModel(
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
 
-    private val _showSetDueDateDialog = MutableStateFlow(false)
-    val showSetDueDateDialog: StateFlow<Boolean> = _showSetDueDateDialog.asStateFlow()
+    private val _setDueDateCardId = MutableStateFlow<Long?>(null)
+    val setDueDateCardId: StateFlow<Long?> = _setDueDateCardId.asStateFlow()
 
     private val _flowOfDeleteResult = MutableSharedFlow<Int>()
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
@@ -384,19 +384,19 @@ class ReviewerViewModel(
     }
 
     private fun rescheduleCard() {
-        currentCard ?: return
-        _showSetDueDateDialog.value = true
+        val card = currentCard ?: return
+        _setDueDateCardId.value = card.id
     }
 
     private fun dismissSetDueDateDialog() {
-        _showSetDueDateDialog.value = false
+        _setDueDateCardId.value = null
     }
 
     private fun setDueDateConfirmed(count: Int) {
         val message = TR.schedulingSetDueDateDone(count)
         viewModelScope.launch { _effect.emit(ReviewerEffect.ShowSnackbar(message)) }
         reloadCard()
-        _showSetDueDateDialog.value = false
+        _setDueDateCardId.value = null
     }
 
     private fun deleteNote() {
