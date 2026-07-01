@@ -145,7 +145,6 @@ sealed class ReviewerEffect {
     object PerformRedo : ReviewerEffect()
     object ToggleWhiteboard : ReviewerEffect()
     data class ShowDeleteNoteDialog(val card: Card) : ReviewerEffect()
-    data class ShowDueDateDialog(val card: Card) : ReviewerEffect()
     data class ReplayMedia(val card: Card) : ReviewerEffect()
     object ToggleVoicePlayback : ReviewerEffect()
     object NavigateToDeckOptions : ReviewerEffect()
@@ -195,6 +194,13 @@ class ReviewerViewModel(
 
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
+
+    private val _showSetDueDateDialog = MutableStateFlow(false)
+    val showSetDueDateDialog: StateFlow<Boolean> = _showSetDueDateDialog.asStateFlow()
+
+    fun showSetDueDateDialog(show: Boolean) {
+        _showSetDueDateDialog.value = show
+    }
     private val _flowOfDeleteResult = MutableSharedFlow<Int>()
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
     private val nextJavascriptCommandId = AtomicInteger(0)
@@ -376,8 +382,8 @@ class ReviewerViewModel(
     }
 
     private fun rescheduleCard() {
-        val card = currentCard ?: return
-        viewModelScope.launch { _effect.emit(ReviewerEffect.ShowDueDateDialog(card)) }
+        currentCard ?: return
+        showSetDueDateDialog(true)
     }
 
     private fun deleteNote() {
