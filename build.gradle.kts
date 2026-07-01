@@ -41,7 +41,7 @@ val ktlintVersion: String = libs.versions.ktlint.get()
 
 // Here we extract per-module "best practices" settings to a single top-level evaluation
 subprojects {
-    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+    pluginManager.apply("org.jlleitschuh.gradle.ktlint")
     configure<KtlintExtension> {
         version.set(ktlintVersion)
     }
@@ -160,36 +160,38 @@ if (jvmVersion != "17" && jvmVersion != "21" && jvmVersion != "24") {
     exitProcess(1)
 }
 
-val ciBuild by extra(System.getenv("CI") == "true") // works for Travis CI or GitHub Actions
+val ciBuild = System.getenv("CI") == "true" // works for Travis CI or GitHub Actions
+extra.set("ciBuild", ciBuild)
 // allows for -Dpre-dex=false to be set
-val preDexEnabled by extra("true" == System.getProperty("pre-dex", "true"))
+val preDexEnabled = "true" == System.getProperty("pre-dex", "true")
+extra.set("preDexEnabled", preDexEnabled)
 // allows for universal APKs to be generated
-val universalApkEnabled by extra("true" == System.getProperty("universal-apk", "false"))
+val universalApkEnabled = "true" == System.getProperty("universal-apk", "false")
+extra.set("universalApkEnabled", universalApkEnabled)
 
-val testReleaseBuild by extra(System.getenv("TEST_RELEASE_BUILD") == "true")
-var androidTestVariantName by extra(
-    if (testReleaseBuild) "Release" else "Debug"
-)
+val testReleaseBuild = System.getenv("TEST_RELEASE_BUILD") == "true"
+extra.set("testReleaseBuild", testReleaseBuild)
+var androidTestVariantName = if (testReleaseBuild) "Release" else "Debug"
+extra.set("androidTestVariantName", androidTestVariantName)
 
-val gradleTestMaxParallelForks by extra(
-    if (System.getProperty("os.name") == "Mac OS X") {
-        // macOS reports hardware cores. This is accurate for CI, Intel (halved due to SMT) and Apple Silicon
-        providers.exec {
-            commandLine("sysctl", "-n", "hw.physicalcpu")
-        }.standardOutput.asText.get().trim().toInt()
-    } else if (ciBuild) {
-        // GitHub Actions run on Standard_D4ads_v5 Azure Compute Units with 4 vCPUs
-        // They appear to be 2:1 vCPU to CPU on Linux/Windows with two vCPU cores but with performance 1:1-similar
-        // Sources to determine the correct Azure Compute Unit (and get CPU count) to tune this:
-        // Which Azure compute unit in use? https://github.com/github/docs/blob/a25a33bb6cbf86a629d0a0c7bef624743991f97e/content/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners.md?plain=1#L176
-        // What is that compute unit? https://learn.microsoft.com/en-us/azure/virtual-machines/dasv5-dadsv5-series#dadsv5-series
-        // How does it perform? https://learn.microsoft.com/en-gb/azure/virtual-machines/linux/compute-benchmark-scores#dadsv5 (vs previous Standard_DS2_v2 https://learn.microsoft.com/en-gb/azure/virtual-machines/linux/compute-benchmark-scores#dv2---general-compute)
-        4
-    } else {
-        // Use 50% of cores to account for SMT which doesn't help this workload
-        max(1, Runtime.getRuntime().availableProcessors() / 2)
-    }
-)
+val gradleTestMaxParallelForks = if (System.getProperty("os.name") == "Mac OS X") {
+    // macOS reports hardware cores. This is accurate for CI, Intel (halved due to SMT) and Apple Silicon
+    providers.exec {
+        commandLine("sysctl", "-n", "hw.physicalcpu")
+    }.standardOutput.asText.get().trim().toInt()
+} else if (ciBuild) {
+    // GitHub Actions run on Standard_D4ads_v5 Azure Compute Units with 4 vCPUs
+    // They appear to be 2:1 vCPU to CPU on Linux/Windows with two vCPU cores but with performance 1:1-similar
+    // Sources to determine the correct Azure Compute Unit (and get CPU count) to tune this:
+    // Which Azure compute unit in use? https://github.com/github/docs/blob/a25a33bb6cbf86a629d0a0c7bef624743991f97e/content/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners.md?plain=1#L176
+    // What is that compute unit? https://learn.microsoft.com/en-us/azure/virtual-machines/dasv5-dadsv5-series#dadsv5-series
+    // How does it perform? https://learn.microsoft.com/en-gb/azure/virtual-machines/linux/compute-benchmark-scores#dadsv5 (vs previous Standard_DS2_v2 https://learn.microsoft.com/en-gb/azure/virtual-machines/linux/compute-benchmark-scores#dv2---general-compute)
+    4
+} else {
+    // Use 50% of cores to account for SMT which doesn't help this workload
+    max(1, Runtime.getRuntime().availableProcessors() / 2)
+}
+extra.set("gradleTestMaxParallelForks", gradleTestMaxParallelForks)
 
 private fun String?.parseIntOrDefault(defaultValue: Int): Int = this?.toIntOrNull() ?: defaultValue
 
