@@ -61,6 +61,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -165,7 +167,7 @@ fun ReviewerContent(
     voicePlaybackViewModel: VoicePlaybackViewModel?
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
     var showColorPickerDialog by remember { mutableStateOf(false) }
@@ -495,7 +497,6 @@ fun ReviewerContent(
                     }
                 menuOptions.forEach { (textRes, icon, action) ->
                     ListItem(
-                        headlineContent = { Text(stringResource(textRes)) },
                         leadingContent = { Icon(icon, contentDescription = null) },
                         modifier = Modifier.clickable {
                             scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -504,7 +505,8 @@ fun ReviewerContent(
                                 }
                             }
                             action()
-                        })
+                        }
+                    ) { Text(stringResource(textRes)) }
                 }
             }
         }

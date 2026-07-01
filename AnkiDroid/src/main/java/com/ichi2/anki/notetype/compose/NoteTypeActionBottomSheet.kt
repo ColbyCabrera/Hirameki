@@ -41,7 +41,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -299,7 +300,7 @@ fun NoteTypeActionBottomSheetPreview() {
     AnkiDroidTheme {
         NoteTypeActionBottomSheet(
             noteType = ManageNoteTypeUiModel(1L, "Basic", 42),
-            sheetState = rememberModalBottomSheetState(),
+            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden),
             onDismissRequest = {},
             onShowFields = {},
             onEditCards = {},

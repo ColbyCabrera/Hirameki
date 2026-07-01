@@ -137,53 +137,53 @@ fun NoteTypeItem(
     ) {
         ListItem(
             modifier = Modifier.combinedClickable(
-            onClick = onClick,
-            onLongClick = onLongClick,
-        ), headlineContent = {
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ), supportingContent = {
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.model_browser_of_type, noteType.useCount, noteType.useCount
+                    ), style = MaterialTheme.typography.bodySmall
+                )
+            }, leadingContent = {
+                MorphingCardCount(
+                    modifier = Modifier.graphicsLayer {
+                        rotationZ = if (isSelected) wobbleRotation else 0f
+                    },
+                    cardCount = noteType.useCount,
+                    containerColor = animatedCountsContainerColor,
+                    contentColor = animatedCountsContentColor,
+                    shapes = MORPHING_SHAPES
+                )
+            }, trailingContent = {
+                if (isInMultiSelectMode) {
+                    Checkbox(
+                        modifier = Modifier.padding(horizontal = 15.dp), // match total width of IconButton
+                        checked = isSelected,
+                        onCheckedChange = null, // handled by row click
+                    )
+                } else {
+                    IconButton(
+                        onClick = onClick,
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = stringResource(id = R.string.more_options),
+                        )
+                    }
+                }
+            }, colors = ListItemDefaults.colors(
+                containerColor = Color.Transparent
+            )
+        ) {
             Text(
                 text = noteType.name,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        }, supportingContent = {
-            Text(
-                text = pluralStringResource(
-                    R.plurals.model_browser_of_type, noteType.useCount, noteType.useCount
-                ), style = MaterialTheme.typography.bodySmall
-            )
-        }, leadingContent = {
-            MorphingCardCount(
-                modifier = Modifier.graphicsLayer {
-                    rotationZ = if (isSelected) wobbleRotation else 0f
-                },
-                cardCount = noteType.useCount,
-                containerColor = animatedCountsContainerColor,
-                contentColor = animatedCountsContentColor,
-                shapes = MORPHING_SHAPES
-            )
-        }, trailingContent = {
-            if (isInMultiSelectMode) {
-                Checkbox(
-                    modifier = Modifier.padding(horizontal = 15.dp), // match total width of IconButton
-                    checked = isSelected,
-                    onCheckedChange = null, // handled by row click
-                )
-            } else {
-                IconButton(
-                    onClick = onClick,
-                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = stringResource(id = R.string.more_options),
-                    )
-                }
-            }
-        }, colors = ListItemDefaults.colors(
-            containerColor = Color.Transparent
-        )
-        )
+        }
     }
 }
 

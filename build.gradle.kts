@@ -115,10 +115,7 @@ subprojects {
         compilerOptions {
             allWarningsAsErrors.set(fatalWarnings)
             val compilerArgs = mutableListOf(
-                "-jvm-default=no-compatibility",
-                // https://youtrack.jetbrains.com/issue/KT-73255
-                // Apply @StringRes to both constructor params and generated properties
-                "-Xannotation-default-target=param-property"
+                "-jvm-default=no-compatibility"
             )
             if (project.name != "api") {
                 compilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"

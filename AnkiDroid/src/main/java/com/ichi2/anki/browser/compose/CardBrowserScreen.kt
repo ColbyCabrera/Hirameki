@@ -52,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -63,7 +64,7 @@ import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -626,7 +627,7 @@ fun FilterBottomSheet(
     onFlagFilter: () -> Unit,
     onFilterByTag: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
 
     ModalBottomSheet(
@@ -636,7 +637,6 @@ fun FilterBottomSheet(
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         ListItem(
-            headlineContent = { Text(stringResource(R.string.card_browser_show_marked)) },
             modifier = Modifier.clickable {
                 onFilter("tag:marked")
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -645,9 +645,8 @@ fun FilterBottomSheet(
                     }
                 }
             },
-        )
+        ) { Text(stringResource(R.string.card_browser_show_marked)) }
         ListItem(
-            headlineContent = { Text(stringResource(R.string.card_browser_show_suspended)) },
             modifier = Modifier.clickable {
                 onFilter("is:suspended")
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -656,9 +655,8 @@ fun FilterBottomSheet(
                     }
                 }
             },
-        )
+        ) { Text(stringResource(R.string.card_browser_show_suspended)) }
         ListItem(
-            headlineContent = { Text(stringResource(R.string.filter_by_tag)) },
             modifier = Modifier.clickable {
                 onFilterByTag()
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -667,11 +665,10 @@ fun FilterBottomSheet(
                     }
                 }
             },
-        )
+        ) { Text(stringResource(R.string.filter_by_tag)) }
         ListItem(
-            headlineContent = { Text(stringResource(R.string.card_browser_search_by_flag)) },
             modifier = Modifier.clickable { onFlagFilter() },
-        )
+        ) { Text(stringResource(R.string.card_browser_search_by_flag)) }
     }
 }
 
@@ -697,7 +694,7 @@ fun MoreOptionsBottomSheet(
     onExportCard: () -> Unit,
     onUndoDeleteNote: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     val hasSelection = selectionCount > 0
 
@@ -710,73 +707,59 @@ fun MoreOptionsBottomSheet(
         if (hasSelection) {
             if (selectionCount == 1) {
                 ListItem(
-                    headlineContent = { Text(stringResource(R.string.cardeditor_title_edit_card)) },
                     modifier = Modifier.clickable { onEditNote() },
-                )
+                ) { Text(stringResource(R.string.cardeditor_title_edit_card)) }
                 ListItem(
-                    headlineContent = { Text(stringResource(R.string.card_info_title)) },
                     modifier = Modifier.clickable { onCardInfo() },
+                ) { Text(stringResource(R.string.card_info_title)) }
+            }
+            ListItem(
+                modifier = Modifier.clickable { onDeleteNote() },
+            ) {
+                Text(
+                    pluralStringResource(
+                        R.plurals.card_browser_delete_notes, selectionCount
+                    )
                 )
             }
             ListItem(
-                headlineContent = {
-                    Text(
-                        pluralStringResource(
-                            R.plurals.card_browser_delete_notes, selectionCount
-                        )
-                    )
-                },
-                modifier = Modifier.clickable { onDeleteNote() },
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.sentence_toggle_suspend)) },
                 modifier = Modifier.clickable { onToggleSuspend() },
-            )
+            ) { Text(stringResource(R.string.sentence_toggle_suspend)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.sentence_toggle_bury)) },
                 modifier = Modifier.clickable { onToggleBury() },
-            )
+            ) { Text(stringResource(R.string.sentence_toggle_bury)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.card_browser_change_deck)) },
                 modifier = Modifier.clickable { onChangeDeck() },
-            )
+            ) { Text(stringResource(R.string.card_browser_change_deck)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.card_editor_reposition_card)) },
                 modifier = Modifier.clickable { onReposition() },
-            )
+            ) { Text(stringResource(R.string.card_editor_reposition_card)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.sentence_set_due_date)) },
                 modifier = Modifier.clickable { onSetDueDate() },
-            )
+            ) { Text(stringResource(R.string.sentence_set_due_date)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.menu_edit_tags)) },
                 modifier = Modifier.clickable { onEditTags() },
-            )
+            ) { Text(stringResource(R.string.menu_edit_tags)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.sentence_grade_now)) },
                 modifier = Modifier.clickable { onGradeNow() },
-            )
+            ) { Text(stringResource(R.string.sentence_grade_now)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.reset_progress)) },
                 modifier = Modifier.clickable { onResetProgress() },
-            )
+            ) { Text(stringResource(R.string.reset_progress)) }
             ListItem(
-                headlineContent = {
-                    val exportStringRes = when (cardsOrNotes) {
-                        CardsOrNotes.CARDS -> R.plurals.card_browser_export_cards
-                        CardsOrNotes.NOTES -> R.plurals.card_browser_export_notes
-                    }
-                    Text(pluralStringResource(exportStringRes, selectionCount))
-                },
                 modifier = Modifier.clickable { onExportCard() },
-            )
+            ) {
+                val exportStringRes = when (cardsOrNotes) {
+                    CardsOrNotes.CARDS -> R.plurals.card_browser_export_cards
+                    CardsOrNotes.NOTES -> R.plurals.card_browser_export_notes
+                }
+                Text(pluralStringResource(exportStringRes, selectionCount))
+            }
         } else {
             ListItem(
-                headlineContent = { Text(stringResource(R.string.card_browser_change_display_order)) },
                 modifier = Modifier.clickable { onChangeDisplayOrder() },
-            )
+            ) { Text(stringResource(R.string.card_browser_change_display_order)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.new_dynamic_deck)) },
                 modifier = Modifier.clickable {
                     onCreateFilteredDeck()
                     scope.launch { sheetState.hide() }.invokeOnCompletion {
@@ -785,11 +768,10 @@ fun MoreOptionsBottomSheet(
                         }
                     }
                 },
-            )
+            ) { Text(stringResource(R.string.new_dynamic_deck)) }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.undo_delete_note)) },
                 modifier = Modifier.clickable { onUndoDeleteNote() },
-            )
+            ) { Text(stringResource(R.string.undo_delete_note)) }
         }
     }
 }
@@ -800,7 +782,7 @@ fun SelectableSortOrderBottomSheet(
     viewModel: CardBrowserViewModel,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     val currentSortType by viewModel.sortTypeFlow.collectAsStateWithLifecycle()
     val isSortDescending by viewModel.isSortDescending.collectAsStateWithLifecycle()
@@ -885,7 +867,6 @@ fun SelectableSortOrderBottomSheet(
                     dismissSheet()
                 }
                 ListItem(
-                    headlineContent = { Text(text = sortLabels[sortType.cardBrowserLabelIndex]) },
                     leadingContent = {
                         RadioButton(
                             selected = currentSortType == sortType,
@@ -893,7 +874,7 @@ fun SelectableSortOrderBottomSheet(
                         )
                     },
                     modifier = Modifier.clickable(onClick = onItemClick),
-                )
+                ) { Text(text = sortLabels[sortType.cardBrowserLabelIndex]) }
             }
         }
     }
@@ -905,7 +886,7 @@ fun FlagFilterBottomSheet(
     onDismiss: () -> Unit,
     onFilter: (String) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     var flagLabels by remember { mutableStateOf<Map<Flag, String>>(emptyMap()) }
     LaunchedEffect(true) {
@@ -921,7 +902,6 @@ fun FlagFilterBottomSheet(
         LazyColumn {
             items(Flag.entries.filter { it != Flag.NONE }) { flag ->
                 ListItem(
-                    headlineContent = { Text(flagLabels[flag] ?: "") },
                     leadingContent = {
                         Icon(
                             painter = painterResource(id = R.drawable.flag_24px),
@@ -939,7 +919,7 @@ fun FlagFilterBottomSheet(
                             }
                         }
                     },
-                )
+                ) { Text(flagLabels[flag] ?: "") }
             }
         }
     }
@@ -951,7 +931,7 @@ fun SetFlagBottomSheet(
     onDismiss: () -> Unit,
     onSetFlag: (Flag) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     var flagLabels by remember { mutableStateOf<Map<Flag, String>>(emptyMap()) }
     LaunchedEffect(true) {
@@ -967,7 +947,6 @@ fun SetFlagBottomSheet(
         LazyColumn {
             items(Flag.entries) { flag ->
                 ListItem(
-                    headlineContent = { Text(flagLabels[flag] ?: "") },
                     leadingContent = {
                         Icon(
                             painter = painterResource(id = R.drawable.flag_24px),
@@ -989,7 +968,7 @@ fun SetFlagBottomSheet(
                             }
                         }
                     },
-                )
+                ) { Text(flagLabels[flag] ?: "") }
             }
         }
     }
