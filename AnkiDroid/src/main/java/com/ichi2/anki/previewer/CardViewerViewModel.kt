@@ -45,8 +45,8 @@ import timber.log.Timber
 
 abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHandler {
     override val onError = MutableSharedFlow<String>()
-    val onMediaError = MutableSharedFlow<String>()
-    val onTtsError = MutableSharedFlow<TtsPlayer.TtsError>()
+    val onMediaError = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val onTtsError = MutableSharedFlow<TtsPlayer.TtsError>(extraBufferCapacity = 1)
     val mediaErrorHandler = MediaErrorHandler()
 
     val eval = MutableSharedFlow<String>()
@@ -166,7 +166,7 @@ abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHa
                 // Retrying fixes most of these
                 if (file.exists()) return MediaErrorBehavior.RETRY_MEDIA
                 mediaErrorHandler.processMissingMedia(file) { fileName ->
-                    viewModelScope.launch { onMediaError.emit(fileName) }
+                    onMediaError.tryEmit(fileName)
                 }
                 return MediaErrorBehavior.CONTINUE_MEDIA
             }
@@ -186,7 +186,7 @@ abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHa
                 isAutomaticPlayback: Boolean,
             ) {
                 mediaErrorHandler.processTtsFailure(error, isAutomaticPlayback) {
-                    viewModelScope.launch { onTtsError.emit(error) }
+                    onTtsError.tryEmit(error)
                 }
             }
         }
