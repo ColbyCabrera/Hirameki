@@ -113,6 +113,7 @@ import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -592,6 +593,8 @@ fun ReviewerContent(
                                 timber.log.Timber.w("unable to update due date")
                                 showThemedToast(activity, R.string.something_wrong, true)
                             }
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             timber.log.Timber.w(e, "unable to update due date")
                             showThemedToast(activity, R.string.something_wrong, true)
