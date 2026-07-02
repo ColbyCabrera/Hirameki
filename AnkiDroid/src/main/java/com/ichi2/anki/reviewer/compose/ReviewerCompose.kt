@@ -110,6 +110,7 @@ import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.scheduling.SetDueDateViewModel
 import com.ichi2.anki.servicelayer.getFSRSStatus
 import com.ichi2.anki.settings.Prefs
+import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
 import kotlinx.coroutines.delay
@@ -581,10 +582,19 @@ fun ReviewerContent(
                 },
                 onDismissRequest = { viewModel.onEvent(ReviewerEvent.DismissSetDueDateDialog) },
                 onConfirm = {
+                    val activity = currentContext as? AnkiActivity ?: return@SetDueDateDialog
                     scope.launch {
-                        val count = setDueDateViewModel.updateDueDateAsync().await()
-                        if (count != null) {
-                            viewModel.onEvent(ReviewerEvent.SetDueDateConfirmed(count))
+                        try {
+                            val count = setDueDateViewModel.updateDueDateAsync().await()
+                            if (count != null) {
+                                viewModel.onEvent(ReviewerEvent.SetDueDateConfirmed(count))
+                            } else {
+                                timber.log.Timber.w("unable to update due date")
+                                showThemedToast(activity, R.string.something_wrong, true)
+                            }
+                        } catch (e: Exception) {
+                            timber.log.Timber.w(e, "unable to update due date")
+                            showThemedToast(activity, R.string.something_wrong, true)
                         }
                     }
                 })
