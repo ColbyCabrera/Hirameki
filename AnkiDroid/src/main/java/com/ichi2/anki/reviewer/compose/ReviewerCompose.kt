@@ -117,6 +117,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
 private val WhiteboardToolbarWidth = 56.dp
@@ -590,13 +591,13 @@ fun ReviewerContent(
                             if (count != null) {
                                 viewModel.onEvent(ReviewerEvent.SetDueDateConfirmed(count))
                             } else {
-                                timber.log.Timber.w("unable to update due date")
+                                Timber.w("unable to update due date")
                                 showThemedToast(activity, R.string.something_wrong, true)
                             }
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            timber.log.Timber.w(e, "unable to update due date")
+                            Timber.w(e, "unable to update due date")
                             showThemedToast(activity, R.string.something_wrong, true)
                         }
                     }
