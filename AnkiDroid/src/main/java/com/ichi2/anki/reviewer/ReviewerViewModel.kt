@@ -26,6 +26,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import anki.scheduler.CardAnswer
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
 import com.ichi2.anki.cardviewer.CardMediaPlayer
@@ -129,6 +130,8 @@ sealed class ReviewerEvent {
     object EditTags : ReviewerEvent()
     object DeleteNote : ReviewerEvent()
     object RescheduleCard : ReviewerEvent()
+    object DismissSetDueDateDialog : ReviewerEvent()
+    data class SetDueDateConfirmed(val count: Int) : ReviewerEvent()
     object ReplayMedia : ReviewerEvent()
     object ToggleVoicePlayback : ReviewerEvent()
     data class OnVoicePlaybackStateChanged(val enabled: Boolean) : ReviewerEvent()
@@ -145,7 +148,6 @@ sealed class ReviewerEffect {
     object PerformRedo : ReviewerEffect()
     object ToggleWhiteboard : ReviewerEffect()
     data class ShowDeleteNoteDialog(val card: Card) : ReviewerEffect()
-    data class ShowDueDateDialog(val card: Card) : ReviewerEffect()
     data class ReplayMedia(val card: Card) : ReviewerEffect()
     object ToggleVoicePlayback : ReviewerEffect()
     object NavigateToDeckOptions : ReviewerEffect()
@@ -195,6 +197,10 @@ class ReviewerViewModel(
 
     private val _showTagsDialog = MutableStateFlow(false)
     val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
+
+    private val _setDueDateCardId = MutableStateFlow<Long?>(null)
+    val setDueDateCardId: StateFlow<Long?> = _setDueDateCardId.asStateFlow()
+
     private val _flowOfDeleteResult = MutableSharedFlow<Int>()
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
     private val nextJavascriptCommandId = AtomicInteger(0)
@@ -341,6 +347,8 @@ class ReviewerViewModel(
             is ReviewerEvent.EditTags -> editTags()
             is ReviewerEvent.DeleteNote -> deleteNote()
             is ReviewerEvent.RescheduleCard -> rescheduleCard()
+            is ReviewerEvent.DismissSetDueDateDialog -> dismissSetDueDateDialog()
+            is ReviewerEvent.SetDueDateConfirmed -> setDueDateConfirmed(event.count)
             is ReviewerEvent.ReplayMedia -> replayMedia()
             is ReviewerEvent.ToggleVoicePlayback -> toggleVoicePlayback()
             is ReviewerEvent.OnVoicePlaybackStateChanged -> onVoicePlaybackStateChanged(event.enabled)
@@ -377,7 +385,18 @@ class ReviewerViewModel(
 
     private fun rescheduleCard() {
         val card = currentCard ?: return
-        viewModelScope.launch { _effect.emit(ReviewerEffect.ShowDueDateDialog(card)) }
+        _setDueDateCardId.value = card.id
+    }
+
+    private fun dismissSetDueDateDialog() {
+        _setDueDateCardId.value = null
+    }
+
+    private fun setDueDateConfirmed(count: Int) {
+        val message = TR.schedulingSetDueDateDone(count)
+        viewModelScope.launch { _effect.emit(ReviewerEffect.ShowSnackbar(message)) }
+        reloadCard()
+        _setDueDateCardId.value = null
     }
 
     private fun deleteNote() {

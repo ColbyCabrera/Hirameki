@@ -36,8 +36,6 @@ import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
 import androidx.annotation.IntDef
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.ThemeUtils
 import androidx.appcompat.widget.TooltipCompat
@@ -49,10 +47,12 @@ import androidx.lifecycle.lifecycleScope
 import anki.collection.OpChanges
 import anki.frontend.SetSchedulingStatesRequest
 import anki.scheduler.CardAnswer.Rating
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anim.ActivityTransitionAnimation.getInverseTransition
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.cardviewer.CardMediaPlayer
 import com.ichi2.anki.cardviewer.Gesture
 import com.ichi2.anki.cardviewer.ViewerCommand
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -84,7 +84,6 @@ import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.reviewer.WhiteboardController
 import com.ichi2.anki.scheduling.ForgetCardsDialog
-import com.ichi2.anki.scheduling.SetDueDateDialog
 import com.ichi2.anki.servicelayer.NoteService.isMarked
 import com.ichi2.anki.servicelayer.NoteService.toggleMark
 import com.ichi2.anki.snackbar.showSnackbar
@@ -108,7 +107,6 @@ import com.ichi2.utils.show
 import com.ichi2.utils.tintOverflowMenuIcons
 import com.ichi2.utils.title
 import com.ichi2.widget.WidgetStatus.updateInBackground
-import com.ichi2.anki.cardviewer.CardMediaPlayer
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -213,29 +211,20 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                     is ReviewerEffect.NavigateToEditCard -> {
                         // Handled in Compose
                     }
-
                     is ReviewerEffect.ShowSnackbar -> {
                         // Handled in Compose
                     }
-
                     is ReviewerEffect.PerformRedo -> redo()
                     is ReviewerEffect.ToggleWhiteboard -> toggleWhiteboard()
                     is ReviewerEffect.ShowDeleteNoteDialog -> {
                         // Handled in Compose via ViewModel-backed delete dialog state
                     }
-                    // TagsDialog is now handled in Compose via ViewModel state
-                    is ReviewerEffect.ShowDueDateDialog -> {
-                        showDueDateDialog()
-                    }
-
                     is ReviewerEffect.ReplayMedia -> {
                         playMedia(true)
                     }
-
                     is ReviewerEffect.ShowTimeboxReachedDialog -> {
                         dealWithTimeBox(effect.timebox)
                     }
-
                     is ReviewerEffect.ToggleVoicePlayback -> {
                         if (!canRecordAudio(this@Reviewer)) {
                             Timber.i("requesting 'RECORD_AUDIO' permission")
@@ -253,7 +242,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                             }
                         }
                     }
-
                     is ReviewerEffect.NavigateToDeckOptions -> {
                         val i = DeckOptions.getIntent(
                             this@Reviewer,
@@ -458,7 +446,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             R.id.action_bury_note -> buryNote()
             R.id.action_suspend_card -> suspendCard()
             R.id.action_suspend_note -> suspendNote()
-            R.id.action_reschedule_card -> showDueDateDialog()
+            R.id.action_reschedule_card -> viewModel.onEvent(ReviewerEvent.RescheduleCard)
             R.id.action_delete -> {
                 Timber.i("Reviewer:: Delete note button pressed")
                 viewModel.onEvent(ReviewerEvent.DeleteNote)
@@ -636,13 +624,6 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             // Audio permission granted, start recording
             voicePlaybackViewModel.toggleRecording(this)
         }
-    }
-
-    private fun showDueDateDialog() = launchCatchingTask {
-        Timber.i("showing due date dialog")
-        val cardId = currentCardId ?: return@launchCatchingTask
-        val dialog = SetDueDateDialog.newInstance(listOf(cardId))
-        showDialogFragment(dialog)
     }
 
     private fun showResetCardDialog() {
@@ -1095,7 +1076,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
             }
 
             ViewerCommand.RESCHEDULE_NOTE -> {
-                showDueDateDialog()
+                viewModel.onEvent(ReviewerEvent.RescheduleCard)
                 return true
             }
 

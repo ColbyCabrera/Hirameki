@@ -54,6 +54,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -61,10 +62,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -93,9 +92,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import anki.scheduler.CardAnswer
 import com.ichi2.anim.ActivityTransitionAnimation
+import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
+import com.ichi2.anki.browser.compose.SetDueDateDialog
 import com.ichi2.anki.dialogs.compose.DeleteConfirmationDialog
 import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.libanki.CardId
@@ -105,12 +107,18 @@ import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
 import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
+import com.ichi2.anki.scheduling.SetDueDateViewModel
+import com.ichi2.anki.servicelayer.getFSRSStatus
 import com.ichi2.anki.settings.Prefs
+import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import kotlin.time.Duration.Companion.milliseconds
 
 private val WhiteboardToolbarWidth = 56.dp
 private val WhiteboardBottomBarOffset = 48.dp
@@ -186,6 +194,9 @@ fun ReviewerContent(
     val snackbarHostState = remember { SnackbarHostState() }
     val layoutDirection = LocalLayoutDirection.current
     val undoLabel = stringResource(R.string.undo)
+
+    // Due date state
+    val setDueDateCardId by viewModel.setDueDateCardId.collectAsStateWithLifecycle()
 
     // Tags dialog state
     val showTagsDialog by viewModel.showTagsDialog.collectAsStateWithLifecycle()
@@ -466,34 +477,34 @@ fun ReviewerContent(
                     remember(state.isWhiteboardEnabled, state.isVoicePlaybackEnabled) {
                         listOf(
                             Triple(R.string.undo, Icons.AutoMirrored.Filled.Undo) {
-                            viewModel.onEvent(ReviewerEvent.Undo)
-                        }, Triple(
-                            if (state.isWhiteboardEnabled) R.string.disable_whiteboard else R.string.enable_whiteboard,
-                            Icons.Filled.Edit
-                        ) {
-                            viewModel.onEvent(ReviewerEvent.ToggleWhiteboard)
-                        }, Triple(R.string.cardeditor_title_edit_card, Icons.Filled.EditNote) {
-                            viewModel.onEvent(ReviewerEvent.EditCard)
-                        }, Triple(R.string.menu_edit_tags, Icons.AutoMirrored.Filled.Label) {
-                            viewModel.onEvent(ReviewerEvent.EditTags)
-                        }, Triple(R.string.menu_bury_card, Icons.Filled.VisibilityOff) {
-                            viewModel.onEvent(ReviewerEvent.BuryCard)
-                        }, Triple(R.string.menu_suspend_card, Icons.Filled.Pause) {
-                            viewModel.onEvent(ReviewerEvent.SuspendCard)
-                        }, Triple(R.string.menu_delete_note, Icons.Filled.Delete) {
-                            viewModel.onEvent(ReviewerEvent.DeleteNote)
-                        }, Triple(R.string.card_editor_reschedule_card, Icons.Filled.Schedule) {
-                            viewModel.onEvent(ReviewerEvent.RescheduleCard)
-                        }, Triple(R.string.replay_media, Icons.Filled.Replay) {
-                            viewModel.onEvent(ReviewerEvent.ReplayMedia)
-                        }, Triple(
-                            if (state.isVoicePlaybackEnabled) R.string.menu_disable_voice_playback else R.string.menu_enable_voice_playback,
-                            Icons.Filled.RecordVoiceOver
-                        ) {
-                            viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
-                        }, Triple(R.string.deck_options, Icons.Filled.Tune) {
-                            viewModel.onEvent(ReviewerEvent.DeckOptions)
-                        })
+                                viewModel.onEvent(ReviewerEvent.Undo)
+                            }, Triple(
+                                if (state.isWhiteboardEnabled) R.string.disable_whiteboard else R.string.enable_whiteboard,
+                                Icons.Filled.Edit
+                            ) {
+                                viewModel.onEvent(ReviewerEvent.ToggleWhiteboard)
+                            }, Triple(R.string.cardeditor_title_edit_card, Icons.Filled.EditNote) {
+                                viewModel.onEvent(ReviewerEvent.EditCard)
+                            }, Triple(R.string.menu_edit_tags, Icons.AutoMirrored.Filled.Label) {
+                                viewModel.onEvent(ReviewerEvent.EditTags)
+                            }, Triple(R.string.menu_bury_card, Icons.Filled.VisibilityOff) {
+                                viewModel.onEvent(ReviewerEvent.BuryCard)
+                            }, Triple(R.string.menu_suspend_card, Icons.Filled.Pause) {
+                                viewModel.onEvent(ReviewerEvent.SuspendCard)
+                            }, Triple(R.string.menu_delete_note, Icons.Filled.Delete) {
+                                viewModel.onEvent(ReviewerEvent.DeleteNote)
+                            }, Triple(R.string.card_editor_reschedule_card, Icons.Filled.Schedule) {
+                                viewModel.onEvent(ReviewerEvent.RescheduleCard)
+                            }, Triple(R.string.replay_media, Icons.Filled.Replay) {
+                                viewModel.onEvent(ReviewerEvent.ReplayMedia)
+                            }, Triple(
+                                if (state.isVoicePlaybackEnabled) R.string.menu_disable_voice_playback else R.string.menu_enable_voice_playback,
+                                Icons.Filled.RecordVoiceOver
+                            ) {
+                                viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
+                            }, Triple(R.string.deck_options, Icons.Filled.Tune) {
+                                viewModel.onEvent(ReviewerEvent.DeckOptions)
+                            })
                     }
                 menuOptions.forEach { (textRes, icon, action) ->
                     ListItem(
@@ -560,6 +571,41 @@ fun ReviewerContent(
                 viewModel = whiteboardViewModel, onDismissRequest = { showEraserOptions = false })
         }
 
+        // Set Due Date Dialog
+        setDueDateCardId?.let { cardId ->
+            val setDueDateViewModel = viewModel<SetDueDateViewModel>()
+            LaunchedEffect(cardId) {
+                val fsrsEnabled = getFSRSStatus() ?: false
+                setDueDateViewModel.init(longArrayOf(cardId), fsrsEnabled)
+            }
+
+            SetDueDateDialog(
+                viewModel = setDueDateViewModel,
+                onHelpClicked = {
+                    (currentContext as? AnkiActivity)?.openUrl(R.string.link_set_due_date_help)
+                },
+                onDismissRequest = { viewModel.onEvent(ReviewerEvent.DismissSetDueDateDialog) },
+                onConfirm = {
+                    val activity = currentContext as? AnkiActivity ?: return@SetDueDateDialog
+                    scope.launch {
+                        try {
+                            val count = setDueDateViewModel.updateDueDateAsync().await()
+                            if (count != null) {
+                                viewModel.onEvent(ReviewerEvent.SetDueDateConfirmed(count))
+                            } else {
+                                Timber.w("unable to update due date")
+                                showThemedToast(activity, R.string.something_wrong, true)
+                            }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.w(e, "unable to update due date")
+                            showThemedToast(activity, R.string.something_wrong, true)
+                        }
+                    }
+                })
+        }
+
         // Tags dialog
         if (showTagsDialog) {
             TagsDialog(
@@ -591,7 +637,7 @@ fun AnswerIndicator(
     LaunchedEffect(feedback) {
         if (feedback != null) {
             lastFeedback = feedback
-            delay(AnswerIndicatorDuration)
+            delay(AnswerIndicatorDuration.milliseconds)
             currentOnDismissed()
         }
     }
