@@ -195,8 +195,10 @@ fun ReviewerContent(
     val layoutDirection = LocalLayoutDirection.current
     val undoLabel = stringResource(R.string.undo)
 
-    // Tags dialog state
+    // Due date state
     val setDueDateCardId by viewModel.setDueDateCardId.collectAsStateWithLifecycle()
+
+    // Tags dialog state
     val showTagsDialog by viewModel.showTagsDialog.collectAsStateWithLifecycle()
     val tagsState by viewModel.tagsState.collectAsStateWithLifecycle()
     val currentNoteTags by viewModel.currentNoteTags.collectAsStateWithLifecycle()
