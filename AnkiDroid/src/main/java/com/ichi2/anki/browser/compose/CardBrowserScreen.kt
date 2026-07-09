@@ -150,6 +150,23 @@ fun CardBrowserScreen(
     val currentContext by rememberUpdatedState(context)
     val undoLabel = stringResource(R.string.undo)
 
+    // 👇 ADD THESE NEW LINES HERE 👇
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                // This forces the UI to refresh the list when you return to the screen
+                viewModel.launchSearchForCards(viewModel.searchTerms, forceRefresh = true)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    // 👆 END OF NEW LINES 👆
+
     LaunchedEffect(viewModel.flowOfSnackbarMessage) {
         viewModel.flowOfSnackbarMessage.collect { messageRes ->
             snackbarHostState.showSnackbar(currentContext.getString(messageRes))

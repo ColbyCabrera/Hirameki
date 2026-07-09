@@ -285,6 +285,9 @@ fun Flashcard(
                 settings.allowFileAccess = true
                 settings.domStorageEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
+                settings.setSupportZoom(true)
+                settings.builtInZoomControls = true
+                settings.displayZoomControls = false
 
                 webChromeClient = object : WebChromeClient() {
                     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
