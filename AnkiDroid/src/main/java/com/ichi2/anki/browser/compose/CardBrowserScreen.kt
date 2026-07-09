@@ -150,7 +150,6 @@ fun CardBrowserScreen(
     val currentContext by rememberUpdatedState(context)
     val undoLabel = stringResource(R.string.undo)
 
-    // 👇 ADD THESE NEW LINES HERE 👇
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
     androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
@@ -165,7 +164,6 @@ fun CardBrowserScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
-    // 👆 END OF NEW LINES 👆
 
     LaunchedEffect(viewModel.flowOfSnackbarMessage) {
         viewModel.flowOfSnackbarMessage.collect { messageRes ->
