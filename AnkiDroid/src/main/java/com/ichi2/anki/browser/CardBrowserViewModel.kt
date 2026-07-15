@@ -76,6 +76,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -143,6 +144,14 @@ class CardBrowserViewModel(
 
     // temporary flow for refactoring - called when cards are cleared
     val flowOfCardsUpdated = MutableSharedFlow<Unit>()
+
+    private val _refreshTrigger = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    fun notifyRefreshRequired() {
+        _refreshTrigger.tryEmit(Unit)
+    }
 
     private val _browserRows = MutableStateFlow<List<BrowserRowWithId>>(emptyList())
     val browserRows: StateFlow<List<BrowserRowWithId>> = _browserRows
@@ -799,6 +808,10 @@ class CardBrowserViewModel(
 
         performSearchFlow.onEach {
             launchSearchForCards()
+        }.launchIn(viewModelScope)
+
+        _refreshTrigger.onEach {
+            launchSearchForCards(clearList = false)
         }.launchIn(viewModelScope)
 
         reverseDirectionFlow.ignoreValuesFromViewModelLaunch()
@@ -1585,7 +1598,9 @@ class CardBrowserViewModel(
      *
      */
     @NeedsTest("Invalid searches are handled. For instance: 'and'")
-    fun launchSearchForCards(cardOrNoteIdsToSelect: List<CardOrNoteId> = emptyList()) {
+    fun launchSearchForCards(
+        cardOrNoteIdsToSelect: List<CardOrNoteId> = emptyList(), clearList: Boolean = true
+    ) {
         if (!initCompleted) return
 
         viewModelScope.launch {
@@ -1601,21 +1616,25 @@ class CardBrowserViewModel(
             // the selection will still be applied by the completing search
             val capturedPendingSelection = pendingSelectionToRestore
             val hasPendingSelection = capturedPendingSelection?.isNotEmpty() == true
-            if (hasPendingSelection) {
-                // Don't clear selection if we're restoring it
-                cards.reset()
-                _browserRows.value = emptyList()
-                flowOfCardsUpdated.emit(Unit)
-                // Don't consume yet - let the completer apply it
-            } else {
-                clearCardsList()
+            if (clearList) {
+                if (hasPendingSelection) {
+                    // Don't clear selection if we're restoring it
+                    cards.reset()
+                    _browserRows.value = emptyList()
+                    flowOfCardsUpdated.emit(Unit)
+                    // Don't consume yet - let the completer apply it
+                } else {
+                    clearCardsList()
+                }
             }
 
             searchJob?.cancel()
             searchJob = launchCatchingIO(
                 errorMessageHandler = { error -> _searchState.emit(SearchState.Error(error)) },
             ) {
-                _searchState.emit(SearchState.Searching)
+                if (clearList) {
+                    _searchState.emit(SearchState.Searching)
+                }
                 Timber.d("performing search: '%s'", query)
                 val newBrowserRows = withCol {
                     val ids = when (cardsOrNotes) {
