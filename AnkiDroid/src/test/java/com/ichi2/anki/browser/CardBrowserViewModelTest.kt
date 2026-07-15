@@ -22,8 +22,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.TurbineTestContext
 import app.cash.turbine.test
-import com.ichi2.anki.ioDispatcher
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.Flag
@@ -58,7 +56,7 @@ import com.ichi2.anki.browser.CardBrowserViewModel.ToggleSelectionState.SELECT_N
 import com.ichi2.anki.browser.RepositionCardsRequest.ContainsNonNewCardsError
 import com.ichi2.anki.browser.RepositionCardsRequest.RepositionData
 import com.ichi2.anki.export.ExportDialogFragment
-import com.ichi2.anki.libanki.CardId
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.QueueType
@@ -80,6 +78,7 @@ import com.ichi2.testutils.ensureOpsExecuted
 import com.ichi2.testutils.ext.reopenWithLanguage
 import com.ichi2.testutils.mockIt
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsInAnyOrder
@@ -128,7 +127,9 @@ class CardBrowserViewModelTest : JvmTest() {
     fun `saving search with same name fails`() = runViewModelTest {
         saveSearch("hello", "aa").also { result ->
             assertThat(
-                "saving a new search succeeds", result, equalTo(SaveSearchResult.SUCCESS)
+                "saving a new search succeeds",
+                result,
+                equalTo(SaveSearchResult.SUCCESS),
             )
         }
         saveSearch("hello", "bb").also { result ->
@@ -144,7 +145,7 @@ class CardBrowserViewModelTest : JvmTest() {
         val newDeck = addDeck("World")
         selectDefaultDeck()
 
-        for (i in 0 until 5) {
+        repeat(5) {
             addBasicAndReversedNote()
         }
         setCardsOrNotes(CardsOrNotes.NOTES)
@@ -802,7 +803,8 @@ class CardBrowserViewModelTest : JvmTest() {
         showMediaFilenamesPreference = false
 
         BrowserColumnCollection.update(
-            AnkiDroidApp.sharedPreferencesProvider.sharedPrefs(), CardsOrNotes.CARDS
+            AnkiDroidApp.sharedPreferencesProvider.sharedPrefs(),
+            CardsOrNotes.CARDS,
         ) {
             it[0] = QUESTION
             true
@@ -917,9 +919,15 @@ class CardBrowserViewModelTest : JvmTest() {
                     FSRS_STABILITY -> Pair("Stability", "")
                 }
                 assertThat(
-                    "${preview.columnType} value", preview.sampleValue, equalTo(expectedValue)
+                    "${preview.columnType} value",
+                    preview.sampleValue,
+                    equalTo(expectedValue),
                 )
-                assertThat("${preview.columnType} label", preview.label, equalTo(expectedLabel))
+                assertThat(
+                    "${preview.columnType} label",
+                    preview.label,
+                    equalTo(expectedLabel),
+                )
             }
         }
     }
@@ -952,9 +960,15 @@ class CardBrowserViewModelTest : JvmTest() {
                     FSRS_STABILITY -> Pair("Stability", "")
                 }
                 assertThat(
-                    "${preview.columnType} value", preview.sampleValue, equalTo(expectedValue)
+                    "${preview.columnType} value",
+                    preview.sampleValue,
+                    equalTo(expectedValue),
                 )
-                assertThat("${preview.columnType} label", preview.label, equalTo(expectedLabel))
+                assertThat(
+                    "${preview.columnType} label",
+                    preview.label,
+                    equalTo(expectedLabel),
+                )
             }
         }
     }
@@ -970,8 +984,15 @@ class CardBrowserViewModelTest : JvmTest() {
                 )
             }
 
-            @Suppress("UNUSED_VARIABLE") val unused =
-                updateActiveColumns(listOf(CARD, DECK, SFLD, DUE, FSRS_STABILITY), cardsOrNotes)
+            @Suppress("CheckResult") updateActiveColumns(
+                listOf(
+                    CARD,
+                    DECK,
+                    SFLD,
+                    DUE,
+                    FSRS_STABILITY
+                ), cardsOrNotes
+            )
 
             previewColumnHeadings(cardsOrNotes).also { columns ->
                 assertThat(
@@ -983,7 +1004,6 @@ class CardBrowserViewModelTest : JvmTest() {
         }
     }
 
-    @Suppress("SpellCheckingInspection") // German
     @Test
     fun `columns headings - language change`() = runViewModelTest {
         fun firstHeading() = flowOfColumnHeadings.value.first().label
@@ -1162,7 +1182,7 @@ class CardBrowserViewModelTest : JvmTest() {
     private fun assertDate(str: String?) {
         // 2025-01-09 @ 18:06
         assertNotNull(str)
-        assertTrue("date expected: $str") { str[4] == '-' && str[11] == '@' }
+        assertTrue("date expected: $str") { (str[4] == '-') && (str[11] == '@') }
     }
 
     private var showMediaFilenamesPreference: Boolean
@@ -1179,8 +1199,7 @@ class CardBrowserViewModelTest : JvmTest() {
         testBody: suspend CardBrowserViewModel.() -> Unit,
     ) = runTest {
         CardsOrNotes.NOTES.saveToCollection(col)
-        @Suppress("EmptyRange")
-        for (i in 0 until notes) {
+        repeat(notes) {
             // ensure 1 note = 2 cards
             addBasicAndReversedNote()
         }
@@ -1210,8 +1229,7 @@ class CardBrowserViewModelTest : JvmTest() {
         val originalDispatcher = ioDispatcher
         ioDispatcher = UnconfinedTestDispatcher(testScheduler)
         try {
-            @Suppress("EmptyRange")
-            for (i in 0 until notes) {
+            repeat(notes) {
                 addBasicNote()
             }
             notes.ifNotZero { count -> Timber.d("added %d notes", count) }
@@ -1286,7 +1304,7 @@ private fun CardBrowserViewModel.selectRowsWithPositions(vararg positions: Int) 
 private fun <T> TurbineTestContext<T>.ignoreEventsDuringViewModelInit() {
     try {
         expectMostRecentItem()
-    } catch (e: AssertionError) {
+    } catch (_: AssertionError) {
         // explicitly ignored: no items
     }
 }

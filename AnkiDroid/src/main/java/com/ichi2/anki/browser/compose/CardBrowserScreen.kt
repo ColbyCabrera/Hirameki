@@ -89,6 +89,7 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import anki.search.BrowserRow
 import com.ichi2.anki.Flag
@@ -149,6 +150,11 @@ fun CardBrowserScreen(
     val context = LocalContext.current
     val currentContext by rememberUpdatedState(context)
     val undoLabel = stringResource(R.string.undo)
+
+    LifecycleResumeEffect(viewModel) {
+        viewModel.notifyRefreshRequired()
+        onPauseOrDispose {}
+    }
 
     LaunchedEffect(viewModel.flowOfSnackbarMessage) {
         viewModel.flowOfSnackbarMessage.collect { messageRes ->
