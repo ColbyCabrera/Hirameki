@@ -1595,7 +1595,8 @@ class CardBrowserViewModel(
     /**
      * @param cardOrNoteIdsToSelect if the screen is reinitialized after destruction
      * restore these rows after the search is completed
-     *
+     * @param clearList if `true`, the current card list is cleared before performing the search.
+     * Set to `false` to preserve existing results during a refresh.
      */
     @NeedsTest("Invalid searches are handled. For instance: 'and'")
     fun launchSearchForCards(
