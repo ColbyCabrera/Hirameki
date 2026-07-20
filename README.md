@@ -34,7 +34,7 @@ This project is currently in **active development** and is available on Google P
 - **Material You**: Dynamic color support and revamped UI components.
 - **Expressive Motion**: Smooth, intentional animations for a more fluid experience.
 - **Modernized Layouts**: Focused on the latest Android design standards.
-- **Full AnkiWeb Compatibility**: Built on the robust core of AnkiDroid, maintaining sync compatibility with AnkiWeb and the [FSRS algorithm](https://github.com/open-spaced-repetition).
+- **AnkiWeb Compatibility**: Built on the robust core of AnkiDroid, maintaining sync compatibility with AnkiWeb and the [FSRS algorithm](https://github.com/open-spaced-repetition).
 
 ---
 
