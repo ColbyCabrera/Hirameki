@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -91,6 +92,7 @@ fun AnswerButtons(
     onMoreOptionsClick: () -> Unit
 ) {
     val view = LocalView.current
+    val adjustButtonStylesForBadges = showAnswerFeedback && moreOptionsInTopAppBar
 
     Column(
         modifier = modifier.imePadding(),
@@ -151,14 +153,16 @@ fun AnswerButtons(
                     if (!isAnswerShown) {
                         val interactionSource = remember { MutableInteractionSource() }
                         val isPressed by interactionSource.collectIsPressedAsState()
-                        val defaultHorizontalPadding =
+                        val baseHorizontalPadding =
                             ButtonDefaults.MediumContentPadding.calculateLeftPadding(
                                 layoutDirection = LocalLayoutDirection.current
-                            )
+                            ) + if (moreOptionsInTopAppBar) 24.dp else 0.dp
                         val horizontalPadding by animateDpAsState(
-                            if (isPressed) defaultHorizontalPadding + 4.dp else defaultHorizontalPadding,
+                            if (isPressed) baseHorizontalPadding + 4.dp else baseHorizontalPadding,
                             motionScheme.fastSpatialSpec()
                         )
+
+
                         Button(
                             onClick = {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -203,12 +207,14 @@ fun AnswerButtons(
                                                     .height(56.dp)
                                                     .fillMaxWidth()
                                                     .then(
-                                                        if (showAnswerFeedback) Modifier.padding(
+                                                        if (showAnswerFeedback && !adjustButtonStylesForBadges) Modifier.padding(
                                                             bottom = 6.dp
                                                         )
                                                         else Modifier
                                                     ), // add slight padding so the badge doesn't overlap excessively
-                                                contentPadding = ButtonDefaults.ExtraSmallContentPadding,
+                                                contentPadding = if (adjustButtonStylesForBadges) PaddingValues(
+                                                    horizontal = 28.dp,
+                                                ) else ButtonDefaults.ExtraSmallContentPadding,
                                                 shape = when (index) {
                                                     0 -> ButtonGroupDefaults.connectedLeadingButtonShape
                                                     ratings.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShape
@@ -221,7 +227,10 @@ fun AnswerButtons(
                                                 )
                                             ) {
                                                 Text(
-                                                    nextTimes.getOrElse(index) { "" },
+                                                    modifier = if (adjustButtonStylesForBadges) Modifier
+                                                        .fillMaxHeight()
+                                                        .padding(top = 14.dp) else Modifier,
+                                                    text = nextTimes.getOrElse(index) { "" },
                                                     softWrap = false,
                                                     overflow = TextOverflow.Visible
                                                 )
@@ -229,6 +238,9 @@ fun AnswerButtons(
 
                                             if (showAnswerFeedback) {
                                                 Badge(
+                                                    modifier = if (adjustButtonStylesForBadges) Modifier.padding(
+                                                        bottom = 2.dp
+                                                    ) else Modifier,
                                                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                                                 ) {
@@ -316,6 +328,42 @@ fun AnswerButtonsTypeInPreview() {
             onShowAnswer = {},
             onRateCard = {},
             nextTimes = emptyList(),
+            onMoreOptionsClick = {})
+    }
+}
+
+@Preview(name = "Expanded Rating Buttons (More Options in Top Bar)", showBackground = true)
+@Composable
+fun AnswerButtonsExpandedRatingPreview() {
+    AnkiDroidTheme {
+        AnswerButtons(
+            isAnswerShown = true,
+            showAnswerFeedback = true,
+            showTypeInAnswer = false,
+            typedAnswer = "",
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = listOf("1m", "2d", "4d", "7d"),
+            moreOptionsInTopAppBar = true,
+            onMoreOptionsClick = {})
+    }
+}
+
+@Preview(name = "Expanded Show Answer (More Options in Top Bar)", showBackground = true)
+@Composable
+fun AnswerButtonsExpandedShowAnswerPreview() {
+    AnkiDroidTheme {
+        AnswerButtons(
+            isAnswerShown = false,
+            showAnswerFeedback = true,
+            showTypeInAnswer = false,
+            typedAnswer = "",
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = emptyList(),
+            moreOptionsInTopAppBar = true,
             onMoreOptionsClick = {})
     }
 }
