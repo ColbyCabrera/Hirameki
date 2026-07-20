@@ -21,6 +21,7 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -281,6 +282,10 @@ fun Flashcard(
         AndroidView(
             factory = { context ->
             WebView(context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
                 settings.javaScriptEnabled = true
                 settings.allowFileAccess = true
                 settings.domStorageEnabled = true
