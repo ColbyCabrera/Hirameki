@@ -540,6 +540,7 @@ object UsageAnalytics {
             R.string.show_audio_play_buttons_key, // Show play buttons on cards with audio (reversed in collection: HIDE_AUDIO_PLAY_BUTTONS)
             R.string.pref_display_filenames_in_browser_key, // Display filenames in card browser
             R.string.show_deck_title_key, // Show deck title
+            R.string.more_options_in_top_app_bar_key, // More options in top app bar
             // ******************************** Controls *********************************************
             R.string.gestures_preference, // Enable gestures
             R.string.gestures_corner_touch_preference, // 9-point touch
