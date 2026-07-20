@@ -152,6 +152,7 @@ sealed class ReviewerEffect {
     object ToggleVoicePlayback : ReviewerEffect()
     object NavigateToDeckOptions : ReviewerEffect()
     data class ShowTimeboxReachedDialog(val timebox: Collection.TimeboxReached) : ReviewerEffect()
+    object ClearWhiteboard : ReviewerEffect()
 }
 
 class ReviewerViewModel(
@@ -702,6 +703,7 @@ class ReviewerViewModel(
             }
         }
         cardMediaPlayer.autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
+        _effect.emit(ReviewerEffect.ClearWhiteboard)
     }
 
     private fun showAnswer() {

@@ -214,6 +214,28 @@ class ReviewerViewModelTest : RobolectricTest() {
     }
 
     @Test
+    fun `answering a card emits ClearWhiteboard effect`() = runTest {
+        addBasicNote("Front 1", "Back 1")
+        addBasicNote("Front 2", "Back 2")
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+
+        viewModel.effect.test {
+            testScheduler.advanceUntilIdle()
+            advanceRobolectricLooper()
+
+            viewModel.onEvent(ReviewerEvent.RateCard(anki.scheduler.CardAnswer.Rating.EASY))
+            testScheduler.advanceUntilIdle()
+            advanceRobolectricLooper()
+
+            val effect = awaitItem()
+            assertThat("ClearWhiteboard effect should be emitted on answering card", effect, equalTo(ReviewerEffect.ClearWhiteboard))
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `voice playback state is updated via event`() = runTest {
         addBasicNote()
         val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())

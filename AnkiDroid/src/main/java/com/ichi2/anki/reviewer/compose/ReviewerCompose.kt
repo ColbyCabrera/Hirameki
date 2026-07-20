@@ -240,6 +240,10 @@ fun ReviewerContent(
                     pendingDeleteCardId = effect.card.id
                 }
 
+                is ReviewerEffect.ClearWhiteboard -> {
+                    whiteboardViewModel?.reset()
+                }
+
                 else -> {
                     // All other effects are handled by the Activity
                 }
