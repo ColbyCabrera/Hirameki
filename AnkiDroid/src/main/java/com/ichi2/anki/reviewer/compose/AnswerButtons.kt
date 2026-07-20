@@ -87,6 +87,7 @@ fun AnswerButtons(
     onShowAnswer: () -> Unit,
     onRateCard: (CardAnswer.Rating) -> Unit,
     nextTimes: List<String>,
+    moreOptionsInTopAppBar: Boolean = false,
     onMoreOptionsClick: () -> Unit
 ) {
     val view = LocalView.current
@@ -133,14 +134,16 @@ fun AnswerButtons(
             colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = onMoreOptionsClick,
-                    modifier = Modifier.height(48.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.MoreVert,
-                        contentDescription = stringResource(R.string.more_options)
-                    )
+                if (!moreOptionsInTopAppBar) {
+                    IconButton(
+                        onClick = onMoreOptionsClick,
+                        modifier = Modifier.height(48.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription = stringResource(R.string.more_options)
+                        )
+                    }
                 }
                 Box(
                     modifier = Modifier.animateContentSize(motionScheme.fastSpatialSpec())

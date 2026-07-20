@@ -242,6 +242,7 @@ object Prefs {
     val autoFocusTypeAnswer by booleanPref(R.string.type_in_answer_focus_key, true)
     val showAnswerFeedback by booleanPref(R.string.show_answer_feedback_key, defaultValue = true)
     val showAnswerButtonBadges by booleanPref(R.string.show_answer_button_badges_key, defaultValue = true)
+    val moreOptionsInTopAppBar by booleanPref(R.string.more_options_in_top_app_bar_key, defaultValue = false)
     val showAnswerButtons by booleanPref(R.string.show_answer_buttons_key, true)
     val applyHiramekiCss by stringPref(R.string.apply_hirameki_css_preference, defaultValue = HIRAMEKI_CSS_ALL)
 
