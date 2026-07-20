@@ -74,7 +74,7 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 private object AnswerButtonsConstants {
     val ColumnSpacing = 12.dp
     val TextFieldBorderWidth = 2.dp
-    val TextFieldMaxWidthFraction = 0.8f
+    const val TEXT_FIELD_MAX_WIDTH_FRACTION = 0.8f
     val ToolbarIconHeight = 48.dp
     val MainButtonHeight = 56.dp
     val RatingButtonGroupSpacing = 2.dp
@@ -177,7 +177,7 @@ private fun AnswerTypeInTextField(
         onValueChange = onTypedAnswerChanged,
         label = { Text(stringResource(R.string.type_in_the_answer)) },
         modifier = Modifier
-            .fillMaxWidth(AnswerButtonsConstants.TextFieldMaxWidthFraction)
+            .fillMaxWidth(AnswerButtonsConstants.TEXT_FIELD_MAX_WIDTH_FRACTION)
             .border(
                 AnswerButtonsConstants.TextFieldBorderWidth,
                 if (isFocused) MaterialTheme.colorScheme.tertiary else Color.Transparent,
@@ -202,8 +202,7 @@ private fun AnswerTypeInTextField(
 
 @Composable
 private fun ShowAnswerButton(
-    moreOptionsInTopAppBar: Boolean,
-    onShowAnswer: () -> Unit
+    moreOptionsInTopAppBar: Boolean, onShowAnswer: () -> Unit
 ) {
     val view = LocalView.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -227,8 +226,7 @@ private fun ShowAnswerButton(
         interactionSource = interactionSource,
         contentPadding = PaddingValues(horizontal = horizontalPadding),
         colors = ButtonDefaults.buttonColors(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.onPrimary
+            MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary
         )
     ) {
         Text(
@@ -250,8 +248,7 @@ private fun RatingButtons(
     val view = LocalView.current
     ButtonGroup(
         horizontalArrangement = Arrangement.spacedBy(AnswerButtonsConstants.RatingButtonGroupSpacing),
-        overflowIndicator = { }
-    ) {
+        overflowIndicator = { }) {
         ratings.forEachIndexed { index, (labelResId, rating) ->
             customItem(
                 buttonGroupContent = {
@@ -264,8 +261,7 @@ private fun RatingButtons(
                             .animateWidth(interactionSource)
                             .semantics {
                                 contentDescription = "$labelText, $nextTime"
-                            },
-                        contentAlignment = Alignment.BottomCenter
+                            }, contentAlignment = Alignment.BottomCenter
                     ) {
                         Button(
                             onClick = {
