@@ -95,17 +95,12 @@ class AnkiToggleView @JvmOverloads constructor(
             val interactionSource = remember { MutableInteractionSource() }
             AnkiToggle(
                 checked = isCheckedState, onCheckedChange = { newChecked ->
-                    if (onCheckedChangeListener != null) {
+                    if (onCheckedChangeListener != null || hasOnClickListeners()) {
                         isChecked = newChecked
                         performClick()
-                    } else if (hasOnClickListeners()) {
+                    } else if (!triggerParentClick()) {
                         isChecked = newChecked
                         performClick()
-                    } else {
-                        isChecked = newChecked
-                        if (!triggerParentClick()) {
-                            performClick()
-                        }
                     }
                 }, interactionSource = interactionSource, enabled = isEnabledState
             )
