@@ -57,6 +57,7 @@ import com.ichi2.anki.browser.RepositionCardsRequest.ContainsNonNewCardsError
 import com.ichi2.anki.browser.RepositionCardsRequest.RepositionData
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.ioDispatcher
+import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.QueueType
