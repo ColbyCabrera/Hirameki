@@ -99,6 +99,7 @@ class AnkiToggleView @JvmOverloads constructor(
                         isChecked = newChecked
                         performClick()
                     } else if (hasOnClickListeners()) {
+                        isChecked = newChecked
                         performClick()
                     } else {
                         isChecked = newChecked
