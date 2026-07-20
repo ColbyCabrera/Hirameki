@@ -306,7 +306,9 @@ fun ReviewerContent(
                 flag = state.flag,
                 onToggleMark = { viewModel.onEvent(ReviewerEvent.ToggleMark) },
                 onSetFlag = { viewModel.onEvent(ReviewerEvent.SetFlag(it)) },
-                isAnswerShown = state.isAnswerShown
+                isAnswerShown = state.isAnswerShown,
+                showMoreOptions = Prefs.moreOptionsInTopAppBar,
+                onMoreOptionsClick = { showBottomSheet = true }
             ) { viewModel.onEvent(ReviewerEvent.UnanswerCard) }
         }) { paddingValues ->
             Box(
@@ -441,7 +443,7 @@ fun ReviewerContent(
                             .padding(bottom = paddingValues.calculateBottomPadding())
                             .onSizeChanged { toolbarHeight = it.height },
                         isAnswerShown = state.isAnswerShown,
-                        showAnswerFeedback = Prefs.showAnswerButtonBadges,
+                        showButtonBadges = Prefs.showAnswerButtonBadges,
                         showTypeInAnswer = state.showTypeInAnswer,
                         typedAnswer = state.typedAnswer,
                         onTypedAnswerChanged = {
@@ -452,6 +454,7 @@ fun ReviewerContent(
                         onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
                         onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
                         nextTimes = state.nextTimes,
+                        moreOptionsInTopAppBar = Prefs.moreOptionsInTopAppBar,
                         onMoreOptionsClick = { showBottomSheet = true })
 
                     AnswerIndicator(

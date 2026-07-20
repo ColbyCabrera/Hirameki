@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -68,6 +71,8 @@ fun ReviewerTopBar(
     onSetFlag: (Int) -> Unit,
     modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
+    showMoreOptions: Boolean = false,
+    onMoreOptionsClick: () -> Unit = {},
     onUnanswerCard: () -> Unit
 ) {
     CenterAlignedTopAppBar(
@@ -90,6 +95,14 @@ fun ReviewerTopBar(
                     Icon(
                         painterResource(R.drawable.undo_24px),
                         contentDescription = stringResource(id = R.string.unanswer_card),
+                    )
+                }
+            }
+            if (showMoreOptions) {
+                IconButton(onClick = onMoreOptionsClick) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.more_options)
                     )
                 }
             }

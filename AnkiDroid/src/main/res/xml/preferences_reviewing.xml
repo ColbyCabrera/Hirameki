@@ -60,6 +60,11 @@
             android:key="@string/show_answer_button_badges_key"
             android:title="@string/show_answer_button_badges"
             android:summary="@string/show_answer_button_badges_summ" />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/more_options_in_top_app_bar_key"
+            android:title="@string/more_options_in_top_app_bar"
+            android:summary="@string/more_options_in_top_app_bar_summ" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/reviewer_css_styling" android:key="@string/reviewer_css_category">
         <ListPreference

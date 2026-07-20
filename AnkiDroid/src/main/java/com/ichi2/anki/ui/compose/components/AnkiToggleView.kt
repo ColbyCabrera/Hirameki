@@ -19,6 +19,7 @@ import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.AttributeSet
+import android.view.View
 import android.widget.Checkable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
@@ -94,11 +95,27 @@ class AnkiToggleView @JvmOverloads constructor(
             val interactionSource = remember { MutableInteractionSource() }
             AnkiToggle(
                 checked = isCheckedState, onCheckedChange = { newChecked ->
-                    isChecked = newChecked
-                    performClick()
+                    if (onCheckedChangeListener != null || hasOnClickListeners()) {
+                        isChecked = newChecked
+                        performClick()
+                    } else if (!triggerParentClick()) {
+                        isChecked = newChecked
+                        performClick()
+                    }
                 }, interactionSource = interactionSource, enabled = isEnabledState
             )
         }
+    }
+
+    private fun triggerParentClick(): Boolean {
+        var current: android.view.ViewParent? = parent
+        while (current is View) {
+            if (current.hasOnClickListeners()) {
+                return current.performClick()
+            }
+            current = current.parent
+        }
+        return false
     }
 
     private class SavedState : BaseSavedState {

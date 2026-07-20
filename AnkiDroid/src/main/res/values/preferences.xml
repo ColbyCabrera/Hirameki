@@ -247,4 +247,5 @@
     <string name="reviewer_toolbar_position_key">reviewerToolbarPosition</string>
     <string name="apply_hirameki_css_preference">applyHiramekiCss</string>
     <string name="reviewer_css_category">reviewer_css_category</string>
+    <string name="more_options_in_top_app_bar_key">moreOptionsInTopAppBar</string>
 </resources>
