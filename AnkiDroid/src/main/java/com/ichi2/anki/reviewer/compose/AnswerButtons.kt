@@ -81,7 +81,7 @@ val ratings = listOf(
 fun AnswerButtons(
     modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
-    showAnswerFeedback: Boolean,
+    showButtonBadges: Boolean,
     showTypeInAnswer: Boolean,
     typedAnswer: String,
     onTypedAnswerChanged: (String) -> Unit,
@@ -92,7 +92,7 @@ fun AnswerButtons(
     onMoreOptionsClick: () -> Unit
 ) {
     val view = LocalView.current
-    val adjustButtonStylesForBadges = showAnswerFeedback && moreOptionsInTopAppBar
+    val adjustButtonStylesForBadges = showButtonBadges && moreOptionsInTopAppBar
 
     Column(
         modifier = modifier.imePadding(),
@@ -207,7 +207,7 @@ fun AnswerButtons(
                                                     .height(56.dp)
                                                     .fillMaxWidth()
                                                     .then(
-                                                        if (showAnswerFeedback && !adjustButtonStylesForBadges) Modifier.padding(
+                                                        if (showButtonBadges && !adjustButtonStylesForBadges) Modifier.padding(
                                                             bottom = 6.dp
                                                         )
                                                         else Modifier
@@ -236,7 +236,7 @@ fun AnswerButtons(
                                                 )
                                             }
 
-                                            if (showAnswerFeedback) {
+                                            if (showButtonBadges) {
                                                 Badge(
                                                     modifier = if (adjustButtonStylesForBadges) Modifier.padding(
                                                         bottom = 2.dp
@@ -270,7 +270,7 @@ fun AnswerButtonsShowAnswerPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = false,
-            showAnswerFeedback = true,
+            showButtonBadges = true,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -287,7 +287,7 @@ fun AnswerButtonsRatingPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = true,
-            showAnswerFeedback = true,
+            showButtonBadges = true,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -304,7 +304,7 @@ fun AnswerButtonsNoFeedbackPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = true,
-            showAnswerFeedback = false,
+            showButtonBadges = false,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -321,7 +321,7 @@ fun AnswerButtonsTypeInPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = false,
-            showAnswerFeedback = true,
+            showButtonBadges = true,
             showTypeInAnswer = true,
             typedAnswer = "Typed Answer",
             onTypedAnswerChanged = {},
@@ -338,7 +338,7 @@ fun AnswerButtonsExpandedRatingPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = true,
-            showAnswerFeedback = true,
+            showButtonBadges = true,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -356,7 +356,7 @@ fun AnswerButtonsExpandedShowAnswerPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = false,
-            showAnswerFeedback = true,
+            showButtonBadges = true,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
