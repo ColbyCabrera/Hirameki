@@ -1,0 +1,78 @@
+<!doctype html>
+<html class="mobile android linux js">
+    <head>
+        <title>AnkiDroid Flashcard</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="file:///android_asset/scripts/session_storage_polyfill.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/root-vars.css">
+        <link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer.css">
+        <link rel="stylesheet" type="text/css" href="file:///android_asset/flashcard.css">
+        <link rel="stylesheet" type="text/css" href="file:///android_asset/ankidroid.css">
+        <link rel="stylesheet" type="text/css" href="file:///android_asset/mathjax/mathjax.css">
+        <link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">
+        <style id="anki-card-style">
+            /* Scoped dynamic card styles injected per card transition */
+        </style>
+        <style id="compose-styles">
+            /* Dynamic compose theme styles */
+        </style>
+        <style>
+            html, body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow-x: hidden;
+            }
+            #qa-root {
+                position: relative;
+                width: 100%;
+                min-height: 100%;
+            }
+            .card-layer {
+                width: 100%;
+                min-height: 100%;
+                top: 0;
+                left: 0;
+                box-sizing: border-box;
+            }
+            .card-layer.layer-hidden {
+                display: none !important;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .card-layer.crossfade-active {
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 2;
+                opacity: 1;
+                transition: opacity 300ms ease-in-out;
+            }
+            .card-layer.crossfade-out {
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 1;
+                opacity: 0;
+                transition: opacity 300ms ease-in-out;
+                pointer-events: none;
+            }
+        </style>
+        <script src="file:///android_asset/backend/js/jquery.min.js"></script>
+        <script src="file:///android_asset/backend/js/mathjax.js"></script>
+        <script src="file:///android_asset/backend/js/vendor/mathjax/tex-chtml-full.js"></script>
+        <script src="file:///android_asset/scripts/card.js" type="text/javascript"></script>
+        <script src="file:///android_asset/scripts/js-api.js" type="text/javascript"></script>
+        <script src="file:///android_asset/scripts/ankidroid.js" type="text/javascript"></script>
+        <script src="file:///android_asset/backend/js/reviewer_extras_bundle.js"></script>
+        <script src="file:///android_asset/scripts/reviewer_bridge.js" type="text/javascript"></script>
+    </head>
+    <body class="card">
+        <div id="qa-root">
+            <div id="card-container-a" class="card-layer"></div>
+            <div id="card-container-b" class="card-layer layer-hidden"></div>
+        </div>
+    </body>
+</html>

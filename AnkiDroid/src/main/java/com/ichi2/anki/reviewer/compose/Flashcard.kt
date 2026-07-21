@@ -119,168 +119,160 @@ fun Flashcard(
     val bodyLargeStyle = typography.titleLarge
 
     val contentKey = remember(questionHtml, answerHtml) {
-        FlashcardContentKey(questionHtml.hashCode(), answerHtml.hashCode())
+        FlashcardContentKey(questionHtml, answerHtml)
     }
 
-    Crossfade(
-        targetState = Pair(isAnswerShown, if (isAnswerShown) answerHtml else questionHtml),
-        animationSpec = tween(300),
-        label = "FlashcardCrossfade"
-    ) { (shown, currentHtml) ->
-        val currentStyle =
-            if (shown) bodyLargeStyle else displayLargeStyle.copy(fontWeight = FontWeight.W500)
-        val currentPadding = if (shown) 40 else 36
+    val currentStyle =
+        if (isAnswerShown) bodyLargeStyle else displayLargeStyle.copy(fontWeight = FontWeight.W500)
+    val currentPadding = if (isAnswerShown) 40 else 36
+    val currentHtml = if (isAnswerShown) answerHtml else questionHtml
 
-        val composeStyle = remember(
-            onSurfaceColorHex,
-            surfaceColorHex,
-            surfaceContainerColorHex,
-            primaryColorHex,
-            outlineColorHex,
-            currentStyle,
-            currentPadding,
-            toolbarHeight,
-            applyHiramekiCssMode
-        ) {
-            if (applyHiramekiCssMode == Prefs.HIRAMEKI_CSS_DISABLED) {
-                """<style id="compose-styles"></style>"""
+    val composeStyle = remember(
+        onSurfaceColorHex,
+        surfaceColorHex,
+        surfaceContainerColorHex,
+        primaryColorHex,
+        outlineColorHex,
+        currentStyle,
+        currentPadding,
+        toolbarHeight,
+        applyHiramekiCssMode
+    ) {
+        if (applyHiramekiCssMode == Prefs.HIRAMEKI_CSS_DISABLED) {
+            ""
+        } else {
+            val fontSizeStyles = if (applyHiramekiCssMode == Prefs.HIRAMEKI_CSS_NO_FONT_SIZE) {
+                ""
             } else {
-                val fontSizeStyles = if (applyHiramekiCssMode == Prefs.HIRAMEKI_CSS_NO_FONT_SIZE) {
-                    ""
-                } else {
-                    """
-                        font-size: ${currentStyle.fontSize.value}px;
-                        line-height: ${currentStyle.lineHeight.value}px;
-                        letter-spacing: ${currentStyle.letterSpacing.value}px;
-                    """.trimIndent()
-                }
-
                 """
-                <style id="compose-styles">
-                    @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
-                    html {
-                        color: ${onSurfaceColorHex}EF;
-                        background-color: $surfaceColorHex;
-                    }
-                    body.card {
-                        text-align: center;
-                        font-family: "Roboto", sans-serif;
-                        $fontSizeStyles
-                        font-weight: ${currentStyle.fontWeight?.weight ?: 400};
-                        text-wrap: pretty;
-                        padding-top: ${currentPadding}px;
-                        padding-bottom: ${toolbarHeight}px;
-                        margin-left: 10px;
-                        margin-right: 10px;
-                        background-color: $surfaceColorHex;
-                        color: ${onSurfaceColorHex}EF;
-                    }
-                    body.card .back {
-                        font-weight: 400;
-                        line-height: 1.4;
-                    }
-                    body.card.nightMode, body.card.night_mode {
-                        background-color: $surfaceColorHex;
-                        color: ${onSurfaceColorHex}EF;
-                    }
-                    hr {
-                        opacity: 0.1;
-                        margin: 12px 0px;
-                    }
-                    img {
-                        border-radius: 16px;
-                    }
-                    button {
-                        font-family: inherit;
-                        font-size: 14px;
-                        font-weight: 500;
-                        color: ${onSurfaceColorHex};
-                        background-color: ${surfaceContainerColorHex};
-                        border: 1px solid ${outlineColorHex}40;
-                        border-radius: 12px;
-                        padding: 2px 6px;
-                        cursor: pointer;
-                        transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
-                        align-items: center;
-                        justify-content: center;
-                        min-height: 48px;
-                        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-                    }
-                    button:hover {
-                        background-color: ${surfaceContainerColorHex}D9;
-                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                    }
-                    button:active {
-                        background-color: ${surfaceContainerColorHex}B3;
-                        transform: scale(0.97);
-                    }
-                    button:focus {
-                        outline: 2px solid ${primaryColorHex};
-                        outline-offset: 2px;
-                    }
-                    button:disabled {
-                        opacity: 0.45;
-                        cursor: not-allowed;
-                        transform: none;
-                    }
-
-                    body.card .replay-button {
-                        --replay-button-size: 42px;
-                        --replay-button-icon-color: ${onSurfaceColorHex};
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        margin: 8px;
-                        border-radius: 8px;
-                        width: var(--replay-button-size);
-                        height: var(--replay-button-size);
-                        color: var(--replay-button-icon-color);
-                        text-decoration: none;
-                        cursor: pointer;
-                        transition: transform 0.1s, opacity 0.2s;
-                        -webkit-tap-highlight-color: transparent;
-                    }
-                    body.card .replay-button:hover {
-                        opacity: 0.85;
-                    }
-                    body.card .replay-button:active {
-                        opacity: 0.7;
-                        transform: scale(0.97);
-                    }
-                    body.card .replay-button:focus-visible {
-                        outline: 2px solid ${primaryColorHex};
-                        outline-offset: 2px;
-                    }
-                    body.card .replay-button .play-action {
-                        display: block;
-                        width: 100%;
-                        height: 100%;
-                        color: inherit;
-                        fill: currentColor;
-                    }
-                    body.card .replay-button .play-action path {
-                        fill: currentColor;
-                    }
-                </style>
+                    font-size: ${currentStyle.fontSize.value}px;
+                    line-height: ${currentStyle.lineHeight.value}px;
+                    letter-spacing: ${currentStyle.letterSpacing.value}px;
                 """.trimIndent()
             }
-        }
-        val styledHtml = remember(context, isNightMode, composeStyle) {
-            buildStyledHtml(context, isNightMode, composeStyle)
-        }
-        val hasImageOcclusion = currentHtml.contains("image-occlusion-container")
-        val sideToken = remember(contentKey, shown) {
-            "${contentKey.hashCode()}_${shown}".hashCode().toString(16)
-        }
-        val evalScript =
-            remember(shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion, sideToken) {
-                buildCardScript(
-                    shown, currentHtml, answerHtml, bodyClass, hasImageOcclusion, sideToken
-                )
-            }
 
-        AndroidView(
-            factory = { context ->
+            """
+                @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+                html {
+                    color: ${onSurfaceColorHex}EF;
+                    background-color: $surfaceColorHex;
+                }
+                body.card {
+                    text-align: center;
+                    font-family: "Roboto", sans-serif;
+                    $fontSizeStyles
+                    font-weight: ${currentStyle.fontWeight?.weight ?: 400};
+                    text-wrap: pretty;
+                    padding-top: ${currentPadding}px;
+                    padding-bottom: ${toolbarHeight}px;
+                    margin-left: 10px;
+                    margin-right: 10px;
+                    background-color: $surfaceColorHex;
+                    color: ${onSurfaceColorHex}EF;
+                }
+                body.card .back {
+                    font-weight: 400;
+                    line-height: 1.4;
+                }
+                body.card.nightMode, body.card.night_mode {
+                    background-color: $surfaceColorHex;
+                    color: ${onSurfaceColorHex}EF;
+                }
+                hr {
+                    opacity: 0.1;
+                    margin: 12px 0px;
+                }
+                img {
+                    border-radius: 16px;
+                }
+                button {
+                    font-family: inherit;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: ${onSurfaceColorHex};
+                    background-color: ${surfaceContainerColorHex};
+                    border: 1px solid ${outlineColorHex}40;
+                    border-radius: 12px;
+                    padding: 2px 6px;
+                    cursor: pointer;
+                    transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 48px;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                }
+                button:hover {
+                    background-color: ${surfaceContainerColorHex}D9;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                button:active {
+                    background-color: ${surfaceContainerColorHex}B3;
+                    transform: scale(0.97);
+                }
+                button:focus {
+                    outline: 2px solid ${primaryColorHex};
+                    outline-offset: 2px;
+                }
+                button:disabled {
+                    opacity: 0.45;
+                    cursor: not-allowed;
+                    transform: none;
+                }
+
+                body.card .replay-button {
+                    --replay-button-size: 42px;
+                    --replay-button-icon-color: ${onSurfaceColorHex};
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 8px;
+                    border-radius: 8px;
+                    width: var(--replay-button-size);
+                    height: var(--replay-button-size);
+                    color: var(--replay-button-icon-color);
+                    text-decoration: none;
+                    cursor: pointer;
+                    transition: transform 0.1s, opacity 0.2s;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                body.card .replay-button:hover {
+                    opacity: 0.85;
+                }
+                body.card .replay-button:active {
+                    opacity: 0.7;
+                    transform: scale(0.97);
+                }
+                body.card .replay-button:focus-visible {
+                    outline: 2px solid ${primaryColorHex};
+                    outline-offset: 2px;
+                }
+                body.card .replay-button .play-action {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    color: inherit;
+                    fill: currentColor;
+                }
+                body.card .replay-button .play-action path {
+                    fill: currentColor;
+                }
+            """.trimIndent()
+        }
+    }
+    val hasImageOcclusion = currentHtml.contains("image-occlusion-container")
+    val sideToken = remember(contentKey, isAnswerShown) {
+        "${contentKey.questionHtml.hashCode()}_${contentKey.answerHtml.hashCode()}_${isAnswerShown}".hashCode().toString(16)
+    }
+    val cachedShellHtml = remember(context, isNightMode) {
+        buildShellHtml(context, isNightMode)
+    }
+    val evalScript =
+        remember(hasImageOcclusion, sideToken) {
+            buildCardScript(hasImageOcclusion, sideToken)
+        }
+
+    AndroidView(
+        factory = { context ->
             WebView(context).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -316,7 +308,7 @@ fun Flashcard(
                     ): Boolean {
                         val uri = request.url
                         val scheme = uri.scheme
-                        val ignoredSchemes = setOf("file", "data", "javascript", "blob")
+                        val ignoredSchemes = setOf("file", "data", "javascript", "blob", "signal", "sound", "ankidroid", "gesture")
                         if (scheme in ignoredSchemes) {
                             return false
                         }
@@ -339,15 +331,10 @@ fun Flashcard(
                         val payload = view.tag as? FlashcardPayload ?: return
                         payload.shellLoaded = true
 
-                        val pendingScript = payload.pendingShellScript
-
+                        val pendingScript = payload.pendingShowCardScript
                         if (pendingScript != null) {
                             view.evaluateJavascript(pendingScript, null)
-                            payload.pendingShellScript = null
-                            payload.scriptExecuted = true
-                        } else if (!payload.scriptExecuted) {
-                            payload.scriptExecuted = true
-                            view.evaluateJavascript(payload.evalScript, null)
+                            payload.pendingShowCardScript = null
                         }
 
                         payload.pendingJavascriptCommand?.let { command ->
@@ -377,178 +364,146 @@ fun Flashcard(
         }, update = { webView ->
             webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
             val currentPayload = webView.tag as? FlashcardPayload
-            val shellChanged =
-                currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle
-            val shouldReload = currentPayload == null || currentPayload.contentKey != contentKey
 
-            when {
-                shouldReload -> {
-                    webView.tag = FlashcardPayload(
-                        contentKey,
-                        baseUrl,
-                        isNightMode,
-                        composeStyle,
-                        evalScript,
-                        pendingJavascriptCommand = javascriptCommand
-                    )
-                    webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
+            fun createShowCardScript(): String {
+                val spaPayload = SpaCardPayload(
+                    html = currentHtml,
+                    isAnswer = isAnswerShown,
+                    composeCss = composeStyle,
+                    bodyClass = bodyClass,
+                    isNightMode = isNightMode,
+                    enableCrossfade = true
+                )
+                val spaJson = Json.encodeToString(spaPayload)
+                val showCardScript = "window.anki.showCard($spaJson);"
+                return if (hasImageOcclusion) {
+                    "$evalScript\n$showCardScript"
+                } else {
+                    showCardScript
+                }
+            }
+
+            if (currentPayload == null) {
+                val fullScript = createShowCardScript()
+                webView.tag = FlashcardPayload(
+                    contentKey = contentKey,
+                    isAnswerShown = isAnswerShown,
+                    baseUrl = baseUrl,
+                    isNightMode = isNightMode,
+                    composeStyle = composeStyle,
+                    bodyClass = bodyClass,
+                    pendingJavascriptCommand = javascriptCommand,
+                    pendingShowCardScript = fullScript
+                )
+                webView.loadDataWithBaseURL(baseUrl, cachedShellHtml, "text/html", "UTF-8", null)
+            } else {
+                val stateChanged = currentPayload.contentKey != contentKey ||
+                        currentPayload.isAnswerShown != isAnswerShown ||
+                        currentPayload.isNightMode != isNightMode ||
+                        currentPayload.composeStyle != composeStyle ||
+                        currentPayload.bodyClass != bodyClass ||
+                        currentPayload.baseUrl != baseUrl
+
+                if (javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id) {
+                    currentPayload.pendingJavascriptCommand = javascriptCommand
                 }
 
-                shellChanged -> {
-                    currentPayload.baseUrl = baseUrl
-                    currentPayload.isNightMode = isNightMode
-                    currentPayload.composeStyle = composeStyle
-                    currentPayload.evalScript = evalScript
-                    val shellScript =
-                        buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
-                    if (javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id) {
-                        currentPayload.pendingJavascriptCommand = javascriptCommand
+                if (currentPayload.shellLoaded) {
+                    if (stateChanged) {
+                        currentPayload.contentKey = contentKey
+                        currentPayload.isAnswerShown = isAnswerShown
+                        currentPayload.isNightMode = isNightMode
+                        currentPayload.composeStyle = composeStyle
+                        currentPayload.bodyClass = bodyClass
+                        currentPayload.baseUrl = baseUrl
+                        val fullScript = createShowCardScript()
+                        webView.evaluateJavascript(fullScript, null)
                     }
 
-                    if (currentPayload.shellLoaded) {
-                        webView.evaluateJavascript(shellScript, null)
-                        currentPayload.pendingJavascriptCommand?.let { command ->
-                            webView.evaluateJavascript(command.script, null)
-                            currentPayload.lastJavascriptCommandId = command.id
-                            currentPayload.pendingJavascriptCommand = null
-                            currentOnJavascriptCommandConsumed(command.id)
-                        }
-                    } else {
-                        // When FlashcardPayload.shellLoaded is false, onPageFinished runs
-                        // FlashcardPayload.pendingShellScript before
-                        // FlashcardPayload.pendingJavascriptCommand. That preserves shell-first
-                        // ordering, while currentOnJavascriptCommandConsumed only runs after the
-                        // command executes and FlashcardPayload.lastJavascriptCommandId becomes the
-                        // idempotency key for replay avoidance.
-                        currentPayload.pendingShellScript = shellScript
-                    }
-                }
-
-                javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id -> {
-                    if (currentPayload.shellLoaded) {
-                        webView.evaluateJavascript(javascriptCommand.script, null)
-                        currentPayload.lastJavascriptCommandId = javascriptCommand.id
+                    currentPayload.pendingJavascriptCommand?.let { command ->
+                        webView.evaluateJavascript(command.script, null)
+                        currentPayload.lastJavascriptCommandId = command.id
                         currentPayload.pendingJavascriptCommand = null
-                        currentOnJavascriptCommandConsumed(javascriptCommand.id)
-                    } else {
-                        currentPayload.pendingJavascriptCommand = javascriptCommand
+                        currentOnJavascriptCommandConsumed(command.id)
                     }
-                }
-
-                currentPayload.shellLoaded -> {
-                    currentPayload.baseUrl = baseUrl
-                    if (currentPayload.evalScript != evalScript) {
-                        currentPayload.evalScript = evalScript
-                        webView.evaluateJavascript(evalScript, null)
+                } else {
+                    if (stateChanged) {
+                        currentPayload.contentKey = contentKey
+                        currentPayload.isAnswerShown = isAnswerShown
+                        currentPayload.isNightMode = isNightMode
+                        currentPayload.composeStyle = composeStyle
+                        currentPayload.baseUrl = baseUrl
+                        currentPayload.pendingShowCardScript = createShowCardScript()
                     }
-                }
-
-                else -> {
-                    currentPayload.baseUrl = baseUrl
-                    currentPayload.evalScript = evalScript
                 }
             }
         }, onRelease = { webView ->
+            (webView.parent as? ViewGroup)?.removeView(webView)
             webView.stopLoading()
             webView.webViewClient = WebViewClient()
             webView.webChromeClient = null
             webView.setOnTouchListener(null)
             webView.destroy()
         }, modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-        )
-    }
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+    )
 }
 
 /**
  * Payload stored in the WebView tag for communication between the update callback and onPageFinished.
  */
 private data class FlashcardContentKey(
-    val questionHash: Int,
-    val answerHash: Int,
+    val questionHtml: String,
+    val answerHtml: String,
+)
+
+@kotlinx.serialization.Serializable
+private data class SpaCardPayload(
+    val html: String,
+    val isAnswer: Boolean,
+    val css: String = "",
+    val composeCss: String = "",
+    val bodyClass: String = "",
+    val isNightMode: Boolean = false,
+    val enableCrossfade: Boolean = true
 )
 
 private class FlashcardPayload(
-    val contentKey: FlashcardContentKey,
+    var contentKey: FlashcardContentKey?,
+    var isAnswerShown: Boolean,
     var baseUrl: String,
     var isNightMode: Boolean,
     var composeStyle: String,
-    var evalScript: String,
+    var bodyClass: String,
     var pendingJavascriptCommand: ReviewerJavascriptCommand? = null,
     var lastJavascriptCommandId: Int = -1,
-    var scriptExecuted: Boolean = false,
     var shellLoaded: Boolean = false,
-    var pendingShellScript: String? = null
+    var pendingShowCardScript: String? = null
 )
 
-private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js")
-private const val REVIEWER_EXTRAS_CSS_LINK =
-    """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
-
-private fun buildStyledHtml(context: Context, isNightMode: Boolean, composeStyle: String): String {
-    val shell = stdHtml(context, EXTRA_JS_ASSETS, isNightMode)
-    return shell.replace("</head>", "$REVIEWER_EXTRAS_CSS_LINK\n$composeStyle\n</head>")
+private fun buildShellHtml(context: Context, isNightMode: Boolean): String {
+    return try {
+        context.assets.open("reviewer_shell.html").bufferedReader().use { it.readText() }
+    } catch (e: Exception) {
+        stdHtml(context, listOf("scripts/reviewer_bridge.js"), isNightMode)
+    }
 }
 
 /**
- * Builds the JavaScript to show the question or answer side of a card.
- *
- * IMPORTANT: We must NOT embed _showQuestion/_showAnswer in `<script>` tags
- * in the HTML because IO card HTML contains `</script>` which prematurely
- * terminates the script tag, causing raw text to be displayed.
+ * Builds the JavaScript to setup Image Occlusion layout and callbacks.
  */
 private fun buildCardScript(
-    isAnswer: Boolean,
-    currentHtml: String,
-    answerHtml: String,
-    bodyClass: String,
     hasImageOcclusion: Boolean,
     sideToken: String,
 ): String {
-    val showCardScript = if (isAnswer) {
-        "_showAnswer(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(bodyClass)});"
-    } else {
-        "_showQuestion(${Json.encodeToString(currentHtml)}, ${Json.encodeToString(answerHtml)}, ${
-            Json.encodeToString(
-                bodyClass
-            )
-        });"
-    }
     return if (hasImageOcclusion) {
         val intercept = IO_SETUP_INTERCEPT.replace($$"${sideToken}", sideToken)
         val postLoad = IO_POST_LOAD_SCRIPT.replace($$"${sideToken}", sideToken)
-        "$intercept\n$showCardScript\n$postLoad"
+        "$intercept\n$postLoad"
     } else {
-        showCardScript
+        ""
     }
-}
-
-/**
- * Builds JavaScript that patches the DOM in-place for a theme change,
- * avoiding a full WebView reload (which causes a blank flash).
- *
- * Updates the root element classes/attributes, replaces the compose-styles
- * CSS content, and re-runs the card display script with the new body class.
- */
-private fun buildShellUpdateScript(
-    isNightMode: Boolean,
-    bodyClass: String,
-    composeCssContent: String,
-    evalScript: String,
-): String {
-    val docClass = if (isNightMode) "night-mode" else ""
-    val baseTheme = if (isNightMode) "dark" else "light"
-    // Escape backticks and backslashes for safe embedding in a JS template literal
-    val escapedCss = composeCssContent.replace("\\", "\\\\").replace("`", "\\`")
-    return """
-        document.documentElement.className = '$docClass';
-        document.documentElement.setAttribute('data-bs-theme', '$baseTheme');
-        document.body.className = '$bodyClass';
-        const s = document.getElementById('compose-styles');
-        if (s) s.outerHTML = `$escapedCss`;
-        $evalScript
-    """.trimIndent()
 }
 
 /**

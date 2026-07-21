@@ -16,6 +16,7 @@
 package com.ichi2.anki.reviewer
 
 import android.app.Application
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
@@ -603,9 +604,15 @@ class ReviewerViewModel(
             }
         }
 
-        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        getApplication<Application>().startActivity(intent)
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            getApplication<Application>().startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Timber.w(e, "No activity found to handle link: %s", url)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to open link: %s", url)
+        }
     }
 
     fun onVideoFinished() = cardMediaPlayer.onVideoFinished()
