@@ -68,10 +68,13 @@ class ViewerResourceHandler(
                     }
                     File(path)
                 } else {
-                    File(mediaDir, path)
+                    val relativePath = path.removePrefix("/")
+                    File(mediaDir, relativePath)
                 }
 
-            if (!file.canonicalPath.startsWith(mediaDir.canonicalPath + File.separator)) {
+            val canonicalMediaDir = mediaDir.canonicalPath
+            val canonicalFile = file.canonicalPath
+            if (!canonicalFile.startsWith(canonicalMediaDir + File.separator) && canonicalFile != canonicalMediaDir) {
                 Timber.w("Path traversal detected: %s", path)
                 // Return 403 Forbidden for file:// URLs to prevent the default WebView loader
                 // from handling them when allowFileAccess is enabled

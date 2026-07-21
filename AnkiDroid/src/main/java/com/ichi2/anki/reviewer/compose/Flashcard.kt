@@ -26,6 +26,7 @@ import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.animation.Crossfade
@@ -285,6 +286,10 @@ fun Flashcard(
                 isHorizontalScrollBarEnabled = false
                 settings.javaScriptEnabled = true
                 settings.allowFileAccess = true
+                settings.allowContentAccess = true
+                settings.loadsImagesAutomatically = true
+                settings.blockNetworkImage = false
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 settings.domStorageEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
                 settings.setSupportZoom(true)
