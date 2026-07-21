@@ -165,8 +165,11 @@ fun Flashcard(
                     text-wrap: pretty;
                     padding-top: ${currentPadding}px;
                     padding-bottom: ${toolbarHeight}px;
-                    margin-left: 10px;
-                    margin-right: 10px;
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    margin: 0px;
+                    min-height: 100vh;
+                    box-sizing: border-box;
                     background-color: $surfaceColorHex;
                     color: ${onSurfaceColorHex}EF;
                 }
@@ -278,6 +281,8 @@ fun Flashcard(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
+                isVerticalScrollBarEnabled = false
+                isHorizontalScrollBarEnabled = false
                 settings.javaScriptEnabled = true
                 settings.allowFileAccess = true
                 settings.domStorageEnabled = true

@@ -22,17 +22,30 @@
                 margin: 0;
                 padding: 0;
                 width: 100%;
+                min-height: 100vh;
                 height: 100%;
                 overflow-x: hidden;
+                overflow-y: auto;
+                scrollbar-gutter: stable;
+                box-sizing: border-box;
+            }
+            ::-webkit-scrollbar {
+                display: none !important;
+                width: 0 !important;
+                height: 0 !important;
             }
             #qa-root {
                 position: relative;
                 width: 100%;
-                min-height: 100%;
+                min-height: 100vh;
+                box-sizing: border-box;
             }
             .card-layer {
+                position: relative;
                 width: 100%;
-                min-height: 100%;
+                min-height: 100vh;
+                margin: 0;
+                padding: 0;
                 top: 0;
                 left: 0;
                 box-sizing: border-box;
@@ -46,6 +59,7 @@
                 position: absolute;
                 top: 0;
                 left: 0;
+                width: 100%;
                 z-index: 2;
                 opacity: 1;
                 transition: opacity 300ms ease-in-out;
@@ -54,6 +68,7 @@
                 position: absolute;
                 top: 0;
                 left: 0;
+                width: 100%;
                 z-index: 1;
                 opacity: 0;
                 transition: opacity 300ms ease-in-out;
