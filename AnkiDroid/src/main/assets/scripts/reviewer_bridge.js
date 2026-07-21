@@ -67,7 +67,7 @@
                 if (typeof handler === "function") {
                     handler.apply(this !== undefined && this !== null ? this : window, handlerArgs);
                 } else {
-                    eval(handler);
+                    Function(handler)();
                 }
             };
             id = origSetTimeout.call(window, wrappedHandler, timeout, ...args);
@@ -176,18 +176,62 @@
         return { purge };
     })();
 
-    // --- 2. Complete Media Cleanup Helper ---
+    // --- Dynamic @import Management ---
+    function getDynamicImportsElement() {
+        let styleEl = document.getElementById("dynamic-imports");
+        if (!styleEl) {
+            styleEl = document.createElement("style");
+            styleEl.id = "dynamic-imports";
+            (document.head || document.documentElement).appendChild(styleEl);
+        }
+        return styleEl;
+    }
+
+    function appendDynamicImports(importsCss) {
+        if (!importsCss || !importsCss.trim()) return;
+        const styleEl = getDynamicImportsElement();
+        styleEl.textContent += importsCss.trim() + "\n";
+    }
+
+    function purgeDynamicImports() {
+        const styleEl = document.getElementById("dynamic-imports");
+        if (styleEl) {
+            styleEl.textContent = "";
+        }
+    }
+
+    // --- 2. Complete Media Cleanup Helper & Decoder Release ---
     function purgeMedia(container) {
+        purgeDynamicImports();
         if (!container) return;
         const mediaElements = container.querySelectorAll("audio, video");
         mediaElements.forEach(media => {
             try {
                 media.pause();
                 media.currentTime = 0;
+                media.removeAttribute("src");
+                media.src = "";
+                media.querySelectorAll("source").forEach(s => s.remove());
+                media.load();
             } catch (e) {
                 console.warn("Error stopping media element:", e);
             }
         });
+    }
+
+    function clearCard() {
+        EventListenerTracker.purge();
+        purgeDynamicImports();
+        const containerA = document.getElementById("card-container-a");
+        const containerB = document.getElementById("card-container-b");
+        if (containerA) {
+            purgeMedia(containerA);
+            containerA.innerHTML = "";
+        }
+        if (containerB) {
+            purgeMedia(containerB);
+            containerB.innerHTML = "";
+        }
     }
 
     // --- 3. CSS Scoping Helper for @scope & Selector Transformation ---
@@ -195,18 +239,19 @@
         if (!css || !css.trim()) return { imports: "", scopedCss: "" };
         const cleanRaw = css.replace(/<\/?style[^>]*>/gi, "");
         let imports = "";
-        const withoutImports = cleanRaw.replace(/@import\s+url\([^)]+\);?/g, match => {
-            imports += match + "\n";
-            return "";
-        });
+        const withoutImports = cleanRaw.replace(
+            /@import\s+(?:url\((?:'[^']*'|"[^"]*"|[^)])+\)|'[^']*'|"[^"]*")[^;]*;?/gi,
+            match => {
+                imports += match + "\n";
+                return "";
+            }
+        );
 
-        // Replace ancestor selectors (html, body.card, body.nightMode, body) with :scope so @scope correctly targets the layer container
-        const transformed = withoutImports
-            .replace(/\bhtml\b/g, ":scope")
-            .replace(/\bbody\.card\b/g, ":scope")
-            .replace(/\bbody\.nightMode\b/g, ":scope")
-            .replace(/\bbody\.night_mode\b/g, ":scope")
-            .replace(/\bbody\b/g, ":scope");
+        // Replace ancestor selectors (html, body.card, body.nightMode, body.night_mode, body) with :scope so @scope correctly targets the layer container
+        const transformed = withoutImports.replace(
+            /(^|\}|\s)(html|body(\.(card|nightMode|night_mode))?)(?=[\s,{.#[:>]|$)/g,
+            "$1:scope"
+        );
 
         const scopedCss = `@scope (#${containerId}) {\n${transformed}\n}`;
         return { imports, scopedCss };
@@ -234,8 +279,7 @@
         });
 
         if (rootImports) {
-            const headStyle = document.getElementById("compose-styles") || document.head;
-            headStyle.insertAdjacentHTML("beforeend", `<style>${rootImports}</style>`);
+            appendDynamicImports(rootImports);
         }
 
         container.innerHTML = "";
@@ -353,8 +397,9 @@
         const nextContainer = currentContainerId === "card-container-a" ? containerB : containerA;
         const nextContainerId = currentContainerId === "card-container-a" ? "card-container-b" : "card-container-a";
 
-        // STEP 1: Teardown & Purge of Event Listeners & Timers
+        // STEP 1: Teardown & Purge of Event Listeners, Timers & Dynamic Imports
         EventListenerTracker.purge();
+        purgeDynamicImports();
         document.querySelectorAll(".anki-card-script").forEach(el => el.remove());
 
         // Strip duplicate IDs from currentContainer so document.getElementById() inside nextContainer scripts always matches new layer
@@ -395,8 +440,7 @@
         if (combinedCss.trim()) {
             const { imports, scopedCss } = processAndScopeCss(combinedCss, nextContainerId);
             if (imports) {
-                const headStyle = document.getElementById("compose-styles") || document.head;
-                headStyle.insertAdjacentHTML("beforeend", `<style>${imports}</style>`);
+                appendDynamicImports(imports);
             }
             if (scopedCss) {
                 const scopedStyle = document.createElement("style");
@@ -424,19 +468,19 @@
         const shouldUseCrossfade = enableCrossfade && !isImageOcclusionCard && currentContainer.children.length > 0;
 
         if (shouldUseCrossfade) {
-            nextContainer.classList.add("crossfade-active");
-            currentContainer.classList.add("crossfade-out");
-
+            // Read all layout geometry values FIRST before style mutations to avoid layout thrashing
             const currentH = currentContainer.offsetHeight || 0;
             const nextH = nextContainer.offsetHeight || 0;
             qaRoot.style.minHeight = Math.max(currentH, nextH) + "px";
 
-            // Force reflow while nextContainer is at opacity: 0
-            void nextContainer.offsetWidth;
+            nextContainer.classList.add("crossfade-active");
+            currentContainer.classList.add("crossfade-out");
 
-            // Trigger concurrent transitions
-            nextContainer.style.opacity = "1";
-            currentContainer.style.opacity = "0";
+            // Use requestAnimationFrame to schedule opacity transitions without forced synchronous reflows
+            requestAnimationFrame(() => {
+                nextContainer.style.opacity = "1";
+                currentContainer.style.opacity = "0";
+            });
 
             crossfadeTimeoutId = setTimeout(() => {
                 crossfadeTimeoutId = null;
@@ -552,4 +596,7 @@
     // Global Public API
     window.anki = window.anki || {};
     window.anki.showCard = showCard;
+    window.anki.clearCard = clearCard;
+    window.anki.purgeMedia = purgeMedia;
+    window.anki.purgeDynamicImports = purgeDynamicImports;
 })();

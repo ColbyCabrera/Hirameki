@@ -89,6 +89,34 @@ class SpaDomSwapTest {
             return result ?: "null"
         }
 
+        /**
+         * Polls a JS expression until it returns the expected value or times out.
+         * Replaces hardcoded delay() calls to eliminate flakiness on CI runners.
+         *
+         * @param jsExpression The JavaScript expression to evaluate repeatedly.
+         * @param expected The expected string result (as returned by evaluateJavascript).
+         * @param timeoutMs Maximum time to wait before failing.
+         * @param intervalMs Polling interval between evaluations.
+         */
+        suspend fun pollUntil(
+            jsExpression: String,
+            expected: String,
+            timeoutMs: Long = 5_000,
+            intervalMs: Long = 50
+        ): String {
+            val deadline = System.currentTimeMillis() + timeoutMs
+            var lastResult = "null"
+            while (System.currentTimeMillis() < deadline) {
+                lastResult = evalJs(jsExpression)
+                if (lastResult == expected) return lastResult
+                delay(intervalMs)
+            }
+            throw AssertionError(
+                "pollUntil timed out after ${timeoutMs}ms. Expression: $jsExpression, " +
+                    "expected: $expected, last result: $lastResult"
+            )
+        }
+
         fun destroy() {
             instrumentation.runOnMainSync {
                 WebStorage.getInstance().deleteAllData()
@@ -171,7 +199,11 @@ class SpaDomSwapTest {
             """.trimIndent()
             harness.evalJs("window.anki.showCard($cardBPayload);")
 
-            delay(350)
+            // Poll until crossfade completes and the active layer contains Card B content
+            harness.pollUntil(
+                "document.querySelector('.card-layer:not(.layer-hidden)')?.innerHTML?.includes('Card B Rapid') ? 'true' : 'false'",
+                "\"true\""
+            )
 
             val activeContent = harness.evalJs("document.querySelector('.card-layer:not(.layer-hidden)').innerHTML;")
             assertTrue(activeContent.contains("Card B Rapid"))
@@ -225,7 +257,11 @@ class SpaDomSwapTest {
             """.trimIndent()
             harness.evalJs("window.anki.showCard($card1Payload);")
 
-            delay(120)
+            // Poll until interval has fired at least once
+            harness.pollUntil(
+                "(window.intervalCount || 0) > 0 ? 'true' : 'false'",
+                "\"true\""
+            )
 
             val count1 = harness.evalJs("window.intervalCount;").toIntOrNull() ?: 0
             assertTrue(count1 > 0)
@@ -241,7 +277,15 @@ class SpaDomSwapTest {
             harness.evalJs("window.anki.showCard($card2Payload);")
 
             val countAtSwap = harness.evalJs("window.intervalCount;").toIntOrNull() ?: 0
-            delay(120)
+
+            // Poll briefly to confirm the interval is no longer incrementing
+            harness.pollUntil(
+                "window.intervalCount;",
+                countAtSwap.toString(),
+                timeoutMs = 500,
+                intervalMs = 100
+            )
+
             val countAfterDelay = harness.evalJs("window.intervalCount;").toIntOrNull() ?: 0
 
             // Verify interval timer was stopped and did not increment further
@@ -272,6 +316,134 @@ class SpaDomSwapTest {
             // Verify input listener attached immediately on DOM swap (before crossfade finishes)
             val hasInput = harness.evalJs("document.querySelector('input#typeans') !== null;")
             assertEquals("true", hasInput)
+
+        } finally {
+            harness.destroy()
+        }
+    }
+
+    @Test
+    fun verifyImageOcclusionSingleContainerSwap() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val harness = SpaWebViewHarness("http://localhost/")
+
+        try {
+            harness.loadShellHtml(readShellHtml(context))
+
+            // First show a normal card to populate container A
+            val normalPayload = """
+                {
+                    "html": "<div id='normal-card'>Normal Card</div>",
+                    "isAnswer": false,
+                    "enableCrossfade": false
+                }
+            """.trimIndent()
+            harness.evalJs("window.anki.showCard($normalPayload);")
+
+            // Now show an Image Occlusion card
+            val ioPayload = """
+                {
+                    "html": "<div id='image-occlusion-container'><img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' /><svg><rect id='active-rect' /></svg></div>",
+                    "isAnswer": false,
+                    "enableCrossfade": true
+                }
+            """.trimIndent()
+            harness.evalJs("window.anki.showCard($ioPayload);")
+
+            // IO card should be present in the active container
+            val hasIo = harness.evalJs("document.querySelector('#image-occlusion-container') !== null;")
+            assertEquals("true", hasIo)
+
+            // Verify SVG is present inside the IO container
+            val hasSvg = harness.evalJs("document.querySelector('#image-occlusion-container svg') !== null;")
+            assertEquals("true", hasSvg)
+
+        } finally {
+            harness.destroy()
+        }
+    }
+
+    @Test
+    fun verifyImageOcclusionSvgPurgedOnSwap() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val harness = SpaWebViewHarness("http://localhost/")
+
+        try {
+            harness.loadShellHtml(readShellHtml(context))
+
+            // Show an Image Occlusion card
+            val ioPayload = """
+                {
+                    "html": "<div id='image-occlusion-container'><img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' /><svg><rect id='io-rect' /></svg></div>",
+                    "isAnswer": false,
+                    "enableCrossfade": false
+                }
+            """.trimIndent()
+            harness.evalJs("window.anki.showCard($ioPayload);")
+
+            val hasIoBefore = harness.evalJs("document.querySelector('#image-occlusion-container') !== null;")
+            assertEquals("true", hasIoBefore)
+
+            // Swap to a new card — IO container and SVG should be purged from the previous container
+            val nextPayload = """
+                {
+                    "html": "<div id='next-card'>Next Card</div>",
+                    "isAnswer": false,
+                    "enableCrossfade": false
+                }
+            """.trimIndent()
+            harness.evalJs("window.anki.showCard($nextPayload);")
+
+            // Verify the IO container and SVG are no longer in the document
+            val hasIoAfter = harness.evalJs("document.querySelector('#image-occlusion-container') !== null;")
+            assertEquals("false", hasIoAfter)
+
+            val hasSvgAfter = harness.evalJs("document.querySelectorAll('svg').length;")
+            assertEquals("0", hasSvgAfter)
+
+        } finally {
+            harness.destroy()
+        }
+    }
+
+    @Test
+    fun verifyImageOcclusionBypassesCrossfade() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val harness = SpaWebViewHarness("http://localhost/")
+
+        try {
+            harness.loadShellHtml(readShellHtml(context))
+
+            // Show a normal card first so currentContainer has content
+            val normalPayload = """
+                {
+                    "html": "<div id='normal'>Normal</div>",
+                    "isAnswer": false,
+                    "enableCrossfade": false
+                }
+            """.trimIndent()
+            harness.evalJs("window.anki.showCard($normalPayload);")
+
+            // Show an IO card with crossfade enabled — should bypass crossfade
+            val ioPayload = """
+                {
+                    "html": "<div id='image-occlusion-container'><img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' /><svg><rect /></svg></div>",
+                    "isAnswer": false,
+                    "enableCrossfade": true
+                }
+            """.trimIndent()
+            harness.evalJs("window.anki.showCard($ioPayload);")
+
+            // IO cards bypass crossfade, so there should be no crossfade-active or crossfade-out classes
+            val hasCrossfadeActive = harness.evalJs("document.querySelector('.crossfade-active') !== null;")
+            assertEquals("false", hasCrossfadeActive)
+
+            val hasCrossfadeOut = harness.evalJs("document.querySelector('.crossfade-out') !== null;")
+            assertEquals("false", hasCrossfadeOut)
+
+            // The IO container should be visible in the active layer
+            val hasIo = harness.evalJs("document.querySelector('.card-layer:not(.layer-hidden) #image-occlusion-container') !== null;")
+            assertEquals("true", hasIo)
 
         } finally {
             harness.destroy()

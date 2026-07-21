@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,8 @@ import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.themes.Themes
 import com.ichi2.utils.toRGBHex
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
@@ -70,9 +73,9 @@ fun Flashcard(
     onJavascriptCommandConsumed: (Int) -> Unit,
     onTap: () -> Unit,
     onLinkClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
-    toolbarHeight: Int = 0
+    toolbarHeight: Int = 0,
+    modifier: Modifier = Modifier,
 ) {
     val currentBaseUrl by rememberUpdatedState(baseUrl)
     val currentOnJavascriptCommandConsumed by rememberUpdatedState(onJavascriptCommandConsumed)
@@ -82,6 +85,15 @@ fun Flashcard(
     val context = LocalContext.current
     val sharedPrefs = remember(context) { context.sharedPrefs() }
     val prefKey = stringResource(R.string.apply_hirameki_css_preference)
+    // TODO: UDF Refactor — Hoist preference state to ViewModel (Unidirectional Data Flow).
+    //  Currently, `applyHiramekiCssMode` is read and observed directly inside this Composable
+    //  via SharedPreferences + DisposableEffect listener. Per AGENTS.md Section 2 (Presentation
+    //  Layer: StateFlow/SharedFlow in ViewModels, Unidirectional Data Flow), this preference
+    //  should be exposed as part of a ViewModel's `StateFlow<ReviewerUiState>` and passed down
+    //  as a pure parameter. This avoids side-effectful preference reads inside composables and
+    //  keeps the Composable a pure function of its inputs. Deferred from the initial code review
+    //  pass because it requires changes to the ViewModel layer and all Flashcard call sites.
+    //  See: https://developer.android.com/topic/architecture#unidirectional-data-flow
     var applyHiramekiCssMode by remember {
         mutableStateOf(
             sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL
@@ -263,9 +275,15 @@ fun Flashcard(
             """.trimIndent()
         }
     }
-    val cachedShellHtml = remember(context, isNightMode) {
-        buildShellHtml(context, isNightMode)
+    var cachedShellHtml by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(context, isNightMode) {
+        cachedShellHtml = withContext(Dispatchers.IO) {
+            buildShellHtml(context, isNightMode)
+        }
     }
+
+    // Don't render the WebView until the shell HTML is loaded off the main thread
+    val shellHtml = cachedShellHtml ?: return
 
     AndroidView(
         factory = { context ->
@@ -404,7 +422,7 @@ fun Flashcard(
                     pendingJavascriptCommand = javascriptCommand,
                     pendingShowCardScript = fullScript
                 )
-                webView.loadDataWithBaseURL(baseUrl, cachedShellHtml, "text/html", "UTF-8", null)
+                webView.loadDataWithBaseURL(baseUrl, shellHtml, "text/html", "UTF-8", null)
             } else {
                 val stateChanged = currentPayload.contentKey != contentKey ||
                         currentPayload.isAnswerShown != isAnswerShown ||
