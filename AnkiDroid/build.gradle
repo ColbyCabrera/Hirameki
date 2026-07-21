@@ -95,7 +95,7 @@ android {
         // This ensures the correct ordering between the various types of releases (dev < alpha < beta < release) which is
         // needed for upgrades to be offered correctly.
         versionCode = 22300120
-        versionName = "1.1.6"
+        versionName = "1.1.7"
         minSdk = libs.versions.minSdk.get().toInteger()
 
         // After #13695: change .tests_emulator.yml
