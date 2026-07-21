@@ -17,6 +17,7 @@
 package com.ichi2.anki.cardviewer
 
 import android.content.Context
+import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.test.core.app.ApplicationProvider
@@ -89,6 +90,7 @@ class SessionStorageTest {
 
         fun destroy() {
             instrumentation.runOnMainSync {
+                WebStorage.getInstance().deleteAllData()
                 webView.destroy()
             }
         }
