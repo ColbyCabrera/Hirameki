@@ -23,12 +23,15 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.previewer.stdHtml
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class SessionStorageTest {
@@ -49,29 +52,38 @@ class SessionStorageTest {
             webView = requireNotNull(createdView)
         }
 
-        fun loadHtml(html: String) {
-            val latch = CountDownLatch(1)
-            instrumentation.runOnMainSync {
-                webView.webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView?, url: String?) {
-                        latch.countDown()
+        suspend fun loadHtml(html: String) {
+            val loaded = withTimeoutOrNull(10_000.milliseconds) {
+                suspendCancellableCoroutine { continuation ->
+                    instrumentation.runOnMainSync {
+                        webView.webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                if (continuation.isActive) {
+                                    continuation.resume(Unit)
+                                }
+                            }
+                        }
+                        webView.loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null)
                     }
                 }
-                webView.loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null)
+                true
             }
-            assertTrue("Page load timed out", latch.await(10, TimeUnit.SECONDS))
+            assertTrue("Page load timed out", loaded == true)
         }
 
-        fun evalJs(script: String): String {
-            val latch = CountDownLatch(1)
-            var result: String? = null
-            instrumentation.runOnMainSync {
-                webView.evaluateJavascript(script) { res ->
-                    result = res
-                    latch.countDown()
+        suspend fun evalJs(script: String): String {
+            val result = withTimeoutOrNull(10_000.milliseconds) {
+                suspendCancellableCoroutine { continuation ->
+                    instrumentation.runOnMainSync {
+                        webView.evaluateJavascript(script) { res ->
+                            if (continuation.isActive) {
+                                continuation.resume(res ?: "null")
+                            }
+                        }
+                    }
                 }
             }
-            assertTrue("JS evaluation timed out", latch.await(10, TimeUnit.SECONDS))
+            assertTrue("JS evaluation timed out", result != null)
             return result ?: "null"
         }
 
@@ -83,7 +95,7 @@ class SessionStorageTest {
     }
 
     @Test
-    fun verifySessionStoragePersistsAcrossCardFlipWithProductionShell() {
+    fun verifySessionStoragePersistsAcrossCardFlipWithProductionShell() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val harness = WebViewTestHarness("http://localhost/")
 
@@ -100,12 +112,10 @@ class SessionStorageTest {
 
             // Verify readable on Front card
             assertEquals(
-                "\"persistentValue123\"",
-                harness.evalJs("sessionStorage.getItem('ankiTestKey');")
+                "\"persistentValue123\"", harness.evalJs("sessionStorage.getItem('ankiTestKey');")
             )
             assertEquals(
-                "\"persistentPropValue456\"",
-                harness.evalJs("sessionStorage.ankiPropKey;")
+                "\"persistentPropValue456\"", harness.evalJs("sessionStorage.ankiPropKey;")
             )
 
             // 3. Reload WebView with Back card HTML via loadDataWithBaseURL (simulating card flip)
@@ -113,20 +123,17 @@ class SessionStorageTest {
 
             // 4. Verify sessionStorage data survived reload and is readable on Back card
             assertEquals(
-                "\"persistentValue123\"",
-                harness.evalJs("sessionStorage.getItem('ankiTestKey');")
+                "\"persistentValue123\"", harness.evalJs("sessionStorage.getItem('ankiTestKey');")
             )
             assertEquals(
-                "\"persistentPropValue456\"",
-                harness.evalJs("sessionStorage.ankiPropKey;")
+                "\"persistentPropValue456\"", harness.evalJs("sessionStorage.ankiPropKey;")
             )
 
             // 5. Test removal and clearing
             harness.evalJs("sessionStorage.removeItem('ankiTestKey');")
             assertEquals("null", harness.evalJs("sessionStorage.getItem('ankiTestKey');"))
             assertEquals(
-                "\"persistentPropValue456\"",
-                harness.evalJs("sessionStorage.ankiPropKey;")
+                "\"persistentPropValue456\"", harness.evalJs("sessionStorage.ankiPropKey;")
             )
 
             harness.evalJs("sessionStorage.clear();")
@@ -138,7 +145,7 @@ class SessionStorageTest {
     }
 
     @Test
-    fun verifySessionStoragePersistsWithLegacyCardTemplate() {
+    fun verifySessionStoragePersistsWithLegacyCardTemplate() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val harness = WebViewTestHarness("file:///android_asset/")
         val cardTemplateContent =
