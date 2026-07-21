@@ -593,6 +593,12 @@ class ReviewerViewModel(
         }
 
         when {
+            url.startsWith("gesture:") ||
+            url.startsWith("ankidroid:") ||
+            url.startsWith("signal:") ||
+            url.startsWith("sound:") ||
+            url.startsWith("missing-user-action:") -> return
+
             url.startsWith("videoended:") -> {
                 onVideoFinished()
                 return

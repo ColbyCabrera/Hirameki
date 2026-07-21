@@ -312,13 +312,20 @@ fun Flashcard(
                         view: WebView, request: WebResourceRequest
                     ): Boolean {
                         val uri = request.url
-                        val scheme = uri.scheme
-                        val ignoredSchemes = setOf("file", "data", "javascript", "blob", "signal", "sound", "ankidroid", "gesture")
-                        if (scheme in ignoredSchemes) {
+                        val scheme = uri.scheme ?: return false
+                        val urlString = uri.toString()
+
+                        // Built-in WebKit schemes that WebView loads internally
+                        if (scheme in setOf("file", "data", "javascript", "blob")) {
                             return false
                         }
 
-                        val urlString = uri.toString()
+                        // Anki JS communication schemes: consume & return true so WebView never navigates to gesture:// or ERR_UNKNOWN_URL_SCHEME
+                        if (scheme in setOf("gesture", "signal", "sound", "ankidroid", "missing-user-action")) {
+                            currentOnLinkClick(urlString)
+                            return true
+                        }
+
                         val payload = view.tag as? FlashcardPayload
                         val effectiveBaseUrl = payload?.baseUrl ?: currentBaseUrl
                         if (urlString.startsWith(effectiveBaseUrl)) {
@@ -332,7 +339,11 @@ fun Flashcard(
                         return true
                     }
 
-                    override fun onPageFinished(view: WebView, url: String) {
+                    override fun onPageFinished(view: WebView, url: String?) {
+                        if (url != null && url.startsWith("chrome-error://")) {
+                            Timber.w("WebView loaded error page: %s", url)
+                            return
+                        }
                         val payload = view.tag as? FlashcardPayload ?: return
                         payload.shellLoaded = true
 
@@ -380,7 +391,7 @@ fun Flashcard(
                     enableCrossfade = true
                 )
                 val spaJson = Json.encodeToString(spaPayload)
-                val showCardScript = "window.anki.showCard($spaJson);"
+                val showCardScript = "if (window.anki && typeof window.anki.showCard === 'function') { window.anki.showCard($spaJson); }"
                 return if (hasImageOcclusion) {
                     "$evalScript\n$showCardScript"
                 } else {

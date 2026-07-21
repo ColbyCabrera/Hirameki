@@ -41,7 +41,7 @@ class ViewerResourceHandler(
         val url = request.url
         val path = url.path
 
-        if (request.method != "GET" || path == null) {
+        if (request.method != "GET" || path.isNullOrEmpty() || path == "/") {
             return null
         }
         if (path == "/favicon.ico") {
