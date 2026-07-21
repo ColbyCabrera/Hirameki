@@ -28,6 +28,13 @@
 
         EventTarget.prototype.addEventListener = function (type, listener, options) {
             trackedListeners.push({ target: this, type, listener, options });
+            if (type === "load" && (document.readyState === "complete" || document.readyState === "interactive")) {
+                if (typeof listener === "function") {
+                    origSetTimeout.call(window, () => listener.call(this, new Event("load")), 0);
+                } else if (listener && typeof listener.handleEvent === "function") {
+                    origSetTimeout.call(window, () => listener.handleEvent(new Event("load")), 0);
+                }
+            }
             return origAddEventListener.call(this, type, listener, options);
         };
 
@@ -206,7 +213,7 @@
     }
 
     // --- 4. Script & Scoped Style Extraction Helper ---
-    function extractAndExecuteScripts(container, rawHtml, containerId) {
+    function extractAndExecuteScripts(container, rawHtml, containerId, isAnswer) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(rawHtml, "text/html");
 
@@ -239,23 +246,59 @@
             container.appendChild(node.cloneNode(true));
         });
 
-        // Re-create script elements dynamically to force browser execution
-        scriptElements.forEach(script => {
-            const newScript = document.createElement("script");
-            newScript.className = "anki-card-script";
-
-            Array.from(script.attributes).forEach(attr => {
-                newScript.setAttribute(attr.name, attr.value);
-            });
-
-            if (script.src) {
-                newScript.src = script.src;
-            } else {
-                newScript.textContent = script.textContent;
+        // Alias #qa and #content wrapper before running scripts so inline scripts execute on the final DOM tree structure
+        if (!container.querySelector("#qa") && !container.querySelector("#content")) {
+            const wrapper = document.createElement("div");
+            wrapper.id = "qa";
+            while (container.firstChild) {
+                wrapper.appendChild(container.firstChild);
             }
+            container.appendChild(wrapper);
+        }
 
-            container.appendChild(newScript);
-        });
+        // Ensure #answer marker element is present when isAnswer is true (using hr#answer placed inside #qa with opacity:0 and display:block so visibility checks pass for Anki IO resize re-evaluation)
+        if (isAnswer && !container.querySelector("#answer")) {
+            const answerMarker = document.createElement("hr");
+            answerMarker.id = "answer";
+            answerMarker.style.display = "block";
+            answerMarker.style.opacity = "0";
+            answerMarker.style.margin = "0";
+            answerMarker.style.padding = "0";
+            answerMarker.style.border = "none";
+            answerMarker.style.height = "0px";
+            answerMarker.style.overflow = "hidden";
+            answerMarker.dataset.generatedAnswerMarker = "true";
+            const qaWrapper = container.querySelector("#qa") || container;
+            qaWrapper.appendChild(answerMarker);
+        }
+
+        // Helper to execute script elements dynamically
+        const runScripts = () => {
+            scriptElements.forEach(script => {
+                const newScript = document.createElement("script");
+                newScript.className = "anki-card-script";
+
+                Array.from(script.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+
+                if (script.src) {
+                    newScript.src = script.src;
+                } else {
+                    newScript.textContent = script.textContent;
+                }
+
+                container.appendChild(newScript);
+            });
+        };
+
+        const ioImg = container.querySelector("#image-occlusion-container img");
+        if (ioImg && !ioImg.complete && ioImg.naturalWidth === 0) {
+            ioImg.addEventListener("load", runScripts, { once: true });
+            ioImg.addEventListener("error", runScripts, { once: true });
+        } else {
+            runScripts();
+        }
     }
 
     // --- 5. Main SPA Card Display Bridge ---
@@ -314,12 +357,38 @@
         EventListenerTracker.purge();
         document.querySelectorAll(".anki-card-script").forEach(el => el.remove());
 
+        // Strip duplicate IDs from currentContainer so document.getElementById() inside nextContainer scripts always matches new layer
+        currentContainer.querySelectorAll("[id]").forEach(el => {
+            el.removeAttribute("id");
+        });
+
+        // Immediately purge SVG and Image Occlusion container nodes from currentContainer
+        // so global document.querySelector("svg") inside nextContainer setup() NEVER collides with previous card SVG
+        currentContainer.querySelectorAll("#image-occlusion-container, svg, .image-occlusion-container").forEach(el => el.remove());
+
+        // Purge leftover instance state on window.anki.imageOcclusion so setup() treats every card flip as a fresh invocation
+        if (window.anki && window.anki.imageOcclusion) {
+            try {
+                for (const key in window.anki.imageOcclusion) {
+                    if (typeof window.anki.imageOcclusion[key] !== "function") {
+                        delete window.anki.imageOcclusion[key];
+                    }
+                }
+            } catch (e) {
+                console.warn("Error purging imageOcclusion state:", e);
+            }
+        }
+
         document.documentElement.className = isNightMode ? "night-mode" : "";
         document.documentElement.setAttribute("data-bs-theme", isNightMode ? "dark" : "light");
         document.body.className = bodyClass;
 
+        // Un-hide nextContainer (at opacity 0) BEFORE extractAndExecuteScripts so offsetWidth/height are non-zero when imageOcclusion setup runs
+        nextContainer.style.opacity = "0";
+        nextContainer.classList.remove("layer-hidden");
+
         // STEP 2: DOM Swap & Scoped Script/Style Execution
-        extractAndExecuteScripts(nextContainer, html, nextContainerId);
+        extractAndExecuteScripts(nextContainer, html, nextContainerId, isAnswer);
 
         // Process and scope composeCss + card css
         const combinedCss = (composeCss || "") + "\n" + (css || "");
@@ -350,11 +419,11 @@
         // STEP 3: Immediate Navigation Reset & Focus Preservation
         finishNavigationAndFocus(nextContainer, isAnswer);
 
-        // STEP 4: True Simultaneous 300ms CSS Crossfade with Accurate Root Height Lock (Criterion 2.5)
-        if (enableCrossfade && currentContainer.children.length > 0) {
-            // Un-hide nextContainer BEFORE measuring offsetHeight so offsetHeight is accurate (not 0)
-            nextContainer.style.opacity = "0";
-            nextContainer.classList.remove("layer-hidden");
+        // STEP 4: True Simultaneous 300ms CSS Crossfade (bypassed for Image Occlusion cards to match single-container Previewer/Desktop behavior)
+        const isImageOcclusionCard = html.includes("image-occlusion-container") || !!currentContainer.querySelector("#image-occlusion-container");
+        const shouldUseCrossfade = enableCrossfade && !isImageOcclusionCard && currentContainer.children.length > 0;
+
+        if (shouldUseCrossfade) {
             nextContainer.classList.add("crossfade-active");
             currentContainer.classList.add("crossfade-out");
 
@@ -410,6 +479,30 @@
             window.resizeImages();
         }
 
+        // Image Occlusion Layout Sizing & Setup Helper
+        const ioContainer = nextContainer.querySelector("#image-occlusion-container");
+        if (ioContainer) {
+            const img = ioContainer.querySelector("img");
+            if (img) {
+                const setupIoLayout = () => {
+                    if (img.naturalWidth > 0) {
+                        const width = Math.max(1, ioContainer.parentElement?.clientWidth || window.innerWidth || 0);
+                        const height = Math.round(width * img.naturalHeight / img.naturalWidth);
+                        ioContainer.style.width = width + "px";
+                        ioContainer.style.height = height + "px";
+                        ioContainer.style.display = "block";
+                        img.style.width = width + "px";
+                        img.style.height = height + "px";
+                    }
+                };
+                if (img.complete) {
+                    setupIoLayout();
+                } else {
+                    img.addEventListener("load", setupIoLayout, { once: true });
+                }
+            }
+        }
+
         if (Array.isArray(window.onShownHook)) {
             window.onShownHook.forEach(hook => {
                 try {
@@ -429,12 +522,15 @@
 
     // Helper: Navigation Reset & Focus Preservation
     function finishNavigationAndFocus(container, isAnswer) {
-        if (!isAnswer) {
+        const isImageOcclusion = !!container.querySelector("#image-occlusion-container");
+        if (!isAnswer || isImageOcclusion) {
             window.scrollTo(0, 0);
         } else {
             const answerAnchor = container.querySelector("#answer");
-            if (answerAnchor) {
+            if (answerAnchor && !answerAnchor.dataset.generatedAnswerMarker) {
                 answerAnchor.scrollIntoView({ behavior: "instant" });
+            } else {
+                window.scrollTo(0, 0);
             }
         }
 

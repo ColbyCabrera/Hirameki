@@ -263,17 +263,9 @@ fun Flashcard(
             """.trimIndent()
         }
     }
-    val hasImageOcclusion = currentHtml.contains("image-occlusion-container")
-    val sideToken = remember(contentKey, isAnswerShown) {
-        "${contentKey.questionHtml.hashCode()}_${contentKey.answerHtml.hashCode()}_${isAnswerShown}".hashCode().toString(16)
-    }
     val cachedShellHtml = remember(context, isNightMode) {
         buildShellHtml(context, isNightMode)
     }
-    val evalScript =
-        remember(hasImageOcclusion, sideToken) {
-            buildCardScript(hasImageOcclusion, sideToken)
-        }
 
     AndroidView(
         factory = { context ->
@@ -397,12 +389,7 @@ fun Flashcard(
                     baseUrl = baseUrl
                 )
                 val spaJson = Json.encodeToString(spaPayload)
-                val showCardScript = "if (window.anki && typeof window.anki.showCard === 'function') { window.anki.showCard($spaJson); }"
-                return if (hasImageOcclusion) {
-                    "$evalScript\n$showCardScript"
-                } else {
-                    showCardScript
-                }
+                return "if (window.anki && typeof window.anki.showCard === 'function') { window.anki.showCard($spaJson); }"
             }
 
             if (currentPayload == null) {
@@ -512,181 +499,3 @@ private fun buildShellHtml(context: Context, isNightMode: Boolean): String {
         stdHtml(context, listOf("scripts/reviewer_bridge.js"), isNightMode)
     }
 }
-
-/**
- * Builds the JavaScript to setup Image Occlusion layout and callbacks.
- */
-private fun buildCardScript(
-    hasImageOcclusion: Boolean,
-    sideToken: String,
-): String {
-    return if (hasImageOcclusion) {
-        val intercept = IO_SETUP_INTERCEPT.replace($$"${sideToken}", sideToken)
-        val postLoad = IO_POST_LOAD_SCRIPT.replace($$"${sideToken}", sideToken)
-        "$intercept\n$postLoad"
-    } else {
-        ""
-    }
-}
-
-/**
- * Intercepts anki.imageOcclusion.setup() with a no-op BEFORE _showQuestion runs.
- *
- * Why: _showQuestion is async (queued via a Promise chain). When the queued work
- * resolves, it sets innerHTML and then executes the card's inline scripts, including
- * `<script>anki.imageOcclusion.setup()</script>`. setup() waits for the image to load,
- * then uses requestAnimationFrame to size the canvas and draw masks. But if the image
- * is cached, setup() completes (~16ms) before our layout poll fires, resulting
- * in a 0x0 canvas — masks invisible 95% of the time.
- *
- * By intercepting setup() here (before _showQuestion queues), the card's inline script
- * becomes a no-op. Our [IO_POST_LOAD_SCRIPT] then applies layout dimensions and calls
- * the original setup() exactly once, guaranteeing correct canvas sizing.
- */
-private const val IO_SETUP_INTERCEPT: String = $$"""
-(() => {
-    const sideToken = '${sideToken}';
-    globalThis.__ioCurrentSide = sideToken;
-
-    if (typeof globalThis.anki?.imageOcclusion?.setup === 'function') {
-        // Guard: preserve original ONLY once
-        globalThis.__ioOriginalSetup ??= globalThis.anki.imageOcclusion.setup;
-        
-        // Intercept: return resolved promise if active side, else fallback
-        globalThis.anki.imageOcclusion.setup = function(...args) {
-            if (globalThis.__ioCurrentSide === sideToken) return Promise.resolve();
-            if (typeof globalThis.__ioOriginalSetup === 'function') {
-                return globalThis.__ioOriginalSetup.apply(this, args);
-            }
-            return Promise.resolve();
-        };
-    }
-})();
-"""
-
-/**
- * Post-load JavaScript for Image Occlusion layout and setup.
- *
- * IMPORTANT: _showQuestion/_showAnswer are ASYNC (queued via a Promise chain in reviewer.js).
- * When this script runs, the card HTML has NOT yet been injected into #qa.
- * We must poll for the image-occlusion-container to appear, THEN wait for the image to load,
- * THEN apply layout dimensions, THEN call the original setup() exactly once.
- */
-private val IO_POST_LOAD_SCRIPT: String = $$"""
-(() => {
-    const sideToken = '${sideToken}';
-    let observer = null;
-    let timeoutId = null;
-
-    const cleanup = () => {
-        if (observer) {
-            observer.disconnect();
-            observer = null;
-        }
-        
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            timeoutId = null;
-        }
-        
-        if (globalThis.__ioCurrentSide === sideToken) {
-            if (globalThis.__ioOriginalSetup) {
-                globalThis.anki.imageOcclusion.setup = globalThis.__ioOriginalSetup;
-                delete globalThis.__ioOriginalSetup;
-            }
-            delete globalThis.__ioCurrentSide;
-        }
-    };
-
-    const waitForContainer = () => {
-        if (globalThis.__ioCurrentSide !== sideToken) return;
-
-        const container = document.getElementById('image-occlusion-container');
-        if (container) return processContainer(container);
-
-        observer = new MutationObserver((mutations, obs) => {
-            if (globalThis.__ioCurrentSide !== sideToken) return cleanup();
-            
-            const target = document.getElementById('image-occlusion-container');
-            if (target) {
-                // Disconnect observer & timeout, but DO NOT call full cleanup() yet.
-                // We need globalThis.__ioCurrentSide to stay alive for processContainer!
-                if (observer) { observer.disconnect(); observer = null; }
-                if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
-                
-                processContainer(target);
-            }
-        });
-
-        const targetNode = document.getElementById('qa') || document.body;
-        observer.observe(targetNode, { childList: true, subtree: true });
-
-        timeoutId = setTimeout(() => {
-            console.warn("AnkiDroid IO: Container wait timed out.");
-            cleanup();
-        }, 1000);
-    };
-
-    const processContainer = (container) => {
-        if (globalThis.__ioCurrentSide !== sideToken) return;
-        
-        const image = container.querySelector('img');
-        if (!image) return cleanup();
-
-        if (image.complete && image.naturalWidth > 0) {
-            applyLayout(container, image);
-        } else {
-            image.addEventListener('load', () => applyLayout(container, image));
-            image.addEventListener('error', cleanup);
-        }
-    };
-
-    const applyLayout = (container, image) => {
-        if (globalThis.__ioCurrentSide !== sideToken) return;
-
-        try {
-            if (image.naturalWidth <= 0 || image.naturalHeight <= 0) return cleanup();
-
-            const width = Math.max(1, container.parentElement?.clientWidth || window.innerWidth || 0);
-            const height = Math.max(1, Math.round(width * image.naturalHeight / image.naturalWidth));
-
-            Object.assign(container.style, {
-                display: 'block',
-                width: width + 'px',
-                height: height + 'px',
-                minHeight: height + 'px',
-                maxWidth: '100%',
-                aspectRatio: image.naturalWidth + ' / ' + image.naturalHeight
-            });
-
-            Object.assign(image.style, {
-                width: width + 'px',
-                height: height + 'px'
-            });
-
-            const canvas = document.getElementById('image-occlusion-canvas');
-            if (canvas) {
-                Object.assign(canvas.style, {
-                    width: width + 'px',
-                    height: height + 'px'
-                });
-            }
-
-            // Force layout reflow
-            void container.offsetHeight;
-
-            // Call the original setup() exactly once for this side
-            if (globalThis.__ioOriginalSetup) {
-                const original = globalThis.__ioOriginalSetup;
-                cleanup(); // Restore original setup before invocation
-                original.call(globalThis.anki.imageOcclusion);
-            }
-        } catch(e) {
-            console.error(e);
-            cleanup(); // Unconditional restoration on error
-        }
-    };
-
-    waitForContainer();
-})();
-""".trimIndent()
