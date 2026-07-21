@@ -161,8 +161,6 @@
                 try {
                     audio.pause();
                     audio.currentTime = 0;
-                    audio.removeAttribute("src");
-                    audio.load();
                 } catch (e) {}
             }
             trackedAudioObjects.clear();
@@ -179,12 +177,6 @@
             try {
                 media.pause();
                 media.currentTime = 0;
-                media.querySelectorAll("source").forEach(source => {
-                    source.removeAttribute("src");
-                    source.remove();
-                });
-                media.removeAttribute("src");
-                media.load();
             } catch (e) {
                 console.warn("Error stopping media element:", e);
             }
@@ -279,8 +271,16 @@
             composeCss = "",
             bodyClass = "card",
             isNightMode = false,
-            enableCrossfade = true
+            enableCrossfade = true,
+            baseUrl = ""
         } = data;
+
+        if (baseUrl) {
+            const baseTag = document.getElementById("base-href");
+            if (baseTag) {
+                baseTag.href = baseUrl;
+            }
+        }
 
         const containerA = document.getElementById("card-container-a");
         const containerB = document.getElementById("card-container-b");

@@ -326,7 +326,7 @@ fun Flashcard(
                         }
 
                         // Anki JS communication schemes: consume & return true so WebView never navigates to gesture:// or ERR_UNKNOWN_URL_SCHEME
-                        if (scheme in setOf("gesture", "signal", "sound", "ankidroid", "missing-user-action")) {
+                        if (scheme in setOf("gesture", "signal", "sound", "playsound", "ankidroid", "missing-user-action")) {
                             currentOnLinkClick(urlString)
                             return true
                         }
@@ -393,7 +393,8 @@ fun Flashcard(
                     composeCss = composeStyle,
                     bodyClass = bodyClass,
                     isNightMode = isNightMode,
-                    enableCrossfade = true
+                    enableCrossfade = true,
+                    baseUrl = baseUrl
                 )
                 val spaJson = Json.encodeToString(spaPayload)
                 val showCardScript = "if (window.anki && typeof window.anki.showCard === 'function') { window.anki.showCard($spaJson); }"
@@ -487,7 +488,8 @@ private data class SpaCardPayload(
     val composeCss: String = "",
     val bodyClass: String = "",
     val isNightMode: Boolean = false,
-    val enableCrossfade: Boolean = true
+    val enableCrossfade: Boolean = true,
+    val baseUrl: String = ""
 )
 
 private class FlashcardPayload(
