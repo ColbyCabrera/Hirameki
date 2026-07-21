@@ -250,9 +250,7 @@ open class Reviewer : AbstractFlashcardViewer(), ReviewerUi {
                         deckOptionsLauncher.launch(i)
                     }
                     is ReviewerEffect.ClearWhiteboard -> {
-                        if (::whiteboardController.isInitialized) {
-                            whiteboardController.updateForNewCard()
-                        }
+                        // Handled in Compose
                     }
                 }
             }

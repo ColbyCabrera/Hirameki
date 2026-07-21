@@ -219,18 +219,31 @@ class ReviewerViewModelTest : RobolectricTest() {
         addBasicNote("Front 2", "Back 2")
 
         val testDispatcher = StandardTestDispatcher(testScheduler)
-        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
 
         viewModel.effect.test {
             testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
+
+            // Consume the initial ClearWhiteboard emitted by LoadInitialCard
+            val initialEffect = awaitItem()
+            assertThat(
+                "Initial card load should emit ClearWhiteboard",
+                initialEffect,
+                equalTo(ReviewerEffect.ClearWhiteboard)
+            )
 
             viewModel.onEvent(ReviewerEvent.RateCard(anki.scheduler.CardAnswer.Rating.EASY))
             testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             val effect = awaitItem()
-            assertThat("ClearWhiteboard effect should be emitted on answering card", effect, equalTo(ReviewerEffect.ClearWhiteboard))
+            assertThat(
+                "ClearWhiteboard effect should be emitted on answering card",
+                effect,
+                equalTo(ReviewerEffect.ClearWhiteboard)
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -260,8 +273,16 @@ class ReviewerViewModelTest : RobolectricTest() {
         advanceRobolectricLooper()
 
         val reloadedNote = col.getNote(note.id)
-        assertThat("Note should be marked after toggle", NoteService.isMarked(reloadedNote), equalTo(true))
-        assertThat("State should reflect marked note", viewModel.state.value.isMarked, equalTo(true))
+        assertThat(
+            "Note should be marked after toggle",
+            NoteService.isMarked(reloadedNote),
+            equalTo(true)
+        )
+        assertThat(
+            "State should reflect marked note",
+            viewModel.state.value.isMarked,
+            equalTo(true)
+        )
     }
 
     @Test
@@ -310,8 +331,16 @@ class ReviewerViewModelTest : RobolectricTest() {
             advanceRobolectricLooper()
 
             val reloadedNote = col.getNote(note.id)
-            assertThat("Note should remain unmarked after failure", NoteService.isMarked(reloadedNote), equalTo(false))
-            assertThat("State should remain unchanged after failure", viewModel.state.value.isMarked, equalTo(false))
+            assertThat(
+                "Note should remain unmarked after failure",
+                NoteService.isMarked(reloadedNote),
+                equalTo(false)
+            )
+            assertThat(
+                "State should remain unchanged after failure",
+                viewModel.state.value.isMarked,
+                equalTo(false)
+            )
         } finally {
             unmockkObject(NoteService)
         }

@@ -223,7 +223,7 @@ fun ReviewerContent(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.effect.collectLatest { effect ->
+        viewModel.effect.collect { effect ->
             when (effect) {
                 is ReviewerEffect.NavigateToEditCard -> {
                     val intent = NoteEditorLauncher.EditCard(
@@ -233,7 +233,9 @@ fun ReviewerContent(
                 }
 
                 is ReviewerEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message)
+                    // Launch independently so a later effect doesn't cancel
+                    // the suspending showSnackbar call
+                    launch { snackbarHostState.showSnackbar(effect.message) }
                 }
 
                 is ReviewerEffect.ShowDeleteNoteDialog -> {
