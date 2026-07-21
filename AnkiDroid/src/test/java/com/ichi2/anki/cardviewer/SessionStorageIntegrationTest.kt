@@ -17,75 +17,41 @@
 package com.ichi2.anki.cardviewer
 
 import android.content.Context
-import android.webkit.WebView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.containsString
+import com.ichi2.anki.previewer.stdHtml
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowWebView
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class SessionStorageIntegrationTest : RobolectricTest() {
-    @Test
-    fun webViewTemplateIncludesSessionStoragePolyfillBeforeOtherScripts() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val webView = WebView(context)
-        val shadowWebView: ShadowWebView = shadowOf(webView)
-
-        val sampleFrontHtml =
-            "<html><head><script src=\"file:///android_asset/scripts/session_storage_polyfill.js\" " +
-                "type=\"text/javascript\"></script></head><body>Front</body></html>"
-        val sampleBackHtml =
-            "<html><head><script src=\"file:///android_asset/scripts/session_storage_polyfill.js\" " +
-                "type=\"text/javascript\"></script></head><body>Back</body></html>"
-
-        // 1. Load Front Card HTML via loadDataWithBaseURL
-        webView.loadDataWithBaseURL("http://127.0.0.1:8765/", sampleFrontHtml, "text/html", "utf-8", null)
-        val frontLoad = shadowWebView.lastLoadDataWithBaseURL
-        assertNotNull(frontLoad, "Front loadDataWithBaseURL should be recorded")
-        assertThat(frontLoad.data, containsString("session_storage_polyfill.js"))
-
-        // 2. Simulate Card Flip to Back Card HTML via loadDataWithBaseURL
-        webView.loadDataWithBaseURL("http://127.0.0.1:8765/", sampleBackHtml, "text/html", "utf-8", null)
-        val backLoad = shadowWebView.lastLoadDataWithBaseURL
-        assertNotNull(backLoad, "Back loadDataWithBaseURL should be recorded")
-        assertThat(backLoad.data, containsString("session_storage_polyfill.js"))
-
-        // 3. Verify origin consistency (both use same baseUrl origin so localStorage state is preserved across reloads)
-        assertEquals("http://127.0.0.1:8765/", frontLoad.baseUrl)
-        assertEquals("http://127.0.0.1:8765/", backLoad.baseUrl)
-    }
 
     @Test
     fun sessionStoragePolyfillAssetIsPresentAndValid() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val assetManager = context.assets
-        val inputStream = assetManager.open("scripts/session_storage_polyfill.js")
-        val content = inputStream.bufferedReader().use { it.readText() }
+        val content = context.assets.open("scripts/session_storage_polyfill.js").reader().use { it.readText() }
 
         assertNotNull(content, "session_storage_polyfill.js asset should be readable")
-        assertThat(content, containsString("window.sessionStorage"))
-        assertThat(content, containsString("__anki_ss_"))
-        assertThat(content, containsString("Proxy"))
-        assertThat(content, containsString("localStorage"))
+        assertTrue(content.contains("window.sessionStorage"), "Must polyfill window.sessionStorage")
+        assertTrue(content.contains("__anki_ss_"), "Must use prefix __anki_ss_")
+        assertTrue(content.contains("Proxy"), "Must use Proxy trap")
+        assertTrue(content.contains("localStorage"), "Must back onto localStorage")
     }
 
     @Test
     fun productionShellTemplatesIncludePolyfill() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
-        // 1. Verify legacy CardTemplate includes polyfill
+        // 1. Legacy reviewer shell (card_template.html)
         val cardTemplateContent = context.assets.open("card_template.html").reader().use { it.readText() }
-        assertThat(cardTemplateContent, containsString("scripts/session_storage_polyfill.js"))
+        assertTrue(cardTemplateContent.contains("scripts/session_storage_polyfill.js"), "card_template.html must include polyfill")
 
-        // 2. Verify Compose Reviewer stdHtml includes polyfill
-        val stdHtmlOutput = com.ichi2.anki.previewer.stdHtml(context)
-        assertThat(stdHtmlOutput, containsString("scripts/session_storage_polyfill.js"))
+        // 2. Compose reviewer shell (stdHtml)
+        val stdHtmlOutput = stdHtml(context)
+        assertTrue(stdHtmlOutput.contains("scripts/session_storage_polyfill.js"), "stdHtml must include polyfill")
     }
 }
+
