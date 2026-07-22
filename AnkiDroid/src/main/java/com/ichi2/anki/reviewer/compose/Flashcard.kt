@@ -29,8 +29,6 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -74,8 +72,8 @@ fun Flashcard(
     onTap: () -> Unit,
     onLinkClick: (String) -> Unit,
     isAnswerShown: Boolean,
-    toolbarHeight: Int = 0,
     modifier: Modifier = Modifier,
+    toolbarHeight: Int = 0
 ) {
     val currentBaseUrl by rememberUpdatedState(baseUrl)
     val currentOnJavascriptCommandConsumed by rememberUpdatedState(onJavascriptCommandConsumed)
@@ -287,191 +285,194 @@ fun Flashcard(
 
     AndroidView(
         factory = { context ->
-            WebView(context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                isVerticalScrollBarEnabled = false
-                isHorizontalScrollBarEnabled = false
-                settings.javaScriptEnabled = true
-                settings.allowFileAccess = true
-                settings.allowContentAccess = true
-                settings.loadsImagesAutomatically = true
-                settings.blockNetworkImage = false
-                settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                settings.domStorageEnabled = true
-                settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
-                settings.setSupportZoom(true)
-                settings.builtInZoomControls = true
-                settings.displayZoomControls = false
+        WebView(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
+            settings.javaScriptEnabled = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = true
+            settings.loadsImagesAutomatically = true
+            settings.blockNetworkImage = false
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            settings.domStorageEnabled = true
+            settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
+            settings.setSupportZoom(true)
+            settings.builtInZoomControls = true
+            settings.displayZoomControls = false
 
-                webChromeClient = object : WebChromeClient() {
-                    override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                        Timber.tag("FlashcardJS")
-                            .d("${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}")
-                        return true
-                    }
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                    Timber.tag("FlashcardJS")
+                        .d("${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}")
+                    return true
+                }
+            }
+
+            webViewClient = object : WebViewClient() {
+                val resourceHandler = ViewerResourceHandler(context)
+
+                override fun shouldInterceptRequest(
+                    view: WebView, request: WebResourceRequest
+                ): WebResourceResponse? {
+                    return resourceHandler.shouldInterceptRequest(request)
                 }
 
-                webViewClient = object : WebViewClient() {
-                    val resourceHandler = ViewerResourceHandler(context)
+                override fun shouldOverrideUrlLoading(
+                    view: WebView, request: WebResourceRequest
+                ): Boolean {
+                    val uri = request.url
+                    val scheme = uri.scheme ?: return false
+                    val urlString = uri.toString()
 
-                    override fun shouldInterceptRequest(
-                        view: WebView, request: WebResourceRequest
-                    ): WebResourceResponse? {
-                        return resourceHandler.shouldInterceptRequest(request)
+                    // Built-in WebKit schemes that WebView loads internally
+                    if (scheme in setOf("file", "data", "javascript", "blob")) {
+                        return false
                     }
 
-                    override fun shouldOverrideUrlLoading(
-                        view: WebView, request: WebResourceRequest
-                    ): Boolean {
-                        val uri = request.url
-                        val scheme = uri.scheme ?: return false
-                        val urlString = uri.toString()
-
-                        // Built-in WebKit schemes that WebView loads internally
-                        if (scheme in setOf("file", "data", "javascript", "blob")) {
-                            return false
-                        }
-
-                        // Anki JS communication schemes: consume & return true so WebView never navigates to gesture:// or ERR_UNKNOWN_URL_SCHEME
-                        if (scheme in setOf("gesture", "signal", "sound", "playsound", "ankidroid", "missing-user-action")) {
-                            currentOnLinkClick(urlString)
-                            return true
-                        }
-
-                        val payload = view.tag as? FlashcardPayload
-                        val effectiveBaseUrl = payload?.baseUrl ?: currentBaseUrl
-                        if (urlString.startsWith(effectiveBaseUrl)) {
-                            val path = urlString.removePrefix(effectiveBaseUrl)
-                            if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
-                                return false
-                            }
-                        }
-
+                    // Anki JS communication schemes: consume & return true so WebView never navigates to gesture:// or ERR_UNKNOWN_URL_SCHEME
+                    if (scheme in setOf(
+                            "gesture",
+                            "signal",
+                            "sound",
+                            "playsound",
+                            "ankidroid",
+                            "missing-user-action"
+                        )
+                    ) {
                         currentOnLinkClick(urlString)
                         return true
                     }
 
-                    override fun onPageFinished(view: WebView, url: String?) {
-                        if (url != null && url.startsWith("chrome-error://")) {
-                            Timber.w("WebView loaded error page: %s", url)
-                            return
-                        }
-                        val payload = view.tag as? FlashcardPayload ?: return
-                        payload.shellLoaded = true
-
-                        val pendingScript = payload.pendingShowCardScript
-                        if (pendingScript != null) {
-                            view.evaluateJavascript(pendingScript, null)
-                            payload.pendingShowCardScript = null
-                        }
-
-                        payload.pendingJavascriptCommand?.let { command ->
-                            view.evaluateJavascript(command.script, null)
-                            payload.lastJavascriptCommandId = command.id
-                            payload.pendingJavascriptCommand = null
-                            currentOnJavascriptCommandConsumed(command.id)
+                    val payload = view.tag as? FlashcardPayload
+                    val effectiveBaseUrl = payload?.baseUrl ?: currentBaseUrl
+                    if (urlString.startsWith(effectiveBaseUrl)) {
+                        val path = urlString.removePrefix(effectiveBaseUrl)
+                        if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
+                            return false
                         }
                     }
+
+                    currentOnLinkClick(urlString)
+                    return true
                 }
 
-                val gestureDetector = GestureDetector(
-                    context, object : GestureDetector.SimpleOnGestureListener() {
-                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                            currentOnTap()
-                            return true
-                        }
-                    })
+                override fun onPageFinished(view: WebView, url: String?) {
+                    if (url != null && url.startsWith("chrome-error://")) {
+                        Timber.w("WebView loaded error page: %s", url)
+                        return
+                    }
+                    val payload = view.tag as? FlashcardPayload ?: return
+                    payload.shellLoaded = true
 
-                @SuppressLint("ClickableViewAccessibility") setOnTouchListener { _, event ->
-                    gestureDetector.onTouchEvent(event)
-                    false
-                }
-
-                setBackgroundColor(Color.TRANSPARENT)
-            }
-        }, update = { webView ->
-            webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
-            val currentPayload = webView.tag as? FlashcardPayload
-
-            fun createShowCardScript(): String {
-                val spaPayload = SpaCardPayload(
-                    html = currentHtml,
-                    isAnswer = isAnswerShown,
-                    composeCss = composeStyle,
-                    bodyClass = bodyClass,
-                    isNightMode = isNightMode,
-                    enableCrossfade = true,
-                    baseUrl = baseUrl
-                )
-                val spaJson = Json.encodeToString(spaPayload)
-                return "if (window.anki && typeof window.anki.showCard === 'function') { window.anki.showCard($spaJson); }"
-            }
-
-            if (currentPayload == null) {
-                val fullScript = createShowCardScript()
-                webView.tag = FlashcardPayload(
-                    contentKey = contentKey,
-                    isAnswerShown = isAnswerShown,
-                    baseUrl = baseUrl,
-                    isNightMode = isNightMode,
-                    composeStyle = composeStyle,
-                    bodyClass = bodyClass,
-                    pendingJavascriptCommand = javascriptCommand,
-                    pendingShowCardScript = fullScript
-                )
-                webView.loadDataWithBaseURL(baseUrl, shellHtml, "text/html", "UTF-8", null)
-            } else {
-                val stateChanged = currentPayload.contentKey != contentKey ||
-                        currentPayload.isAnswerShown != isAnswerShown ||
-                        currentPayload.isNightMode != isNightMode ||
-                        currentPayload.composeStyle != composeStyle ||
-                        currentPayload.bodyClass != bodyClass ||
-                        currentPayload.baseUrl != baseUrl
-
-                if (javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id) {
-                    currentPayload.pendingJavascriptCommand = javascriptCommand
-                }
-
-                if (currentPayload.shellLoaded) {
-                    if (stateChanged) {
-                        currentPayload.contentKey = contentKey
-                        currentPayload.isAnswerShown = isAnswerShown
-                        currentPayload.isNightMode = isNightMode
-                        currentPayload.composeStyle = composeStyle
-                        currentPayload.bodyClass = bodyClass
-                        currentPayload.baseUrl = baseUrl
-                        val fullScript = createShowCardScript()
-                        webView.evaluateJavascript(fullScript, null)
+                    val pendingScript = payload.pendingShowCardScript
+                    if (pendingScript != null) {
+                        view.evaluateJavascript(pendingScript, null)
+                        payload.pendingShowCardScript = null
                     }
 
-                    currentPayload.pendingJavascriptCommand?.let { command ->
-                        webView.evaluateJavascript(command.script, null)
-                        currentPayload.lastJavascriptCommandId = command.id
-                        currentPayload.pendingJavascriptCommand = null
+                    payload.pendingJavascriptCommand?.let { command ->
+                        view.evaluateJavascript(command.script, null)
+                        payload.lastJavascriptCommandId = command.id
+                        payload.pendingJavascriptCommand = null
                         currentOnJavascriptCommandConsumed(command.id)
                     }
-                } else {
-                    if (stateChanged) {
-                        currentPayload.contentKey = contentKey
-                        currentPayload.isAnswerShown = isAnswerShown
-                        currentPayload.isNightMode = isNightMode
-                        currentPayload.composeStyle = composeStyle
-                        currentPayload.baseUrl = baseUrl
-                        currentPayload.pendingShowCardScript = createShowCardScript()
-                    }
                 }
             }
-        }, onRelease = { webView ->
-            (webView.parent as? ViewGroup)?.removeView(webView)
-            webView.stopLoading()
-            webView.webViewClient = WebViewClient()
-            webView.webChromeClient = null
-            webView.setOnTouchListener(null)
-            webView.destroy()
-        }, modifier = modifier
+
+            val gestureDetector = GestureDetector(
+                context, object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                        currentOnTap()
+                        return true
+                    }
+                })
+
+            @SuppressLint("ClickableViewAccessibility") setOnTouchListener { _, event ->
+                gestureDetector.onTouchEvent(event)
+                false
+            }
+
+            setBackgroundColor(Color.TRANSPARENT)
+        }
+    }, update = { webView ->
+        webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
+        val currentPayload = webView.tag as? FlashcardPayload
+
+        fun createShowCardScript(): String {
+            val spaPayload = SpaCardPayload(
+                html = currentHtml,
+                isAnswer = isAnswerShown,
+                composeCss = composeStyle,
+                bodyClass = bodyClass,
+                isNightMode = isNightMode,
+                enableCrossfade = true,
+                baseUrl = baseUrl
+            )
+            val spaJson = Json.encodeToString(spaPayload)
+            return "if (window.anki && typeof window.anki.showCard === 'function') { window.anki.showCard($spaJson); }"
+        }
+
+        if (currentPayload == null) {
+            val fullScript = createShowCardScript()
+            webView.tag = FlashcardPayload(
+                contentKey = contentKey,
+                isAnswerShown = isAnswerShown,
+                baseUrl = baseUrl,
+                isNightMode = isNightMode,
+                composeStyle = composeStyle,
+                bodyClass = bodyClass,
+                pendingJavascriptCommand = javascriptCommand,
+                pendingShowCardScript = fullScript
+            )
+            webView.loadDataWithBaseURL(baseUrl, shellHtml, "text/html", "UTF-8", null)
+        } else {
+            val stateChanged =
+                currentPayload.contentKey != contentKey || currentPayload.isAnswerShown != isAnswerShown || currentPayload.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle || currentPayload.bodyClass != bodyClass || currentPayload.baseUrl != baseUrl
+
+            if (javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id) {
+                currentPayload.pendingJavascriptCommand = javascriptCommand
+            }
+
+            if (currentPayload.shellLoaded) {
+                if (stateChanged) {
+                    currentPayload.contentKey = contentKey
+                    currentPayload.isAnswerShown = isAnswerShown
+                    currentPayload.isNightMode = isNightMode
+                    currentPayload.composeStyle = composeStyle
+                    currentPayload.bodyClass = bodyClass
+                    currentPayload.baseUrl = baseUrl
+                    val fullScript = createShowCardScript()
+                    webView.evaluateJavascript(fullScript, null)
+                }
+
+                currentPayload.pendingJavascriptCommand?.let { command ->
+                    webView.evaluateJavascript(command.script, null)
+                    currentPayload.lastJavascriptCommandId = command.id
+                    currentPayload.pendingJavascriptCommand = null
+                    currentOnJavascriptCommandConsumed(command.id)
+                }
+            } else {
+                if (stateChanged) {
+                    currentPayload.contentKey = contentKey
+                    currentPayload.isAnswerShown = isAnswerShown
+                    currentPayload.isNightMode = isNightMode
+                    currentPayload.composeStyle = composeStyle
+                    currentPayload.baseUrl = baseUrl
+                    currentPayload.pendingShowCardScript = createShowCardScript()
+                }
+            }
+        }
+    }, onRelease = { webView ->
+        (webView.parent as? ViewGroup)?.removeView(webView)
+        webView.stopLoading()
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = null
+        webView.setOnTouchListener(null)
+        webView.destroy()
+    }, modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     )
