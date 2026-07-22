@@ -350,6 +350,7 @@ fun ReviewerContent(
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))
                         },
                         isAnswerShown = state.isAnswerShown,
+                        applyHiramekiCssMode = state.applyHiramekiCssMode,
                         toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt()
                     )
 

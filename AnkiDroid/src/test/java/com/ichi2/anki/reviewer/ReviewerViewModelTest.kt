@@ -15,11 +15,15 @@
  */
 package com.ichi2.anki.reviewer
 
+import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
+import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
+import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.servicelayer.NoteService
+import com.ichi2.anki.settings.Prefs
 import io.mockk.coEvery
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
@@ -34,6 +38,7 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.junit.Test
 import org.junit.runner.RunWith
+import androidx.core.content.edit
 
 /**
  * Tests for [ReviewerViewModel].
@@ -452,5 +457,32 @@ class ReviewerViewModelTest : RobolectricTest() {
         val stateAfter = viewModel.state.first()
         assertThat("State should remain finished", stateAfter.isFinished, equalTo(true))
         assertThat("Answer should not be shown", stateAfter.isAnswerShown, equalTo(false))
+    }
+
+    @Test
+    fun `applyHiramekiCssMode reflects preference and updates on preference change`() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val prefKey = context.getString(R.string.apply_hirameki_css_preference)
+        val prefs = context.sharedPrefs()
+
+        prefs.edit(commit = true) { putString(prefKey, Prefs.HIRAMEKI_CSS_ALL) }
+
+        val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+        advanceRobolectricLooper()
+
+        assertThat(
+            "Initial applyHiramekiCssMode should match preference",
+            viewModel.state.value.applyHiramekiCssMode,
+            equalTo(Prefs.HIRAMEKI_CSS_ALL)
+        )
+
+        prefs.edit(commit = true) { putString(prefKey, Prefs.HIRAMEKI_CSS_DISABLED) }
+        advanceRobolectricLooper()
+
+        assertThat(
+            "applyHiramekiCssMode should update when preference changes",
+            viewModel.state.value.applyHiramekiCssMode,
+            equalTo(Prefs.HIRAMEKI_CSS_DISABLED)
+        )
     }
 }

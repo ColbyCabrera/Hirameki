@@ -18,6 +18,7 @@ package com.ichi2.anki.reviewer
 import android.app.Application
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.SharedPreferences
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.core.net.toUri
@@ -53,6 +54,7 @@ import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.bodyClassForCardOrd
 import com.ichi2.anki.servicelayer.NoteService
+import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.utils.CollectionPreferences
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -97,7 +99,8 @@ data class ReviewerState(
     val isFinished: Boolean = false,
     val isWhiteboardEnabled: Boolean = false,
     val isVoicePlaybackEnabled: Boolean = false,
-    val mediaError: MediaError? = null
+    val mediaError: MediaError? = null,
+    val applyHiramekiCssMode: String = Prefs.HIRAMEKI_CSS_ALL
 )
 
 data class AnswerFeedback(
@@ -275,12 +278,25 @@ class ReviewerViewModel(
         })
     }
 
+    private val prefKeyApplyHiramekiCss = app.getString(R.string.apply_hirameki_css_preference)
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == prefKeyApplyHiramekiCss) {
+            _state.update {
+                it.copy(applyHiramekiCssMode = Prefs.applyHiramekiCss ?: Prefs.HIRAMEKI_CSS_ALL)
+            }
+        }
+    }
+
     init {
+        val initialHiramekiCss = Prefs.applyHiramekiCss ?: Prefs.HIRAMEKI_CSS_ALL
+        _state.update { it.copy(applyHiramekiCssMode = initialHiramekiCss) }
+        app.sharedPrefs().registerOnSharedPreferenceChangeListener(prefListener)
         server.start()
         onEvent(ReviewerEvent.LoadInitialCard)
     }
 
     override fun onCleared() {
+        getApplication<Application>().sharedPrefs().unregisterOnSharedPreferenceChangeListener(prefListener)
         server.stop()
         cardMediaPlayer.close()
     }

@@ -17,7 +17,6 @@ package com.ichi2.anki.reviewer.compose
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Color
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -33,7 +32,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,12 +41,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
-import com.ichi2.anki.R
 import com.ichi2.anki.ViewerResourceHandler
-import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.stdHtml
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.settings.Prefs
@@ -73,47 +68,14 @@ fun Flashcard(
     onLinkClick: (String) -> Unit,
     isAnswerShown: Boolean,
     modifier: Modifier = Modifier,
+    applyHiramekiCssMode: String = Prefs.HIRAMEKI_CSS_ALL,
     toolbarHeight: Int = 0
 ) {
+    val context = LocalContext.current
     val currentBaseUrl by rememberUpdatedState(baseUrl)
     val currentOnJavascriptCommandConsumed by rememberUpdatedState(onJavascriptCommandConsumed)
     val currentOnLinkClick by rememberUpdatedState(onLinkClick)
     val currentOnTap by rememberUpdatedState(onTap)
-
-    val context = LocalContext.current
-    val sharedPrefs = remember(context) { context.sharedPrefs() }
-    val prefKey = stringResource(R.string.apply_hirameki_css_preference)
-    // TODO: UDF Refactor — Hoist preference state to ViewModel (Unidirectional Data Flow).
-    //  Currently, `applyHiramekiCssMode` is read and observed directly inside this Composable
-    //  via SharedPreferences + DisposableEffect listener. Per AGENTS.md Section 2 (Presentation
-    //  Layer: StateFlow/SharedFlow in ViewModels, Unidirectional Data Flow), this preference
-    //  should be exposed as part of a ViewModel's `StateFlow<ReviewerUiState>` and passed down
-    //  as a pure parameter. This avoids side-effectful preference reads inside composables and
-    //  keeps the Composable a pure function of its inputs. Deferred from the initial code review
-    //  pass because it requires changes to the ViewModel layer and all Flashcard call sites.
-    //  See: https://developer.android.com/topic/architecture#unidirectional-data-flow
-    var applyHiramekiCssMode by remember {
-        mutableStateOf(
-            sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL
-        )
-    }
-
-    val listener = remember(sharedPrefs, prefKey) {
-        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == prefKey) {
-                applyHiramekiCssMode =
-                    sharedPrefs.getString(prefKey, Prefs.HIRAMEKI_CSS_ALL) ?: Prefs.HIRAMEKI_CSS_ALL
-            }
-        }
-    }
-
-    DisposableEffect(sharedPrefs, listener) {
-        sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose {
-            sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
-        }
-    }
-
     val isNightMode = Themes.currentTheme.isNightMode
     val surfaceColor = MaterialTheme.colorScheme.surface
     val surfaceColorHex = surfaceColor.toArgb().toRGBHex()
