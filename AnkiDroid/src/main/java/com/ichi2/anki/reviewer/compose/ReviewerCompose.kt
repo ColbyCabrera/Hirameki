@@ -68,6 +68,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -125,44 +126,56 @@ private val WhiteboardBottomBarOffset = 48.dp
 private const val AnswerIndicatorDuration = 1000L
 
 // You can rename this class to be more descriptive
-class InvertedTopCornersShape(private val cornerRadius: Dp) : Shape {
+class InvertedTopCornersShape(
+    private val cornerRadius: Dp,
+) : Shape {
     override fun createOutline(
-        size: Size, layoutDirection: LayoutDirection, density: Density
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density,
     ): Outline {
         val cornerRadiusPx = with(density) { cornerRadius.toPx() }
 
-        val path = Path().apply {
-            // --- Top-Left Corner Path ---
-            moveTo(0f, 0f) // Start at the top-left point
-            lineTo(cornerRadiusPx, 0f) // Line to the start of the arc
-            // Arc from (r, 0) down to (0, r)
-            arcTo(
-                rect = Rect(
-                    left = 0f, top = 0f, right = 2 * cornerRadiusPx, bottom = 2 * cornerRadiusPx
-                ), startAngleDegrees = 270f,   // Top-center of the rect
-                sweepAngleDegrees = -90f, // Sweep counter-clockwise
-                forceMoveTo = false
-            )
-            // lineTo(0f, 0f) is implicitly added by close()
-            close() // Close the path, drawing a line from (0, r) back to (0, 0)
+        val path =
+            Path().apply {
+                // --- Top-Left Corner Path ---
+                moveTo(0f, 0f) // Start at the top-left point
+                lineTo(cornerRadiusPx, 0f) // Line to the start of the arc
+                // Arc from (r, 0) down to (0, r)
+                arcTo(
+                    rect =
+                        Rect(
+                            left = 0f,
+                            top = 0f,
+                            right = 2 * cornerRadiusPx,
+                            bottom = 2 * cornerRadiusPx,
+                        ),
+                    startAngleDegrees = 270f, // Top-center of the rect
+                    sweepAngleDegrees = -90f, // Sweep counter-clockwise
+                    forceMoveTo = false,
+                )
+                // lineTo(0f, 0f) is implicitly added by close()
+                close() // Close the path, drawing a line from (0, r) back to (0, 0)
 
-            // --- Top-Right Corner Path ---
-            moveTo(size.width, 0f) // Start at the top-right point
-            lineTo(size.width - cornerRadiusPx, 0f) // Line to the start of the arc
-            // Arc from (width - r, 0) down to (width, r)
-            arcTo(
-                rect = Rect(
-                    left = size.width - 2 * cornerRadiusPx,
-                    top = 0f,
-                    right = size.width,
-                    bottom = 2 * cornerRadiusPx
-                ), startAngleDegrees = 270f, // Top-center of the rect
-                sweepAngleDegrees = 90f,  // Sweep clockwise
-                forceMoveTo = false
-            )
-            // lineTo(size.width, 0f) is implicitly added by close()
-            close() // Close the path, drawing a line from (width, r) back to (width, 0)
-        }
+                // --- Top-Right Corner Path ---
+                moveTo(size.width, 0f) // Start at the top-right point
+                lineTo(size.width - cornerRadiusPx, 0f) // Line to the start of the arc
+                // Arc from (width - r, 0) down to (width, r)
+                arcTo(
+                    rect =
+                        Rect(
+                            left = size.width - 2 * cornerRadiusPx,
+                            top = 0f,
+                            right = size.width,
+                            bottom = 2 * cornerRadiusPx,
+                        ),
+                    startAngleDegrees = 270f, // Top-center of the rect
+                    sweepAngleDegrees = 90f, // Sweep clockwise
+                    forceMoveTo = false,
+                )
+                // lineTo(size.width, 0f) is implicitly added by close()
+                close() // Close the path, drawing a line from (width, r) back to (width, 0)
+            }
         return Outline.Generic(path)
     }
 }
@@ -172,7 +185,7 @@ class InvertedTopCornersShape(private val cornerRadius: Dp) : Shape {
 fun ReviewerContent(
     viewModel: ReviewerViewModel,
     whiteboardViewModel: WhiteboardViewModel?,
-    voicePlaybackViewModel: VoicePlaybackViewModel?
+    voicePlaybackViewModel: VoicePlaybackViewModel?,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
@@ -216,19 +229,33 @@ fun ReviewerContent(
         }
     }
 
-    val editCardLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) {
-        viewModel.onEvent(ReviewerEvent.ReloadCard)
+    // Reset whiteboard on card transitions; guarded with rememberSaveable to prevent
+    // wiping the user's sketch on configuration changes (e.g. screen rotation)
+    var lastHandledCardIndex by rememberSaveable { mutableLongStateOf(-1L) }
+    LaunchedEffect(state.cardDisplayIndex) {
+        if (lastHandledCardIndex != -1L && state.cardDisplayIndex != lastHandledCardIndex) {
+            whiteboardViewModel?.reset()
+        }
+        lastHandledCardIndex = state.cardDisplayIndex
     }
+
+    val editCardLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+        ) {
+            viewModel.onEvent(ReviewerEvent.ReloadCard)
+        }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ReviewerEffect.NavigateToEditCard -> {
-                    val intent = NoteEditorLauncher.EditCard(
-                        effect.cardId, ActivityTransitionAnimation.Direction.FADE
-                    ).toIntent(currentContext)
+                    val intent =
+                        NoteEditorLauncher
+                            .EditCard(
+                                effect.cardId,
+                                ActivityTransitionAnimation.Direction.FADE,
+                            ).toIntent(currentContext)
                     editCardLauncher.launch(intent)
                 }
 
@@ -240,10 +267,6 @@ fun ReviewerContent(
 
                 is ReviewerEffect.ShowDeleteNoteDialog -> {
                     pendingDeleteCardId = effect.card.id
-                }
-
-                is ReviewerEffect.ClearWhiteboard -> {
-                    whiteboardViewModel?.reset()
                 }
 
                 else -> {
@@ -262,16 +285,18 @@ fun ReviewerContent(
 
     LaunchedEffect(viewModel.flowOfDeleteResult) {
         viewModel.flowOfDeleteResult.collectLatest { count ->
-            val message = currentContext.resources.getQuantityString(
-                R.plurals.card_browser_cards_deleted,
-                count,
-                count,
-            )
-            val result = snackbarHostState.showSnackbar(
-                message = message,
-                actionLabel = undoLabel,
-                duration = SnackbarDuration.Short,
-            )
+            val message =
+                currentContext.resources.getQuantityString(
+                    R.plurals.card_browser_cards_deleted,
+                    count,
+                    count,
+                )
+            val result =
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    actionLabel = undoLabel,
+                    duration = SnackbarDuration.Short,
+                )
             if (result == SnackbarResult.ActionPerformed) {
                 viewModel.undoDelete()
             }
@@ -292,7 +317,8 @@ fun ReviewerContent(
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(snackbarHost = {
             SnackbarHost(
-                snackbarHostState, modifier = Modifier.padding(bottom = toolbarHeightDp + 32.dp)
+                snackbarHostState,
+                modifier = Modifier.padding(bottom = toolbarHeightDp + 32.dp),
             ) { data ->
                 Snackbar(
                     snackbarData = data,
@@ -314,33 +340,35 @@ fun ReviewerContent(
                 onSetFlag = { viewModel.onEvent(ReviewerEvent.SetFlag(it)) },
                 isAnswerShown = state.isAnswerShown,
                 showMoreOptions = Prefs.moreOptionsInTopAppBar,
-                onMoreOptionsClick = { showBottomSheet = true }
+                onMoreOptionsClick = { showBottomSheet = true },
             ) { viewModel.onEvent(ReviewerEvent.UnanswerCard) }
         }) { paddingValues ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .padding(
-                        top = paddingValues.calculateTopPadding(),
-                        start = paddingValues.calculateStartPadding(layoutDirection),
-                        end = paddingValues.calculateEndPadding(layoutDirection)
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .padding(
+                            top = paddingValues.calculateTopPadding(),
+                            start = paddingValues.calculateStartPadding(layoutDirection),
+                            end = paddingValues.calculateEndPadding(layoutDirection),
+                        ),
             ) {
                 Box(
-                    modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
                 ) {
                     val invertedTopCornersShape =
                         remember { InvertedTopCornersShape(cornerRadius = 32.dp) }
 
                     Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .zIndex(1F)
-                            .height(100.dp)
-                            .fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .zIndex(1F)
+                                .height(100.dp)
+                                .fillMaxWidth(),
                         shape = invertedTopCornersShape,
-                        color = MaterialTheme.colorScheme.surfaceContainer
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                     ) {}
 
                     Flashcard(
@@ -356,7 +384,7 @@ fun ReviewerContent(
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))
                         },
                         isAnswerShown = state.isAnswerShown,
-                        toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt()
+                        toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt(),
                     )
 
                     // Whiteboard canvas and toolbar
@@ -364,34 +392,41 @@ fun ReviewerContent(
                         val toolbarAlignment by whiteboardViewModel.toolbarAlignment.collectAsStateWithLifecycle()
 
                         // Canvas padding based on toolbar alignment
-                        val canvasPadding = when (toolbarAlignment) {
-                            ToolbarAlignment.BOTTOM -> Modifier.padding(bottom = totalBottomPadding + WhiteboardBottomBarOffset)
-                            ToolbarAlignment.LEFT -> Modifier.padding(start = WhiteboardToolbarWidth)
-                            ToolbarAlignment.RIGHT -> Modifier.padding(end = WhiteboardToolbarWidth)
-                        }
+                        val canvasPadding =
+                            when (toolbarAlignment) {
+                                ToolbarAlignment.BOTTOM -> Modifier.padding(bottom = totalBottomPadding + WhiteboardBottomBarOffset)
+                                ToolbarAlignment.LEFT -> Modifier.padding(start = WhiteboardToolbarWidth)
+                                ToolbarAlignment.RIGHT -> Modifier.padding(end = WhiteboardToolbarWidth)
+                            }
                         WhiteboardCanvas(
-                            viewModel = whiteboardViewModel, modifier = canvasPadding
+                            viewModel = whiteboardViewModel,
+                            modifier = canvasPadding,
                         )
 
                         // Toolbar positioning
-                        val composeAlignment = when (toolbarAlignment) {
-                            ToolbarAlignment.BOTTOM -> Alignment.BottomCenter
-                            ToolbarAlignment.LEFT -> Alignment.CenterStart
-                            ToolbarAlignment.RIGHT -> Alignment.CenterEnd
-                        }
-                        val toolbarPadding = when (toolbarAlignment) {
-                            ToolbarAlignment.BOTTOM -> Modifier
-                                .offset(y = -ScreenOffset - toolbarHeightDp - 8.dp)
-                                .padding(bottom = paddingValues.calculateBottomPadding())
+                        val composeAlignment =
+                            when (toolbarAlignment) {
+                                ToolbarAlignment.BOTTOM -> Alignment.BottomCenter
+                                ToolbarAlignment.LEFT -> Alignment.CenterStart
+                                ToolbarAlignment.RIGHT -> Alignment.CenterEnd
+                            }
+                        val toolbarPadding =
+                            when (toolbarAlignment) {
+                                ToolbarAlignment.BOTTOM ->
+                                    Modifier
+                                        .offset(y = -ScreenOffset - toolbarHeightDp - 8.dp)
+                                        .padding(bottom = paddingValues.calculateBottomPadding())
 
-                            ToolbarAlignment.LEFT -> Modifier.padding(
-                                start = 8.dp
-                            )
+                                ToolbarAlignment.LEFT ->
+                                    Modifier.padding(
+                                        start = 8.dp,
+                                    )
 
-                            ToolbarAlignment.RIGHT -> Modifier.padding(
-                                end = 8.dp
-                            )
-                        }
+                                ToolbarAlignment.RIGHT ->
+                                    Modifier.padding(
+                                        end = 8.dp,
+                                    )
+                            }
                         WhiteboardToolbar(
                             viewModel = whiteboardViewModel,
                             onBrushClick = { _, index ->
@@ -416,10 +451,12 @@ fun ReviewerContent(
                                     whiteboardViewModel.enableEraser()
                                 }
                             },
-                            modifier = Modifier
-                                .align(composeAlignment)
-                                .then(toolbarPadding)
-                                .onSizeChanged { whiteboardToolbarHeight = it.height })
+                            modifier =
+                                Modifier
+                                    .align(composeAlignment)
+                                    .then(toolbarPadding)
+                                    .onSizeChanged { whiteboardToolbarHeight = it.height },
+                        )
                     }
 
                     // Voice Playback Toolbar
@@ -434,41 +471,46 @@ fun ReviewerContent(
                                 onDismiss = {
                                     viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
                                 },
-                                modifier = Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .offset(y = -ScreenOffset - toolbarHeightDp - 16.dp)
-                                    .padding(bottom = paddingValues.calculateBottomPadding())
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .offset(y = -ScreenOffset - toolbarHeightDp - 16.dp)
+                                        .padding(bottom = paddingValues.calculateBottomPadding()),
                             )
                         }
                     }
 
                     AnswerButtons(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .offset(y = -ScreenOffset)
-                            .padding(bottom = paddingValues.calculateBottomPadding())
-                            .onSizeChanged { toolbarHeight = it.height },
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .offset(y = -ScreenOffset)
+                                .padding(bottom = paddingValues.calculateBottomPadding())
+                                .onSizeChanged { toolbarHeight = it.height },
                         isAnswerShown = state.isAnswerShown,
                         showButtonBadges = Prefs.showAnswerButtonBadges,
                         showTypeInAnswer = state.showTypeInAnswer,
                         typedAnswer = state.typedAnswer,
                         onTypedAnswerChanged = {
                             viewModel.onEvent(
-                                ReviewerEvent.OnTypedAnswerChanged(it)
+                                ReviewerEvent.OnTypedAnswerChanged(it),
                             )
                         },
                         onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
                         onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
                         nextTimes = state.nextTimes,
                         moreOptionsInTopAppBar = Prefs.moreOptionsInTopAppBar,
-                        onMoreOptionsClick = { showBottomSheet = true })
+                        onMoreOptionsClick = { showBottomSheet = true },
+                    )
 
                     AnswerIndicator(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(end = 16.dp, top = 16.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(end = 16.dp, top = 16.dp),
                         feedback = state.answerFeedback,
-                        onDismissed = { viewModel.onEvent(ReviewerEvent.AnswerFeedbackShown) })
+                        onDismissed = { viewModel.onEvent(ReviewerEvent.AnswerFeedbackShown) },
+                    )
                 }
             }
         }
@@ -487,45 +529,57 @@ fun ReviewerContent(
                         listOf(
                             Triple(R.string.undo, Icons.AutoMirrored.Filled.Undo) {
                                 viewModel.onEvent(ReviewerEvent.Undo)
-                            }, Triple(
+                            },
+                            Triple(
                                 if (state.isWhiteboardEnabled) R.string.disable_whiteboard else R.string.enable_whiteboard,
-                                Icons.Filled.Edit
+                                Icons.Filled.Edit,
                             ) {
                                 viewModel.onEvent(ReviewerEvent.ToggleWhiteboard)
-                            }, Triple(R.string.cardeditor_title_edit_card, Icons.Filled.EditNote) {
+                            },
+                            Triple(R.string.cardeditor_title_edit_card, Icons.Filled.EditNote) {
                                 viewModel.onEvent(ReviewerEvent.EditCard)
-                            }, Triple(R.string.menu_edit_tags, Icons.AutoMirrored.Filled.Label) {
+                            },
+                            Triple(R.string.menu_edit_tags, Icons.AutoMirrored.Filled.Label) {
                                 viewModel.onEvent(ReviewerEvent.EditTags)
-                            }, Triple(R.string.menu_bury_card, Icons.Filled.VisibilityOff) {
+                            },
+                            Triple(R.string.menu_bury_card, Icons.Filled.VisibilityOff) {
                                 viewModel.onEvent(ReviewerEvent.BuryCard)
-                            }, Triple(R.string.menu_suspend_card, Icons.Filled.Pause) {
+                            },
+                            Triple(R.string.menu_suspend_card, Icons.Filled.Pause) {
                                 viewModel.onEvent(ReviewerEvent.SuspendCard)
-                            }, Triple(R.string.menu_delete_note, Icons.Filled.Delete) {
+                            },
+                            Triple(R.string.menu_delete_note, Icons.Filled.Delete) {
                                 viewModel.onEvent(ReviewerEvent.DeleteNote)
-                            }, Triple(R.string.card_editor_reschedule_card, Icons.Filled.Schedule) {
+                            },
+                            Triple(R.string.card_editor_reschedule_card, Icons.Filled.Schedule) {
                                 viewModel.onEvent(ReviewerEvent.RescheduleCard)
-                            }, Triple(R.string.replay_media, Icons.Filled.Replay) {
+                            },
+                            Triple(R.string.replay_media, Icons.Filled.Replay) {
                                 viewModel.onEvent(ReviewerEvent.ReplayMedia)
-                            }, Triple(
+                            },
+                            Triple(
                                 if (state.isVoicePlaybackEnabled) R.string.menu_disable_voice_playback else R.string.menu_enable_voice_playback,
-                                Icons.Filled.RecordVoiceOver
+                                Icons.Filled.RecordVoiceOver,
                             ) {
                                 viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
-                            }, Triple(R.string.deck_options, Icons.Filled.Tune) {
+                            },
+                            Triple(R.string.deck_options, Icons.Filled.Tune) {
                                 viewModel.onEvent(ReviewerEvent.DeckOptions)
-                            })
+                            },
+                        )
                     }
                 menuOptions.forEach { (textRes, icon, action) ->
                     ListItem(
                         leadingContent = { Icon(icon, contentDescription = null) },
-                        modifier = Modifier.clickable {
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    showBottomSheet = false
+                        modifier =
+                            Modifier.clickable {
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        showBottomSheet = false
+                                    }
                                 }
-                            }
-                            action()
-                        }
+                                action()
+                            },
                     ) { Text(stringResource(textRes)) }
                 }
             }
@@ -542,7 +596,8 @@ fun ReviewerContent(
                     whiteboardViewModel.addBrush(color)
                     showColorPickerDialog = false
                 },
-                onDismiss = { showColorPickerDialog = false })
+                onDismiss = { showColorPickerDialog = false },
+            )
         }
 
         // Brush removal confirmation dialog
@@ -557,7 +612,8 @@ fun ReviewerContent(
                                 whiteboardViewModel.removeBrush(index)
                             }
                             brushIndexToRemove = null
-                        }) {
+                        },
+                    ) {
                         Text(stringResource(R.string.dialog_remove))
                     }
                 },
@@ -565,19 +621,24 @@ fun ReviewerContent(
                     TextButton(onClick = { brushIndexToRemove = null }) {
                         Text(stringResource(R.string.dialog_cancel))
                     }
-                })
+                },
+            )
         }
 
         // Brush options dialog
         if (showBrushOptions && whiteboardViewModel != null) {
             BrushOptionsDialog(
-                viewModel = whiteboardViewModel, onDismissRequest = { showBrushOptions = false })
+                viewModel = whiteboardViewModel,
+                onDismissRequest = { showBrushOptions = false },
+            )
         }
 
         // Eraser options dialog
         if (showEraserOptions && whiteboardViewModel != null) {
             EraserOptionsDialog(
-                viewModel = whiteboardViewModel, onDismissRequest = { showEraserOptions = false })
+                viewModel = whiteboardViewModel,
+                onDismissRequest = { showEraserOptions = false },
+            )
         }
 
         // Set Due Date Dialog
@@ -612,7 +673,8 @@ fun ReviewerContent(
                             showThemedToast(activity, R.string.something_wrong, true)
                         }
                     }
-                })
+                },
+            )
         }
 
         // Tags dialog
@@ -630,7 +692,8 @@ fun ReviewerContent(
                 title = stringResource(R.string.card_details_tags),
                 confirmButtonText = stringResource(R.string.dialog_ok),
                 showFilterByDeckToggle = true,
-                onAddTag = { viewModel.registerNewTag(it) })
+                onAddTag = { viewModel.registerNewTag(it) },
+            )
         }
     }
 }
@@ -638,7 +701,9 @@ fun ReviewerContent(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnswerIndicator(
-    modifier: Modifier = Modifier, feedback: AnswerFeedback?, onDismissed: () -> Unit
+    modifier: Modifier = Modifier,
+    feedback: AnswerFeedback?,
+    onDismissed: () -> Unit,
 ) {
     var lastFeedback by remember { mutableStateOf<AnswerFeedback?>(null) }
     val currentOnDismissed by rememberUpdatedState(onDismissed)
@@ -655,7 +720,7 @@ fun AnswerIndicator(
         visible = feedback != null,
         enter = fadeIn(),
         exit = fadeOut(animationSpec = MaterialTheme.motionScheme.slowEffectsSpec()),
-        modifier = modifier
+        modifier = modifier,
     ) {
         // Use the cached lastFeedback to avoid disappearing mid-animation
         lastFeedback?.let { current ->
@@ -667,17 +732,18 @@ fun AnswerIndicator(
                 Text(
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                     text = stringResource(current.rating.toResId()),
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
                 )
             }
         }
     }
 }
 
-private fun CardAnswer.Rating.toResId(): Int = when (this) {
-    CardAnswer.Rating.AGAIN -> R.string.ease_button_again
-    CardAnswer.Rating.HARD -> R.string.ease_button_hard
-    CardAnswer.Rating.GOOD -> R.string.ease_button_good
-    CardAnswer.Rating.EASY -> R.string.ease_button_easy
-    else -> R.string.unknown_rating
-}
+private fun CardAnswer.Rating.toResId(): Int =
+    when (this) {
+        CardAnswer.Rating.AGAIN -> R.string.ease_button_again
+        CardAnswer.Rating.HARD -> R.string.ease_button_hard
+        CardAnswer.Rating.GOOD -> R.string.ease_button_good
+        CardAnswer.Rating.EASY -> R.string.ease_button_easy
+        else -> R.string.unknown_rating
+    }
