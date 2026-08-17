@@ -600,6 +600,7 @@ object UsageAnalytics {
             R.string.show_large_answer_buttons_preference,
             R.string.pref_card_minimal_click_time,
             R.string.show_answer_button_badges_key,
+            R.string.colorize_answer_buttons_key,
             // ******************************** Advanced ***********************************************
             R.string.pref_ankidroid_directory_key, // AnkiDroid directory
             R.string.double_scrolling_gap_key, // Double scrolling
