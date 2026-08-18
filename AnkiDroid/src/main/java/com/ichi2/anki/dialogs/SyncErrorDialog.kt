@@ -20,7 +20,6 @@ import android.app.Dialog
 import android.os.Bundle
 import android.os.Message
 import androidx.annotation.CheckResult
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.ConflictResolution
@@ -67,7 +66,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
         val dialog = MaterialAlertDialogBuilder(requireContext()).setTitle(title).setMessage(message)
         return when (dialogType) {
             @Suppress("DEPRECATION") Type.DIALOG_USER_NOT_LOGGED_IN_SYNC -> {
-                dialog.setIcon(R.drawable.ic_sync_problem)
+                dialog.setIcon(R.drawable.sync_problem_24px)
                     .setPositiveButton(R.string.log_in) { _, _ ->
                         requireSyncErrorDialogListener().loginToSyncServer()
                     }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
@@ -75,7 +74,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
 
             @Suppress("DEPRECATION") DIALOG_CONNECTION_ERROR -> {
                 // Connection error; allow user to retry or cancel
-                dialog.setIcon(R.drawable.ic_sync_problem)
+                dialog.setIcon(R.drawable.sync_problem_24px)
                     .setPositiveButton(R.string.retry) { _, _ ->
                         syncAndDismissAllDialogFragments()
                     }.setNegativeButton(R.string.dialog_cancel) { _, _ ->
@@ -85,7 +84,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
 
             DIALOG_SYNC_CONFLICT_RESOLUTION -> {
                 // Sync conflict; allow user to cancel, or choose between local and remote versions
-                dialog.setIcon(R.drawable.ic_sync_problem)
+                dialog.setIcon(R.drawable.sync_problem_24px)
                     .setPositiveButton(R.string.sync_conflict_keep_local_new) { _, _ ->
                         requireSyncErrorDialogListener().showSyncErrorDialog(
                             DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_LOCAL
@@ -101,7 +100,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
 
             DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_LOCAL -> {
                 // Confirmation before pushing local collection to server after sync conflict
-                dialog.setIcon(R.drawable.ic_sync_problem)
+                dialog.setIcon(R.drawable.sync_problem_24px)
                     .setPositiveButton(R.string.dialog_positive_replace) { _, _ ->
                         syncAndDismissAllDialogFragments(ConflictResolution.FULL_UPLOAD)
                     }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()
@@ -109,7 +108,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
 
             DIALOG_SYNC_CONFLICT_CONFIRM_KEEP_REMOTE -> {
                 // Confirmation before overwriting local collection with server collection after sync conflict
-                dialog.setIcon(R.drawable.ic_sync_problem)
+                dialog.setIcon(R.drawable.sync_problem_24px)
                     .setPositiveButton(R.string.dialog_positive_replace) { _, _ ->
                         syncAndDismissAllDialogFragments(ConflictResolution.FULL_DOWNLOAD)
                     }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }.create()

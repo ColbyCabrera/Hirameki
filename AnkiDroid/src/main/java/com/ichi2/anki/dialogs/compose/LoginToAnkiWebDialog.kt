@@ -41,7 +41,7 @@ fun LoginToAnkiWebDialog(
         onDismissRequest = onDismissRequest,
         icon = {
             Icon(
-                painter = painterResource(id = R.drawable.ic_sync_problem),
+                painter = painterResource(id = R.drawable.sync_problem_24px),
                 contentDescription = null,
             )
         },
