@@ -187,9 +187,6 @@ class CardBrowserViewModel(
     private val flowOfCardsOrNotes = MutableStateFlow(CARDS)
     val cardsOrNotes get() = flowOfCardsOrNotes.value
 
-    // card that was clicked (not marked)
-    var currentCardId: CardId = 0
-
     private val _sortTypeFlow = MutableStateFlow(SortType.NO_SORTING)
     val sortTypeFlow: StateFlow<SortType> = _sortTypeFlow
     val order get() = _sortTypeFlow.value
@@ -655,7 +652,7 @@ class CardBrowserViewModel(
     }
 
     suspend fun queryCardInfoDestination(): CardInfoDestination? {
-        val firstSelectedCard = selectedRows.firstOrNull()?.toCardId(cardsOrNotes) ?: return null
+        val firstSelectedCard = selectedRows.firstOrNull()?.toCardIdOrNull(cardsOrNotes) ?: return null
         return CardInfoDestination(firstSelectedCard, TR.cardStatsCurrentCard(TR.qtMiscBrowse()))
     }
 
@@ -664,7 +661,7 @@ class CardBrowserViewModel(
      *
      * This is not a trivial operation when in notes mode, as a database lookup is required.
      */
-    suspend fun queryDataForCardEdit(id: CardOrNoteId): CardId = id.toCardId(cardsOrNotes)
+    suspend fun queryDataForCardEdit(id: CardOrNoteId): CardId? = id.toCardIdOrNull(cardsOrNotes)
 
     private suspend fun getInitialDeck(): SelectableDeck {
         val search = when (options) {
@@ -999,7 +996,6 @@ class CardBrowserViewModel(
 
     fun handleRowLongPress(rowSelection: RowSelection) = viewModelScope.launch {
         val id = rowSelection.rowId
-        currentCardId = id.toCardId(cardsOrNotes)
         toggleRowSelection(rowSelection)
         focusedRow = id
     }
@@ -1047,8 +1043,8 @@ class CardBrowserViewModel(
         val updated = _browserRows.value.toMutableList()
         for (rowId in ids) {
             val newRow = backend.browserRowForId(rowId.rowId.cardOrNoteId)
-            val index = updated.indexOfFirst { it.id == rowId.rowId.cardOrNoteId }
-            if (index != -1) updated[index] = BrowserRowWithId(newRow, rowId.rowId.cardOrNoteId)
+            val index = updated.indexOfFirst { it.id == rowId.rowId }
+            if (index != -1) updated[index] = BrowserRowWithId(newRow, rowId.rowId)
         }
         _browserRows.value = updated
     }
@@ -1645,7 +1641,7 @@ class CardBrowserViewModel(
                     ids.map { id ->
                         BrowserRowWithId(
                             browserRow = backend.browserRowForId(id),
-                            id = id,
+                            id = CardOrNoteId(id),
                         )
                     }
                 }
@@ -1655,7 +1651,7 @@ class CardBrowserViewModel(
                 _browserRows.value = newBrowserRows
                 this@CardBrowserViewModel.cards.replaceWith(
                     cardsOrNotes,
-                    newBrowserRows.map { CardOrNoteId(it.id) },
+                    newBrowserRows.map { it.id },
                 )
                 _searchState.emit(SearchState.Completed)
                 // Apply pending selection if any, using the captured value.

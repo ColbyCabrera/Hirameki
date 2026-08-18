@@ -41,10 +41,40 @@ class CardBrowserActionHandler(
     private val launchPreview: (Intent) -> Unit
 ) {
     fun openNoteEditorForCard(cardId: CardId) {
-        viewModel.currentCardId = cardId
         val launcher = NoteEditorLauncher.EditCard(cardId, Direction.DEFAULT, false)
         launchEditCard(launcher.toIntent(activity))
     }
+
+    fun openNoteEditorForRow(rowId: CardOrNoteId): kotlinx.coroutines.Job =
+        activity.launchCatchingTask {
+            val cardId = viewModel.queryDataForCardEdit(rowId)
+            if (cardId != null) {
+                openNoteEditorForCard(cardId)
+            } else {
+                Timber.w("openNoteEditorForRow: Could not resolve CardId for %s", rowId)
+                viewModel.emitSnackbarMessage(activity.getString(R.string.no_note_to_edit))
+            }
+        }
+
+    fun openNoteEditorForSelectedRow(): kotlinx.coroutines.Job? {
+        val selectedId = viewModel.selectedRows.firstOrNull()
+        return if (selectedId != null) {
+            openNoteEditorForRow(selectedId)
+        } else {
+            ensureSelection("edit note")
+            null
+        }
+    }
+
+    fun openCardInfoForSelectedRow(): kotlinx.coroutines.Job =
+        activity.launchCatchingTask {
+            val destination = viewModel.queryCardInfoDestination()
+            if (destination != null) {
+                activity.startActivity(destination.toIntent(activity))
+            } else {
+                ensureSelection("card info")
+            }
+        }
 
     fun showChangeDeckDialog() {
         if (!ensureSelection("Change Deck")) return
