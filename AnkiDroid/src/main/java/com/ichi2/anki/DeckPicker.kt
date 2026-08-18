@@ -47,8 +47,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -68,6 +66,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import anki.collection.OpChanges
 import anki.sync.SyncStatusResponse
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
@@ -78,8 +77,8 @@ import com.ichi2.anki.InitialActivity.StartupFailure.DatabaseLocked
 import com.ichi2.anki.InitialActivity.StartupFailure.DirectoryNotAccessible
 import com.ichi2.anki.InitialActivity.StartupFailure.DiskFull
 import com.ichi2.anki.InitialActivity.StartupFailure.FutureAnkidroidVersion
-import com.ichi2.anki.InitialActivity.StartupFailure.SDCardNotMounted
 import com.ichi2.anki.InitialActivity.StartupFailure.InitializationError
+import com.ichi2.anki.InitialActivity.StartupFailure.SDCardNotMounted
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.android.input.ShortcutGroup
 import com.ichi2.anki.android.input.shortcut
@@ -100,9 +99,8 @@ import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.ConfirmationDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.CustomExceptionData
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
-import com.ichi2.anki.dialogs.FatalErrorDialog
-import com.ichi2.anki.dialogs.DeckSelectionDialog
 import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
+import com.ichi2.anki.dialogs.FatalErrorDialog
 import com.ichi2.anki.dialogs.ImportDialog.ImportDialogListener
 import com.ichi2.anki.dialogs.ImportFileSelectionFragment.ApkgImportResultLauncherProvider
 import com.ichi2.anki.dialogs.ImportFileSelectionFragment.CsvImportResultLauncherProvider
@@ -111,8 +109,6 @@ import com.ichi2.anki.dialogs.SyncErrorDialog
 import com.ichi2.anki.dialogs.SyncErrorDialog.Companion.newInstance
 import com.ichi2.anki.dialogs.SyncErrorDialog.SyncErrorDialogListener
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
-
-import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.introduction.CollectionPermissionScreenLauncher
 import com.ichi2.anki.introduction.hasCollectionStoragePermissions
@@ -122,14 +118,11 @@ import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.libanki.undoAvailable
 import com.ichi2.anki.libanki.undoLabel
 import com.ichi2.anki.mediacheck.MediaCheckFragment
-import com.ichi2.anki.model.CardStateFilter
-import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.rememberNavigationState
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.pages.AnkiPackageImporterFragment
-import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.pages.CongratsPage
 import com.ichi2.anki.preferences.AdvancedSettingsFragment
 import com.ichi2.anki.preferences.PreferencesActivity
@@ -141,7 +134,6 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
-
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.worker.SyncMediaWorker
 import com.ichi2.anki.worker.SyncWorker
@@ -455,18 +447,12 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                     navigator = navigator,
                     viewModel = viewModel,
                     cardBrowserViewModel = cardBrowserViewModel,
+                    actionHandler = actionHandler,
                     fragmented = fragmented,
                     onLaunchIntent = { startActivity(it) },
-                    onOpenNoteEditor = { actionHandler.openNoteEditorForCard(it) },
                     onAddNote = { addNote() },
                     onAddSharedDeck = { openAnkiWebSharedDecks() },
                     onAddFilteredDeck = { viewModel.showCreateFilteredDeckDialog() },
-                    onOpenCardInfo = { cardId ->
-                        val destination = CardInfoDestination(
-                            cardId, getString(R.string.card_info_title)
-                        )
-                        startActivity(destination.toIntent(this@DeckPicker))
-                    },
                     onShowDialogFragment = { it.show(supportFragmentManager, null) },
                     onInvalidateOptionsMenu = { invalidateOptionsMenu() },
                     onLoginToAnkiWeb = { loginToSyncServer() },
@@ -556,8 +542,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
 
                 is DeckPickerEffect.ShowEmptyCardsDialog -> {
                     EmptyCardsDialogFragment().show(
-                        supportFragmentManager,
-                        EmptyCardsDialogFragment.TAG
+                        supportFragmentManager, EmptyCardsDialogFragment.TAG
                     )
                 }
             }
