@@ -161,9 +161,7 @@ class WhiteboardController(
     }
 
     fun updateForNewCard() {
-        if (isEnabled) {
-            viewModel.reset()
-        }
+        viewModel.reset()
     }
 
     fun changePenColor() {
