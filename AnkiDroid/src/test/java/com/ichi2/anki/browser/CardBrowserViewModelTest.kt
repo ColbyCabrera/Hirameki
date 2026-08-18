@@ -1180,6 +1180,91 @@ class CardBrowserViewModelTest : JvmTest() {
         }
     }
 
+    @Test
+    fun `queryDataForCardEdit converts Note ID to Card ID in Notes mode - Issue 137`() = runViewModelTest {
+        val note1 = addBasicAndReversedNote()
+        val note2 = addBasicAndReversedNote()
+        val note1CardIds = note1.cardIds(col)
+        val note2CardIds = note2.cardIds(col)
+
+        setCardsOrNotes(CardsOrNotes.NOTES)
+        waitForSearchResults()
+
+        assertThat("Search should return 2 notes", rowCount, equalTo(2))
+
+        val firstRowId = cards[0]
+        val secondRowId = cards[1]
+
+        val firstResolvedCardId = queryDataForCardEdit(firstRowId)
+        val secondResolvedCardId = queryDataForCardEdit(secondRowId)
+
+        assertNotNull(firstResolvedCardId)
+        assertNotNull(secondResolvedCardId)
+        assertTrue(firstResolvedCardId in note1CardIds || firstResolvedCardId in note2CardIds)
+        assertTrue(secondResolvedCardId in note1CardIds || secondResolvedCardId in note2CardIds)
+        assertThat("Resolved Card IDs must be valid positive IDs", firstResolvedCardId > 0, equalTo(true))
+        assertThat("Resolved Card IDs must be valid positive IDs", secondResolvedCardId > 0, equalTo(true))
+    }
+
+    @Test
+    fun `queryDataForCardEdit returns Card ID directly in Cards mode`() = runViewModelTest {
+        val note = addBasicAndReversedNote()
+        val noteCardIds = note.cardIds(col)
+
+        setCardsOrNotes(CardsOrNotes.CARDS)
+        waitForSearchResults()
+
+        assertThat("Search should return 2 cards", rowCount, equalTo(2))
+
+        val firstRowId = cards[0]
+        val resolvedCardId = queryDataForCardEdit(firstRowId)
+
+        assertNotNull(resolvedCardId)
+        assertThat(resolvedCardId, equalTo(firstRowId.cardOrNoteId))
+        assertTrue(resolvedCardId in noteCardIds)
+    }
+
+    @Test
+    fun `queryCardInfoDestination resolves correctly in Notes and Cards mode`() = runViewModelTest {
+        val note = addBasicAndReversedNote()
+        val noteCardIds = note.cardIds(col)
+
+        // Test in NOTES mode
+        setCardsOrNotes(CardsOrNotes.NOTES)
+        waitForSearchResults()
+        selectRowAtPosition(0)
+
+        val destinationNotesMode = queryCardInfoDestination()
+        assertNotNull(destinationNotesMode)
+        assertTrue(destinationNotesMode.cardId in noteCardIds)
+        assertThat(destinationNotesMode.cardId > 0, equalTo(true))
+
+        // Test in CARDS mode
+        setCardsOrNotes(CardsOrNotes.CARDS)
+        waitForSearchResults()
+        selectRowAtPosition(0)
+
+        val destinationCardsMode = queryCardInfoDestination()
+        assertNotNull(destinationCardsMode)
+        assertTrue(destinationCardsMode.cardId in noteCardIds)
+        assertThat(destinationCardsMode.cardId > 0, equalTo(true))
+    }
+
+    @Test
+    fun `browserRows emits BrowserRowWithId with strongly-typed CardOrNoteId in both modes`() = runViewModelTest {
+        val note = addBasicNote("Front", "Back")
+
+        setCardsOrNotes(CardsOrNotes.NOTES)
+        waitForSearchResults()
+        val noteRow = browserRows.value.first()
+        assertThat(noteRow.id.cardOrNoteId, equalTo(note.id))
+
+        setCardsOrNotes(CardsOrNotes.CARDS)
+        waitForSearchResults()
+        val cardRow = browserRows.value.first()
+        assertThat(cardRow.id.cardOrNoteId, equalTo(note.firstCard().id))
+    }
+
     private fun assertDate(str: String?) {
         // 2025-01-09 @ 18:06
         assertNotNull(str)
