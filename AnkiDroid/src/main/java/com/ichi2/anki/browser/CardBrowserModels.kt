@@ -24,5 +24,5 @@ import anki.search.BrowserRow
 
 data class BrowserRowWithId(
     val browserRow: BrowserRow,
-    val id: Long
+    val id: CardOrNoteId
 )

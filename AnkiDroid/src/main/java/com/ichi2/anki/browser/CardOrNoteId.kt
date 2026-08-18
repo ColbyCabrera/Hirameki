@@ -34,11 +34,12 @@ value class CardOrNoteId(
 ) {
     override fun toString(): String = cardOrNoteId.toString()
 
-    // TODO: We use this for 'Edit Note' or 'Card Info'. We should reconsider whether we ever want
-    //  to move from NoteId to CardId. Our move to 'Notes' mode wasn't well thought-through
-    suspend fun toCardId(type: CardsOrNotes): CardId =
+    suspend fun toCardIdOrNull(type: CardsOrNotes): CardId? =
         when (type) {
             CardsOrNotes.CARDS -> cardOrNoteId
-            CardsOrNotes.NOTES -> withCol { cardIdsOfNote(cardOrNoteId).first() }
+            CardsOrNotes.NOTES -> withCol { cardIdsOfNote(cardOrNoteId).firstOrNull() }
         }
+
+    suspend fun toCardId(type: CardsOrNotes): CardId =
+        toCardIdOrNull(type) ?: throw NoSuchElementException("No cards found for note $cardOrNoteId")
 }
