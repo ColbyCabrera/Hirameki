@@ -18,15 +18,14 @@ package com.ichi2.anki.deckpicker.compose
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ichi2.anki.browser.BrowserColumnSelectionFragment
 import com.ichi2.anki.browser.CardBrowserViewModel
-import com.ichi2.anki.browser.CardOrNoteId
 import com.ichi2.anki.browser.compose.CardBrowserLayout
 import com.ichi2.anki.browser.compose.FilterByTagsDialog
 import com.ichi2.anki.dialogs.BrowserOptionsDialog
@@ -41,10 +40,9 @@ import com.ichi2.anki.dialogs.compose.FlagRenameDialog
 @Composable
 fun DeckPickerTabletCardBrowser(
     cardBrowserViewModel: CardBrowserViewModel,
+    actionHandler: com.ichi2.anki.browser.CardBrowserActionHandler,
     onNavigateToDecks: () -> Unit,
     onAddFilteredDeck: () -> Unit,
-    onOpenNoteEditor: (Long) -> Unit,
-    onOpenCardInfo: (Long) -> Unit,
     onAddNote: () -> Unit,
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
@@ -124,34 +122,32 @@ fun DeckPickerTabletCardBrowser(
             if (cardBrowserViewModel.isInMultiSelectMode) {
                 cardBrowserViewModel.toggleRowSelection(
                     CardBrowserViewModel.RowSelection(
-                        rowId = CardOrNoteId(row.id),
+                        rowId = row.id,
                         topOffset = 0,
                     ),
                 )
             } else {
-                onOpenNoteEditor(row.id)
+                actionHandler.openNoteEditorForRow(row.id)
             }
         },
         onAddNote = onAddNote,
-        onPreview = { /* ActionHandler handled by Activity */ }, // This might need a callback
+        onPreview = { actionHandler.onPreview() },
         onFilter = cardBrowserViewModel::search,
         onSelectAll = { cardBrowserViewModel.toggleSelectAllOrNone() },
         onOptions = { showBrowserOptionsDialog = true },
         onCreateFilteredDeck = { onAddFilteredDeck() },
         onEditNote = {
-            val cardId = cardBrowserViewModel.currentCardId
-            if (cardId > 0) onOpenNoteEditor(cardId)
+            actionHandler.openNoteEditorForSelectedRow()
         },
         onCardInfo = {
-            val cardId = cardBrowserViewModel.currentCardId
-            if (cardId > 0) onOpenCardInfo(cardId)
+            actionHandler.openCardInfoForSelectedRow()
         },
-        onChangeDeck = { /* ActionHandler handled by Activity */ },
-        onReposition = { /* ActionHandler handled by Activity */ },
-        onSetDueDate = { /* ActionHandler handled by Activity */ },
-        onGradeNow = { /* ActionHandler handled by Activity */ },
-        onResetProgress = { /* ActionHandler handled by Activity */ },
-        onExportCard = { /* ActionHandler handled by Activity */ },
+        onChangeDeck = { actionHandler.showChangeDeckDialog() },
+        onReposition = { actionHandler.repositionSelectedCards() },
+        onSetDueDate = { actionHandler.rescheduleSelectedCards() },
+        onGradeNow = { actionHandler.onGradeNow() },
+        onResetProgress = { actionHandler.onResetProgress() },
+        onExportCard = { actionHandler.exportSelected() },
         onFilterByTag = {
             cardBrowserViewModel.loadAllTags()
             cardBrowserViewModel.loadDeckTags()

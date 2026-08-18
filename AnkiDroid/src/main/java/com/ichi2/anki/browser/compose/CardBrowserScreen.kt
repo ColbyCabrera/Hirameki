@@ -295,17 +295,17 @@ fun CardBrowserScreen(
                         ) {
                             items(
                                 items = browserRows,
-                                key = { it.id },
+                                key = { it.id.cardOrNoteId },
                             ) { row ->
                                 CardBrowserRow(
                                     row = row.browserRow,
-                                    isSelected = selectedRows.contains(CardOrNoteId(row.id)),
+                                    isSelected = selectedRows.contains(row.id),
                                     modifier = Modifier.combinedClickable(onClick = {
                                         onCardClicked(row)
                                     }, onLongClick = {
                                         viewModel.handleRowLongPress(
                                             CardBrowserViewModel.RowSelection(
-                                                rowId = CardOrNoteId(row.id),
+                                                rowId = row.id,
                                                 topOffset = 0,
                                             ),
                                         )

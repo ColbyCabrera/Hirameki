@@ -209,11 +209,11 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                             if (viewModel.isInMultiSelectMode) {
                                 viewModel.toggleRowSelection(
                                     CardBrowserViewModel.RowSelection(
-                                        rowId = CardOrNoteId(row.id), topOffset = 0
+                                        rowId = row.id, topOffset = 0
                                     )
                                 )
                             } else {
-                                actionHandler.openNoteEditorForCard(row.id)
+                                actionHandler.openNoteEditorForRow(row.id)
                             }
                         },
                         onAddNote = {
@@ -233,13 +233,10 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                             actionHandler.showCreateFilteredDeckDialog()
                         },
                         onEditNote = {
-                            actionHandler.openNoteEditorForCard(viewModel.currentCardId)
+                            actionHandler.openNoteEditorForSelectedRow()
                         },
                         onCardInfo = {
-                            val cardId = viewModel.currentCardId
-                            val destination =
-                                CardInfoDestination(cardId, getString(R.string.card_info_title))
-                            startActivity(destination.toIntent(this@CardBrowser))
+                            actionHandler.openCardInfoForSelectedRow()
                         },
                         onChangeDeck = {
                             actionHandler.showChangeDeckDialog()
