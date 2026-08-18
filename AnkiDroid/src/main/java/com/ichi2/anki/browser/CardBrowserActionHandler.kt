@@ -66,15 +66,19 @@ class CardBrowserActionHandler(
         }
     }
 
-    fun openCardInfoForSelectedRow(): kotlinx.coroutines.Job =
-        activity.launchCatchingTask {
+    fun openCardInfoForSelectedRow(): kotlinx.coroutines.Job? {
+        if (!ensureSelection("card info")) return null
+
+        return activity.launchCatchingTask {
             val destination = viewModel.queryCardInfoDestination()
             if (destination != null) {
                 activity.startActivity(destination.toIntent(activity))
             } else {
-                ensureSelection("card info")
+                Timber.w("openCardInfoForSelectedRow: Could not resolve CardId for selected row")
+                viewModel.emitSnackbarMessage(activity.getString(R.string.no_note_to_edit))
             }
         }
+    }
 
     fun showChangeDeckDialog() {
         if (!ensureSelection("Change Deck")) return
