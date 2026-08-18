@@ -20,6 +20,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.ui.compose.theme
 
+import android.content.Context
 import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
@@ -32,6 +33,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -39,9 +41,7 @@ import com.ichi2.anki.R
 import com.ichi2.themes.Themes
 
 @ColorInt
-@Composable
-private fun ankiColor(@AttrRes attr: Int): Int {
-    val context = LocalContext.current
+private fun ankiColor(context: Context, @AttrRes attr: Int): Int {
     val typedValue = TypedValue()
     context.theme.resolveAttribute(attr, typedValue, true)
     return typedValue.data
@@ -58,26 +58,39 @@ val AppShapes = Shapes(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnkiDroidTheme(
+    harmonizeRatings: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
     val currentAnkiTheme = Themes.currentTheme
-    val colorScheme = if (currentAnkiTheme.isNightMode) {
+    val isNightMode = currentAnkiTheme.isNightMode
+    val colorScheme = if (isNightMode) {
         dynamicDarkColorScheme(context)
     } else {
         dynamicLightColorScheme(context)
     }
 
-    val ankiColors = AnkiColors(
-        againButton = Color(ankiColor(R.attr.againButtonBackground)),
-        hardButton = Color(ankiColor(R.attr.hardButtonBackground)),
-        goodButton = Color(ankiColor(R.attr.goodButtonBackground)),
-        easyButton = Color(ankiColor(R.attr.easyButtonBackground)),
-        newCount = Color(ankiColor(R.attr.newCountColor)),
-        learnCount = Color(ankiColor(R.attr.learnCountColor)),
-        reviewCount = Color(ankiColor(R.attr.reviewCountColor)),
-        topBar = Color(ankiColor(R.attr.topBarColor))
-    )
+    val ratingColors = remember(colorScheme.primary, isNightMode, harmonizeRatings) {
+        RatingColorFactory.createRatingColorScheme(
+            primaryColor = colorScheme.primary,
+            isDark = isNightMode,
+            harmonize = harmonizeRatings
+        )
+    }
+
+    val ankiColors = remember(ratingColors, colorScheme, context) {
+        AnkiColors(
+            ratings = ratingColors,
+            againButton = ratingColors.again.color,
+            hardButton = ratingColors.hard.color,
+            goodButton = ratingColors.good.color,
+            easyButton = ratingColors.easy.color,
+            newCount = Color(ankiColor(context, R.attr.newCountColor)),
+            learnCount = Color(ankiColor(context, R.attr.learnCountColor)),
+            reviewCount = Color(ankiColor(context, R.attr.reviewCountColor)),
+            topBar = Color(ankiColor(context, R.attr.topBarColor))
+        )
+    }
 
     CompositionLocalProvider(LocalAnkiColors provides ankiColors) {
         MaterialTheme(

@@ -52,6 +52,7 @@ import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.bodyClassForCardOrd
 import com.ichi2.anki.servicelayer.NoteService
+import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.utils.CollectionPreferences
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -96,7 +97,9 @@ data class ReviewerState(
     val isFinished: Boolean = false,
     val isWhiteboardEnabled: Boolean = false,
     val isVoicePlaybackEnabled: Boolean = false,
-    val mediaError: MediaError? = null
+    val mediaError: MediaError? = null,
+    val colorizeAnswerButtons: Boolean = false,
+    val showAnswerButtonBadges: Boolean = true,
 )
 
 data class AnswerFeedback(
@@ -161,7 +164,12 @@ class ReviewerViewModel(
     private val server = AnkiServer(this)
     var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
 
-    private val _state = MutableStateFlow(ReviewerState())
+    private val _state = MutableStateFlow(
+        ReviewerState(
+            colorizeAnswerButtons = Prefs.colorizeAnswerButtons,
+            showAnswerButtonBadges = Prefs.showAnswerButtonBadges,
+        )
+    )
     val state: StateFlow<ReviewerState> = _state.asStateFlow()
 
     private val _effect = MutableSharedFlow<ReviewerEffect>()

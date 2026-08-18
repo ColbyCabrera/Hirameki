@@ -443,7 +443,8 @@ fun ReviewerContent(
                             .padding(bottom = paddingValues.calculateBottomPadding())
                             .onSizeChanged { toolbarHeight = it.height },
                         isAnswerShown = state.isAnswerShown,
-                        showButtonBadges = Prefs.showAnswerButtonBadges,
+                        showButtonBadges = state.showAnswerButtonBadges,
+                        colorizeAnswerButtons = state.colorizeAnswerButtons,
                         showTypeInAnswer = state.showTypeInAnswer,
                         typedAnswer = state.typedAnswer,
                         onTypedAnswerChanged = {
