@@ -31,9 +31,53 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
 
-// Define Expressive Typography
+@OptIn(ExperimentalTextApi::class)
 val GoogleSansRounded = FontFamily(
-    Font(R.font.google_sans_rounded_regular, FontWeight.Normal),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W100,
+        variationSettings = FontVariation.Settings(FontVariation.weight(100)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W200,
+        variationSettings = FontVariation.Settings(FontVariation.weight(200)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W300,
+        variationSettings = FontVariation.Settings(FontVariation.weight(300)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W400,
+        variationSettings = FontVariation.Settings(FontVariation.weight(400)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W500,
+        variationSettings = FontVariation.Settings(FontVariation.weight(500)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W600,
+        variationSettings = FontVariation.Settings(FontVariation.weight(600)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W700,
+        variationSettings = FontVariation.Settings(FontVariation.weight(700)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W800,
+        variationSettings = FontVariation.Settings(FontVariation.weight(800)),
+    ),
+    Font(
+        R.font.google_sans_rounded_regular,
+        FontWeight.W900,
+        variationSettings = FontVariation.Settings(FontVariation.weight(900)),
+    ),
 )
 
 val GoogleSansFamily = FontFamily(
@@ -154,42 +198,42 @@ val AppTypography = Typography(
     ),
     bodyLarge = TextStyle(
         fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp,
     ),
     bodySmall = TextStyle(
         fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp,
     ),
     labelLarge = TextStyle(
         fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp,
     ),
     labelMedium = TextStyle(
         fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
     ),
     labelSmall = TextStyle(
         fontFamily = GoogleSansRounded,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
