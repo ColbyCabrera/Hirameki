@@ -19,9 +19,11 @@ package com.ichi2.anki.browser
 import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.cash.turbine.test
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.NoteEditorActivity
+import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.model.CardsOrNotes
@@ -217,10 +219,13 @@ class CardBrowserActionHandlerTest : JvmTest() {
                     launchPreview = {},
                 )
 
-                actionHandler.openCardInfoForSelectedRow().join()
+                val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
+                shadowActivity.clearNextStartedActivities()
+
+                actionHandler.openCardInfoForSelectedRow()?.join()
                 ShadowLooper.idleMainLooper()
 
-                val startedIntent = org.robolectric.Shadows.shadowOf(activity).nextStartedActivity
+                val startedIntent = shadowActivity.nextStartedActivity
                 assertNotNull(startedIntent)
                 val fragmentArgs =
                     startedIntent.getBundleExtra(SingleFragmentActivity.FRAGMENT_ARGS_EXTRA)
@@ -228,6 +233,114 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val path = fragmentArgs.getString(PageFragment.PATH_ARG_KEY)
                 assertNotNull(path)
                 assertTrue(noteCardIds.any { path == "card-info/$it" })
+            } finally {
+                ioDispatcher = originalDispatcher
+            }
+        }
+
+    @Test
+    fun `openCardInfoForSelectedRow does nothing if no rows selected`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val originalDispatcher = ioDispatcher
+            ioDispatcher = UnconfinedTestDispatcher(testScheduler)
+            try {
+                addBasicNote("Front", "Back")
+
+                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
+                shadowActivity.clearNextStartedActivities()
+                val viewModel = createTestViewModel(CardsOrNotes.CARDS)
+
+                val actionHandler = CardBrowserActionHandler(
+                    activity = activity,
+                    viewModel = viewModel,
+                    launchEditCard = {},
+                    launchAddNote = {},
+                    launchPreview = {},
+                )
+
+                actionHandler.openCardInfoForSelectedRow()?.join()
+                ShadowLooper.idleMainLooper()
+
+                val startedIntent = shadowActivity.nextStartedActivity
+                assertThat("No activity should be started when selection is empty", startedIntent, nullValue())
+            } finally {
+                ioDispatcher = originalDispatcher
+            }
+        }
+
+    @Test
+    fun `openNoteEditorForRow emits snackbar when note has no cards`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val originalDispatcher = ioDispatcher
+            ioDispatcher = UnconfinedTestDispatcher(testScheduler)
+            try {
+                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val viewModel = createTestViewModel(CardsOrNotes.NOTES)
+
+                var launchedIntent: Intent? = null
+                val actionHandler = CardBrowserActionHandler(
+                    activity = activity,
+                    viewModel = viewModel,
+                    launchEditCard = { launchedIntent = it },
+                    launchAddNote = {},
+                    launchPreview = {},
+                )
+
+                // Non-existent / 0-card Note ID (e.g. 999999L)
+                val invalidNoteId = CardOrNoteId(999999L)
+                viewModel.flowOfSnackbarString.test {
+                    actionHandler.openNoteEditorForRow(invalidNoteId).join()
+                    ShadowLooper.idleMainLooper()
+
+                    assertThat("No editor should launch for empty/invalid note", launchedIntent, nullValue())
+                    assertThat(
+                        "Snackbar message should indicate no note to edit",
+                        awaitItem().message,
+                        equalTo(activity.getString(R.string.no_note_to_edit))
+                    )
+                }
+            } finally {
+                ioDispatcher = originalDispatcher
+            }
+        }
+
+    @Test
+    fun `openCardInfoForSelectedRow emits snackbar when note has no cards`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val originalDispatcher = ioDispatcher
+            ioDispatcher = UnconfinedTestDispatcher(testScheduler)
+            try {
+                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
+                shadowActivity.clearNextStartedActivities()
+                val viewModel = createTestViewModel(CardsOrNotes.NOTES)
+
+                // Manually select an invalid NoteId to simulate a corrupted 0-card note
+                val invalidNoteId = CardOrNoteId(999999L)
+                viewModel.toggleRowSelection(CardBrowserViewModel.RowSelection(invalidNoteId, 0)).join()
+                assertThat(viewModel.selectedRows.size, equalTo(1))
+
+                val actionHandler = CardBrowserActionHandler(
+                    activity = activity,
+                    viewModel = viewModel,
+                    launchEditCard = {},
+                    launchAddNote = {},
+                    launchPreview = {},
+                )
+
+                viewModel.flowOfSnackbarString.test {
+                    actionHandler.openCardInfoForSelectedRow()?.join()
+                    ShadowLooper.idleMainLooper()
+
+                    val startedIntent = shadowActivity.nextStartedActivity
+                    assertThat("No card info should open for 0-card note", startedIntent, nullValue())
+                    assertThat(
+                        "Snackbar message should be emitted for 0-card note",
+                        awaitItem().message,
+                        equalTo(activity.getString(R.string.no_note_to_edit))
+                    )
+                }
             } finally {
                 ioDispatcher = originalDispatcher
             }
