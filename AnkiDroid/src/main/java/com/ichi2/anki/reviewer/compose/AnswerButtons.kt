@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import anki.scheduler.CardAnswer
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.ui.compose.theme.LocalAnkiColors
 
 private object AnswerButtonsConstants {
     val ColumnSpacing = 12.dp
@@ -99,6 +100,7 @@ fun AnswerButtons(
     modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
     showButtonBadges: Boolean,
+    colorizeAnswerButtons: Boolean = false,
     showTypeInAnswer: Boolean,
     typedAnswer: String,
     onTypedAnswerChanged: (String) -> Unit,
@@ -151,6 +153,7 @@ fun AnswerButtons(
                     } else {
                         RatingButtons(
                             showButtonBadges = showButtonBadges,
+                            colorizeAnswerButtons = colorizeAnswerButtons,
                             adjustButtonStylesForBadges = adjustButtonStylesForBadges,
                             onRateCard = onRateCard,
                             nextTimes = nextTimes
@@ -241,11 +244,14 @@ private fun ShowAnswerButton(
 @Composable
 private fun RatingButtons(
     showButtonBadges: Boolean,
+    colorizeAnswerButtons: Boolean,
     adjustButtonStylesForBadges: Boolean,
     onRateCard: (CardAnswer.Rating) -> Unit,
     nextTimes: List<String>
 ) {
     val view = LocalView.current
+    val ratingColors = LocalAnkiColors.current.ratings
+
     ButtonGroup(
         horizontalArrangement = Arrangement.spacedBy(AnswerButtonsConstants.RatingButtonGroupSpacing),
         overflowIndicator = { }) {
@@ -255,6 +261,13 @@ private fun RatingButtons(
                     val interactionSource = remember { MutableInteractionSource() }
                     val labelText = stringResource(labelResId)
                     val nextTime = nextTimes.getOrElse(index) { "" }
+                    val tonalRole = ratingColors.forRating(rating)
+
+                    val (buttonContainerColor, buttonContentColor) = if (colorizeAnswerButtons) {
+                        tonalRole.colorContainer to tonalRole.onColorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+                    }
 
                     Box(
                         modifier = Modifier
@@ -286,8 +299,8 @@ private fun RatingButtons(
                             },
                             interactionSource = interactionSource,
                             colors = ButtonDefaults.buttonColors(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.onPrimary
+                                containerColor = buttonContainerColor,
+                                contentColor = buttonContentColor
                             )
                         ) {
                             Text(
@@ -303,12 +316,18 @@ private fun RatingButtons(
                         }
 
                         if (showButtonBadges) {
+                            val (badgeContainerColor, badgeContentColor) = if (colorizeAnswerButtons) {
+                                tonalRole.color to tonalRole.onColor
+                            } else {
+                                MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                            }
+
                             Badge(
                                 modifier = if (adjustButtonStylesForBadges) {
                                     Modifier.padding(bottom = AnswerButtonsConstants.AdjustedBadgeBottomPadding)
                                 } else Modifier,
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                containerColor = badgeContainerColor,
+                                contentColor = badgeContentColor,
                             ) {
                                 Text(
                                     modifier = Modifier.padding(1.dp),
@@ -332,6 +351,7 @@ fun AnswerButtonsShowAnswerPreview() {
         AnswerButtons(
             isAnswerShown = false,
             showButtonBadges = true,
+            colorizeAnswerButtons = false,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -342,13 +362,50 @@ fun AnswerButtonsShowAnswerPreview() {
     }
 }
 
-@Preview(name = "Rating Buttons", showBackground = true)
+@Preview(name = "Rating Buttons (Default)", showBackground = true)
 @Composable
 fun AnswerButtonsRatingPreview() {
     AnkiDroidTheme {
         AnswerButtons(
             isAnswerShown = true,
             showButtonBadges = true,
+            colorizeAnswerButtons = false,
+            showTypeInAnswer = false,
+            typedAnswer = "",
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = listOf("1m", "2d", "4d", "7d"),
+            onMoreOptionsClick = {})
+    }
+}
+
+@Preview(name = "Rating Buttons (Colorized Harmonized)", showBackground = true)
+@Composable
+fun AnswerButtonsColorizedRatingPreview() {
+    AnkiDroidTheme {
+        AnswerButtons(
+            isAnswerShown = true,
+            showButtonBadges = true,
+            colorizeAnswerButtons = true,
+            showTypeInAnswer = false,
+            typedAnswer = "",
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = listOf("1m", "2d", "4d", "7d"),
+            onMoreOptionsClick = {})
+    }
+}
+
+@Preview(name = "Rating Buttons (Colorized, No Badges)", showBackground = true)
+@Composable
+fun AnswerButtonsColorizedNoBadgesPreview() {
+    AnkiDroidTheme {
+        AnswerButtons(
+            isAnswerShown = true,
+            showButtonBadges = false,
+            colorizeAnswerButtons = true,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -366,6 +423,7 @@ fun AnswerButtonsNoFeedbackPreview() {
         AnswerButtons(
             isAnswerShown = true,
             showButtonBadges = false,
+            colorizeAnswerButtons = false,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -383,6 +441,7 @@ fun AnswerButtonsTypeInPreview() {
         AnswerButtons(
             isAnswerShown = false,
             showButtonBadges = true,
+            colorizeAnswerButtons = false,
             showTypeInAnswer = true,
             typedAnswer = "Typed Answer",
             onTypedAnswerChanged = {},
@@ -400,6 +459,26 @@ fun AnswerButtonsExpandedRatingPreview() {
         AnswerButtons(
             isAnswerShown = true,
             showButtonBadges = true,
+            colorizeAnswerButtons = false,
+            showTypeInAnswer = false,
+            typedAnswer = "",
+            onTypedAnswerChanged = {},
+            onShowAnswer = {},
+            onRateCard = {},
+            nextTimes = listOf("1m", "2d", "4d", "7d"),
+            moreOptionsInTopAppBar = true,
+            onMoreOptionsClick = {})
+    }
+}
+
+@Preview(name = "Expanded Colorized Rating Buttons", showBackground = true)
+@Composable
+fun AnswerButtonsExpandedColorizedRatingPreview() {
+    AnkiDroidTheme {
+        AnswerButtons(
+            isAnswerShown = true,
+            showButtonBadges = true,
+            colorizeAnswerButtons = true,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -418,6 +497,7 @@ fun AnswerButtonsExpandedShowAnswerPreview() {
         AnswerButtons(
             isAnswerShown = false,
             showButtonBadges = true,
+            colorizeAnswerButtons = false,
             showTypeInAnswer = false,
             typedAnswer = "",
             onTypedAnswerChanged = {},
@@ -428,3 +508,4 @@ fun AnswerButtonsExpandedShowAnswerPreview() {
             onMoreOptionsClick = {})
     }
 }
+
