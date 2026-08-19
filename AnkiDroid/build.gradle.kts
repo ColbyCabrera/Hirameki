@@ -40,25 +40,17 @@ val homePath: String? = System.getProperty("user.home")
 val baseVersionCode = 22300121
 val baseVersionName = "1.1.7"
 
-fun gitCommitHash(): String =
-    try {
-        ProcessBuilder("git", "rev-parse", "HEAD")
-            .start()
-            .inputStream
-            .bufferedReader()
-            .readText()
-            .trim()
-    } catch (_: Exception) {
-        ""
-    }
+fun gitCommitHash(): String = try {
+    ProcessBuilder("git", "rev-parse", "HEAD").start().inputStream.bufferedReader().readText()
+        .trim()
+} catch (_: Exception) {
+    ""
+}
 
 extensions.configure<ApplicationExtension> {
     namespace = "com.ichi2.anki"
 
-    compileSdk =
-        libs.versions.compileSdk
-            .get()
-            .toInt()
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     buildFeatures {
         buildConfig = true
@@ -81,105 +73,98 @@ extensions.configure<ApplicationExtension> {
         buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
         resValue("string", "app_name", "Hirameki")
         androidResources {
-            localeFilters +=
-                listOf(
-                    "af",
-                    "am",
-                    "ar",
-                    "az",
-                    "be",
-                    "bg",
-                    "bn",
-                    "ca",
-                    "ckb",
-                    "cs",
-                    "da",
-                    "de",
-                    "el",
-                    "en",
-                    "eo",
-                    "es",
-                    "es-rAR",
-                    "es-rES",
-                    "et",
-                    "eu",
-                    "fa",
-                    "fi",
-                    "fil",
-                    "fr",
-                    "fy",
-                    "ga",
-                    "gl",
-                    "got",
-                    "gu",
-                    "he",
-                    "hi",
-                    "hr",
-                    "hu",
-                    "hy",
-                    "id",
-                    "it",
-                    "iw",
-                    "ja",
-                    "ka",
-                    "kk",
-                    "km",
-                    "kn",
-                    "ko",
-                    "ku",
-                    "ky",
-                    "lt",
-                    "lv",
-                    "mk",
-                    "ml",
-                    "mn",
-                    "mr",
-                    "ms",
-                    "my",
-                    "nl",
-                    "nn",
-                    "no",
-                    "or",
-                    "pa",
-                    "pl",
-                    "pt-rBR",
-                    "pt-rPT",
-                    "ro",
-                    "ru",
-                    "sat",
-                    "sc",
-                    "sk",
-                    "sl",
-                    "sq",
-                    "sr",
-                    "sv",
-                    "ta",
-                    "te",
-                    "tl",
-                    "th",
-                    "ti",
-                    "tr",
-                    "tt",
-                    "ug",
-                    "uk",
-                    "ur",
-                    "uz",
-                    "vi",
-                    "zh-rCN",
-                    "zh-rTW",
-                )
+            localeFilters += listOf(
+                "af",
+                "am",
+                "ar",
+                "az",
+                "be",
+                "bg",
+                "bn",
+                "ca",
+                "ckb",
+                "cs",
+                "da",
+                "de",
+                "el",
+                "en",
+                "eo",
+                "es",
+                "es-rAR",
+                "es-rES",
+                "et",
+                "eu",
+                "fa",
+                "fi",
+                "fil",
+                "fr",
+                "fy",
+                "ga",
+                "gl",
+                "got",
+                "gu",
+                "he",
+                "hi",
+                "hr",
+                "hu",
+                "hy",
+                "id",
+                "it",
+                "iw",
+                "ja",
+                "ka",
+                "kk",
+                "km",
+                "kn",
+                "ko",
+                "ku",
+                "ky",
+                "lt",
+                "lv",
+                "mk",
+                "ml",
+                "mn",
+                "mr",
+                "ms",
+                "my",
+                "nl",
+                "nn",
+                "no",
+                "or",
+                "pa",
+                "pl",
+                "pt-rBR",
+                "pt-rPT",
+                "ro",
+                "ru",
+                "sat",
+                "sc",
+                "sk",
+                "sl",
+                "sq",
+                "sr",
+                "sv",
+                "ta",
+                "te",
+                "tl",
+                "th",
+                "ti",
+                "tr",
+                "tt",
+                "ug",
+                "uk",
+                "ur",
+                "uz",
+                "vi",
+                "zh-rCN",
+                "zh-rTW",
+            )
         }
 
         versionCode = baseVersionCode
         versionName = baseVersionName
-        minSdk =
-            libs.versions.minSdk
-                .get()
-                .toInt()
-        targetSdk =
-            libs.versions.targetSdk
-                .get()
-                .toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         testApplicationId = "com.ichi2.anki.tests"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "com.ichi2.testutils.NewCollectionPathTestRunner"
@@ -249,8 +234,7 @@ extensions.configure<ApplicationExtension> {
             )
             testProguardFile("proguard-test-rules.pro")
             splits.abi.isUniversalApk =
-                rootProject.extra.has("universalApkEnabled") &&
-                (rootProject.extra.get("universalApkEnabled") as? Boolean) == true
+                rootProject.extra.has("universalApkEnabled") && (rootProject.extra.get("universalApkEnabled") as? Boolean) == true
             signingConfig = signingConfigs.getByName("release")
 
             if (project.hasProperty("customSuffix")) {
@@ -364,31 +348,29 @@ configure<PlayPublisherExtension> {
     releaseName.set(baseVersionName)
 }
 
-val installGitHook =
-    tasks.register<Copy>("installGitHook") {
-        from(File(rootProject.rootDir, "pre-commit"))
-        into(File(rootProject.rootDir, ".git/hooks"))
-        filePermissions {
-            user {
-                read = true
-                write = true
-                execute = true
-            }
+val installGitHook = tasks.register<Copy>("installGitHook") {
+    from(File(rootProject.rootDir, "pre-commit"))
+    into(File(rootProject.rootDir, ".git/hooks"))
+    filePermissions {
+        user {
+            read = true
+            write = true
+            execute = true
         }
     }
+}
 
 tasks.named("preBuild").configure {
     dependsOn(installGitHook)
 }
 
-val copyTestLibIntoAndroidTest =
-    tasks.register<Copy>("copyTestLibIntoAndroidTest") {
-        into(File(rootProject.rootDir, "AnkiDroid/src/androidTest/java/com/ichi2/testutils"))
-        from(File(rootProject.rootDir, "testlib/src/main/java/com/ichi2/testutils"))
-        into("common") {
-            from("common")
-        }
+val copyTestLibIntoAndroidTest = tasks.register<Copy>("copyTestLibIntoAndroidTest") {
+    into(File(rootProject.rootDir, "AnkiDroid/src/androidTest/java/com/ichi2/testutils"))
+    from(File(rootProject.rootDir, "testlib/src/main/java/com/ichi2/testutils"))
+    into("common") {
+        from("common")
     }
+}
 
 tasks.named("preBuild").configure {
     dependsOn(copyTestLibIntoAndroidTest)
@@ -404,8 +386,7 @@ tasks.register("assertNonzeroAndroidTests") {
             if (matches.size != 1) {
                 throw GradleException("Unable to determine count of tests executed for ${file.name}. Regex pattern out of date?")
             }
-            if (!Regex(""".* tests="\d+" .*""").containsMatchIn(matches[0]) ||
-                matches[0].contains(
+            if (!Regex(""".* tests="\d+" .*""").containsMatchIn(matches[0]) || matches[0].contains(
                     """tests="0"""",
                 )
             ) {
