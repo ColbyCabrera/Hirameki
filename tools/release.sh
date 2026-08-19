@@ -32,10 +32,10 @@ fi
 
 # Define the location of the manifest file
 SRC_DIR="./AnkiDroid"
-GRADLEFILE="$SRC_DIR/build.gradle"
+GRADLEFILE="$SRC_DIR/build.gradle.kts"
 CHANGELOG="$SRC_DIR/src/main/assets/changelog.html"
 
-if ! VERSION=$(grep 'versionName=' $GRADLEFILE | sed -e 's/.*="//' | sed -e 's/".*//')
+if ! VERSION=$(grep -E '(baseVersionName|versionName)\s*=' $GRADLEFILE | head -n 1 | sed -e 's/.*="//' | sed -e 's/".*//')
 then
   echo "Unable to get current version. Is sed installed?"
   exit 1
@@ -82,13 +82,13 @@ if [ "$PUBLIC" != "public" ]; then
   # Increment version code
   # It is an integer in AndroidManifest that nobody actually sees.
   # Ex: 72 to 73
-  PREVIOUS_CODE=$(grep 'versionCode=' $GRADLEFILE | sed -e 's/.*=//')
+  PREVIOUS_CODE=$(grep -E '(baseVersionCode|versionCode)\s*=' $GRADLEFILE | head -n 1 | sed -e 's/.*=\s*//' | tr -d ' "')
   GUESSED_CODE=$((PREVIOUS_CODE + 1))
 
-  # Edit AndroidManifest.xml to bump version string
+  # Edit build.gradle.kts to bump version string
   echo "Bumping version from $PREVIOUS_VERSION$SUFFIX to $VERSION (and code from $PREVIOUS_CODE to $GUESSED_CODE)"
   sed -i -e s/"$PREVIOUS_VERSION""$SUFFIX"/"$VERSION"/g $GRADLEFILE
-  sed -i -e s/versionCode="$PREVIOUS_CODE"/versionCode="$GUESSED_CODE"/g $GRADLEFILE
+  sed -i -e s/"$PREVIOUS_CODE"/"$GUESSED_CODE"/g $GRADLEFILE
 fi
 
 # If any changes go in during the release process, pushing fails, so push immediately.
