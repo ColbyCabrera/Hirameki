@@ -42,14 +42,31 @@ val baseVersionName = "1.1.7"
 
 fun gitCommitHash(): String =
     try {
-        ProcessBuilder("git", "rev-parse", "HEAD")
-            .start()
-            .inputStream
-            .bufferedReader()
-            .readText()
+        providers
+            .exec {
+                commandLine("git", "rev-parse", "HEAD")
+                isIgnoreExitValue = true
+            }.standardOutput.asText
+            .get()
             .trim()
     } catch (_: Exception) {
         ""
+    }
+
+fun buildTime(): Long =
+    try {
+        providers
+            .exec {
+                commandLine("git", "log", "-1", "--format=%ct")
+                isIgnoreExitValue = true
+            }.standardOutput.asText
+            .get()
+            .trim()
+            .toLongOrNull()
+            ?.times(1000)
+            ?: System.currentTimeMillis()
+    } catch (_: Exception) {
+        System.currentTimeMillis()
     }
 
 extensions.configure<ApplicationExtension> {
@@ -182,7 +199,7 @@ extensions.configure<ApplicationExtension> {
         buildConfigField("String", "BACKEND_VERSION", "\"${libs.versions.ankiBackend.get()}\"")
         buildConfigField("Boolean", "ENABLE_LEAK_CANARY", "false")
         buildConfigField("String", "GIT_COMMIT_HASH", "\"${gitCommitHash()}\"")
-        buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
+        buildConfigField("long", "BUILD_TIME", "${buildTime()}L")
         resValue("string", "app_name", "Hirameki")
 
         versionCode = baseVersionCode
@@ -432,12 +449,13 @@ tasks.register("assertNonzeroAndroidTests") {
 apply(from = "./robolectricDownloader.gradle")
 apply(from = "./jacoco.gradle")
 
-dependencies {
-    configurations.configureEach {
-        resolutionStrategy {
-            force(libs.jetbrains.annotations)
-        }
+configurations.configureEach {
+    resolutionStrategy {
+        force(libs.jetbrains.annotations)
     }
+}
+
+dependencies {
     api(project(":api"))
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.compose.ui.text)
@@ -538,7 +556,6 @@ dependencies {
     implementation(libs.tapTargetPrompt)
     implementation(libs.colorpicker)
     implementation(libs.kotlin.reflect)
-    implementation(libs.kotlin.test)
     implementation(libs.search.preference)
 
     implementation(libs.leakcanary.android)
