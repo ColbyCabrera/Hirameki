@@ -32,7 +32,9 @@ plugins {
 
 val localProperties = Properties()
 if (project.rootProject.file("local.properties").exists()) {
-    localProperties.load(project.rootProject.file("local.properties").inputStream())
+    project.rootProject.file("local.properties").inputStream().use { stream ->
+        localProperties.load(stream)
+    }
 }
 val fatalWarnings = localProperties["fatal_warnings"] != "false"
 

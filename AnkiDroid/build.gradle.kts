@@ -40,17 +40,25 @@ val homePath: String? = System.getProperty("user.home")
 val baseVersionCode = 22300121
 val baseVersionName = "1.1.7"
 
-fun gitCommitHash(): String = try {
-    ProcessBuilder("git", "rev-parse", "HEAD").start().inputStream.bufferedReader().readText()
-        .trim()
-} catch (_: Exception) {
-    ""
-}
+fun gitCommitHash(): String =
+    try {
+        ProcessBuilder("git", "rev-parse", "HEAD")
+            .start()
+            .inputStream
+            .bufferedReader()
+            .readText()
+            .trim()
+    } catch (_: Exception) {
+        ""
+    }
 
 extensions.configure<ApplicationExtension> {
     namespace = "com.ichi2.anki"
 
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     buildFeatures {
         buildConfig = true
@@ -63,6 +71,110 @@ extensions.configure<ApplicationExtension> {
         rootProject.extra.has("testReleaseBuild") && (rootProject.extra.get("testReleaseBuild") as? Boolean) == true
     testBuildType = if (testReleaseBuild) "release" else "debug"
 
+    androidResources {
+        val enableLanguages =
+            if (project.rootProject.file("local.properties").exists()) {
+                project.rootProject.file("local.properties").inputStream().use { stream ->
+                    val localProps = Properties()
+                    localProps.load(stream)
+                    localProps["enable_languages"] != "false"
+                }
+            } else {
+                true
+            }
+        if (enableLanguages) {
+            localeFilters +=
+                listOf(
+                    "af",
+                    "am",
+                    "ar",
+                    "az",
+                    "be",
+                    "bg",
+                    "bn",
+                    "ca",
+                    "ckb",
+                    "cs",
+                    "da",
+                    "de",
+                    "el",
+                    "en",
+                    "eo",
+                    "es",
+                    "es-rAR",
+                    "es-rES",
+                    "et",
+                    "eu",
+                    "fa",
+                    "fi",
+                    "fil",
+                    "fr",
+                    "fy",
+                    "ga",
+                    "gl",
+                    "got",
+                    "gu",
+                    "he",
+                    "hi",
+                    "hr",
+                    "hu",
+                    "hy",
+                    "id",
+                    "it",
+                    "iw",
+                    "ja",
+                    "ka",
+                    "kk",
+                    "km",
+                    "kn",
+                    "ko",
+                    "ku",
+                    "ky",
+                    "lt",
+                    "lv",
+                    "mk",
+                    "ml",
+                    "mn",
+                    "mr",
+                    "ms",
+                    "my",
+                    "nl",
+                    "nn",
+                    "no",
+                    "or",
+                    "pa",
+                    "pl",
+                    "pt-rBR",
+                    "pt-rPT",
+                    "ro",
+                    "ru",
+                    "sat",
+                    "sc",
+                    "sk",
+                    "sl",
+                    "sq",
+                    "sr",
+                    "sv",
+                    "ta",
+                    "te",
+                    "tl",
+                    "th",
+                    "ti",
+                    "tr",
+                    "tt",
+                    "ug",
+                    "uk",
+                    "ur",
+                    "uz",
+                    "vi",
+                    "zh-rCN",
+                    "zh-rTW",
+                )
+        } else {
+            localeFilters += listOf("en")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.hirameki.flashcards"
         buildConfigField("Boolean", "CI", (System.getenv("CI") == "true").toString())
@@ -72,99 +184,17 @@ extensions.configure<ApplicationExtension> {
         buildConfigField("String", "GIT_COMMIT_HASH", "\"${gitCommitHash()}\"")
         buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
         resValue("string", "app_name", "Hirameki")
-        androidResources {
-            localeFilters += listOf(
-                "af",
-                "am",
-                "ar",
-                "az",
-                "be",
-                "bg",
-                "bn",
-                "ca",
-                "ckb",
-                "cs",
-                "da",
-                "de",
-                "el",
-                "en",
-                "eo",
-                "es",
-                "es-rAR",
-                "es-rES",
-                "et",
-                "eu",
-                "fa",
-                "fi",
-                "fil",
-                "fr",
-                "fy",
-                "ga",
-                "gl",
-                "got",
-                "gu",
-                "he",
-                "hi",
-                "hr",
-                "hu",
-                "hy",
-                "id",
-                "it",
-                "iw",
-                "ja",
-                "ka",
-                "kk",
-                "km",
-                "kn",
-                "ko",
-                "ku",
-                "ky",
-                "lt",
-                "lv",
-                "mk",
-                "ml",
-                "mn",
-                "mr",
-                "ms",
-                "my",
-                "nl",
-                "nn",
-                "no",
-                "or",
-                "pa",
-                "pl",
-                "pt-rBR",
-                "pt-rPT",
-                "ro",
-                "ru",
-                "sat",
-                "sc",
-                "sk",
-                "sl",
-                "sq",
-                "sr",
-                "sv",
-                "ta",
-                "te",
-                "tl",
-                "th",
-                "ti",
-                "tr",
-                "tt",
-                "ug",
-                "uk",
-                "ur",
-                "uz",
-                "vi",
-                "zh-rCN",
-                "zh-rTW",
-            )
-        }
 
         versionCode = baseVersionCode
         versionName = baseVersionName
-        minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
         testApplicationId = "com.ichi2.anki.tests"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "com.ichi2.testutils.NewCollectionPathTestRunner"
@@ -192,17 +222,14 @@ extensions.configure<ApplicationExtension> {
             versionNameSuffix = "-debug"
             isDebuggable = true
             applicationIdSuffix = ".debug"
-            splits.abi.isUniversalApk = true
 
             if (project.rootProject.file("local.properties").exists()) {
                 val localProperties = Properties()
-                localProperties.load(project.rootProject.file("local.properties").inputStream())
+                project.rootProject.file("local.properties").inputStream().use { stream ->
+                    localProperties.load(stream)
+                }
                 enableUnitTestCoverage = localProperties["enable_coverage"] != "false"
                 enableAndroidTestCoverage = localProperties["enable_coverage"] != "false"
-                if (localProperties["enable_languages"] == "false") {
-                    androidResources.localeFilters.clear()
-                    androidResources.localeFilters.add("en")
-                }
                 if (localProperties["enable_leak_canary"] != null) {
                     buildConfigField(
                         "Boolean",
@@ -233,8 +260,6 @@ extensions.configure<ApplicationExtension> {
                 "proguard-rules.pro",
             )
             testProguardFile("proguard-test-rules.pro")
-            splits.abi.isUniversalApk =
-                rootProject.extra.has("universalApkEnabled") && (rootProject.extra.get("universalApkEnabled") as? Boolean) == true
             signingConfig = signingConfigs.getByName("release")
 
             if (project.hasProperty("customSuffix")) {
@@ -279,6 +304,9 @@ extensions.configure<ApplicationExtension> {
             isEnable = enableSeparateBuildPerCPUArchitecture
             reset()
             include("armeabi-v7a", "x86", "arm64-v8a", "x86_64")
+            isUniversalApk =
+                rootProject.extra.has("universalApkEnabled") &&
+                (rootProject.extra.get("universalApkEnabled") as? Boolean) == true
         }
     }
 
@@ -348,45 +376,48 @@ configure<PlayPublisherExtension> {
     releaseName.set(baseVersionName)
 }
 
-val installGitHook = tasks.register<Copy>("installGitHook") {
-    from(File(rootProject.rootDir, "pre-commit"))
-    into(File(rootProject.rootDir, ".git/hooks"))
-    filePermissions {
-        user {
-            read = true
-            write = true
-            execute = true
+val installGitHook =
+    tasks.register<Copy>("installGitHook") {
+        from(File(rootProject.rootDir, "pre-commit"))
+        into(File(rootProject.rootDir, ".git/hooks"))
+        filePermissions {
+            user {
+                read = true
+                write = true
+                execute = true
+            }
         }
     }
-}
 
 tasks.named("preBuild").configure {
     dependsOn(installGitHook)
 }
 
-val copyTestLibIntoAndroidTest = tasks.register<Copy>("copyTestLibIntoAndroidTest") {
-    into(File(rootProject.rootDir, "AnkiDroid/src/androidTest/java/com/ichi2/testutils"))
-    from(File(rootProject.rootDir, "testlib/src/main/java/com/ichi2/testutils"))
-    into("common") {
-        from("common")
+val copyTestLibIntoAndroidTest =
+    tasks.register<Copy>("copyTestLibIntoAndroidTest") {
+        into(File(rootProject.rootDir, "AnkiDroid/src/androidTest/java/com/ichi2/testutils"))
+        from(File(rootProject.rootDir, "testlib/src/main/java/com/ichi2/testutils"))
     }
-}
 
 tasks.named("preBuild").configure {
     dependsOn(copyTestLibIntoAndroidTest)
 }
 
 tasks.register("assertNonzeroAndroidTests") {
+    val folder = file("./build/outputs/androidTest-results/connected/flavors/play")
     doLast {
-        val folder = file("./build/outputs/androidTest-results/connected/flavors/play")
         val listOfFiles = folder.listFiles { _, name -> name.endsWith(".xml") } ?: emptyArray()
+        if (listOfFiles.isEmpty()) {
+            throw GradleException("No androidTest result files found in $folder")
+        }
         for (file in listOfFiles) {
             val lines = file.readLines()
             val matches = lines.filter { it.contains("<testsuite") }
             if (matches.size != 1) {
                 throw GradleException("Unable to determine count of tests executed for ${file.name}. Regex pattern out of date?")
             }
-            if (!Regex(""".* tests="\d+" .*""").containsMatchIn(matches[0]) || matches[0].contains(
+            if (!Regex(""".* tests="\d+" .*""").containsMatchIn(matches[0]) ||
+                matches[0].contains(
                     """tests="0"""",
                 )
             ) {
@@ -476,7 +507,9 @@ dependencies {
 
     val localProperties = Properties()
     if (project.rootProject.file("local.properties").exists()) {
-        localProperties.load(project.rootProject.file("local.properties").inputStream())
+        project.rootProject.file("local.properties").inputStream().use { stream ->
+            localProperties.load(stream)
+        }
     }
     if (localProperties["local_backend"] == "true") {
         implementation(files("../../Anki-Android-Backend/rsdroid/build/outputs/aar/rsdroid-release.aar"))
@@ -520,7 +553,7 @@ dependencies {
     testImplementation(libs.mockito.inline)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin) {
-        exclude(module = "mockitoCore")
+        exclude(group = "org.mockito", module = "mockito-core")
     }
     testImplementation(libs.hamcrest)
     testImplementation(libs.robolectric)
