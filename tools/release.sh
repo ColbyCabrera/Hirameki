@@ -87,8 +87,8 @@ if [ "$PUBLIC" != "public" ]; then
 
   # Edit build.gradle.kts to bump version string
   echo "Bumping version from $PREVIOUS_VERSION$SUFFIX to $VERSION (and code from $PREVIOUS_CODE to $GUESSED_CODE)"
-  sed -i -e s/"$PREVIOUS_VERSION""$SUFFIX"/"$VERSION"/g $GRADLEFILE
-  sed -i -e s/"$PREVIOUS_CODE"/"$GUESSED_CODE"/g $GRADLEFILE
+  sed -i -E "s/((baseVersionName|versionName)[[:space:]]*=[[:space:]]*\")[^\"]*(\")/\1$VERSION\3/" $GRADLEFILE
+  sed -i -E "s/((baseVersionCode|versionCode)[[:space:]]*=[[:space:]]*)[0-9]+/\1$GUESSED_CODE/" $GRADLEFILE
 fi
 
 # If any changes go in during the release process, pushing fails, so push immediately.
