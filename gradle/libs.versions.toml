@@ -18,7 +18,7 @@ ktlint = '1.5.0'
 #
 # Old changelogs - See 'Table of Contents' in sidebar
 # https://developer.android.com/build/releases/past-releases
-androidGradlePlugin = "9.3.0"
+androidGradlePlugin = "9.3.1"
 # https://developer.android.com/jetpack/androidx/releases/activity
 androidxActivity = "1.13.0"
 # https://developer.android.com/jetpack/androidx/releases/annotation
@@ -93,7 +93,7 @@ kotlin = '2.4.0'
 kotlinxSerializationJson = "1.11.0"
 ktlintGradlePlugin = "14.2.0"
 leakcanaryAndroid = "2.14"
-lint = "32.3.0"
+lint = "32.3.1"
 material = "1.14.0"
 material3 = "1.5.0-alpha23"
 materialTapTargetPrompt = "3.3.2"
