@@ -57,7 +57,6 @@ import com.ichi2.anki.browser.RepositionCardsRequest.ContainsNonNewCardsError
 import com.ichi2.anki.browser.RepositionCardsRequest.RepositionData
 import com.ichi2.anki.export.ExportDialogFragment
 import com.ichi2.anki.ioDispatcher
-import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.QueueType
@@ -179,7 +178,8 @@ class CardBrowserViewModelTest : JvmTest() {
 
         assertThat("All decks should be selected", hasSelectedAllDecks())
 
-        val addIntent = com.ichi2.anki.noteeditor.NoteEditorLauncher.AddNoteFromCardBrowser(this).toIntent(mockIt())
+        val addIntent = com.ichi2.anki.noteeditor.NoteEditorLauncher.AddNoteFromCardBrowser(this)
+            .toIntent(mockIt())
         val bundle = addIntent.getBundleExtra(NoteEditorActivity.FRAGMENT_ARGS_EXTRA)
         IntentAssert.doesNotHaveExtra(bundle, NoteEditorActivity.EXTRA_DID)
     }
@@ -987,11 +987,7 @@ class CardBrowserViewModelTest : JvmTest() {
 
             @Suppress("CheckResult") updateActiveColumns(
                 listOf(
-                    CARD,
-                    DECK,
-                    SFLD,
-                    DUE,
-                    FSRS_STABILITY
+                    CARD, DECK, SFLD, DUE, FSRS_STABILITY
                 ), cardsOrNotes
             )
 
@@ -1143,7 +1139,9 @@ class CardBrowserViewModelTest : JvmTest() {
         val handle = SavedStateHandle()
         val cacheDir = createTransientDirectory()
         var idOfSelectedRow: CardOrNoteId? = null
-        runViewModelTest(savedStateHandle = handle, notes = 2, manualInit = false, cacheDir = cacheDir) {
+        runViewModelTest(
+            savedStateHandle = handle, notes = 2, manualInit = false, cacheDir = cacheDir
+        ) {
             selectRowAtPosition(1)
             idOfSelectedRow = selectedRows.single()
             // HACK: easiest way to add it to the bundle. This is called on destruction
@@ -1181,35 +1179,46 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `queryDataForCardEdit converts Note ID to Card ID in Notes mode - Issue 137`() = runViewModelTest {
-        val note1 = addBasicAndReversedNote()
-        val note2 = addBasicAndReversedNote()
-        val note1CardIds = note1.cardIds(col)
-        val note2CardIds = note2.cardIds(col)
+    fun `queryDataForCardEdit converts Note ID to Card ID in Notes mode - Issue 137`() =
+        runViewModelTest {
+            val note1 = addBasicAndReversedNote()
+            val note2 = addBasicAndReversedNote()
+            val note1CardIds = note1.cardIds(col)
+            val note2CardIds = note2.cardIds(col)
 
-        setCardsOrNotes(CardsOrNotes.NOTES)
-        waitForSearchResults()
+            setCardsOrNotes(CardsOrNotes.NOTES)
+            waitForSearchResults()
 
-        assertThat("Search should return 2 notes", rowCount, equalTo(2))
+            assertThat("Search should return 2 notes", rowCount, equalTo(2))
 
-        val firstRowId = cards[0]
-        val secondRowId = cards[1]
+            val firstRowId = cards[0]
+            val secondRowId = cards[1]
 
-        val firstResolvedCardId = queryDataForCardEdit(firstRowId)
-        val secondResolvedCardId = queryDataForCardEdit(secondRowId)
+            val firstResolvedCardId = queryDataForCardEdit(firstRowId)
+            val secondResolvedCardId = queryDataForCardEdit(secondRowId)
 
-        assertNotNull(firstResolvedCardId)
-        assertNotNull(secondResolvedCardId)
-        val expectedFirstNoteCardIds = if (firstRowId.cardOrNoteId == note1.id) note1CardIds else note2CardIds
-        val expectedSecondNoteCardIds = if (secondRowId.cardOrNoteId == note1.id) note1CardIds else note2CardIds
+            assertNotNull(firstResolvedCardId)
+            assertNotNull(secondResolvedCardId)
+            val expectedFirstNoteCardIds =
+                if (firstRowId.cardOrNoteId == note1.id) note1CardIds else note2CardIds
+            val expectedSecondNoteCardIds =
+                if (secondRowId.cardOrNoteId == note1.id) note1CardIds else note2CardIds
 
-        assertTrue(firstResolvedCardId in expectedFirstNoteCardIds)
-        assertTrue(secondResolvedCardId in expectedSecondNoteCardIds)
-        assertThat(col.getCard(firstResolvedCardId).nid, equalTo(firstRowId.cardOrNoteId))
-        assertThat(col.getCard(secondResolvedCardId).nid, equalTo(secondRowId.cardOrNoteId))
-        assertThat("Resolved Card IDs must be valid positive IDs", firstResolvedCardId > 0, equalTo(true))
-        assertThat("Resolved Card IDs must be valid positive IDs", secondResolvedCardId > 0, equalTo(true))
-    }
+            assertTrue(firstResolvedCardId in expectedFirstNoteCardIds)
+            assertTrue(secondResolvedCardId in expectedSecondNoteCardIds)
+            assertThat(col.getCard(firstResolvedCardId).nid, equalTo(firstRowId.cardOrNoteId))
+            assertThat(col.getCard(secondResolvedCardId).nid, equalTo(secondRowId.cardOrNoteId))
+            assertThat(
+                "Resolved Card IDs must be valid positive IDs",
+                firstResolvedCardId > 0,
+                equalTo(true)
+            )
+            assertThat(
+                "Resolved Card IDs must be valid positive IDs",
+                secondResolvedCardId > 0,
+                equalTo(true)
+            )
+        }
 
     @Test
     fun `queryDataForCardEdit returns Card ID directly in Cards mode`() = runViewModelTest {
@@ -1256,19 +1265,20 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `browserRows emits BrowserRowWithId with strongly-typed CardOrNoteId in both modes`() = runViewModelTest {
-        val note = addBasicNote("Front", "Back")
+    fun `browserRows emits BrowserRowWithId with strongly-typed CardOrNoteId in both modes`() =
+        runViewModelTest {
+            val note = addBasicNote("Front", "Back")
 
-        setCardsOrNotes(CardsOrNotes.NOTES)
-        waitForSearchResults()
-        val noteRow = browserRows.value.first()
-        assertThat(noteRow.id.cardOrNoteId, equalTo(note.id))
+            setCardsOrNotes(CardsOrNotes.NOTES)
+            waitForSearchResults()
+            val noteRow = browserRows.value.first()
+            assertThat(noteRow.id.cardOrNoteId, equalTo(note.id))
 
-        setCardsOrNotes(CardsOrNotes.CARDS)
-        waitForSearchResults()
-        val cardRow = browserRows.value.first()
-        assertThat(cardRow.id.cardOrNoteId, equalTo(note.firstCard().id))
-    }
+            setCardsOrNotes(CardsOrNotes.CARDS)
+            waitForSearchResults()
+            val cardRow = browserRows.value.first()
+            assertThat(cardRow.id.cardOrNoteId, equalTo(note.firstCard().id))
+        }
 
     private fun assertDate(str: String?) {
         // 2025-01-09 @ 18:06
@@ -1451,7 +1461,7 @@ private fun AnkiTest.suspendAll() {
     }
 }
 
-private fun AnkiTest.suspendCards(vararg cardIds: CardId) {
+private fun AnkiTest.suspendCards(vararg cardIds: Long) {
     col.sched.suspendCards(ids = cardIds.toList())
 }
 
