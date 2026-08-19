@@ -10,21 +10,26 @@ plugins {
 group = "com.ichi2.anki"
 version = "2.0.0"
 
-
 extensions.configure<LibraryExtension> {
     namespace = "com.ichi2.anki.api"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     buildFeatures {
         buildConfig = true
     }
 
     defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
         buildConfigField(
             "String",
             "READ_WRITE_PERMISSION",
-            "\"com.ichi2.anki.permission.READ_WRITE_DATABASE\""
+            "\"com.ichi2.anki.permission.READ_WRITE_DATABASE\"",
         )
         buildConfigField("String", "AUTHORITY", "\"com.ichi2.anki.flashcards\"")
     }
@@ -34,7 +39,7 @@ extensions.configure<LibraryExtension> {
             buildConfigField(
                 "String",
                 "READ_WRITE_PERMISSION",
-                "\"com.ichi2.anki.debug.permission.READ_WRITE_DATABASE\""
+                "\"com.ichi2.anki.debug.permission.READ_WRITE_DATABASE\"",
             )
             buildConfigField("String", "AUTHORITY", "\"com.ichi2.anki.debug.flashcards\"")
         }
@@ -42,7 +47,7 @@ extensions.configure<LibraryExtension> {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -58,6 +63,21 @@ extensions.configure<LibraryExtension> {
             withSourcesJar()
         }
     }
+
+    lint {
+        abortOnError = true
+        checkReleaseBuilds = false
+        checkTestSources = true
+        explainIssues = false
+        lintConfig = file("../lint-release.xml")
+        showAll = true
+        warningsAsErrors = true
+
+        if (System.getenv("CI") == "true") {
+            // 14853: we want this to appear in the IDE, but it adds noise to CI
+            disable += "WrongThread"
+        }
+    }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -69,13 +89,12 @@ tasks.withType<KotlinCompile>().configureEach {
     }
 }
 
-apply(from = "../lint.gradle")
-
 dependencies {
     implementation(libs.androidx.annotation)
     implementation(libs.kotlin.stdlib)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.vintage.engine)
+    testImplementation(libs.junit.platform.launcher)
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlin.test)
 
@@ -116,29 +135,38 @@ afterEvaluate {
             maven {
                 val releasesRepoUrl = layout.buildDirectory.dir("repos/releases")
                 val snapshotsRepoUrl = layout.buildDirectory.dir("repos/snapshots")
-                url = uri(
-                    if (version.toString()
-                            .endsWith("SNAPSHOT")
-                    ) snapshotsRepoUrl else releasesRepoUrl
-                )
+                url =
+                    uri(
+                        if (version.toString().endsWith("SNAPSHOT")) {
+                            snapshotsRepoUrl
+                        } else {
+                            releasesRepoUrl
+                        },
+                    )
             }
         }
     }
 }
 
-val zipReleaseProvider = tasks.register<Zip>("zipRelease") {
-    dependsOn(tasks.named("publish"))
-    from(layout.buildDirectory.dir("repos/releases"))
-    destinationDirectory.set(layout.buildDirectory)
-    archiveFileName.set("release-$version.zip")
-}
-
-val generateRelease: TaskProvider<Task> = tasks.register("generateRelease") {
-    doLast {
-        println("Release $version can be found at ${layout.buildDirectory.get()}/repos/releases/")
-        println("Release $version zipped can be found ${layout.buildDirectory.get()}/release-$version.zip")
+val zipReleaseProvider =
+    tasks.register<Zip>("zipRelease") {
+        description = "Zips the release repository artifacts."
+        group = "publishing"
+        dependsOn(tasks.named("publish"))
+        from(layout.buildDirectory.dir("repos/releases"))
+        destinationDirectory.set(layout.buildDirectory)
+        archiveFileName.set("release-$version.zip")
     }
-}
+
+val generateRelease: TaskProvider<Task> =
+    tasks.register("generateRelease") {
+        description = "Generates and prints the release repository paths and zip location."
+        group = "publishing"
+        doLast {
+            println("Release $version can be found at ${layout.buildDirectory.get()}/repos/releases/")
+            println("Release $version zipped can be found ${layout.buildDirectory.get()}/release-$version.zip")
+        }
+    }
 
 generateRelease.configure {
     dependsOn(tasks.named("publish"))
