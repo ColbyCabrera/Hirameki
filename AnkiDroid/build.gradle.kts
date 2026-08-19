@@ -40,42 +40,28 @@ val homePath: String? = System.getProperty("user.home")
 val baseVersionCode = 22300121
 val baseVersionName = "1.1.7"
 
-fun gitCommitHash(): String =
-    try {
-        providers
-            .exec {
-                commandLine("git", "rev-parse", "HEAD")
-                isIgnoreExitValue = true
-            }.standardOutput.asText
-            .get()
-            .trim()
-    } catch (_: Exception) {
-        ""
-    }
+fun gitCommitHash(): String = try {
+    providers.exec {
+        commandLine("git", "rev-parse", "HEAD")
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
+} catch (_: Exception) {
+    ""
+}
 
-fun buildTime(): Long =
-    try {
-        providers
-            .exec {
-                commandLine("git", "log", "-1", "--format=%ct")
-                isIgnoreExitValue = true
-            }.standardOutput.asText
-            .get()
-            .trim()
-            .toLongOrNull()
-            ?.times(1000)
-            ?: System.currentTimeMillis()
-    } catch (_: Exception) {
-        System.currentTimeMillis()
-    }
+fun buildTime(): Long = try {
+    providers.exec {
+        commandLine("git", "log", "-1", "--format=%ct")
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim().toLongOrNull()?.times(1000) ?: System.currentTimeMillis()
+} catch (_: Exception) {
+    System.currentTimeMillis()
+}
 
 extensions.configure<ApplicationExtension> {
     namespace = "com.ichi2.anki"
 
-    compileSdk =
-        libs.versions.compileSdk
-            .get()
-            .toInt()
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     buildFeatures {
         buildConfig = true
@@ -89,104 +75,102 @@ extensions.configure<ApplicationExtension> {
     testBuildType = if (testReleaseBuild) "release" else "debug"
 
     androidResources {
-        val enableLanguages =
-            if (project.rootProject.file("local.properties").exists()) {
-                project.rootProject.file("local.properties").inputStream().use { stream ->
-                    val localProps = Properties()
-                    localProps.load(stream)
-                    localProps["enable_languages"] != "false"
-                }
-            } else {
-                true
+        val enableLanguages = if (project.rootProject.file("local.properties").exists()) {
+            project.rootProject.file("local.properties").inputStream().use { stream ->
+                val localProps = Properties()
+                localProps.load(stream)
+                localProps["enable_languages"] != "false"
             }
+        } else {
+            true
+        }
         if (enableLanguages) {
-            localeFilters +=
-                listOf(
-                    "af",
-                    "am",
-                    "ar",
-                    "az",
-                    "be",
-                    "bg",
-                    "bn",
-                    "ca",
-                    "ckb",
-                    "cs",
-                    "da",
-                    "de",
-                    "el",
-                    "en",
-                    "eo",
-                    "es",
-                    "es-rAR",
-                    "es-rES",
-                    "et",
-                    "eu",
-                    "fa",
-                    "fi",
-                    "fil",
-                    "fr",
-                    "fy",
-                    "ga",
-                    "gl",
-                    "got",
-                    "gu",
-                    "he",
-                    "hi",
-                    "hr",
-                    "hu",
-                    "hy",
-                    "id",
-                    "it",
-                    "iw",
-                    "ja",
-                    "ka",
-                    "kk",
-                    "km",
-                    "kn",
-                    "ko",
-                    "ku",
-                    "ky",
-                    "lt",
-                    "lv",
-                    "mk",
-                    "ml",
-                    "mn",
-                    "mr",
-                    "ms",
-                    "my",
-                    "nl",
-                    "nn",
-                    "no",
-                    "or",
-                    "pa",
-                    "pl",
-                    "pt-rBR",
-                    "pt-rPT",
-                    "ro",
-                    "ru",
-                    "sat",
-                    "sc",
-                    "sk",
-                    "sl",
-                    "sq",
-                    "sr",
-                    "sv",
-                    "ta",
-                    "te",
-                    "tl",
-                    "th",
-                    "ti",
-                    "tr",
-                    "tt",
-                    "ug",
-                    "uk",
-                    "ur",
-                    "uz",
-                    "vi",
-                    "zh-rCN",
-                    "zh-rTW",
-                )
+            localeFilters += listOf(
+                "af",
+                "am",
+                "ar",
+                "az",
+                "be",
+                "bg",
+                "bn",
+                "ca",
+                "ckb",
+                "cs",
+                "da",
+                "de",
+                "el",
+                "en",
+                "eo",
+                "es",
+                "es-rAR",
+                "es-rES",
+                "et",
+                "eu",
+                "fa",
+                "fi",
+                "fil",
+                "fr",
+                "fy",
+                "ga",
+                "gl",
+                "got",
+                "gu",
+                "he",
+                "hi",
+                "hr",
+                "hu",
+                "hy",
+                "id",
+                "it",
+                "iw",
+                "ja",
+                "ka",
+                "kk",
+                "km",
+                "kn",
+                "ko",
+                "ku",
+                "ky",
+                "lt",
+                "lv",
+                "mk",
+                "ml",
+                "mn",
+                "mr",
+                "ms",
+                "my",
+                "nl",
+                "nn",
+                "no",
+                "or",
+                "pa",
+                "pl",
+                "pt-rBR",
+                "pt-rPT",
+                "ro",
+                "ru",
+                "sat",
+                "sc",
+                "sk",
+                "sl",
+                "sq",
+                "sr",
+                "sv",
+                "ta",
+                "te",
+                "tl",
+                "th",
+                "ti",
+                "tr",
+                "tt",
+                "ug",
+                "uk",
+                "ur",
+                "uz",
+                "vi",
+                "zh-rCN",
+                "zh-rTW",
+            )
         } else {
             localeFilters += listOf("en")
         }
@@ -204,14 +188,8 @@ extensions.configure<ApplicationExtension> {
 
         versionCode = baseVersionCode
         versionName = baseVersionName
-        minSdk =
-            libs.versions.minSdk
-                .get()
-                .toInt()
-        targetSdk =
-            libs.versions.targetSdk
-                .get()
-                .toInt()
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         testApplicationId = "com.ichi2.anki.tests"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "com.ichi2.testutils.NewCollectionPathTestRunner"
@@ -322,8 +300,7 @@ extensions.configure<ApplicationExtension> {
             reset()
             include("armeabi-v7a", "x86", "arm64-v8a", "x86_64")
             isUniversalApk =
-                rootProject.extra.has("universalApkEnabled") &&
-                (rootProject.extra.get("universalApkEnabled") as? Boolean) == true
+                rootProject.extra.has("universalApkEnabled") && (rootProject.extra.get("universalApkEnabled") as? Boolean) == true
         }
     }
 
@@ -393,28 +370,26 @@ configure<PlayPublisherExtension> {
     releaseName.set(baseVersionName)
 }
 
-val installGitHook =
-    tasks.register<Copy>("installGitHook") {
-        from(File(rootProject.rootDir, "pre-commit"))
-        into(File(rootProject.rootDir, ".git/hooks"))
-        filePermissions {
-            user {
-                read = true
-                write = true
-                execute = true
-            }
+val installGitHook = tasks.register<Copy>("installGitHook") {
+    from(File(rootProject.rootDir, "pre-commit"))
+    into(File(rootProject.rootDir, ".git/hooks"))
+    filePermissions {
+        user {
+            read = true
+            write = true
+            execute = true
         }
     }
+}
 
 tasks.named("preBuild").configure {
     dependsOn(installGitHook)
 }
 
-val copyTestLibIntoAndroidTest =
-    tasks.register<Copy>("copyTestLibIntoAndroidTest") {
-        into(File(rootProject.rootDir, "AnkiDroid/src/androidTest/java/com/ichi2/testutils"))
-        from(File(rootProject.rootDir, "testlib/src/main/java/com/ichi2/testutils"))
-    }
+val copyTestLibIntoAndroidTest = tasks.register<Copy>("copyTestLibIntoAndroidTest") {
+    into(File(rootProject.rootDir, "AnkiDroid/src/androidTest/java/com/ichi2/testutils"))
+    from(File(rootProject.rootDir, "testlib/src/main/java/com/ichi2/testutils"))
+}
 
 tasks.named("preBuild").configure {
     dependsOn(copyTestLibIntoAndroidTest)
@@ -433,8 +408,7 @@ tasks.register("assertNonzeroAndroidTests") {
             if (matches.size != 1) {
                 throw GradleException("Unable to determine count of tests executed for ${file.name}. Regex pattern out of date?")
             }
-            if (!Regex(""".* tests="\d+" .*""").containsMatchIn(matches[0]) ||
-                matches[0].contains(
+            if (!Regex(""".* tests="\d+" .*""").containsMatchIn(matches[0]) || matches[0].contains(
                     """tests="0"""",
                 )
             ) {
