@@ -35,8 +35,7 @@ SRC_DIR="./AnkiDroid"
 GRADLEFILE="$SRC_DIR/build.gradle.kts"
 CHANGELOG="$SRC_DIR/src/main/assets/changelog.html"
 
-if ! VERSION=$(grep -E '(baseVersionName|versionName)\s*=' $GRADLEFILE | head -n 1 | sed -e 's/.*="//' | sed -e 's/".*//')
-then
+if ! VERSION=$(grep -E '(baseVersionName|versionName)[[:space:]]*=[[:space:]]*"[^"]+"' "$GRADLEFILE" | head -n 1 | sed -e 's/.*=[[:space:]]*"//' | sed -e 's/".*//') || [ -z "$VERSION" ]; then
   echo "Unable to get current version. Is sed installed?"
   exit 1
 fi
@@ -82,7 +81,7 @@ if [ "$PUBLIC" != "public" ]; then
   # Increment version code
   # It is an integer in AndroidManifest that nobody actually sees.
   # Ex: 72 to 73
-  PREVIOUS_CODE=$(grep -E '(baseVersionCode|versionCode)\s*=' $GRADLEFILE | head -n 1 | sed -e 's/.*=\s*//' | tr -d ' "')
+  PREVIOUS_CODE=$(grep -E '(baseVersionCode|versionCode)[[:space:]]*=' "$GRADLEFILE" | head -n 1 | sed -e 's/.*=[[:space:]]*//' | tr -d ' "')
   GUESSED_CODE=$((PREVIOUS_CODE + 1))
 
   # Edit build.gradle.kts to bump version string
