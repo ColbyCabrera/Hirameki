@@ -78,6 +78,11 @@ if [ "$PUBLIC" != "public" ]; then
   fi
   VERSION=${1:-$GUESSED_VERSION$SUFFIX}
 
+  if ! [[ "$VERSION" =~ ^[a-zA-Z0-9._+-]+$ ]]; then
+    echo "Invalid version '$VERSION': must contain only alphanumeric characters, dots, hyphens, pluses, or underscores."
+    exit 1
+  fi
+
   # Increment version code
   # It is an integer in AndroidManifest that nobody actually sees.
   # Ex: 72 to 73
@@ -86,8 +91,8 @@ if [ "$PUBLIC" != "public" ]; then
 
   # Edit build.gradle.kts to bump version string
   echo "Bumping version from $PREVIOUS_VERSION$SUFFIX to $VERSION (and code from $PREVIOUS_CODE to $GUESSED_CODE)"
-  sed -i -E "s/((baseVersionName|versionName)[[:space:]]*=[[:space:]]*\")[^\"]*(\")/\1$VERSION\3/" $GRADLEFILE
-  sed -i -E "s/((baseVersionCode|versionCode)[[:space:]]*=[[:space:]]*)[0-9]+/\1$GUESSED_CODE/" $GRADLEFILE
+  sed -i -E "s/((baseVersionName|versionName)[[:space:]]*=[[:space:]]*\")[^\"]*(\")/\1$VERSION\3/" "$GRADLEFILE"
+  sed -i -E "s/((baseVersionCode|versionCode)[[:space:]]*=[[:space:]]*)[0-9]+/\1$GUESSED_CODE/" "$GRADLEFILE"
 fi
 
 # If any changes go in during the release process, pushing fails, so push immediately.
