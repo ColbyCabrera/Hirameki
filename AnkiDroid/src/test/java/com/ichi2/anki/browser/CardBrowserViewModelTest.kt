@@ -1200,8 +1200,13 @@ class CardBrowserViewModelTest : JvmTest() {
 
         assertNotNull(firstResolvedCardId)
         assertNotNull(secondResolvedCardId)
-        assertTrue(firstResolvedCardId in note1CardIds || firstResolvedCardId in note2CardIds)
-        assertTrue(secondResolvedCardId in note1CardIds || secondResolvedCardId in note2CardIds)
+        val expectedFirstNoteCardIds = if (firstRowId.cardOrNoteId == note1.id) note1CardIds else note2CardIds
+        val expectedSecondNoteCardIds = if (secondRowId.cardOrNoteId == note1.id) note1CardIds else note2CardIds
+
+        assertTrue(firstResolvedCardId in expectedFirstNoteCardIds)
+        assertTrue(secondResolvedCardId in expectedSecondNoteCardIds)
+        assertThat(col.getCard(firstResolvedCardId).nid, equalTo(firstRowId.cardOrNoteId))
+        assertThat(col.getCard(secondResolvedCardId).nid, equalTo(secondRowId.cardOrNoteId))
         assertThat("Resolved Card IDs must be valid positive IDs", firstResolvedCardId > 0, equalTo(true))
         assertThat("Resolved Card IDs must be valid positive IDs", secondResolvedCardId > 0, equalTo(true))
     }
