@@ -377,7 +377,7 @@ fun ManageNoteTypesTopAppBar(
                 searchAnim = searchAnim,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 16.dp, end = 12.dp, bottom = 8.dp),
+                    .padding(start = 16.dp, end = 12.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
         } else {

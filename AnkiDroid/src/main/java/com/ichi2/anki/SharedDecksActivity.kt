@@ -322,8 +322,7 @@ class SharedDecksActivity : AnkiActivity() {
                                 searchAnim = searchAnim,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(64.dp)
-                                    .padding(end = 12.dp, bottom = 8.dp)
+                                    .padding(end = 12.dp)
                             )
                         } else {
                             Text(
