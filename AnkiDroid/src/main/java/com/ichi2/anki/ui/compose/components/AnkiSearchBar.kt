@@ -1,15 +1,32 @@
+/****************************************************************************************
+ * Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>                         *
+ *                                                                                      *
+ * This program is free software; you can redistribute it and/or modify it under        *
+ * the terms of the GNU General Public License as published by the Free Software        *
+ * Foundation; either version 3 of the License, or (at your option) any later           *
+ * version.                                                                             *
+ *                                                                                      *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY      *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A      *
+ * PARTICULAR PURPOSE. See the GNU General Public License for more details.             *
+ *                                                                                      *
+ * You should have received a copy of the GNU General Public License along with         *
+ * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
+ ****************************************************************************************/
 package com.ichi2.anki.ui.compose.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SearchBarDefaults.InputField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -19,13 +36,17 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import kotlinx.coroutines.android.awaitFrame
 
 /**
  * A shared search bar component that provides a consistent look and feel across the app.
@@ -55,59 +76,71 @@ fun AnkiSearchBar(
 ) {
     val density = LocalDensity.current
     val searchOffsetPx = with(density) { (-8).dp.toPx() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
-    ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
-        SearchBar(
-            inputField = {
-                LaunchedEffect(Unit) {
-                    focusRequester.requestFocus()
-                }
-                InputField(
-                    query = query,
-                    onQueryChange = onQueryChange,
-                    onSearch = onSearch,
-                    expanded = true,
-                    onExpandedChange = { },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("search_field")
-                        .focusRequester(focusRequester)
-                        .graphicsLayer {
-                            alpha = searchAnim
-                            translationY = searchOffsetPx * (1f - searchAnim)
-                            scaleX = 0.98f + 0.02f * searchAnim
-                            scaleY = 0.98f + 0.02f * searchAnim
-                        },
-                    placeholder = { Text(placeholder) },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.search_24px),
-                            contentDescription = placeholder,
-                        )
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            onQueryChange("")
-                            onActiveChange(false)
-                        }) {
-                            Icon(
-                                painter = painterResource(R.drawable.close_24px),
-                                contentDescription = stringResource(R.string.close),
-                            )
-                        }
-                    },
+    LaunchedEffect(focusRequester) {
+        awaitFrame()
+        try {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        } catch (_: Exception) {
+            // Ignore if layout is in the middle of teardown
+        }
+    }
+
+    Surface(
+        shape = SearchBarDefaults.inputFieldShape,
+        color = containerColor,
+        modifier = modifier.graphicsLayer {
+            alpha = searchAnim
+            translationY = searchOffsetPx * (1f - searchAnim)
+            scaleX = 0.98f + 0.02f * searchAnim
+            scaleY = 0.98f + 0.02f * searchAnim
+        },
+    ) {
+        TextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("search_field")
+                .focusRequester(focusRequester),
+            placeholder = { Text(placeholder) },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.search_24px),
+                    contentDescription = placeholder,
                 )
             },
-            expanded = false,
-            onExpandedChange = { },
-            modifier = modifier.graphicsLayer {
-                alpha = searchAnim
+            trailingIcon = {
+                IconButton(onClick = {
+                    onQueryChange("")
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    onActiveChange(false)
+                }) {
+                    Icon(
+                        painter = painterResource(R.drawable.close_24px),
+                        contentDescription = stringResource(R.string.close),
+                    )
+                }
             },
-            shape = SearchBarDefaults.inputFieldShape,
-            colors = SearchBarDefaults.colors(
-                containerColor = containerColor,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
             ),
-            content = { },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = {
+                keyboardController?.hide()
+                focusManager.clearFocus()
+                onSearch(query)
+            }),
         )
     }
 }
@@ -122,6 +155,7 @@ private fun AnkiSearchBarPreview() {
             onSearch = {},
             onActiveChange = {},
             placeholder = "Search...",
-            focusRequester = remember { FocusRequester() })
+            focusRequester = remember { FocusRequester() },
+        )
     }
 }
