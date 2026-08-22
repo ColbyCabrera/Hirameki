@@ -298,25 +298,27 @@ fun CardBrowserLayout(
             modifier = Modifier.weight(1f),
             topBar = {
                 TopAppBar(title = {
-                    Row(
-                        modifier =
-                            Modifier.graphicsLayer {
-                                alpha = 1f - searchAnim
-                            },
-                    ) {
-                        DeckSelector(
-                            selectedDeck =
-                                viewModel.flowOfDeckSelection
-                                    .collectAsStateWithLifecycle(
-                                        null,
-                                    ).value,
-                            availableDecks = availableDecks,
-                            onDeckSelected = { deck ->
-                                coroutineScope.launch {
-                                    viewModel.setSelectedDeck(deck)
-                                }
-                            },
-                        )
+                    if (!isSearchOpen) {
+                        Row(
+                            modifier =
+                                Modifier.graphicsLayer {
+                                    alpha = 1f - searchAnim
+                                },
+                        ) {
+                            DeckSelector(
+                                selectedDeck =
+                                    viewModel.flowOfDeckSelection
+                                        .collectAsStateWithLifecycle(
+                                            null,
+                                        ).value,
+                                availableDecks = availableDecks,
+                                onDeckSelected = { deck ->
+                                    coroutineScope.launch {
+                                        viewModel.setSelectedDeck(deck)
+                                    }
+                                },
+                            )
+                        }
                     }
                 }, navigationIcon = {
                     if (!isSearchOpen) {
@@ -352,7 +354,7 @@ fun CardBrowserLayout(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(start = 10.dp, end = 6.dp, bottom = 16.dp),
+                                    .padding(start = 10.dp, end = 6.dp),
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         )
                     } else {
