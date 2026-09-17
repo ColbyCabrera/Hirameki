@@ -86,7 +86,6 @@ import com.ichi2.anki.browser.CardBrowserActionHandler
 import com.ichi2.anki.browser.CardBrowserViewModel
 import com.ichi2.anki.browser.MySearchesContract
 import com.ichi2.anki.common.annotations.NeedsTest
-import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.deckpicker.DeckPickerEffect
 import com.ichi2.anki.deckpicker.DeckPickerViewModel
@@ -135,8 +134,6 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
 import com.ichi2.anki.utils.ext.showDialogFragment
-import com.ichi2.anki.worker.SyncMediaWorker
-import com.ichi2.anki.worker.SyncWorker
 import com.ichi2.anki.worker.UniqueWorkNames
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import com.ichi2.ui.BadgeDrawableBuilder
@@ -1011,74 +1008,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
         WidgetStatus.updateInBackground(this@DeckPicker)
     }
 
-    /**
-     * Performs a sync if the conditions are met, e.g. user is logged in, there are changes,
-     * and auto sync is enabled.
-     * @param runInBackground whether the sync should be performed in the background or not
-     * @return whether a sync was performed or not.
-     */
-    private suspend fun automaticSync(runInBackground: Boolean = false): Boolean {
-        /**
-         * @return whether there are collection changes to be sync.
-         *
-         * It DOES NOT include if there are media to be synced.
-         */
-        suspend fun areThereChangesToSync(): Boolean {
-            val auth = syncAuth() ?: return false
-            val status = withContext(Dispatchers.IO) {
-                CollectionManager.getBackend().syncStatus(auth)
-            }.required
-
-            return when (status) {
-                SyncStatusResponse.Required.NO_CHANGES,
-                SyncStatusResponse.Required.UNRECOGNIZED,
-                null,
-                    -> false
-
-                SyncStatusResponse.Required.FULL_SYNC,
-                SyncStatusResponse.Required.NORMAL_SYNC,
-                    -> true
-            }
-        }
-
-        fun syncIntervalPassed(): Boolean {
-            val automaticSyncIntervalInMS = AUTOMATIC_SYNC_MINIMAL_INTERVAL_IN_MINUTES * 60 * 1000
-            return TimeManager.time.intTimeMS() - Prefs.lastSyncTime > automaticSyncIntervalInMS
-        }
-
-        val isBlockedByMeteredConnection =
-            !Prefs.allowSyncOnMeteredConnections && isActiveNetworkMetered()
-
-        when {
-            !Prefs.isAutoSyncEnabled -> Timber.d("autoSync: not enabled")
-            isBlockedByMeteredConnection -> Timber.d("autoSync: blocked by metered connection")
-            !NetworkUtils.isOnline -> Timber.d("autoSync: offline")
-            !runInBackground && !syncIntervalPassed() -> Timber.d("autoSync: interval not passed")
-            !isLoggedIn() -> Timber.d("autoSync: not logged in")
-            !areThereChangesToSync() -> {
-                Timber.d("autoSync: no collection changes to sync. Syncing media if set")
-                if (shouldFetchMedia()) {
-                    val auth = syncAuth() ?: return false
-                    SyncMediaWorker.start(this, auth)
-                }
-                setLastSyncTimeToNow()
-            }
-
-            else -> {
-                if (runInBackground) {
-                    Timber.i("autoSync: starting background")
-                    val auth = syncAuth() ?: return false
-                    SyncWorker.start(this, auth, shouldFetchMedia())
-                } else {
-                    Timber.i("autoSync: starting foreground")
-                    sync()
-                }
-                return true
-            }
-        }
-        return false
-    }
-
     override fun onKeyUp(
         keyCode: Int,
         event: KeyEvent,
@@ -1268,6 +1197,31 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
                 if (!automaticSync()) {
                     BackupPromptDialog.showIfAvailable(this@DeckPicker)
                 }
+            }
+        }
+    }
+
+    /**
+     * the automatic sync on app start. the user sees it, so unlike the sync on leaving the app it
+     * also starts a one-way sync, which asks the user which way to go
+     *
+     * @return whether a collection sync was started
+     */
+    private suspend fun automaticSync(): Boolean {
+        val status = automaticSyncStatus(checkInterval = true) ?: return false
+        return when (status.required) {
+            SyncStatusResponse.Required.NORMAL_SYNC,
+            SyncStatusResponse.Required.FULL_SYNC,
+            -> {
+                Timber.i("autoSync: starting foreground")
+                sync()
+                true
+            }
+            SyncStatusResponse.Required.NO_CHANGES,
+            SyncStatusResponse.Required.UNRECOGNIZED,
+            -> {
+                syncMediaWithoutCollectionChanges(this, status.auth)
+                false
             }
         }
     }
@@ -1650,7 +1604,7 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     fun updateDeckList() {
         launchCatchingTask {
-            viewModel.updateDeckList()?.join()
+            viewModel.updateDeckList().join()
         }
     }
 
@@ -1776,10 +1730,6 @@ open class DeckPicker : AnkiActivity(), SyncErrorDialogListener, ImportDialogLis
          */
         @VisibleForTesting
         const val REQUEST_STORAGE_PERMISSION = 0
-
-        // For automatic syncing
-        // 10 minutes in milliseconds.
-        private const val AUTOMATIC_SYNC_MINIMAL_INTERVAL_IN_MINUTES: Long = 10
     }
 
     override fun opExecuted(

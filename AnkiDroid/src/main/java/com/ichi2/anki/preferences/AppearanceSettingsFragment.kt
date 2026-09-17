@@ -48,6 +48,16 @@ class AppearanceSettingsFragment : SettingsFragment() {
             }
         }
 
+        // the ui font is picked when an activity is created (theme overlay, compose typography), so the switch shows
+        // after a recreate: settings recreates itself here, and every activity behind it recreates when it starts
+        // again (AnkiActivity.onStart)
+        requirePreference<SwitchPreferenceCompat>(R.string.arabic_script_font_key).apply {
+            setOnPreferenceChangeListener { newValue ->
+                isChecked = newValue
+                ActivityCompat.recreate(requireActivity())
+            }
+        }
+
         // Show estimate time
         // Represents the collection pref "estTime": i.e.
         // whether the buttons should indicate the duration of the interval if we click on them.

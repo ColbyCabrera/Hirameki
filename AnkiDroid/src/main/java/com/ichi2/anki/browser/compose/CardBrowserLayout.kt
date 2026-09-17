@@ -19,7 +19,6 @@ package com.ichi2.anki.browser.compose
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +30,6 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -66,6 +64,7 @@ import com.ichi2.anki.scheduling.SetDueDateViewModel
 import com.ichi2.anki.servicelayer.getFSRSStatus
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.DeckSelector
+import com.ichi2.anki.ui.compose.components.predictiveBackSearchAnim
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -105,10 +104,13 @@ fun CardBrowserLayout(
     var availableDecks by remember { mutableStateOf<List<SelectableDeck.Deck>>(emptyList()) }
     val createDeckDialogState by viewModel.createDeckDialogState.collectAsStateWithLifecycle()
     val showDeckSelectionDialog by viewModel.showDeckSelectionDialog.collectAsStateWithLifecycle()
-    val searchAnim by animateFloatAsState(
-        targetValue = if (isSearchOpen) 1f else 0f,
-        animationSpec = motionScheme.defaultEffectsSpec(),
-    )
+    val multiSelectMode by viewModel.flowOfMultiSelectModeChanged.collectAsStateWithLifecycle()
+    // back leaves multi-select before it leaves the browser. the view browser did this with
+    // multiSelectOnBackPressedCallback, which the compose migration (af6a5a992c) dropped. it follows
+    // the mode, not the selection: "select none" keeps multi-select on with 0 rows selected.
+    // declared before the search handler: the newest handler wins, so an open search closes first
+    BackHandler(enabled = multiSelectMode.resultedInMultiSelect) { viewModel.deselectAll() }
+    val searchAnim by predictiveBackSearchAnim(isSearchOpen) { viewModel.collapseSearchQuery() }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     // Use an integer revision counter as an event-style trigger so that
@@ -127,10 +129,6 @@ fun CardBrowserLayout(
 
     LaunchedEffect(showDeckSelectionDialog, createDeckDialogState) {
         availableDecks = viewModel.getAvailableDecks()
-    }
-
-    BackHandler(isSearchOpen) {
-        viewModel.collapseSearchQuery()
     }
 
     // Create Deck Dialog

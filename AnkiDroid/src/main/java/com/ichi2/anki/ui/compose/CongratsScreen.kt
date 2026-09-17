@@ -20,7 +20,6 @@
  ****************************************************************************************/
 package com.ichi2.anki.ui.compose
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.compose.theme.RobotoMono
+import com.ichi2.anki.ui.compose.theme.Vazirmatn
 import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 
@@ -72,7 +72,9 @@ fun CongratsScreen(
     onCustomStudy: () -> Unit,
     timeUntilNextDay: Long
 ) {
-    BackHandler { onNavigateUp() }
+    // no BackHandler here: both hosts already handle back. NavDisplay pops this entry with the
+    // predictive pop animation and CongratsActivity is finished by the system (cross-activity
+    // animation); an unconditional handler overrode both
     AnkiDroidTheme {
         Scaffold(topBar = {
             TopAppBar(
@@ -154,6 +156,12 @@ fun CongratsScreen(
                         }
                     }
 
+                    // roboto mono carries no arabic-script glyphs, so in an arabic-script ui both the label and the
+                    // clock's own digits would fall back to the system naskh: there the ui font
+                    // (ArabicScriptTypography, com.ichi2.themes.ArabicScriptFont) draws them instead
+                    val clockFontFamily =
+                        MaterialTheme.typography.displayMedium.fontFamily.takeIf { it == Vazirmatn } ?: RobotoMono
+
                     val hours = TimeUnit.MILLISECONDS.toHours(remainingTime)
                     val minutes = TimeUnit.MILLISECONDS.toMinutes(remainingTime) % 60
                     val seconds = TimeUnit.MILLISECONDS.toSeconds(remainingTime) % 60
@@ -162,7 +170,7 @@ fun CongratsScreen(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         text = stringResource(R.string.next_review_in),
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        fontFamily = RobotoMono,
+                        fontFamily = clockFontFamily,
                         fontSize = MaterialTheme.typography.displayMedium.fontSize,
                         lineHeight = MaterialTheme.typography.displayLarge.lineHeight,
                         fontWeight = FontWeight.SemiBold,
@@ -178,7 +186,7 @@ fun CongratsScreen(
                             text = "%02d:%02d:%02d".format(
                                 Locale.current.platformLocale, hours, minutes, seconds
                             ),
-                            fontFamily = RobotoMono,
+                            fontFamily = clockFontFamily,
                             fontSize = 70.sp,
                             fontWeight = FontWeight.SemiBold,
                             lineHeight = 70.sp,

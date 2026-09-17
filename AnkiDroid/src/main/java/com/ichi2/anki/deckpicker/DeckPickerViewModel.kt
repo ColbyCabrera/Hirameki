@@ -24,9 +24,9 @@ import anki.card_rendering.EmptyCardsReport
 import anki.i18n.GeneratedTranslations
 import anki.sync.SyncStatusResponse
 import com.ichi2.anki.CardBrowser
-import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.CollectionManager.withOpenColOrNull
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.InitialActivity
 import com.ichi2.anki.OnErrorListener
@@ -739,22 +739,19 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      * This method also triggers an update for the widget to reflect the newly calculated counts.
      */
     @RustCleanup("backup with 5 minute timer, instead of deck list refresh")
-    fun updateDeckList(): Job? {
-        if (!CollectionManager.isOpenUnsafe()) {
-            return null
-        }
-        if (Build.FINGERPRINT != "robolectric") {
-            // uses user's desktop settings to determine whether a backup
-            // actually happens
-            launchCatchingIO { performBackupInBackground() }
-        }
+    fun updateDeckList(): Job {
         Timber.d("updateDeckList")
-        return reloadDeckCounts()
-    }
-
-    fun reloadDeckCounts(): Job {
         loadDeckCounts?.cancel()
         val loadDeckCounts = viewModelScope.launch {
+            // a closed collection is not reopened for the deck list. checked here, not with the blocking
+            // CollectionManager.isOpenUnsafe on the caller's main thread: a sync in the background holds the
+            // collection for its whole run, and returning to the deck list froze until it ended
+            if (withOpenColOrNull { true } == null) return@launch
+            if (Build.FINGERPRINT != "robolectric") {
+                // uses user's desktop settings to determine whether a backup
+                // actually happens
+                launchCatchingIO { performBackupInBackground() }
+            }
             Timber.d("Refreshing deck list")
             val (deckDueTree, collectionHasNoCards, buriedDecks) = withCol {
                 val buried =

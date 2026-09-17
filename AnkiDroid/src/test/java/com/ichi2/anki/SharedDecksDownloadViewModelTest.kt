@@ -19,6 +19,10 @@ package com.ichi2.anki
 
 import android.app.DownloadManager
 import android.database.MatrixCursor
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.ichi2.anki.ui.compose.shareddecks.DownloadIntent
@@ -489,5 +493,43 @@ class SharedDecksDownloadViewModelTest : RobolectricTest() {
 
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `test clearing the view model stops polling`() = runTest {
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        var queries = 0
+
+        every { downloadManager.query(any()) } answers {
+            queries++
+            MatrixCursor(
+                arrayOf(
+                    DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR,
+                    DownloadManager.COLUMN_TOTAL_SIZE_BYTES,
+                    DownloadManager.COLUMN_STATUS,
+                    DownloadManager.COLUMN_REASON
+                )
+            ).apply {
+                addRow(arrayOf<Any>(50L, 100L, DownloadManager.STATUS_RUNNING, 0))
+            }
+        }
+
+        val store = ViewModelStore()
+        val viewModel = ViewModelProvider(
+            store,
+            viewModelFactory { initializer { SharedDecksDownloadViewModel(testDispatcher) } }
+        )[SharedDecksDownloadViewModel::class.java]
+
+        viewModel.startPolling(downloadManager, 123L)
+        advanceTimeBy(1100)
+        assertTrue("polling should have queried at least once", queries > 0)
+
+        // what leaving the download screen does: onCleared runs here, on the thread the caller is on,
+        // so it must cancel the polling job rather than block waiting for it
+        store.clear()
+        val queriesWhenCleared = queries
+
+        advanceTimeBy(5000)
+        assertEquals(queriesWhenCleared, queries)
     }
 }

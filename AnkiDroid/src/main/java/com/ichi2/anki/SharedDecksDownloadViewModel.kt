@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
@@ -137,14 +136,6 @@ class SharedDecksDownloadViewModel(
      */
     fun stopPolling() {
         viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            progressJobMutex.withLock {
-                clearProgressJobLocked()
-            }
-        }
-    }
-
-    private fun stopPollingBlocking() {
-        runBlocking {
             progressJobMutex.withLock {
                 clearProgressJobLocked()
             }
@@ -266,7 +257,12 @@ class SharedDecksDownloadViewModel(
     }
 
     override fun onCleared() {
-        stopPollingBlocking()
+        // cancel directly instead of taking progressJobMutex: onCleared runs on the main thread, and the only
+        // other holders of that mutex are coroutines on viewModelScope, so blocking here to wait for it can
+        // block the very thread that has to release it. viewModelScope is already cancelled by this point,
+        // which cancels progressJob too; this is just the explicit drop of the reference.
+        progressJob?.cancel()
+        progressJob = null
         super.onCleared()
     }
 }

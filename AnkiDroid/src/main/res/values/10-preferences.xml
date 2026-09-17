@@ -109,8 +109,8 @@
     <string name="sync_account" maxLength="41">AnkiWeb account</string>
     <string name="sync_account_summ_logged_out">Not logged in</string>
     <string name="automatic_sync_choice" maxLength="41">Automatic synchronization</string>
-    <string name="automatic_sync_choice_summ">Sync automatically on app start/exit if the last sync was more than 10
-        minutes ago.</string>
+    <string name="automatic_sync_choice_summ">Sync automatically when the app starts if the last sync was more than 10
+        minutes ago, and when you leave the app (at most once every 5 minutes).</string>
     <string name="sync_media_always" comment="Option to always fetch media when syncing">Always</string>
     <string name="sync_media_only_unmetered">Only on unmetered connections</string>
     <string name="sync_media_never">Never</string>
@@ -192,7 +192,7 @@
     <!-- Paste clipboard image as png option -->
     <string name="paste_as_png" maxLength="41">Paste clipboard images as PNG</string>
     <string name="exit_via_double_tap_back" maxLength="41">Press back twice to go back/exit</string>
-    <string name="exit_via_double_tap_back_summ">To avoid accidentally leaving the study screen or the app</string>
+    <string name="exit_via_double_tap_back_summ">To avoid accidentally leaving the study screen</string>
     <!-- Allow all files in media imports -->
     <string name="media_import_allow_all_files" maxLength="41">Allow all files in media imports</string>
     <string name="media_import_allow_all_files_summ">If Android doesn’t recognize a media file</string>
@@ -482,4 +482,14 @@ this formatter is used if the bind only applies to the answer">A: %s</string>
     <string name="apply_hirameki_css_all">Apply all custom CSS</string>
     <string name="apply_hirameki_css_no_font_size">Disable font size changes</string>
     <string name="apply_hirameki_css_disabled">Disable all custom CSS</string>
+    <string name="arabic_script_font" maxLength="41">Vazirmatn for Arabic script</string>
+    <string name="arabic_script_font_summ">Show Arabic, Persian, Urdu and Kurdish text in Vazirmatn instead of the system font: the whole app when its language uses Arabic script, and card text styled by Hirameki CSS</string>
+    <!-- Settings > Reviewing > Card view -->
+    <string name="card_view_category" maxLength="41">Card view</string>
+    <string name="card_view_reviewer" maxLength="41">Review on a card</string>
+    <string name="card_view_reviewer_summ">Question and answer keep one fixed place on a card you flip, instead of moving when the answer appears. Hides the answer buttons.</string>
+    <string name="card_tap_to_flip" maxLength="41">Tap to reveal</string>
+    <string name="card_tap_to_flip_summ">Tap the card to flip it and show the answer</string>
+    <string name="card_drag_to_grade" maxLength="41">Drag to a corner to answer</string>
+    <string name="card_drag_to_grade_summ" comment="The four corners are named by row only: the app mirrors the left and right ones in a right-to-left layout, and each corner is labelled on the card itself while it is dragged">Again and Good are the bottom corners, Hard and Easy the top ones. Drag back to the middle to cancel.</string>
 </resources>

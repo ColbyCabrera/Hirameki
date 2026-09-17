@@ -16,6 +16,7 @@
 
 package com.ichi2.anki
 
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.lifecycle.lifecycleScope
 import anki.backend.backendError
@@ -26,12 +27,14 @@ import anki.sync.SyncStatusResponse
 import anki.sync.syncAuth
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.CollectionManager.withOpenColOrNull
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.dialogs.SyncErrorDialog
 import com.ichi2.anki.observability.ChangeManager.notifySubscribersAllValuesChanged
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.settings.enums.ShouldFetchMedia
 import com.ichi2.anki.worker.SyncMediaWorker
+import com.ichi2.anki.worker.SyncWorker
 import com.ichi2.preferences.VersatileTextWithASwitchPreference
 import com.ichi2.utils.NetworkUtils
 import kotlinx.coroutines.CancellationException
@@ -46,9 +49,38 @@ import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 private const val SYNC_DIALOG_MINIMUM_INTERVAL_SECONDS = 5L
+
+/**
+ * the automatic sync on app start is skipped when the last sync is more recent than this.
+ * the automatic sync preference summary (automatic_sync_choice_summ) states this number
+ */
+val AUTOMATIC_SYNC_MINIMAL_INTERVAL = 10.minutes
+
+/**
+ * collection syncs running in this process, started from the deck list or by [SyncWorker].
+ * a count rather than a flag: both can run at once (one waits for the other's collection lock),
+ * and the first to end must not report that nothing is running
+ */
+private val runningSyncs = AtomicInteger(0)
+
+/** whether a collection sync is running in this process. automatic syncs never start on top of one */
+val isSyncRunning: Boolean
+    get() = runningSyncs.get() > 0
+
+/** runs [block], a collection sync, with [isSyncRunning] reporting it */
+suspend fun <T> trackRunningSync(block: suspend () -> T): T {
+    runningSyncs.incrementAndGet()
+    try {
+        return block()
+    } finally {
+        runningSyncs.decrementAndGet()
+    }
+}
 
 object SyncPreferences {
     const val CURRENT_SYNC_URI = "currentSyncUri"
@@ -96,6 +128,78 @@ fun isLoggedIn(): Boolean = !Prefs.hkey.isNullOrEmpty()
 
 fun millisecondsSinceLastSync() = TimeManager.time.intTimeMS() - Prefs.lastSyncTime
 
+/** what an automatic sync found: the login to sync with and what the collection needs */
+data class AutomaticSyncStatus(
+    val auth: SyncAuth,
+    val required: SyncStatusResponse.Required,
+)
+
+/**
+ * checks the conditions of an automatic sync, e.g. auto sync is enabled and the user is logged in, then
+ * asks the backend what the collection needs. shared by the sync on app start and the sync on leaving
+ * the app ([AutomaticSyncOnLeave]), so both follow the same rules.
+ *
+ * the status check reaches the server only when there are no local changes, and the backend reuses the
+ * server's answer for 5 minutes, so checking on every leave costs at most one request in that time
+ *
+ * @param checkInterval whether to skip the sync when the last one was less than
+ * [AUTOMATIC_SYNC_MINIMAL_INTERVAL] ago
+ * @return null when a condition holds the sync back
+ */
+suspend fun automaticSyncStatus(checkInterval: Boolean): AutomaticSyncStatus? {
+    when {
+        !Prefs.isAutoSyncEnabled -> Timber.d("autoSync: not enabled")
+        isSyncRunning -> Timber.d("autoSync: a sync is already running")
+        !Prefs.allowSyncOnMeteredConnections && NetworkUtils.isActiveNetworkMetered() ->
+            Timber.d("autoSync: blocked by metered connection")
+        !NetworkUtils.isOnline -> Timber.d("autoSync: offline")
+        checkInterval && millisecondsSinceLastSync() <= AUTOMATIC_SYNC_MINIMAL_INTERVAL.inWholeMilliseconds ->
+            Timber.d("autoSync: interval not passed")
+        !isLoggedIn() -> Timber.d("autoSync: not logged in")
+        // the status check needs an open collection. a closed one is not reopened for it: it may be
+        // closed on purpose (a one-way sync, an import) or never opened (first run, no storage access)
+        withOpenColOrNull { true } == null -> Timber.d("autoSync: collection not open")
+        else -> {
+            val auth = syncAuth() ?: return null
+            val required =
+                withContext(Dispatchers.IO) {
+                    CollectionManager.getBackend().syncStatus(auth)
+                }.required
+            Timber.d("autoSync: %s", required)
+            return AutomaticSyncStatus(auth, required)
+        }
+    }
+    return null
+}
+
+/**
+ * an automatic sync found no collection changes: syncs media only (if media fetching allows it) and
+ * records the sync time, as a sync that found nothing to do still counts as recent
+ */
+fun syncMediaWithoutCollectionChanges(
+    context: Context,
+    auth: SyncAuth,
+) {
+    Timber.d("autoSync: no collection changes to sync. Syncing media if set")
+    if (shouldFetchMedia()) {
+        SyncMediaWorker.start(context, auth)
+    }
+    setLastSyncTimeToNow()
+}
+
+/**
+ * after a collection sync pulled changes: the backend does not know about the note type cache, so styles
+ * changed on another device would keep rendering the old way (#14827), and open screens and the widgets
+ * would keep showing old data. shared by the sync on the deck list and [SyncWorker]
+ */
+suspend fun refreshAfterCollectionSync(handler: Any?) {
+    withCol { notetypes.clearCache() }
+    // subscribers are screens: they must hear about it on the main thread
+    withContext(Dispatchers.Main.immediate) {
+        notifySubscribersAllValuesChanged(handler)
+    }
+}
+
 fun DeckPicker.handleNewSync(
     conflict: ConflictResolution?,
     syncMedia: Boolean,
@@ -107,44 +211,45 @@ fun DeckPicker.handleNewSync(
     }
     val deckPicker = this
     launchCatchingTask {
-        try {
-            val syncCompleted = when (conflict) {
-                ConflictResolution.FULL_DOWNLOAD -> {
-                    handleDownload(
-                        deckPicker,
-                        auth,
-                        deckPicker.mediaUsnOnConflict,
-                    )
-                    true
-                }
+        trackRunningSync {
+            try {
+                val syncCompleted = when (conflict) {
+                    ConflictResolution.FULL_DOWNLOAD -> {
+                        handleDownload(
+                            deckPicker,
+                            auth,
+                            deckPicker.mediaUsnOnConflict,
+                        )
+                        true
+                    }
 
-                ConflictResolution.FULL_UPLOAD -> {
-                    handleUpload(
-                        deckPicker,
-                        auth,
-                        deckPicker.mediaUsnOnConflict,
-                    )
-                    true
-                }
+                    ConflictResolution.FULL_UPLOAD -> {
+                        handleUpload(
+                            deckPicker,
+                            auth,
+                            deckPicker.mediaUsnOnConflict,
+                        )
+                        true
+                    }
 
-                null -> handleNormalSync(deckPicker, auth, syncMedia)
+                    null -> handleNormalSync(deckPicker, auth, syncMedia)
+                }
+                if (syncCompleted) {
+                    refreshAfterCollectionSync(deckPicker)
+                    setLastSyncTimeToNow()
+                    refreshState()
+                }
+            } catch (exc: BackendSyncException.BackendSyncAuthFailedException) {
+                // auth failed; log out
+                updateLogin("", "")
+                throw exc
+            } catch (exc: BackendNetworkException) {
+                Timber.w(exc, "Network error during sync")
+                deckPicker.viewModel.setShowNetworkErrorDialog(true)
+                deckPicker.refreshState()
+            } finally {
+                deckPicker.viewModel.isSyncing.value = false
             }
-            if (syncCompleted) {
-                withCol { notetypes.clearCache() }
-                notifySubscribersAllValuesChanged(deckPicker)
-                setLastSyncTimeToNow()
-                refreshState()
-            }
-        } catch (exc: BackendSyncException.BackendSyncAuthFailedException) {
-            // auth failed; log out
-            updateLogin("", "")
-            throw exc
-        } catch (exc: BackendNetworkException) {
-            Timber.w(exc, "Network error during sync")
-            deckPicker.viewModel.setShowNetworkErrorDialog(true)
-            deckPicker.refreshState()
-        } finally {
-            deckPicker.viewModel.isSyncing.value = false
         }
     }
 }

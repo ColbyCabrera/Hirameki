@@ -22,7 +22,6 @@ package com.ichi2.anki.notetype.compose
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +55,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -77,6 +75,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,6 +93,8 @@ import com.ichi2.anki.R
 import com.ichi2.anki.notetype.ManageNoteTypeUiModel
 import com.ichi2.anki.notetype.ManageNoteTypesUiState
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
+import com.ichi2.anki.ui.compose.components.predictiveBackSearchAnim
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 @OptIn(
@@ -127,9 +128,18 @@ fun ManageNoteTypesScreen(
         widthSizeClass == WindowWidthSizeClass.Expanded || widthSizeClass == WindowWidthSizeClass.Medium
 
     var isSearchOpen by remember { mutableStateOf(false) }
-    var selectedNoteType by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
+    // saveable because the sheet state is: rememberBottomSheetState saves where the sheet sits. if a
+    // recreation with the sheet open (dark mode, font scale, unfolding, process death) dropped only
+    // this flag, that saved "expanded" would wait unread until the next open picked it up and
+    // skipped the slide-in. keeping the flag brings the sheet back open, which reads it where it
+    // belongs. an id, not the model, so it fits in the saved state
+    var selectedNoteTypeId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val selectedNoteType = selectedNoteTypeId?.let { id -> uiState.noteTypes.firstOrNull { it.id == id } }
 
-    BackHandler(isSearchOpen) {
+    // declared here, not in the top bar, so the multi-select handler below stays newer and still
+    // wins when both are active. the top bar reads the value lazily, so this scope does not
+    // recompose every animation frame
+    val searchAnim by predictiveBackSearchAnim(isSearchOpen) {
         onSearch("")
         isSearchOpen = false
     }
@@ -139,7 +149,6 @@ fun ManageNoteTypesScreen(
         onDeselectAll()
     }
 
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var noteTypeToRename by remember { mutableStateOf<ManageNoteTypeUiModel?>(null) }
@@ -152,6 +161,7 @@ fun ManageNoteTypesScreen(
                 ManageNoteTypesTopAppBar(
                     searchQuery = uiState.searchQuery,
                     isSearchOpen = isSearchOpen,
+                    searchAnim = { searchAnim },
                     onSearchOpenChange = { isSearchOpen = it },
                     onSearchQueryChange = onSearch,
                     onNavigateUp = onNavigateUp,
@@ -196,7 +206,7 @@ fun ManageNoteTypesScreen(
                         if (uiState.isInMultiSelectMode) {
                             onToggleSelection(noteType.id)
                         } else {
-                            selectedNoteType = noteType
+                            selectedNoteTypeId = noteType.id
                         }
                     },
                     onNoteTypeLongClick = { noteType ->
@@ -209,17 +219,23 @@ fun ManageNoteTypesScreen(
 
             if (!uiState.isInMultiSelectMode) {
                 selectedNoteType?.let { noteType ->
+                    // the sheet state lives and dies with the sheet. the action buttons slide the sheet
+                    // out before clearing selectedNoteTypeId, but the sheet can still leave composition
+                    // without hiding (its note type gone from the list, say), and a state hoisted above
+                    // this block would then still read expanded on the next open - material3 skips the
+                    // show animation when the state it enters with is not hidden, making that open
+                    // appear instantly
+                    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+                    // the sheet clears selectedNoteTypeId itself once it has slid out; clearing it in an
+                    // action too would drop the sheet mid-exit, so it would vanish instead
                     NoteTypeActionBottomSheet(
                         noteType = noteType,
                         sheetState = sheetState,
-                        onDismissRequest = { selectedNoteType = null },
+                        onDismissRequest = { selectedNoteTypeId = null },
                         onShowFields = { onShowFields(noteType) },
                         onEditCards = { onEditCards(noteType) },
                         onRename = { noteTypeToRename = noteType },
-                        onDelete = {
-                            onDeleteRequest(noteType)
-                            selectedNoteType = null
-                        })
+                        onDelete = { onDeleteRequest(noteType) })
                 }
             }
 
@@ -327,6 +343,7 @@ fun NoteTypeSelectionToolbar(
 fun ManageNoteTypesTopAppBar(
     searchQuery: String,
     isSearchOpen: Boolean,
+    searchAnim: () -> Float,
     onSearchOpenChange: (Boolean) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onNavigateUp: () -> Unit,
@@ -334,11 +351,6 @@ fun ManageNoteTypesTopAppBar(
     modifier: Modifier = Modifier,
 ) {
     val searchFocusRequester = remember { FocusRequester() }
-    val searchAnim by animateFloatAsState(
-        targetValue = if (isSearchOpen) 1f else 0f,
-        animationSpec = motionScheme.defaultEffectsSpec(),
-        label = "searchAnim"
-    )
 
     LargeFlexibleTopAppBar(
         modifier = modifier, title = {
@@ -347,7 +359,7 @@ fun ManageNoteTypesTopAppBar(
                 stringResource(R.string.model_browser_label),
                 style = MaterialTheme.typography.displayMediumEmphasized,
                 modifier = Modifier.graphicsLayer {
-                    alpha = 1f - searchAnim
+                    alpha = 1f - searchAnim()
                 })
         }
     }, navigationIcon = {
@@ -374,7 +386,7 @@ fun ManageNoteTypesTopAppBar(
                 onActiveChange = onSearchOpenChange,
                 placeholder = stringResource(R.string.card_browser_search_hint),
                 focusRequester = searchFocusRequester,
-                searchAnim = searchAnim,
+                searchAnim = searchAnim(),
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 16.dp, end = 12.dp),
@@ -583,23 +595,25 @@ fun AddNoteTypeDialog(
                             )
                             .fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded, onDismissRequest = { expanded = false }) {
-                        uiState.addOptions.forEach { option ->
-                            DropdownMenuItem(text = {
-                                val prefixRes = if (option.isStandard) {
-                                    R.string.model_browser_add_add
-                                } else {
-                                    R.string.model_browser_add_clone
-                                }
-                                Text(stringResource(prefixRes, option.name))
-                            }, onClick = {
-                                selectedOption = option
-                                expanded = false
-                                if (newName.isEmpty()) {
-                                    newName = option.name + "-new"
-                                }
-                            })
+                    MenuExitMotion(expanded = expanded) {
+                        ExposedDropdownMenu(
+                            expanded = expanded, onDismissRequest = { expanded = false }) {
+                            uiState.addOptions.forEach { option ->
+                                DropdownMenuItem(text = {
+                                    val prefixRes = if (option.isStandard) {
+                                        R.string.model_browser_add_add
+                                    } else {
+                                        R.string.model_browser_add_clone
+                                    }
+                                    Text(stringResource(prefixRes, option.name))
+                                }, onClick = {
+                                    selectedOption = option
+                                    expanded = false
+                                    if (newName.isEmpty()) {
+                                        newName = option.name + "-new"
+                                    }
+                                })
+                            }
                         }
                     }
                 }

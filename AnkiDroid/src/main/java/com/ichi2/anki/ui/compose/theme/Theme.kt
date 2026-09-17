@@ -20,6 +20,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.ui.compose.theme
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.TypedValue
 import androidx.annotation.AttrRes
@@ -36,8 +37,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
+import com.ichi2.themes.ArabicScriptFont
 import com.ichi2.themes.Themes
 
 @ColorInt
@@ -70,6 +73,22 @@ fun AnkiDroidTheme(
         dynamicLightColorScheme(context)
     }
 
+    // a preview has no AnkiDroidApp for Prefs to read, so it keeps the default typography
+    val isPreview = LocalInspectionMode.current
+    // keyed on the context and read from its resources, not from LocalConfiguration: reading that local would re-run
+    // this whole theme on every rotation or resize in the activities that handle those themselves, and the fresh
+    // dynamic color scheme it builds then recomposes the entire screen. nothing is lost: no activity handles a locale
+    // change itself, so a new ui language always comes with a new context, and a switch change recreates the
+    // activity (AnkiActivity.onStart)
+    @SuppressLint("LocalContextConfigurationRead")
+    val typography = remember(context, isPreview) {
+        if (!isPreview && ArabicScriptFont.appliesToUi(context.resources.configuration)) {
+            ArabicScriptTypography
+        } else {
+            AppTypography
+        }
+    }
+
     val ratingColors = remember(colorScheme.primary, isNightMode, harmonizeRatings) {
         RatingColorFactory.createRatingColorScheme(
             primaryColor = colorScheme.primary,
@@ -95,7 +114,7 @@ fun AnkiDroidTheme(
     CompositionLocalProvider(LocalAnkiColors provides ankiColors) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = AppTypography,
+            typography = typography,
             shapes = AppShapes,
             motionScheme = MotionScheme.expressive(),
             content = content

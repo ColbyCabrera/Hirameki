@@ -39,6 +39,12 @@ import java.io.File
 import java.nio.file.Paths
 
 /**
+ * `dataset` key marking a video pause the app made itself, such as the card view pausing a face that is
+ * turned away. The video's onpause skips a marked pause, so it is not reported as the user pausing.
+ */
+const val SILENT_PAUSE_DATASET_KEY = "hiramekiSilentPause"
+
+/**
  * Takes content with [AvRef]s and expands them to reference the media file
  *
  * * Videos are replaced with `<video>`
@@ -77,7 +83,8 @@ fun expandSounds(
 
         val onEnded = """window.location.href = "videoended:$playsound";"""
         val onPause =
-            """if (this.currentTime != this.duration) { window.location.href = "videopause:$playsound"; }"""
+            "if (this.currentTime != this.duration && !this.dataset.$SILENT_PAUSE_DATASET_KEY) " +
+                """{ window.location.href = "videopause:$playsound"; }"""
 
         // TODO: Make the loading screen nicer if the video doesn't autoplay
         @Language("HTML") val result = """<video

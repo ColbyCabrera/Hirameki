@@ -33,6 +33,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
+import com.ichi2.anki.showThemedToast
 import com.ichi2.themes.Themes
 import timber.log.Timber
 import kotlin.reflect.KClass
@@ -113,6 +114,18 @@ open class PageFragment(
             }
             webViewClient = pageWebViewClient
             webChromeClient = PageChromeClient()
+        }
+        // a webview never draws again once its renderer died. rebuilding only this view would register the
+        // subclasses' back callbacks a second time (DeckOptions, ImageOcclusion), and a page fragment is the whole
+        // screen (SingleFragmentActivity), so the screen is recreated: saved state brings the page back with a
+        // fresh webview, client and server, as a configuration change would
+        pageWebViewClient.onRendererGone = { canRebuild ->
+            if (canRebuild) {
+                requireActivity().recreate()
+            } else {
+                showThemedToast(requireContext(), R.string.page_web_view_error, false)
+                requireActivity().finish()
+            }
         }
         setupBridgeCommand(pageWebViewClient)
         onWebViewCreated(webView)

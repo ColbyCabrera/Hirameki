@@ -37,8 +37,12 @@ idea {
 }
 
 val homePath: String? = System.getProperty("user.home")
-val baseVersionCode = 22300123
-val baseVersionName = "1.1.9"
+
+// the third digit from the end is ankidroid's build type, and VersionUtils.isReleaseVersion reads a 3 there as a
+// store release, which opens ankidroid's changelog after every update. keep it below 3: bump only the last two
+// digits, and when they run out, the digits in front of the build type. VersionUtilsTest fails on a release code
+val baseVersionCode = 22300137
+val baseVersionName = "1.2.13"
 
 fun gitCommitHash(): String =
     try {
@@ -387,18 +391,20 @@ configure<PlayPublisherExtension> {
     releaseName.set(baseVersionName)
 }
 
-val installGitHook =
-    tasks.register<Copy>("installGitHook") {
-        from(File(rootProject.rootDir, "pre-commit"))
-        into(File(rootProject.rootDir, ".git/hooks"))
-        filePermissions {
-            user {
-                read = true
-                write = true
-                execute = true
-            }
+// install the ktlint pre-commit hook by hand: ./gradlew installGitHook
+// not a preBuild dependency since a4584c0192 ("git hook coupling"): a build should not rewrite .git/hooks, and the
+// hook reverse-applies unstaged edits while ktlint formats, leaving them in a patch file when they cannot re-apply
+tasks.register<Copy>("installGitHook") {
+    from(File(rootProject.rootDir, "pre-commit"))
+    into(File(rootProject.rootDir, ".git/hooks"))
+    filePermissions {
+        user {
+            read = true
+            write = true
+            execute = true
         }
     }
+}
 
 val copyTestLibIntoAndroidTest =
     tasks.register<Copy>("copyTestLibIntoAndroidTest") {
@@ -514,7 +520,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.constraintlayout.compose)
-    implementation(libs.coil.compose)
 
     debugImplementation(libs.androidx.fragment.testing.manifest)
 

@@ -1,0 +1,13 @@
+{
+    "name": "hirameki-asset-tests",
+    "version": "1.0.0",
+    "description": "tests for the scripts AnkiDroid/src/main/assets injects into anki's web pages",
+    "private": true,
+    "license": "GPL-3.0",
+    "scripts": {
+        "test": "node --test"
+    },
+    "devDependencies": {
+        "jsdom": "30.0.1"
+    }
+}

@@ -143,6 +143,18 @@ class DeckPickerViewModelTest : RobolectricTest() {
     }
 
     @Test
+    fun `updating the deck list leaves a closed collection closed`() =
+        runTest {
+            // the open check runs inside the update: a closed collection may be closed on purpose,
+            // e.g. during a one-way sync, and reading the deck counts would reopen it
+            CollectionManager.ensureClosed()
+
+            viewModel.updateDeckList().join()
+
+            assertThat("collection is open", CollectionManager.withOpenColOrNull { true }, equalTo(null))
+        }
+
+    @Test
     fun `empty filtered - does not hang when updating deck list`() {
         runTest {
             val filteredDeckId = moveAllCardsToFilteredDeck()

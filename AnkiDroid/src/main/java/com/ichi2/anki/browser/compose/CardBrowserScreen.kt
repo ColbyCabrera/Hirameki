@@ -104,6 +104,7 @@ import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.model.CardsOrNotes
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.model.SortType
+import com.ichi2.anki.ui.compose.components.hideAfter
 import kotlinx.coroutines.launch
 
 private val ToolbarBottomSpacing = 32.dp
@@ -371,76 +372,27 @@ fun CardBrowserScreen(
         }
 
         if (showMoreOptionsMenu) {
+            // the sheet clears showMoreOptionsMenu itself once it has slid out; clearing it in these callbacks
+            // too would drop the sheet mid-exit, so it would vanish instead
             MoreOptionsBottomSheet(
                 onDismissRequest = { showMoreOptionsMenu = false },
-                onChangeDisplayOrder = {
-                    showMoreOptionsMenu = false
-                    showSortMenu = true
-                },
-                onCreateFilteredDeck = {
-                    onCreateFilteredDeck()
-                    showMoreOptionsMenu = false
-                },
+                onChangeDisplayOrder = { showSortMenu = true },
+                onCreateFilteredDeck = onCreateFilteredDeck,
                 selectionCount = selectedRows.size,
                 cardsOrNotes = viewModel.cardsOrNotes,
-                onEditNote = {
-                    onEditNote()
-                    showMoreOptionsMenu = false
-                },
-                onDeleteNote = {
-                    showDeleteConfirmationDialog = true
-                    showMoreOptionsMenu = false
-                },
-                onCardInfo = {
-                    onCardInfo()
-                    showMoreOptionsMenu = false
-                },
-                onToggleSuspend = {
-                    scope.launch {
-                        viewModel.toggleSuspendCards()
-                        showMoreOptionsMenu = false
-                    }
-                },
-                onToggleBury = {
-                    scope.launch {
-                        viewModel.toggleBury()
-                        showMoreOptionsMenu = false
-                    }
-                },
-                onChangeDeck = {
-                    onChangeDeck()
-                    showMoreOptionsMenu = false
-                },
-                onReposition = {
-                    onReposition()
-                    showMoreOptionsMenu = false
-                },
-                onSetDueDate = {
-                    onSetDueDate()
-                    showMoreOptionsMenu = false
-                },
-                onEditTags = {
-                    showEditTagsDialog = true
-                    showMoreOptionsMenu = false
-                },
-                onGradeNow = {
-                    onGradeNow()
-                    showMoreOptionsMenu = false
-                },
-                onResetProgress = {
-                    onResetProgress()
-                    showMoreOptionsMenu = false
-                },
-                onExportCard = {
-                    onExportCard()
-                    showMoreOptionsMenu = false
-                },
-                onUndoDeleteNote = {
-                    scope.launch {
-                        viewModel.undo()
-                        showMoreOptionsMenu = false
-                    }
-                },
+                onEditNote = onEditNote,
+                onDeleteNote = { showDeleteConfirmationDialog = true },
+                onCardInfo = onCardInfo,
+                onToggleSuspend = { scope.launch { viewModel.toggleSuspendCards() } },
+                onToggleBury = { scope.launch { viewModel.toggleBury() } },
+                onChangeDeck = onChangeDeck,
+                onReposition = onReposition,
+                onSetDueDate = onSetDueDate,
+                onEditTags = { showEditTagsDialog = true },
+                onGradeNow = onGradeNow,
+                onResetProgress = onResetProgress,
+                onExportCard = onExportCard,
+                onUndoDeleteNote = { scope.launch { viewModel.undo() } },
             )
         }
 
@@ -451,18 +403,16 @@ fun CardBrowserScreen(
             )
         }
 
+        // like the more options sheet, these clear their own flag once they have slid out
         if (showFlagMenu) {
-            FlagFilterBottomSheet(onDismiss = { showFlagMenu = false }, onFilter = {
-                onFilter(it)
-                showFlagMenu = false
-            })
+            FlagFilterBottomSheet(onDismiss = { showFlagMenu = false }, onFilter = onFilter)
         }
 
         if (showSetFlagMenu) {
-            SetFlagBottomSheet(onDismiss = { showSetFlagMenu = false }, onSetFlag = {
-                viewModel.setFlagForSelectedRows(it)
-                showSetFlagMenu = false
-            })
+            SetFlagBottomSheet(
+                onDismiss = { showSetFlagMenu = false },
+                onSetFlag = { viewModel.setFlagForSelectedRows(it) },
+            )
         }
     }
 }
@@ -644,33 +594,16 @@ fun FilterBottomSheet(
     ) {
         ListItem(
             modifier = Modifier.clickable {
-                onFilter("tag:marked")
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    if (!sheetState.isVisible) {
-                        onDismissRequest()
-                    }
-                }
+                sheetState.hideAfter(scope, onDismissRequest) { onFilter("tag:marked") }
             },
         ) { Text(stringResource(R.string.card_browser_show_marked)) }
         ListItem(
             modifier = Modifier.clickable {
-                onFilter("is:suspended")
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    if (!sheetState.isVisible) {
-                        onDismissRequest()
-                    }
-                }
+                sheetState.hideAfter(scope, onDismissRequest) { onFilter("is:suspended") }
             },
         ) { Text(stringResource(R.string.card_browser_show_suspended)) }
         ListItem(
-            modifier = Modifier.clickable {
-                onFilterByTag()
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    if (!sheetState.isVisible) {
-                        onDismissRequest()
-                    }
-                }
-            },
+            modifier = Modifier.clickable { sheetState.hideAfter(scope, onDismissRequest, onFilterByTag) },
         ) { Text(stringResource(R.string.filter_by_tag)) }
         ListItem(
             modifier = Modifier.clickable { onFlagFilter() },
@@ -703,6 +636,7 @@ fun MoreOptionsBottomSheet(
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     val hasSelection = selectionCount > 0
+    val closeAfter: (() -> Unit) -> Unit = { action -> sheetState.hideAfter(scope, onDismissRequest, action) }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -713,14 +647,14 @@ fun MoreOptionsBottomSheet(
         if (hasSelection) {
             if (selectionCount == 1) {
                 ListItem(
-                    modifier = Modifier.clickable { onEditNote() },
+                    modifier = Modifier.clickable { closeAfter(onEditNote) },
                 ) { Text(stringResource(R.string.cardeditor_title_edit_card)) }
                 ListItem(
-                    modifier = Modifier.clickable { onCardInfo() },
+                    modifier = Modifier.clickable { closeAfter(onCardInfo) },
                 ) { Text(stringResource(R.string.card_info_title)) }
             }
             ListItem(
-                modifier = Modifier.clickable { onDeleteNote() },
+                modifier = Modifier.clickable { closeAfter(onDeleteNote) },
             ) {
                 Text(
                     pluralStringResource(
@@ -729,31 +663,31 @@ fun MoreOptionsBottomSheet(
                 )
             }
             ListItem(
-                modifier = Modifier.clickable { onToggleSuspend() },
+                modifier = Modifier.clickable { closeAfter(onToggleSuspend) },
             ) { Text(stringResource(R.string.sentence_toggle_suspend)) }
             ListItem(
-                modifier = Modifier.clickable { onToggleBury() },
+                modifier = Modifier.clickable { closeAfter(onToggleBury) },
             ) { Text(stringResource(R.string.sentence_toggle_bury)) }
             ListItem(
-                modifier = Modifier.clickable { onChangeDeck() },
+                modifier = Modifier.clickable { closeAfter(onChangeDeck) },
             ) { Text(stringResource(R.string.card_browser_change_deck)) }
             ListItem(
-                modifier = Modifier.clickable { onReposition() },
+                modifier = Modifier.clickable { closeAfter(onReposition) },
             ) { Text(stringResource(R.string.card_editor_reposition_card)) }
             ListItem(
-                modifier = Modifier.clickable { onSetDueDate() },
+                modifier = Modifier.clickable { closeAfter(onSetDueDate) },
             ) { Text(stringResource(R.string.sentence_set_due_date)) }
             ListItem(
-                modifier = Modifier.clickable { onEditTags() },
+                modifier = Modifier.clickable { closeAfter(onEditTags) },
             ) { Text(stringResource(R.string.menu_edit_tags)) }
             ListItem(
-                modifier = Modifier.clickable { onGradeNow() },
+                modifier = Modifier.clickable { closeAfter(onGradeNow) },
             ) { Text(stringResource(R.string.sentence_grade_now)) }
             ListItem(
-                modifier = Modifier.clickable { onResetProgress() },
+                modifier = Modifier.clickable { closeAfter(onResetProgress) },
             ) { Text(stringResource(R.string.reset_progress)) }
             ListItem(
-                modifier = Modifier.clickable { onExportCard() },
+                modifier = Modifier.clickable { closeAfter(onExportCard) },
             ) {
                 val exportStringRes = when (cardsOrNotes) {
                     CardsOrNotes.CARDS -> R.plurals.card_browser_export_cards
@@ -763,20 +697,13 @@ fun MoreOptionsBottomSheet(
             }
         } else {
             ListItem(
-                modifier = Modifier.clickable { onChangeDisplayOrder() },
+                modifier = Modifier.clickable { closeAfter(onChangeDisplayOrder) },
             ) { Text(stringResource(R.string.card_browser_change_display_order)) }
             ListItem(
-                modifier = Modifier.clickable {
-                    onCreateFilteredDeck()
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            onDismissRequest()
-                        }
-                    }
-                },
+                modifier = Modifier.clickable { closeAfter(onCreateFilteredDeck) },
             ) { Text(stringResource(R.string.new_dynamic_deck)) }
             ListItem(
-                modifier = Modifier.clickable { onUndoDeleteNote() },
+                modifier = Modifier.clickable { closeAfter(onUndoDeleteNote) },
             ) { Text(stringResource(R.string.undo_delete_note)) }
         }
     }
@@ -794,13 +721,7 @@ fun SelectableSortOrderBottomSheet(
     val isSortDescending by viewModel.isSortDescending.collectAsStateWithLifecycle()
     val sortLabels = stringArrayResource(id = R.array.card_browser_order_labels)
 
-    val dismissSheet: () -> Unit = {
-        scope.launch { sheetState.hide() }.invokeOnCompletion {
-            if (!sheetState.isVisible) {
-                onDismiss()
-            }
-        }
-    }
+    val closeAfter: (() -> Unit) -> Unit = { action -> sheetState.hideAfter(scope, onDismiss, action) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -837,8 +758,7 @@ fun SelectableSortOrderBottomSheet(
                                 ToggleButton(
                                     checked = isChecked,
                                     onCheckedChange = {
-                                        viewModel.setSortDescending(isDescending)
-                                        dismissSheet()
+                                        closeAfter { viewModel.setSortDescending(isDescending) }
                                     },
                                     modifier = Modifier
                                         .weight(1F)
@@ -869,8 +789,7 @@ fun SelectableSortOrderBottomSheet(
 
             items(SortType.entries) { sortType ->
                 val onItemClick: () -> Unit = {
-                    viewModel.changeCardOrder(sortType)
-                    dismissSheet()
+                    closeAfter { viewModel.changeCardOrder(sortType) }
                 }
                 ListItem(
                     leadingContent = {
@@ -918,12 +837,7 @@ fun FlagFilterBottomSheet(
                         )
                     },
                     modifier = Modifier.clickable {
-                        onFilter("flag:${flag.code}")
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                onDismiss()
-                            }
-                        }
+                        sheetState.hideAfter(scope, onDismiss) { onFilter("flag:${flag.code}") }
                     },
                 ) { Text(flagLabels[flag] ?: "") }
             }
@@ -967,12 +881,7 @@ fun SetFlagBottomSheet(
                         )
                     },
                     modifier = Modifier.clickable {
-                        onSetFlag(flag)
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                onDismiss()
-                            }
-                        }
+                        sheetState.hideAfter(scope, onDismiss) { onSetFlag(flag) }
                     },
                 ) { Text(flagLabels[flag] ?: "") }
             }

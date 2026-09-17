@@ -4,8 +4,10 @@ package com.ichi2.anki
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Looper
 import android.os.Parcelable
 import android.webkit.RenderProcessGoneDetail
+import android.widget.TextView
 import androidx.annotation.CheckResult
 import androidx.core.os.BundleCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,8 +29,6 @@ import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.AutomaticAnswer
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
 import com.ichi2.anki.reviewer.AutomaticAnswerSettings
-import com.ichi2.testutils.common.Flaky
-import com.ichi2.testutils.common.OS
 import net.ankiweb.rsdroid.BackendException
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
@@ -45,8 +45,9 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.robolectric.Robolectric
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
-import timber.log.Timber
+import java.time.Duration
 import java.util.stream.Stream
 
 @Suppress("SameParameterValue")
@@ -80,36 +81,6 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
 
         fun hasAutomaticAnswerQueued(): Boolean = automaticAnswer.timeoutHandler.hasMessages(0)
 
-        /**
-         * Fixes an issue with noAutomaticAnswerAfterRenderProcessGoneAndPaused_issue9632
-         * where [onMediaGroupCompleted] executed AFTER [executeCommand] completed
-         * this lead to an assertion which sometimes occurred before [onMediaGroupCompleted] had
-         * been called, which failed
-         *
-         * This is fine in real life, as we have media to play
-         */
-        private var mediaGroupCompleted = false
-
-        override fun onMediaGroupCompleted() {
-            super.onMediaGroupCompleted()
-            mediaGroupCompleted = true
-        }
-
-        override fun executeCommand(
-            which: ViewerCommand,
-            fromGesture: Gesture?,
-        ): Boolean {
-            mediaGroupCompleted = false
-            return super.executeCommand(which, fromGesture).also {
-                if (which != ViewerCommand.SHOW_ANSWER) return@also
-                Timber.v("waiting for onMediaGroupCompleted")
-                for (i in 0..100) {
-                    if (mediaGroupCompleted) break
-                    Thread.sleep(10)
-                }
-                require(mediaGroupCompleted) { "mediaGroupCompleted never occurred" }
-            }
-        }
         override suspend fun answerCardInner(rating: Rating) {
             if (shouldThrowCardModified) {
                 // We use mock since we cannot instantiate BackendException easily
@@ -273,15 +244,21 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
     }
 
     @Test
-    @Flaky(OS.ALL) // Flaky on MACOS and WINDOWS, not seen a breakage on LINUX
     fun noAutomaticAnswerAfterRenderProcessGoneAndPaused_issue9632() =
         runTest {
             val controller = getViewerController(addCard = true, startedWithShortcut = false)
             val viewer = controller.get()
+            // the question's autoplay runs on a real io thread, and reports its media group complete (which is what
+            // schedules the automatic answer) whenever that thread gets there. the test used to set a flag in that
+            // report and poll for it after showing the answer, but the question's late report set the flag too: the
+            // wait ended while the answer's own playback had not scheduled anything yet, and the assert below failed
+            // on slower machines. so the question's playback is waited out first, and then the answer's
+            viewer.cardMediaPlayer.awaitIdle()
             viewer.automaticAnswer = AutomaticAnswer(viewer, AutomaticAnswerSettings(AutomaticAnswerAction.BURY_CARD, 5.0, 5.0))
             viewer.lifecycle.addObserver(viewer.automaticAnswer)
             viewer.automaticAnswer.enable()
             viewer.executeCommand(ViewerCommand.SHOW_ANSWER)
+            viewer.cardMediaPlayer.awaitIdle()
             assertThat("messages after flipping card", viewer.hasAutomaticAnswerQueued(), equalTo(true))
             controller.pause()
             assertThat("disabled after pause", viewer.automaticAnswer.isDisabled, equalTo(true))
@@ -289,6 +266,26 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
             viewer.onRenderProcessGoneDelegate.onRenderProcessGone(viewer.webView!!, mock(RenderProcessGoneDetail::class.java))
             assertThat("no auto answer after onRenderProcessGone when paused", viewer.hasAutomaticAnswerQueued(), equalTo(false))
         }
+
+    @Test
+    fun `the answer indicator is not cleared on a viewer that is gone`() {
+        // a second card, so answering the first leaves the viewer open
+        addBasicNote("second", "card")
+        val controller = getViewerController(addCard = true, startedWithShortcut = false)
+        val viewer = controller.get()
+        val indicator = viewer.findViewById<TextView>(R.id.chosen_answer)
+        viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE3) // show answer
+        viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE3) // answer good
+        assertThat("the viewer is still open", viewer.isFinishing, equalTo(false))
+        assertThat("the rating's dots are up", indicator.text.toString(), equalTo("\u2022\u2022\u2022"))
+
+        // back is left to the system, which destroys the viewer without closeReviewer(); the indicator's hide timer
+        // then still ran two seconds later, holding the destroyed viewer until it did
+        controller.pause().stop().destroy()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+        assertThat("the hide timer stopped with the viewer", indicator.text.toString(), equalTo("\u2022\u2022\u2022"))
+    }
 
     @Test
     fun `Show audio play buttons preference handling - sound`() =

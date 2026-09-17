@@ -88,6 +88,7 @@ import com.ichi2.anki.dialogs.compose.DiscardChangesDialog
 import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.noteeditor.ToolbarButtonModel
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 /**
@@ -447,16 +448,18 @@ fun NoteTypeSelector(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             ),
         )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = MaterialTheme.shapes.large,
-        ) {
-            availableNoteTypes.forEach { noteType ->
-                DropdownMenuItem(text = { Text(noteType) }, onClick = {
-                    expanded = false
-                    onNoteTypeSelected(noteType)
-                })
+        MenuExitMotion(expanded = expanded) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                shape = MaterialTheme.shapes.large,
+            ) {
+                availableNoteTypes.forEach { noteType ->
+                    DropdownMenuItem(text = { Text(noteType) }, onClick = {
+                        expanded = false
+                        onNoteTypeSelected(noteType)
+                    })
+                }
             }
         }
     }
@@ -516,19 +519,21 @@ fun DeckSelector(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             ),
         )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = MaterialTheme.shapes.large,
-        ) {
-            DeckHierarchyMenuItems(
-                deckHierarchy = deckHierarchy,
-                expandedDecks = expandedDecks,
-                onDeckSelected = { deckName ->
-                    expanded = false
-                    onDeckSelected(deckName)
-                },
-            )
+        MenuExitMotion(expanded = expanded) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                shape = MaterialTheme.shapes.large,
+            ) {
+                DeckHierarchyMenuItems(
+                    deckHierarchy = deckHierarchy,
+                    expandedDecks = expandedDecks,
+                    onDeckSelected = { deckName ->
+                        expanded = false
+                        onDeckSelected(deckName)
+                    },
+                )
+            }
         }
     }
 }

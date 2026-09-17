@@ -344,6 +344,13 @@ private fun RemoveAccountWebView(
                 loadUrl(removeAccountUrl)
             }
         },
+        // leaving the screen only detaches the webview: without destroy() it keeps its renderer and the page
+        // alive. a callback that still arrives afterwards and redirects calls loadUrl on a destroyed webview,
+        // which ignores it
+        onRelease = { webView ->
+            webView.stopLoading()
+            webView.destroy()
+        },
         modifier = modifier,
     )
 }

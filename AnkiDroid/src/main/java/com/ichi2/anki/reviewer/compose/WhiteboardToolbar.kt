@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
@@ -182,51 +183,53 @@ fun WhiteboardToolbarContent(
                     )
                 }
 
-                DropdownMenu(
-                    expanded = showOverflowMenu,
-                    onDismissRequest = { showOverflowMenu = false },
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    // Stylus mode toggle
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.stylus_mode)) },
-                        onClick = {
-                            showOverflowMenu = false
-                            onToggleStylusMode()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(if (isStylusOnlyMode) R.drawable.check_24px else R.drawable.edit_24px),
-                                contentDescription = null
-                            )
-                        })
+                MenuExitMotion(expanded = showOverflowMenu) {
+                    DropdownMenu(
+                        expanded = showOverflowMenu,
+                        onDismissRequest = { showOverflowMenu = false },
+                        shape = MaterialTheme.shapes.large
+                    ) {
+                        // Stylus mode toggle
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.stylus_mode)) },
+                            onClick = {
+                                showOverflowMenu = false
+                                onToggleStylusMode()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(if (isStylusOnlyMode) R.drawable.check_24px else R.drawable.edit_24px),
+                                    contentDescription = null
+                                )
+                            })
 
-                    // Toolbar position submenu
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.whiteboard_align_left)) },
-                        onClick = {
-                            showOverflowMenu = false
-                            onSetAlignment(ToolbarAlignment.LEFT)
-                        },
-                        enabled = alignment != ToolbarAlignment.LEFT
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.whiteboard_align_bottom)) },
-                        onClick = {
-                            showOverflowMenu = false
-                            onSetAlignment(ToolbarAlignment.BOTTOM)
-                        },
-                        enabled = alignment != ToolbarAlignment.BOTTOM
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.whiteboard_align_right)) },
-                        onClick = {
-                            showOverflowMenu = false
-                            onSetAlignment(ToolbarAlignment.RIGHT)
-                        },
-                        enabled = alignment != ToolbarAlignment.RIGHT
-                    )
+                        // Toolbar position submenu
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.whiteboard_align_left)) },
+                            onClick = {
+                                showOverflowMenu = false
+                                onSetAlignment(ToolbarAlignment.LEFT)
+                            },
+                            enabled = alignment != ToolbarAlignment.LEFT
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.whiteboard_align_bottom)) },
+                            onClick = {
+                                showOverflowMenu = false
+                                onSetAlignment(ToolbarAlignment.BOTTOM)
+                            },
+                            enabled = alignment != ToolbarAlignment.BOTTOM
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.whiteboard_align_right)) },
+                            onClick = {
+                                showOverflowMenu = false
+                                onSetAlignment(ToolbarAlignment.RIGHT)
+                            },
+                            enabled = alignment != ToolbarAlignment.RIGHT
+                        )
+                    }
                 }
             }
 

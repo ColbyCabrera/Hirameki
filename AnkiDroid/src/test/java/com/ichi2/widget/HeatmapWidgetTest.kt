@@ -23,11 +23,15 @@ import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.DB
 import com.ichi2.anki.libanki.LibAnki
+import com.ichi2.anki.libanki.sched.Scheduler
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import net.ankiweb.rsdroid.Backend
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -99,16 +103,21 @@ class HeatmapWidgetTest {
         every { mockCursor.getInt(1) } returns 5 andThen 10
         every { mockCursor.close() } returns Unit
 
-        // Mock DB
+        // Mock DB, capturing the SQL so the day bucketing can be checked
+        val querySlot = slot<String>()
         val mockDb = mockk<DB> {
-            every { query(any(), *anyVararg()) } returns mockCursor
-            every { query(any()) } returns mockCursor
+            every { query(capture(querySlot), *anyVararg()) } returns mockCursor
+            every { query(capture(querySlot)) } returns mockCursor
         }
 
         // Mock Collection
+        val mockSched = mockk<Scheduler> {
+            every { dayCutoff } returns DAY_CUTOFF_SECONDS
+        }
         val mockCol = mockk<Collection> {
             every { db } returns mockDb
             every { dbClosed } returns false
+            every { sched } returns mockSched
         }
 
         // Mock Backend to prevent loading native libraries
@@ -126,6 +135,17 @@ class HeatmapWidgetTest {
             assertEquals(2, result.size)
             assertEquals(5, result[100L])
             assertEquals(10, result[101L])
+
+            // Days are counted back from the collection's cutoff, which knows the timezone and the
+            // user's rollover hour; dividing revlog.id by a day would bucket by UTC midnight instead.
+            assertTrue(
+                "query should count back from the day cutoff, was: ${querySlot.captured}",
+                querySlot.captured.contains("(${DAY_CUTOFF_SECONDS * 1000} - id)"),
+            )
+            assertFalse(
+                "query should not bucket by UTC midnight, was: ${querySlot.captured}",
+                querySlot.captured.contains("id/"),
+            )
         } finally {
             // Cleanup
             CollectionManager.setColForTests(null)
@@ -134,6 +154,9 @@ class HeatmapWidgetTest {
     }
 
     companion object {
+        /** an arbitrary day cutoff: what matters is that the query is built from it */
+        private const val DAY_CUTOFF_SECONDS = 1_700_000_000L
+
         @Suppress("DEPRECATION")
         fun setBackend(backend: Backend?) {
             LibAnki.backend = backend

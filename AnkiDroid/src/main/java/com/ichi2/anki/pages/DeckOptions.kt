@@ -55,7 +55,6 @@ import timber.log.Timber
 @NeedsTest("15130: pressing back: icon + button should return to options if the manual is open")
 @NeedsTest("17905: pressing back before the webpage is ready closes the screen")
 class DeckOptions : PageFragment() {
-    private var webViewIsReady = false
     private lateinit var pageWebViewClient: PageWebViewClient
 
     /**
@@ -73,26 +72,27 @@ class DeckOptions : PageFragment() {
      * Callback used when nothing is on top of the deck options, neither manual nor modal.
      * It sends the webview a request to deal with the closing request, requesting confirmation if
      * that would lose the local changes and otherwise close the webview.
+     *
+     * it starts disabled and is enabled in [onWebViewReady]: before the page is shown no change could
+     * have occurred, so the system closes the screen with the predictive back animation (#17905).
+     * once enabled it must stay enabled: pending changes are only known asynchronously in the page
+     * (commitEditing() then isModified()), and isEnabled has to be known before the gesture starts,
+     * so a loaded deck options page gets no predictive back animation
      */
-    private val onBackFromDeckOptions = object : OnBackPressedCallback(true) {
+    private val onBackFromDeckOptions = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
             Timber.v("DeckOptions: requesting the webview to handle the user close request.")
-            if (webViewIsReady) {
-                webView.evaluateJavascript("anki.deckOptionsPendingChanges()") {
-                    // Callback is handled in the WebView:
-                    //  * A 'discard changes' dialog may be shown, using confirm()
-                    //  * if no changes, or changes discarded, `deckOptionsRequireClose` is called
-                    //    which PostRequestHandler handles and calls on this fragment
+            webView.evaluateJavascript("anki.deckOptionsPendingChanges()") {
+                // Callback is handled in the WebView:
+                //  * A 'discard changes' dialog may be shown, using confirm()
+                //  * if no changes, or changes discarded, `deckOptionsRequireClose` is called
+                //    which PostRequestHandler handles and calls on this fragment
 
-                    // Used to handle an edge-case when the page could not be fully loaded and therefore the anki-call is unavailable
-                        value ->
-                    if (value == "null") {
-                        actuallyClose()
-                    }
+                // Used to handle an edge-case when the page could not be fully loaded and therefore the anki-call is unavailable
+                    value ->
+                if (value == "null") {
+                    actuallyClose()
                 }
-            } else {
-                // The webview is not yet loaded, no change could have occurred, we can safely close it.
-                actuallyClose()
             }
         }
     }
@@ -249,7 +249,8 @@ class DeckOptions : PageFragment() {
     fun onWebViewReady() {
         Timber.d("WebView ready to receive input")
         pageWebViewClient.runWhenPageStyled(webView) {
-            webViewIsReady = true
+            // the page is shown from here on, so the user can make changes that back must check
+            onBackFromDeckOptions.isEnabled = true
             it.isVisible = true
             pageLoadingIndicator.isVisible = false
         }

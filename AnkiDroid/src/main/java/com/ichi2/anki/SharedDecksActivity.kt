@@ -29,7 +29,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -56,6 +55,7 @@ import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
+import com.ichi2.anki.ui.compose.components.predictiveBackSearchAnim
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.FileNameAndExtension
 import com.ichi2.utils.ImportUtils
@@ -79,9 +79,18 @@ class SharedDecksActivity : AnkiActivity() {
         Regex("""^ankiuser\.net$"""),
         Regex("""^ankisrs\.net$""")
     )
-    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+
+    // enabled only while the web history can go back, so the first page leaves with the predictive
+    // back animation. if it is stale (history changed since the last update), let this back through
+    // instead of swallowing it
+    private val onBackPressedCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
-            if (webView.canGoBack()) webView.goBack()
+            if (webView.canGoBack()) {
+                webView.goBack()
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
         }
     }
 
@@ -111,6 +120,8 @@ class SharedDecksActivity : AnkiActivity() {
             // Clear history if mShouldHistoryBeCleared is true and set it to false
             if (shouldHistoryBeCleared) {
                 webView.clearHistory()
+                // clearHistory() does not go through doUpdateVisitedHistory; resync or back is swallowed
+                onBackPressedCallback.isEnabled = webView.canGoBack()
                 shouldHistoryBeCleared = false
             }
             redirectTimes = 0
@@ -290,11 +301,11 @@ class SharedDecksActivity : AnkiActivity() {
                 var isSearching by rememberSaveable { mutableStateOf(false) }
                 var searchQuery by rememberSaveable { mutableStateOf("") }
                 val searchFocusRequester = remember { FocusRequester() }
-                val searchAnim by animateFloatAsState(
-                    targetValue = if (isSearching) 1f else 0f,
-                    animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-                    label = "searchAnim"
-                )
+                // back closes the search field before it navigates the page
+                val searchAnim by predictiveBackSearchAnim(isSearching) {
+                    isSearching = false
+                    searchQuery = ""
+                }
 
                 AnkiTopAppBar(
                     onNavigateUp = {

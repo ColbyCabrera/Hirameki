@@ -44,9 +44,12 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -276,6 +279,21 @@ class NoteEditorViewModel(
 
     // Store initial note type ID to detect note type changes
     private var initialNoteTypeId: Long = 0L
+
+    /** bumped whenever the clean baseline read by [hasUnsavedChanges] moves; the baseline is not a flow */
+    private val baselineVersion = MutableStateFlow(0)
+
+    /**
+     * whether closing now would lose edits. drives the editor's back callback, which may only be
+     * enabled while this is true so a clean editor gets the system predictive back animation.
+     *
+     * declared after the state [hasUnsavedChanges] reads: Eagerly on the main thread computes the
+     * first value while the view model is still being constructed
+     */
+    val hasUnsavedChangesFlow: StateFlow<Boolean> =
+        combine(_noteEditorState, _deckId, _currentNote, baselineVersion) { _, _, _, _ ->
+            hasUnsavedChanges()
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     // ============================================================================
     // Caller/Result State (migrated from NoteEditorFragment)
@@ -838,6 +856,7 @@ class NoteEditorViewModel(
                     // Snapshot the new field values as the "clean" baseline so that
                     // hasUnsavedChanges() doesn't flag the migration itself as a change.
                     initialFieldValues = _noteEditorState.value.fields.map { it.value.text }
+                    baselineVersion.update { it + 1 }
                     persistDraftState()
 
                     Timber.d("Successfully changed note type to '%s'", noteTypeName)
@@ -1635,5 +1654,7 @@ class NoteEditorViewModel(
     private fun refreshInitialSelectionState() {
         initialDeckId = _deckId.value
         initialNoteTypeId = _currentNote.value?.notetype?.id ?: 0L
+        // last step of every full or selection-only re-baseline
+        baselineVersion.update { it + 1 }
     }
 }

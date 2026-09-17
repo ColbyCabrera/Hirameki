@@ -23,8 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -84,11 +82,14 @@ class NavigationState(
 
 /**
  * Convert NavigationState into NavEntries.
+ *
+ * every back stack is decorated, not only the ones in use, so the entries of a stack that is not shown keep their
+ * saved state.
  */
 @Composable
 fun NavigationState.toEntries(
     entryProvider: (NavKey) -> NavEntry<NavKey>
-): SnapshotStateList<NavEntry<NavKey>> {
+): List<NavEntry<NavKey>> {
 
     val decoratedEntries = backStacks.mapValues { (_, stack) ->
         val decorators = listOf(
@@ -101,7 +102,7 @@ fun NavigationState.toEntries(
         )
     }
 
-    return stacksInUse
-        .flatMap { decoratedEntries[it] ?: emptyList() }
-        .toMutableStateList()
+    // a plain list: NavDisplay only reads it. copying it into a new SnapshotStateList made a state object on every
+    // recomposition that nothing observed
+    return stacksInUse.flatMap { decoratedEntries[it] ?: emptyList() }
 }

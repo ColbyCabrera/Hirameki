@@ -37,6 +37,7 @@ import com.ichi2.anki.libanki.TTSTag
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.reviewer.CardSide
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -44,8 +45,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -87,11 +89,23 @@ class CardMediaPlayer : Closeable {
     private val ttsPlayer: Deferred<TtsPlayer>
     private val mediaErrorListener: MediaErrorListener
 
+    /**
+     * where every playback runs: Dispatchers.IO in the app. a test passes a dispatcher it steps by hand, since on IO
+     * the threads decide which of two waiting playbacks runs first, and how playbacks replace each other depends on it
+     */
+    private val playbackDispatcher: CoroutineDispatcher
+
     @VisibleForTesting
-    constructor(soundTagPlayer: SoundTagPlayer, ttsPlayer: Deferred<TtsPlayer>, mediaErrorListener: MediaErrorListener) {
+    constructor(
+        soundTagPlayer: SoundTagPlayer,
+        ttsPlayer: Deferred<TtsPlayer>,
+        mediaErrorListener: MediaErrorListener,
+        playbackDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ) {
         this.soundTagPlayer = soundTagPlayer
         this.ttsPlayer = ttsPlayer
         this.mediaErrorListener = mediaErrorListener
+        this.playbackDispatcher = playbackDispatcher
     }
 
     constructor(javascriptEvaluator: JavascriptEvaluator, mediaErrorListener: MediaErrorListener) {
@@ -102,12 +116,25 @@ class CardMediaPlayer : Closeable {
                 videoPlayer = VideoPlayer(javascriptEvaluator),
             )
         this.ttsPlayer = scope.async { AndroidTtsPlayer.createInstance(scope) }
+        this.playbackDispatcher = Dispatchers.IO
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** Serializes playbacks to avoid overloading the thread pool and a potential deadlock */
+    /**
+     * the parent of every playback, so a new playback and [stop] reach all the older ones: the latest alone may
+     * have been replaced before it ever ran, and then it never stopped the playback it had replaced
+     */
+    private val playbacks = SupervisorJob(scope.coroutineContext.job)
+
+    /**
+     * Serializes playbacks to avoid overloading the thread pool and a potential deadlock.
+     * held for a whole playback (see [launchPlayback]), so one only starts once the playback it replaced has let go
+     */
     private val playbackMutex = Mutex()
+
+    /** makes replacing [playAvTagsJob] atomic: a replay tap on the main thread can race a card action on another */
+    private val playbackLock = Any()
 
     private lateinit var questionAvTags: List<AvTag>
     private lateinit var answerAvTags: List<AvTag>
@@ -125,8 +152,18 @@ class CardMediaPlayer : Closeable {
     }
 
     @VisibleForTesting
+    @Volatile
     var playAvTagsJob: Job? = null
+        private set
     val isPlaying get() = playAvTagsJob != null
+
+    /**
+     * Suspends until the current playback has finished, been stopped, or failed. [playOne] only
+     * starts playback and returns straight away, so this is the way to learn when it is over.
+     */
+    suspend fun awaitIdle() {
+        playAvTagsJob?.join()
+    }
 
     private var onMediaGroupCompleted: (() -> Unit)? = null
 
@@ -165,29 +202,54 @@ class CardMediaPlayer : Closeable {
         }
     }
 
-    suspend fun autoplayAllForSide(cardSide: CardSide) {
+    fun autoplayAllForSide(cardSide: CardSide) {
         playAllForSide(cardSide, isAutomaticPlayback = true)
     }
 
-    suspend fun playAllForSide(cardSide: CardSide, isAutomaticPlayback: Boolean) {
+    fun playAllForSide(cardSide: CardSide, isAutomaticPlayback: Boolean) {
         if (!isEnabled) return
         if (isAutomaticPlayback && !config.autoplay) {
             onMediaGroupCompleted?.invoke()
             return
         }
-        playAvTagsJob =
-            playbackMutex.withLock {
-                playAvTagsJob?.cancelAndJoin()
-                scope.launch {
-                    Timber.i("playing sounds for %s", cardSide)
-                    playAllAvTagsInternal(cardSide, isAutomaticPlayback)
-                    playAvTagsJob = null
-                }
-            }
+        launchPlayback {
+            Timber.i("playing sounds for %s", cardSide)
+            playAllAvTagsInternal(cardSide, isAutomaticPlayback)
+        }
     }
 
-    suspend fun playOne(tag: AvTag) {
-        if (!isEnabled) return
+    /**
+     * starts [playback] in place of whatever plays now and returns at once, without waiting for that to stop.
+     * stopping a sound waits on the media thread, which may be busy preparing a file, and the reviewer autoplays
+     * inside its card actions: a reveal that waited here kept its action running after the answer was already
+     * up, and a rating made in that time was dropped. so the new playback stops the older ones itself, on this
+     * player's threads, and plays only once they have let go of [playbackMutex]
+     */
+    private fun launchPlayback(playback: suspend () -> Unit): Job =
+        synchronized(playbackLock) {
+            // all live playbacks, not only the latest: see [playbacks]
+            val replaced = playbacks.children.toList()
+            scope.launch(playbacks + playbackDispatcher) {
+                replaced.forEach { it.cancel() }
+                playbackMutex.withLock { playback() }
+            }.also { job ->
+                playAvTagsJob = job
+                job.invokeOnCompletion {
+                    synchronized(playbackLock) {
+                        // a replaced playback ends after its successor took over, and must not clear the successor
+                        if (playAvTagsJob === job) playAvTagsJob = null
+                    }
+                }
+            }
+        }
+
+    /**
+     * Starts [tag] playing and hands back the job playing it, or null when playback is disabled. Join that
+     * job to wait for this playback in particular: [awaitIdle] waits on whatever is current when it is
+     * called, which a later replay or a card change may already have replaced.
+     */
+    fun playOne(tag: AvTag): Job? {
+        if (!isEnabled) return null
 
         suspend fun play(tag: AvTag) = play(tag, isAutomaticPlayback = false)
 
@@ -201,33 +263,28 @@ class CardMediaPlayer : Closeable {
             }
         }
 
-        playAvTagsJob =
-            playbackMutex.withLock {
-                playAvTagsJob?.cancelAndJoin()
-                Timber.i("playing one AV Tag")
-
-                scope.launch {
-                    try {
-                        play(tag)
-                    } catch (e: MediaException) {
-                        when (e.continuationBehavior) {
-                            RETRY_MEDIA -> retry()
-                            CONTINUE_MEDIA, STOP_MEDIA -> { }
-                        }
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Timber.w(e, "Exception playing AV Tag")
-                    }
-                    Timber.v("completed playing one AV Tag")
-                    playAvTagsJob = null
+        return launchPlayback {
+            Timber.i("playing one AV Tag")
+            try {
+                play(tag)
+            } catch (e: MediaException) {
+                when (e.continuationBehavior) {
+                    RETRY_MEDIA -> retry()
+                    CONTINUE_MEDIA, STOP_MEDIA -> { }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Exception playing AV Tag")
             }
+            Timber.v("completed playing one AV Tag")
+        }
     }
 
     fun stop() {
         if (isPlaying) Timber.i("stopping playing all AV tags")
-        playAvTagsJob?.cancel()
+        // every playback, not only the latest: see [playbacks]
+        playbacks.cancelChildren()
         soundTagPlayer.stop()
     }
 
@@ -282,7 +339,9 @@ class CardMediaPlayer : Closeable {
         tag: AvTag,
         isAutomaticPlayback: Boolean,
     ): Boolean =
-        withContext(Dispatchers.IO) {
+        // play only runs inside a playback, already on this dispatcher: a hard-coded Dispatchers.IO here would move a
+        // test's hand-stepped playback onto real threads
+        withContext(playbackDispatcher) {
             suspend fun play() {
                 ensureActive()
                 when (tag) {
@@ -328,7 +387,7 @@ class CardMediaPlayer : Closeable {
     /**
      * Replays all sounds for [side], calling [onMediaGroupCompleted] when completed
      */
-    suspend fun replayAll(side: SingleCardSide) =
+    fun replayAll(side: SingleCardSide) =
         when (side) {
             SingleCardSide.BACK -> if (config.replayQuestion) playAllForSide(CardSide.BOTH, isAutomaticPlayback = false) else playAllForSide(CardSide.ANSWER, isAutomaticPlayback = false)
             SingleCardSide.FRONT -> playAllForSide(CardSide.QUESTION, isAutomaticPlayback = false)

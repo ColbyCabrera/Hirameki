@@ -69,6 +69,7 @@ import anki.decks.deckTreeNode
 import com.ichi2.anki.R
 import com.ichi2.anki.deckpicker.DisplayDeckNode
 import com.ichi2.anki.libanki.sched.DeckNode
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
@@ -204,100 +205,102 @@ fun DeckItem(
             } else {
                 Spacer(modifier = Modifier.size(44.dp))
             }
-            DropdownMenu(
-                expanded = isContextMenuOpen,
-                onDismissRequest = { isContextMenuOpen = false },
-                shape = MaterialTheme.shapes.large
-            ) {
-                if (deck.filtered) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.rebuild_cram_label)) },
-                        onClick = {
+            MenuExitMotion(expanded = isContextMenuOpen) {
+                DropdownMenu(
+                    expanded = isContextMenuOpen,
+                    onDismissRequest = { isContextMenuOpen = false },
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    if (deck.filtered) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.rebuild_cram_label)) },
+                            onClick = {
+                                isContextMenuOpen = false
+                                actions.onRebuild()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Refresh, contentDescription = null)
+                            })
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.empty_cram_label)) },
+                            onClick = {
+                                isContextMenuOpen = false
+                                actions.onEmpty()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Close, contentDescription = null)
+                            })
+                    } else {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.custom_study)) },
+                            onClick = {
+                                isContextMenuOpen = false
+                                actions.onCustomStudy()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.star_24px), contentDescription = null
+                                )
+                            })
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.create_subdeck)) },
+                            onClick = {
+                                isContextMenuOpen = false
+                                actions.onCreateSubdeck()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_add_deck_filled),
+                                    contentDescription = null
+                                )
+                            })
+                    }
+                    DropdownMenuItem(text = { Text(stringResource(R.string.rename_deck)) }, onClick = {
+                        isContextMenuOpen = false
+                        actions.onRename()
+                    }, leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.edit_24px), contentDescription = null
+                        )
+                    })
+                    if (deck.hasBuried) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.unbury)) }, onClick = {
                             isContextMenuOpen = false
-                            actions.onRebuild()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Filled.Refresh, contentDescription = null)
-                        })
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.empty_cram_label)) },
-                        onClick = {
-                            isContextMenuOpen = false
-                            actions.onEmpty()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Filled.Close, contentDescription = null)
-                        })
-                } else {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.custom_study)) },
-                        onClick = {
-                            isContextMenuOpen = false
-                            actions.onCustomStudy()
-                        },
-                        leadingIcon = {
+                            actions.onUnbury()
+                        }, leadingIcon = {
                             Icon(
-                                painterResource(R.drawable.star_24px), contentDescription = null
+                                painter = painterResource(R.drawable.undo_24px),
+                                contentDescription = null
                             )
                         })
+                    }
+                    DropdownMenuItem(text = { Text(stringResource(R.string.export_deck)) }, onClick = {
+                        isContextMenuOpen = false
+                        actions.onExportDeck()
+                    }, leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.share_24px), contentDescription = null
+                        )
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
+                        isContextMenuOpen = false
+                        actions.onDeckOptions()
+                    }, leadingIcon = {
+                        Icon(painter = painterResource(R.drawable.tune_24px), contentDescription = null)
+                    })
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.create_subdeck)) },
+                        text = { Text(stringResource(R.string.contextmenu_deckpicker_delete_deck)) },
                         onClick = {
                             isContextMenuOpen = false
-                            actions.onCreateSubdeck()
+                            actions.onDelete()
                         },
                         leadingIcon = {
                             Icon(
-                                painter = painterResource(R.drawable.ic_add_deck_filled),
+                                painter = painterResource(R.drawable.delete_24px),
                                 contentDescription = null
                             )
                         })
                 }
-                DropdownMenuItem(text = { Text(stringResource(R.string.rename_deck)) }, onClick = {
-                    isContextMenuOpen = false
-                    actions.onRename()
-                }, leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.edit_24px), contentDescription = null
-                    )
-                })
-                if (deck.hasBuried) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.unbury)) }, onClick = {
-                        isContextMenuOpen = false
-                        actions.onUnbury()
-                    }, leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.undo_24px),
-                            contentDescription = null
-                        )
-                    })
-                }
-                DropdownMenuItem(text = { Text(stringResource(R.string.export_deck)) }, onClick = {
-                    isContextMenuOpen = false
-                    actions.onExportDeck()
-                }, leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.share_24px), contentDescription = null
-                    )
-                })
-                DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
-                    isContextMenuOpen = false
-                    actions.onDeckOptions()
-                }, leadingIcon = {
-                    Icon(painter = painterResource(R.drawable.tune_24px), contentDescription = null)
-                })
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.contextmenu_deckpicker_delete_deck)) },
-                    onClick = {
-                        isContextMenuOpen = false
-                        actions.onDelete()
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.delete_24px),
-                            contentDescription = null
-                        )
-                    })
             }
         }
     }

@@ -22,7 +22,6 @@ import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -73,6 +72,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -103,8 +103,10 @@ import com.ichi2.anki.ui.compose.SnackbarPaddingBottom
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.ExpandableFab
 import com.ichi2.anki.ui.compose.components.ExpandableFabContainer
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
 import com.ichi2.anki.ui.compose.components.Scrim
 import com.ichi2.anki.ui.compose.components.SyncIcon
+import com.ichi2.anki.ui.compose.components.predictiveBackSearchAnim
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.utils.MorphShape
 
@@ -132,10 +134,13 @@ private fun RenderDeck(
     )
 
     // Preserve the last expanded subtree long enough for AnimatedVisibility to animate it away.
-    var rememberedChildren by remember { mutableStateOf<List<DisplayDeckNode>?>(null) }
-    if (!deck.collapsed) {
-        rememberedChildren = children
+    // saved after composition, in a SideEffect: writing compose state while composing is a backwards write
+    var lastExpandedChildren by remember { mutableStateOf(emptyList<DisplayDeckNode>()) }
+    SideEffect {
+        if (!deck.collapsed) lastExpandedChildren = children
     }
+    // a collapsed deck's children are no longer in the flattened list, so it shows the saved ones
+    val shownChildren = if (deck.collapsed) lastExpandedChildren else children
 
     val actions = remember(deck, deckRowActions) {
         DeckItemActions(
@@ -170,7 +175,7 @@ private fun RenderDeck(
             ),
         ) {
             Column {
-                for (child in (rememberedChildren ?: emptyList())) {
+                for (child in shownChildren) {
                     key(child.did) {
                         val grandChildren = deckToChildrenMap[child] ?: emptyList()
                         RenderDeck(
@@ -262,12 +267,12 @@ fun DeckPickerContent(
             end = MaterialShapes.Cookie12Sided,
         )
     }
-    val morphingShape = remember(state.distanceFraction) {
-        MorphShape(
-            morph = morph,
-            percentage = state.distanceFraction,
-        )
-    }
+    // the shape reads the drag fraction each time its outline is built, so one shape serves the whole drag
+    // instead of a new one every frame
+    val morphingShape =
+        remember(morph, state) {
+            MorphShape(morph) { state.distanceFraction }
+        }
 
     // Rebuild the parent -> children lookup only when the flattened deck list changes.
     val (deckToChildrenMap, rootDecks) = remember(decks) {
@@ -375,6 +380,7 @@ fun DeckPickerContent(
 private fun DeckPickerTopBar(
     isSearchOpen: Boolean,
     onSearchOpenChange: (Boolean) -> Unit,
+    searchOwnsBack: Boolean,
     searchQuery: String,
     onSearchQueryChanged: (String) -> Unit,
     isSyncing: Boolean,
@@ -386,12 +392,8 @@ private fun DeckPickerTopBar(
 ) {
     var isMoreOptionsMenuOpen by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
-    val searchAnim by animateFloatAsState(
-        targetValue = if (isSearchOpen) 1f else 0f,
-        animationSpec = motionScheme.defaultEffectsSpec(),
-    )
-
-    BackHandler(isSearchOpen) {
+    // whatever is drawn over the search owns back first: searchOwnsBack is false while it is up, see DeckPickerScreen
+    val searchAnim by predictiveBackSearchAnim(isSearchOpen, backEnabled = searchOwnsBack) {
         onSearchQueryChanged("")
         onSearchOpenChange(false)
     }
@@ -507,63 +509,65 @@ fun MoreOptionsMenu(
                 contentDescription = stringResource(R.string.more_options),
             )
         }
-        DropdownMenu(
-            expanded = isMoreOptionsMenuOpen,
-            onDismissRequest = { onMoreOptionsMenuOpenChange(false) },
-            shape = MaterialTheme.shapes.large,
-        ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.check_db)) },
-                onClick = {
-                    onMoreOptionsMenuOpenChange(false)
-                    moreOptionsMenuActions.onCheckDatabase()
-                },
-                leadingIcon = {
-                    Icon(
-                        painterResource(R.drawable.checklist_24px),
-                        contentDescription = null,
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.model_browser_label)) },
-                onClick = {
-                    onMoreOptionsMenuOpenChange(false)
-                    moreOptionsMenuActions.onManageNoteTypes()
-                },
-                leadingIcon = {
-                    Icon(
-                        painterResource(R.drawable.list_24px),
-                        contentDescription = null,
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(text = TR.actionsExport()) },
-                onClick = {
-                    onMoreOptionsMenuOpenChange(false)
-                    moreOptionsMenuActions.onExport()
-                },
-                leadingIcon = {
-                    Icon(
-                        painterResource(R.drawable.file_export_24px),
-                        contentDescription = null,
-                    )
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(TR.actionsEmptyCards()) },
-                onClick = {
-                    onMoreOptionsMenuOpenChange(false)
-                    moreOptionsMenuActions.onDeleteEmptyCards()
-                },
-                leadingIcon = {
-                    Icon(
-                        painterResource(R.drawable.delete_24px),
-                        contentDescription = null,
-                    )
-                },
-            )
+        MenuExitMotion(expanded = isMoreOptionsMenuOpen) {
+            DropdownMenu(
+                expanded = isMoreOptionsMenuOpen,
+                onDismissRequest = { onMoreOptionsMenuOpenChange(false) },
+                shape = MaterialTheme.shapes.large,
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.check_db)) },
+                    onClick = {
+                        onMoreOptionsMenuOpenChange(false)
+                        moreOptionsMenuActions.onCheckDatabase()
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.checklist_24px),
+                            contentDescription = null,
+                        )
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.model_browser_label)) },
+                    onClick = {
+                        onMoreOptionsMenuOpenChange(false)
+                        moreOptionsMenuActions.onManageNoteTypes()
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.list_24px),
+                            contentDescription = null,
+                        )
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(text = TR.actionsExport()) },
+                    onClick = {
+                        onMoreOptionsMenuOpenChange(false)
+                        moreOptionsMenuActions.onExport()
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.file_export_24px),
+                            contentDescription = null,
+                        )
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(TR.actionsEmptyCards()) },
+                    onClick = {
+                        onMoreOptionsMenuOpenChange(false)
+                        moreOptionsMenuActions.onDeleteEmptyCards()
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painterResource(R.drawable.delete_24px),
+                            contentDescription = null,
+                        )
+                    },
+                )
+            }
         }
     }
 }
@@ -574,9 +578,15 @@ fun MoreOptionsMenu(
  * When [fragmented] is `true`, the deck list and study options are shown side by side. Otherwise,
  * the study options surface is reached through deck selection and other navigation flows.
  *
+ * back goes to whatever is drawn on top: the drawer first, then the fab menu, then the search. each
+ * layer's handler is disabled while a higher one is up, because registration order cannot express
+ * this - the search lives in [Scaffold]'s topBar, which is subcomposed during layout and so
+ * registers last, and the fab is composed after the scaffold.
+ *
  * @param fragmented Whether the deck picker is currently using the split tablet layout.
  * @param studyOptionsData The currently selected deck summary for the study options panel.
  * @param requestSearchFocus One-shot flag used by outer navigation state to reopen deck search.
+ * @param isDrawerOpen whether the navigation drawer over this screen is open or opening.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -598,6 +608,7 @@ fun DeckPickerScreen(
     onSearchFocusRequested: () -> Unit,
     syncState: SyncIconState,
     isInInitialState: Boolean?,
+    isDrawerOpen: Boolean,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -634,6 +645,7 @@ fun DeckPickerScreen(
                 DeckPickerTopBar(
                     isSearchOpen = isSearchOpen,
                     onSearchOpenChange = { isSearchOpen = it },
+                    searchOwnsBack = !isDrawerOpen && !fabMenuExpanded,
                     searchQuery = searchQuery,
                     onSearchQueryChanged = onSearchQueryChanged,
                     isSyncing = isSyncing,
@@ -687,6 +699,7 @@ fun DeckPickerScreen(
             expanded = fabMenuExpanded,
             onExpandedChange = { fabMenuExpanded = it },
             fabActions = fabActions,
+            backEnabled = !isDrawerOpen,
             scrimOpacity = if (fragmented) 0F else 0.5f,
         )
     }
@@ -694,12 +707,16 @@ fun DeckPickerScreen(
 
 /**
  * Hosts the expandable floating action button and its dismiss scrim.
+ *
+ * @param backEnabled false while the drawer is dragged open over the menu. the drawer's own handler
+ * is registered first, so without this the menu hidden behind it would take the gesture instead.
  */
 @Composable
 private fun DeckPickerFab(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     fabActions: FabActions,
+    backEnabled: Boolean,
     scrimOpacity: Float = 0.5f,
 ) {
     Scrim(
@@ -718,7 +735,7 @@ private fun DeckPickerFab(
             onImport = fabActions.onImport,
         )
     }
-    BackHandler(expanded) { onExpandedChange(false) }
+    BackHandler(expanded && backEnabled) { onExpandedChange(false) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -728,6 +745,7 @@ fun DeckPickerTopBarPreview() {
     AnkiDroidTheme {
         DeckPickerTopBar(
             isSearchOpen = false,
+            searchOwnsBack = true,
             onSearchOpenChange = {},
             searchQuery = "",
             onSearchQueryChanged = {},
@@ -752,6 +770,7 @@ fun DeckPickerTopBarSearchOpenPreview() {
     AnkiDroidTheme {
         DeckPickerTopBar(
             isSearchOpen = true,
+            searchOwnsBack = true,
             onSearchOpenChange = {},
             searchQuery = "Japanese",
             onSearchQueryChanged = {},

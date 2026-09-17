@@ -27,13 +27,16 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.BrushInfo
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -61,11 +64,13 @@ class DrawingViewModel : ViewModel() {
     private val _paths = MutableStateFlow<List<DrawingPath>>(emptyList())
     val paths: StateFlow<List<DrawingPath>> = _paths
 
-    // Undo/Redo stack
-    private val undoStack = mutableListOf<DrawingPath>()
+    // Redo stack. undo needs none: it takes the last stroke off paths
     private val redoStack = mutableListOf<DrawingPath>()
 
-    val canUndo = _paths.map { it.isNotEmpty() }
+    // a StateFlow like its neighbours, not a cold map: a new composition, say after the activity is recreated,
+    // reads the current value instead of starting with undo disabled over strokes the view model still holds
+    val canUndo: StateFlow<Boolean> =
+        _paths.map { it.isNotEmpty() }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val canRedo = MutableStateFlow(false)
 
     // Brush settings (Active State)
@@ -113,7 +118,6 @@ class DrawingViewModel : ViewModel() {
             isEraser = isEraserActive.value
         )
         _paths.value += drawingPath
-        undoStack.add(drawingPath)
 
         // Clear redo stack
         redoStack.clear()
@@ -132,8 +136,7 @@ class DrawingViewModel : ViewModel() {
             redoStack.add(lastPath)
             canRedo.value = true
 
-            // Remove from paths and undo stack
-            undoStack.removeLastOrNull()
+            // Remove from paths
             _paths.value = currentPaths.dropLast(1)
         }
     }
@@ -144,7 +147,6 @@ class DrawingViewModel : ViewModel() {
     fun redo() {
         if (redoStack.isNotEmpty()) {
             val path = redoStack.removeAt(redoStack.lastIndex)
-            undoStack.add(path)
             _paths.value += path
             canRedo.value = redoStack.isNotEmpty()
         }
@@ -155,7 +157,6 @@ class DrawingViewModel : ViewModel() {
      */
     fun clearCanvas() {
         _paths.value = emptyList()
-        undoStack.clear()
         redoStack.clear()
         canRedo.value = false
     }

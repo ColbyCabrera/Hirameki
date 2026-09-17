@@ -230,9 +230,24 @@ abstract class AppCompatPreferenceActivity<PreferenceHack : AppCompatPreferenceA
         delegate.onCreate(savedInstanceState)
         super.onCreate(savedInstanceState)
         this.col = CollectionManager.getColUnsafe()
-        // HACK: PreferenceActivity does not have a back dispatcher
-        // on API <= 32, onKeyDown is called; on API 33+, this is needed
+    }
+
+    /** whether [interceptBackToCloseWithResult] registered its platform back callback */
+    private var interceptsBack = false
+
+    /**
+     * HACK: PreferenceActivity does not have a back dispatcher. on api 31/32 [onKeyDown] sees back;
+     * api 33+ never sends KEYCODE_BACK once enableOnBackInvokedCallback is on (#18627, 48bd91e3b3),
+     * so back is caught with a platform callback instead.
+     *
+     * it is registered only once a preference changed: until then closing needs no rebuild, and
+     * with no callback the system finishes the screen with the predictive back animation.
+     * [prefChanged] never goes back to false, so the callback is never unregistered
+     */
+    private fun interceptBackToCloseWithResult() {
+        if (interceptsBack) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            interceptsBack = true
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(PRIORITY_OVERLAY) {
                 tryCloseWithResult()
             }
@@ -321,6 +336,7 @@ abstract class AppCompatPreferenceActivity<PreferenceHack : AppCompatPreferenceA
     ) {
         // update values on changed preference
         prefChanged = true
+        interceptBackToCloseWithResult()
         updateSummaries()
     }
 

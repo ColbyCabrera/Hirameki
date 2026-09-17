@@ -21,14 +21,19 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.shape.MaterialShapeDrawable
 import com.ichi2.anki.CardTemplateEditor.CardTemplateFragment.CardTemplate
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.dialogs.utils.input
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.libanki.testutils.ext.addNote
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.previewer.CardViewerActivity
 import com.ichi2.testutils.assertFalse
+import com.ichi2.themes.Themes
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.json.JSONObject
@@ -37,7 +42,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowActivity
+import org.robolectric.shadows.ShadowDialog
 import timber.log.Timber
 import kotlin.test.junit5.JUnit5Asserter.assertEquals
 import kotlin.test.junit5.JUnit5Asserter.assertNotEquals
@@ -73,6 +80,7 @@ class CardTemplateEditorTest : RobolectricTest() {
         templateFront.text.append(testNoteTypeQfmtEdit)
         advanceRobolectricLooper()
         assertTrue("Note type did not change after edit?", testEditor.noteTypeHasChanged())
+        assertTrue("back must ask before discarding typed edits", testEditor.displayDiscardChangesCallback.isEnabled)
         assertEquals(
             "Change already in database?",
             collectionBasicNoteTypeOriginal.toString().trim(),
@@ -94,6 +102,7 @@ class CardTemplateEditorTest : RobolectricTest() {
         testEditor = templateEditorController.get()
         var shadowTestEditor = shadowOf(testEditor)
         assertTrue("note type change not preserved across activity lifecycle?", testEditor.noteTypeHasChanged())
+        assertTrue("back must ask before discarding restored edits", testEditor.displayDiscardChangesCallback.isEnabled)
         assertEquals(
             "Change already in database?",
             collectionBasicNoteTypeOriginal.toString().trim(),
@@ -161,6 +170,31 @@ class CardTemplateEditorTest : RobolectricTest() {
     }
 
     @Test
+    fun `adding a card type makes back ask before discarding`() {
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.putExtra("noteTypeId", getCurrentDatabaseNoteTypeCopy("Basic").id)
+        val templateEditorController =
+            Robolectric
+                .buildActivity(CardTemplateEditor::class.java, intent)
+                .create()
+                .start()
+                .resume()
+                .visible()
+        saveControllerForCleanup(templateEditorController)
+        val testEditor = templateEditorController.get()
+        assertFalse("a clean editor leaves back to the system", testEditor.displayDiscardChangesCallback.isEnabled)
+
+        // nothing is typed: the text watcher used to be the only place the back callback was refreshed
+        assertTrue("Unable to click?", shadowOf(testEditor).clickMenuItem(R.id.action_add))
+        advanceRobolectricLooper()
+        clickAlertDialogButton(DialogInterface.BUTTON_POSITIVE, true)
+        advanceRobolectricLooper()
+
+        assertEquals("Note type should have 2 templates now", 2, testEditor.tempNoteType?.templateCount)
+        assertTrue("back must ask before discarding the new card type", testEditor.displayDiscardChangesCallback.isEnabled)
+    }
+
+    @Test
     fun testDeleteTemplate() {
         val noteTypeName = "Basic (and reversed card)"
 
@@ -189,6 +223,7 @@ class CardTemplateEditorTest : RobolectricTest() {
         advanceRobolectricLooper()
         assertTrue("Note type should have changed", testEditor.noteTypeHasChanged())
         assertEquals("Note type should have 1 template now", 1, testEditor.tempNoteType?.templateCount)
+        assertTrue("back must ask before discarding the deletion", testEditor.displayDiscardChangesCallback.isEnabled)
 
         // Try to delete the template again, but there's only one
         assertTrue("Unable to click?", shadowTestEditor.clickMenuItem(R.id.action_delete))
@@ -674,9 +709,50 @@ class CardTemplateEditorTest : RobolectricTest() {
         MatcherAssert.assertThat("Deck ID element should be null", template?.jsonObject?.get("did"), Matchers.equalTo(JSONObject.NULL))
         editor.onDeckSelected(SelectableDeck.Deck(1, "hello"))
         MatcherAssert.assertThat("Deck ID element should be changed", template?.jsonObject?.get("did"), Matchers.equalTo(1L))
+        assertTrue("back must ask before discarding a deck override", editor.displayDiscardChangesCallback.isEnabled)
         editor.onDeckSelected(null)
         MatcherAssert.assertThat("Deck ID element should exist", template!!.jsonObject.has("did"), Matchers.equalTo(true))
         MatcherAssert.assertThat("Deck ID element should be null", template.jsonObject["did"], Matchers.equalTo(JSONObject.NULL))
+        assertFalse("removing the override again leaves nothing to discard", editor.displayDiscardChangesCallback.isEnabled)
+    }
+
+    @Test
+    fun `renaming a card type or changing its browser appearance keeps back's discard prompt current`() {
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.putExtra("noteTypeId", getCurrentDatabaseNoteTypeCopy("Basic").id)
+        val editor = super.startActivityNormallyOpenCollectionWithIntent(CardTemplateEditor::class.java, intent)
+        val originalName = editor.tempNoteType!!.getTemplate(0).name
+        assertFalse("a clean editor leaves back to the system", editor.displayDiscardChangesCallback.isEnabled)
+
+        fun rename(name: String) {
+            // renaming refreshes the pager, so the current fragment is looked up for every step
+            editor.currentFragment!!.showRenameDialog()
+            advanceRobolectricLooper()
+            (ShadowDialog.getLatestDialog() as AlertDialog).input = name
+            clickAlertDialogButton(DialogInterface.BUTTON_POSITIVE, true)
+            advanceRobolectricLooper()
+        }
+        rename("Renamed")
+        assertTrue("back must ask before discarding a rename", editor.displayDiscardChangesCallback.isEnabled)
+        rename(originalName)
+        assertFalse("renaming it back leaves nothing to discard", editor.displayDiscardChangesCallback.isEnabled)
+
+        fun returnBrowserAppearance(question: String) {
+            editor.currentFragment!!.openBrowserAppearance()
+            advanceRobolectricLooper()
+            val shadowEditor = shadowOf(editor)
+            val request = shadowEditor.nextStartedActivityForResult.intent
+            shadowEditor.receiveResult(
+                request,
+                Activity.RESULT_OK,
+                CardTemplateBrowserAppearanceEditor.getIntent(targetContext, question, ""),
+            )
+            advanceRobolectricLooper()
+        }
+        returnBrowserAppearance("{{Front}}")
+        assertTrue("back must ask before discarding a browser appearance", editor.displayDiscardChangesCallback.isEnabled)
+        returnBrowserAppearance("")
+        assertFalse("restoring the browser appearance leaves nothing to discard", editor.displayDiscardChangesCallback.isEnabled)
     }
 
     @Test
@@ -750,6 +826,76 @@ class CardTemplateEditorTest : RobolectricTest() {
         // check if current view is changed or not
         assumeThat(templateEditText.text.toString(), Matchers.equalTo(tempNoteType.css))
         assumeThat(cardTemplateFragment.currentEditorViewId, Matchers.equalTo(R.id.styling_edit))
+    }
+
+    @Test
+    fun `bottom navigation takes the app's navigation bar colours in light mode`() {
+        assertBottomNavigationFollowsTheme(expectNightMode = false)
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    fun `bottom navigation takes the app's navigation bar colours in dark mode`() {
+        assertBottomNavigationFollowsTheme(expectNightMode = true)
+    }
+
+    private fun assertBottomNavigationFollowsTheme(expectNightMode: Boolean) {
+        // the bar used to paint itself alternativeBackgroundColor and remap material's navigation bar roles to the
+        // tab layout attributes, which are meant for tabs inside the primary-coloured app bar: the selected pill came
+        // out primary in light mode and colorSurface in dark mode, with primary labels. it has to resolve material's
+        // own roles from the activity theme, which is what carries the app's material you palette into the bar.
+        // the expected colours come from the activity, not the bar's context, so an overlay on the bar that remaps a
+        // role would change only the actual side and fail here
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.putExtra("noteTypeId", getCurrentDatabaseNoteTypeCopy("Basic").id)
+        val templateEditorController =
+            Robolectric
+                .buildActivity(CardTemplateEditor::class.java, intent)
+                .create()
+                .start()
+                .resume()
+                .visible()
+        saveControllerForCleanup(templateEditorController)
+        advanceRobolectricLooper()
+        val activity = templateEditorController.get()
+        assertEquals("app theme follows the system night mode", expectNightMode, Themes.currentTheme.isNightMode)
+        val bottomNavigation = activity.currentFragment!!.bottomNavigation
+
+        fun themeColor(attr: Int) = MaterialColors.getColor(activity, attr, "CardTemplateEditorTest")
+        val selected = intArrayOf(android.R.attr.state_checked, android.R.attr.state_enabled)
+        val unselected = intArrayOf(android.R.attr.state_enabled)
+
+        assertEquals(
+            "bar surface",
+            themeColor(com.google.android.material.R.attr.colorSurfaceContainer),
+            (bottomNavigation.background as MaterialShapeDrawable).fillColor?.defaultColor,
+        )
+        assertEquals(
+            "selected item indicator",
+            themeColor(com.google.android.material.R.attr.colorSecondaryContainer),
+            bottomNavigation.itemActiveIndicatorColor?.defaultColor,
+        )
+        assertEquals(
+            "selected icon",
+            themeColor(com.google.android.material.R.attr.colorOnSecondaryContainer),
+            bottomNavigation.itemIconTintList?.getColorForState(selected, 0),
+        )
+        assertEquals(
+            "unselected icon",
+            themeColor(com.google.android.material.R.attr.colorOnSurfaceVariant),
+            bottomNavigation.itemIconTintList?.getColorForState(unselected, 0),
+        )
+        assertEquals(
+            "selected label",
+            themeColor(com.google.android.material.R.attr.colorOnSurface),
+            bottomNavigation.itemTextColor?.getColorForState(selected, 0),
+        )
+        assertEquals(
+            "unselected label",
+            themeColor(com.google.android.material.R.attr.colorOnSurfaceVariant),
+            bottomNavigation.itemTextColor?.getColorForState(unselected, 0),
+        )
+        assertEquals("flat, no shadow", 0f, bottomNavigation.elevation)
     }
 
     private fun addCardType(

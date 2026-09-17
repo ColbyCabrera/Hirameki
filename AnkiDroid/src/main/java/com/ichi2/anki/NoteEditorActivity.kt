@@ -114,6 +114,7 @@ import com.ichi2.utils.ImportUtils
 import com.ichi2.widget.WidgetStatus
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -345,9 +346,28 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         val backgroundColor = resolveThemeSurfaceColor()
         window.decorView.setBackgroundColor(backgroundColor)
 
-        onBackPressedDispatcher.addCallback(this) {
-            Timber.i("NoteEditor:: onBackPressed()")
-            closeCardEditorWithCheck()
+        // intercept back only while closing would lose edits. a clean editor is closed by the system,
+        // which plays the predictive back animation (android 13+ with enableOnBackInvokedCallback);
+        // api 31/32 reach the same finish through Activity.onBackPressed()
+        val discardChangesCallback =
+            onBackPressedDispatcher.addCallback(this, enabled = false) {
+                Timber.i("NoteEditor:: onBackPressed()")
+                // re-checks hasUnsavedChanges(): if the flag was a false alarm this still closes normally
+                closeCardEditorWithCheck()
+            }
+        lifecycleScope.launch {
+            noteEditorViewModel.hasUnsavedChangesFlow.collect { discardChangesCallback.isEnabled = it }
+        }
+        // a system back finishes without closeNoteEditor(), so keep the result it would set current
+        lifecycleScope.launch {
+            combine(noteEditorViewModel.changed, noteEditorViewModel.reloadRequired) { _, _ -> }
+                .collect {
+                    // once finishing, the closing path has set its result (e.g. RESULT_DB_ERROR)
+                    if (!isFinishing) {
+                        val (resultCode, data) = closeResult()
+                        setResult(resultCode, data)
+                    }
+                }
         }
 
         startLoadingCollection()
@@ -754,7 +774,9 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
 
                         NoteEditorTopAppBar(
                             title = title,
-                            onBackClick = { onBackPressedDispatcher.onBackPressed() },
+                            // not a back dispatch: a clean editor would then be finished by the
+                            // system fallback, losing closeNoteEditor()'s FINISH_ANIMATION_EXTRA slide
+                            onBackClick = { closeCardEditorWithCheck() },
                             showSaveAction = allowSaveAndPreview,
                             saveEnabled = allowSaveAndPreview,
                             onSaveClick = {
@@ -967,6 +989,15 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     private fun AddClozeType.toClozeMode(): ClozeInsertionMode = when (this) {
         AddClozeType.SAME_NUMBER -> ClozeInsertionMode.SAME_NUMBER
         AddClozeType.INCREMENT_NUMBER -> ClozeInsertionMode.INCREMENT_NUMBER
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // every close passes here, including a system back finish that skips closeNoteEditor().
+        // not onDestroy: that can run after the next screen already wrote its own temp files
+        if (isFinishing) {
+            CardTemplateNotetype.clearTempNoteTypeFiles()
+        }
     }
 
     override fun onStop() {
@@ -1199,19 +1230,20 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         noteEditorViewModel.setShowDiscardChangesDialog(true)
     }
 
-    private fun closeNoteEditor(intent: Intent = Intent()) {
-        val result: Int = if (changed) {
-            RESULT_OK
-        } else {
-            RESULT_CANCELED
-        }
+    /** the result closing the editor reports; shared by [closeNoteEditor] and a system back finish */
+    private fun closeResult(intent: Intent = Intent()): Pair<Int, Intent> {
         if (reloadRequired) {
             intent.putExtra(RELOAD_REQUIRED_EXTRA_KEY, true)
         }
         if (changed) {
             intent.putExtra(NOTE_CHANGED_EXTRA_KEY, true)
         }
-        closeNoteEditor(result, intent)
+        return (if (changed) RESULT_OK else RESULT_CANCELED) to intent
+    }
+
+    private fun closeNoteEditor(intent: Intent = Intent()) {
+        val (result, data) = closeResult(intent)
+        closeNoteEditor(result, data)
     }
 
     private fun closeNoteEditor(
@@ -1223,7 +1255,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         } else {
             setResult(result)
         }
-        CardTemplateNotetype.clearTempNoteTypeFiles()
+        // temp note type files are cleared in onPause(), which every finish passes through
 
         Timber.i("Closing note editor")
 

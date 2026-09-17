@@ -24,7 +24,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.ActionMode
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -32,6 +31,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -235,17 +235,14 @@ class InstantNoteEditorActivity :
                     Timber.d("Save note button pressed")
                     checkAndSave()
                 }
-
-                // required due to setCancelable(false)
-                setOnKeyListener { _, keyCode, event ->
-                    if (!(keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP)) {
-                        return@setOnKeyListener false
-                    }
-
-                    this@InstantNoteEditorActivity.onBackPressedDispatcher.onBackPressed()
-                    false
-                }
             }
+
+        // setCancelable(false) makes the dialog ignore back itself, and android 13+ never sends
+        // KEYCODE_BACK to a key listener (enableOnBackInvokedCallback). forward back from the dialog's
+        // own dispatcher to the activity, which asks before discarding an edited note
+        instantAlertDialog.onBackPressedDispatcher.addCallback(instantAlertDialog) {
+            this@InstantNoteEditorActivity.onBackPressedDispatcher.onBackPressed()
+        }
 
         // consume the touch event outside the dialog
         dialogView.rootView.userClickOutsideDialog(

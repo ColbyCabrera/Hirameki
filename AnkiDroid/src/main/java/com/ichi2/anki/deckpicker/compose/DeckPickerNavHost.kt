@@ -16,9 +16,6 @@
 package com.ichi2.anki.deckpicker.compose
 
 import android.content.Intent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -110,6 +107,7 @@ import com.ichi2.anki.ui.compose.contribute.ContributeScreen
 import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
+import com.ichi2.anki.ui.motion.PredictiveBack
 import com.ichi2.anki.userAcceptsSchemaChange
 import kotlinx.coroutines.launch
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
@@ -388,13 +386,12 @@ fun DeckPickerNavHost(
     NavDisplay(
         entries = navigator.state.toEntries(entryProvider),
         onBack = { navigator.goBack() },
-        transitionSpec = {
-            fadeIn() togetherWith fadeOut()
-        },
-        popTransitionSpec = {
-            fadeIn() togetherWith fadeOut()
-        },
-        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() })
+        // one motion for every destination, shared with settings and shaped like the system's
+        // cross-activity back, see [PredictiveBack]. nav3 seeks the predictive spec with the gesture
+        transitionSpec = { PredictiveBack.push() },
+        popTransitionSpec = { PredictiveBack.pop() },
+        predictivePopTransitionSpec = { swipeEdge -> PredictiveBack.predictivePop(swipeEdge) },
+    )
 }
 
 /**
@@ -681,6 +678,10 @@ private fun DeckPickerWithDrawer(
         gesturesEnabled = !state.fragmented || state.drawerState.targetValue != DrawerValue.Closed,
         drawerContent = {
             ModalDrawerSheet(
+                // the drawerState overload is the one that handles back: it closes the drawer and
+                // shrinks it with the predictive back gesture. the modifier-only overload registers
+                // no back handler, so back with the drawer open used to leave the app
+                drawerState = state.drawerState,
                 modifier = Modifier.width(310.dp),
             ) {
                 Column(
@@ -760,6 +761,9 @@ private fun DeckPickerWithDrawer(
             snackbarHostState = state.snackbarHostState,
             syncState = state.syncState,
             isInInitialState = state.isInInitialState,
+            // the exact condition that enables the drawer sheet's own back handler (material3
+            // DrawerPredictiveBackHandler), so exactly one of the two handles back
+            isDrawerOpen = state.drawerState.targetValue == DrawerValue.Open,
         )
     }
 }

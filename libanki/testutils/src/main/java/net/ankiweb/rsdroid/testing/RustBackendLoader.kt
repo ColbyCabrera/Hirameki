@@ -20,18 +20,16 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
-import java.security.MessageDigest
 
 /**
  * Loads a librsdroid alternative to allow testing of rsdroid under a Robolectric-based environment.
  *
- * This local override diverges from the upstream test helper by extracting a classloader-specific
- * filename. Robolectric commonly creates multiple sandbox classloaders in a single process, and the
- * shared extracted path can lead to native bindings being associated with the wrong loader on Windows.
+ * This local override diverges from the upstream test helper by giving every extraction a filename of
+ * its own. Robolectric commonly creates multiple sandbox classloaders in a single process, and a shared
+ * extracted path can lead to native bindings being associated with the wrong loader on Windows.
  */
 object RustBackendLoader {
     private var hasSetUp = false
-    private val fileNameToPathCache = HashMap<String, String>()
     var printDebug = false
 
     @JvmStatic
@@ -79,31 +77,29 @@ object RustBackendLoader {
             // This helper must load the exact absolute path to keep Robolectric sandboxes isolated.
             System.load(path)
         } catch (e: UnsatisfiedLinkError) {
-            if (!File(path).exists()) {
+            val extracted = File(path)
+            if (!extracted.exists()) {
+                // keep the linker's own text, and the error itself as the cause: "no such file",
+                // "cannot allocate memory" and "invalid ELF header" are three different bugs, and a bare
+                // FileNotFoundException names none of them. dropping it is why the ci failure that
+                // prompted this file's last change (github run 35273990450) is still unexplained
                 throw RuntimeException(
                     FileNotFoundException(
-                        "Extracted file was not found. Maybe the temp folder was deleted. Please try again: '$path'",
-                    ),
+                        "Extracted file was not found. Maybe the temp folder was deleted. Please try again: '$path'" +
+                            " (load failed: ${e.message}; temp dir present: ${extracted.parentFile?.exists()})",
+                    ).apply { initCause(e) },
                 )
             }
-            if (!isAlreadyLoaded(e.message ?: "")) {
+            // the only link failure this may swallow is the jvm refusing a second System.load() of one
+            // path from another classloader, which is the message upstream's helper matches too. a file
+            // per extraction means it can no longer happen here, but a shared path would still be
+            // harmless. every other link error - a truncated copy, a missing dependency, a policy block -
+            // has to fail the test instead of leaving hasSetUp true with no backend loaded
+            if (!(e.message ?: "").contains("already loaded in another classloader", ignoreCase = true)) {
                 throw e
             }
             print("native library already loaded in another classloader: $path")
         }
-    }
-
-    private fun isAlreadyLoaded(message: String): Boolean {
-        val patterns = listOf("already loaded", "already_init")
-        return patterns.any {
-            message.contains(
-                it,
-                ignoreCase = true
-            )
-        } || (message.contains("loaded", ignoreCase = true) && message.contains(
-            "classloader",
-            ignoreCase = true
-        ))
     }
 
     @Throws(IOException::class)
@@ -112,29 +108,24 @@ object RustBackendLoader {
         extension: String,
     ): String {
         val fullFilename = fileName + extension
-        fileNameToPathCache[fullFilename]?.let { cachedPath ->
-            if (File(cachedPath).exists()) {
-                return cachedPath
-            }
-            fileNameToPathCache.remove(fullFilename)
-        }
+        sweepOldExtractions(fileName, extension)
 
-        val buffer = ByteArray(8 * 1024)
-        val checksum = withStream(fullFilename) { stream ->
-            val digest = MessageDigest.getInstance("SHA-1")
-            var bytesRead: Int
-            while (stream.read(buffer).also { bytesRead = it } != -1) {
-                digest.update(buffer, 0, bytesRead)
-            }
-            digest.digest().joinToString("") { "%02x".format(it) }
-        }
-
-        val loaderId = System.identityHashCode(RustBackendLoader::class.java.classLoader)
-        val expectedFile =
-            File(System.getProperty("java.io.tmpdir"), "$fileName-$checksum-$loaderId$extension")
-        if (!expectedFile.exists()) {
-            val tempFile = File.createTempFile("$fileName-$loaderId-", extension)
-            tempFile.outputStream().use { outStream ->
+        // a file of this extraction's own. the name used to be the library's checksum plus the
+        // classloader's identity hash, and that hash repeats across jvm launches (measured: the same
+        // value on every run of the same code), so every test worker gradle forks arrived at one shared
+        // path rather than its own. keeping that shared path current needed rename, copy(overwrite) and
+        // a delete on failure - the last two unlink a file another worker may be loading, and on windows,
+        // where renaming over a loaded dll fails, that fallback is the live path. a per-extraction name
+        // removes that class of race and still gives each robolectric sandbox a path of its own, which is
+        // what this override exists for. it is not known to be the cause of run 35273990450
+        val extracted = File.createTempFile("$fileName-", extension)
+        // tens of megabytes per sandbox: the jvm unlinks them when it exits. a library windows still has
+        // mapped cannot be deleted and that failure is silent, so windows keeps its copies until the
+        // sweep above reaches them
+        extracted.deleteOnExit()
+        try {
+            val buffer = ByteArray(8 * 1024)
+            extracted.outputStream().use { outStream ->
                 withStream(fullFilename) { inStream ->
                     var bytesRead: Int
                     while (inStream.read(buffer).also { bytesRead = it } != -1) {
@@ -143,33 +134,38 @@ object RustBackendLoader {
                 }
                 outStream.flush()
             }
-            check(moveOrReplace(tempFile, expectedFile)) {
-                "Could not move extracted rsdroid library to $expectedFile"
-            }
+        } catch (e: Throwable) {
+            // an empty or half-written copy is indistinguishable from a good one afterwards, and on
+            // windows deleteOnExit may never remove it
+            extracted.delete()
+            throw e
         }
 
-        fileNameToPathCache[fullFilename] = expectedFile.absolutePath
-        return expectedFile.absolutePath
+        return extracted.absolutePath
     }
 
-    private fun moveOrReplace(tempFile: File, expectedFile: File): Boolean {
-        if (tempFile.renameTo(expectedFile)) {
-            return true
-        }
-        return try {
-            tempFile.copyTo(expectedFile, overwrite = true)
-            tempFile.delete()
-            true
-        } catch (_: IOException) {
-            try {
-                if (expectedFile.exists()) {
-                    expectedFile.delete()
-                }
-            } catch (_: Exception) {
-                // Ignore cleanup failures safely
-            }
-            false
-        }
+    /**
+     * Deletes library copies left behind by earlier runs.
+     *
+     * [File.deleteOnExit] cannot unlink a library Windows still has mapped, so without this the temp
+     * directory grows by one copy per extraction and never shrinks. Only copies older than an hour are
+     * touched, so a worker running beside this one keeps its own; a delete that fails is a copy still in
+     * use, which is expected and ignored.
+     */
+    private fun sweepOldExtractions(
+        fileName: String,
+        extension: String,
+    ) {
+        val tempDir = System.getProperty("java.io.tmpdir")?.let { File(it) } ?: return
+        val cutoff = System.currentTimeMillis() - 60 * 60 * 1000
+        tempDir
+            .listFiles()
+            ?.filter {
+                it.isFile &&
+                    it.name.startsWith("$fileName-") &&
+                    it.name.endsWith(extension) &&
+                    it.lastModified() < cutoff
+            }?.forEach { it.delete() }
     }
 
     private fun <T> withStream(

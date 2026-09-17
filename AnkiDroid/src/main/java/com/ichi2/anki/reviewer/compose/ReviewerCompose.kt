@@ -17,6 +17,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.reviewer.compose
 
+import android.view.accessibility.AccessibilityManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -65,6 +66,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -77,6 +79,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
@@ -87,11 +90,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.core.content.getSystemService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import anki.scheduler.CardAnswer
@@ -112,6 +120,7 @@ import com.ichi2.anki.scheduling.SetDueDateViewModel
 import com.ichi2.anki.servicelayer.getFSRSStatus
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.showThemedToast
+import com.ichi2.anki.ui.compose.components.hideAfter
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.ToolbarAlignment
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
 import kotlinx.coroutines.CancellationException
@@ -123,6 +132,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private val WhiteboardToolbarWidth = 56.dp
 private val WhiteboardBottomBarOffset = 48.dp
+
+/** Gap between the voice playback toolbar and the answer buttons, or the screen offset when they are hidden. */
+private val VoiceToolbarGap = 16.dp
 private const val AnswerIndicatorDuration = 1000L
 
 // You can rename this class to be more descriptive
@@ -202,6 +214,43 @@ fun ReviewerContent(
     val whiteboardToolbarHeightDp = with(LocalDensity.current) { whiteboardToolbarHeight.toDp() }
     val totalBottomPadding =
         toolbarHeightDp + (if (state.isWhiteboardEnabled) whiteboardToolbarHeightDp + 8.dp else 0.dp)
+
+    // read once for the screen. these only change in the app's settings, which cannot be open over the reviewer, and
+    // read inline they cost up to nine preference lookups on every recomposition, one per keystroke of a typed answer
+    val cardViewSetting = remember { Prefs.cardViewReviewer }
+    val tapToFlip = remember { Prefs.cardTapToFlip }
+    val dragToGrade = remember { Prefs.cardDragToGrade }
+    // where the overflow menu lives follows the settings, not the card: the card view hands a card with a typed answer
+    // or a whiteboard to the classic layout, and deciding by that moved the button between the top bar and the answer
+    // bar from one card to the next
+    val moreOptionsInTopBar = remember { Prefs.moreOptionsInTopAppBar || cardViewSetting }
+
+    // the card view replaces the flashcard and the answer buttons together. it cannot serve type-in
+    // answers (the text field lives inside the buttons) or whiteboard sessions (the canvas needs the
+    // touches), so those keep the classic layout.
+    val useCardView = cardViewSetting && !state.showTypeInAnswer && !state.isWhiteboardEnabled
+
+    // the card only stands in for the buttons on a step it can perform itself: with tap-to-reveal off it
+    // cannot show the answer, with drag-to-grade off it cannot rate, and without buttons the session
+    // would stall with no way forward
+    val cardCoversThisStep =
+        useCardView && (if (state.isAnswerShown) dragToGrade else tapToFlip)
+
+    // with only one card gesture on, the answer buttons come and go between the two steps. their room is
+    // kept on both, so the card neither jumps nor reflows in the middle of the flip
+    val keepsAnswerBarRoom =
+        !cardCoversThisStep || (useCardView && !(tapToFlip && dragToGrade))
+
+    // collected once, for both the card's room and the toolbar itself
+    val voiceToolbarVisible = voicePlaybackViewModel?.isVisible?.collectAsStateWithLifecycle()?.value == true
+    val voiceToolbarShown = state.isVoicePlaybackEnabled && voiceToolbarVisible
+    val isScreenReaderOn = rememberIsScreenReaderOn()
+
+    // the measured button height is only written while the answer buttons are on screen, so it goes
+    // stale once the card hides them; things stacked above the buttons read this instead
+    val answerBarHeightDp = if (keepsAnswerBarRoom) toolbarHeightDp else 0.dp
+    var voiceToolbarHeight by remember { mutableIntStateOf(0) }
+    val voiceToolbarHeightDp = with(LocalDensity.current) { voiceToolbarHeight.toDp() }
     val context = LocalContext.current
     val currentContext by rememberUpdatedState(context)
     val snackbarHostState = remember { SnackbarHostState() }
@@ -318,7 +367,7 @@ fun ReviewerContent(
         Scaffold(snackbarHost = {
             SnackbarHost(
                 snackbarHostState,
-                modifier = Modifier.padding(bottom = toolbarHeightDp + 32.dp),
+                modifier = Modifier.padding(bottom = answerBarHeightDp + 32.dp),
             ) { data ->
                 Snackbar(
                     snackbarData = data,
@@ -339,7 +388,9 @@ fun ReviewerContent(
                 onToggleMark = { viewModel.onEvent(ReviewerEvent.ToggleMark) },
                 onSetFlag = { viewModel.onEvent(ReviewerEvent.SetFlag(it)) },
                 isAnswerShown = state.isAnswerShown,
-                showMoreOptions = Prefs.moreOptionsInTopAppBar,
+                // the overflow button normally sits in the answer buttons, which the card view hides; the
+                // menu (undo, edit, bury, suspend, whiteboard) must live in the top bar or be unreachable
+                showMoreOptions = moreOptionsInTopBar,
                 onMoreOptionsClick = { showBottomSheet = true },
             ) { viewModel.onEvent(ReviewerEvent.UnanswerCard) }
         }) { paddingValues ->
@@ -371,21 +422,58 @@ fun ReviewerContent(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                     ) {}
 
-                    Flashcard(
-                        baseUrl = state.baseUrl,
-                        questionHtml = state.questionHtml,
-                        answerHtml = state.answerHtml,
-                        bodyClass = state.bodyClass,
-                        isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
-                        javascriptCommand = javascriptCommands.firstOrNull(),
-                        onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
-                        onTap = { },
-                        onLinkClick = {
-                            viewModel.onEvent(ReviewerEvent.LinkClicked(it))
-                        },
-                        isAnswerShown = state.isAnswerShown,
-                        toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt(),
-                    )
+                    if (useCardView) {
+                        // the card's room ends where the highest thing along the bottom begins: the voice
+                        // toolbar, which stacks above the answer buttons, or else the answer buttons' room.
+                        // mirrors the offsets those toolbars are placed with below
+                        val bottomRoom =
+                            when {
+                                voiceToolbarShown ->
+                                    ScreenOffset + answerBarHeightDp + VoiceToolbarGap + voiceToolbarHeightDp
+                                keepsAnswerBarRoom -> ScreenOffset + answerBarHeightDp
+                                else -> 0.dp
+                            }
+                        DraggableFlashcard(
+                            cardKey = state.cardDisplayIndex,
+                            baseUrl = state.baseUrl,
+                            questionHtml = state.questionHtml,
+                            answerHtml = state.answerHtml,
+                            bodyClass = state.bodyClass,
+                            isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
+                            javascriptCommand = javascriptCommands.firstOrNull(),
+                            onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
+                            onLinkClick = {
+                                viewModel.onEvent(ReviewerEvent.LinkClicked(it))
+                            },
+                            isAnswerShown = state.isAnswerShown,
+                            tapToFlip = tapToFlip,
+                            dragToGrade = dragToGrade,
+                            nextTimes = state.nextTimes,
+                            replayFinished = state.replayFinished,
+                            onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
+                            onUnanswer = { viewModel.onEvent(ReviewerEvent.UnanswerCard) },
+                            onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
+                            recordedRating = state.answerFeedback,
+                            modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding() + bottomRoom),
+                        )
+                    } else {
+                        Flashcard(
+                            baseUrl = state.baseUrl,
+                            questionHtml = state.questionHtml,
+                            answerHtml = state.answerHtml,
+                            bodyClass = state.bodyClass,
+                            isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
+                            javascriptCommand = javascriptCommands.firstOrNull(),
+                            onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
+                            onTap = { },
+                            onLinkClick = {
+                                viewModel.onEvent(ReviewerEvent.LinkClicked(it))
+                            },
+                            isAnswerShown = state.isAnswerShown,
+                            toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt(),
+                            replayFinished = state.replayFinished,
+                        )
+                    }
 
                     // Whiteboard canvas and toolbar
                     if (state.isWhiteboardEnabled && whiteboardViewModel != null) {
@@ -460,49 +548,66 @@ fun ReviewerContent(
                     }
 
                     // Voice Playback Toolbar
-                    if (state.isVoicePlaybackEnabled && voicePlaybackViewModel != null) {
-                        val voicePlaybackIsVisible by voicePlaybackViewModel.isVisible.collectAsStateWithLifecycle()
-                        if (voicePlaybackIsVisible) {
-                            VoicePlaybackToolbar(
-                                viewModel = voicePlaybackViewModel,
-                                onToggleRecording = {
-                                    voicePlaybackViewModel.toggleRecording(currentContext)
-                                },
-                                onDismiss = {
-                                    viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
-                                },
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .offset(y = -ScreenOffset - toolbarHeightDp - 16.dp)
-                                        .padding(bottom = paddingValues.calculateBottomPadding()),
-                            )
-                        }
+                    if (voiceToolbarShown) {
+                        VoicePlaybackToolbar(
+                            viewModel = voicePlaybackViewModel,
+                            onToggleRecording = {
+                                voicePlaybackViewModel.toggleRecording(currentContext)
+                            },
+                            onDismiss = {
+                                viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
+                            },
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .offset(y = -ScreenOffset - answerBarHeightDp - VoiceToolbarGap)
+                                    .padding(bottom = paddingValues.calculateBottomPadding())
+                                    // after the inset padding, so it measures the toolbar alone: a modifier
+                                    // sees everything after it in the chain, and measured first it counted
+                                    // the navigation bar, which the card's padding already clears
+                                    .onSizeChanged { voiceToolbarHeight = it.height },
+                        )
                     }
 
-                    AnswerButtons(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .offset(y = -ScreenOffset)
-                                .padding(bottom = paddingValues.calculateBottomPadding())
-                                .onSizeChanged { toolbarHeight = it.height },
-                        isAnswerShown = state.isAnswerShown,
-                        showButtonBadges = state.showAnswerButtonBadges,
-                        colorizeAnswerButtons = state.colorizeAnswerButtons,
-                        showTypeInAnswer = state.showTypeInAnswer,
-                        typedAnswer = state.typedAnswer,
-                        onTypedAnswerChanged = {
-                            viewModel.onEvent(
-                                ReviewerEvent.OnTypedAnswerChanged(it),
-                            )
-                        },
-                        onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
-                        onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
-                        nextTimes = state.nextTimes,
-                        moreOptionsInTopAppBar = Prefs.moreOptionsInTopAppBar,
-                        onMoreOptionsClick = { showBottomSheet = true },
-                    )
+                    if (keepsAnswerBarRoom) {
+                        AnswerButtons(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .offset(y = -ScreenOffset)
+                                    .padding(bottom = paddingValues.calculateBottomPadding())
+                                    .onSizeChanged { toolbarHeight = it.height }
+                                    // on a step the card performs itself the bar is still laid out and placed, so its
+                                    // room is known before the first reveal: measured only once shown, the room
+                                    // arrived with the first flip and moved the card as it turned. it is drawn away to
+                                    // nothing, kept out of the screen reader's tree and disabled below, so it is
+                                    // neither seen, announced nor able to act on a touch.
+                                    // it used to be measured and deliberately left unplaced. compose records a node's
+                                    // screen rect only when the node is placed, so the whole bar stayed out of that
+                                    // register, and the first real placement - the reveal - walked the subtree marking
+                                    // it placed and threw IllegalArgumentException "LayoutNode N not found in
+                                    // RectList", which killed the reviewer
+                                    .alpha(if (cardCoversThisStep) 0f else 1f)
+                                    .then(if (cardCoversThisStep) Modifier.clearAndSetSemantics {} else Modifier),
+                            enabled = !cardCoversThisStep,
+                            isAnswerShown = state.isAnswerShown,
+                            showButtonBadges = state.showAnswerButtonBadges,
+                            colorizeAnswerButtons = state.colorizeAnswerButtons,
+                            showTypeInAnswer = state.showTypeInAnswer,
+                            typedAnswer = state.typedAnswer,
+                            onTypedAnswerChanged = {
+                                viewModel.onEvent(
+                                    ReviewerEvent.OnTypedAnswerChanged(it),
+                                )
+                            },
+                            onShowAnswer = { viewModel.onEvent(ReviewerEvent.ShowAnswer) },
+                            onRateCard = { viewModel.onEvent(ReviewerEvent.RateCard(it)) },
+                            nextTimes = state.nextTimes,
+                            // in card view the menu already sits in the top bar; do not offer it twice
+                            moreOptionsInTopAppBar = moreOptionsInTopBar,
+                            onMoreOptionsClick = { showBottomSheet = true },
+                        )
+                    }
 
                     AnswerIndicator(
                         modifier =
@@ -510,6 +615,10 @@ fun ReviewerContent(
                                 .align(Alignment.TopEnd)
                                 .padding(end = 16.dp, top = 16.dp),
                         feedback = state.answerFeedback,
+                        // a card dragged into a corner is confirmed by that corner; a second notice of the
+                        // same rating up here is noise. not to a screen reader, which can neither see the corner nor
+                        // drag: it rates through the card's actions, and this notice is all it hears of the grade
+                        isShown = !(useCardView && dragToGrade) || isScreenReaderOn,
                         onDismissed = { viewModel.onEvent(ReviewerEvent.AnswerFeedbackShown) },
                     )
                 }
@@ -574,12 +683,7 @@ fun ReviewerContent(
                         leadingContent = { Icon(icon, contentDescription = null) },
                         modifier =
                             Modifier.clickable {
-                                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                    if (!sheetState.isVisible) {
-                                        showBottomSheet = false
-                                    }
-                                }
-                                action()
+                                sheetState.hideAfter(scope, onHidden = { showBottomSheet = false }, action = action)
                             },
                     ) { Text(stringResource(textRes)) }
                 }
@@ -704,6 +808,7 @@ fun ReviewerContent(
 fun AnswerIndicator(
     modifier: Modifier = Modifier,
     feedback: AnswerFeedback?,
+    isShown: Boolean = true,
     onDismissed: () -> Unit,
 ) {
     var lastFeedback by remember { mutableStateOf<AnswerFeedback?>(null) }
@@ -711,6 +816,11 @@ fun AnswerIndicator(
 
     LaunchedEffect(feedback) {
         if (feedback != null) {
+            // still acknowledged when not shown, so a notice cannot linger and surface later
+            if (!isShown) {
+                currentOnDismissed()
+                return@LaunchedEffect
+            }
             lastFeedback = feedback
             delay(AnswerIndicatorDuration.milliseconds)
             currentOnDismissed()
@@ -718,7 +828,7 @@ fun AnswerIndicator(
     }
 
     AnimatedVisibility(
-        visible = feedback != null,
+        visible = feedback != null && isShown,
         enter = fadeIn(),
         exit = fadeOut(animationSpec = MaterialTheme.motionScheme.slowEffectsSpec()),
         modifier = modifier,
@@ -726,6 +836,8 @@ fun AnswerIndicator(
         // Use the cached lastFeedback to avoid disappearing mid-animation
         lastFeedback?.let { current ->
             Surface(
+                // read out as it appears, as a snackbar is: a rating recorded is otherwise silent to a screen reader
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 shape = MaterialTheme.shapes.extraExtraLarge,
                 color = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -738,6 +850,23 @@ fun AnswerIndicator(
             }
         }
     }
+}
+
+/**
+ * Whether a screen reader is exploring the screen by touch, kept current while the reviewer is open. Such a reader
+ * cannot drag the card or see its corners, so the screen confirms grades it would otherwise leave to them.
+ */
+@Composable
+private fun rememberIsScreenReaderOn(): Boolean {
+    val context = LocalContext.current
+    val manager = remember(context) { context.getSystemService<AccessibilityManager>() }
+    var isOn by remember(manager) { mutableStateOf(manager?.isTouchExplorationEnabled == true) }
+    DisposableEffect(manager) {
+        val listener = AccessibilityManager.TouchExplorationStateChangeListener { isOn = it }
+        manager?.addTouchExplorationStateChangeListener(listener)
+        onDispose { manager?.removeTouchExplorationStateChangeListener(listener) }
+    }
+    return isOn
 }
 
 private fun CardAnswer.Rating.toResId(): Int =

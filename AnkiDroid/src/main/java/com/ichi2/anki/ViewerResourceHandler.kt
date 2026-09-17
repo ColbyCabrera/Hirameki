@@ -20,6 +20,7 @@ import android.content.Context
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.themes.ArabicScriptFont
 import com.ichi2.utils.AssetHelper.guessMimeType
 import timber.log.Timber
 import java.io.ByteArrayInputStream
@@ -35,6 +36,7 @@ class ViewerResourceHandler(
     context: Context,
 ) {
     private val assetManager = context.assets
+    private val resources = context.resources
     private val mediaDir = CollectionHelper.getMediaDirectory(context)
 
     fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? {
@@ -49,6 +51,12 @@ class ViewerResourceHandler(
         }
 
         try {
+            // the card's arabic-script font (ArabicScriptFont): answered on the page's own http://127.0.0.1 origin, so
+            // the @font-face load is same-origin, and read from the one res/font copy the ui also uses. matched
+            // exactly, so no traversal check is needed, and no media file shadows it: anki media names have no "/"
+            if (path == ArabicScriptFont.CARD_FONT_PATH) {
+                return WebResourceResponse("font/ttf", null, resources.openRawResource(R.font.vazirmatn))
+            }
             if (path.startsWith(MATHJAX_PATH_PREFIX)) {
                 val mathjaxAssetPath =
                     Paths

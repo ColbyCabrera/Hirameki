@@ -52,6 +52,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
 
 /**
  * Represents an item displayed in the overflow menu of the note editor top app bar.
@@ -145,43 +146,45 @@ fun NoteEditorTopAppBar(
                         contentDescription = stringResource(R.string.more_options),
                     )
                 }
-                DropdownMenu(
-                    expanded = overflowExpanded,
-                    onDismissRequest = { overflowExpanded = false },
-                    shape = MaterialTheme.shapes.large,
-                ) {
-                    visibleOverflowItems.forEach { item ->
-                        when (item) {
-                            is NoteEditorSimpleOverflowItem -> {
-                                DropdownMenuItem(
-                                    text = { Text(item.title) },
-                                    enabled = item.enabled,
-                                    onClick = {
-                                        overflowExpanded = false
-                                        item.onClick()
-                                    },
-                                )
-                            }
+                MenuExitMotion(expanded = overflowExpanded) {
+                    DropdownMenu(
+                        expanded = overflowExpanded,
+                        onDismissRequest = { overflowExpanded = false },
+                        shape = MaterialTheme.shapes.large,
+                    ) {
+                        visibleOverflowItems.forEach { item ->
+                            when (item) {
+                                is NoteEditorSimpleOverflowItem -> {
+                                    DropdownMenuItem(
+                                        text = { Text(item.title) },
+                                        enabled = item.enabled,
+                                        onClick = {
+                                            overflowExpanded = false
+                                            item.onClick()
+                                        },
+                                    )
+                                }
 
-                            is NoteEditorToggleOverflowItem -> {
-                                DropdownMenuItem(
-                                    text = { Text(item.title) },
-                                    enabled = item.enabled,
-                                    onClick = {
-                                        overflowExpanded = false
-                                        item.onCheckedChange(!item.checked)
-                                    },
-                                    trailingIcon = {
-                                        Checkbox(
-                                            checked = item.checked,
-                                            enabled = item.enabled,
-                                            onCheckedChange = null,
-                                            modifier = Modifier.semantics {
-                                                contentDescription = item.title
-                                            },
-                                        )
-                                    },
-                                )
+                                is NoteEditorToggleOverflowItem -> {
+                                    DropdownMenuItem(
+                                        text = { Text(item.title) },
+                                        enabled = item.enabled,
+                                        onClick = {
+                                            overflowExpanded = false
+                                            item.onCheckedChange(!item.checked)
+                                        },
+                                        trailingIcon = {
+                                            Checkbox(
+                                                checked = item.checked,
+                                                enabled = item.enabled,
+                                                onCheckedChange = null,
+                                                modifier = Modifier.semantics {
+                                                    contentDescription = item.title
+                                                },
+                                            )
+                                        },
+                                    )
+                                }
                             }
                         }
                     }

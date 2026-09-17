@@ -38,7 +38,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -79,16 +78,6 @@ fun DeckSelector(
         buildDeckHierarchy(availableDecks, deckSearchQuery)
     }
 
-    // Clean up state when deck menu is dismissed
-    DisposableEffect(showDeckMenu) {
-        onDispose {
-            if (!showDeckMenu) {
-                deckSearchQuery = ""
-                expandedDecks.clear()
-            }
-        }
-    }
-
     val deckName = when (selectedDeck) {
         is SelectableDeck.Deck -> selectedDeck.name
         is SelectableDeck.AllDecks -> stringResource(R.string.card_browser_all_decks)
@@ -96,7 +85,14 @@ fun DeckSelector(
     }
 
     Column(modifier = modifier) {
-        TextButton(onClick = { showDeckMenu = true }) {
+        // the search and the expanded decks are reset as the menu opens, not as it closes: the menu is still
+        // on screen through its exit, and clearing them on dismiss emptied the field and collapsed the tree
+        // while it faded, resizing the popup as it left. every open still starts fresh
+        TextButton(onClick = {
+            deckSearchQuery = ""
+            expandedDecks.clear()
+            showDeckMenu = true
+        }) {
             Text(
                 text = deckName, maxLines = 1, overflow = TextOverflow.Ellipsis
             )
@@ -106,62 +102,64 @@ fun DeckSelector(
             )
         }
 
-        DropdownMenu(
-            expanded = showDeckMenu,
-            onDismissRequest = { showDeckMenu = false },
-            shape = MaterialTheme.shapes.large
-        ) {
-            Surface(
-                modifier = Modifier.padding(
-                    vertical = 8.dp, horizontal = 12.dp
-                ), color = MaterialTheme.colorScheme.surface, shape = CircleShape
+        MenuExitMotion(expanded = showDeckMenu) {
+            DropdownMenu(
+                expanded = showDeckMenu,
+                onDismissRequest = { showDeckMenu = false },
+                shape = MaterialTheme.shapes.large
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextField(
-                        value = deckSearchQuery,
-                        onValueChange = { deckSearchQuery = it },
-                        placeholder = { Text(stringResource(R.string.card_browser_search_hint)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = MaterialTheme.typography.bodyLarge,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                        singleLine = true,
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.search_24px),
-                                contentDescription = null
-                            )
-                        },
-                        trailingIcon = {
-                            if (deckSearchQuery.isNotEmpty()) {
-                                IconButton(onClick = { deckSearchQuery = "" }) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.close)
-                                    )
+                Surface(
+                    modifier = Modifier.padding(
+                        vertical = 8.dp, horizontal = 12.dp
+                    ), color = MaterialTheme.colorScheme.surface, shape = CircleShape
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextField(
+                            value = deckSearchQuery,
+                            onValueChange = { deckSearchQuery = it },
+                            placeholder = { Text(stringResource(R.string.card_browser_search_hint)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                            singleLine = true,
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.search_24px),
+                                    contentDescription = null
+                                )
+                            },
+                            trailingIcon = {
+                                if (deckSearchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { deckSearchQuery = "" }) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.close)
+                                        )
+                                    }
                                 }
-                            }
-                        },
-                        colors = transparentTextFieldColors(),
-                    )
+                            },
+                            colors = transparentTextFieldColors(),
+                        )
+                    }
                 }
-            }
 
-            if (showAllDecksOption) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.card_browser_all_decks)) },
-                    onClick = {
+                if (showAllDecksOption) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.card_browser_all_decks)) },
+                        onClick = {
+                            showDeckMenu = false
+                            onDeckSelected(SelectableDeck.AllDecks)
+                        })
+                }
+
+                DeckHierarchyMenu(
+                    deckHierarchy = deckHierarchy, expandedDecks = expandedDecks, onDeckSelected = {
                         showDeckMenu = false
-                        onDeckSelected(SelectableDeck.AllDecks)
-                    })
+                        onDeckSelected(it)
+                    }, searchQuery = deckSearchQuery
+                )
             }
-
-            DeckHierarchyMenu(
-                deckHierarchy = deckHierarchy, expandedDecks = expandedDecks, onDeckSelected = {
-                    showDeckMenu = false
-                    onDeckSelected(it)
-                }, searchQuery = deckSearchQuery
-            )
         }
     }
 }

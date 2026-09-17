@@ -246,6 +246,7 @@ open class AnkiDroidApp : Application(), ChangeManager.Subscriber {
         )
 
         activityAgnosticDialogs = ActivityAgnosticDialogs.register(this)
+        registerActivityLifecycleCallbacks(AutomaticSyncOnLeave(this, applicationScope))
         TtsVoices.launchBuildLocalesJob()
         // enable {{tts-voices:}} field filter
         TtsVoicesFieldFilter.ensureApplied()

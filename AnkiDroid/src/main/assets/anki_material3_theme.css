@@ -1,74 +1,9 @@
-.deck-options-page,
-.deck-options-page .container-columns,
-.deck-options-page .row-columns {
-    background-color: var(--canvas) !important;
-    color: var(--fg) !important;
-    box-shadow: none !important;
-}
-
-.deck-options-page details,
-.deck-options-page .modal-content,
-.deck-options-page .radio-group,
-.deck-options-page .button-bar {
-    background-color: var(--canvas-elevated) !important;
-    color: var(--deck-options-on-surface) !important;
-    border: 1px solid var(--canvas-inset) !important;
-    box-shadow: none !important;
-}
-
-.deck-options-page details {
-    padding: 16px !important;
-}
-
-.deck-options-page details > summary {
-    color: var(--fg) !important;
-    cursor: pointer !important;
-    font-weight: 600 !important;
-}
-
-.deck-options-page details[open] > summary {
-    margin-bottom: 12px !important;
-}
-
-.deck-options-page .modal-header,
-.deck-options-page .modal-footer {
-    border-color: var(--border) !important;
-}
-
-.deck-options-page .btn {
-    background-color: var(--button-primary-bg) !important;
-    color: var(--deck-options-on-primary) !important;
-    border: none !important;
-    border-radius: 20px !important;
-    box-shadow: none !important;
-    background-image: none !important;
-}
-
-.deck-options-page .btn-primary {
-    --bs-btn-color: var(--deck-options-on-primary) !important;
-    --bs-btn-hover-color: var(--deck-options-on-primary) !important;
-    --bs-btn-active-color: var(--deck-options-on-primary) !important;
-    --bs-btn-disabled-color: var(--deck-options-on-primary) !important;
-    --bs-btn-bg: var(--button-primary-bg);
-    --bs-btn-hover-bg: var(--button-primary-bg);
-    --bs-btn-active-bg: var(--button-primary-bg);
-    --bs-btn-disabled-bg: var(--button-primary-bg);
-    --bs-btn-border-color: transparent;
-    --bs-btn-hover-border-color: transparent;
-    --bs-btn-active-border-color: transparent;
-    --bs-btn-disabled-border-color: transparent;
-
-    color: var(--deck-options-on-primary) !important;
-}
-
-.deck-options-page .btn-primary,
-.deck-options-page .btn-primary:hover,
-.deck-options-page .btn-primary:focus-visible,
-.deck-options-page .btn-primary:active,
-.deck-options-page .btn-primary:disabled,
-.deck-options-page .btn-primary * {
-    color: var(--deck-options-on-primary) !important;
-}
+/*
+ * material 3 theme for anki's sveltekit pages (graphs, card info, congrats, change notetype,
+ * deck options, import, image occlusion). PageWebViewClient appends this file to one <style>
+ * in <head>, after a :root block that maps the android theme onto anki/bootstrap variables and
+ * onto --m3-* roles, so both day and night mode take the app's own colours.
+ */
 
 .label-button.primary,
 .label-button.primary:hover,
@@ -77,66 +12,7 @@
 .label-button.primary:active,
 .label-button.primary:disabled,
 .label-button.primary * {
-    color: var(--deck-options-on-primary) !important;
-}
-
-.deck-options-page .revert .badge,
-.deck-options-page .revert .badge:hover,
-.deck-options-page .revert .badge:focus,
-.deck-options-page .revert .badge:focus-visible,
-.deck-options-page .revert .badge:active {
-    background-color: transparent !important;
-    border: 0 !important;
-    outline: 0 !important;
-    box-shadow: none !important;
-    color: var(--fg-subtle) !important;
-}
-
-.deck-options-page .revert .badge:hover,
-.deck-options-page .revert .badge:focus-visible {
-    color: var(--fg) !important;
-}
-
-.deck-options-page .form-control,
-.deck-options-page .form-select,
-.deck-options-page input[type="text"],
-.deck-options-page input[type="number"],
-.deck-options-page input[type="date"],
-.deck-options-page textarea {
-    background-color: var(--canvas-inset) !important;
-    color: var(--deck-options-on-surface) !important;
-    border-color: var(--border) !important;
-    box-shadow: none !important;
-}
-
-.deck-options-page .form-control:focus,
-.deck-options-page .form-select:focus,
-.deck-options-page input[type="text"]:focus,
-.deck-options-page input[type="number"]:focus,
-.deck-options-page input[type="date"]:focus,
-.deck-options-page textarea:focus {
-    border-color: var(--border-focus) !important;
-    box-shadow: 0 0 0 1px var(--border-focus) !important;
-}
-
-.deck-options-page .col-form-label,
-.deck-options-page .form-label,
-.deck-options-page .header,
-.deck-options-page summary,
-.deck-options-page .day {
-    color: var(--fg) !important;
-}
-
-.deck-options-page .dropdown-divider {
-    border-color: var(--border) !important;
-    opacity: 1 !important;
-}
-
-.deck-options-page .alert {
-    background-color: var(--canvas-inset) !important;
-    color: var(--deck-options-on-surface) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 16px !important;
+    color: var(--m3-on-primary) !important;
 }
 
 /* Bootstrap Switch Styling */
@@ -156,12 +32,6 @@ a:visited {
     color: var(--fg-link) !important;
 }
 
-.deck-options-page .modal-content {
-    --bs-modal-bg: var(--canvas-elevated);
-    --bs-modal-color: var(--deck-options-on-surface);
-    --bs-modal-border-color: var(--border);
-}
-
 .range-box {
     background: var(--canvas-elevated) !important;
     border-color: var(--border) !important;
@@ -173,7 +43,9 @@ a:visited {
     padding: 0 16px 4px !important;
 }
 
-.range-box > div {
+/* the two option groups. the range box's first div is the loading spinner (.spin), which a pill
+   around it would draw as a filled blob whenever it fades in */
+.range-box > div:not(.spin) {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -182,15 +54,6 @@ a:visited {
     border-radius: 24px !important;
     padding: 4px !important;
     max-width: 100% !important;
-}
-
-.range-box > div:first-of-type {
-    flex-wrap: wrap !important;
-}
-
-.range-box > div:first-of-type input[type="text"] {
-    flex: 1 1 100% !important;
-    margin-top: 8px !important;
 }
 
 .range-box label {
@@ -207,16 +70,15 @@ a:visited {
     background-color: var(--border) !important;
 }
 
-.range-box input[type="radio"]:checked + label,
 .range-box label:has(input[type="radio"]:checked) {
-    background-color: var(--deck-options-tertiary-container) !important;
-    color: var(--deck-options-on-tertiary-container) !important;
+    background-color: var(--m3-tertiary-container) !important;
+    color: var(--m3-on-tertiary-container) !important;
 }
 
 .range-box input[type="text"],
 #statisticsSearchText {
     background-color: var(--canvas-inset) !important;
-    color: var(--deck-options-on-surface) !important;
+    color: var(--m3-on-surface) !important;
     border: 1px solid var(--border) !important;
     border-radius: 20px !important;
     padding: 8px 16px !important;
@@ -225,23 +87,6 @@ a:visited {
 
 .range-box .spin {
     color: var(--button-primary-bg) !important;
-}
-
-.deck-options-page input[type="radio"],
-.deck-options-page input[type="checkbox"],
-.deck-options-page input[type="range"] {
-    accent-color: var(--button-primary-bg) !important;
-}
-
-.deck-options-page input[type="search"],
-.deck-options-page select {
-    background-color: var(--canvas-inset) !important;
-    color: var(--deck-options-on-surface) !important;
-    border-color: var(--border) !important;
-}
-
-.deck-options-page label {
-    color: var(--fg) !important;
 }
 
 .graphs-container {
@@ -257,16 +102,1227 @@ a:visited {
     box-shadow: none !important;
 }
 
-.graphs-container h2,
-.graphs-container h3,
-.graphs-container .title,
-svg text,
-.axis text {
+svg text {
     color: var(--fg) !important;
     fill: var(--fg) !important;
 }
 
-svg .axis path,
-svg .axis line {
-    stroke: var(--border) !important;
+/*
+ * deck options
+ *
+ * laid out like the app's settings screens: flat tonal cards on the toolbar's surface colour,
+ * group titles in primary, 56px setting rows, filled 48px fields, m3 switches, menus and dialogs.
+ *
+ * scoping: the page body is .deck-options-page. the preset bar, the preset-name dialog and
+ * bootstrap's modal backdrop render outside it, so their rules hang off
+ * body:has(.deck-options-page). controls inside a card hang off .dynamically-slottable, which
+ * leaves out the help dialogs (they sit in each card's header) but keeps the fsrs simulator.
+ *
+ * these rules beat upstream's by specificity, never by load order: route css that loads lazily
+ * can land after this style. do not give a card or any of its ancestors a transform, filter,
+ * contain, isolation, opacity below 1, z-index or clipping overflow: the help and simulator
+ * dialogs are position:fixed inside the cards, and select and revert menus spill out of them.
+ */
+
+/* the native toolbar above the page is colorSurface; bar and page match it */
+body:has(.deck-options-page) {
+    background-color: var(--m3-surface) !important; /* the shared body rule is !important */
+}
+
+/* 16px beside and between the cards; upstream leaves 4px beside and 22px between */
+.deck-options-page > svelte-css-wrapper > .container-columns {
+    --gutter-block: 8px; /* each .row-columns pads itself by this above and below */
+    padding: 0 16px 40px; /* room above the navigation bar, which the webview extends under */
+}
+
+/* section card: a flat tonal container, like the deck picker's deck groups */
+.deck-options-page .container-columns .row-columns > .container {
+    --gutter-inline: 0; /* columns get their spacing from the setting-row rules */
+    padding: 16px 16px 12px;
+    border: 0;
+    border-radius: 24px;
+    background: var(--m3-surface-container);
+    color: var(--m3-on-surface);
+    box-shadow: none;
+}
+
+/* group title, styled as the app's preference category header */
+.deck-options-page .row-columns > .container > .position-relative > h1 {
+    margin: 0 0 4px;
+    padding: 0;
+    padding-inline-end: 40px; /* keeps long titles clear of the help button */
+    border: 0;
+    color: var(--m3-primary);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+}
+
+/* help: a 40px icon button centred on the title line. only offsets go on .help-badge: it also
+   holds the help dialog, which would inherit anything else */
+.deck-options-page .row-columns > .container > .position-relative > .help-badge {
+    top: -10px;
+    right: auto;
+    left: auto;
+    inset-inline-end: -12px;
+}
+
+.deck-options-page .row-columns > .container > .position-relative > .help-badge > .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--m3-on-surface-variant);
+}
+
+/* setting rows: a 56px list item with 16px between label and control. upstream packs rows 2px
+   apart; its column splits stay, the rhythm is shared */
+.deck-options-page .row-columns .dynamically-slottable .row:has(> svelte-css-wrapper > .col) {
+    min-height: 56px;
+    padding-block: 4px;
+    row-gap: 8px; /* label above control once the row wraps (selects on phones) */
+}
+
+.deck-options-page .row-columns .dynamically-slottable .row > svelte-css-wrapper:first-child:not(:last-child) > .col {
+    padding-inline-end: 16px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .col .row {
+    padding-block: 0; /* the field's own inner row (tabs + number) */
+}
+
+.deck-options-page .row-columns .dynamically-slottable .row:has(> .alert) {
+    padding-block: 4px;
+}
+
+@media (max-width: 767.98px) {
+    /* tabs do not fit beside a label on a phone: stack label, tabs and field. wider rows wrap
+       the same way on their own once the tabs outgrow the control column */
+    .deck-options-page .row-columns .dynamically-slottable .row:has(> svelte-css-wrapper > .col > .row > ul) > svelte-css-wrapper > .col {
+        flex-basis: 100%;
+    }
+}
+
+.deck-options-page .row-columns .dynamically-slottable .setting-title {
+    color: var(--m3-on-surface);
+    font-size: 16px;
+    line-height: 24px;
+}
+
+/* touch keeps :hover after a tap, so upstream's dotted hover underline would stay behind */
+.deck-options-page .row-columns .dynamically-slottable .setting-title:hover {
+    text-decoration: none;
+}
+
+/* a title above its own field instead of beside it (fsrs parameters) */
+.deck-options-page .row-columns .dynamically-slottable .setting-title:has(+ .config-input) {
+    padding-block: 12px 8px;
+}
+
+/* "affects the entire collection" marker */
+.deck-options-page .row-columns .dynamically-slottable .inline-icon {
+    margin: 0;
+    margin-inline-start: 6px;
+    color: var(--m3-on-surface-variant);
+    vertical-align: -2px;
+}
+
+/* fields: a surface fill with a 1px outline, like the app's outlined dialog fields. the fill alone
+   is about 1.1:1 against the surface-container card, so without the outline number fields and
+   selects read as loose text instead of tappable controls */
+.deck-options-page .row-columns .dynamically-slottable .spin-box,
+.deck-options-page .row-columns .dynamically-slottable .select-container,
+.deck-options-page .row-columns .dynamically-slottable input[type="text"],
+.deck-options-page .row-columns .dynamically-slottable input[type="date"],
+body:has(.deck-options-page) .modal-body input[type="text"] {
+    height: 48px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .spin-box,
+.deck-options-page .row-columns .dynamically-slottable .select-container,
+.deck-options-page .row-columns .dynamically-slottable input[type="text"],
+.deck-options-page .row-columns .dynamically-slottable input[type="date"],
+.deck-options-page .row-columns .dynamically-slottable textarea,
+body:has(.deck-options-page) .modal-body input[type="text"] {
+    border: 0;
+    border-radius: 16px;
+    outline: 0;
+    background: var(--m3-surface);
+    color: var(--m3-on-surface);
+    box-shadow: inset 0 0 0 1px var(--m3-outline);
+    caret-color: var(--m3-primary);
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable input[type="text"],
+.deck-options-page .row-columns .dynamically-slottable input[type="date"],
+body:has(.deck-options-page) .modal-body input[type="text"] {
+    padding: 0 16px;
+}
+
+/* height stays upstream's: 10em for custom scheduling, fitted to the text for fsrs parameters */
+.deck-options-page .row-columns .dynamically-slottable textarea {
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable input::placeholder,
+.deck-options-page .row-columns .dynamically-slottable textarea::placeholder {
+    color: var(--m3-on-surface-variant);
+    opacity: 1;
+}
+
+/* focus: a 2px primary ring inside the field; selects keep it while their menu is open. a number
+   field rings for its input only: a stepper that takes focus (talkback's click) is no edit */
+.deck-options-page .row-columns .dynamically-slottable .spin-box:has(> input:focus),
+.deck-options-page .row-columns .dynamically-slottable input[type="text"]:focus,
+.deck-options-page .row-columns .dynamically-slottable input[type="date"]:focus,
+.deck-options-page .row-columns .dynamically-slottable textarea:focus,
+.deck-options-page .row-columns .dynamically-slottable .select-container[aria-expanded="true"],
+.deck-options-page .row-columns .dynamically-slottable .select-container:focus-visible,
+body:has(.deck-options-page) .sticky-container .select-container[aria-expanded="true"],
+body:has(.deck-options-page) .sticky-container .select-container:focus-visible,
+body:has(.deck-options-page) .modal-body input[type="text"]:focus {
+    box-shadow: inset 0 0 0 2px var(--m3-primary);
+}
+
+/* upstream repaints the preset-name field on focus in night mode (.nightMode:focus) */
+body:has(.deck-options-page) .modal-body input[type="text"]:focus {
+    background-color: var(--m3-surface);
+}
+
+/* number field. the number keeps upstream's 0.5em padding so the "%" overlay (.suffix) stays
+   on it, including the inline 2.2ch padding upstream sets when a locale puts "%" first; the
+   margin supplies the rest of the 16px inset */
+.deck-options-page .row-columns .dynamically-slottable .spin-box input {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-inline-start: 8px; /* logical: in rtl the number starts at the right edge */
+    padding-block: 0;
+    color: inherit;
+}
+
+/* the overlay is laid out from the number's start edge, so it takes the same logical side as the
+   margin: upstream's physical left put the "%" at the wrong end of an rtl field */
+.deck-options-page .row-columns .dynamically-slottable .spin-box .suffix {
+    top: 0;
+    left: auto;
+    inset-inline-start: calc(8px + 0.5em);
+    line-height: 48px; /* same baseline as the input's vertically centred text */
+    color: var(--m3-on-surface-variant);
+}
+
+/* - and + at the ends of the field (anki_material3_steppers.js; upstream's step buttons are
+   desktop-only). a 40px tonal icon button inside a 48px touch target of transparent borders. the
+   field keeps room for both, a shown revert icon and five digits (48 + 48 + 48 + 64px): a row too
+   narrow for that wraps, putting its label above the field as the rows with tabs do on a phone */
+.deck-options-page .row-columns .dynamically-slottable .spin-box:has(> .m3-stepper) {
+    min-width: 208px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .spin-box > .m3-stepper {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 4px solid transparent;
+    border-radius: 50%;
+    background-clip: padding-box; /* the fill and its state layer stop at the 40px circle */
+    background-color: var(--m3-secondary-container);
+    background-image: none; /* upstream's hover gradient for every plain button, which touch keeps after a tap */
+    color: var(--m3-on-secondary-container);
+    box-shadow: none; /* upstream's pressed shadow for every plain button */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; /* quick taps are steps, not a double-tap zoom */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .spin-box > .m3-stepper > svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .spin-box > .m3-stepper + input {
+    margin-inline-start: 0; /* the - button is the inset */
+}
+
+.deck-options-page .row-columns .dynamically-slottable .spin-box:has(> .m3-stepper) .suffix {
+    inset-inline-start: calc(48px + 0.5em);
+}
+
+/* select: upstream styles it as a gradient button with a divided chevron */
+.deck-options-page .row-columns .dynamically-slottable .select-container .label,
+body:has(.deck-options-page) .sticky-container .select-container .label {
+    inset-inline-start: 16px;
+    inset-inline-end: 4px;
+    line-height: 48px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .select-container .chevron,
+body:has(.deck-options-page) .sticky-container .select-container .chevron {
+    --buttons-size: 32px; /* sizes the icon box (30px, icon 24px); the page never defines it */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    border: 0;
+    color: var(--m3-on-surface-variant);
+}
+
+.deck-options-page .row-columns .dynamically-slottable .select-container.disabled {
+    opacity: 0.38;
+}
+
+/* revert: upstream hangs it 1.7em outside the field, which is past the card's edge now. in a
+   field it becomes a trailing icon; beside a switch it sits just before the switch */
+.deck-options-page .row-columns .dynamically-slottable .config-input > .revert {
+    top: 0;
+    bottom: 0;
+    right: auto;
+    left: auto;
+    inset-inline-end: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> .select-container) > .revert {
+    inset-inline-end: 44px; /* before the chevron */
+}
+
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> .spin-box > .m3-stepper) > .revert {
+    inset-inline-end: 52px; /* before the + button, centred in the room the value keeps for it */
+}
+
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> textarea, > details) > .revert {
+    top: 4px;
+    bottom: auto;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .config-input:not(.flex-grow-1) > .revert {
+    inset-inline-end: calc(100% + 4px); /* switch rows: the only inputs that do not grow */
+}
+
+/* only while shown: upstream hides the badge with display:none (.hide), which must win */
+.deck-options-page .row-columns .dynamically-slottable .revert > :not(.hide) > .badge {
+    position: relative;
+    z-index: 1; /* above the field, which is later in the dom and positioned */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--m3-on-surface-variant);
+}
+
+/* a tap on the badge restores the default itself (anki_material3_revert.js): it presses the item of the
+   one-item menu anki hangs the restore off, inside the tap's own task. the script wears this mark for
+   the microtasks it waits on a menu anki has yet to render, which nothing paints between, and this keeps
+   that menu out of layout and out of the enter animation while it is in the document. scoped like the
+   script, which looks for no row around a badge, so that every menu it opens is a menu this hides */
+body:has(.deck-options-page) .revert[data-m3-restoring] .floating {
+    display: none;
+}
+
+/* keep the value clear of a shown revert icon */
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> .revert > :not(.hide) > .badge) > .spin-box input,
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> .revert > :not(.hide) > .badge) > input,
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> .revert > :not(.hide) > .badge) > textarea,
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> .revert > :not(.hide) > .badge) > details > summary {
+    padding-inline-end: 48px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .config-input:has(> .revert > :not(.hide) > .badge) > .select-container .label {
+    inset-inline-end: 44px;
+}
+
+/* "preset / this deck / today only": an outlined segmented button, as in the browser options.
+   segments size to their label and wrap it only once the row is full: equal thirds cut french,
+   italian, russian, danish and latvian labels on a phone */
+.deck-options-page .row-columns .dynamically-slottable .col > .row > ul {
+    display: flex;
+    width: 100%;
+    margin: 0 0 8px;
+    padding: 0;
+    overflow: hidden; /* clips the segments to the pill; it holds no menus */
+    border: 1px solid var(--m3-outline);
+    border-radius: 20px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .col > .row > ul > li {
+    display: flex; /* the button fills a segment that a two-line neighbour made taller */
+    flex: 1 1 auto;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .col > .row > ul > li + li {
+    border-inline-start: 1px solid var(--m3-outline);
+}
+
+.deck-options-page .row-columns .dynamically-slottable .col > .row > ul > li > button {
+    flex: 1 1 auto;
+    min-height: 38px;
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--m3-on-surface);
+    box-shadow: none;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+    white-space: normal; /* upstream is nowrap */
+}
+
+.deck-options-page .row-columns .dynamically-slottable .col > .row > ul > li.active > button {
+    background-color: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+}
+
+/* switch: the m3 switch with icons, as drawn by the app's AnkiToggle. PageWebViewClient builds
+   the handle images (--m3-switch-thumb-*) */
+.deck-options-page .row-columns .dynamically-slottable .form-switch {
+    display: flex;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .form-switch .form-check-input {
+    flex: none;
+    float: none;
+    /* the input is the switch's only tap target: upstream cancels the label's click and the title
+       opens help. 8px transparent borders above and below make it 48px tall, while the negative
+       margins keep it laying out, and the padding box keeps it drawing, as a 52x32 track */
+    width: 52px;
+    height: 48px;
+    margin: -8px 0;
+    border: 0 solid transparent;
+    border-block-width: 8px;
+    border-radius: 16px / 24px; /* minus the 8px borders: a 16px pill around the padding box */
+    background-clip: padding-box;
+    background-color: var(--m3-surface-container-highest);
+    background-image: var(--m3-switch-thumb-off);
+    background-position: 2px center;
+    background-repeat: no-repeat;
+    background-size: 28px 28px; /* handle centres land 16px and 36px from the left */
+    box-shadow: inset 0 0 0 2px var(--m3-outline); /* the track outline, inside the tap borders */
+    transition:
+        background-position 0.2s cubic-bezier(0.2, 0, 0, 1),
+        background-color 0.2s,
+        box-shadow 0.2s;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .form-switch .form-check-input:checked {
+    border-color: transparent !important; /* the all-pages :checked rule at the top is !important */
+    background-color: var(--m3-primary);
+    background-image: var(--m3-switch-thumb-on) !important; /* PageWebViewClient's all-pages :checked knob is !important */
+    background-position: right 2px center;
+    box-shadow: none;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .form-switch .form-check-input:disabled {
+    opacity: 0.38;
+}
+
+/* buttons in cards and in the simulator: tonal. save is the page's only filled button, and
+   btn-warning marks the cancel button of a running optimisation or simulation */
+.deck-options-page .row-columns .dynamically-slottable .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    margin-block: 4px;
+    margin-inline-end: 8px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 20px;
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+    box-shadow: none;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .btn-warning {
+    background-color: var(--m3-tertiary-container);
+    color: var(--m3-on-tertiary-container);
+}
+
+.deck-options-page .row-columns .dynamically-slottable .btn:disabled {
+    background-color: color-mix(in srgb, var(--m3-on-surface) 12%, transparent);
+    color: color-mix(in srgb, var(--m3-on-surface) 38%, transparent);
+    opacity: 1;
+}
+
+.deck-options-page .row-columns .dynamically-slottable hr {
+    margin: 16px 0;
+    border: 0;
+    border-top: 1px solid var(--m3-outline-variant);
+    opacity: 1;
+}
+
+/* bootstrap's spacing utilities are !important; their 4-8px side margins pushed the fsrs and
+   custom scheduling blocks off the card's alignment line */
+.deck-options-page .row-columns .dynamically-slottable .ms-1,
+.deck-options-page .row-columns .dynamically-slottable .m-1,
+.deck-options-page .row-columns .dynamically-slottable .m-2 {
+    margin-inline: 0 !important;
+}
+
+/* warnings: tonal callouts. info is neutral, warning tertiary, danger error, so the severity
+   reads at a glance. no !important on box properties: svelte's slide transition animates them */
+.deck-options-page .row-columns .dynamically-slottable .alert {
+    --bs-alert-padding-x: 16px;
+    --bs-alert-padding-y: 12px;
+    --bs-alert-border-radius: 16px;
+    flex: 1 1 auto; /* upstream's col-12 has no rule, so short warnings shrank to their text */
+    border: 0;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .alert-info {
+    --bs-alert-bg: var(--m3-surface-container-highest);
+    --bs-alert-color: var(--m3-on-surface-variant);
+}
+
+.deck-options-page .row-columns .dynamically-slottable .alert-warning {
+    --bs-alert-bg: var(--m3-tertiary-container);
+    --bs-alert-color: var(--m3-on-tertiary-container);
+}
+
+.deck-options-page .row-columns .dynamically-slottable .alert-danger {
+    --bs-alert-bg: var(--m3-error-container);
+    --bs-alert-color: var(--m3-on-error-container);
+}
+
+/* custom scheduling and the simulator's collapsible groups */
+.deck-options-page .row-columns .dynamically-slottable summary {
+    margin: 0;
+    padding-block: 12px;
+    color: var(--m3-on-surface);
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable summary::marker {
+    color: var(--m3-on-surface-variant);
+}
+
+.deck-options-page .row-columns .dynamically-slottable details[open] > summary {
+    margin-bottom: 8px;
+}
+
+/* easy days: upstream's three 1fr columns cannot shrink below their longest word, so a
+   translated column header widened the grid past the card, where the page's overflow-x cut
+   it off */
+.deck-options-page .row-columns .dynamically-slottable .easy-days-settings {
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
+}
+
+/* no rule under every cell, and the app's m3 slider (16px track, 4x44px handle) with a stop
+   mark at "reduced". appearance:none drops the native parts, so both are drawn */
+.deck-options-page .row-columns .dynamically-slottable .easy-days-settings > * {
+    padding: 4px 8px;
+    border-bottom: 0;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .easy-days-settings .header {
+    color: var(--m3-on-surface-variant);
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.5px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .easy-days-settings .day {
+    justify-content: flex-start;
+    color: var(--m3-on-surface);
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .easy-days-settings input[type="range"] {
+    height: 44px;
+    margin: 0;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .easy-days-settings input[type="range"]::-webkit-slider-runnable-track {
+    height: 16px;
+    border-radius: 8px;
+    background:
+        radial-gradient(circle, var(--m3-on-secondary-container) 2px, transparent 2.5px) center / 16px 16px no-repeat,
+        var(--m3-secondary-container);
+}
+
+.deck-options-page .row-columns .dynamically-slottable .easy-days-settings input[type="range"]::-webkit-slider-thumb {
+    width: 4px;
+    height: 44px;
+    margin-top: -14px; /* centres the handle on the 16px track */
+    border: 0;
+    border-radius: 2px;
+    background: var(--m3-primary);
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* fsrs simulator: graph type radios */
+.deck-options-page .row-columns .dynamically-slottable .radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+    margin: 8px 0;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .radio-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--m3-primary);
+}
+
+/* preset bar: part of the toolbar surface, without upstream's divider or zero side gutter */
+body:has(.deck-options-page) .sticky-container {
+    border-width: 0;
+    background: var(--m3-surface);
+}
+
+body:has(.deck-options-page) .sticky-container > .container {
+    padding: 8px 16px;
+}
+
+body:has(.deck-options-page) .sticky-container .button-bar {
+    align-items: center;
+    gap: 8px;
+}
+
+/* preset picker: a filled pill, like the app's search bar */
+body:has(.deck-options-page) .sticky-container .select-container {
+    height: 48px;
+    margin: 0; /* .mr1; the bar's gap spaces it instead, in both directions */
+    border: 0;
+    border-radius: 24px;
+    background: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+    box-shadow: none;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+/* save: an m3 filled split button (two primary halves, 2px apart, 4px inner corners). the
+   chevron's height is upstream's global .chevron { height: 100% !important } of this 40px row */
+body:has(.deck-options-page) .sticky-container .button-bar > .d-flex {
+    gap: 2px;
+}
+
+body:has(.deck-options-page) .sticky-container .label-button.primary,
+body:has(.deck-options-page) .sticky-container .icon-button.chevron {
+    border: 0;
+    background: var(--m3-primary);
+    color: var(--m3-on-primary);
+    box-shadow: none;
+}
+
+body:has(.deck-options-page) .sticky-container .label-button.primary {
+    height: 40px;
+    padding-inline: 16px 12px;
+    border-start-start-radius: 20px;
+    border-end-start-radius: 20px;
+    border-start-end-radius: 4px;
+    border-end-end-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+}
+
+body:has(.deck-options-page) .sticky-container .label-button .save {
+    margin: 0;
+}
+
+body:has(.deck-options-page) .sticky-container .icon-button.chevron {
+    --buttons-size: 32px; /* sizes the icon box (30px, icon 24px); the page never defines it */
+    width: 48px;
+    padding: 0;
+    border-start-start-radius: 4px;
+    border-end-start-radius: 4px;
+    border-start-end-radius: 20px;
+    border-end-end-radius: 20px;
+}
+
+/* menus (preset list, save menu, select options, restore default): the app's dropdown menu */
+body:has(.deck-options-page) .popover {
+    min-width: max(112px, var(--popover-width, 0px));
+    padding: 4px;
+    border: 0;
+    border-radius: 24px;
+    background-color: var(--m3-surface-container-high);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        0 2px 6px 2px rgba(0, 0, 0, 0.15);
+}
+
+body:has(.deck-options-page) .popover button.dropdown-item {
+    align-items: center;
+    min-height: 48px;
+    padding: 8px 16px;
+    /* upstream keeps menu rows on one line, so a long preset name ran out of the menu and off
+       the screen edge. m3 menu rows wrap instead */
+    overflow-wrap: break-word;
+    white-space: normal;
+    border: 0;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--m3-on-surface);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+}
+
+/* the current value; upstream marked it with a 3px bar and hovered in anki blue */
+body:has(.deck-options-page) .popover button.dropdown-item.active {
+    background-color: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+}
+
+body:has(.deck-options-page) .popover button.dropdown-item[disabled] {
+    color: color-mix(in srgb, var(--m3-on-surface) 38%, transparent);
+}
+
+body:has(.deck-options-page) .popover .dropdown-divider {
+    margin: 4px 12px;
+    border-top: 1px solid var(--m3-outline-variant);
+    opacity: 1;
+}
+
+/* m3 menus have no pointer arrow */
+body:has(.deck-options-page) .floating-arrow > .arrow {
+    display: none;
+}
+
+/* one scrim: the help and simulator dialogs painted #00000080 over bootstrap's backdrop, which
+   dimmed the page twice. the backdrop stays, at the m3 scrim opacity: it is the preset-name
+   dialog's only dim, and bootstrap closes dialogs on taps on .modal itself, not the backdrop */
+.deck-options-page .row-columns .modal {
+    background-color: transparent;
+}
+
+body:has(.deck-options-page) .modal-backdrop {
+    --bs-backdrop-opacity: 0.32;
+}
+
+/* help opened from inside the fsrs simulator: bootstrap puts every backdrop at z-index 1050, under
+   the simulator's .modal (1055), so the help dialog's own backdrop never dims the simulator. while
+   the simulator is open, the help modal (1066) paints the scrim itself, as upstream's #00000080 did */
+.deck-options-page:has(.modal.show > .modal-xl) .row-columns .modal.fade {
+    background-color: rgb(0 0 0 / 0.32);
+}
+
+/* dialogs: the m3 basic dialog. .fade marks the help and preset-name dialogs; the simulator has
+   no .fade and fills the screen */
+body:has(.deck-options-page) .modal.fade {
+    --bs-modal-margin: 24px;
+}
+
+/* centred, and never taller than the screen: the dialog body scrolls instead */
+body:has(.deck-options-page) .modal.fade .modal-dialog {
+    display: flex;
+    align-items: center;
+    height: calc(100% - var(--bs-modal-margin) * 2);
+}
+
+/* the preset-name dialog focuses its input as it opens, so the keyboard comes up with it. edge to
+   edge the webview is not resized for the keyboard (PageFragment pads only the status bar), and
+   centred, cancel and ok would sit under it: this dialog stays at the top */
+body:has(.deck-options-page) .modal.fade:has(#prompt-input) .modal-dialog {
+    align-items: flex-start;
+}
+
+body:has(.deck-options-page) .modal.fade .modal-content {
+    max-height: 100%;
+    overflow: hidden;
+}
+
+body:has(.deck-options-page) .modal.fade .modal-body {
+    overflow-y: auto;
+}
+
+body:has(.deck-options-page) .modal-content {
+    border: 0;
+    border-radius: 28px;
+    background-color: var(--m3-surface-container-high);
+    color: var(--m3-on-surface);
+}
+
+body:has(.deck-options-page) .modal-xl .modal-content {
+    border-radius: 0;
+}
+
+body:has(.deck-options-page) .modal-header {
+    padding: 24px 24px 16px;
+    border-bottom: 0;
+}
+
+body:has(.deck-options-page) .modal-xl .modal-header {
+    background-color: inherit; /* the simulator's header is sticky; upstream paints it the page colour */
+}
+
+body:has(.deck-options-page) .modal-title {
+    margin: 0;
+    color: var(--m3-on-surface);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 32px;
+}
+
+body:has(.deck-options-page) .modal-body {
+    padding: 0 24px;
+}
+
+body:has(.deck-options-page) .modal-body:last-child {
+    padding-bottom: 24px;
+}
+
+body:has(.deck-options-page) .modal-footer {
+    --bs-modal-footer-gap: 8px;
+    padding: 12px 20px 20px; /* plus the buttons' 4px margins: 24px */
+    border-top: 0;
+}
+
+/* dialog actions: m3 text buttons */
+body:has(.deck-options-page) .modal-footer .btn {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--m3-primary);
+    box-shadow: none;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+}
+
+/* close: a 40px icon button. bootstrap's own x svg is used as a mask, so it takes the theme
+   colour in both modes (upstream inverts it with a filter in night mode). the mask goes on a
+   pseudo-element: on the button it would also mask away the button's keyboard focus outline */
+body:has(.deck-options-page) .btn-close {
+    position: relative;
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+    margin-block: -4px;
+    margin-inline: auto -8px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    opacity: 1;
+    filter: none;
+    box-shadow: none;
+}
+
+body:has(.deck-options-page) .btn-close::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--m3-on-surface-variant);
+    -webkit-mask: var(--bs-btn-close-bg) center / 14px 14px no-repeat; /* the variable is declared on .btn-close */
+}
+
+/* dialogs with their own actions (help: close, preset name: cancel/ok) drop the extra x.
+   DeckOptions.kt still clicks it on back press, and click() works on a hidden button */
+body:has(.deck-options-page) .modal-content:has(> .modal-footer) .btn-close {
+    display: none;
+}
+
+body:has(.deck-options-page) .modal .col-form-label {
+    padding-top: 0;
+    color: var(--m3-on-surface-variant);
+    font-size: 14px;
+    line-height: 20px;
+}
+
+/* help dialog: manual link under the title, then readable pages instead of 23px headings */
+body:has(.deck-options-page) .modal-header .chapter-redirect {
+    margin-top: 4px;
+    color: var(--m3-on-surface-variant);
+    font-size: 14px;
+    line-height: 20px;
+}
+
+body:has(.deck-options-page) .carousel-item > .row {
+    color: var(--m3-on-surface-variant);
+    /* help text carries urls and file paths; unbroken, they reach past the dialog */
+    overflow-wrap: break-word;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+body:has(.deck-options-page) .carousel-item h2 {
+    margin-bottom: 8px;
+    color: var(--m3-on-surface);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 24px;
+}
+
+body:has(.deck-options-page) .carousel-item hr {
+    margin: 16px 0;
+    border-top: 1px solid var(--m3-outline-variant);
+    opacity: 1;
+}
+
+body:has(.deck-options-page) .carousel-item .chapter-redirect {
+    font-size: 14px;
+    line-height: 20px;
+}
+
+/* help chapters: an m3 navigation list beside the page in wide dialogs */
+body:has(.deck-options-page) #nav {
+    margin-bottom: 16px;
+}
+
+body:has(.deck-options-page) #nav button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 24px;
+    background: transparent;
+    color: var(--m3-on-surface-variant);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    text-align: start;
+}
+
+body:has(.deck-options-page) #nav button.active {
+    background-color: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+}
+
+/* narrow dialogs: upstream stacked a 250px-wide chapter list above the text. the chapters are
+   chips that wrap onto as many lines as they need, so every chapter of the card stays in view
+   and nothing scrolls sideways */
+@media (max-width: 991.98px) {
+    body:has(.deck-options-page) .modal.fade .modal-body > svelte-css-wrapper > .row > svelte-css-wrapper > .col {
+        flex-basis: 100%;
+    }
+
+    body:has(.deck-options-page) .modal-body nav {
+        flex: 1 1 auto;
+        min-width: 0; /* lets the chips wrap instead of widening the dialog */
+    }
+
+    body:has(.deck-options-page) #nav ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    body:has(.deck-options-page) #nav li {
+        flex: none;
+        max-width: 100%; /* a long chapter title wraps inside its chip, it does not stick out */
+    }
+
+    /* a chapter that does not apply to the current scheduler is hidden with .d-none, which anki
+       puts on the button, not on its li. the li then survives as a 0x0 flex item and still takes
+       a gap on either side, and the advanced card hides five chapters in a row: a 48px hole in
+       the middle of the row. the li goes with its button, so only real chips are spaced */
+    body:has(.deck-options-page) #nav li:has(> button.d-none) {
+        display: none;
+    }
+
+    body:has(.deck-options-page) #nav button {
+        width: auto;
+        min-height: 32px;
+        padding: 4px 12px;
+        border: 1px solid var(--m3-outline-variant);
+        border-radius: 8px;
+    }
+
+    body:has(.deck-options-page) #nav button.active {
+        border-color: transparent;
+    }
+}
+
+/* motion
+ *
+ * bootstrap drives these dialogs from javascript and reads how long to wait out of one
+ * element's computed style per step: the first comma-separated transition-duration plus
+ * transition-delay, and 5ms of padding (Cfg-5ksk.js:177). the element it measures is
+ *   opening   the backdrop, after .show is added, and then the .modal-dialog, after .show
+ *   closing   the .modal, after .show is removed, and then the backdrop again
+ * upstream therefore spent 150ms fading the scrim before a 300ms 50px slide even started. an
+ * m3 dialog is a fade with a small scale, so the scrim holds a 0s transition while it opens,
+ * which lets the dialog start in the same frame, and a keyframe animation fades it alongside.
+ * so every duration here doubles as bootstrap's wait, while the animations stay invisible to
+ * that measurement, which is what the scrim and the .fade-less simulator lean on
+ *
+ * enters are per surface (150ms menus, 200ms dialogs and scrim, m3 emphasized decelerate); every
+ * exit is the same keyframes played backwards over one duration and one curve, so how a popup
+ * leaves has a single place to change it. the three surfaces whose node is gone before it could
+ * animate - menus, the .fade-less simulator and its scrim - are put back for that one animation
+ * by anki_material3_motion.js, which marks each with .m3-exit and asks the same reduced-motion
+ * question this file does, so with motion off they close at once and the .m3-exit rules never
+ * match anything
+ */
+body:has(.deck-options-page) {
+    --m3-exit-duration: 120ms;
+    --m3-exit-easing: cubic-bezier(0.3, 0, 0.8, 0.15); /* m3 emphasized accelerate */
+}
+
+/* a node kept only for its exit takes no taps on the way out */
+body:has(.deck-options-page) .m3-exit {
+    pointer-events: none;
+}
+
+/* pointer-events is inherited, not enforced: bootstrap gives .modal-content its own `auto`, which
+   would take taps over the whole viewport for as long as a closing dialog is held on screen */
+body:has(.deck-options-page) .m3-exit .modal-content {
+    pointer-events: none;
+}
+
+@keyframes m3-scrim-in {
+    from {
+        opacity: 0;
+    }
+}
+
+/* dialogs and menus enter the same way, on their own duration and easing */
+@keyframes m3-scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+}
+
+@keyframes m3-help-page-in {
+    from {
+        opacity: 0;
+    }
+}
+
+body:has(.deck-options-page) .modal-backdrop.show {
+    animation: m3-scrim-in 200ms linear;
+}
+
+body:has(.deck-options-page) .modal-backdrop.fade {
+    transition: opacity var(--m3-exit-duration) linear; /* measured while closing, once .show is gone */
+}
+
+body:has(.deck-options-page) .modal-backdrop.fade.show {
+    transition-duration: 0s; /* measured while opening: the dialog follows in the same frame */
+}
+
+/* the stand-in for the scrim bootstrap removes unanimated: .show holds it at the scrim opacity,
+   and the enter, reversed, takes it from there to nothing */
+body:has(.deck-options-page) .modal-backdrop.show.m3-exit {
+    animation: m3-scrim-in var(--m3-exit-duration) linear reverse forwards;
+}
+
+/* the .modal carries the fade, and with it the closing wait; the dialog carries the scale */
+body:has(.deck-options-page) .modal.fade {
+    transition: opacity var(--m3-exit-duration) linear;
+}
+
+body:has(.deck-options-page) .modal.fade .modal-dialog {
+    transition: transform 200ms cubic-bezier(0.05, 0.7, 0.1, 1); /* m3 emphasized decelerate */
+}
+
+/* the closed state: where an opening dialog starts and where a closing one ends. it is scoped
+   to :not(.show) so that bootstrap's own `.modal.show .modal-dialog { transform: none }` still
+   lands the open dialog, which it could not if this rule reached the shown state as well */
+body:has(.deck-options-page) .modal.fade:not(.show) .modal-dialog {
+    transform: scale(0.92);
+    transition-duration: var(--m3-exit-duration);
+    transition-timing-function: var(--m3-exit-easing);
+}
+
+/* the simulator carries no .fade, so bootstrap animates none of it and only adds .show */
+body:has(.deck-options-page) .modal:not(.fade).show .modal-dialog {
+    animation: m3-scale-in 200ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+/* and hides it in the frame the close starts, so the script shows it again for this one animation.
+   .show is gone by then, which is why the enter above cannot reach the closing dialog */
+body:has(.deck-options-page) .modal.m3-exit .modal-dialog {
+    animation: m3-scale-in var(--m3-exit-duration) var(--m3-exit-easing) reverse forwards;
+}
+
+/* menus: the popover mounts as .hidden and floating-ui drops the class once it has placed it,
+   so the animation runs anchored. closing unmounts the node, so its exit needs the script */
+body:has(.deck-options-page) .popover:not(.hidden) {
+    transform-origin: top center;
+    animation: m3-scale-in 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+body:has(.deck-options-page) .popover.top:not(.hidden) {
+    transform-origin: bottom center;
+}
+
+body:has(.deck-options-page) .popover.left:not(.hidden) {
+    transform-origin: center right;
+}
+
+body:has(.deck-options-page) .popover.right:not(.hidden) {
+    transform-origin: center left;
+}
+
+/* the menu the script put back for its exit, anchored the same way. :not(.hidden) is only there to
+   outrank the enter, which the ghost still matches: re-inserting a node restarts its animations */
+body:has(.deck-options-page) .popover.m3-exit:not(.hidden) {
+    animation: m3-scale-in var(--m3-exit-duration) var(--m3-exit-easing) reverse forwards;
+}
+
+/* the field a tap on the revert badge has just put the default back into: a tonal wash that fades off
+   it, on the exit curve so it is seen before it goes. the badge disappearing is the page's own answer,
+   but it disappears under the finger that tapped it, so this is what the restore is seen by.
+   anki_material3_revert.js marks the field and asks the same reduced-motion question this file does,
+   so with motion off a restore is instant and unmarked */
+@keyframes m3-restore-flash {
+    from {
+        opacity: 0.4;
+    }
+}
+
+.deck-options-page .row-columns .dynamically-slottable .config-input[data-m3-restored]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0; /* over the field, under the 40px badge (z-index 1) while it is still there */
+    border-radius: 16px; /* the fields' own */
+    background: var(--m3-secondary-container);
+    opacity: 0;
+    pointer-events: none;
+    animation: m3-restore-flash 400ms var(--m3-exit-easing);
+}
+
+/* help chapters: upstream slides the pages sideways, because anki hands .carousel-item
+   `transition: var(--transition)`, which is every property, transform included, over 180ms.
+   with no transition bootstrap's wait drops to its 5ms floor: the page swaps at once, in
+   place, and fades in */
+body:has(.deck-options-page) .carousel-item {
+    transform: none;
+    transition: none;
+}
+
+/* both pages of a swap carry -start or -end while it runs, and both are held invisible. the
+   outgoing one would otherwise draw over the incoming one for a frame, and the incoming one is
+   already display:block a task before bootstrap adds .active: it would paint at full opacity in
+   that gap and the fade would then restart it from 0, which reads as a blink */
+body:has(.deck-options-page) .carousel-item-start,
+body:has(.deck-options-page) .carousel-item-end {
+    opacity: 0;
+}
+
+body:has(.deck-options-page) .carousel-item.active {
+    animation: m3-help-page-in 150ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+/* state layers: 8% of the content colour on hover, 10% pressed. hover only with a real pointer,
+   because touch keeps :hover after a tap. color-mix needs chromium 111; older webviews simply
+   show no layer */
+@media (hover: hover) {
+    .deck-options-page .row-columns .dynamically-slottable .btn:hover:not(:disabled),
+    .deck-options-page .row-columns .dynamically-slottable .col > .row > ul > li > button:hover,
+    .deck-options-page .row-columns .dynamically-slottable .revert .badge:hover,
+    .deck-options-page .row-columns > .container > .position-relative > .help-badge > .badge:hover,
+    .deck-options-page .row-columns .dynamically-slottable .select-container:hover,
+    .deck-options-page .row-columns .dynamically-slottable .spin-box > .m3-stepper:hover,
+    body:has(.deck-options-page) .sticky-container .select-container:hover,
+    body:has(.deck-options-page) .sticky-container .label-button.primary:hover,
+    body:has(.deck-options-page) .sticky-container .icon-button.chevron:hover,
+    body:has(.deck-options-page) .popover button.dropdown-item:hover:not([disabled]),
+    body:has(.deck-options-page) .modal-footer .btn:hover,
+    body:has(.deck-options-page) #nav button:hover {
+        background-image: linear-gradient(color-mix(in srgb, currentColor 8%, transparent) 0 0);
+    }
+}
+
+.deck-options-page .row-columns .dynamically-slottable .btn:active:not(:disabled),
+.deck-options-page .row-columns .dynamically-slottable .col > .row > ul > li > button:active,
+.deck-options-page .row-columns .dynamically-slottable .revert .badge:active,
+.deck-options-page .row-columns > .container > .position-relative > .help-badge > .badge:active,
+.deck-options-page .row-columns .dynamically-slottable .select-container:active,
+.deck-options-page .row-columns .dynamically-slottable .spin-box > .m3-stepper:active,
+body:has(.deck-options-page) .sticky-container .select-container:active,
+body:has(.deck-options-page) .sticky-container .label-button.primary:active,
+body:has(.deck-options-page) .sticky-container .icon-button.chevron:active,
+body:has(.deck-options-page) .popover button.dropdown-item:active:not([disabled]),
+body:has(.deck-options-page) .popover button.dropdown-item.focus,
+body:has(.deck-options-page) .modal-footer .btn:active,
+body:has(.deck-options-page) #nav button:active {
+    background-image: linear-gradient(color-mix(in srgb, currentColor 10%, transparent) 0 0);
+}
+
+/* keyboard focus. the revert badge is in the tab order since a tap on it restores the default itself
+   (anki_material3_revert.js); upstream left it out, along with the menu item it used to open */
+.deck-options-page .row-columns .dynamically-slottable .btn:focus-visible,
+.deck-options-page .row-columns .dynamically-slottable .revert .badge:focus-visible,
+.deck-options-page .row-columns .dynamically-slottable .form-switch .form-check-input:focus-visible,
+body:has(.deck-options-page) .modal-footer .btn:focus-visible,
+body:has(.deck-options-page) .btn-close:focus-visible,
+body:has(.deck-options-page) #nav button:focus-visible {
+    outline: 2px solid var(--m3-primary);
+    outline-offset: 2px;
+}
+
+.deck-options-page .row-columns .dynamically-slottable .col > .row > ul > li > button:focus-visible {
+    outline: 2px solid var(--m3-primary);
+    outline-offset: -2px; /* the segmented pill clips anything outside */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .deck-options-page .row-columns .dynamically-slottable .form-switch .form-check-input {
+        transition: none;
+    }
+
+    /* the motion rules outrank bootstrap's own reduced-motion rules, so each one stands itself
+       down here. dropping a transition only shortens bootstrap's wait to the 5ms floor, it
+       never strands a dialog: the callback that finishes opening or closing still runs */
+    body:has(.deck-options-page) .modal-backdrop.fade,
+    body:has(.deck-options-page) .modal.fade,
+    body:has(.deck-options-page) .modal.fade .modal-dialog,
+    body:has(.deck-options-page) .modal.fade:not(.show) .modal-dialog {
+        transition: none;
+    }
+
+    body:has(.deck-options-page) .modal-backdrop.show,
+    body:has(.deck-options-page) .modal:not(.fade).show .modal-dialog,
+    body:has(.deck-options-page) .popover:not(.hidden),
+    body:has(.deck-options-page) .carousel-item.active {
+        animation: none;
+    }
 }

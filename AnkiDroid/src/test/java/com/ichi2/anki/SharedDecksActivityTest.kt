@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -108,5 +109,72 @@ class SharedDecksActivityTest : RobolectricTest() {
         val lastUrl = shadowWebView.lastLoadedUrl
         assertNotEquals("Search should have triggered a new load", initialLast, lastUrl)
         assertEquals("https://ankiweb.net/shared/decks?search=kanji", lastUrl)
+    }
+
+    @Test
+    fun `back on the first page is left to the system`() {
+        val activity = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent()).setup().get()
+        composeTestRule.waitForIdle()
+
+        assertFalse(
+            "nothing intercepts back on the first page, so it gets the predictive back animation",
+            activity.onBackPressedDispatcher.hasEnabledCallbacks(),
+        )
+    }
+
+    @Test
+    fun `back after going home is not swallowed`() {
+        val activity = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent()).setup().get()
+        val webView = activity.findViewById<WebView>(R.id.media_check_webview)
+        val shadowWebView = shadowOf(webView)
+        val client = shadowWebView.webViewClient
+        val homeUrl = activity.getString(R.string.shared_decks_url)
+        val deckUrl = "https://ankiweb.net/shared/info/12345678"
+
+        // follow a link: the web history can go back
+        shadowWebView.pushEntryToHistory(homeUrl)
+        shadowWebView.pushEntryToHistory(deckUrl)
+        client.doUpdateVisitedHistory(webView, deckUrl, false)
+        assertTrue("back navigates the web history", activity.onBackPressedDispatcher.hasEnabledCallbacks())
+
+        // home clears the history once the page loaded, without a doUpdateVisitedHistory call
+        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.home)).performClick()
+        client.onPageFinished(webView, homeUrl)
+
+        assertFalse(
+            "no stale callback swallows the next back",
+            activity.onBackPressedDispatcher.hasEnabledCallbacks(),
+        )
+    }
+
+    @Test
+    fun `a stale back callback lets back through`() {
+        val activity = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent()).setup().get()
+        val webView = activity.findViewById<WebView>(R.id.media_check_webview)
+        val shadowWebView = shadowOf(webView)
+        val deckUrl = "https://ankiweb.net/shared/info/12345678"
+        shadowWebView.pushEntryToHistory(activity.getString(R.string.shared_decks_url))
+        shadowWebView.pushEntryToHistory(deckUrl)
+        shadowWebView.webViewClient.doUpdateVisitedHistory(webView, deckUrl, false)
+
+        // the history changes without a doUpdateVisitedHistory call
+        webView.clearHistory()
+        activity.onBackPressedDispatcher.onBackPressed()
+
+        assertTrue("back leaves instead of being swallowed", activity.isFinishing)
+    }
+
+    @Test
+    fun `back closes the search field first`() {
+        val activity = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent()).setup().get()
+        composeTestRule
+            .onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
+            .performClick()
+        composeTestRule.onNode(hasTestTag("search_field")).assertExists()
+
+        composeTestRule.runOnIdle { activity.onBackPressedDispatcher.onBackPressed() }
+
+        composeTestRule.onNode(hasTestTag("search_field")).assertDoesNotExist()
+        assertFalse("back closed search instead of leaving", activity.isFinishing)
     }
 }

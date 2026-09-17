@@ -16,9 +16,13 @@
 package com.ichi2.anki.pages
 
 import android.app.Application
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.ichi2.anki.ioDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
@@ -31,28 +35,37 @@ class PageWebViewViewModel(
     application: Application
 ) : AndroidViewModel(application), PostRequestHandler {
 
-    private val server = AnkiServer(this)
+    @VisibleForTesting
+    internal val server = AnkiServer(this)
 
     private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
     val serverState = _serverState.asStateFlow()
 
-
-    init {
-        try {
-            server.start()
-            val url = server.baseUrl()
-            _serverState.value = ServerState.Running(url)
-            Timber.d("PageWebViewViewModel: AnkiServer started at %s", url)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to start AnkiServer")
-            _serverState.value = ServerState.Error(e)
+    // binding the socket and waiting for nanohttpd's listener thread is blocking io, and this view model is created
+    // during composition on the main thread. the page shows its loading indicator (Stopped) until the url is known
+    private val serverStart =
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                server.start()
+                val url = server.baseUrl()
+                _serverState.value = ServerState.Running(url)
+                Timber.d("PageWebViewViewModel: AnkiServer started at %s", url)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to start AnkiServer")
+                _serverState.value = ServerState.Error(e)
+            }
         }
-    }
 
     override fun onCleared() {
-        server.stop()
-        _serverState.value = ServerState.Stopped
-        Timber.d("PageWebViewViewModel: AnkiServer stopped")
+        // a blocking start cannot be cancelled, so a screen closed while it runs would stop the server before it has
+        // bound, and the socket would then stay open for the life of the process. stopping once the start is over
+        // (at once if it already is, or never ran) closes whatever it opened. the state follows the stop, since a start
+        // still running would otherwise report Running after it
+        serverStart.invokeOnCompletion {
+            server.stop()
+            _serverState.value = ServerState.Stopped
+            Timber.d("PageWebViewViewModel: AnkiServer stopped")
+        }
         super.onCleared()
     }
 

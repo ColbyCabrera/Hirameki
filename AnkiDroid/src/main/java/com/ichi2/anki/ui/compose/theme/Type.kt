@@ -103,6 +103,21 @@ val GoogleSansFlexLowWidth = FontFamily(
     ),
 )
 
+/**
+ * vazirmatn, the ui font for an arabic-script ui language (com.ichi2.themes.ArabicScriptFont); every weight an
+ * instance of its one variable file
+ */
+@OptIn(ExperimentalTextApi::class)
+val Vazirmatn = FontFamily(
+    (100..900 step 100).map { weight ->
+        Font(
+            R.font.vazirmatn,
+            FontWeight(weight),
+            variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
+        )
+    },
+)
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 val AppTypography = Typography(
     displayLarge = TextStyle(
@@ -239,3 +254,46 @@ val AppTypography = Typography(
         letterSpacing = 0.5.sp,
     ),
 )
+
+/**
+ * AppTypography with every style drawn in Vazirmatn, including the ones left at material's defaults (for example
+ * labelLargeEmphasized), so no ui text falls back to the system's naskh. sizes, weights and spacing are unchanged.
+ */
+val ArabicScriptTypography = AppTypography.inFamily(Vazirmatn)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun Typography.inFamily(family: FontFamily): Typography {
+    fun TextStyle.withFamily() = copy(fontFamily = family)
+    return copy(
+        displayLarge = displayLarge.withFamily(),
+        displayMedium = displayMedium.withFamily(),
+        displaySmall = displaySmall.withFamily(),
+        headlineLarge = headlineLarge.withFamily(),
+        headlineMedium = headlineMedium.withFamily(),
+        headlineSmall = headlineSmall.withFamily(),
+        titleLarge = titleLarge.withFamily(),
+        titleMedium = titleMedium.withFamily(),
+        titleSmall = titleSmall.withFamily(),
+        bodyLarge = bodyLarge.withFamily(),
+        bodyMedium = bodyMedium.withFamily(),
+        bodySmall = bodySmall.withFamily(),
+        labelLarge = labelLarge.withFamily(),
+        labelMedium = labelMedium.withFamily(),
+        labelSmall = labelSmall.withFamily(),
+        displayLargeEmphasized = displayLargeEmphasized.withFamily(),
+        displayMediumEmphasized = displayMediumEmphasized.withFamily(),
+        displaySmallEmphasized = displaySmallEmphasized.withFamily(),
+        headlineLargeEmphasized = headlineLargeEmphasized.withFamily(),
+        headlineMediumEmphasized = headlineMediumEmphasized.withFamily(),
+        headlineSmallEmphasized = headlineSmallEmphasized.withFamily(),
+        titleLargeEmphasized = titleLargeEmphasized.withFamily(),
+        titleMediumEmphasized = titleMediumEmphasized.withFamily(),
+        titleSmallEmphasized = titleSmallEmphasized.withFamily(),
+        bodyLargeEmphasized = bodyLargeEmphasized.withFamily(),
+        bodyMediumEmphasized = bodyMediumEmphasized.withFamily(),
+        bodySmallEmphasized = bodySmallEmphasized.withFamily(),
+        labelLargeEmphasized = labelLargeEmphasized.withFamily(),
+        labelMediumEmphasized = labelMediumEmphasized.withFamily(),
+        labelSmallEmphasized = labelSmallEmphasized.withFamily(),
+    )
+}

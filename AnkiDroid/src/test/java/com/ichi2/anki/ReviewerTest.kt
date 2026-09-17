@@ -20,10 +20,14 @@ import android.content.Intent
 import androidx.core.os.BundleCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import anki.collection.OpChanges
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.cardviewer.Gesture
 import junit.framework.TestCase.assertEquals
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.nullValue
 import org.junit.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
 
@@ -67,6 +71,34 @@ class ReviewerTest : RobolectricTest() {
             expectedAnimation,
             actualAnimation
         )
+    }
+
+    @Test
+    fun `a dead renderer is handled by a reviewer that has no card frame`() {
+        addBasicNote("Hello", "World")
+        val reviewer = startRegularActivity<Reviewer>()
+        advanceRobolectricLooper()
+
+        // #143: this reviewer draws its card in compose and never runs initLayout(), so it has no card
+        // frame. both of these run from onRenderProcessGone, and webview rethrows anything thrown there as
+        // an app crash, which closed the reviewer and reopened the deck list
+        assertDoesNotThrow { reviewer.destroyWebViewFrame() }
+        assertDoesNotThrow { reviewer.recreateWebViewFrame() }
+        assertThat("no webview is built that nothing can show", reviewer.webView, nullValue())
+    }
+
+    @Test
+    fun `a reload builds no webview for a reviewer that has no card frame`() {
+        addBasicNote("Hello", "World")
+        val reviewer = startRegularActivity<Reviewer>()
+        advanceRobolectricLooper()
+
+        // what the reviewer does after a change made outside it, or on its way back from the deck options: the
+        // legacy viewer re-shows the card, which built a webview for a frame this reviewer never lays out
+        reviewer.opExecuted(OpChanges.newBuilder().setStudyQueues(true).build(), handler = null)
+        advanceRobolectricLooper()
+
+        assertThat(reviewer.webView, nullValue())
     }
 
     companion object {

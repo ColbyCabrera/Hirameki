@@ -52,6 +52,10 @@ object Themes {
         updateCurrentTheme(context)
         Timber.i("Setting theme to %s", currentTheme.name)
         context.setTheme(currentTheme.resId)
+        // additive, like ThemeOverlay.Xiaomi: swaps only the views' font, see ArabicScriptFont
+        if (ArabicScriptFont.appliesToUi(context.resources.configuration)) {
+            context.setTheme(R.style.ThemeOverlay_Hirameki_ArabicScriptFont)
+        }
         // Apply dynamic colors from wallpaper on top of the base theme (Android 12+)
         // This allows all themes to use wallpaper-based colors while respecting light/dark mode
         (context as? Activity)?.let { DynamicColors.applyToActivityIfAvailable(it) }

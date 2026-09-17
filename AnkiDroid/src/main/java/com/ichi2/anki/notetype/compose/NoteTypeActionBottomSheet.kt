@@ -46,6 +46,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -58,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.notetype.ManageNoteTypeUiModel
 import com.ichi2.anki.ui.compose.components.MorphingCardCount
+import com.ichi2.anki.ui.compose.components.hideAfter
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -71,18 +73,19 @@ fun NoteTypeActionBottomSheet(
     onRename: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     ) {
+        // every button slides the sheet out before onDismissRequest drops it, so it leaves the way it came in
         NoteTypeActionBottomSheetContent(
             noteType = noteType,
-            onDismissRequest = onDismissRequest,
-            onShowFields = onShowFields,
-            onEditCards = onEditCards,
-            onRename = onRename,
-            onDelete = onDelete
+            onShowFields = { sheetState.hideAfter(scope, onDismissRequest, onShowFields) },
+            onEditCards = { sheetState.hideAfter(scope, onDismissRequest, onEditCards) },
+            onRename = { sheetState.hideAfter(scope, onDismissRequest, onRename) },
+            onDelete = { sheetState.hideAfter(scope, onDismissRequest, onDelete) },
         )
     }
 }
@@ -91,7 +94,6 @@ fun NoteTypeActionBottomSheet(
 @Composable
 fun NoteTypeActionBottomSheetContent(
     noteType: ManageNoteTypeUiModel,
-    onDismissRequest: () -> Unit,
     onShowFields: () -> Unit,
     onEditCards: () -> Unit,
     onRename: () -> Unit,
@@ -155,10 +157,7 @@ fun NoteTypeActionBottomSheetContent(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 ),
-                onClick = {
-                    onEditCards()
-                    onDismissRequest()
-                })
+                onClick = onEditCards)
             ActionItem(
                 icon = painterResource(R.drawable.list_24px),
                 label = stringResource(id = R.string.fields),
@@ -167,10 +166,7 @@ fun NoteTypeActionBottomSheetContent(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
-                onClick = {
-                    onShowFields()
-                    onDismissRequest()
-                })
+                onClick = onShowFields)
 
         }
 
@@ -188,10 +184,7 @@ fun NoteTypeActionBottomSheetContent(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                 ),
-                onClick = {
-                    onRename()
-                    onDismissRequest()
-                })
+                onClick = onRename)
             ActionItem(
                 modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.delete_24px),
@@ -202,10 +195,7 @@ fun NoteTypeActionBottomSheetContent(
                 ),
                 label = null,
                 contentDescription = stringResource(id = R.string.model_browser_delete),
-                onClick = {
-                    onDelete()
-                    onDismissRequest()
-                })
+                onClick = onDelete)
         }
     }
 }
@@ -284,7 +274,6 @@ fun NoteTypeActionBottomSheetContentPreview() {
         Surface {
             NoteTypeActionBottomSheetContent(
                 noteType = ManageNoteTypeUiModel(1L, "Basic", 42),
-                onDismissRequest = {},
                 onShowFields = {},
                 onEditCards = {},
                 onRename = {},

@@ -41,6 +41,8 @@ class ImageOcclusion : PageFragment(R.layout.image_occlusion) {
     ) {
         super.onViewCreated(view, savedInstanceState)
         with(requireActivity()) {
+            // stays enabled: the image occlusion page reports no change events, so there is no safe
+            // way to know it is clean. this screen therefore gets no predictive back animation
             onBackPressedDispatcher.addCallback(this) {
                 DiscardChangesDialog.showDialog(this@with) {
                     finish()

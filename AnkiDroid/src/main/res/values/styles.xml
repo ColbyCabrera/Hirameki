@@ -130,7 +130,10 @@
 
     <style name="TabLayoutStyle" parent="Widget.Material3.TabLayout">
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.TabLayout</item>
-        <item name="tabTextAppearance">@style/TextAppearance.Material3.LabelLarge</item>
+        <!-- the attribute, not the style it points at: every app theme resolves it to that same style, and naming
+             the attribute lets the arabic-script font overlay swap it, so a template name in arabic script is drawn
+             in the same font as the rest of the screen (arabic-script-font-theme-overlay.xml) -->
+        <item name="tabTextAppearance">?attr/textAppearanceLabelLarge</item>
         <item name="tabIndicator">@drawable/tab_layout_indicator_floating_pill</item>
         <item name="tabIndicatorHeight">14dp</item>
         <item name="tabTextColor">@color/white</item>
@@ -141,20 +144,24 @@
         <item name="colorOnSurfaceVariant">#cfff</item> <!-- Not selected text color -->
     </style>
 
+    <!-- card types' front/back/styling bar. no theme overlay: one used to remap material's navigation bar roles to the
+         tab layout's colour attributes, made for tabs inside a primary-coloured app bar, so under the dynamic themes
+         the pill came out colorPrimary in light mode and colorSurface in dark mode, with primary labels. left alone,
+         the roles resolve from the same wallpaper palette compose builds its colour scheme from -->
     <style name="BottomNavigationViewStyle" parent="@style/Widget.Material3.BottomNavigationView">
-        <item name="materialThemeOverlay">@style/ThemeOverlay.App.BottomNavigationView</item>
-    </style>
-    <style name="ThemeOverlay.App.BottomNavigationView" parent="">
-        <item name="colorSecondaryContainer">?attr/tabLayoutBackgroundColor</item> <!-- Selected item indicator -->
-        <item name="colorOnSecondaryContainer">?attr/tabActiveIconColor</item> <!-- Active icon -->
-        <item name="colorOnSurface">?attr/colorPrimary</item> <!-- Active icon -->
-        <item name="colorOnSurfaceVariant">?attr/colorPrimary</item> <!-- Inactive icon & label -->
-        <item name="textAppearanceTitleSmall">@style/TextAppearance.Material3.TitleSmall</item>
-        <item name="textAppearanceLabelLarge">@style/TextAppearance.Material3.LabelLarge</item>
+        <!-- flat, like compose's NavigationBar (0dp): colorSurfaceContainer already is the tonal elevation, and the
+             view default of 3dp casts a shadow over the editor that no other bar in the app has -->
+        <item name="elevation">0dp</item>
     </style>
 
     <style name="TextAppearance.Anki.PageToolbar.Expressive" parent="TextAppearance.Material3.HeadlineSmall">
-        <item name="android:fontFamily">@string/font_fontFamily_medium</item>
+        <!-- the family comes from the theme, so the arabic-script overlay can swap it: pages/DeckOptions.kt hands
+             this appearance to the toolbar in code, where the overlay's typescale styles never reach it.
+             both spellings, because appcompat's textview reads the app-namespace one first and android's only as a
+             fallback - which is why naming sans-serif-medium here never showed: the material parent already set
+             fontFamily to sans-serif, so sans-serif is what the title has always been drawn in -->
+        <item name="fontFamily">?attr/uiFontFamily</item>
+        <item name="android:fontFamily">?attr/uiFontFamily</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:textStyle">normal</item>
     </style>

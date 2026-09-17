@@ -29,15 +29,19 @@ import androidx.graphics.shapes.toPath
  * A [Shape] that morphs between two [androidx.graphics.shapes.RoundedPolygon]s.
  *
  * This class allows you to create a shape that smoothly transitions between a [Morph.start] and
- * [Morph.end] polygon as the [percentage] changes.
+ * [Morph.end] polygon as the [progress] changes.
  *
  * @param morph The [Morph] object that defines the start and end shapes.
- * @param percentage The progress of the morph, between 0.0 and 1.0.
+ * @param progress The progress of the morph, between 0.0 and 1.0. it is read each time the outline is built, and
+ * compose observes state read there, so a shape reading animated state follows it without being recreated.
  */
 class MorphShape(
     private val morph: Morph,
-    private val percentage: Float
+    private val progress: () -> Float,
 ) : Shape {
+    /** a shape fixed at [percentage], between 0.0 and 1.0 */
+    constructor(morph: Morph, percentage: Float) : this(morph, { percentage })
+
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
@@ -48,7 +52,7 @@ class MorphShape(
         matrix.setScale(size.width, size.height)
 
         // Create the morphed path.
-        val path = morph.toPath(progress = percentage.coerceIn(0f, 1f))
+        val path = morph.toPath(progress = progress().coerceIn(0f, 1f))
 
         // Apply the scaling matrix to the path.
         path.transform(matrix)

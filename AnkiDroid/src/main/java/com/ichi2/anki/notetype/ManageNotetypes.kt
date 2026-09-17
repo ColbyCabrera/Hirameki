@@ -27,12 +27,12 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardTemplateEditor
 import com.ichi2.anki.NoteTypeFieldEditor
@@ -63,7 +63,7 @@ class ManageNotetypes : AnkiActivity() {
         setTitle(R.string.model_browser_label)
         setContentView(R.layout.manage_notetypes)
         findViewById<ComposeView>(R.id.compose_view).setContent {
-            val uiState by viewModel.uiState.collectAsState()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             var showBatchDeleteConfirmation by remember { mutableStateOf(false) }
             LaunchedEffect(viewModel) {
                 viewModel.uiEvents.collect { event ->

@@ -88,7 +88,13 @@ class PreferencesAnalyticsTest : RobolectricTest() {
             R.string.custom_sync_server_collection_url_key, // syncBaseUrl
             R.string.pref_language_key, // language
             R.string.custom_sync_certificate_key, // customSyncCertificate
+            // hirameki's own settings: not personal data, but this fork reports no usage analytics
+            // (UsageAnalytics.isAvailable is false), so they stay off the upstream report list
             R.string.apply_hirameki_css_preference, // applyHiramekiCss
+            R.string.card_view_reviewer_key, // cardViewReviewer
+            R.string.card_tap_to_flip_key, // cardTapToFlip
+            R.string.card_drag_to_grade_key, // cardDragToGrade
+            R.string.arabic_script_font_key, // arabicScriptFont
         ).toStringResourceSet()
 
     @Test

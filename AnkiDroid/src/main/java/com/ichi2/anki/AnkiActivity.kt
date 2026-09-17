@@ -38,6 +38,7 @@ import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK
 import androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT
 import androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_SYSTEM
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.PendingIntentCompat
 import androidx.core.app.ShareCompat
@@ -83,6 +84,7 @@ import com.ichi2.compat.CompatHelper.Companion.registerReceiverCompat
 import com.ichi2.compat.customtabs.CustomTabActivityHelper
 import com.ichi2.compat.customtabs.CustomTabsFallback
 import com.ichi2.compat.customtabs.CustomTabsHelper
+import com.ichi2.themes.ArabicScriptFont
 import com.ichi2.themes.Themes
 import com.ichi2.utils.AdaptionUtil
 import com.ichi2.utils.HandlerUtils
@@ -117,6 +119,9 @@ open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivity
 
     private val customTabActivityHelper: CustomTabActivityHelper = CustomTabActivityHelper()
 
+    /** whether this activity was created with the vazirmatn ui font ([ArabicScriptFont]); checked again in [onStart] */
+    private var createdWithArabicScriptFont = false
+
     private lateinit var fileExportPath: String
     private val saveFileLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
@@ -142,6 +147,7 @@ open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivity
         volumeControlStream = AudioManager.STREAM_MUSIC
         // Set the theme
         Themes.setTheme(this)
+        createdWithArabicScriptFont = ArabicScriptFont.appliesToUi(resources.configuration)
         Themes.disableXiaomiForceDarkMode(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -171,6 +177,14 @@ open class AnkiActivity : AppCompatActivity, ShortcutGroupProvider, AnkiActivity
     override fun onStart() {
         super.onStart()
         customTabActivityHelper.bindCustomTabsService(this)
+        // the ui font (views theme overlay, compose typography) is fixed when an activity is created, and the arabic
+        // script font switch can change in settings while this activity is stopped behind it. the deck picker and the
+        // card browser open settings with a plain startActivity, so no activity result tells them; checking here, on
+        // the way back, covers every screen however settings was opened, before onResume starts its work
+        if (ArabicScriptFont.appliesToUi(resources.configuration) != createdWithArabicScriptFont) {
+            Timber.i("arabic script font changed since onCreate: recreating")
+            ActivityCompat.recreate(this)
+        }
     }
 
     override fun onStop() {

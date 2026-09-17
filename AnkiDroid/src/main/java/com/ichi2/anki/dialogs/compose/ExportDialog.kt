@@ -58,6 +58,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.libanki.DeckNameId
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
 import kotlinx.parcelize.Parcelize
 
 // State holder classes for checkbox groups
@@ -321,26 +322,28 @@ fun DropdownSelector(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.textFieldColors(),
             )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                shape = MaterialTheme.shapes.medium
-            ) {
-                options.forEach { selectionOption ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = selectionOption,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        onClick = {
-                            onOptionSelected(selectionOption)
-                            expanded = false
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-                    )
+            MenuExitMotion(expanded = expanded) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    options.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = selectionOption,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            onClick = {
+                                onOptionSelected(selectionOption)
+                                expanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                        )
+                    }
                 }
             }
         }

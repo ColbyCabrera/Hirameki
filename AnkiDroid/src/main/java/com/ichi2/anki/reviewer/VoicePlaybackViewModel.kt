@@ -229,6 +229,11 @@ class VoicePlaybackViewModel : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
-        stopAndReset()
+        // deletes the temp file, not only the recorder: the reviewer's view models are cleared on every
+        // exit, including one where onPause never runs (a RESULT_DB_ERROR close from the note
+        // editor finishes the reviewer before it resumes, so android skips both onResume and onPause),
+        // and when android destroys a backgrounded reviewer, which loses the recording anyway. rotation
+        // does not clear view models, so a recording survives that
+        discardRecording()
     }
 }

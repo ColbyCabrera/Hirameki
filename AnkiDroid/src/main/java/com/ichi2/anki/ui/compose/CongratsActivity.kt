@@ -24,8 +24,10 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.setValue
 import com.ichi2.anki.AnkiActivity
-import com.ichi2.anki.CollectionManager.getColUnsafe
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.StudyOptionsComposeActivity
 import com.ichi2.anki.common.time.TimeManager
@@ -35,39 +37,52 @@ import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.pages.DeckOptions
 import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.ext.showDialogFragment
-import timber.log.Timber
 
 class CongratsActivity : AnkiActivity() {
+    /** 0 until the collection is read: the countdown then starts from the real value, as in the deck picker */
+    private var timeUntilNextDay by mutableLongStateOf(0L)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
+        // during a backup restore there is no collection: finish through the shared check, as other activities do.
+        // the synchronous collection open used to throw and finish here instead
+        if (showedActivityFailedScreen(savedInstanceState)) {
+            return
+        }
         super.onCreate(savedInstanceState)
-        try {
-            val col = getColUnsafe()
-            val timeUntilNextDay =
-                (col.sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
 
-            setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
-                when (CustomStudyAction.fromBundle(bundle)) {
-                    CustomStudyAction.CUSTOM_STUDY_SESSION, CustomStudyAction.EXTEND_STUDY_LIMITS -> {
-                        openStudyOptionsAndFinish()
-                    }
+        setFragmentResultListener(CustomStudyAction.REQUEST_KEY) { _, bundle ->
+            when (CustomStudyAction.fromBundle(bundle)) {
+                CustomStudyAction.CUSTOM_STUDY_SESSION, CustomStudyAction.EXTEND_STUDY_LIMITS -> {
+                    openStudyOptionsAndFinish()
                 }
             }
+        }
 
-            setContent {
-                CongratsScreen(
-                    onNavigateUp = { finish() }, onDeckOptions = {
-                    val intent = DeckOptions.getIntent(this, col.decks.current().id)
-                    startActivity(intent)
-                }, onCustomStudy = {
-                    val customStudy = CustomStudyDialog.createInstance(col.decks.current().id)
-                    showDialogFragment(customStudy)
-                }, timeUntilNextDay = timeUntilNextDay
-                )
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error getting collection in CongratsActivity")
-            finish()
+        // the collection is read off the main thread: opening it in onCreate blocked the first frame, and a
+        // slow open could reach an application-not-responding dialog
+        launchCatchingTask {
+            val dayCutoff = withCol { sched.dayCutoff }
+            timeUntilNextDay = (dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
+        }
+
+        setContent {
+            CongratsScreen(
+                onNavigateUp = { finish() },
+                onDeckOptions = {
+                    launchCatchingTask {
+                        val deckId = withCol { decks.current().id }
+                        startActivity(DeckOptions.getIntent(this@CongratsActivity, deckId))
+                    }
+                },
+                onCustomStudy = {
+                    launchCatchingTask {
+                        val deckId = withCol { decks.current().id }
+                        showDialogFragment(CustomStudyDialog.createInstance(deckId))
+                    }
+                },
+                timeUntilNextDay = timeUntilNextDay,
+            )
         }
     }
 

@@ -122,8 +122,6 @@ class HeatmapWidget : GlanceAppWidget() {
         // Widgets run outside the main app context and don't have collection access,
         // so direct time APIs are appropriate here rather than collection.getTime()
         @Suppress("DirectSystemCurrentTimeMillisUsage") val today = System.currentTimeMillis()
-        val dayMillis = DAY_IN_MILLIS
-        val currentDayIndex = today / dayMillis
 
         // Calculate ISO Day of Week (0 = Mon, 6 = Sun)
         @Suppress("DirectCalendarInstanceUsage") val calendar = Calendar.getInstance()
@@ -133,7 +131,8 @@ class HeatmapWidget : GlanceAppWidget() {
         val dow = calendar.get(Calendar.DAY_OF_WEEK)
         val todayDoW = (dow + 5) % 7
 
-        val todayCount = data[currentDayIndex] ?: 0
+        // data is keyed by whole days before today, so today is 0 (see fetchHeatmapData)
+        val todayCount = data[0L] ?: 0
 
         Row(
             modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.background)
@@ -205,9 +204,9 @@ class HeatmapWidget : GlanceAppWidget() {
                                 modifier = GlanceModifier.padding(end = 2.dp),
                             ) {
                                 for (d in 0..6) {
-                                    val dayOffset = (w * 7) + (todayDoW - d)
-                                    val checkDayIndex = currentDayIndex - dayOffset
-                                    val count = data[checkDayIndex] ?: 0
+                                    // days before today; negative for the rest of this week, which holds no reviews
+                                    val daysAgo = ((w * 7) + (todayDoW - d)).toLong()
+                                    val count = data[daysAgo] ?: 0
                                     val (colorProvider, alpha) = getColorForCount(
                                         count,
                                         GlanceTheme.colors,
@@ -311,17 +310,24 @@ class HeatmapWidget : GlanceAppWidget() {
             else -> colors.primary to 1f
         }
 
+        /**
+         * Review counts keyed by whole days before today, 0 being today, as the collection counts days.
+         *
+         * The scheduler's dayCutoff is when the current day ends in the user's own timezone and at their chosen
+         * rollover hour, so counting back from it puts every review in the day the scheduler credited it to.
+         * Dividing revlog.id by a day instead bucketed by UTC midnight, which moved the reviews either side of
+         * local midnight into the neighbouring day for everyone not on UTC.
+         */
         suspend fun fetchHeatmapData(): Map<Long, Int> = try {
             CollectionManager.withCol {
+                val dayCutoffMillis = this@withCol.sched.dayCutoff * 1000
                 // Limit query to recent history for performance.
                 // revlog.id is the primary key (timestamp in ms), so the WHERE clause
                 // enables an efficient index range scan instead of a full table scan.
-                // Widgets run outside the main app context and may not have collection access,
-                // so direct time APIs are appropriate here
-                @Suppress("DirectSystemCurrentTimeMillisUsage") val cutoffMillis =
-                    System.currentTimeMillis() - (MAX_HEATMAP_DAYS * DAY_IN_MILLIS)
+                val historyStartMillis = dayCutoffMillis - (MAX_HEATMAP_DAYS * DAY_IN_MILLIS)
                 val query =
-                    "SELECT CAST(id/$DAY_IN_MILLIS AS INTEGER) as day, count() FROM revlog WHERE id >= $cutoffMillis GROUP BY day"
+                    "SELECT CAST(($dayCutoffMillis - id) / $DAY_IN_MILLIS AS INTEGER) as daysAgo, count() " +
+                        "FROM revlog WHERE id >= $historyStartMillis GROUP BY daysAgo"
 
                 buildMap {
                     this@withCol.db.query(query).use { c ->
@@ -336,21 +342,20 @@ class HeatmapWidget : GlanceAppWidget() {
             emptyMap()
         }
 
+        /** Same shape as [fetchHeatmapData]: keys are whole days before today. */
         fun getDummyHeatmapData(): Map<Long, Int> = buildMap {
-            @Suppress("DirectSystemCurrentTimeMillisUsage") val today =
-                System.currentTimeMillis() / DAY_IN_MILLIS
             // Fill some days
-            for (i in 0..100) {
+            for (i in 0L..100L) {
                 // Use when to explicitly define precedence (first matching condition wins)
                 when {
-                    i % 11 == 0 -> put(today - i, 21)
-                    i % 5 == 0 -> put(today - i, 11)
-                    i % 13 == 0 -> put(today - i, 6)
-                    i % 2 == 0 -> put(today - i, 1)
-                    i % 3 == 0 -> put(today - i, 0)
+                    i % 11 == 0L -> put(i, 21)
+                    i % 5 == 0L -> put(i, 11)
+                    i % 13 == 0L -> put(i, 6)
+                    i % 2 == 0L -> put(i, 1)
+                    i % 3 == 0L -> put(i, 0)
                 }
             }
-            put(today, 294)
+            put(0L, 294)
         }
 
         suspend fun updateHeatmapWidgetPreview(context: Context) {

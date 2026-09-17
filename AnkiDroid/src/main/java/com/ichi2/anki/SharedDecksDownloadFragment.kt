@@ -31,7 +31,6 @@ import android.view.ViewGroup
 import android.webkit.CookieManager
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.VisibleForTesting
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.ContextCompat
@@ -40,6 +39,7 @@ import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.ichi2.anki.SharedDecksActivity.Companion.DOWNLOAD_FILE
@@ -142,7 +142,7 @@ class SharedDecksDownloadFragment : Fragment() {
 
         (view as ComposeView).setContent {
             AnkiDroidTheme {
-                val state by viewModel.uiState.collectAsState()
+                val state by viewModel.uiState.collectAsStateWithLifecycle()
                 SharedDecksDownloadScreen(
                     state = state,
                     onNavigateUp = { activity?.onBackPressedDispatcher?.onBackPressed() },
