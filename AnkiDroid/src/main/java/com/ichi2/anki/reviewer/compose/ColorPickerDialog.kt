@@ -30,7 +30,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -200,21 +199,10 @@ private fun ColorSliderRow(
                     .background(Brush.horizontalGradient(gradientColors)),
         ) {
             var lastValue by remember(valueRange) { mutableFloatStateOf(value) }
-            val sliderState =
-                remember(valueRange) {
-                    SliderState(
-                        value = value,
-                        steps = 0,
-                        trackRange = valueRange,
-                    )
-                }
-            if (sliderState.value != value) {
-                sliderState.value = value
-            }
+            @Suppress("DEPRECATION")
             Slider(
-                state = sliderState,
+                value = value,
                 onValueChange = {
-                    sliderState.value = it
                     onValueChange(it)
                     // Haptic feedback when the value changes significantly (e.g., 5%)
                     val rangeSpan = valueRange.endInclusive - valueRange.start
@@ -223,6 +211,7 @@ private fun ColorSliderRow(
                         lastValue = it
                     }
                 },
+                valueRange = valueRange,
                 modifier = Modifier.fillMaxWidth(),
                 colors =
                     SliderDefaults.colors(

@@ -37,7 +37,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -153,28 +152,19 @@ fun BrushOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            var lastBrushWidth by remember(activeIndex) { mutableFloatStateOf(brush.width) }
-            val sliderState =
-                remember(activeIndex) {
-                    SliderState(
-                        value = brush.width,
-                        steps = 7,
-                        trackRange = 1f..70f,
-                    )
-                }
-            if (sliderState.value != brush.width) {
-                sliderState.value = brush.width
-            }
+            var lastBrushWidth by remember { mutableFloatStateOf(brush.width) }
+            @Suppress("DEPRECATION")
             Slider(
-                state = sliderState,
+                value = brush.width,
                 onValueChange = {
-                    sliderState.value = it
                     viewModel.setActiveStrokeWidth(it)
                     if (it.toInt() != lastBrushWidth.toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         lastBrushWidth = it
                     }
                 },
+                valueRange = 1f..70f,
+                steps = 7,
             )
         }
     }
@@ -251,28 +241,19 @@ fun EraserOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            var lastWidth by remember(width) { mutableFloatStateOf(width) }
-            val sliderState =
-                remember(width) {
-                    SliderState(
-                        value = width,
-                        steps = 8,
-                        trackRange = 5f..200f,
-                    )
-                }
-            if (sliderState.value != width) {
-                sliderState.value = width
-            }
+            var lastWidth by remember { mutableFloatStateOf(width) }
+            @Suppress("DEPRECATION")
             Slider(
-                state = sliderState,
+                value = width,
                 onValueChange = {
-                    sliderState.value = it
                     viewModel.setActiveStrokeWidth(it)
                     if (it.toInt() != lastWidth.toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         lastWidth = it
                     }
                 },
+                valueRange = 5f..200f,
+                steps = 8,
             )
         }
 
