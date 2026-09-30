@@ -47,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -55,6 +56,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
@@ -341,18 +343,25 @@ fun DrawingBrushOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                    var lastBrushWidth by remember { mutableStateOf(brush.width) }
+                    var lastBrushWidth by remember { mutableFloatStateOf(brush.width) }
+                    val sliderState = remember {
+                        SliderState(
+                            brush.width,
+                            7,
+                            1f..70f,
+                        )
+                    }
+                    sliderState.value = brush.width
                     Slider(
-                        value = brush.width,
+                        state = sliderState,
                         onValueChange = {
+                            sliderState.value = it
                             onWidthChange(it)
                             if (it.toInt() != lastBrushWidth.toInt()) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 lastBrushWidth = it
                             }
                         },
-                        valueRange = 1f..70f,
-                        steps = 7,
                     )
                 }
             }
@@ -399,18 +408,25 @@ fun DrawingEraserOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                    var lastEraserWidth by remember { mutableStateOf(eraserWidth) }
+                    var lastEraserWidth by remember { mutableFloatStateOf(eraserWidth) }
+                    val sliderState = remember {
+                        SliderState(
+                            eraserWidth,
+                            8,
+                            5f..200f,
+                        )
+                    }
+                    sliderState.value = eraserWidth
                     Slider(
-                        value = eraserWidth,
+                        state = sliderState,
                         onValueChange = {
+                            sliderState.value = it
                             onWidthChange(it)
                             if (it.toInt() != lastEraserWidth.toInt()) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 lastEraserWidth = it
                             }
                         },
-                        valueRange = 5f..200f,
-                        steps = 8,
                     )
                 }
 
