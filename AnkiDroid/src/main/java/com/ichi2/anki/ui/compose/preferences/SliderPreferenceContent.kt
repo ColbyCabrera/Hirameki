@@ -36,9 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -72,9 +70,12 @@ fun SliderPreferenceContent(
     enabled: Boolean = true
 ) {
     val lastHapticValue = remember(value) { floatArrayOf(value.toFloat()) }
-    var pendingValue by remember { mutableStateOf<Int?>(null) }
-    if (value == pendingValue) {
-        pendingValue = null
+    val lastExternalValue = remember { intArrayOf(value) }
+    val pendingCommit = remember { arrayOf<Int?>(null) }
+
+    if (value != lastExternalValue[0] || (pendingCommit[0] != null && value == pendingCommit[0])) {
+        lastExternalValue[0] = value
+        pendingCommit[0] = null
     }
 
     val haptic = LocalHapticFeedback.current
@@ -93,7 +94,7 @@ fun SliderPreferenceContent(
         )
     }
     SideEffect {
-        if (!isDragged && pendingValue == null && sliderState.value != value.toFloat()) {
+        if (!isDragged && pendingCommit[0] == null && sliderState.value != value.toFloat()) {
             sliderState.value = value.toFloat()
         }
     }
@@ -199,7 +200,7 @@ fun SliderPreferenceContent(
                         sliderState.value.roundToInt()
                     }
                     val coercedValue = finalValue.coerceIn(valueFrom, valueTo)
-                    pendingValue = coercedValue
+                    pendingCommit[0] = coercedValue
                     onValueChange(coercedValue)
                 },
                 modifier = Modifier.fillMaxWidth(),
