@@ -33,7 +33,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -70,13 +70,6 @@ fun SliderPreferenceContent(
     enabled: Boolean = true
 ) {
     val lastHapticValue = remember(value) { floatArrayOf(value.toFloat()) }
-    val lastExternalValue = remember { intArrayOf(value) }
-    val pendingCommit = remember { arrayOf<Int?>(null) }
-
-    if (value != lastExternalValue[0] || (pendingCommit[0] != null && value == pendingCommit[0])) {
-        lastExternalValue[0] = value
-        pendingCommit[0] = null
-    }
 
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -93,8 +86,9 @@ fun SliderPreferenceContent(
             trackRange = valueFrom.toFloat()..valueTo.toFloat(),
         )
     }
-    SideEffect {
-        if (!isDragged && pendingCommit[0] == null && sliderState.value != value.toFloat()) {
+    // Sync external value changes into the slider, but don't clobber active gestures
+    LaunchedEffect(value) {
+        if (!isDragged && sliderState.value != value.toFloat()) {
             sliderState.value = value.toFloat()
         }
     }
@@ -200,7 +194,7 @@ fun SliderPreferenceContent(
                         sliderState.value.roundToInt()
                     }
                     val coercedValue = finalValue.coerceIn(valueFrom, valueTo)
-                    pendingCommit[0] = coercedValue
+                    sliderState.value = coercedValue.toFloat()
                     onValueChange(coercedValue)
                 },
                 modifier = Modifier.fillMaxWidth(),
