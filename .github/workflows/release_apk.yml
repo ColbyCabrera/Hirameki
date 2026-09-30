@@ -1,0 +1,392 @@
+name: 📦 Build & Release APK
+
+# builds signed apks and publishes them as a github release you can download.
+# start it from the actions tab ("run workflow"), or push a tag such as v1.2.0.
+# one-time setup of the signing secrets: README.md, "Build Your Own APK".
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag. Leave empty to use v + baseVersionName from AnkiDroid/build.gradle.kts"
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+# queue runs instead of cancelling them, one group per tag: a run waiting behind another is cancelled as soon as a
+# third joins its group, so with every tag in one group, pushing two tags in a row could leave the first one with
+# no release at all. the group can only name the tag the run was started with, so a manual run that leaves the tag
+# empty groups under its branch while the tag it resolves to (v + baseVersionName) groups under that tag: those two
+# do not serialise. both still stop at the "release already exists" check or at `gh release create`, so the worst
+# case is one wasted build, never two releases for one tag
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read # only the publish job can write: it creates the tag and the release
+
+jobs:
+  # the checks that take seconds, in a job of their own that the tests and the build wait for. a failed job does not
+  # stop the jobs running next to it, so if these checks ran inside the build job, a bad tag or bad secrets would still
+  # leave the tests running for 10+ minutes, and a corrected run would queue behind that doomed one (see concurrency)
+  preflight:
+    name: Check tag and signing key
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      # pinned to commit shas for the reason given in the build job: this job holds the signing key too
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve release tag
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          version=$(sed -nE 's/^[[:space:]]*val[[:space:]]+baseVersionName[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' AnkiDroid/build.gradle.kts | head -n 1)
+          if [ -z "$version" ]; then
+            echo "::error::could not read baseVersionName from AnkiDroid/build.gradle.kts"
+            exit 1
+          fi
+
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag=$GITHUB_REF_NAME
+            if [ -n "$INPUT_TAG" ] && [ "$INPUT_TAG" != "$tag" ]; then
+              echo "::warning::run started on tag $tag, so the tag input '$INPUT_TAG' is ignored"
+            fi
+            # the apks carry baseVersionName and baseVersionCode whatever the tag says, so another tag would
+            # publish a release labelled with a version nothing was built from, at a versionCode already released
+            if [ "$tag" != "v$version" ]; then
+              echo "::error::tag $tag does not match baseVersionName $version in AnkiDroid/build.gradle.kts (expected v$version). bump baseVersionName and baseVersionCode there, then tag the new commit"
+              exit 1
+            fi
+          else
+            tag=${INPUT_TAG:-v$version}
+          fi
+          if ! [[ $tag =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]]; then
+            echo "::error::invalid tag '$tag': use letters, digits and . _ + - only"
+            exit 1
+          fi
+
+          # prints the http status of a github api call; the body lands in api.json
+          api() {
+            curl -sS -o "$RUNNER_TEMP/api.json" -w '%{http_code}' \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/$1"
+          }
+
+          status=$(api "releases/tags/$tag")
+          case $status in
+            404) ;;
+            200)
+              echo "::error::release $tag already exists. bump baseVersionName in AnkiDroid/build.gradle.kts, enter another tag when starting the run, or delete that release"
+              exit 1
+              ;;
+            *)
+              echo "::error::checking for release $tag failed with http $status: $(cat "$RUNNER_TEMP/api.json")"
+              exit 1
+              ;;
+          esac
+
+          # gh release create ignores --target when the tag already exists, so an old
+          # tag would label these apks with code they were not built from
+          if [ "$GITHUB_REF_TYPE" != tag ]; then
+            status=$(api "git/ref/tags/$tag")
+            case $status in
+              404) ;;
+              200)
+                type=$(jq -r .object.type "$RUNNER_TEMP/api.json")
+                sha=$(jq -r .object.sha "$RUNNER_TEMP/api.json")
+                if [ "$type" = tag ]; then # annotated tag: follow it to its commit
+                  if [ "$(api "git/tags/$sha")" != 200 ]; then
+                    echo "::error::could not read annotated tag $tag: $(cat "$RUNNER_TEMP/api.json")"
+                    exit 1
+                  fi
+                  sha=$(jq -r .object.sha "$RUNNER_TEMP/api.json")
+                fi
+                if [ "$sha" != "$GITHUB_SHA" ]; then
+                  echo "::error::tag $tag already points at $sha, not at the commit being built ($GITHUB_SHA). enter another tag or delete the old one"
+                  exit 1
+                fi
+                ;;
+              *)
+                echo "::error::checking for tag $tag failed with http $status: $(cat "$RUNNER_TEMP/api.json")"
+                exit 1
+                ;;
+            esac
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      # jar and jarsigner for the signing key probe
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # the build job runs this same step through its alias, since it needs the key file and the one decoded here
+      # goes away with this job's runner
+      - &load-signing-key
+        name: Load signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          # no fallback to tools/fallback-release-keystore.jks: that key is public,
+          # so anyone could sign an "update" for apks released with it
+          missing=()
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::missing repository secrets: ${missing[*]}. add them under settings > secrets and variables > actions, see README.md"
+            exit 1
+          fi
+
+          # outside the workspace, so no cache or artifact can pick it up
+          keystore=$RUNNER_TEMP/release.keystore
+          # whitespace is stripped so a value pasted with line breaks still decodes
+          if ! tr -d '[:space:]' <<< "$KEYSTORE_BASE64" | base64 --decode > "$keystore"; then
+            echo "::error::KEYSTORE_BASE64 is not valid base64"
+            exit 1
+          fi
+
+          # signing a throwaway jar proves the password, alias and key password in
+          # seconds, instead of gradle rejecting them at the end of the build
+          echo probe > "$RUNNER_TEMP/probe.txt"
+          jar --create --file "$RUNNER_TEMP/probe.jar" -C "$RUNNER_TEMP" probe.txt
+          if ! jarsigner -keystore "$keystore" -storepass:env KEYSTORE_PASSWORD -keypass:env KEY_PASSWORD \
+              "$RUNNER_TEMP/probe.jar" "$KEY_ALIAS" > "$RUNNER_TEMP/probe.log" 2>&1; then
+            cat "$RUNNER_TEMP/probe.log"
+            echo "::error::the signing key does not open. check KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD"
+            exit 1
+          fi
+
+          # read by signingConfigs.release in AnkiDroid/build.gradle.kts
+          echo "KEYSTOREPATH=$keystore" >> "$GITHUB_ENV"
+
+  # the same unit test suites the "unit tests" workflow runs on every push, so a commit with a failing test is never
+  # published. it runs next to the build, not before it: a release waits about as long as the tests take (10 to 12
+  # minutes on ubuntu, against about 7 for the build), not tests plus build. no secrets reach this job
+  unit-tests:
+    name: Unit tests
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # no cache: this workflow publishes artifacts, and a cache entry poisoned by
+      # another run in the same scope could execute ahead of the build (zizmor
+      # cache-poisoning). releases are rare, so the extra downloads are acceptable
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-disabled: true
+
+      # robolectric would fetch its android sdk jars during the tests; fetching them first through gradle, as the
+      # unit tests workflow does, turns a dropped download into a retried step instead of a failed test run. three
+      # tries 60 s apart like that workflow's retry action, written out so no other third-party action needs pinning
+      - name: Download Robolectric SDKs
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew robolectricSdkDownload && exit 0
+            echo "::warning::robolectric sdk download failed (attempt $attempt of 3)"
+            [ "$attempt" = 3 ] || sleep 60
+          done
+          exit 1
+
+      - name: Run unit tests
+        run: ./gradlew :AnkiDroid:testPlayDebugUnitTest :libanki:testDebugUnitTest :common:testDebugUnitTest
+
+  release:
+    name: Build APKs
+    needs: preflight
+    # pinned image: android sdk 37, build-tools, jq and gh come preinstalled
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      # actions are pinned to commit shas because this job holds the signing key, so a moved tag can't swap in
+      # different code. dependabot (.github/dependabot.yml) keeps the pins current once version updates are
+      # enabled; a fork starts with them off
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # keep the token out of .git/config, where gradle plugins could read it
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21" # same as the other workflows and jitpack.yml
+
+      # the key file preflight decoded went away with its runner, so this job loads and checks it again
+      - *load-signing-key
+
+      # no cache: this job loads the signing key and publishes the artifacts, and a
+      # cache entry poisoned by another run in the same scope could execute where the
+      # key is loaded (zizmor cache-poisoning). releases are rare, so the slower
+      # build is the safer trade
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-disabled: true
+
+      # full flavor is the sideload build: play only removes MANAGE_EXTERNAL_STORAGE
+      # for google play policy (AnkiDroid/src/play/AndroidManifest.xml).
+      # -Duniversal-apk=true adds one apk for every device next to the per-abi apks.
+      - name: Build APKs
+        env:
+          KEYSTOREPWD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYPWD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :AnkiDroid:assembleFullRelease -Duniversal-apk=true
+
+      - name: Collect APKs
+        env:
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          out=AnkiDroid/build/outputs/apk/full/release
+          apksigner=$(printf '%s\n' "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          if [ ! -x "$apksigner" ]; then
+            echo "::error::no apksigner in $ANDROID_HOME/build-tools"
+            exit 1
+          fi
+          mkdir -p dist
+          # output-metadata.json is agp's own list of the apks it built, so abis and
+          # file names come from the build instead of being guessed here
+          jq -r '.elements[] | [((.filters[] | select(.filterType == "ABI") | .value) // "universal"), .outputFile, .versionName] | @tsv' "$out/output-metadata.json" |
+            while IFS=$'\t' read -r abi file name; do
+              if [ "$name" != "$VERSION" ]; then
+                echo "::error::$file reports version $name, expected $VERSION"
+                exit 1
+              fi
+              "$apksigner" verify "$out/$file" # fails on an unsigned apk
+              cp "$out/$file" "dist/Hirameki-$VERSION-$abi.apk"
+            done
+          if [ ! -f "dist/Hirameki-$VERSION-universal.apk" ]; then
+            echo "::error::no universal apk was built"
+            exit 1
+          fi
+          # r8 renames every class in a release build, so without this file a crash trace from a published apk
+          # cannot be read back. it is missing only when the build ran with MINIFY_ENABLED=false
+          mapping=AnkiDroid/build/outputs/mapping/fullRelease/mapping.txt
+          if [ -f "$mapping" ]; then
+            # gzipped: the raw file is larger than every apk together, and r8's retrace reads it compressed
+            gzip -9 -c "$mapping" > "dist/Hirameki-$VERSION-mapping.txt.gz"
+          else
+            echo "::warning::no r8 mapping at $mapping: crash traces from these apks cannot be deobfuscated"
+          fi
+          ls -l dist
+
+      # hands the apks to the publish job, and keeps them downloadable from the run page when the tests or
+      # publishing fail, so a long build is never lost
+      - name: Upload APKs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: apks-${{ github.run_id }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0 # apks and the gzipped mapping are compressed already
+          # artifact names are unique per run, not per attempt, so "re-run all jobs" would otherwise fail here
+          overwrite: true
+          retention-days: 7
+
+  publish:
+    name: Publish release
+    # publishes only when the build and every unit test passed. preflight is listed for its tag and version: a job can
+    # only read the outputs of the jobs it names here
+    needs: [preflight, release, unit-tests]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write # create the tag and the release
+    steps:
+      - name: Download APKs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: apks-${{ github.run_id }}
+          path: dist
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.preflight.outputs.tag }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          assets=()
+          for apk in dist/*.apk; do
+            abi=${apk#"dist/Hirameki-$VERSION-"}
+            abi=${abi%.apk}
+            case $abi in
+              universal) label="Universal APK (any device)" ;;
+              arm64-v8a) label="arm64-v8a APK (almost every current phone, smaller)" ;;
+              *) label="$abi APK" ;;
+            esac
+            assets+=("$apk#$label")
+          done
+          mapping=dist/Hirameki-$VERSION-mapping.txt.gz
+          if [ -f "$mapping" ]; then
+            assets+=("$mapping#R8 mapping file, gzipped (turns a crash trace from these APKs back into readable names)")
+          fi
+
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          Hirameki $VERSION, built from $GITHUB_SHA.
+
+          **Which APK?** If unsure, take **universal**: it runs on every device. **arm64-v8a** is smaller and fits almost every current phone.
+
+          Pick one kind and stay on it: the universal APK's version code is lower than every per-ABI one, so Android refuses to install it over an arm64-v8a build. Switching kinds means uninstalling first, after syncing or backing up your collection.
+
+          This build is signed with this repository's own key, so Android will not install it over the Google Play version. Uninstall that first, after syncing or backing up your collection.
+          EOF
+
+          # a folded list of the commit titles since the last release, so the notes say what changed without
+          # growing long. read from the api, not from git: this job has no checkout
+          prev=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name 2>/dev/null || true)
+          if [ -n "$prev" ] && [ "$prev" != "$TAG" ]; then
+            titles=$(gh api "repos/$GH_REPO/compare/$prev...$GITHUB_SHA" \
+              --jq '.commits[].commit.message | split("\n")[0]' 2>/dev/null || true)
+            if [ -n "$titles" ]; then
+              {
+                echo
+                echo '<details>'
+                echo "<summary>Changes since $prev</summary>"
+                echo
+                echo "$titles" | sed 's/^/- /'
+                echo
+                echo '</details>'
+              } >> "$RUNNER_TEMP/notes.md"
+            else
+              # a squashed or unrelated history has no comparable commits; the rest of the notes still stand
+              echo "::warning::no commit list between $prev and $GITHUB_SHA, so these notes carry no changelog"
+            fi
+          fi
+
+          # a tag created with github.token triggers no workflows, so this starts no second run
+          url=$(gh release create "$TAG" "${assets[@]}" --target "$GITHUB_SHA" --title "Hirameki $VERSION" --notes-file "$RUNNER_TEMP/notes.md")
+          echo "Release: $url" >> "$GITHUB_STEP_SUMMARY"

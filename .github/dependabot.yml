@@ -1,10 +1,17 @@
 version: 2
+# on a fork, version updates stay off until enabled under settings > advanced security > dependabot.
+# no target-branch: upstream sent version updates to its own dependency-updates branch, which this fork does not
+# have. without it, pull requests go to the default branch
 updates:
 - package-ecosystem: "github-actions"
   directory: "/"
   schedule:
-    interval: "daily"
-  target-branch: dependency-updates
+    interval: "weekly"
+  # all action bumps in one pull request, the sha pins in release_apk.yml included
+  groups:
+    actions:
+      patterns:
+        - "*"
   labels:
   - "dependencies"
 - package-ecosystem: gradle
@@ -12,8 +19,9 @@ updates:
   schedule:
     interval: daily
     time: "10:00"
-  open-pull-requests-limit: 10
-  target-branch: dependency-updates
+  # 0 keeps version update pull requests off, as they were while they targeted the missing branch; raise it to get
+  # them against the default branch. security update pull requests do not count toward this limit
+  open-pull-requests-limit: 0
   labels:
   - "dependencies"
   ignore:
@@ -24,8 +32,9 @@ updates:
   schedule:
     interval: weekly
     time: "10:00"
-  open-pull-requests-limit: 10
-  target-branch: dependency-updates
+  # 0 keeps version update pull requests off, as they were while they targeted the missing branch; raise it to get
+  # them against the default branch. security update pull requests do not count toward this limit
+  open-pull-requests-limit: 0
   groups:
     non-breaking:
       update-types:
