@@ -15,11 +15,10 @@
  */
 package com.ichi2.anki.tests
 
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.R
 import com.ichi2.themes.Themes.setTheme
 import org.junit.Test
@@ -27,8 +26,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(Parameterized::class)
 class LayoutValidationTest : InstrumentedTest() {
@@ -49,29 +46,9 @@ class LayoutValidationTest : InstrumentedTest() {
         setTheme(targetContext)
         val li = LayoutInflater.from(targetContext)
         val root: ViewGroup = LinearLayout(targetContext)
-        ensureNoCrashOnUiThread { li.inflate(resourceId, root, true) }
-    }
-
-    /** Crashing on the UI thread takes down the process  */
-    @Throws(Exception::class)
-    private fun ensureNoCrashOnUiThread(runnable: Runnable) {
-        val failed = AtomicReference<Exception?>()
-        val latch = CountDownLatch(1)
-        runOnUiThread {
-            try {
-                runnable.run()
-            } catch (e: Exception) {
-                failed.set(e)
-            } finally {
-                latch.countDown()
-            }
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            li.inflate(resourceId, root, true)
         }
-        latch.await()
-        failed.get()?.let { throw it }
-    }
-
-    private fun runOnUiThread(runnable: Runnable) {
-        Handler(Looper.getMainLooper()).post(runnable)
     }
 
     companion object {

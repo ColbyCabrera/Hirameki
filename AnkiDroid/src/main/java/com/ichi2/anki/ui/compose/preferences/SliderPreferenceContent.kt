@@ -33,6 +33,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -87,12 +88,14 @@ fun SliderPreferenceContent(
             trackRange = valueFrom.toFloat()..valueTo.toFloat(),
         )
     }
-    if (!isDragged && sliderState.value != value.toFloat()) {
-        sliderState.value = value.toFloat()
+    LaunchedEffect(value, isDragged) {
+        if (!isDragged && sliderState.value != value.toFloat()) {
+            sliderState.value = value.toFloat()
+        }
     }
 
     // Derived state for display text to avoid redundant formatting calls
-    val displayText by remember(displayFormat) {
+    val displayText by remember(sliderState, displayFormat) {
         derivedStateOf {
             val roundedValue = sliderState.value.roundToInt()
             displayFormat?.let { String.format(it, roundedValue) } ?: roundedValue.toString()
