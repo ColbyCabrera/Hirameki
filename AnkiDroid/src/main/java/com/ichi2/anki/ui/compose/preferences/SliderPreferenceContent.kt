@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -152,9 +153,22 @@ fun SliderPreferenceContent(
                 }
             }
 
+            val sliderState = remember(valueFrom, valueTo, stepSize) {
+                SliderState(
+                    sliderPosition,
+                    if (stepSize > 0) maxOf(
+                        0,
+                        ((valueTo - valueFrom) / stepSize).toInt() - 1
+                    ) else 0,
+                    valueFrom.toFloat()..valueTo.toFloat()
+                )
+            }
+            sliderState.value = sliderPosition
+
             Slider(
-                value = sliderPosition,
-                onValueChange = { newValue ->
+                state = sliderState,
+                onValueChange = { newValue: Float ->
+                    sliderState.value = newValue
                     sliderPosition = newValue
                     if (stepSize > 0) {
                         val steps = ((newValue - valueFrom) / stepSize).roundToInt()
@@ -180,28 +194,23 @@ fun SliderPreferenceContent(
                     }
                     onValueChange(finalValue.coerceIn(valueFrom, valueTo))
                 },
-                valueRange = valueFrom.toFloat()..valueTo.toFloat(),
-                steps = if (stepSize > 0) maxOf(
-                    0, ((valueTo - valueFrom) / stepSize).toInt() - 1
-                ) else 0,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
+                colors = SliderDefaults.colors(
+                    activeTickColor = Color.Transparent,
+                    inactiveTickColor = Color.Transparent,
+                    disabledActiveTickColor = Color.Transparent,
+                    disabledInactiveTickColor = Color.Transparent
+                ),
                 interactionSource = interactionSource,
-                thumb = {
+                thumb = @Composable { _: SliderState ->
                     SliderThumbWithLabel(
                         isDragged = isDragged,
                         displayText = displayText,
                         interactionSource = interactionSource,
                         enabled = enabled
                     )
-                },
-                colors = SliderDefaults.colors(
-                    activeTickColor = Color.Transparent,
-                    inactiveTickColor = Color.Transparent,
-                    disabledActiveTickColor = Color.Transparent,
-                    disabledInactiveTickColor = Color.Transparent
-                )
-            )
+                })
         }
     }
 }
@@ -295,7 +304,6 @@ fun PreviewSliderPreferenceContentDisabled() {
         )
     }
 }
-
 
 
 @Preview(showBackground = true)
