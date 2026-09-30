@@ -33,10 +33,10 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -71,7 +71,11 @@ fun SliderPreferenceContent(
     isIconSpaceReserved: Boolean = false,
     enabled: Boolean = true
 ) {
-    var lastHapticValue by remember(value) { mutableFloatStateOf(value.toFloat()) }
+    val lastHapticValue = remember(value) { floatArrayOf(value.toFloat()) }
+    var pendingValue by remember { mutableStateOf<Int?>(null) }
+    if (value == pendingValue) {
+        pendingValue = null
+    }
 
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -88,8 +92,8 @@ fun SliderPreferenceContent(
             trackRange = valueFrom.toFloat()..valueTo.toFloat(),
         )
     }
-    LaunchedEffect(value, isDragged) {
-        if (!isDragged && sliderState.value != value.toFloat()) {
+    SideEffect {
+        if (!isDragged && pendingValue == null && sliderState.value != value.toFloat()) {
             sliderState.value = value.toFloat()
         }
     }
@@ -175,15 +179,15 @@ fun SliderPreferenceContent(
                     if (stepSize > 0) {
                         val steps = ((newValue - valueFrom) / stepSize).roundToInt()
                         val roundedValue = valueFrom + (steps * stepSize)
-                        if (roundedValue != lastHapticValue) {
+                        if (roundedValue != lastHapticValue[0]) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            lastHapticValue = roundedValue
+                            lastHapticValue[0] = roundedValue
                         }
                     } else {
                         val rangeSpan = (valueTo - valueFrom).toFloat()
-                        if (abs(newValue - lastHapticValue) > rangeSpan * 0.05f) {
+                        if (abs(newValue - lastHapticValue[0]) > rangeSpan * 0.05f) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            lastHapticValue = newValue
+                            lastHapticValue[0] = newValue
                         }
                     }
                 },
@@ -194,7 +198,9 @@ fun SliderPreferenceContent(
                     } else {
                         sliderState.value.roundToInt()
                     }
-                    onValueChange(finalValue.coerceIn(valueFrom, valueTo))
+                    val coercedValue = finalValue.coerceIn(valueFrom, valueTo)
+                    pendingValue = coercedValue
+                    onValueChange(coercedValue)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
