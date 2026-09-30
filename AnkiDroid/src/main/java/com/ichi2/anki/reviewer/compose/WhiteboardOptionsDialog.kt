@@ -37,10 +37,12 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -152,19 +154,30 @@ fun BrushOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            val lastBrushWidth = remember { floatArrayOf(brush.width) }
-            @Suppress("DEPRECATION")
+            val lastBrushWidth = remember(activeIndex) { floatArrayOf(brush.width) }
+            val sliderState = remember(activeIndex) {
+                SliderState(
+                    value = brush.width,
+                    steps = 7,
+                    trackRange = 1f..70f,
+                )
+            }
+            LaunchedEffect(brush.width) {
+                if (sliderState.value != brush.width) {
+                    sliderState.value = brush.width
+                }
+            }
             Slider(
-                value = brush.width,
+                state = sliderState,
                 onValueChange = {
+                    sliderState.value = it
                     viewModel.setActiveStrokeWidth(it)
                     if (it.toInt() != lastBrushWidth[0].toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         lastBrushWidth[0] = it
                     }
                 },
-                valueRange = 1f..70f,
-                steps = 7,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -241,19 +254,30 @@ fun EraserOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            val lastWidth = remember { floatArrayOf(width) }
-            @Suppress("DEPRECATION")
+            val lastWidth = remember(mode) { floatArrayOf(width) }
+            val sliderState = remember(mode) {
+                SliderState(
+                    value = width,
+                    steps = 8,
+                    trackRange = 5f..200f,
+                )
+            }
+            LaunchedEffect(width) {
+                if (sliderState.value != width) {
+                    sliderState.value = width
+                }
+            }
             Slider(
-                value = width,
+                state = sliderState,
                 onValueChange = {
+                    sliderState.value = it
                     viewModel.setActiveStrokeWidth(it)
                     if (it.toInt() != lastWidth[0].toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         lastWidth[0] = it
                     }
                 },
-                valueRange = 5f..200f,
-                steps = 8,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 
