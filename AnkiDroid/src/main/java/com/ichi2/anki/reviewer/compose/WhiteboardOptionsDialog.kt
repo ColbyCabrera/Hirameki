@@ -153,15 +153,18 @@ fun BrushOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            var lastBrushWidth by remember { mutableFloatStateOf(brush.width) }
-            val sliderState = remember {
-                SliderState(
-                    brush.width,
-                    7,
-                    1f..70f,
-                )
+            var lastBrushWidth by remember(activeIndex) { mutableFloatStateOf(brush.width) }
+            val sliderState =
+                remember(activeIndex) {
+                    SliderState(
+                        brush.width,
+                        7,
+                        1f..70f,
+                    )
+                }
+            if (sliderState.value != brush.width) {
+                sliderState.value = brush.width
             }
-            sliderState.value = brush.width
             Slider(
                 state = sliderState,
                 onValueChange = {
@@ -249,14 +252,17 @@ fun EraserOptionsContent(
                 )
             }
             var lastWidth by remember { mutableFloatStateOf(width) }
-            val sliderState = remember {
-                SliderState(
-                    width,
-                    8,
-                    5f..200f,
-                )
+            val sliderState =
+                remember {
+                    SliderState(
+                        width,
+                        8,
+                        5f..200f,
+                    )
+                }
+            if (sliderState.value != width) {
+                sliderState.value = width
             }
-            sliderState.value = width
             Slider(
                 state = sliderState,
                 onValueChange = {
