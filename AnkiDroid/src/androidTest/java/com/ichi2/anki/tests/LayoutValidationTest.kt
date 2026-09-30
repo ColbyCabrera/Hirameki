@@ -20,6 +20,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import com.ichi2.anki.R
 import com.ichi2.themes.Themes.setTheme
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -86,7 +87,7 @@ class LayoutValidationTest : InstrumentedTest() {
         )
         @JvmStatic // required for initParameters
         fun initParameters(): Collection<Array<out Any>> {
-            val ctor: Constructor<*> = com.ichi2.anki.R.layout::class.java.declaredConstructors[0]
+            val ctor: Constructor<*> = R.layout::class.java.declaredConstructors[0]
             ctor.isAccessible = true // Required for at least API 16, maybe later.
             val layout = ctor.newInstance()
 
@@ -102,13 +103,12 @@ class LayoutValidationTest : InstrumentedTest() {
             //   a FragmentActivity to use android:name="..."
             val ignoredLayoutIds =
                 listOf(
-                    com.ichi2.anki.R.layout.introduction_activity,
-                    com.ichi2.anki.R.layout.preferences,
-                ) +
-                        emptyList()
+                    R.layout.introduction_activity,
+                    R.layout.preferences,
+                )
 
             return layout::class.java.fields
-                .map { arrayOf(it.getInt(layout), it.name) }
+                .map { arrayOf<Any>(it.getInt(layout), it.name) }
                 .filterNot { (id, name) -> name in nonAnkiFieldNames || id in ignoredLayoutIds }
         }
 
