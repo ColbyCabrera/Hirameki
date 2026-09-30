@@ -77,7 +77,7 @@ fun SliderPreferenceContent(
 
     val stepsCount = if (stepSize > 0) maxOf(
         0,
-        ((valueTo - valueFrom) / stepSize).toInt() - 1
+        ((valueTo - valueFrom) / stepSize).roundToInt() - 1
     ) else 0
     val sliderState = remember(valueFrom, valueTo, stepSize) {
         SliderState(
@@ -87,7 +87,7 @@ fun SliderPreferenceContent(
         )
     }
     // Sync external value changes into the slider, but don't clobber active gestures
-    LaunchedEffect(value) {
+    LaunchedEffect(value, isDragged) {
         if (!isDragged && sliderState.value != value.toFloat()) {
             sliderState.value = value.toFloat()
         }

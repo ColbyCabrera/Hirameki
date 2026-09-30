@@ -330,21 +330,8 @@ fun DrawingBrushOptionsDialog(
 
                 // Width Slider
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            stringResource(R.string.whiteboard_width),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        Text(
-                            brush.width.roundToInt().toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
-                    val lastBrushWidth = remember(brush) { floatArrayOf(brush.width) }
-                    val sliderState = remember(brush) {
+                    val lastBrushWidth = remember { floatArrayOf(brush.width) }
+                    val sliderState = remember {
                         SliderState(
                             value = brush.width,
                             steps = 7,
@@ -356,15 +343,30 @@ fun DrawingBrushOptionsDialog(
                             sliderState.value = brush.width
                         }
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            stringResource(R.string.whiteboard_width),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        Text(
+                            sliderState.value.roundToInt().toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                     Slider(
                         state = sliderState,
                         onValueChange = {
                             sliderState.value = it
-                            onWidthChange(it)
                             if (it.toInt() != lastBrushWidth[0].toInt()) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 lastBrushWidth[0] = it
                             }
+                        },
+                        onValueChangeFinished = {
+                            onWidthChange(sliderState.value)
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -400,21 +402,8 @@ fun DrawingEraserOptionsDialog(
             ) {
                 // Width Slider
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            stringResource(R.string.whiteboard_width),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                        Text(
-                            eraserWidth.roundToInt().toString(),
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
-                    val lastEraserWidth = remember(eraserWidth) { floatArrayOf(eraserWidth) }
-                    val sliderState = remember(eraserWidth) {
+                    val lastEraserWidth = remember { floatArrayOf(eraserWidth) }
+                    val sliderState = remember {
                         SliderState(
                             value = eraserWidth,
                             steps = 8,
@@ -426,15 +415,30 @@ fun DrawingEraserOptionsDialog(
                             sliderState.value = eraserWidth
                         }
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            stringResource(R.string.whiteboard_width),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                        Text(
+                            sliderState.value.roundToInt().toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                     Slider(
                         state = sliderState,
                         onValueChange = {
                             sliderState.value = it
-                            onWidthChange(it)
                             if (it.toInt() != lastEraserWidth[0].toInt()) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 lastEraserWidth[0] = it
                             }
+                        },
+                        onValueChangeFinished = {
+                            onWidthChange(sliderState.value)
                         },
                         modifier = Modifier.fillMaxWidth(),
                     )

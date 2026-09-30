@@ -141,19 +141,6 @@ fun BrushOptionsContent(
 
         // Width Slider
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    stringResource(R.string.whiteboard_width),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(
-                    brush.width.roundToInt().toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
             val lastBrushWidth = remember(activeIndex) { floatArrayOf(brush.width) }
             val sliderState = remember(activeIndex) {
                 SliderState(
@@ -167,15 +154,30 @@ fun BrushOptionsContent(
                     sliderState.value = brush.width
                 }
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    stringResource(R.string.whiteboard_width),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Text(
+                    sliderState.value.roundToInt().toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
             Slider(
                 state = sliderState,
                 onValueChange = {
                     sliderState.value = it
-                    viewModel.setActiveStrokeWidth(it)
                     if (it.toInt() != lastBrushWidth[0].toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         lastBrushWidth[0] = it
                     }
+                },
+                onValueChangeFinished = {
+                    viewModel.setActiveStrokeWidth(sliderState.value)
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -241,19 +243,6 @@ fun EraserOptionsContent(
 
         // Width Slider
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    stringResource(R.string.whiteboard_width),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(
-                    width.roundToInt().toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
             val lastWidth = remember(mode) { floatArrayOf(width) }
             val sliderState = remember(mode) {
                 SliderState(
@@ -267,15 +256,30 @@ fun EraserOptionsContent(
                     sliderState.value = width
                 }
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    stringResource(R.string.whiteboard_width),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                Text(
+                    sliderState.value.roundToInt().toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
             Slider(
                 state = sliderState,
                 onValueChange = {
                     sliderState.value = it
-                    viewModel.setActiveStrokeWidth(it)
                     if (it.toInt() != lastWidth[0].toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         lastWidth[0] = it
                     }
+                },
+                onValueChangeFinished = {
+                    viewModel.setActiveStrokeWidth(sliderState.value)
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
