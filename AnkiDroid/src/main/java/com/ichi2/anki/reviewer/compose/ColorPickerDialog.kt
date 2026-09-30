@@ -34,11 +34,7 @@ import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -78,17 +74,17 @@ fun ColorPickerDialog(
         }
     val defaultAlpha = remember(defaultColor) { Color.alpha(defaultColor) / 255f }
 
-    var hue by remember(defaultColor) { mutableFloatStateOf(defaultHsv[0]) }
-    var saturation by remember(defaultColor) { mutableFloatStateOf(defaultHsv[1]) }
-    var value by remember(defaultColor) { mutableFloatStateOf(defaultHsv[2]) }
-    var alpha by remember(defaultColor) { mutableFloatStateOf(defaultAlpha) }
+    val hueState = remember(defaultColor) { SliderState(value = defaultHsv[0], trackRange = 0f..360f) }
+    val saturationState = remember(defaultColor) { SliderState(value = defaultHsv[1], trackRange = 0f..1f) }
+    val valueState = remember(defaultColor) { SliderState(value = defaultHsv[2], trackRange = 0f..1f) }
+    val alphaState = remember(defaultColor) { SliderState(value = defaultAlpha, trackRange = 0f..1f) }
 
     // Current color based on HSV values
     val currentColor =
-        remember(hue, saturation, value, alpha) {
-            val hsv = floatArrayOf(hue, saturation, value)
+        remember(hueState.value, saturationState.value, valueState.value, alphaState.value) {
+            val hsv = floatArrayOf(hueState.value, saturationState.value, valueState.value)
             if (showAlpha) {
-                Color.HSVToColor((alpha * 255).roundToInt(), hsv)
+                Color.HSVToColor((alphaState.value * 255).roundToInt(), hsv)
             } else {
                 Color.HSVToColor(hsv)
             }
@@ -128,35 +124,29 @@ fun ColorPickerDialog(
                 // Hue slider (rainbow gradient)
                 ColorSliderRow(
                     label = stringResource(R.string.color_picker_hue),
-                    value = hue,
-                    valueRange = 0f..360f,
-                    onValueChange = { hue = it },
+                    state = hueState,
                     gradientColors = HueGradientColors,
                 )
 
                 // Saturation slider
                 ColorSliderRow(
                     label = stringResource(R.string.color_picker_saturation),
-                    value = saturation,
-                    valueRange = 0f..1f,
-                    onValueChange = { saturation = it },
+                    state = saturationState,
                     gradientColors =
                         listOf(
-                            ComposeColor(Color.HSVToColor(floatArrayOf(hue, 0f, value))),
-                            ComposeColor(Color.HSVToColor(floatArrayOf(hue, 1f, value))),
+                            ComposeColor(Color.HSVToColor(floatArrayOf(hueState.value, 0f, valueState.value))),
+                            ComposeColor(Color.HSVToColor(floatArrayOf(hueState.value, 1f, valueState.value))),
                         ),
                 )
 
                 // Value/Brightness slider
                 ColorSliderRow(
                     label = stringResource(R.string.color_picker_brightness),
-                    value = value,
-                    valueRange = 0f..1f,
-                    onValueChange = { value = it },
+                    state = valueState,
                     gradientColors =
                         listOf(
                             ComposeColor.Black,
-                            ComposeColor(Color.HSVToColor(floatArrayOf(hue, saturation, 1f))),
+                            ComposeColor(Color.HSVToColor(floatArrayOf(hueState.value, saturationState.value, 1f))),
                         ),
                 )
 
@@ -164,13 +154,11 @@ fun ColorPickerDialog(
                 if (showAlpha) {
                     ColorSliderRow(
                         label = stringResource(R.string.color_picker_alpha),
-                        value = alpha,
-                        valueRange = 0f..1f,
-                        onValueChange = { alpha = it },
+                        state = alphaState,
                         gradientColors =
                             listOf(
                                 ComposeColor.Transparent,
-                                ComposeColor(Color.HSVToColor(floatArrayOf(hue, saturation, value))),
+                                ComposeColor(Color.HSVToColor(floatArrayOf(hueState.value, saturationState.value, valueState.value))),
                             ),
                     )
                 }
@@ -182,9 +170,7 @@ fun ColorPickerDialog(
 @Composable
 private fun ColorSliderRow(
     label: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit,
+    state: SliderState,
     gradientColors: List<ComposeColor>,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -202,25 +188,13 @@ private fun ColorSliderRow(
                     .clip(MaterialTheme.shapes.small)
                     .background(Brush.horizontalGradient(gradientColors)),
         ) {
-            val lastHapticValue = remember(valueRange) { floatArrayOf(value) }
-            val sliderState = remember(valueRange) {
-                SliderState(
-                    value = value,
-                    trackRange = valueRange,
-                )
-            }
-            LaunchedEffect(value) {
-                if (sliderState.value != value) {
-                    sliderState.value = value
-                }
-            }
+            val lastHapticValue = remember(state) { floatArrayOf(state.value) }
             Slider(
-                state = sliderState,
+                state = state,
                 onValueChange = {
-                    sliderState.value = it
-                    onValueChange(it)
+                    state.value = it
                     // Haptic feedback when the value changes significantly (e.g., 5%)
-                    val rangeSpan = valueRange.endInclusive - valueRange.start
+                    val rangeSpan = state.trackRange.endInclusive - state.trackRange.start
                     if (abs(it - lastHapticValue[0]) > rangeSpan * 0.05f) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         lastHapticValue[0] = it
