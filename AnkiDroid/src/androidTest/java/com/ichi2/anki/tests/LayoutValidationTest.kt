@@ -45,8 +45,8 @@ class LayoutValidationTest : InstrumentedTest() {
         val targetContext = testContext
         setTheme(targetContext)
         val li = LayoutInflater.from(targetContext)
-        val root: ViewGroup = LinearLayout(targetContext)
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val root: ViewGroup = LinearLayout(targetContext)
             li.inflate(resourceId, root, true)
         }
     }

@@ -71,10 +71,10 @@ fun ColorPickerDialog(
         }
     val defaultAlpha = remember(defaultColor) { Color.alpha(defaultColor) / 255f }
 
-    var hue by remember { mutableFloatStateOf(defaultHsv[0]) }
-    var saturation by remember { mutableFloatStateOf(defaultHsv[1]) }
-    var value by remember { mutableFloatStateOf(defaultHsv[2]) }
-    var alpha by remember { mutableFloatStateOf(defaultAlpha) }
+    var hue by remember(defaultColor) { mutableFloatStateOf(defaultHsv[0]) }
+    var saturation by remember(defaultColor) { mutableFloatStateOf(defaultHsv[1]) }
+    var value by remember(defaultColor) { mutableFloatStateOf(defaultHsv[2]) }
+    var alpha by remember(defaultColor) { mutableFloatStateOf(defaultAlpha) }
 
     // Current color based on HSV values
     val currentColor =
@@ -198,7 +198,7 @@ private fun ColorSliderRow(
                     .clip(MaterialTheme.shapes.small)
                     .background(Brush.horizontalGradient(gradientColors)),
         ) {
-            var lastValue by remember(valueRange) { mutableFloatStateOf(value) }
+            val lastHapticValue = remember(valueRange) { floatArrayOf(value) }
             @Suppress("DEPRECATION")
             Slider(
                 value = value,
@@ -206,9 +206,9 @@ private fun ColorSliderRow(
                     onValueChange(it)
                     // Haptic feedback when the value changes significantly (e.g., 5%)
                     val rangeSpan = valueRange.endInclusive - valueRange.start
-                    if (abs(it - lastValue) > rangeSpan * 0.05f) {
+                    if (abs(it - lastHapticValue[0]) > rangeSpan * 0.05f) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        lastValue = it
+                        lastHapticValue[0] = it
                     }
                 },
                 valueRange = valueRange,

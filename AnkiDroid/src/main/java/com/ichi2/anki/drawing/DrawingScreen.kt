@@ -342,15 +342,15 @@ fun DrawingBrushOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                    var lastBrushWidth by remember { mutableFloatStateOf(brush.width) }
+                    val lastBrushWidth = remember { floatArrayOf(brush.width) }
                     @Suppress("DEPRECATION")
                     Slider(
                         value = brush.width,
                         onValueChange = {
                             onWidthChange(it)
-                            if (it.toInt() != lastBrushWidth.toInt()) {
+                            if (it.toInt() != lastBrushWidth[0].toInt()) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                lastBrushWidth = it
+                                lastBrushWidth[0] = it
                             }
                         },
                         valueRange = 1f..70f,
@@ -401,15 +401,15 @@ fun DrawingEraserOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                    var lastEraserWidth by remember { mutableFloatStateOf(eraserWidth) }
+                    val lastEraserWidth = remember { floatArrayOf(eraserWidth) }
                     @Suppress("DEPRECATION")
                     Slider(
                         value = eraserWidth,
                         onValueChange = {
                             onWidthChange(it)
-                            if (it.toInt() != lastEraserWidth.toInt()) {
+                            if (it.toInt() != lastEraserWidth[0].toInt()) {
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                lastEraserWidth = it
+                                lastEraserWidth[0] = it
                             }
                         },
                         valueRange = 5f..200f,

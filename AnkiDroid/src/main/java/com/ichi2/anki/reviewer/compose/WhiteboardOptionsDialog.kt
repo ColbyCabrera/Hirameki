@@ -152,15 +152,15 @@ fun BrushOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            var lastBrushWidth by remember { mutableFloatStateOf(brush.width) }
+            val lastBrushWidth = remember { floatArrayOf(brush.width) }
             @Suppress("DEPRECATION")
             Slider(
                 value = brush.width,
                 onValueChange = {
                     viewModel.setActiveStrokeWidth(it)
-                    if (it.toInt() != lastBrushWidth.toInt()) {
+                    if (it.toInt() != lastBrushWidth[0].toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        lastBrushWidth = it
+                        lastBrushWidth[0] = it
                     }
                 },
                 valueRange = 1f..70f,
@@ -241,15 +241,15 @@ fun EraserOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            var lastWidth by remember { mutableFloatStateOf(width) }
+            val lastWidth = remember { floatArrayOf(width) }
             @Suppress("DEPRECATION")
             Slider(
                 value = width,
                 onValueChange = {
                     viewModel.setActiveStrokeWidth(it)
-                    if (it.toInt() != lastWidth.toInt()) {
+                    if (it.toInt() != lastWidth[0].toInt()) {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        lastWidth = it
+                        lastWidth[0] = it
                     }
                 },
                 valueRange = 5f..200f,
