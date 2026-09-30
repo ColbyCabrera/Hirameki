@@ -200,14 +200,17 @@ private fun ColorSliderRow(
                     .background(Brush.horizontalGradient(gradientColors)),
         ) {
             var lastValue by remember { mutableFloatStateOf(value) }
-            val sliderState = remember {
-                SliderState(
-                    value,
-                    0,
-                    valueRange,
-                )
+            val sliderState =
+                remember(valueRange) {
+                    SliderState(
+                        value,
+                        0,
+                        valueRange,
+                    )
+                }
+            if (sliderState.value != value) {
+                sliderState.value = value
             }
-            sliderState.value = value
             Slider(
                 state = sliderState,
                 onValueChange = {

@@ -163,7 +163,9 @@ fun SliderPreferenceContent(
                     valueFrom.toFloat()..valueTo.toFloat()
                 )
             }
-            sliderState.value = sliderPosition
+            if (sliderState.value != sliderPosition) {
+                sliderState.value = sliderPosition
+            }
 
             Slider(
                 state = sliderState,

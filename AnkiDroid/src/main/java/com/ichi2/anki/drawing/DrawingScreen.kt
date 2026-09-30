@@ -344,14 +344,17 @@ fun DrawingBrushOptionsDialog(
                         )
                     }
                     var lastBrushWidth by remember { mutableFloatStateOf(brush.width) }
-                    val sliderState = remember {
-                        SliderState(
-                            brush.width,
-                            7,
-                            1f..70f,
-                        )
+                    val sliderState =
+                        remember {
+                            SliderState(
+                                brush.width,
+                                7,
+                                1f..70f,
+                            )
+                        }
+                    if (sliderState.value != brush.width) {
+                        sliderState.value = brush.width
                     }
-                    sliderState.value = brush.width
                     Slider(
                         state = sliderState,
                         onValueChange = {
@@ -409,14 +412,17 @@ fun DrawingEraserOptionsDialog(
                         )
                     }
                     var lastEraserWidth by remember { mutableFloatStateOf(eraserWidth) }
-                    val sliderState = remember {
-                        SliderState(
-                            eraserWidth,
-                            8,
-                            5f..200f,
-                        )
+                    val sliderState =
+                        remember {
+                            SliderState(
+                                eraserWidth,
+                                8,
+                                5f..200f,
+                            )
+                        }
+                    if (sliderState.value != eraserWidth) {
+                        sliderState.value = eraserWidth
                     }
-                    sliderState.value = eraserWidth
                     Slider(
                         state = sliderState,
                         onValueChange = {
