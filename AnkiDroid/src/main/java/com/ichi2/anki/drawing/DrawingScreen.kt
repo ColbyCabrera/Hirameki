@@ -343,13 +343,13 @@ fun DrawingBrushOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                    var lastBrushWidth by remember { mutableFloatStateOf(brush.width) }
+                    var lastBrushWidth by remember(brush) { mutableFloatStateOf(brush.width) }
                     val sliderState =
-                        remember {
+                        remember(brush) {
                             SliderState(
-                                brush.width,
-                                7,
-                                1f..70f,
+                                value = brush.width,
+                                steps = 7,
+                                trackRange = 1f..70f,
                             )
                         }
                     if (sliderState.value != brush.width) {
@@ -411,13 +411,13 @@ fun DrawingEraserOptionsDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
-                    var lastEraserWidth by remember { mutableFloatStateOf(eraserWidth) }
+                    var lastEraserWidth by remember(eraserWidth) { mutableFloatStateOf(eraserWidth) }
                     val sliderState =
-                        remember {
+                        remember(eraserWidth) {
                             SliderState(
-                                eraserWidth,
-                                8,
-                                5f..200f,
+                                value = eraserWidth,
+                                steps = 8,
+                                trackRange = 5f..200f,
                             )
                         }
                     if (sliderState.value != eraserWidth) {
