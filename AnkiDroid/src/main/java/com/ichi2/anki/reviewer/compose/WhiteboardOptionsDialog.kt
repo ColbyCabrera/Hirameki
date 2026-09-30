@@ -157,9 +157,9 @@ fun BrushOptionsContent(
             val sliderState =
                 remember(activeIndex) {
                     SliderState(
-                        brush.width,
-                        7,
-                        1f..70f,
+                        value = brush.width,
+                        steps = 7,
+                        trackRange = 1f..70f,
                     )
                 }
             if (sliderState.value != brush.width) {
@@ -251,13 +251,13 @@ fun EraserOptionsContent(
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            var lastWidth by remember { mutableFloatStateOf(width) }
+            var lastWidth by remember(width) { mutableFloatStateOf(width) }
             val sliderState =
-                remember {
+                remember(width) {
                     SliderState(
-                        width,
-                        8,
-                        5f..200f,
+                        value = width,
+                        steps = 8,
+                        trackRange = 5f..200f,
                     )
                 }
             if (sliderState.value != width) {

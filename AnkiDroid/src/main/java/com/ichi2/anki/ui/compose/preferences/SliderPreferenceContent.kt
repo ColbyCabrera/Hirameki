@@ -70,19 +70,31 @@ fun SliderPreferenceContent(
     isIconSpaceReserved: Boolean = false,
     enabled: Boolean = true
 ) {
-    // We use a local state for the slider to ensure smooth dragging.
-    // Sync with the external value when it changes.
-    var sliderPosition by remember(value) { mutableFloatStateOf(value.toFloat()) }
     var lastHapticValue by remember(value) { mutableFloatStateOf(value.toFloat()) }
 
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isDragged by interactionSource.collectIsDraggedAsState()
 
+    val stepsCount = if (stepSize > 0) maxOf(
+        0,
+        ((valueTo - valueFrom) / stepSize).toInt() - 1
+    ) else 0
+    val sliderState = remember(valueFrom, valueTo, stepSize) {
+        SliderState(
+            value = value.toFloat(),
+            steps = stepsCount,
+            trackRange = valueFrom.toFloat()..valueTo.toFloat(),
+        )
+    }
+    if (!isDragged && sliderState.value != value.toFloat()) {
+        sliderState.value = value.toFloat()
+    }
+
     // Derived state for display text to avoid redundant formatting calls
-    val displayText by remember(displayFormat, sliderPosition) {
+    val displayText by remember(displayFormat) {
         derivedStateOf {
-            val roundedValue = sliderPosition.roundToInt()
+            val roundedValue = sliderState.value.roundToInt()
             displayFormat?.let { String.format(it, roundedValue) } ?: roundedValue.toString()
         }
     }
@@ -153,25 +165,10 @@ fun SliderPreferenceContent(
                 }
             }
 
-            val sliderState = remember(valueFrom, valueTo, stepSize) {
-                SliderState(
-                    sliderPosition,
-                    if (stepSize > 0) maxOf(
-                        0,
-                        ((valueTo - valueFrom) / stepSize).toInt() - 1
-                    ) else 0,
-                    valueFrom.toFloat()..valueTo.toFloat()
-                )
-            }
-            if (sliderState.value != sliderPosition) {
-                sliderState.value = sliderPosition
-            }
-
             Slider(
                 state = sliderState,
                 onValueChange = { newValue: Float ->
                     sliderState.value = newValue
-                    sliderPosition = newValue
                     if (stepSize > 0) {
                         val steps = ((newValue - valueFrom) / stepSize).roundToInt()
                         val roundedValue = valueFrom + (steps * stepSize)
@@ -189,10 +186,10 @@ fun SliderPreferenceContent(
                 },
                 onValueChangeFinished = {
                     val finalValue = if (stepSize > 0) {
-                        val steps = ((sliderPosition - valueFrom) / stepSize).roundToInt()
-                        valueFrom + (steps * stepSize).roundToInt()
+                        val steps = ((sliderState.value - valueFrom) / stepSize).roundToInt()
+                        (valueFrom + (steps * stepSize)).roundToInt()
                     } else {
-                        sliderPosition.roundToInt()
+                        sliderState.value.roundToInt()
                     }
                     onValueChange(finalValue.coerceIn(valueFrom, valueTo))
                 },

@@ -199,13 +199,13 @@ private fun ColorSliderRow(
                     .clip(MaterialTheme.shapes.small)
                     .background(Brush.horizontalGradient(gradientColors)),
         ) {
-            var lastValue by remember { mutableFloatStateOf(value) }
+            var lastValue by remember(valueRange) { mutableFloatStateOf(value) }
             val sliderState =
                 remember(valueRange) {
                     SliderState(
-                        value,
-                        0,
-                        valueRange,
+                        value = value,
+                        steps = 0,
+                        trackRange = valueRange,
                     )
                 }
             if (sliderState.value != value) {

@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(Parameterized::class)
@@ -56,22 +56,18 @@ class LayoutValidationTest : InstrumentedTest() {
     @Throws(Exception::class)
     private fun ensureNoCrashOnUiThread(runnable: Runnable) {
         val failed = AtomicReference<Exception?>()
-        val hasRun = AtomicBoolean(false)
+        val latch = CountDownLatch(1)
         runOnUiThread {
             try {
                 runnable.run()
             } catch (e: Exception) {
                 failed.set(e)
             } finally {
-                hasRun.set(true)
+                latch.countDown()
             }
         }
-        while (!hasRun.get()) {
-            // spin
-        }
-        if (failed.get() != null) {
-            throw failed.get()!!
-        }
+        latch.await()
+        failed.get()?.let { throw it }
     }
 
     private fun runOnUiThread(runnable: Runnable) {
