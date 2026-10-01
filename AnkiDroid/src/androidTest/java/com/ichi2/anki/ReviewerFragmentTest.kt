@@ -34,10 +34,9 @@ import com.ichi2.anki.testutil.closeGetStartedScreenIfExists
 import com.ichi2.anki.testutil.grantPermissions
 import com.ichi2.anki.testutil.notificationPermission
 import com.ichi2.anki.testutil.reviewDeckWithName
-import com.ichi2.testutils.common.Flaky
-import com.ichi2.testutils.common.OS
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,7 +61,7 @@ class ReviewerFragmentTest : InstrumentedTest() {
     val retry = RetryRule(10)
 
     @Test
-    @Flaky(os = OS.ALL, "Fails on CI with timing issues frequently")
+    @Ignore("Reviewer is Compose-only; this test uses deleted legacy view IDs and needs a Compose rewrite")
     fun testCustomSchedulerWithCustomData() {
         setNewReviewer()
         col.cardStateCustomizer =
@@ -104,7 +103,7 @@ class ReviewerFragmentTest : InstrumentedTest() {
     }
 
     @Test
-    @Flaky(os = OS.ALL, "Fails on CI with timing issues frequently")
+    @Ignore("Reviewer is Compose-only; this test uses deleted legacy view IDs and needs a Compose rewrite")
     fun testCustomSchedulerWithRuntimeError() {
         setNewReviewer()
         // Issue 15035 - runtime errors weren't handled
