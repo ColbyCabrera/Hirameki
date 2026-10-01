@@ -17,6 +17,7 @@ package com.ichi2.anki.preferences
 
 import android.content.Context
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -62,8 +63,16 @@ class PreferencesNavigationTest : InstrumentedTest() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         assumeTrue(context.resources.isWindowCompact())
 
+        val drawerButtonDescription = context.getString(R.string.navigation_drawer_open)
+        // The DeckPicker top bar is only shown once the deck list has loaded
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            composeTestRule
+                .onAllNodesWithContentDescription(drawerButtonDescription)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
         composeTestRule
-            .onNodeWithContentDescription(context.getString(R.string.navigation_drawer_open))
+            .onNodeWithContentDescription(drawerButtonDescription)
             .performClick()
         composeTestRule
             .onNodeWithText(context.getString(R.string.settings))
