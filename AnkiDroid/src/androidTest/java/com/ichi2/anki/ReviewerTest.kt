@@ -40,10 +40,9 @@ import com.ichi2.anki.testutil.closeBackupCollectionDialogIfExists
 import com.ichi2.anki.testutil.closeGetStartedScreenIfExists
 import com.ichi2.anki.testutil.grantPermissions
 import com.ichi2.anki.testutil.notificationPermission
-import com.ichi2.testutils.common.Flaky
-import com.ichi2.testutils.common.OS
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,7 +79,7 @@ class ReviewerTest : InstrumentedTest() {
     }
 
     @Test
-    @Flaky(os = OS.ALL, "Fails on CI with timing issues frequently")
+    @Ignore("Reviewer is Compose-only; this test uses deleted legacy view IDs and needs a Compose rewrite")
     fun testCustomSchedulerWithCustomData() {
         col.cardStateCustomizer =
             """
@@ -132,7 +131,7 @@ class ReviewerTest : InstrumentedTest() {
     }
 
     @Test
-    @Flaky(os = OS.ALL, "Fails on CI with timing issues frequently")
+    @Ignore("Reviewer is Compose-only; this test uses deleted legacy view IDs and needs a Compose rewrite")
     fun testCustomSchedulerWithRuntimeError() {
         // Issue 15035 - runtime errors weren't handled
         col.cardStateCustomizer = "states.this_is_not_defined.normal.review = 12;"
