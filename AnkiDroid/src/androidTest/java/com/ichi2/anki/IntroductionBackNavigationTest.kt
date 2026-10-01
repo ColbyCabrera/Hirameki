@@ -53,6 +53,14 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
         continueButton.click()
         device.waitForIdle()
 
+        // Wait until the setup page is shown so its back handler is registered
+        val getStartedText =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getString(R.string.intro_get_started)
+        assertNotNull(device.findOrScrollTo(getStartedText), "Setup page should be shown")
+
         // Back from the setup page returns to the disclaimer instead of closing the activity
         device.pressBack()
 
