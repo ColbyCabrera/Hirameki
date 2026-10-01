@@ -51,6 +51,8 @@ import com.ichi2.anki.testutil.DatabaseUtils.cursorFillWindow
 import com.ichi2.anki.testutil.GrantStoragePermission.storagePermission
 import com.ichi2.anki.testutil.addNote
 import com.ichi2.anki.testutil.grantPermissions
+import com.ichi2.testutils.common.Flaky
+import com.ichi2.testutils.common.OS
 import com.ichi2.testutils.common.assertThrows
 import kotlinx.serialization.json.Json
 import net.ankiweb.rsdroid.exceptions.BackendNotFoundException
@@ -1355,6 +1357,7 @@ class ContentProviderTest : InstrumentedTest() {
     }
 
     @Test
+    @Flaky(os = OS.ALL, message = "Media file listing is state dependent on the CI emulator")
     fun testMediaFilesAddedCorrectlyInReviewInfo() {
         val imageFileName = "img.jpg"
         val audioFileName = "test.mp3"
