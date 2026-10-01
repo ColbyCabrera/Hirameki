@@ -236,13 +236,7 @@ tasks.register('assertNonzeroAndroidTestCoverage') {
         }
 
         if (!hasCovered) {
-            def message = "androidTest registered zero code coverage in jacocoAndroidTestReport.xml. Probably some incompatibilities in the toolchain."
-            if (rootProject.testReleaseBuild) {
-                // The minified release test build used by the emulator CI does not collect coverage
-                logger.warn(message, null)
-            } else {
-                throw new GradleScriptException(message, null)
-            }
+            throw new GradleScriptException("androidTest registered zero code coverage in jacocoAndroidTestReport.xml. Probably some incompatibilities in the toolchain.", null)
         }
     }
 }
