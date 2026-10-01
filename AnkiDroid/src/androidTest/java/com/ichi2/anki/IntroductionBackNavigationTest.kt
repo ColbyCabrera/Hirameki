@@ -20,50 +20,58 @@
  */
 package com.ichi2.anki
 
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.Until
 import com.ichi2.anki.tests.InstrumentedTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class IntroductionBackNavigationTest : InstrumentedTest() {
     @get:Rule
-    val composeTestRule = createAndroidComposeRule<IntroductionActivity>()
+    val activityScenarioRule = ActivityScenarioRule(IntroductionActivity::class.java)
 
     @Test
     fun backFromSetupScreenReshowsDisclaimer() {
-        // The introduction rotates an icon forever, so the test clock must be controlled manually
-        composeTestRule.mainClock.autoAdvance = false
-        // Let the initial composition and entrance animation lay out the disclaimer
-        composeTestRule.mainClock.advanceTimeBy(2_000)
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         val continueText =
             InstrumentationRegistry
                 .getInstrumentation()
                 .targetContext
                 .getString(R.string.intro_continue)
 
-        // The disclaimer is the first page of the introduction and is scrollable
-        composeTestRule
-            .onNodeWithText(continueText)
-            .performScrollTo()
-            .assertIsDisplayed()
-            .performClick()
-        composeTestRule.mainClock.advanceTimeBy(1_000)
+        // The disclaimer is scrollable, so the button may start below the fold
+        val continueButton = device.findOrScrollTo(continueText)
+        assertNotNull(continueButton, "Continue button should be visible")
+        continueButton.click()
+        device.waitForIdle()
 
         // Back from the setup page returns to the disclaimer instead of closing the activity
-        composeTestRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-        composeTestRule.mainClock.advanceTimeBy(1_000)
+        device.pressBack()
 
-        composeTestRule
-            .onNodeWithText(continueText)
-            .performScrollTo()
-            .assertIsDisplayed()
+        val continueButtonAgain = device.findOrScrollTo(continueText)
+        assertNotNull(continueButtonAgain, "Continue button should be visible after pressing back")
+    }
+
+    private fun UiDevice.findOrScrollTo(text: String): UiObject2? {
+        var obj = wait(Until.findObject(By.text(text)), 2_000)
+        if (obj == null) {
+            swipe(
+                displayWidth / 2,
+                (displayHeight * 0.75).toInt(),
+                displayWidth / 2,
+                (displayHeight * 0.25).toInt(),
+                20,
+            )
+            obj = wait(Until.findObject(By.text(text)), 2_000)
+        }
+        return obj
     }
 }
