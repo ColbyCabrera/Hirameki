@@ -24,7 +24,7 @@ class UtilsTest {
     fun testSplit() {
         val sep = Consts.FIELD_SEPARATOR
         assertEquals(listOf("foo", "bar"), Utils.splitFields("foo${sep}bar"))
-        assertEquals(listOf("", "foo", "", "", ""), Utils.splitFields("${sep}foo${sep}${sep}${sep}"))
+        assertEquals(listOf("", "foo", "", "", ""), Utils.splitFields("${sep}foo${sep}${sep}$sep"))
     }
 
     @Test

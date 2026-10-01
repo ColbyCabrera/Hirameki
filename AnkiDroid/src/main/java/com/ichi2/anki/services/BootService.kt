@@ -61,13 +61,14 @@ class BootService : BroadcastReceiver() {
             Timber.d("BootService - Already run")
             return
         }
-        val hasStoragePermissions = runCatching {
-            grantedStoragePermissions(context, showToast = false)
-        }.onFailure { error ->
-            Timber.e(error, "Boot Service did not execute - error checking storage permissions")
-        }.getOrElse {
-            return
-        }
+        val hasStoragePermissions =
+            runCatching {
+                grantedStoragePermissions(context, showToast = false)
+            }.onFailure { error ->
+                Timber.e(error, "Boot Service did not execute - error checking storage permissions")
+            }.getOrElse {
+                return
+            }
         if (!hasStoragePermissions) {
             Timber.w("Boot Service did not execute - no permissions")
             return
@@ -144,10 +145,12 @@ class BootService : BroadcastReceiver() {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val sp = context.sharedPrefs()
             // Don't schedule a notification if the due reminders setting is not enabled
-            if (sp.getString(
+            if (sp
+                    .getString(
                         context.getString(R.string.pref_notifications_minimum_cards_due_key),
                         PENDING_NOTIFICATIONS_ONLY.toString(),
-                    )!!.toInt() >= PENDING_NOTIFICATIONS_ONLY
+                    )!!
+                    .toInt() >= PENDING_NOTIFICATIONS_ONLY
             ) {
                 return
             }
@@ -157,13 +160,14 @@ class BootService : BroadcastReceiver() {
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
             }
-            val notificationIntent = PendingIntentCompat.getBroadcast(
-                context,
-                0,
-                Intent(context, NotificationService::class.java),
-                0,
-                false,
-            )
+            val notificationIntent =
+                PendingIntentCompat.getBroadcast(
+                    context,
+                    0,
+                    Intent(context, NotificationService::class.java),
+                    0,
+                    false,
+                )
             if (notificationIntent != null) {
                 alarmManager.setRepeating(
                     AlarmManager.RTC_WAKEUP,

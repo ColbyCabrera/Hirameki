@@ -78,7 +78,8 @@ class DeckPickerTest : InstrumentedTest() {
 
         // Check if study options are displayed
         // In the new Compose UI, we check for the presence of the "Study" button text.
-        composeTestRule.onNodeWithText(testContext.getString(R.string.studyoptions_start))
+        composeTestRule
+            .onNodeWithText(testContext.getString(R.string.studyoptions_start))
             .assertIsDisplayed()
     }
 
@@ -110,7 +111,8 @@ class DeckPickerTest : InstrumentedTest() {
         composeTestRule.onNodeWithText(deckName).performTouchInput { longClick() }
 
         // Click on the "Delete" option in the context menu
-        composeTestRule.onNodeWithText(testContext.getString(R.string.contextmenu_deckpicker_delete_deck))
+        composeTestRule
+            .onNodeWithText(testContext.getString(R.string.contextmenu_deckpicker_delete_deck))
             .performClick()
 
         val deletingDeckText = testContext.getString(R.string.delete_deck)

@@ -100,10 +100,11 @@ class SliderPreference(
 
         context.withStyledAttributes(attrs, R.styleable.SliderPreference) {
             displayFormat = getString(R.styleable.SliderPreference_displayFormat)
-            displayValue = displayFormat != null || getBoolean(
-                R.styleable.SliderPreference_displayValue,
-                false
-            )
+            displayValue = displayFormat != null ||
+                getBoolean(
+                    R.styleable.SliderPreference_displayValue,
+                    false,
+                )
         }
     }
 
@@ -124,16 +125,18 @@ class SliderPreference(
 
         composeView.setContent {
             AnkiDroidTheme {
-                val iconPainter = icon?.let {
-                    remember(it) {
-                        BitmapPainter(it.toBitmap().asImageBitmap())
+                val iconPainter =
+                    icon?.let {
+                        remember(it) {
+                            BitmapPainter(it.toBitmap().asImageBitmap())
+                        }
                     }
-                }
 
                 // Calculate dynamic summary if needed
-                val dynamicSummary = summaryFormatResource?.let {
-                    context.getFormattedStringOrPlurals(it, value)
-                } ?: summary?.toString()
+                val dynamicSummary =
+                    summaryFormatResource?.let {
+                        context.getFormattedStringOrPlurals(it, value)
+                    } ?: summary?.toString()
 
                 SliderPreferenceContent(
                     title = title?.toString() ?: "",
@@ -151,7 +154,7 @@ class SliderPreference(
                     },
                     icon = iconPainter,
                     isIconSpaceReserved = isIconSpaceReserved,
-                    enabled = isEnabled
+                    enabled = isEnabled,
                 )
             }
         }

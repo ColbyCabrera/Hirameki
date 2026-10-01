@@ -44,7 +44,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class CardBrowserActionHandlerTest : JvmTest() {
-
     @Test
     fun `openNoteEditorForRow launches NoteEditor with CardId in CARDS mode`() =
         runTest(UnconfinedTestDispatcher()) {
@@ -58,13 +57,14 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 var launchedIntent: Intent? = null
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = { launchedIntent = it },
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = { launchedIntent = it },
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 val firstRow = viewModel.cards.first()
                 actionHandler.openNoteEditorForRow(firstRow).join()
@@ -94,19 +94,20 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 var launchedIntent: Intent? = null
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = { launchedIntent = it },
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = { launchedIntent = it },
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 val firstRow = viewModel.cards.first()
                 assertThat(
                     "In notes mode row ID is NoteId",
                     firstRow.cardOrNoteId,
-                    equalTo(note.id)
+                    equalTo(note.id),
                 )
 
                 actionHandler.openNoteEditorForRow(firstRow).join()
@@ -139,13 +140,14 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 assertThat(viewModel.selectedRows.size, equalTo(1))
 
                 var launchedIntent: Intent? = null
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = { launchedIntent = it },
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = { launchedIntent = it },
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 actionHandler.openNoteEditorForSelectedRow()?.join()
                 ShadowLooper.idleMainLooper()
@@ -156,7 +158,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 assertThat(
                     "Launched Card ID must be valid and non-zero",
                     launchedCardId,
-                    equalTo(expectedCardId)
+                    equalTo(expectedCardId),
                 )
             } finally {
                 ioDispatcher = originalDispatcher
@@ -175,20 +177,21 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 var launchedIntent: Intent? = null
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = { launchedIntent = it },
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = { launchedIntent = it },
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 actionHandler.openNoteEditorForSelectedRow()?.join()
                 ShadowLooper.idleMainLooper()
                 assertThat(
                     "No intent should be launched when selection is empty",
                     launchedIntent,
-                    nullValue()
+                    nullValue(),
                 )
             } finally {
                 ioDispatcher = originalDispatcher
@@ -211,13 +214,14 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 viewModel.toggleSelectAllOrNone()
                 assertThat(viewModel.selectedRows.size, equalTo(1))
 
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = {},
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = {},
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
                 shadowActivity.clearNextStartedActivities()
@@ -251,13 +255,14 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 shadowActivity.clearNextStartedActivities()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = {},
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = {},
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 actionHandler.openCardInfoForSelectedRow()?.join()
                 ShadowLooper.idleMainLooper()
@@ -279,13 +284,14 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 var launchedIntent: Intent? = null
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = { launchedIntent = it },
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = { launchedIntent = it },
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 // Non-existent / 0-card Note ID (e.g. 999999L)
                 val invalidNoteId = CardOrNoteId(999999L)
@@ -297,7 +303,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                     assertThat(
                         "Snackbar message should indicate no note to edit",
                         awaitItem().message,
-                        equalTo(activity.getString(R.string.no_note_to_edit))
+                        equalTo(activity.getString(R.string.no_note_to_edit)),
                     )
                 }
             } finally {
@@ -321,13 +327,14 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 viewModel.toggleRowSelection(CardBrowserViewModel.RowSelection(invalidNoteId, 0)).join()
                 assertThat(viewModel.selectedRows.size, equalTo(1))
 
-                val actionHandler = CardBrowserActionHandler(
-                    activity = activity,
-                    viewModel = viewModel,
-                    launchEditCard = {},
-                    launchAddNote = {},
-                    launchPreview = {},
-                )
+                val actionHandler =
+                    CardBrowserActionHandler(
+                        activity = activity,
+                        viewModel = viewModel,
+                        launchEditCard = {},
+                        launchAddNote = {},
+                        launchPreview = {},
+                    )
 
                 viewModel.flowOfSnackbarString.test {
                     actionHandler.openCardInfoForSelectedRow()?.join()
@@ -338,7 +345,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                     assertThat(
                         "Snackbar message should be emitted for 0-card note",
                         awaitItem().message,
-                        equalTo(activity.getString(R.string.no_note_to_edit))
+                        equalTo(activity.getString(R.string.no_note_to_edit)),
                     )
                 }
             } finally {

@@ -43,7 +43,10 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 
-abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHandler {
+abstract class CardViewerViewModel :
+    ViewModel(),
+    OnErrorListener,
+    PostRequestHandler {
     override val onError = MutableSharedFlow<String>()
     val onMediaError = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val onTtsError = MutableSharedFlow<TtsPlayer.TtsError>(extraBufferCapacity = 1)
@@ -53,12 +56,13 @@ abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHa
 
     open val showingAnswer = MutableStateFlow(false)
 
-    protected val cardMediaPlayer = CardMediaPlayer(
-        javascriptEvaluator = { launchCatchingIO { eval.emit(it) } },
-        mediaErrorListener = createSoundErrorListener(),
-    ).also {
-        addCloseable(it)
-    }
+    protected val cardMediaPlayer =
+        CardMediaPlayer(
+            javascriptEvaluator = { launchCatchingIO { eval.emit(it) } },
+            mediaErrorListener = createSoundErrorListener(),
+        ).also {
+            addCloseable(it)
+        }
     abstract var currentCard: Deferred<Card>
 
     abstract val server: AnkiServer
@@ -120,8 +124,7 @@ abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHa
             replayButtonContentDescription = replayButtonContentDescription(),
         )
 
-    protected open fun replayButtonContentDescription(): String =
-        AnkiDroidApp.instance.getString(R.string.replay_media)
+    protected open fun replayButtonContentDescription(): String = AnkiDroidApp.instance.getString(R.string.replay_media)
 
     protected open suspend fun showQuestion() {
         Timber.v("showQuestion")
@@ -195,12 +198,13 @@ abstract class CardViewerViewModel : ViewModel(), OnErrorListener, PostRequestHa
     override suspend fun handlePostRequest(
         uri: String,
         bytes: ByteArray,
-    ): ByteArray = if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-        when (uri.substring(AnkiServer.ANKI_PREFIX.length)) {
-            "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
-            else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
+    ): ByteArray =
+        if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
+            when (uri.substring(AnkiServer.ANKI_PREFIX.length)) {
+                "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
+                else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
+            }
+        } else {
+            throw IllegalArgumentException("Unhandled POST request: $uri")
         }
-    } else {
-        throw IllegalArgumentException("Unhandled POST request: $uri")
-    }
 }

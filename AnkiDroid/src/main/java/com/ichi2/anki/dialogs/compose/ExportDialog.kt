@@ -113,10 +113,11 @@ fun ExportDialog(
     onConfirm: () -> Unit,
 ) {
     AlertDialog(onDismissRequest = onDismissRequest, title = {
-        val titleRes = when (exportFormats.indexOf(selectedFormat)) {
-            0 -> R.string.export_collection
-            else -> R.string.export_deck
-        }
+        val titleRes =
+            when (exportFormats.indexOf(selectedFormat)) {
+                0 -> R.string.export_collection
+                else -> R.string.export_deck
+            }
         Text(text = stringResource(titleRes))
     }, confirmButton = {
         TextButton(
@@ -162,9 +163,10 @@ fun ExportDialog(
                     text = stringResource(labelRes),
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
                 )
             }
 
@@ -312,9 +314,10 @@ fun DropdownSelector(
             onExpandedChange = { expanded = !expanded },
         ) {
             OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
                 readOnly = true,
                 value = selectedOption,
                 onValueChange = {},
@@ -324,7 +327,7 @@ fun DropdownSelector(
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
             ) {
                 options.forEach { selectionOption ->
                     DropdownMenuItem(
@@ -332,7 +335,7 @@ fun DropdownSelector(
                             Text(
                                 text = selectionOption,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
                         },
                         onClick = {
@@ -369,7 +372,6 @@ fun ExportDialogPreview() {
     var notesState by remember { mutableStateOf(NotesExportState()) }
     var cardsState by remember { mutableStateOf(CardsExportState()) }
 
-
     ExportDialog(
         exportFormats = exportFormats,
         selectedFormat = selectedFormat,
@@ -391,5 +393,4 @@ fun ExportDialogPreview() {
         onDismissRequest = {},
         onConfirm = {},
     )
-
 }

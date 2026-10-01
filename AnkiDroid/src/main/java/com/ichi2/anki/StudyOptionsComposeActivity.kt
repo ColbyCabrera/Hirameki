@@ -52,16 +52,20 @@ class StudyOptionsComposeActivity : AnkiActivity() {
 
     private var refreshCounter by mutableIntStateOf(0)
 
-    private val reviewerLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == AbstractFlashcardViewer.RESULT_NO_MORE_CARDS || result.resultCode == DeckPicker.RESULT_DB_ERROR || result.resultCode == DeckPicker.RESULT_MEDIA_EJECTED) {
-            setResult(result.resultCode)
-            finish()
-        } else {
-            refreshCounter++
+    private val reviewerLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+        ) { result ->
+            if (result.resultCode == AbstractFlashcardViewer.RESULT_NO_MORE_CARDS ||
+                result.resultCode == DeckPicker.RESULT_DB_ERROR ||
+                result.resultCode == DeckPicker.RESULT_MEDIA_EJECTED
+            ) {
+                setResult(result.resultCode)
+                finish()
+            } else {
+                refreshCounter++
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (showedActivityFailedScreen(savedInstanceState)) {
@@ -74,12 +78,13 @@ class StudyOptionsComposeActivity : AnkiActivity() {
                 CustomStudyAction.CUSTOM_STUDY_SESSION -> {
                     launchCatchingTask {
                         val deckId = withCol { decks.selected() }
-                        val intent = Intent(
-                            this@StudyOptionsComposeActivity,
-                            StudyOptionsComposeActivity::class.java
-                        ).apply {
-                            putExtra(DECK_ID, deckId)
-                        }
+                        val intent =
+                            Intent(
+                                this@StudyOptionsComposeActivity,
+                                StudyOptionsComposeActivity::class.java,
+                            ).apply {
+                                putExtra(DECK_ID, deckId)
+                            }
                         startActivity(intent)
                         finish()
                     }
@@ -95,46 +100,48 @@ class StudyOptionsComposeActivity : AnkiActivity() {
             var studyOptionsData by remember { mutableStateOf<StudyOptionsData?>(null) }
 
             LaunchedEffect(refreshCounter) {
-                studyOptionsData = withContext(collectionDispatcher) {
-                    withCol {
-                        val deckId = intent.getLongExtra(DECK_ID, decks.current().id)
-                        decks.select(deckId)
-                        val deck = decks.current()
-                        val counts = sched.counts()
-                        var buriedNew = 0
-                        var buriedLearning = 0
-                        var buriedReview = 0
-                        val tree = sched.deckDueTree(deck.id)
-                        if (tree != null) {
-                            buriedNew = tree.newCount - counts.new
-                            buriedLearning = tree.learnCount - counts.lrn
-                            buriedReview = tree.reviewCount - counts.rev
+                studyOptionsData =
+                    withContext(collectionDispatcher) {
+                        withCol {
+                            val deckId = intent.getLongExtra(DECK_ID, decks.current().id)
+                            decks.select(deckId)
+                            val deck = decks.current()
+                            val counts = sched.counts()
+                            var buriedNew = 0
+                            var buriedLearning = 0
+                            var buriedReview = 0
+                            val tree = sched.deckDueTree(deck.id)
+                            if (tree != null) {
+                                buriedNew = tree.newCount - counts.new
+                                buriedLearning = tree.learnCount - counts.lrn
+                                buriedReview = tree.reviewCount - counts.rev
+                            }
+                            StudyOptionsData(
+                                deckId = deck.id,
+                                deckName = deck.getString("name"),
+                                deckDescription = deck.description,
+                                newCount = counts.new,
+                                lrnCount = counts.lrn,
+                                revCount = counts.rev,
+                                buriedNew = buriedNew,
+                                buriedLrn = buriedLearning,
+                                buriedRev = buriedReview,
+                                totalNewCards = sched.totalNewForCurrentDeck(),
+                                totalCards = decks.cardCount(deck.id, includeSubdecks = true),
+                                isFiltered = deck.isFiltered,
+                                haveBuried = sched.haveBuried(),
+                            )
                         }
-                        StudyOptionsData(
-                            deckId = deck.id,
-                            deckName = deck.getString("name"),
-                            deckDescription = deck.description,
-                            newCount = counts.new,
-                            lrnCount = counts.lrn,
-                            revCount = counts.rev,
-                            buriedNew = buriedNew,
-                            buriedLrn = buriedLearning,
-                            buriedRev = buriedReview,
-                            totalNewCards = sched.totalNewForCurrentDeck(),
-                            totalCards = decks.cardCount(deck.id, includeSubdecks = true),
-                            isFiltered = deck.isFiltered,
-                            haveBuried = sched.haveBuried(),
-                        )
                     }
-                }
             }
 
             AnkiDroidTheme {
                 Scaffold { innerPadding ->
                     StudyOptionsScreen(
-                        modifier = Modifier
-                            .padding(innerPadding)
-                            .fillMaxSize(),
+                        modifier =
+                            Modifier
+                                .padding(innerPadding)
+                                .fillMaxSize(),
                         studyOptionsData = studyOptionsData,
                         onStartStudy = {
                             reviewerLauncher.launch(Reviewer.getIntent(this))

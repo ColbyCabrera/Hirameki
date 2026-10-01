@@ -38,7 +38,7 @@ class CardBrowserActionHandler(
     private val viewModel: CardBrowserViewModel,
     private val launchEditCard: (Intent) -> Unit,
     private val launchAddNote: (Intent) -> Unit,
-    private val launchPreview: (Intent) -> Unit
+    private val launchPreview: (Intent) -> Unit,
 ) {
     fun openNoteEditorForCard(cardId: CardId) {
         val launcher = NoteEditorLauncher.EditCard(cardId, Direction.DEFAULT, false)
@@ -98,11 +98,12 @@ class CardBrowserActionHandler(
         activity.launchCatchingTask {
             when (val repositionCardsResult = viewModel.prepareToRepositionCards()) {
                 is RepositionCardsRequest.ContainsNonNewCardsError -> {
-                    SimpleMessageDialog.newInstance(
-                        title = activity.getString(R.string.vague_error),
-                        message = activity.getString(R.string.reposition_card_not_new_error),
-                        reload = false
-                    ).show(activity.supportFragmentManager, "reposition_error_dialog")
+                    SimpleMessageDialog
+                        .newInstance(
+                            title = activity.getString(R.string.vague_error),
+                            message = activity.getString(R.string.reposition_card_not_new_error),
+                            reload = false,
+                        ).show(activity.supportFragmentManager, "reposition_error_dialog")
                     return@launchCatchingTask
                 }
 
@@ -111,13 +112,15 @@ class CardBrowserActionHandler(
                     val bottom = repositionCardsResult.queueBottom
                     if (top == null || bottom == null) {
                         Timber.w("repositionSelectedCards: queueTop or queueBottom is null, aborting")
-                        SimpleMessageDialog.newInstance(
-                            title = activity.getString(R.string.vague_error),
-                            message = activity.getString(R.string.card_browser_reposition_invalid_bounds),
-                            reload = false
-                        ).show(
-                            activity.supportFragmentManager, "reposition_invalid_bounds_dialog"
-                        )
+                        SimpleMessageDialog
+                            .newInstance(
+                                title = activity.getString(R.string.vague_error),
+                                message = activity.getString(R.string.card_browser_reposition_invalid_bounds),
+                                reload = false,
+                            ).show(
+                                activity.supportFragmentManager,
+                                "reposition_invalid_bounds_dialog",
+                            )
                         return@launchCatchingTask
                     }
                     viewModel.showRepositionDialog(
@@ -125,8 +128,8 @@ class CardBrowserActionHandler(
                             queueTop = top,
                             queueBottom = bottom,
                             random = repositionCardsResult.random,
-                            shift = repositionCardsResult.shift
-                        )
+                            shift = repositionCardsResult.shift,
+                        ),
                     )
                 }
             }
@@ -147,7 +150,8 @@ class CardBrowserActionHandler(
 
     fun exportSelected() {
         val (type, selectedIds) = viewModel.querySelectionExportData() ?: return
-        ExportDialogFragment.newInstance(type, selectedIds)
+        ExportDialogFragment
+            .newInstance(type, selectedIds)
             .show(activity.supportFragmentManager, "exportDialog")
     }
 
@@ -164,7 +168,7 @@ class CardBrowserActionHandler(
         if (viewModel.cardsOrNotes == CardsOrNotes.NOTES && viewModel.hasSelectedAnyRows()) {
             viewModel.emitSnackbarMessage(
                 activity.getString(R.string.card_browser_unavailable_when_notes_mode),
-                activity.getString(R.string.cards)
+                activity.getString(R.string.cards),
             ) { viewModel.setCardsOrNotes(CardsOrNotes.CARDS) }
             return true
         }
@@ -172,9 +176,11 @@ class CardBrowserActionHandler(
     }
 
     fun addNote() {
-        val launcher = NoteEditorLauncher.AddNoteFromCardBrowser(
-            viewModel, inCardBrowserActivity = activity is com.ichi2.anki.CardBrowser
-        )
+        val launcher =
+            NoteEditorLauncher.AddNoteFromCardBrowser(
+                viewModel,
+                inCardBrowserActivity = activity is com.ichi2.anki.CardBrowser,
+            )
         launchAddNote(launcher.toIntent(activity))
     }
 
@@ -185,9 +191,12 @@ class CardBrowserActionHandler(
         }
         activity.launchCatchingTask {
             val intentData = viewModel.queryPreviewIntentData()
-            val intent = PreviewerFragment.getIntent(
-                activity, intentData.idsFile, intentData.currentIndex
-            )
+            val intent =
+                PreviewerFragment.getIntent(
+                    activity,
+                    intentData.idsFile,
+                    intentData.currentIndex,
+                )
             launchPreview(intent)
         }
     }

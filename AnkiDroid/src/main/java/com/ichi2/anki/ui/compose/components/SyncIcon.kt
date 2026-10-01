@@ -77,44 +77,51 @@ fun SyncIcon(
             while (currentIsSyncing) {
                 rotation.animateTo(
                     targetValue = rotation.targetValue + 360f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow,
-                    ),
+                    animationSpec =
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow,
+                        ),
                 )
                 rotation.snapTo(0f)
             }
         }
     }
 
-    val syncIconDescription = if (isSyncing) {
-        stringResource(R.string.syncing)
-    } else {
-        when (syncState) {
-            SyncIconState.PendingChanges -> stringResource(R.string.sync_menu_title_pending_changes)
-            SyncIconState.OneWay -> stringResource(R.string.sync_menu_title_one_way_sync)
-            SyncIconState.NotLoggedIn -> stringResource(R.string.sync_menu_title_no_account)
-            else -> stringResource(R.string.sync_now)
+    val syncIconDescription =
+        if (isSyncing) {
+            stringResource(R.string.syncing)
+        } else {
+            when (syncState) {
+                SyncIconState.PendingChanges -> stringResource(R.string.sync_menu_title_pending_changes)
+                SyncIconState.OneWay -> stringResource(R.string.sync_menu_title_one_way_sync)
+                SyncIconState.NotLoggedIn -> stringResource(R.string.sync_menu_title_no_account)
+                else -> stringResource(R.string.sync_now)
+            }
         }
-    }
 
     BadgedBox(
         modifier = modifier,
         badge = {
             when (syncState) {
                 SyncIconState.PendingChanges -> Badge()
-                SyncIconState.OneWay, SyncIconState.NotLoggedIn -> Badge {
-                    val badgeDescription = when (syncState) {
-                        SyncIconState.OneWay -> stringResource(R.string.sync_menu_title_one_way_sync)
-                        else -> stringResource(R.string.sync_menu_title_no_account)
+                SyncIconState.OneWay, SyncIconState.NotLoggedIn ->
+                    Badge {
+                        val badgeDescription =
+                            when (syncState) {
+                                SyncIconState.OneWay -> stringResource(R.string.sync_menu_title_one_way_sync)
+                                else -> stringResource(R.string.sync_menu_title_no_account)
+                            }
+                        Text(
+                            text = "!",
+                            modifier =
+                                Modifier.semantics {
+                                    contentDescription = badgeDescription
+                                },
+                        )
                     }
-                    Text(
-                        text = "!", modifier = Modifier.semantics {
-                            contentDescription = badgeDescription
-                        })
-                }
 
-                else -> { /* No badge for Normal state */
+                else -> { // No badge for Normal state
                 }
             }
         },
@@ -122,10 +129,11 @@ fun SyncIcon(
         FilledIconButton(
             onClick = onRefresh,
             enabled = !isSyncing,
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            ),
+            colors =
+                IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
         ) {
             Icon(
                 painter = painterResource(R.drawable.sync_24px),
@@ -141,18 +149,34 @@ fun SyncIcon(
 private fun SyncIconPreview() {
     AnkiDroidTheme {
         Row(
-            modifier = Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SyncIcon(
-                isSyncing = false, syncState = SyncIconState.Normal, onRefresh = { })
+                isSyncing = false,
+                syncState = SyncIconState.Normal,
+                onRefresh = { },
+            )
             SyncIcon(
-                isSyncing = true, syncState = SyncIconState.Normal, onRefresh = { })
+                isSyncing = true,
+                syncState = SyncIconState.Normal,
+                onRefresh = { },
+            )
             SyncIcon(
-                isSyncing = false, syncState = SyncIconState.PendingChanges, onRefresh = { })
+                isSyncing = false,
+                syncState = SyncIconState.PendingChanges,
+                onRefresh = { },
+            )
             SyncIcon(
-                isSyncing = false, syncState = SyncIconState.OneWay, onRefresh = { })
+                isSyncing = false,
+                syncState = SyncIconState.OneWay,
+                onRefresh = { },
+            )
             SyncIcon(
-                isSyncing = false, syncState = SyncIconState.NotLoggedIn, onRefresh = { })
+                isSyncing = false,
+                syncState = SyncIconState.NotLoggedIn,
+                onRefresh = { },
+            )
         }
     }
 }

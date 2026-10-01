@@ -24,9 +24,9 @@ import anki.collection.OpChangesWithCount
 import anki.tags.TagTreeNode
 import com.ichi2.anki.libanki.utils.LibAnkiAlias
 import com.ichi2.anki.libanki.utils.join
-import java.util.AbstractSet
 import net.ankiweb.rsdroid.exceptions.BackendNotFoundException
 import timber.log.Timber
+import java.util.AbstractSet
 
 /**
  * Anki maintains a cache of used tags so it can quickly present a list of tags
@@ -88,15 +88,16 @@ class Tags(
         noteIds: List<NoteId>,
         tags: String,
     ): OpChanges {
-        val notes = noteIds.mapNotNull {
-            try {
-                col.getNote(it)
-            } catch (e: BackendNotFoundException) {
-                // The note was not found, probably deleted.
-                Timber.w("bulkUpdate: failed to get note %s, skipping", it)
-                null
+        val notes =
+            noteIds.mapNotNull {
+                try {
+                    col.getNote(it)
+                } catch (e: BackendNotFoundException) {
+                    // The note was not found, probably deleted.
+                    Timber.w("bulkUpdate: failed to get note %s, skipping", it)
+                    null
+                }
             }
-        }
         for (note in notes) {
             note.tags = split(tags)
         }
@@ -165,8 +166,6 @@ class Tags(
         tag: String,
         tags: Iterable<String>,
     ): Boolean = tags.map { it.lowercase() }.contains(tag.lowercase())
-
-
 
     /**
      * Replace occurrences of a search with a new value in tags.

@@ -39,7 +39,6 @@ import com.ichi2.anki.browser.BrowserColumnSelectionFragment
 import com.ichi2.anki.browser.CardBrowserActionHandler
 import com.ichi2.anki.browser.CardBrowserLaunchOptions
 import com.ichi2.anki.browser.CardBrowserViewModel
-import com.ichi2.anki.browser.CardOrNoteId
 import com.ichi2.anki.browser.MySearchesContract
 import com.ichi2.anki.browser.SharedPreferencesLastDeckIdRepository
 import com.ichi2.anki.browser.compose.CardBrowserLayout
@@ -49,10 +48,8 @@ import com.ichi2.anki.dialogs.BrowserOptionsDialog
 import com.ichi2.anki.dialogs.compose.FlagRenameDialog
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.observability.ChangeManager
-import com.ichi2.anki.pages.CardInfoDestination
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import timber.log.Timber
-
 
 /**
  * A Jetpack Compose-based Activity for browsing cards.
@@ -61,24 +58,31 @@ import timber.log.Timber
  * Composable, which is responsible for rendering the UI. It retains the [CardBrowserViewModel]
  * for state management and business logic.
  */
-open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwarder {
-
+open class CardBrowser :
+    AnkiActivity(),
+    ChangeManager.Subscriber,
+    SnackbarForwarder {
     val fragmented: Boolean
         get() = resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK == Configuration.SCREENLAYOUT_SIZE_XLARGE
 
     private lateinit var viewModel: CardBrowserViewModel
 
-    override fun forwardSnackbar(message: String, actionLabel: String?, action: (() -> Unit)?) {
+    override fun forwardSnackbar(
+        message: String,
+        actionLabel: String?,
+        action: (() -> Unit)?,
+    ) {
         viewModel.emitSnackbarMessage(message, actionLabel, action)
     }
 
     private lateinit var actionHandler: CardBrowserActionHandler
 
-    private val onMySearches = registerForActivityResult(MySearchesContract()) { query ->
-        if (query != null) {
-            viewModel.search(query)
+    private val onMySearches =
+        registerForActivityResult(MySearchesContract()) { query ->
+            if (query != null) {
+                viewModel.search(query)
+            }
         }
-    }
 
     private var onEditCardActivityResult =
         registerForActivityResult(StartActivityForResult()) { result: ActivityResult ->
@@ -115,9 +119,14 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                 return@registerForActivityResult
             }
             val data = result.data
-            if (data != null && (data.getBooleanExtra(
-                    NoteEditorActivity.RELOAD_REQUIRED_EXTRA_KEY, false
-                ) || data.getBooleanExtra(NoteEditorActivity.NOTE_CHANGED_EXTRA_KEY, false))
+            if (data != null &&
+                (
+                    data.getBooleanExtra(
+                        NoteEditorActivity.RELOAD_REQUIRED_EXTRA_KEY,
+                        false,
+                    ) ||
+                        data.getBooleanExtra(NoteEditorActivity.NOTE_CHANGED_EXTRA_KEY, false)
+                )
             ) {
                 viewModel.search(viewModel.searchQuery.value)
             }
@@ -136,12 +145,14 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
 
         val launchOptions = intent?.toCardBrowserLaunchOptions()
         viewModel = createViewModel(launchOptions, fragmented)
-        actionHandler = CardBrowserActionHandler(
-            this,
-            viewModel,
-            launchEditCard = { onEditCardActivityResult.launch(it) },
-            launchAddNote = { onAddNoteActivityResult.launch(it) },
-            launchPreview = { onPreviewCardsActivityResult.launch(it) })
+        actionHandler =
+            CardBrowserActionHandler(
+                this,
+                viewModel,
+                launchEditCard = { onEditCardActivityResult.launch(it) },
+                launchAddNote = { onAddNoteActivityResult.launch(it) },
+                launchPreview = { onPreviewCardsActivityResult.launch(it) },
+            )
 
         startLoadingCollection()
 
@@ -160,8 +171,8 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                     if (showBrowserOptionsDialog) {
                         BrowserOptionsDialog(
                             onDismissRequest = {
-                            showBrowserOptionsDialog = false
-                        },
+                                showBrowserOptionsDialog = false
+                            },
                             onConfirm = { cardsOrNotes, isTruncated, shouldIgnoreAccents ->
                                 viewModel.setCardsOrNotes(cardsOrNotes)
                                 viewModel.setTruncated(isTruncated)
@@ -178,7 +189,8 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                             onRenameFlagClicked = {
                                 showBrowserOptionsDialog = false
                                 showFlagRenameDialog = true
-                            })
+                            },
+                        )
                     }
                     if (showFilterByTagsDialog) {
                         FilterByTagsDialog(
@@ -191,7 +203,7 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                             initialSelection = selectedTags,
                             deckTags = deckTags,
                             initialFilterByDeck = filterTagsByDeck,
-                            onFilterByDeckChanged = viewModel::setFilterTagsByDeck
+                            onFilterByDeckChanged = viewModel::setFilterTagsByDeck,
                         )
                     }
                     if (showFlagRenameDialog) {
@@ -199,7 +211,8 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                             onDismissRequest = {
                                 showFlagRenameDialog = false
                                 invalidateOptionsMenu()
-                            })
+                            },
+                        )
                     }
                     CardBrowserLayout(
                         viewModel = viewModel,
@@ -209,8 +222,9 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                             if (viewModel.isInMultiSelectMode) {
                                 viewModel.toggleRowSelection(
                                     CardBrowserViewModel.RowSelection(
-                                        rowId = row.id, topOffset = 0
-                                    )
+                                        rowId = row.id,
+                                        topOffset = 0,
+                                    ),
                                 )
                             } else {
                                 actionHandler.openNoteEditorForRow(row.id)
@@ -260,7 +274,8 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
                             viewModel.loadAllTags()
                             viewModel.loadDeckTags()
                             showFilterByTagsDialog = true
-                        })
+                        },
+                    )
                 }
             }
         }
@@ -271,7 +286,10 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
         Timber.d("onCollectionLoaded(): Collection loaded, ViewModel will start search.")
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+    override fun onKeyUp(
+        keyCode: Int,
+        event: KeyEvent?,
+    ): Boolean {
         if (event == null) {
             return super.onKeyUp(keyCode, event)
         }
@@ -308,17 +326,23 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
     }
 
     private fun createViewModel(
-        launchOptions: CardBrowserLaunchOptions?, isFragmented: Boolean
+        launchOptions: CardBrowserLaunchOptions?,
+        isFragmented: Boolean,
     ) = ViewModelProvider(
-        viewModelStore, CardBrowserViewModel.factory(
+        viewModelStore,
+        CardBrowserViewModel.factory(
             lastDeckIdRepository = AnkiDroidApp.instance.sharedPrefsLastDeckIdRepository,
             cacheDir = cacheDir,
             options = launchOptions,
-            isFragmented = isFragmented
-        ), defaultViewModelCreationExtras
+            isFragmented = isFragmented,
+        ),
+        defaultViewModelCreationExtras,
     )[CardBrowserViewModel::class.java]
 
-    override fun opExecuted(changes: OpChanges, handler: Any?) {
+    override fun opExecuted(
+        changes: OpChanges,
+        handler: Any?,
+    ) {
         if (handler === this || handler === viewModel) {
             return
         }
@@ -333,5 +357,4 @@ open class CardBrowser : AnkiActivity(), ChangeManager.Subscriber, SnackbarForwa
     companion object {
         fun clearLastDeckId() = SharedPreferencesLastDeckIdRepository.clearLastDeckId()
     }
-
 }

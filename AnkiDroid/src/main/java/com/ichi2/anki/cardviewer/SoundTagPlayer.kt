@@ -52,13 +52,18 @@ class SoundTagPlayer(
 
     // MediaPlayer callbacks require a looper-backed thread, and MediaPlayer access must stay
     // on the same thread that created the instance.
-    private val mediaPlayerThread = HandlerThread("SoundTagPlayer").apply {
-        start()
-    }
+    private val mediaPlayerThread =
+        HandlerThread("SoundTagPlayer").apply {
+            start()
+        }
     private val mediaPlayerHandler = Handler(mediaPlayerThread.looper)
 
-    private val music = AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-        .setUsage(AudioAttributes.USAGE_MEDIA).build()
+    private val music =
+        AudioAttributes
+            .Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .build()
 
     /**
      * AudioManager to request/release audio focus
@@ -68,8 +73,10 @@ class SoundTagPlayer(
 
     // the same instance of an AudioFocusRequest must be used to cancel focus
     private val audioFocusRequest: AudioFocusRequest by lazy {
-        AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-            .setAudioAttributes(music).build()
+        AudioFocusRequest
+            .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+            .setAudioAttributes(music)
+            .build()
     }
 
     /**
@@ -84,9 +91,10 @@ class SoundTagPlayer(
         suspendCancellableCoroutine { continuation ->
             Timber.d("Playing SoundOrVideoTag")
             when (tagType) {
-                SoundOrVideoTag.Type.AUDIO -> postToMediaPlayerThread(continuation) {
-                    playSound(continuation, tag, mediaErrorListener)
-                }
+                SoundOrVideoTag.Type.AUDIO ->
+                    postToMediaPlayerThread(continuation) {
+                        playSound(continuation, tag, mediaErrorListener)
+                    }
 
                 SoundOrVideoTag.Type.VIDEO -> playVideo(continuation, tag)
             }
@@ -121,11 +129,12 @@ class SoundTagPlayer(
                 }
             }
             val tagUri = tag.filename.toUri()
-            val soundUri = if (tagUri.scheme != null) {
-                tagUri
-            } else {
-                (soundUriBase + Uri.encode(tag.filename)).toUri()
-            }
+            val soundUri =
+                if (tagUri.scheme != null) {
+                    tagUri
+                } else {
+                    (soundUriBase + Uri.encode(tag.filename)).toUri()
+                }
             setAudioAttributes(music)
             setOnErrorListener { mp, what, extra ->
                 Timber.w("Media error %d", what)
@@ -260,30 +269,32 @@ class SoundTagPlayer(
             return
         }
 
-        val isPosted = synchronized(releaseLock) {
-            if (isReleased) {
-                false
-            } else {
-                mediaPlayerHandler.post {
-                    if (isReleased) {
-                        if (!continuation.isCompleted) {
-                            continuation.resumeWithException(IllegalStateException("SoundTagPlayer released"))
+        val isPosted =
+            synchronized(releaseLock) {
+                if (isReleased) {
+                    false
+                } else {
+                    mediaPlayerHandler.post {
+                        if (isReleased) {
+                            if (!continuation.isCompleted) {
+                                continuation.resumeWithException(IllegalStateException("SoundTagPlayer released"))
+                            }
+                            return@post
                         }
-                        return@post
-                    }
 
-                    action()
+                        action()
+                    }
                 }
             }
-        }
 
         if (!isPosted) {
             if (!continuation.isCompleted) {
-                val exception = if (isReleased) {
-                    IllegalStateException("SoundTagPlayer released")
-                } else {
-                    IllegalStateException("SoundTagPlayer thread unavailable")
-                }
+                val exception =
+                    if (isReleased) {
+                        IllegalStateException("SoundTagPlayer released")
+                    } else {
+                        IllegalStateException("SoundTagPlayer thread unavailable")
+                    }
                 continuation.resumeWithException(exception)
             }
         }
@@ -305,25 +316,26 @@ class SoundTagPlayer(
 
         val completionLatch = CountDownLatch(1)
         var failure: Throwable? = null
-        val isPosted = synchronized(releaseLock) {
-            if (isReleased) {
-                false
-            } else {
-                mediaPlayerHandler.post {
-                    try {
-                        if (isReleased) {
-                            return@post
-                        }
+        val isPosted =
+            synchronized(releaseLock) {
+                if (isReleased) {
+                    false
+                } else {
+                    mediaPlayerHandler.post {
+                        try {
+                            if (isReleased) {
+                                return@post
+                            }
 
-                        action()
-                    } catch (e: Throwable) {
-                        failure = e
-                    } finally {
-                        completionLatch.countDown()
+                            action()
+                        } catch (e: Throwable) {
+                            failure = e
+                        } finally {
+                            completionLatch.countDown()
+                        }
                     }
                 }
             }
-        }
 
         if (!isPosted) {
             check(isReleased) { "SoundTagPlayer thread unavailable" }

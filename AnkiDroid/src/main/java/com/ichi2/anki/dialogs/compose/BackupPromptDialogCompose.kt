@@ -40,13 +40,15 @@ fun BackupPromptDialogCompose(
     onBackup: () -> Unit,
     onDismissRequest: () -> Unit,
     onDoNotShowAgainChanged: (Boolean) -> Unit,
-    isDoNotShowAgainChecked: Boolean
+    isDoNotShowAgainChecked: Boolean,
 ) {
     AlertDialog(onDismissRequest = onDismissRequest, icon = {
         Icon(
-            painter = painterResource(
-                id = if (isLoggedIn) R.drawable.ic_baseline_backup_24 else R.drawable.ic_backup_restore
-            ), contentDescription = null
+            painter =
+                painterResource(
+                    id = if (isLoggedIn) R.drawable.ic_baseline_backup_24 else R.drawable.ic_backup_restore,
+                ),
+            contentDescription = null,
         )
     }, title = {
         Text(stringResource(R.string.backup_your_collection))
@@ -61,14 +63,14 @@ fun BackupPromptDialogCompose(
                     text = stringResource(R.string.button_do_not_show_again),
                     isChecked = isDoNotShowAgainChecked,
                     onCheckedChange = onDoNotShowAgainChanged,
-                    horizontalPadding = 0.dp
+                    horizontalPadding = 0.dp,
                 )
             }
         }
     }, confirmButton = {
         TextButton(
             onClick = onBackup,
-            enabled = !(allowUserToPermanentlyDismissDialog && isDoNotShowAgainChecked)
+            enabled = !(allowUserToPermanentlyDismissDialog && isDoNotShowAgainChecked),
         ) {
             Text(stringResource(if (isLoggedIn) R.string.button_sync else R.string.button_backup))
         }
@@ -89,7 +91,7 @@ fun BackupPromptDialogComposeLoggedInPreview() {
             onBackup = {},
             onDismissRequest = {},
             onDoNotShowAgainChanged = {},
-            isDoNotShowAgainChecked = false
+            isDoNotShowAgainChecked = false,
         )
     }
 }
@@ -104,7 +106,7 @@ fun BackupPromptDialogComposeNotLoggedInPreview() {
             onBackup = {},
             onDismissRequest = {},
             onDoNotShowAgainChanged = {},
-            isDoNotShowAgainChecked = false
+            isDoNotShowAgainChecked = false,
         )
     }
 }
@@ -119,7 +121,7 @@ fun BackupPromptDialogComposeDoNotShowAgainPreview() {
             onBackup = {},
             onDismissRequest = {},
             onDoNotShowAgainChanged = {},
-            isDoNotShowAgainChecked = true
+            isDoNotShowAgainChecked = true,
         )
     }
 }

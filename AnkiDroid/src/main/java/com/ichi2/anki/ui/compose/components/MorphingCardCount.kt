@@ -54,32 +54,33 @@ import kotlin.random.Random
 
 // A list of interesting shapes to cycle through for the morph animation.
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-val MORPHING_SHAPES = listOf(
-    MaterialShapes.Circle,
-    MaterialShapes.Pill,
-    MaterialShapes.SoftBurst,
-    MaterialShapes.Pentagon,
-    MaterialShapes.Sunny,
-    MaterialShapes.Oval,
-    MaterialShapes.Square,
-    MaterialShapes.Slanted,
-    MaterialShapes.Arch,
-    MaterialShapes.Arrow,
-    MaterialShapes.Fan,
-    MaterialShapes.Cookie4Sided,
-    MaterialShapes.Cookie6Sided,
-    MaterialShapes.Cookie7Sided,
-    MaterialShapes.Cookie9Sided,
-    MaterialShapes.Cookie12Sided,
-    MaterialShapes.Clover4Leaf,
-    MaterialShapes.Clover8Leaf,
-    MaterialShapes.SoftBoom,
-    MaterialShapes.Ghostish,
-    MaterialShapes.Puffy,
-    MaterialShapes.PuffyDiamond,
-    MaterialShapes.Bun,
-    MaterialShapes.Flower
-)
+val MORPHING_SHAPES =
+    listOf(
+        MaterialShapes.Circle,
+        MaterialShapes.Pill,
+        MaterialShapes.SoftBurst,
+        MaterialShapes.Pentagon,
+        MaterialShapes.Sunny,
+        MaterialShapes.Oval,
+        MaterialShapes.Square,
+        MaterialShapes.Slanted,
+        MaterialShapes.Arch,
+        MaterialShapes.Arrow,
+        MaterialShapes.Fan,
+        MaterialShapes.Cookie4Sided,
+        MaterialShapes.Cookie6Sided,
+        MaterialShapes.Cookie7Sided,
+        MaterialShapes.Cookie9Sided,
+        MaterialShapes.Cookie12Sided,
+        MaterialShapes.Clover4Leaf,
+        MaterialShapes.Clover8Leaf,
+        MaterialShapes.SoftBoom,
+        MaterialShapes.Ghostish,
+        MaterialShapes.Puffy,
+        MaterialShapes.PuffyDiamond,
+        MaterialShapes.Bun,
+        MaterialShapes.Flower,
+    )
 
 // The spring animation gives it a lively, physical feel.
 private val MORPH_ANIMATION_SPEC: FiniteAnimationSpec<Float> =
@@ -129,7 +130,8 @@ fun MorphingCardCount(
         }
         launch {
             rotation.animateTo(
-                targetValue = 360f * rotationDirection, animationSpec = MORPH_ANIMATION_SPEC
+                targetValue = 360f * rotationDirection,
+                animationSpec = MORPH_ANIMATION_SPEC,
             )
         }
 
@@ -138,44 +140,50 @@ fun MorphingCardCount(
     }
 
     // Create the Morph object, normalizing shapes to ensure smooth transitions.
-    val morph = remember(startShape, endShape) {
-        Morph(startShape.normalized(), endShape.normalized())
-    }
+    val morph =
+        remember(startShape, endShape) {
+            Morph(startShape.normalized(), endShape.normalized())
+        }
 
     // Create the dynamic MorphShape using the current animation progress.
     val morphingShape = MorphShape(morph, morphProgress.value)
 
-    Box(modifier = modifier
-        .size(36.dp)
-        .graphicsLayer {
-            // Apply the rotation from the animation.
-            rotationZ = rotation.value
-        }
-        .clip(morphingShape)
-        .background(containerColor),
-
-        contentAlignment = Alignment.Center) {
+    Box(
+        modifier =
+            modifier
+                .size(36.dp)
+                .graphicsLayer {
+                    // Apply the rotation from the animation.
+                    rotationZ = rotation.value
+                }.clip(morphingShape)
+                .background(containerColor),
+        contentAlignment = Alignment.Center,
+    ) {
         // AnimatedContent provides a nice transition for the text itself.
         AnimatedContent(
-            targetState = cardCount, transitionSpec = {
-                val enter = if (targetState > initialState) {
-                    slideInVertically { height -> height } + fadeIn()
-                } else {
-                    slideInVertically { height -> -height } + fadeIn()
-                }
-                val exit = if (targetState > initialState) {
-                    slideOutVertically { height -> -height } + fadeOut()
-                } else {
-                    slideOutVertically { height -> height } + fadeOut()
-                }
+            targetState = cardCount,
+            transitionSpec = {
+                val enter =
+                    if (targetState > initialState) {
+                        slideInVertically { height -> height } + fadeIn()
+                    } else {
+                        slideInVertically { height -> -height } + fadeIn()
+                    }
+                val exit =
+                    if (targetState > initialState) {
+                        slideOutVertically { height -> -height } + fadeOut()
+                    } else {
+                        slideOutVertically { height -> height } + fadeOut()
+                    }
                 enter togetherWith exit using SizeTransform(clip = false)
-            }, label = "CardCountAnimation"
+            },
+            label = "CardCountAnimation",
         ) { count ->
             Text(
                 modifier = Modifier.basicMarquee(),
                 text = count.toString(),
                 color = contentColor,
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelMedium,
             )
         }
     }

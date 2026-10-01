@@ -35,7 +35,8 @@ object AndroidUiUtils {
     fun Activity?.showSoftInput() {
         val activity = this ?: return
         val currentFocus = activity.currentFocus ?: return
-        WindowCompat.getInsetsController(activity.window, currentFocus)
+        WindowCompat
+            .getInsetsController(activity.window, currentFocus)
             .show(WindowInsetsCompat.Type.ime())
     }
 
@@ -67,7 +68,8 @@ object AndroidUiUtils {
             view.requestFocus()
             val activity = findActivity(view.context)
             if (activity != null) {
-                WindowCompat.getInsetsController(activity.window, view)
+                WindowCompat
+                    .getInsetsController(activity.window, view)
                     .show(WindowInsetsCompat.Type.ime())
             } else {
                 val imm =

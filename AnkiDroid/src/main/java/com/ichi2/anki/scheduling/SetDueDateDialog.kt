@@ -45,9 +45,9 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textview.MaterialTextView
 import com.ichi2.anki.AnkiActivity
-import com.ichi2.anki.SnackbarForwarder
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
+import com.ichi2.anki.SnackbarForwarder
 import com.ichi2.anki.asyncCatching
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.CardId
@@ -134,10 +134,13 @@ class SetDueDateDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-        MaterialAlertDialogBuilder(requireContext()).create {
+        MaterialAlertDialogBuilder(requireContext())
+            .create {
                 title(
-                    text = TR.actionsSetDueDate()
-                        .toSentenceCase(this@SetDueDateDialog, R.string.sentence_set_due_date)
+                    text =
+                        TR
+                            .actionsSetDueDate()
+                            .toSentenceCase(this@SetDueDateDialog, R.string.sentence_set_due_date),
                 )
                 positiveButton(R.string.dialog_ok) { launchUpdateDueDate() }
                 negativeButton(R.string.dialog_cancel)
@@ -160,8 +163,8 @@ class SetDueDateDialog : DialogFragment() {
                 val tabLayout = findViewById<TabLayout>(R.id.tab_layout)!!
                 TabLayoutMediator(tabLayout, viewPager) { tab: TabLayout.Tab, position: Int ->
                     Tab.entries.first { it.position == position }.let { selectedTab ->
-                            tab.setIcon(selectedTab.icon)
-                        }
+                        tab.setIcon(selectedTab.icon)
+                    }
                 }.attach()
                 tabLayout.selectTab(tabLayout.getTabAt(0))
 
@@ -193,11 +196,12 @@ class SetDueDateDialog : DialogFragment() {
                             // Current interval is set to null when multiple cards are selected
                             if (currentInterval != null) {
                                 tv.isVisible = true
-                                tv.text = resources.getQuantityString(
-                                    R.plurals.set_due_date_current_interval,
-                                    currentInterval,
-                                    currentInterval,
-                                )
+                                tv.text =
+                                    resources.getQuantityString(
+                                        R.plurals.set_due_date_current_interval,
+                                        currentInterval,
+                                        currentInterval,
+                                    )
                             } else {
                                 tv.isVisible = false
                             }
@@ -228,8 +232,7 @@ class SetDueDateDialog : DialogFragment() {
 
     private fun getScreenRotation() = ContextCompat.getDisplayOrDefault(requireContext()).rotation
 
-    private fun launchUpdateDueDate(showError: Boolean = true) =
-        requireAnkiActivity().updateDueDate(viewModel, showError)
+    private fun launchUpdateDueDate(showError: Boolean = true) = requireAnkiActivity().updateDueDate(viewModel, showError)
 
     companion object {
         const val ARG_CARD_IDS = "ARGS_CARD_IDS"
@@ -239,23 +242,26 @@ class SetDueDateDialog : DialogFragment() {
         private const val RESULT_SUBMIT_DUE_DATE = "SubmitDueDate"
 
         @CheckResult
-        suspend fun newInstance(cardIds: List<CardId>) = SetDueDateDialog().apply {
-            arguments = Bundle().apply {
-                putLongArray(ARG_CARD_IDS, cardIds.toLongArray())
-                putBoolean(ARG_FSRS, getFSRSStatus() ?: false.also { Timber.w("FSRS Status error") })
+        suspend fun newInstance(cardIds: List<CardId>) =
+            SetDueDateDialog().apply {
+                arguments =
+                    Bundle().apply {
+                        putLongArray(ARG_CARD_IDS, cardIds.toLongArray())
+                        putBoolean(ARG_FSRS, getFSRSStatus() ?: false.also { Timber.w("FSRS Status error") })
+                    }
+                Timber.i("Showing 'set due date' dialog for %d cards", cardIds.size)
             }
-            Timber.i("Showing 'set due date' dialog for %d cards", cardIds.size)
-        }
     }
 
     class DueDateStateAdapter(
         fragment: Fragment,
     ) : FragmentStateAdapter(fragment) {
-        override fun createFragment(position: Int): Fragment = when (position) {
-            0 -> SelectSingleDateFragment()
-            1 -> SelectDateRangeFragment()
-            else -> throw IllegalStateException("invalid position: $position")
-        }
+        override fun createFragment(position: Int): Fragment =
+            when (position) {
+                0 -> SelectSingleDateFragment()
+                1 -> SelectDateRangeFragment()
+                else -> throw IllegalStateException("invalid position: $position")
+            }
 
         override fun getItemCount() = 2
     }
@@ -274,24 +280,28 @@ class SetDueDateDialog : DialogFragment() {
                     doOnTextChanged { text, _, _, _ ->
                         val currentValue = text?.toString()?.toIntOrNull()
                         viewModel.nextSingleDayDueDate = currentValue
-                        suffixText = resources.getQuantityString(
-                            R.plurals.set_due_date_label_suffix,
-                            currentValue ?: 0
-                        )
+                        suffixText =
+                            resources.getQuantityString(
+                                R.plurals.set_due_date_label_suffix,
+                                currentValue ?: 0,
+                            )
                     }
                     suffixText = resources.getQuantityString(R.plurals.set_due_date_label_suffix, 0)
-                    helperText = getString(
-                        R.string.set_due_date_hintText,
-                        // 0 days
-                        resources.getQuantityString(R.plurals.set_due_date_label_suffix, 0),
-                        // 1 day
-                        resources.getQuantityString(R.plurals.set_due_date_label_suffix, 1),
-                    )
+                    helperText =
+                        getString(
+                            R.string.set_due_date_hintText,
+                            // 0 days
+                            resources.getQuantityString(R.plurals.set_due_date_label_suffix, 0),
+                            // 1 day
+                            resources.getQuantityString(R.plurals.set_due_date_label_suffix, 1),
+                        )
                     setOnEditorActionListener { _, actionId, event ->
-                        return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
+                        return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE ||
+                            event?.keyCode == KeyEvent.KEYCODE_ENTER
+                        ) {
                             parentFragmentManager.setFragmentResult(
                                 RESULT_SUBMIT_DUE_DATE,
-                                Bundle()
+                                Bundle(),
                             )
                             true
                         } else {
@@ -301,10 +311,11 @@ class SetDueDateDialog : DialogFragment() {
                     selectAllWhenFocused()
                 }
             }
-            view.findViewById<TextView>(R.id.date_single_label).text = resources.getQuantityString(
-                R.plurals.set_due_date_single_day_label,
-                viewModel.cardCount
-            )
+            view.findViewById<TextView>(R.id.date_single_label).text =
+                resources.getQuantityString(
+                    R.plurals.set_due_date_single_day_label,
+                    viewModel.cardCount,
+                )
         }
 
         override fun onResume() {
@@ -334,10 +345,11 @@ class SetDueDateDialog : DialogFragment() {
                     doOnTextChanged { text, _, _, _ ->
                         val value = text.toString().toIntOrNull()
                         viewModel.setNextDateRangeStart(value)
-                        suffixText = resources.getQuantityString(
-                            R.plurals.set_due_date_label_suffix,
-                            value ?: 0
-                        )
+                        suffixText =
+                            resources.getQuantityString(
+                                R.plurals.set_due_date_label_suffix,
+                                value ?: 0,
+                            )
                     }
                     suffixText = resources.getQuantityString(R.plurals.set_due_date_label_suffix, 0)
                     selectAllWhenFocused()
@@ -348,18 +360,21 @@ class SetDueDateDialog : DialogFragment() {
                     doOnTextChanged { text, _, _, _ ->
                         val value = text.toString().toIntOrNull()
                         viewModel.setNextDateRangeEnd(value)
-                        suffixText = resources.getQuantityString(
-                            R.plurals.set_due_date_label_suffix,
-                            value ?: 0
-                        )
+                        suffixText =
+                            resources.getQuantityString(
+                                R.plurals.set_due_date_label_suffix,
+                                value ?: 0,
+                            )
                     }
                     suffixText = resources.getQuantityString(R.plurals.set_due_date_label_suffix, 0)
                     viewModel.dateRange.end?.let { end -> setText(end.toString()) }
                     setOnEditorActionListener { _, actionId, event ->
-                        return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
+                        return@setOnEditorActionListener if (actionId == EditorInfo.IME_ACTION_DONE ||
+                            event?.keyCode == KeyEvent.KEYCODE_ENTER
+                        ) {
                             parentFragmentManager.setFragmentResult(
                                 RESULT_SUBMIT_DUE_DATE,
-                                Bundle()
+                                Bundle(),
                             )
                             true
                         } else {
@@ -388,32 +403,34 @@ class SetDueDateDialog : DialogFragment() {
 private fun AnkiActivity.updateDueDate(
     viewModel: SetDueDateViewModel,
     showError: Boolean,
-): Deferred<Int?> = this.asyncCatching {
-    // NICE_TO_HAVE: Display a snackbar if the activity is recreated while this executes
-    val cardsUpdated = withProgress {
-        // this is async as it should be run on the viewModel
-        viewModel.updateDueDateAsync().await()
-    }
+): Deferred<Int?> =
+    this.asyncCatching {
+        // NICE_TO_HAVE: Display a snackbar if the activity is recreated while this executes
+        val cardsUpdated =
+            withProgress {
+                // this is async as it should be run on the viewModel
+                viewModel.updateDueDateAsync().await()
+            }
 
-    if (cardsUpdated == null) {
-        Timber.w("unable to update due date")
-        if (showError) {
-            showThemedToast(this@updateDueDate, R.string.something_wrong, true)
+        if (cardsUpdated == null) {
+            Timber.w("unable to update due date")
+            if (showError) {
+                showThemedToast(this@updateDueDate, R.string.something_wrong, true)
+            }
+            return@asyncCatching null
         }
-        return@asyncCatching null
+        Timber.d("updated %d cards", cardsUpdated)
+        val message = TR.schedulingSetDueDateDone(cardsUpdated)
+        if (this@updateDueDate is SnackbarForwarder) {
+            // CardBrowser handles snackbars internally with Compose
+            this@updateDueDate.forwardSnackbar(message)
+        } else if (canProperlyShowSnackbars()) {
+            showSnackbar(message, Snackbar.LENGTH_SHORT)
+        } else {
+            showThemedToast(this@updateDueDate, message, true)
+        }
+        return@asyncCatching cardsUpdated
     }
-    Timber.d("updated %d cards", cardsUpdated)
-    val message = TR.schedulingSetDueDateDone(cardsUpdated)
-    if (this@updateDueDate is SnackbarForwarder) {
-        // CardBrowser handles snackbars internally with Compose
-        this@updateDueDate.forwardSnackbar(message)
-    } else if (canProperlyShowSnackbars()) {
-        showSnackbar(message, Snackbar.LENGTH_SHORT)
-    } else {
-        showThemedToast(this@updateDueDate, message, true)
-    }
-    return@asyncCatching cardsUpdated
-}
 
 private fun EditText.selectAllWhenFocused() {
     setOnFocusChangeListener { _, hasFocus ->

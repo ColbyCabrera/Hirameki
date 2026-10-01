@@ -36,7 +36,6 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w1280dp-h1280dp")
 class StudyOptionsScreenTest : RobolectricTest() {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -52,7 +51,8 @@ class StudyOptionsScreenTest : RobolectricTest() {
             }
         }
 
-        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+        composeTestRule
+            .onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
             .assertExists()
     }
 
@@ -87,12 +87,13 @@ class StudyOptionsScreenTest : RobolectricTest() {
         composeTestRule.setContent {
             AnkiDroidTheme {
                 StudyOptionsScreen(
-                    studyOptionsData = defaultStudyOptionsData(
-                        newCount = 0,
-                        lrnCount = 0,
-                        revCount = 0,
-                        totalCards = 10,
-                    ),
+                    studyOptionsData =
+                        defaultStudyOptionsData(
+                            newCount = 0,
+                            lrnCount = 0,
+                            revCount = 0,
+                            totalCards = 10,
+                        ),
                     onStartStudy = {},
                     onCustomStudy = { customStudyDeckId = it },
                 )
@@ -114,13 +115,14 @@ class StudyOptionsScreenTest : RobolectricTest() {
         composeTestRule.setContent {
             AnkiDroidTheme {
                 StudyOptionsScreen(
-                    studyOptionsData = defaultStudyOptionsData(
-                        newCount = 0,
-                        lrnCount = 0,
-                        revCount = 0,
-                        totalCards = 10,
-                        isFiltered = true,
-                    ),
+                    studyOptionsData =
+                        defaultStudyOptionsData(
+                            newCount = 0,
+                            lrnCount = 0,
+                            revCount = 0,
+                            totalCards = 10,
+                            isFiltered = true,
+                        ),
                     onStartStudy = {},
                     onCustomStudy = {},
                 )

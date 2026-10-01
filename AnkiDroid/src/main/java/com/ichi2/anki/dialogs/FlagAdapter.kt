@@ -91,7 +91,10 @@ class FlagAdapter(
         }
 
         holder.saveButton.setOnClickListener {
-            val updatedTextName = holder.flagNameEdit.text.toString().ifEmpty { flagItem.title }
+            val updatedTextName =
+                holder.flagNameEdit.text
+                    .toString()
+                    .ifEmpty { flagItem.title }
             holder.flagNameViewLayout.visibility = View.VISIBLE
             holder.flagNameEditLayout.visibility = View.GONE
             val updatedFlagItem = flagItem.copy(title = updatedTextName)

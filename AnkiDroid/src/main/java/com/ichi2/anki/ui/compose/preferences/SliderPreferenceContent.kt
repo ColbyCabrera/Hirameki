@@ -67,7 +67,7 @@ fun SliderPreferenceContent(
     modifier: Modifier = Modifier,
     icon: Painter? = null,
     isIconSpaceReserved: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     val lastHapticValue = remember(value) { floatArrayOf(value.toFloat()) }
 
@@ -75,17 +75,23 @@ fun SliderPreferenceContent(
     val interactionSource = remember { MutableInteractionSource() }
     val isDragged by interactionSource.collectIsDraggedAsState()
 
-    val stepsCount = if (stepSize > 0) maxOf(
-        0,
-        ((valueTo - valueFrom) / stepSize).roundToInt() - 1
-    ) else 0
-    val sliderState = remember(valueFrom, valueTo, stepSize) {
-        SliderState(
-            value = value.toFloat(),
-            steps = stepsCount,
-            trackRange = valueFrom.toFloat()..valueTo.toFloat(),
-        )
-    }
+    val stepsCount =
+        if (stepSize > 0) {
+            maxOf(
+                0,
+                ((valueTo - valueFrom) / stepSize).roundToInt() - 1,
+            )
+        } else {
+            0
+        }
+    val sliderState =
+        remember(valueFrom, valueTo, stepSize) {
+            SliderState(
+                value = value.toFloat(),
+                steps = stepsCount,
+                trackRange = valueFrom.toFloat()..valueTo.toFloat(),
+            )
+        }
     // Sync external value changes into the slider, but don't clobber active gestures
     LaunchedEffect(value, isDragged) {
         if (!isDragged && sliderState.value != value.toFloat()) {
@@ -110,32 +116,36 @@ fun SliderPreferenceContent(
     val secondaryColor = if (enabled) onSurfaceVariant else onSurface.copy(alpha = disabledAlpha)
 
     Row(
-        modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
             Icon(
                 painter = icon,
                 contentDescription = null,
                 tint = secondaryColor,
-                modifier = Modifier
-                    .padding(end = 16.dp)
-                    .size(24.dp)
+                modifier =
+                    Modifier
+                        .padding(end = 16.dp)
+                        .size(24.dp),
             )
         } else if (isIconSpaceReserved) {
             Box(
-                modifier = Modifier
-                    .padding(end = 16.dp)
-                    .size(24.dp)
+                modifier =
+                    Modifier
+                        .padding(end = 16.dp)
+                        .size(24.dp),
             )
         }
 
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(top = 12.dp, bottom = 8.dp)
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(top = 12.dp, bottom = 8.dp),
         ) {
             Row(
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.Top,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -143,7 +153,7 @@ fun SliderPreferenceContent(
                         style = MaterialTheme.typography.bodyLarge,
                         color = titleColor,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                     if (!summary.isNullOrEmpty()) {
                         Text(
@@ -152,7 +162,7 @@ fun SliderPreferenceContent(
                             color = secondaryColor,
                             modifier = Modifier.padding(top = 2.dp),
                             maxLines = 4,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -162,7 +172,7 @@ fun SliderPreferenceContent(
                         text = displayText,
                         style = MaterialTheme.typography.bodyMedium,
                         color = secondaryColor,
-                        modifier = Modifier.padding(start = 8.dp)
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
             }
@@ -187,33 +197,36 @@ fun SliderPreferenceContent(
                     }
                 },
                 onValueChangeFinished = {
-                    val finalValue = if (stepSize > 0) {
-                        val steps = ((sliderState.value - valueFrom) / stepSize).roundToInt()
-                        (valueFrom + (steps * stepSize)).roundToInt()
-                    } else {
-                        sliderState.value.roundToInt()
-                    }
+                    val finalValue =
+                        if (stepSize > 0) {
+                            val steps = ((sliderState.value - valueFrom) / stepSize).roundToInt()
+                            (valueFrom + (steps * stepSize)).roundToInt()
+                        } else {
+                            sliderState.value.roundToInt()
+                        }
                     val coercedValue = finalValue.coerceIn(valueFrom, valueTo)
                     sliderState.value = coercedValue.toFloat()
                     onValueChange(coercedValue)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
-                colors = SliderDefaults.colors(
-                    activeTickColor = Color.Transparent,
-                    inactiveTickColor = Color.Transparent,
-                    disabledActiveTickColor = Color.Transparent,
-                    disabledInactiveTickColor = Color.Transparent
-                ),
+                colors =
+                    SliderDefaults.colors(
+                        activeTickColor = Color.Transparent,
+                        inactiveTickColor = Color.Transparent,
+                        disabledActiveTickColor = Color.Transparent,
+                        disabledInactiveTickColor = Color.Transparent,
+                    ),
                 interactionSource = interactionSource,
                 thumb = @Composable { _: SliderState ->
                     SliderThumbWithLabel(
                         isDragged = isDragged,
                         displayText = displayText,
                         interactionSource = interactionSource,
-                        enabled = enabled
+                        enabled = enabled,
                     )
-                })
+                },
+            )
         }
     }
 }
@@ -225,37 +238,40 @@ fun SliderThumbWithLabel(
     displayText: String,
     interactionSource: MutableInteractionSource,
     enabled: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Layout(
         content = {
             if (isDragged) {
                 Box(
-                    modifier = Modifier
-                        .layoutId("label")
-                        .background(
-                            color = MaterialTheme.colorScheme.tertiaryContainer,
-                            shape = MaterialTheme.shapes.extraExtraLarge
-                        )
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    modifier =
+                        Modifier
+                            .layoutId("label")
+                            .background(
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                shape = MaterialTheme.shapes.extraExtraLarge,
+                            ).padding(horizontal = 10.dp, vertical = 4.dp),
                 ) {
                     Text(
                         text = displayText,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
             SliderDefaults.Thumb(
                 interactionSource = interactionSource,
                 enabled = enabled,
-                modifier = Modifier.layoutId("thumb")
+                modifier = Modifier.layoutId("thumb"),
             )
-        }, modifier = modifier
+        },
+        modifier = modifier,
     ) { measurables, constraints ->
         val thumbPlaceable = measurables.first { it.layoutId == "thumb" }.measure(constraints)
-        val labelPlaceable = measurables.find { it.layoutId == "label" }
-            ?.measure(constraints.copy(minWidth = 0, minHeight = 0))
+        val labelPlaceable =
+            measurables
+                .find { it.layoutId == "label" }
+                ?.measure(constraints.copy(minWidth = 0, minHeight = 0))
 
         layout(thumbPlaceable.width, thumbPlaceable.height) {
             thumbPlaceable.placeRelative(0, 0)
@@ -283,7 +299,7 @@ fun PreviewSliderPreferenceContent() {
             displayValue = true,
             displayFormat = "%d%%",
             onValueChange = {},
-            isIconSpaceReserved = true
+            isIconSpaceReserved = true,
         )
     }
 }
@@ -303,24 +319,24 @@ fun PreviewSliderPreferenceContentDisabled() {
             displayFormat = "%d%%",
             onValueChange = {},
             isIconSpaceReserved = true,
-            enabled = false
+            enabled = false,
         )
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
 fun PreviewSliderThumbWithLabel() {
     AnkiDroidTheme {
         Box(
-            modifier = Modifier.size(140.dp), contentAlignment = Alignment.Center
+            modifier = Modifier.size(140.dp),
+            contentAlignment = Alignment.Center,
         ) {
             SliderThumbWithLabel(
                 isDragged = true,
                 displayText = "100%",
                 interactionSource = remember { MutableInteractionSource() },
-                enabled = true
+                enabled = true,
             )
         }
     }

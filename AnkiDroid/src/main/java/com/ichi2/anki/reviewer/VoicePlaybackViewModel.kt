@@ -36,12 +36,16 @@ import java.io.File
  * Manages recording and playback of audio for self-testing purposes.
  */
 class VoicePlaybackViewModel : ViewModel() {
-
     sealed interface RecordingState {
         data object Idle : RecordingState
+
         data object Recording : RecordingState
+
         data object PlaybackReady : RecordingState
-        data class Playing(val progress: Float) : RecordingState
+
+        data class Playing(
+            val progress: Float,
+        ) : RecordingState
     }
 
     private val _state = MutableStateFlow<RecordingState>(RecordingState.Idle)
@@ -87,13 +91,17 @@ class VoicePlaybackViewModel : ViewModel() {
         }
     }
 
-    private fun startRecording(context: Context, tempAudioFile: File) {
+    private fun startRecording(
+        context: Context,
+        tempAudioFile: File,
+    ) {
         Timber.i("VoicePlaybackViewModel: starting recording")
         try {
             audioRecorder?.release()
-            audioRecorder = AudioRecorder().apply {
-                startRecording(context, tempAudioFile)
-            }
+            audioRecorder =
+                AudioRecorder().apply {
+                    startRecording(context, tempAudioFile)
+                }
             audioFile = tempAudioFile
             _state.value = RecordingState.Recording
             startAmplitudeMonitoring()
@@ -105,14 +113,15 @@ class VoicePlaybackViewModel : ViewModel() {
 
     private fun startAmplitudeMonitoring() {
         amplitudeJob?.cancel()
-        amplitudeJob = viewModelScope.launch {
-            while (isActive && _state.value == RecordingState.Recording) {
-                val amp = audioRecorder?.maxAmplitude() ?: 0
-                // Normalize amplitude (max is typically around 32767)
-                _amplitude.value = (amp / 32767f).coerceIn(0f, 1f)
-                delay(50)
+        amplitudeJob =
+            viewModelScope.launch {
+                while (isActive && _state.value == RecordingState.Recording) {
+                    val amp = audioRecorder?.maxAmplitude() ?: 0
+                    // Normalize amplitude (max is typically around 32767)
+                    _amplitude.value = (amp / 32767f).coerceIn(0f, 1f)
+                    delay(50)
+                }
             }
-        }
     }
 
     private fun stopRecording() {
@@ -143,15 +152,16 @@ class VoicePlaybackViewModel : ViewModel() {
         Timber.i("VoicePlaybackViewModel: starting playback")
         try {
             mediaPlayer?.release()
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(file.absolutePath)
-                prepare()
-                start()
-                setOnCompletionListener {
-                    _state.value = RecordingState.PlaybackReady
-                    playbackProgressJob?.cancel()
+            mediaPlayer =
+                MediaPlayer().apply {
+                    setDataSource(file.absolutePath)
+                    prepare()
+                    start()
+                    setOnCompletionListener {
+                        _state.value = RecordingState.PlaybackReady
+                        playbackProgressJob?.cancel()
+                    }
                 }
-            }
             _state.value = RecordingState.Playing(0f)
             startPlaybackProgressMonitoring()
         } catch (e: Exception) {
@@ -162,16 +172,20 @@ class VoicePlaybackViewModel : ViewModel() {
 
     private fun startPlaybackProgressMonitoring() {
         playbackProgressJob?.cancel()
-        playbackProgressJob = viewModelScope.launch {
-            while (isActive && _state.value is RecordingState.Playing) {
-                val player = mediaPlayer ?: break
-                val progress = if (player.duration > 0) {
-                    player.currentPosition.toFloat() / player.duration
-                } else 0f
-                _state.value = RecordingState.Playing(progress)
-                delay(50)
+        playbackProgressJob =
+            viewModelScope.launch {
+                while (isActive && _state.value is RecordingState.Playing) {
+                    val player = mediaPlayer ?: break
+                    val progress =
+                        if (player.duration > 0) {
+                            player.currentPosition.toFloat() / player.duration
+                        } else {
+                            0f
+                        }
+                    _state.value = RecordingState.Playing(progress)
+                    delay(50)
+                }
             }
-        }
     }
 
     private fun stopPlayback() {

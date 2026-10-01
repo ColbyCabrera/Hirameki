@@ -214,7 +214,8 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         underTest.handleSpacebar()
 
         assertThat(
-            "After a keypress the answer should be displayed", underTest.testIsDisplayingAnswer()
+            "After a keypress the answer should be displayed",
+            underTest.testIsDisplayingAnswer(),
         )
 
         underTest.handleSpacebar()
@@ -222,7 +223,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
 
         assertThat(
             "After a second keypress the question should be displayed",
-            !underTest.testIsDisplayingAnswer()
+            !underTest.testIsDisplayingAnswer(),
         )
     }
 
@@ -266,7 +267,10 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         var processor: BindingMap<ReviewerBinding, ViewerCommand> =
             BindingMap(sharedPrefs(), ViewerCommand.entries, this)
 
-        override fun processAction(action: ViewerCommand, binding: ReviewerBinding): Boolean {
+        override fun processAction(
+            action: ViewerCommand,
+            binding: ReviewerBinding,
+        ): Boolean {
             val currentSide = if (displayAnswer) CardSide.ANSWER else CardSide.QUESTION
             if (binding.side != CardSide.BOTH && binding.side != currentSide) {
                 return false
@@ -342,15 +346,15 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         private fun createKeyEvent(
             keycode: Int,
             unicodeChar: Char = '\u0000',
-        ): KeyEvent = spyk(KeyEvent(ACTION_DOWN, keycode)) {
-            every { getUnicodeChar(any()) } returns unicodeChar.code
-        }
+        ): KeyEvent =
+            spyk(KeyEvent(ACTION_DOWN, keycode)) {
+                every { getUnicodeChar(any()) } returns unicodeChar.code
+            }
 
-        private fun createUnicodeKeyEvent(
-            unicodeChar: Char,
-        ): KeyEvent = spyk(KeyEvent(ACTION_DOWN, 0)) {
-            every { getUnicodeChar(any()) } returns unicodeChar.code
-        }
+        private fun createUnicodeKeyEvent(unicodeChar: Char): KeyEvent =
+            spyk(KeyEvent(ACTION_DOWN, 0)) {
+                every { getUnicodeChar(any()) } returns unicodeChar.code
+            }
 
         fun focusTextField(): KeyboardInputTestReviewer {
             isTextInputFocused = true
@@ -405,8 +409,8 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             return false
         }
 
-        private fun executeCommand(which: ViewerCommand): Boolean {
-            return when (which) {
+        private fun executeCommand(which: ViewerCommand): Boolean =
+            when (which) {
                 ViewerCommand.SHOW_ANSWER -> {
                     if (displayAnswer) {
                         false
@@ -473,7 +477,6 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
 
                 else -> false
             }
-        }
 
         companion object {
             @CheckResult

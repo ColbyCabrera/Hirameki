@@ -102,11 +102,12 @@ class ProgressDialogFragment : DialogFragment() {
             titleState.value = savedInstanceState.getString(STATE_TITLE).orEmpty()
             messageState.value = savedInstanceState.getString(STATE_MESSAGE).orEmpty()
             isCancelButtonSet = savedInstanceState.getBoolean(STATE_IS_CANCEL_BUTTON_SET)
-            cancelLabelResId = if (savedInstanceState.containsKey(STATE_CANCEL_LABEL_RES_ID)) {
-                savedInstanceState.getInt(STATE_CANCEL_LABEL_RES_ID)
-            } else {
-                null
-            }
+            cancelLabelResId =
+                if (savedInstanceState.containsKey(STATE_CANCEL_LABEL_RES_ID)) {
+                    savedInstanceState.getInt(STATE_CANCEL_LABEL_RES_ID)
+                } else {
+                    null
+                }
         }
         // Dialog should be non-dismissable if cancel button is present or if onCancelCallback is null
         isCancelable = onCancelCallback != null && cancelLabelResId == null
@@ -121,9 +122,11 @@ class ProgressDialogFragment : DialogFragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View =
+        ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 AnkiDroidTheme {
@@ -136,12 +139,11 @@ class ProgressDialogFragment : DialogFragment() {
                         cancelLabelResId = cancelLabelResId,
                         isCancelable = isCancelable,
                         showCancelButton = isCancelButtonSet,
-                        onDismiss = { dismissAllowingStateLoss() })
+                        onDismiss = { dismissAllowingStateLoss() },
+                    )
                 }
             }
         }
-    }
-
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -153,7 +155,7 @@ internal fun ProgressDialogContent(
     cancelLabelResId: Int?,
     isCancelable: Boolean,
     showCancelButton: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(onDismissRequest = {
         if (isCancelable) {
@@ -166,9 +168,10 @@ internal fun ProgressDialogContent(
                 Text(text = title)
             }
             LinearWavyProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
             )
         }
     }, text = {
@@ -177,8 +180,9 @@ internal fun ProgressDialogContent(
         }
     }, confirmButton = {}, dismissButton = {
         if (onCancel != null && showCancelButton) {
-            val label = cancelLabelResId?.let { stringResource(id = it) }
-                ?: stringResource(id = R.string.dialog_cancel)
+            val label =
+                cancelLabelResId?.let { stringResource(id = it) }
+                    ?: stringResource(id = R.string.dialog_cancel)
             TextButton(onClick = {
                 onCancel.invoke()
                 onDismiss()
@@ -200,7 +204,8 @@ private fun ProgressDialogContentPreview() {
             cancelLabelResId = null,
             isCancelable = true,
             showCancelButton = true,
-            onDismiss = {})
+            onDismiss = {},
+        )
     }
 }
 
@@ -215,6 +220,7 @@ private fun ProgressDialogContentMessageOnlyPreview() {
             cancelLabelResId = null,
             isCancelable = false,
             showCancelButton = false,
-            onDismiss = {})
+            onDismiss = {},
+        )
     }
 }

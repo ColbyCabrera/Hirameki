@@ -42,40 +42,42 @@ import timber.log.Timber
 class OneWaySyncDialog(
     val message: String?,
 ) : DialogHandlerMessage(
-    which = WhichDialogHandler.MSG_SHOW_ONE_WAY_SYNC_DIALOG,
-    analyticName = "OneWaySyncDialog",
-) {
+        which = WhichDialogHandler.MSG_SHOW_ONE_WAY_SYNC_DIALOG,
+        analyticName = "OneWaySyncDialog",
+    ) {
     override fun handleAsyncMessage(activity: AnkiActivity) {
         // Confirmation dialog for one-way sync
         val dialog = ConfirmationDialog()
-        val confirm = Runnable {
-            // Bypass the check once the user confirms
-            activity.launchCatchingTask {
-                try {
-                    withCol { modSchemaNoCheck() }
-                } catch (e: Exception) {
-                    if (e is CancellationException) {
-                        throw e
+        val confirm =
+            Runnable {
+                // Bypass the check once the user confirms
+                activity.launchCatchingTask {
+                    try {
+                        withCol { modSchemaNoCheck() }
+                    } catch (e: Exception) {
+                        if (e is CancellationException) {
+                            throw e
+                        }
+                        Timber.e(e, "Failed to modify schema")
+                        activity.showSimpleMessageDialog("Failed to modify schema")
                     }
-                    Timber.e(e, "Failed to modify schema")
-                    activity.showSimpleMessageDialog("Failed to modify schema")
                 }
             }
-        }
         dialog.setConfirm(confirm)
         dialog.setArgs(message)
         activity.showDialogFragment(dialog)
     }
 
-    override fun toMessage(): Message = Message.obtain().apply {
-        what = this@OneWaySyncDialog.what
-        data = Bundle().apply {
-            putString("message", message)
+    override fun toMessage(): Message =
+        Message.obtain().apply {
+            what = this@OneWaySyncDialog.what
+            data =
+                Bundle().apply {
+                    putString("message", message)
+                }
         }
-    }
 
     companion object {
-        fun fromMessage(message: Message): DialogHandlerMessage =
-            OneWaySyncDialog(message.data.getString("message"))
+        fun fromMessage(message: Message): DialogHandlerMessage = OneWaySyncDialog(message.data.getString("message"))
     }
 }

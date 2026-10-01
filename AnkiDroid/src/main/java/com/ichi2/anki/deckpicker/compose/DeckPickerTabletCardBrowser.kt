@@ -65,22 +65,23 @@ fun DeckPickerTabletCardBrowser(
             },
             onConfirm = { cardsOrNotes, isTruncated, shouldIgnoreAccents ->
                 cardBrowserViewModel.setCardsOrNotes(
-                    cardsOrNotes
+                    cardsOrNotes,
                 )
                 cardBrowserViewModel.setTruncated(
-                    isTruncated
+                    isTruncated,
                 )
                 cardBrowserViewModel.setIgnoreAccents(
-                    shouldIgnoreAccents
+                    shouldIgnoreAccents,
                 )
             },
             initialCardsOrNotes = cardBrowserViewModel.cardsOrNotes,
             initialIsTruncated = cardBrowserViewModel.isTruncated,
             initialShouldIgnoreAccents = cardBrowserViewModel.shouldIgnoreAccents,
             onManageColumnsClicked = {
-                val dialog = BrowserColumnSelectionFragment.createInstance(
-                    cardBrowserViewModel.cardsOrNotes
-                )
+                val dialog =
+                    BrowserColumnSelectionFragment.createInstance(
+                        cardBrowserViewModel.cardsOrNotes,
+                    )
                 onShowDialogFragment(dialog)
             },
             onRenameFlagClicked = {
@@ -152,5 +153,6 @@ fun DeckPickerTabletCardBrowser(
             cardBrowserViewModel.loadAllTags()
             cardBrowserViewModel.loadDeckTags()
             showFilterByTagsDialog = true
-        })
+        },
+    )
 }

@@ -80,7 +80,9 @@ fun expandSounds(
             """if (this.currentTime != this.duration) { window.location.href = "videopause:$playsound"; }"""
 
         // TODO: Make the loading screen nicer if the video doesn't autoplay
-        @Language("HTML") val result = """<video
+        @Language("HTML")
+        val result =
+            """<video
                     | src="$uri"
                     | controls
                     | data-file="${filename.htmlEncode()}"
@@ -106,23 +108,25 @@ fun expandSounds(
 suspend fun getAvTag(
     card: Card,
     url: String,
-): AvTag? = AV_PLAYLINK_RE.matchEntire(url)?.let {
-    val values = it.groupValues
-    val questionSide = values[1] == "q"
-    val index = values[2].toInt()
-    val tags = CollectionManager.withCol {
-        if (questionSide) {
-            card.questionAvTags(this)
+): AvTag? =
+    AV_PLAYLINK_RE.matchEntire(url)?.let {
+        val values = it.groupValues
+        val questionSide = values[1] == "q"
+        val index = values[2].toInt()
+        val tags =
+            CollectionManager.withCol {
+                if (questionSide) {
+                    card.questionAvTags(this)
+                } else {
+                    card.answerAvTags(this)
+                }
+            }
+        if (index < tags.size) {
+            tags[index]
         } else {
-            card.answerAvTags(this)
+            null
         }
     }
-    if (index < tags.size) {
-        tags[index]
-    } else {
-        null
-    }
-}
 
 /**
  * Return card text with play buttons added, or stripped.

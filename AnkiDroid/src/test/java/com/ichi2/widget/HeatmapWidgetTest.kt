@@ -34,7 +34,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class HeatmapWidgetTest {
-
     @Test
     fun testGetColorForCount() {
         val colors = mockk<ColorProviders>()
@@ -87,51 +86,54 @@ class HeatmapWidgetTest {
 
     @Test
     @Suppress("DEPRECATION")
-    fun testFetchHeatmapData() = runTest {
-        // Mock Cursor
-        val mockCursor = mockk<Cursor>()
-        // Simulate 2 rows:
-        // 1. day=100, count=5
-        // 2. day=101, count=10
-        // moveToNext returns true twice, then false
-        every { mockCursor.moveToNext() } returns true andThen true andThen false
-        every { mockCursor.getLong(0) } returns 100L andThen 101L
-        every { mockCursor.getInt(1) } returns 5 andThen 10
-        every { mockCursor.close() } returns Unit
+    fun testFetchHeatmapData() =
+        runTest {
+            // Mock Cursor
+            val mockCursor = mockk<Cursor>()
+            // Simulate 2 rows:
+            // 1. day=100, count=5
+            // 2. day=101, count=10
+            // moveToNext returns true twice, then false
+            every { mockCursor.moveToNext() } returns true andThen true andThen false
+            every { mockCursor.getLong(0) } returns 100L andThen 101L
+            every { mockCursor.getInt(1) } returns 5 andThen 10
+            every { mockCursor.close() } returns Unit
 
-        // Mock DB
-        val mockDb = mockk<DB> {
-            every { query(any(), *anyVararg()) } returns mockCursor
-            every { query(any()) } returns mockCursor
+            // Mock DB
+            val mockDb =
+                mockk<DB> {
+                    every { query(any(), *anyVararg()) } returns mockCursor
+                    every { query(any()) } returns mockCursor
+                }
+
+            // Mock Collection
+            val mockCol =
+                mockk<Collection> {
+                    every { db } returns mockDb
+                    every { dbClosed } returns false
+                }
+
+            // Mock Backend to prevent loading native libraries
+            val mockBackend = mockk<Backend>()
+            setBackend(mockBackend)
+
+            // Inject mock collection
+            CollectionManager.setColForTests(mockCol)
+
+            try {
+                // Execute
+                val result = HeatmapWidget.fetchHeatmapData()
+
+                // Verify
+                assertEquals(2, result.size)
+                assertEquals(5, result[100L])
+                assertEquals(10, result[101L])
+            } finally {
+                // Cleanup
+                CollectionManager.setColForTests(null)
+                setBackend(null)
+            }
         }
-
-        // Mock Collection
-        val mockCol = mockk<Collection> {
-            every { db } returns mockDb
-            every { dbClosed } returns false
-        }
-
-        // Mock Backend to prevent loading native libraries
-        val mockBackend = mockk<Backend>()
-        setBackend(mockBackend)
-
-        // Inject mock collection
-        CollectionManager.setColForTests(mockCol)
-
-        try {
-            // Execute
-            val result = HeatmapWidget.fetchHeatmapData()
-
-            // Verify
-            assertEquals(2, result.size)
-            assertEquals(5, result[100L])
-            assertEquals(10, result[101L])
-        } finally {
-            // Cleanup
-            CollectionManager.setColForTests(null)
-            setBackend(null)
-        }
-    }
 
     companion object {
         @Suppress("DEPRECATION")

@@ -68,16 +68,17 @@ fun DeckSelector(
     availableDecks: List<SelectableDeck.Deck>,
     onDeckSelected: (SelectableDeck) -> Unit,
     modifier: Modifier = Modifier,
-    showAllDecksOption: Boolean = true
+    showAllDecksOption: Boolean = true,
 ) {
     var showDeckMenu by remember { mutableStateOf(false) }
     var deckSearchQuery by remember { mutableStateOf("") }
     val expandedDecks = remember { mutableStateMapOf<String, Boolean>() }
     val focusManager = LocalFocusManager.current
 
-    val deckHierarchy = remember(availableDecks, deckSearchQuery) {
-        buildDeckHierarchy(availableDecks, deckSearchQuery)
-    }
+    val deckHierarchy =
+        remember(availableDecks, deckSearchQuery) {
+            buildDeckHierarchy(availableDecks, deckSearchQuery)
+        }
 
     // Clean up state when deck menu is dismissed
     DisposableEffect(showDeckMenu) {
@@ -89,32 +90,39 @@ fun DeckSelector(
         }
     }
 
-    val deckName = when (selectedDeck) {
-        is SelectableDeck.Deck -> selectedDeck.name
-        is SelectableDeck.AllDecks -> stringResource(R.string.card_browser_all_decks)
-        else -> ""
-    }
+    val deckName =
+        when (selectedDeck) {
+            is SelectableDeck.Deck -> selectedDeck.name
+            is SelectableDeck.AllDecks -> stringResource(R.string.card_browser_all_decks)
+            else -> ""
+        }
 
     Column(modifier = modifier) {
         TextButton(onClick = { showDeckMenu = true }) {
             Text(
-                text = deckName, maxLines = 1, overflow = TextOverflow.Ellipsis
+                text = deckName,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Icon(
                 Icons.Default.ArrowDropDown,
-                contentDescription = stringResource(R.string.select_deck)
+                contentDescription = stringResource(R.string.select_deck),
             )
         }
 
         DropdownMenu(
             expanded = showDeckMenu,
             onDismissRequest = { showDeckMenu = false },
-            shape = MaterialTheme.shapes.large
+            shape = MaterialTheme.shapes.large,
         ) {
             Surface(
-                modifier = Modifier.padding(
-                    vertical = 8.dp, horizontal = 12.dp
-                ), color = MaterialTheme.colorScheme.surface, shape = CircleShape
+                modifier =
+                    Modifier.padding(
+                        vertical = 8.dp,
+                        horizontal = 12.dp,
+                    ),
+                color = MaterialTheme.colorScheme.surface,
+                shape = CircleShape,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TextField(
@@ -129,7 +137,7 @@ fun DeckSelector(
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(R.drawable.search_24px),
-                                contentDescription = null
+                                contentDescription = null,
                             )
                         },
                         trailingIcon = {
@@ -137,7 +145,7 @@ fun DeckSelector(
                                 IconButton(onClick = { deckSearchQuery = "" }) {
                                     Icon(
                                         Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.close)
+                                        contentDescription = stringResource(R.string.close),
                                     )
                                 }
                             }
@@ -153,52 +161,59 @@ fun DeckSelector(
                     onClick = {
                         showDeckMenu = false
                         onDeckSelected(SelectableDeck.AllDecks)
-                    })
+                    },
+                )
             }
 
             DeckHierarchyMenu(
-                deckHierarchy = deckHierarchy, expandedDecks = expandedDecks, onDeckSelected = {
+                deckHierarchy = deckHierarchy,
+                expandedDecks = expandedDecks,
+                onDeckSelected = {
                     showDeckMenu = false
                     onDeckSelected(it)
-                }, searchQuery = deckSearchQuery
+                },
+                searchQuery = deckSearchQuery,
             )
         }
     }
 }
 
 @Composable
-private fun transparentTextFieldColors(): TextFieldColors = TextFieldDefaults.colors(
-    focusedIndicatorColor = Color.Transparent,
-    unfocusedIndicatorColor = Color.Transparent,
-    disabledIndicatorColor = Color.Transparent,
-    focusedContainerColor = Color.Transparent,
-    unfocusedContainerColor = Color.Transparent,
-    disabledContainerColor = Color.Transparent
-)
+private fun transparentTextFieldColors(): TextFieldColors =
+    TextFieldDefaults.colors(
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        disabledIndicatorColor = Color.Transparent,
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+    )
 
 private fun buildDeckHierarchy(
-    decks: List<SelectableDeck.Deck>, searchQuery: String
+    decks: List<SelectableDeck.Deck>,
+    searchQuery: String,
 ): Map<String, List<SelectableDeck.Deck>> {
     val hierarchy = mutableMapOf<String, MutableList<SelectableDeck.Deck>>()
     val topLevelDecks = mutableListOf<SelectableDeck.Deck>()
 
-    val decksToShow = if (searchQuery.isEmpty()) {
-        decks
-    } else {
-        val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
-        val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
-        val allDecksByName = decks.associateBy { it.name }
+    val decksToShow =
+        if (searchQuery.isEmpty()) {
+            decks
+        } else {
+            val matchingDecks = decks.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            val requiredDecks = mutableSetOf<SelectableDeck.Deck>()
+            val allDecksByName = decks.associateBy { it.name }
 
-        for (deck in matchingDecks) {
-            requiredDecks.add(deck)
-            var currentName = deck.name
-            while (currentName.contains("::")) {
-                currentName = currentName.substringBeforeLast("::")
-                allDecksByName[currentName]?.let { requiredDecks.add(it) }
+            for (deck in matchingDecks) {
+                requiredDecks.add(deck)
+                var currentName = deck.name
+                while (currentName.contains("::")) {
+                    currentName = currentName.substringBeforeLast("::")
+                    allDecksByName[currentName]?.let { requiredDecks.add(it) }
+                }
             }
+            requiredDecks.toList()
         }
-        requiredDecks.toList()
-    }
 
     for (deck in decksToShow) {
         val parts = deck.name.split("::")
@@ -220,7 +235,7 @@ private fun DeckHierarchyMenu(
     expandedDecks: MutableMap<String, Boolean>,
     onDeckSelected: (SelectableDeck.Deck) -> Unit,
     searchQuery: String,
-    parentName: String = ""
+    parentName: String = "",
 ) {
     val children = deckHierarchy[parentName] ?: return
 
@@ -235,19 +250,29 @@ private fun DeckHierarchyMenu(
                 if (hasChildren) {
                     IconButton(onClick = { expandedDecks[deck.name] = !isExpanded }) {
                         Icon(
-                            painter = if (isExpanded) painterResource(R.drawable.keyboard_arrow_down_24px)
-                            else painterResource(R.drawable.keyboard_arrow_right_24px),
-                            contentDescription = stringResource(
-                                if (isExpanded) R.string.collapse else R.string.expand
-                            )
+                            painter =
+                                if (isExpanded) {
+                                    painterResource(R.drawable.keyboard_arrow_down_24px)
+                                } else {
+                                    painterResource(R.drawable.keyboard_arrow_right_24px)
+                                },
+                            contentDescription =
+                                stringResource(
+                                    if (isExpanded) R.string.collapse else R.string.expand,
+                                ),
                         )
                     }
                 }
-            })
+            },
+        )
         if (isExpanded && hasChildren) {
             Column(modifier = Modifier.padding(start = 16.dp)) {
                 DeckHierarchyMenu(
-                    deckHierarchy, expandedDecks, onDeckSelected, searchQuery, deck.name
+                    deckHierarchy,
+                    expandedDecks,
+                    onDeckSelected,
+                    searchQuery,
+                    deck.name,
                 )
             }
         }
@@ -257,19 +282,21 @@ private fun DeckHierarchyMenu(
 @Preview(showBackground = true)
 @Composable
 private fun DeckSelectorPreview() {
-    val availableDecks = listOf(
-        SelectableDeck.Deck(1L, "Default"),
-        SelectableDeck.Deck(2L, "Japanese"),
-        SelectableDeck.Deck(3L, "Japanese::Kanji"),
-        SelectableDeck.Deck(4L, "Japanese::Vocabulary"),
-        SelectableDeck.Deck(5L, "Spanish"),
-    )
+    val availableDecks =
+        listOf(
+            SelectableDeck.Deck(1L, "Default"),
+            SelectableDeck.Deck(2L, "Japanese"),
+            SelectableDeck.Deck(3L, "Japanese::Kanji"),
+            SelectableDeck.Deck(4L, "Japanese::Vocabulary"),
+            SelectableDeck.Deck(5L, "Spanish"),
+        )
     var selectedDeck by remember { mutableStateOf<SelectableDeck?>(SelectableDeck.AllDecks) }
 
     AnkiDroidTheme {
         DeckSelector(
             selectedDeck = selectedDeck,
             availableDecks = availableDecks,
-            onDeckSelected = { selectedDeck = it })
+            onDeckSelected = { selectedDeck = it },
+        )
     }
 }

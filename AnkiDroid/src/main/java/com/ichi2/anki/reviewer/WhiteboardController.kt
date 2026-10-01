@@ -22,9 +22,9 @@ import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anki.MetaDB
 import com.ichi2.anki.R
 import com.ichi2.anki.Reviewer
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.windows.reviewer.whiteboard.WhiteboardViewModel
-import com.ichi2.anki.ioDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -32,9 +32,8 @@ import timber.log.Timber
 class WhiteboardController(
     private val activity: Reviewer,
     private val viewModel: WhiteboardViewModel,
-    private val reviewerViewModel: ReviewerViewModel
+    private val reviewerViewModel: ReviewerViewModel,
 ) {
-
     var isEnabled: Boolean = false
         private set
     var isVisible: Boolean = false
@@ -42,15 +41,17 @@ class WhiteboardController(
 
     fun initialize() {
         activity.lifecycleScope.launch {
-            isEnabled = withContext(ioDispatcher) {
-                MetaDB.getWhiteboardState(activity, activity.parentDid)
-            }
+            isEnabled =
+                withContext(ioDispatcher) {
+                    MetaDB.getWhiteboardState(activity, activity.parentDid)
+                }
             reviewerViewModel.onEvent(ReviewerEvent.OnWhiteboardStateChanged(isEnabled))
 
             if (isEnabled) {
-                isVisible = withContext(ioDispatcher) {
-                    MetaDB.getWhiteboardVisibility(activity, activity.parentDid)
-                }
+                isVisible =
+                    withContext(ioDispatcher) {
+                        MetaDB.getWhiteboardVisibility(activity, activity.parentDid)
+                    }
                 // Apply side effects without redundant DB writes (we just read these values)
                 if (isVisible) {
                     activity.disableDrawerSwipe()
@@ -88,13 +89,15 @@ class WhiteboardController(
                 viewModel.setActiveBrush(viewModel.activeBrushIndex.value)
                 Timber.i("Reviewer:: Whiteboard eraser mode disabled")
                 activity.showSnackbar(
-                    activity.getString(R.string.white_board_eraser_disabled), Snackbar.LENGTH_SHORT
+                    activity.getString(R.string.white_board_eraser_disabled),
+                    Snackbar.LENGTH_SHORT,
                 )
             } else {
                 viewModel.enableEraser()
                 Timber.i("Reviewer:: Whiteboard eraser mode enabled")
                 activity.showSnackbar(
-                    activity.getString(R.string.white_board_eraser_enabled), Snackbar.LENGTH_SHORT
+                    activity.getString(R.string.white_board_eraser_enabled),
+                    Snackbar.LENGTH_SHORT,
                 )
             }
             activity.refreshActionBar()
@@ -129,23 +132,27 @@ class WhiteboardController(
         activity.lifecycleScope.launch {
             val displayMetrics = activity.resources.displayMetrics
             try {
-                val savedFile = viewModel.saveToFile(
-                    activity, displayMetrics.widthPixels, displayMetrics.heightPixels
-                )
+                val savedFile =
+                    viewModel.saveToFile(
+                        activity,
+                        displayMetrics.widthPixels,
+                        displayMetrics.heightPixels,
+                    )
                 if (savedFile != null) {
                     activity.showSnackbar(
                         activity.getString(R.string.white_board_image_saved, savedFile.path),
-                        Snackbar.LENGTH_SHORT
+                        Snackbar.LENGTH_SHORT,
                     )
                 } else {
-                    val errorReason = if (viewModel.paths.value.isEmpty()) {
-                        activity.getString(R.string.white_board_no_content)
-                    } else {
-                        activity.getString(R.string.something_wrong)
-                    }
+                    val errorReason =
+                        if (viewModel.paths.value.isEmpty()) {
+                            activity.getString(R.string.white_board_no_content)
+                        } else {
+                            activity.getString(R.string.something_wrong)
+                        }
                     activity.showSnackbar(
                         activity.getString(R.string.white_board_image_save_failed, errorReason),
-                        Snackbar.LENGTH_SHORT
+                        Snackbar.LENGTH_SHORT,
                     )
                 }
             } catch (e: Exception) {
@@ -153,8 +160,9 @@ class WhiteboardController(
                 activity.showSnackbar(
                     activity.getString(
                         R.string.white_board_image_save_failed,
-                        e.localizedMessage ?: activity.getString(R.string.something_wrong)
-                    ), Snackbar.LENGTH_SHORT
+                        e.localizedMessage ?: activity.getString(R.string.something_wrong),
+                    ),
+                    Snackbar.LENGTH_SHORT,
                 )
             }
         }

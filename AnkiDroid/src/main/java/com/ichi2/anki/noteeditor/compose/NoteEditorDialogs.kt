@@ -124,14 +124,15 @@ fun AddToolbarItemDialog(
         onDismissRequest = onDismissRequest,
         title = {
             Text(
-                text = stringResource(
-                    if (state.isEditMode) R.string.edit_toolbar_item else R.string.add_toolbar_item
-                )
+                text =
+                    stringResource(
+                        if (state.isEditMode) R.string.edit_toolbar_item else R.string.add_toolbar_item,
+                    ),
             )
         },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text = stringResource(R.string.toolbar_item_explain_edit_or_remove),
@@ -161,13 +162,15 @@ fun AddToolbarItemDialog(
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     if (state.isEditMode && onDelete != null) {
                         TextButton(
-                            onClick = onDelete, colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                            onClick = onDelete,
+                            colors =
+                                ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
                         ) {
                             Text(text = stringResource(R.string.dialog_positive_delete))
                         }
@@ -182,12 +185,14 @@ fun AddToolbarItemDialog(
             TextButton(
                 onClick = {
                     onConfirm(iconText.trim(), prefixText.trim(), suffixText.trim())
-                }, enabled = iconText.isNotBlank()
+                },
+                enabled = iconText.isNotBlank(),
             ) {
                 Text(
-                    text = stringResource(
-                        if (state.isEditMode) R.string.save else R.string.dialog_positive_create
-                    )
+                    text =
+                        stringResource(
+                            if (state.isEditMode) R.string.save else R.string.dialog_positive_create,
+                        ),
                 )
             }
         },
@@ -217,13 +222,14 @@ private fun AddToolbarItemDialogPreview() {
 private fun EditToolbarItemDialogPreview() {
     AnkiDroidTheme {
         AddToolbarItemDialog(
-            state = ToolbarItemDialogState(
-                isVisible = true,
-                isEditMode = true,
-                icon = "function",
-                prefix = "<b>",
-                suffix = "</b>"
-            ),
+            state =
+                ToolbarItemDialogState(
+                    isVisible = true,
+                    isEditMode = true,
+                    icon = "function",
+                    prefix = "<b>",
+                    suffix = "</b>",
+                ),
             onDismissRequest = {},
             onConfirm = { _, _, _ -> },
             onDelete = {},
@@ -248,21 +254,23 @@ fun FontSizeDialog(
         title = { Text(text = stringResource(R.string.menu_font_size)) },
         text = {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
             ) {
                 items(sizeLabels.zip(sizeCodes)) { (label, code) ->
                     TextButton(
                         onClick = {
                             onSizeSelected(code)
                             onDismissRequest()
-                        }, modifier = Modifier.fillMaxWidth()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
                             text = label,
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start
+                            textAlign = TextAlign.Start,
                         )
                     }
                 }
@@ -272,7 +280,8 @@ fun FontSizeDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 @Composable
@@ -290,21 +299,23 @@ fun InsertHeadingDialog(
         title = { Text(text = stringResource(R.string.insert_heading)) },
         text = {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
             ) {
                 items(headingTags) { tag ->
                     TextButton(
                         onClick = {
                             onHeadingSelected(tag)
                             onDismissRequest()
-                        }, modifier = Modifier.fillMaxWidth()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
                             text = tag,
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start
+                            textAlign = TextAlign.Start,
                         )
                     }
                 }
@@ -314,7 +325,8 @@ fun InsertHeadingDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 data class MathJaxOption(
@@ -331,33 +343,36 @@ fun InsertMathJaxDialog(
 ) {
     if (!show) return
 
-    val options = remember {
-        listOf(
-            MathJaxOption(TR.editingMathjaxBlock(), prefix = "\\[\\", suffix = "\\]"),
-            MathJaxOption(TR.editingMathjaxChemistry(), prefix = "\\( \\ce{", suffix = "} \\)"),
-        )
-    }
+    val options =
+        remember {
+            listOf(
+                MathJaxOption(TR.editingMathjaxBlock(), prefix = "\\[\\", suffix = "\\]"),
+                MathJaxOption(TR.editingMathjaxChemistry(), prefix = "\\( \\ce{", suffix = "} \\)"),
+            )
+        }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(text = stringResource(R.string.insert_mathjax)) },
         text = {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 200.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp),
             ) {
                 items(options) { option ->
                     TextButton(
                         onClick = {
                             onOptionSelected(option.prefix, option.suffix)
                             onDismissRequest()
-                        }, modifier = Modifier.fillMaxWidth()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(
                             text = option.label,
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Start
+                            textAlign = TextAlign.Start,
                         )
                     }
                 }
@@ -367,7 +382,8 @@ fun InsertMathJaxDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 @Composable
@@ -380,13 +396,14 @@ fun DeckSelectionDialog(
     if (!show) return
 
     var searchQueryParams by remember { mutableStateOf("") }
-    val filteredDecks = remember(decks, searchQueryParams) {
-        if (searchQueryParams.isBlank()) {
-            decks
-        } else {
-            decks.filter { it.contains(searchQueryParams, ignoreCase = true) }
+    val filteredDecks =
+        remember(decks, searchQueryParams) {
+            if (searchQueryParams.isBlank()) {
+                decks
+            } else {
+                decks.filter { it.contains(searchQueryParams, ignoreCase = true) }
+            }
         }
-    }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -398,24 +415,26 @@ fun DeckSelectionDialog(
                     onValueChange = { searchQueryParams = it },
                     placeholder = { Text(stringResource(R.string.search_deck)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp),
                 ) {
                     items(filteredDecks) { deckName ->
                         TextButton(
                             onClick = {
                                 onDeckSelected(deckName)
                                 onDismissRequest()
-                            }, modifier = Modifier.fillMaxWidth()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(
                                 text = deckName,
                                 modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Start
+                                textAlign = TextAlign.Start,
                             )
                         }
                     }
@@ -426,5 +445,6 @@ fun DeckSelectionDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }

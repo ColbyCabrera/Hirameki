@@ -40,21 +40,25 @@ fun AnkiTopAppBar(
     actions: @Composable (RowScope.() -> Unit) = {},
 ) {
     TopAppBar(
-        modifier = modifier, title = titleContent, navigationIcon = {
+        modifier = modifier,
+        title = titleContent,
+        navigationIcon = {
             FilledIconButton(
                 modifier = Modifier.padding(end = 8.dp),
                 onClick = onNavigateUp,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
+                colors =
+                    IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back_24px),
                     contentDescription = stringResource(R.string.back),
                 )
             }
-        }, actions = actions
+        },
+        actions = actions,
     )
 }
 

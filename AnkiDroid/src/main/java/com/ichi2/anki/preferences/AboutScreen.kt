@@ -78,21 +78,23 @@ fun AboutScreen(
     licenseText: String,
     onBackClick: () -> Unit,
     onCopyDebugClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "AboutIconRotation")
 
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(9000, easing = LinearEasing),
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(9000, easing = LinearEasing),
+            ),
         label = "AboutIconRotationAngle",
     )
 
     Scaffold(
-        modifier = modifier, topBar = {
+        modifier = modifier,
+        topBar = {
             TopAppBar(title = {
                 Text(
                     text = stringResource(R.string.pref_cat_about_title),
@@ -102,10 +104,11 @@ fun AboutScreen(
                 FilledIconButton(
                     modifier = Modifier.padding(end = 8.dp),
                     onClick = onBackClick,
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.arrow_back_24px),
@@ -113,34 +116,37 @@ fun AboutScreen(
                     )
                 }
             })
-        }) { innerPadding ->
+        },
+    ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(horizontal = 32.dp),
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
             contentAlignment = Alignment.TopCenter,
         ) {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
-                    modifier = Modifier
-                        .padding(top = 64.dp, bottom = 24.dp)
-                        .size(124.dp),
+                    modifier =
+                        Modifier
+                            .padding(top = 64.dp, bottom = 24.dp)
+                            .size(124.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                rotationZ = rotation
-                            }
-                            .background(
-                                MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = SoftBurstShape,
-                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    rotationZ = rotation
+                                }.background(
+                                    MaterialTheme.colorScheme.tertiaryContainer,
+                                    shape = SoftBurstShape,
+                                ),
                     )
                     Image(
                         modifier = Modifier.size(60.dp),
@@ -151,10 +157,11 @@ fun AboutScreen(
                 }
 
                 Text(
-                    text = stringResource(
-                        R.string.about_fork_of,
-                        stringResource(R.string.app_name)
-                    ),
+                    text =
+                        stringResource(
+                            R.string.about_fork_of,
+                            stringResource(R.string.app_name),
+                        ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -176,12 +183,12 @@ fun AboutScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     // Contributors
                     SectionTitle(stringResource(R.string.contributors_title))
                     HtmlTextView(
-                        text = contributorsText
+                        text = contributorsText,
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -189,7 +196,7 @@ fun AboutScreen(
                     // License
                     SectionTitle(stringResource(R.string.license))
                     HtmlTextView(
-                        text = licenseText
+                        text = licenseText,
                     )
                 }
 
@@ -213,7 +220,7 @@ private fun VersionText(text: String) {
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(vertical = 2.dp)
+            modifier = Modifier.padding(vertical = 2.dp),
         )
     }
 }
@@ -223,7 +230,7 @@ private fun SectionTitle(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(bottom = 8.dp),
     )
 }
 
@@ -239,9 +246,11 @@ private fun HtmlTextView(text: String) {
                 setTextColor(textColor)
                 textSize = textSizeSp
             }
-        }, update = {
+        },
+        update = {
             it.text = text.parseAsHtml()
-        }, modifier = Modifier.padding(vertical = 4.dp)
+        },
+        modifier = Modifier.padding(vertical = 4.dp),
     )
 }
 
@@ -257,6 +266,7 @@ private fun AboutScreenPreview() {
             contributorsText = "Contributors...",
             licenseText = "License...",
             onBackClick = {},
-            onCopyDebugClick = {})
+            onCopyDebugClick = {},
+        )
     }
 }

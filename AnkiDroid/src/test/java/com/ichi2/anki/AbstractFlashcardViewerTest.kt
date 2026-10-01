@@ -17,11 +17,11 @@ import com.ichi2.anki.AbstractFlashcardViewer.Companion.toAnimationTransition
 import com.ichi2.anki.AbstractFlashcardViewer.Signal
 import com.ichi2.anki.AbstractFlashcardViewer.Signal.Companion.toSignal
 import com.ichi2.anki.AnkiActivity.Companion.FINISH_ANIMATION_EXTRA
-import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.cardviewer.Gesture
 import com.ichi2.anki.cardviewer.ViewerCommand
 import com.ichi2.anki.libanki.testutils.ext.addNote
 import com.ichi2.anki.libanki.testutils.ext.newNote
+import com.ichi2.anki.noteeditor.NoteEditorCaller
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.AutomaticAnswer
@@ -110,6 +110,7 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
                 require(mediaGroupCompleted) { "mediaGroupCompleted never occurred" }
             }
         }
+
         override suspend fun answerCardInner(rating: Rating) {
             if (shouldThrowCardModified) {
                 // We use mock since we cannot instantiate BackendException easily
@@ -246,19 +247,18 @@ class AbstractFlashcardViewerTest : RobolectricTest() {
 
         assertThat(viewer.answered, notNullValue())
     }
+
     @Test
     fun testAnswerCardCatchesCardModifiedException() {
         val viewer: NonAbstractFlashcardViewer = getViewer(true)
         viewer.shouldThrowCardModified = true
-        
+
         // Ensure no crash occurs when answering the card
         assertDoesNotThrow {
             viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE2) // Show answer
             viewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE2) // Answer card
         }
     }
-
-
 
     @Test
     fun automaticAnswerDisabledProperty() {

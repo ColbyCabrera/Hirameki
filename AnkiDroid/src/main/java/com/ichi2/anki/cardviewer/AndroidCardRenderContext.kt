@@ -75,11 +75,13 @@ class AndroidCardRenderContext(
         val requiresMathjax = MathJax.textContainsMathjax(content)
 
         val style = cardAppearance.style
-        val script = when (requiresMathjax) {
-            false -> ""
-            true -> """        <script src="file:///android_asset/backend/js/mathjax.js"></script>
+        val script =
+            when (requiresMathjax) {
+                false -> ""
+                true ->
+                    """        <script src="file:///android_asset/backend/js/mathjax.js"></script>
         <script src="file:///android_asset/backend/js/vendor/mathjax/tex-chtml-full.js"></script>"""
-        }
+            }
         val cardClass =
             cardAppearance.getCardClass(ord + 1) + if (requiresMathjax) " mathjax-needs-to-render" else ""
 
@@ -95,19 +97,21 @@ class AndroidCardRenderContext(
      * @param content The content to surround with tags.
      * @return The enriched content
      */
-    private fun enrichWithQADiv(content: String) = buildString {
-        append("""<div id="qa">""")
-        append(content)
-        append("</div>")
-    }
+    private fun enrichWithQADiv(content: String) =
+        buildString {
+            append("""<div id="qa">""")
+            append(content)
+            append("</div>")
+        }
 
     private fun filterTypeAnswer(
         content: String,
         side: SingleCardSide,
-    ): String = when (side) {
-        SingleCardSide.FRONT -> typeAnswer.filterQuestion(content)
-        SingleCardSide.BACK -> typeAnswer.filterAnswer(content)
-    }
+    ): String =
+        when (side) {
+            SingleCardSide.FRONT -> typeAnswer.filterQuestion(content)
+            SingleCardSide.BACK -> typeAnswer.filterAnswer(content)
+        }
 
     private fun expandSounds(
         content: String,

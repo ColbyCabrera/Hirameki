@@ -27,7 +27,6 @@ import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class IntroductionI18nTest : RobolectricTest() {
-
     @Test
     fun stringsEnglish() {
         val ctx = targetContext
@@ -35,10 +34,16 @@ class IntroductionI18nTest : RobolectricTest() {
         assertEquals("Welcome to Hirameki!", title)
 
         val donation = ctx.getStringByLocale(R.string.intro_fork_disclaimer_1, Locale.ENGLISH)
-        assertEquals("Hirameki is a customized, open-source version of AnkiDroid. If you love this app, please consider supporting the original AnkiDroid team and the creator of AnkiWeb, as this app is built on their incredible work.", donation)
+        assertEquals(
+            "Hirameki is a customized, open-source version of AnkiDroid. If you love this app, please consider supporting the original AnkiDroid team and the creator of AnkiWeb, as this app is built on their incredible work.",
+            donation,
+        )
 
         val contact = ctx.getStringByLocale(R.string.intro_fork_disclaimer_2, Locale.ENGLISH)
-        assertEquals("Please direct any bug reports or feedback about this version to us directly, rather than the AnkiDroid team. Happy memorizing!", contact)
+        assertEquals(
+            "Please direct any bug reports or feedback about this version to us directly, rather than the AnkiDroid team. Happy memorizing!",
+            contact,
+        )
 
         val donate = ctx.getStringByLocale(R.string.donate, Locale.ENGLISH)
         assertEquals("Donate", donate)
@@ -51,7 +56,10 @@ class IntroductionI18nTest : RobolectricTest() {
         assertEquals("続ける前に！", titleJa)
 
         val donationJa = ctx.getStringByLocale(R.string.intro_fork_disclaimer_1, Locale.JAPANESE)
-        assertEquals("このアプリはAnkiDroidのフォークです。AnkiDroidチームの活動を支援するために寄付をご検討ください。Ankiの作者はAnkiWeb同期の使用を快く許可してくれました。作者を支援したい場合は、AnkiのiPhone版の購入をご検討ください。", donationJa)
+        assertEquals(
+            "このアプリはAnkiDroidのフォークです。AnkiDroidチームの活動を支援するために寄付をご検討ください。Ankiの作者はAnkiWeb同期の使用を快く許可してくれました。作者を支援したい場合は、AnkiのiPhone版の購入をご検討ください。",
+            donationJa,
+        )
 
         val contactJa = ctx.getStringByLocale(R.string.intro_fork_disclaimer_2, Locale.JAPANESE)
         assertEquals("このバージョンに問題がある場合は、AnkiDroidチームではなく私にご連絡ください。学習をお楽しみください！", contactJa)

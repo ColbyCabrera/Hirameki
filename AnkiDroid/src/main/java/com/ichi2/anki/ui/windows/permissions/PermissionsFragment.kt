@@ -17,12 +17,10 @@ package com.ichi2.anki.ui.windows.permissions
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.LayoutRes
-import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.core.view.allViews
 import androidx.fragment.app.Fragment

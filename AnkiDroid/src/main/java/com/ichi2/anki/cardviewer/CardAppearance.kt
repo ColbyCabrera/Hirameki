@@ -61,8 +61,7 @@ class CardAppearance(
             return style.toString()
         }
 
-    fun getCardClass(oneBasedCardOrdinal: Int): String =
-        "card card$oneBasedCardOrdinal" + getCssClasses()
+    fun getCardClass(oneBasedCardOrdinal: Int): String = "card card$oneBasedCardOrdinal" + getCssClasses()
 
     companion object {
         fun create(

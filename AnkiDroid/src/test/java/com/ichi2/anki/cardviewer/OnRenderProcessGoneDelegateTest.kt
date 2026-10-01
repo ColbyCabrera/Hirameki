@@ -94,7 +94,7 @@ class OnRenderProcessGoneDelegateTest {
 
         verify(
             mock,
-            never().description("No mutating methods should be called if the WebView is not relevant")
+            never().description("No mutating methods should be called if the WebView is not relevant"),
         ).destroyWebViewFrame()
     }
 
@@ -127,7 +127,7 @@ class OnRenderProcessGoneDelegateTest {
         assertThat(
             "A toast should not be displayed as the screen is minimised",
             delegate.displayedToast,
-            equalTo(false)
+            equalTo(false),
         )
         verify(mock, times(1).description("screen should be closed")).finish()
     }
@@ -144,7 +144,7 @@ class OnRenderProcessGoneDelegateTest {
         assertThat(
             "onRenderProcessGone should only return false if we want the app killed",
             result,
-            equalTo(true)
+            equalTo(true),
         )
     }
 
@@ -174,8 +174,7 @@ class OnRenderProcessGoneDelegateTest {
         return ret
     }
 
-    private fun getInstance(mock: AbstractFlashcardViewer?): OnRenderProcessGoneDelegateImpl =
-        spy(OnRenderProcessGoneDelegateImpl(mock))
+    private fun getInstance(mock: AbstractFlashcardViewer?): OnRenderProcessGoneDelegateImpl = spy(OnRenderProcessGoneDelegateImpl(mock))
 
     // this value doesn't matter for now as it only defines a string
     private val crashDetail: RenderProcessGoneDetail

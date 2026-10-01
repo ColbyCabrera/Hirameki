@@ -46,11 +46,12 @@ class AudioWaveform(
     attrs: AttributeSet? = null,
 ) : View(context, attrs) {
     private val spikePaint = Paint().apply { isAntiAlias = true }
-    private val verticalLinePaint = Paint().apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 5f
-        isAntiAlias = true
-    }
+    private val verticalLinePaint =
+        Paint().apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 5f
+            isAntiAlias = true
+        }
     private val backgroundPaint = Paint()
 
     private val amplitudes = ArrayList<Float>()
@@ -114,12 +115,13 @@ fun AudioWaveformCompose(
     displayVerticalLine: Boolean = false,
     spikeColor: Color = MaterialTheme.colorScheme.primary,
     verticalLineColor: Color = MaterialTheme.colorScheme.tertiary,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
 ) {
     ComposeCanvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(100.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(100.dp),
     ) {
         val w = 6.dp.toPx()
         val d = 4.dp.toPx()
@@ -131,16 +133,17 @@ fun AudioWaveformCompose(
         drawRect(color = backgroundColor)
 
         if (showAmplitudes) {
-            val relevantAmplitudes = if (currentIndex == -1) {
-                amplitudes.takeLast(spikeCount)
-            } else {
-                val halfSpikeCount = spikeCount / 2
-                val start = (currentIndex - halfSpikeCount).coerceIn(0, amplitudes.size)
-                val end = (start + spikeCount).coerceIn(start, amplitudes.size)
-                // If we are near the end, we might have fewer spikes than spikeCount. 
-                // That's fine, we'll just draw what we have from 'start'
-                amplitudes.subList(start, end)
-            }
+            val relevantAmplitudes =
+                if (currentIndex == -1) {
+                    amplitudes.takeLast(spikeCount)
+                } else {
+                    val halfSpikeCount = spikeCount / 2
+                    val start = (currentIndex - halfSpikeCount).coerceIn(0, amplitudes.size)
+                    val end = (start + spikeCount).coerceIn(start, amplitudes.size)
+                    // If we are near the end, we might have fewer spikes than spikeCount.
+                    // That's fine, we'll just draw what we have from 'start'
+                    amplitudes.subList(start, end)
+                }
 
             relevantAmplitudes.forEachIndexed { index, ampFactor ->
                 val spikeHeight = (ampFactor * size.height).coerceIn(6.dp.toPx(), size.height)
@@ -151,7 +154,7 @@ fun AudioWaveformCompose(
                     color = spikeColor,
                     topLeft = Offset(left, top),
                     size = Size(w, spikeHeight),
-                    cornerRadius = CornerRadius(radius, radius)
+                    cornerRadius = CornerRadius(radius, radius),
                 )
             }
         }
@@ -162,7 +165,7 @@ fun AudioWaveformCompose(
                 color = verticalLineColor,
                 start = Offset(centerX, 0f),
                 end = Offset(centerX, size.height),
-                strokeWidth = 2.dp.toPx()
+                strokeWidth = 2.dp.toPx(),
             )
         }
     }
@@ -173,23 +176,25 @@ fun AudioWaveformCompose(
 private fun AudioWaveformRecordingPreview() {
     AnkiDroidTheme {
         AudioWaveformCompose(
-            amplitudes = listOf(
-                0.1f,
-                0.2f,
-                0.5f,
-                0.3f,
-                0.8f,
-                0.6f,
-                0.4f,
-                0.9f,
-                0.7f,
-                0.5f,
-                0.2f,
-                0.4f,
-                0.6f,
-                0.8f,
-                1.0f
-            ), showAmplitudes = true
+            amplitudes =
+                listOf(
+                    0.1f,
+                    0.2f,
+                    0.5f,
+                    0.3f,
+                    0.8f,
+                    0.6f,
+                    0.4f,
+                    0.9f,
+                    0.7f,
+                    0.5f,
+                    0.2f,
+                    0.4f,
+                    0.6f,
+                    0.8f,
+                    1.0f,
+                ),
+            showAmplitudes = true,
         )
     }
 }
@@ -199,23 +204,25 @@ private fun AudioWaveformRecordingPreview() {
 private fun AudioWaveformNotRecordingPreview() {
     AnkiDroidTheme {
         AudioWaveformCompose(
-            amplitudes = listOf(
-                0.1f,
-                0.2f,
-                0.5f,
-                0.3f,
-                0.8f,
-                0.6f,
-                0.4f,
-                0.9f,
-                0.7f,
-                0.5f,
-                0.2f,
-                0.4f,
-                0.6f,
-                0.8f,
-                1.0f
-            ), showAmplitudes = false
+            amplitudes =
+                listOf(
+                    0.1f,
+                    0.2f,
+                    0.5f,
+                    0.3f,
+                    0.8f,
+                    0.6f,
+                    0.4f,
+                    0.9f,
+                    0.7f,
+                    0.5f,
+                    0.2f,
+                    0.4f,
+                    0.6f,
+                    0.8f,
+                    1.0f,
+                ),
+            showAmplitudes = false,
         )
     }
 }

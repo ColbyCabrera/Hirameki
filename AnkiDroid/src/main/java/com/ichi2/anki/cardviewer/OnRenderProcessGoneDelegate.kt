@@ -17,7 +17,6 @@ package com.ichi2.anki.cardviewer
 
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.Lifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AbstractFlashcardViewer
@@ -140,19 +139,23 @@ open class OnRenderProcessGoneDelegate(
     ) {
         val cardInformation = currentCardId.toString()
         val res = target.resources
-        val errorDetails = if (detail.didCrash()) {
-            res.getString(
-                R.string.webview_crash_unknwon_detailed,
-            )
-        } else {
-            res.getString(R.string.webview_crash_oom_details)
-        }
+        val errorDetails =
+            if (detail.didCrash()) {
+                res.getString(
+                    R.string.webview_crash_unknwon_detailed,
+                )
+            } else {
+                res.getString(R.string.webview_crash_oom_details)
+            }
         MaterialAlertDialogBuilder(target).show {
             title(R.string.webview_crash_loop_dialog_title)
             message(
-                text = res.getString(
-                    R.string.webview_crash_loop_dialog_content, cardInformation, errorDetails
-                )
+                text =
+                    res.getString(
+                        R.string.webview_crash_loop_dialog_content,
+                        cardInformation,
+                        errorDetails,
+                    ),
             )
             positiveButton(R.string.dialog_ok) {
                 onCloseRenderLoopDialog()
@@ -175,15 +178,14 @@ open class OnRenderProcessGoneDelegate(
         return !lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
     }
 
-    private fun webViewRendererLastCrashedOnCard(cardId: CardId): Boolean =
-        lastCrashingCardId != null && lastCrashingCardId == cardId
+    private fun webViewRendererLastCrashedOnCard(cardId: CardId): Boolean = lastCrashingCardId != null && lastCrashingCardId == cardId
 
     private fun canRecoverFromWebViewRendererCrash(): Boolean =
-    // DEFECT
-    // If we don't have a card to render, we're in a bad state. The class doesn't currently track state
-    // well enough to be able to know exactly where we are in the initialisation pipeline.
-    // so it's best to mark the crash as non-recoverable.
-    // We should fix this, but it's very unlikely that we'll ever get here. Logs will tell
+        // DEFECT
+        // If we don't have a card to render, we're in a bad state. The class doesn't currently track state
+        // well enough to be able to know exactly where we are in the initialisation pipeline.
+        // so it's best to mark the crash as non-recoverable.
+        // We should fix this, but it's very unlikely that we'll ever get here. Logs will tell
 
         // Revisit webViewCrashedOnCard() if changing this. Logic currently assumes we have a card.
         target.currentCard != null

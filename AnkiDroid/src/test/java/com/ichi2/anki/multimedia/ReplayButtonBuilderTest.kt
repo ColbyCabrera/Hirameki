@@ -22,14 +22,14 @@ import org.hamcrest.Matchers.not
 import org.junit.Test
 
 class ReplayButtonBuilderTest {
-
     @Test
     fun `createReplayButton keeps the shared replay button contract`() {
-        val html = ReplayButtonBuilder.createReplayButton(
-            url = "playsound:q:0",
-            contentDescription = ReplayButtonBuilder.TEST_DEFAULT_CONTENT_DESCRIPTION,
-            extraClasses = "soundLink",
-        )
+        val html =
+            ReplayButtonBuilder.createReplayButton(
+                url = "playsound:q:0",
+                contentDescription = ReplayButtonBuilder.TEST_DEFAULT_CONTENT_DESCRIPTION,
+                extraClasses = "soundLink",
+            )
 
         assertThat(html, containsString("href=\"playsound:q:0\""))
         assertThat(html, containsString("class=\"replay-button soundLink\""))
@@ -42,21 +42,22 @@ class ReplayButtonBuilderTest {
 
     @Test
     fun `createReplayButton html encodes dynamic attributes and class tokens`() {
-        val html = ReplayButtonBuilder.createReplayButton(
-            url = "playsound:q:0?x=1&y=\"2\"",
-            contentDescription = "Replay <audio> & \"again\"",
-            extraClasses = "soundLink bad\"class amp&class",
-        )
+        val html =
+            ReplayButtonBuilder.createReplayButton(
+                url = "playsound:q:0?x=1&y=\"2\"",
+                contentDescription = "Replay <audio> & \"again\"",
+                extraClasses = "soundLink bad\"class amp&class",
+            )
 
         assertThat(html, containsString("href=\"playsound:q:0?x=1&amp;y=&quot;2&quot;\""))
         assertThat(html, containsString("title=\"Replay &lt;audio&gt; &amp; &quot;again&quot;\""))
         assertThat(
             html,
-            containsString("aria-label=\"Replay &lt;audio&gt; &amp; &quot;again&quot;\"")
+            containsString("aria-label=\"Replay &lt;audio&gt; &amp; &quot;again&quot;\""),
         )
         assertThat(
             html,
-            containsString("class=\"replay-button soundLink bad&quot;class amp&amp;class\"")
+            containsString("class=\"replay-button soundLink bad&quot;class amp&amp;class\""),
         )
     }
 }

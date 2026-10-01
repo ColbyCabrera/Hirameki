@@ -28,13 +28,14 @@ import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class LoginActivityTest : RobolectricTest() {
-
     @Before
     override fun setUp() {
         super.setUp()
         // Ensure the activity doesn't finish itself due to being a "test client" (monkey/firebase)
         android.provider.Settings.System.putString(
-            targetContext.contentResolver, "firebase.test.lab", "false"
+            targetContext.contentResolver,
+            "firebase.test.lab",
+            "false",
         )
     }
 
@@ -60,7 +61,11 @@ class LoginActivityTest : RobolectricTest() {
         Prefs.hkey = ""
 
         val controller =
-            Robolectric.buildActivity(LoginActivity::class.java).create().start().resume()
+            Robolectric
+                .buildActivity(LoginActivity::class.java)
+                .create()
+                .start()
+                .resume()
         try {
             val activity = controller.get()
 

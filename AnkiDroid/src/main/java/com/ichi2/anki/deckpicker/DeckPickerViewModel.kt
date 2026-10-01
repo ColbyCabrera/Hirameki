@@ -83,7 +83,9 @@ import timber.log.Timber
 /**
  * ViewModel for the [DeckPicker]
  */
-class DeckPickerViewModel : ViewModel(), OnErrorListener {
+class DeckPickerViewModel :
+    ViewModel(),
+    OnErrorListener {
     val isSyncing = MutableStateFlow(false)
     val flowOfStartupResponse = MutableStateFlow<StartupResponse?>(null)
 
@@ -117,7 +119,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     val showAnalyticsOptInDialog: StateFlow<Boolean> = _showAnalyticsOptInDialog.asStateFlow()
 
     data class DeleteDeckConfirmationState(
-        val deckId: DeckId, val deckName: String, val totalCards: Int, val isFiltered: Boolean
+        val deckId: DeckId,
+        val deckName: String,
+        val totalCards: Int,
+        val isFiltered: Boolean,
     )
 
     private val _showDeleteDeckConfirmation = MutableStateFlow<DeleteDeckConfirmationState?>(null)
@@ -149,34 +154,41 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         _showAnalyticsOptInDialog.value = false
     }
 
-    fun showDeleteDeckConfirmation(deckId: DeckId) = viewModelScope.launch {
-        try {
-            val (deckName, totalCards, isFilteredDeck) = withCol {
-                val deck = decks.getLegacy(deckId) ?: return@withCol null
-                Triple(
-                    decks.name(deckId),
-                    decks.cardCount(deckId, includeSubdecks = true),
-                    deck.isFiltered
-                )
-            } ?: return@launch
-            _showDeleteDeckConfirmation.value = DeleteDeckConfirmationState(
-                deckId = deckId,
-                deckName = deckName,
-                totalCards = totalCards,
-                isFiltered = isFilteredDeck
-            )
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to load properties for deleting deck %d", deckId)
+    fun showDeleteDeckConfirmation(deckId: DeckId) =
+        viewModelScope.launch {
+            try {
+                val (deckName, totalCards, isFilteredDeck) =
+                    withCol {
+                        val deck = decks.getLegacy(deckId) ?: return@withCol null
+                        Triple(
+                            decks.name(deckId),
+                            decks.cardCount(deckId, includeSubdecks = true),
+                            deck.isFiltered,
+                        )
+                    } ?: return@launch
+                _showDeleteDeckConfirmation.value =
+                    DeleteDeckConfirmationState(
+                        deckId = deckId,
+                        deckName = deckName,
+                        totalCards = totalCards,
+                        isFiltered = isFilteredDeck,
+                    )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load properties for deleting deck %d", deckId)
+            }
         }
-    }
 
     fun dismissDeleteDeckConfirmation() {
         _showDeleteDeckConfirmation.value = null
     }
 
-    fun showSyncDialog(title: String, message: String, onCancel: () -> Unit) {
+    fun showSyncDialog(
+        title: String,
+        message: String,
+        onCancel: () -> Unit,
+    ) {
         _syncDialogState.value = SyncDialogState(title, message, onCancel)
     }
 
@@ -225,11 +237,12 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                 flowOfFocusedDeck,
                 flowOfDecksReloaded.onStart { emit(Unit) },
             ) { deckId, _ -> deckId }.collectLatest { deckId ->
-                _studyOptionsData.value = if (deckId != null) {
-                    selectAndLoadStudyOptions(deckId)
-                } else {
-                    null
-                }
+                _studyOptionsData.value =
+                    if (deckId != null) {
+                        selectAndLoadStudyOptions(deckId)
+                    } else {
+                        null
+                    }
             }
         }
     }
@@ -260,10 +273,11 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                     buriedLrn = buriedLearning,
                     buriedRev = buriedReview,
                     totalNewCards = sched.totalNewForCurrentDeck(),
-                    totalCards = decks.cardCount(
-                        deckId,
-                        includeSubdecks = true,
-                    ),
+                    totalCards =
+                        decks.cardCount(
+                            deckId,
+                            includeSubdecks = true,
+                        ),
                     isFiltered = deck.isFiltered,
                     haveBuried = sched.haveBuried(),
                 )
@@ -281,22 +295,23 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      */
     private val flowOfRefreshDeckList = MutableSharedFlow<Unit>()
 
-    val flowOfDeckList = combine(
-        flowOfDeckDueTree,
-        flowOfCurrentDeckFilter,
-        flowOfFocusedDeck,
-        flowOfBuriedDecks,
-        combine(flowOfCurrentDeckId, flowOfRefreshDeckList.onStart { emit(Unit) }, ::Pair),
-    ) { tree, filter, _, buriedDecks, (currentDeckId, _) ->
-        if (tree == null) return@combine FlattenedDeckList.empty
+    val flowOfDeckList =
+        combine(
+            flowOfDeckDueTree,
+            flowOfCurrentDeckFilter,
+            flowOfFocusedDeck,
+            flowOfBuriedDecks,
+            combine(flowOfCurrentDeckId, flowOfRefreshDeckList.onStart { emit(Unit) }, ::Pair),
+        ) { tree, filter, _, buriedDecks, (currentDeckId, _) ->
+            if (tree == null) return@combine FlattenedDeckList.empty
 
-        Timber.i("currentDeckId: %d", currentDeckId)
+            Timber.i("currentDeckId: %d", currentDeckId)
 
-        FlattenedDeckList(
-            data = tree.filterAndFlattenDisplay(filter, currentDeckId, buriedDecks),
-            hasSubDecks = tree.children.any { it.children.any() },
-        )
-    }
+            FlattenedDeckList(
+                data = tree.filterAndFlattenDisplay(filter, currentDeckId, buriedDecks),
+                hasSubDecks = tree.children.any { it.children.any() },
+            )
+        }
 
     val flowOfDestination = MutableSharedFlow<Destination>()
 
@@ -339,7 +354,6 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     val flowOfPromptUserToUpdateScheduler = MutableSharedFlow<Unit>()
 
-
     val flowOfUndoUpdated = MutableSharedFlow<Unit>()
 
     val flowOfCollectionHasNoCards = MutableStateFlow(true)
@@ -363,75 +377,86 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     private val _flowOfTimeUntilNextDay = MutableStateFlow(0L)
     val flowOfTimeUntilNextDay: StateFlow<Long> = _flowOfTimeUntilNextDay.asStateFlow()
 
-    private val _createDeckDialogState = MutableStateFlow<CreateDeckDialogState>(
-        CreateDeckDialogState.Hidden
-    )
+    private val _createDeckDialogState =
+        MutableStateFlow<CreateDeckDialogState>(
+            CreateDeckDialogState.Hidden,
+        )
 
     val createDeckDialogState: StateFlow<CreateDeckDialogState> =
         _createDeckDialogState.asStateFlow()
 
     fun showCreateDeckDialog() {
-        _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.DECK, titleResId = R.string.new_deck
-        )
+        _createDeckDialogState.value =
+            CreateDeckDialogState.Visible(
+                type = DeckDialogType.DECK,
+                titleResId = R.string.new_deck,
+            )
     }
 
     fun showCreateSubdeckDialog(parentId: DeckId) {
-        _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.SUB_DECK,
-            titleResId = R.string.create_subdeck,
-            parentId = parentId
-        )
+        _createDeckDialogState.value =
+            CreateDeckDialogState.Visible(
+                type = DeckDialogType.SUB_DECK,
+                titleResId = R.string.create_subdeck,
+                parentId = parentId,
+            )
     }
 
     fun showCreateFilteredDeckDialog() {
-        _createDeckDialogState.value = CreateDeckDialogState.Visible(
-            type = DeckDialogType.FILTERED_DECK, titleResId = R.string.new_dynamic_deck
-        )
-    }
-
-    fun showRenameDeckDialog(deckId: DeckId) = viewModelScope.launch {
-        try {
-            val currentName = withCol { decks.getLegacy(deckId)?.name }
-            if (currentName.isNullOrBlank()) {
-                Timber.w("Deck not found for rename dialog: %d", deckId)
-                return@launch
-            }
-
-            _createDeckDialogState.value = CreateDeckDialogState.Visible(
-                type = DeckDialogType.RENAME_DECK,
-                titleResId = R.string.rename_deck,
-                initialName = currentName,
-                deckIdToRename = deckId
+        _createDeckDialogState.value =
+            CreateDeckDialogState.Visible(
+                type = DeckDialogType.FILTERED_DECK,
+                titleResId = R.string.new_dynamic_deck,
             )
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to load deck %d for rename dialog", deckId)
-        }
     }
 
+    fun showRenameDeckDialog(deckId: DeckId) =
+        viewModelScope.launch {
+            try {
+                val currentName = withCol { decks.getLegacy(deckId)?.name }
+                if (currentName.isNullOrBlank()) {
+                    Timber.w("Deck not found for rename dialog: %d", deckId)
+                    return@launch
+                }
+
+                _createDeckDialogState.value =
+                    CreateDeckDialogState.Visible(
+                        type = DeckDialogType.RENAME_DECK,
+                        titleResId = R.string.rename_deck,
+                        initialName = currentName,
+                        deckIdToRename = deckId,
+                    )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to load deck %d for rename dialog", deckId)
+            }
+        }
 
     fun dismissCreateDeckDialog() {
         _createDeckDialogState.value = CreateDeckDialogState.Hidden
     }
 
     enum class DeckNameError {
-        INVALID_NAME, ALREADY_EXISTS
+        INVALID_NAME,
+        ALREADY_EXISTS,
     }
 
     suspend fun validateDeckName(
-        name: String, dialogState: CreateDeckDialogState.Visible
-    ): DeckNameError? {
-        return when {
+        name: String,
+        dialogState: CreateDeckDialogState.Visible,
+    ): DeckNameError? =
+        when {
             name.isBlank() -> null
             !Decks.isValidDeckName(getFullDeckName(name, dialogState)) -> DeckNameError.INVALID_NAME
             deckExists(name, dialogState) -> DeckNameError.ALREADY_EXISTS
             else -> null
         }
-    }
 
-    private suspend fun deckExists(name: String, state: CreateDeckDialogState.Visible): Boolean {
+    private suspend fun deckExists(
+        name: String,
+        state: CreateDeckDialogState.Visible,
+    ): Boolean {
         val fullName = getFullDeckName(name, state)
         val existingDeck = withCol { decks.byName(fullName) }
 
@@ -450,7 +475,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     private suspend fun getFullDeckName(
-        name: String, state: CreateDeckDialogState.Visible
+        name: String,
+        state: CreateDeckDialogState.Visible,
     ): String {
         return when (state.type) {
             DeckDialogType.SUB_DECK -> {
@@ -462,7 +488,10 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         }
     }
 
-    fun createDeck(name: String, state: CreateDeckDialogState.Visible) {
+    fun createDeck(
+        name: String,
+        state: CreateDeckDialogState.Visible,
+    ) {
         viewModelScope.launch {
             try {
                 var operationSucceeded = true
@@ -487,14 +516,17 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
                         DeckDialogType.RENAME_DECK -> {
                             // Use lookup-only (not get-or-create) to avoid accidentally creating a deck
-                            val deckId = state.deckIdToRename ?: decks.byName(state.initialName)
-                                ?.getLong("id")
+                            val deckId =
+                                state.deckIdToRename ?: decks
+                                    .byName(state.initialName)
+                                    ?.getLong("id")
                             if (deckId != null) {
                                 decks.getLegacy(deckId)?.let {
                                     decks.rename(it, name)
                                 } ?: run {
                                     Timber.w(
-                                        "Deck no longer exists for rename: %s", state.initialName
+                                        "Deck no longer exists for rename: %s",
+                                        state.initialName,
                                     )
                                     operationSucceeded = false
                                 }
@@ -516,10 +548,11 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
                         openDeckOptions(newFilteredDeckId, isFiltered = true)
                     } else {
                         updateDeckList()
-                        val messageResId = when (state.type) {
-                            DeckDialogType.RENAME_DECK -> R.string.deck_renamed
-                            else -> R.string.deck_created
-                        }
+                        val messageResId =
+                            when (state.type) {
+                                DeckDialogType.RENAME_DECK -> R.string.deck_renamed
+                                else -> R.string.deck_created
+                            }
                         _composeEffects.send(DeckPickerComposeEffect.ShowSnackbar(messageResId))
                     }
                 } else {
@@ -531,8 +564,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
             } catch (e: BackendDeckIsFilteredException) {
                 _composeEffects.send(
                     DeckPickerComposeEffect.ShowSnackbarMessage(
-                        e.localizedMessage ?: e.message.orEmpty()
-                    )
+                        e.localizedMessage ?: e.message.orEmpty(),
+                    ),
                 )
             } catch (e: Exception) {
                 Timber.w(e, "Failed to create/rename deck")
@@ -545,23 +578,24 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         deckId: DeckId,
         selectionType: DeckSelectionType,
     ) = viewModelScope.launch {
-        val result = withCol {
-            decks.select(deckId)
-            CardBrowser.clearLastDeckId()
-            focusedDeck = deckId
-            val deck = dueTree?.find(deckId)
-            if (deck != null && deck.hasCardsReadyToStudy()) {
-                DeckSelectionResult.HasCardsToStudy(selectionType)
-            } else {
-                val isEmpty = deck?.all { decks.isEmpty(it.did) } ?: true
-                if (isEmpty) {
-                    DeckSelectionResult.Empty(deckId)
+        val result =
+            withCol {
+                decks.select(deckId)
+                CardBrowser.clearLastDeckId()
+                focusedDeck = deckId
+                val deck = dueTree?.find(deckId)
+                if (deck != null && deck.hasCardsReadyToStudy()) {
+                    DeckSelectionResult.HasCardsToStudy(selectionType)
                 } else {
-                    _flowOfTimeUntilNextDay.value = calculateTimeUntilNextDay(sched)
-                    DeckSelectionResult.NoCardsToStudy(deckId)
+                    val isEmpty = deck?.all { decks.isEmpty(it.did) } ?: true
+                    if (isEmpty) {
+                        DeckSelectionResult.Empty(deckId)
+                    } else {
+                        _flowOfTimeUntilNextDay.value = calculateTimeUntilNextDay(sched)
+                        DeckSelectionResult.NoCardsToStudy(deckId)
+                    }
                 }
             }
-        }
         _composeEffects.send(DeckPickerComposeEffect.HandleDeckSelection(result))
     }
 
@@ -570,40 +604,41 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      *
      * @param did ID of the deck to delete
      */
-    fun deleteDeck(did: DeckId) = viewModelScope.launch {
-        var followUpEffect: DeckPickerComposeEffect
-        try {
-            val deckName = withCol { decks.getLegacy(did)?.name }
-            if (deckName == null) {
-                Timber.w("Deck %d not found for deletion", did)
-                followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
-            } else {
-                val changes = undoableOp { decks.remove(listOf(did)) }
-                // Capture the undo step so we can merge any subsequent backend
-                // operations (e.g. deck selection) into this single undo entry.
-                val undoStep = withCol { undoStatus().lastStep }
-                // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
-                // to match and avoid unnecessary scrolls in `renderPage()`.
-                focusedDeck = Consts.DEFAULT_DECK_ID
-                updateDeckList()
-                // Merge any undo entries created by deck selection (triggered by
-                // focusedDeck assignment above) so that "Undo" restores the deleted
-                // deck, not an intermediate setCurrentDeck operation.
-                withCol { mergeUndoEntries(undoStep) }
+    fun deleteDeck(did: DeckId) =
+        viewModelScope.launch {
+            var followUpEffect: DeckPickerComposeEffect
+            try {
+                val deckName = withCol { decks.getLegacy(did)?.name }
+                if (deckName == null) {
+                    Timber.w("Deck %d not found for deletion", did)
+                    followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
+                } else {
+                    val changes = undoableOp { decks.remove(listOf(did)) }
+                    // Capture the undo step so we can merge any subsequent backend
+                    // operations (e.g. deck selection) into this single undo entry.
+                    val undoStep = withCol { undoStatus().lastStep }
+                    // After deletion: decks.current() reverts to Default, necessitating `focusedDeck`
+                    // to match and avoid unnecessary scrolls in `renderPage()`.
+                    focusedDeck = Consts.DEFAULT_DECK_ID
+                    updateDeckList()
+                    // Merge any undo entries created by deck selection (triggered by
+                    // focusedDeck assignment above) so that "Undo" restores the deleted
+                    // deck, not an intermediate setCurrentDeck operation.
+                    withCol { mergeUndoEntries(undoStep) }
 
-                val deletionResult =
-                    DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
-                followUpEffect =
-                    DeckPickerComposeEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString())
+                    val deletionResult =
+                        DeckDeletionResult(deckName = deckName, cardsDeleted = changes.count)
+                    followUpEffect =
+                        DeckPickerComposeEffect.ShowUndoSnackbar(deletionResult.toHumanReadableString())
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to delete deck %d", did)
+                followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
             }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to delete deck %d", did)
-            followUpEffect = DeckPickerComposeEffect.ShowSnackbar(R.string.something_wrong)
+            _composeEffects.send(followUpEffect)
         }
-        _composeEffects.send(followUpEffect)
-    }
 
     /**
      * Deletes the currently selected deck
@@ -611,10 +646,11 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      * This is a slow operation and should be inside `withProgress`
      */
     @CheckResult
-    fun deleteSelectedDeck() = viewModelScope.launch {
-        val targetDeckId = withCol { decks.selected() }
-        deleteDeck(targetDeckId).join()
-    }
+    fun deleteSelectedDeck() =
+        viewModelScope.launch {
+            val targetDeckId = withCol { decks.selected() }
+            deleteDeck(targetDeckId).join()
+        }
 
     /**
      * Removes cards in [report] from the collection.
@@ -645,54 +681,63 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     // TODO: move withProgress to the ViewModel, so we don't return 'Job'
-    fun emptyFilteredDeck(deckId: DeckId): Job = viewModelScope.launch {
-        Timber.i("empty filtered deck %s", deckId)
-        withCol {
-            decks.select(deckId)
+    fun emptyFilteredDeck(deckId: DeckId): Job =
+        viewModelScope.launch {
+            Timber.i("empty filtered deck %s", deckId)
+            withCol {
+                decks.select(deckId)
+            }
+            undoableOp { sched.emptyFilteredDeck(decks.selected()) }
+            updateDeckList()
         }
-        undoableOp { sched.emptyFilteredDeck(decks.selected()) }
-        updateDeckList()
-    }
 
-    fun rebuildFilteredDeck(deckId: DeckId): Job = viewModelScope.launch {
-        Timber.i("rebuild filtered deck %s", deckId)
-        _effects.send(DeckPickerEffect.RebuildFilteredDeck(deckId))
-    }
+    fun rebuildFilteredDeck(deckId: DeckId): Job =
+        viewModelScope.launch {
+            Timber.i("rebuild filtered deck %s", deckId)
+            _effects.send(DeckPickerEffect.RebuildFilteredDeck(deckId))
+        }
 
-    fun sync() = launchCatchingIO {
-        _effects.send(DeckPickerEffect.Sync)
-    }
+    fun sync() =
+        launchCatchingIO {
+            _effects.send(DeckPickerEffect.Sync)
+        }
 
-    fun undo() = launchCatchingIO {
-        val message = undoAndGetSnackbarMessage()
-        updateDeckList()
-        _composeEffects.send(DeckPickerComposeEffect.ShowSnackbarMessage(message))
-    }
+    fun undo() =
+        launchCatchingIO {
+            val message = undoAndGetSnackbarMessage()
+            updateDeckList()
+            _composeEffects.send(DeckPickerComposeEffect.ShowSnackbarMessage(message))
+        }
 
-    fun openReviewer() = launchCatchingIO {
-        _effects.send(DeckPickerEffect.NavigateToReviewer)
-    }
+    fun openReviewer() =
+        launchCatchingIO {
+            _effects.send(DeckPickerEffect.NavigateToReviewer)
+        }
 
-    fun openStudyOptionsActivity() = launchCatchingIO {
-        _effects.send(DeckPickerEffect.NavigateToStudyOptions)
-    }
+    fun openStudyOptionsActivity() =
+        launchCatchingIO {
+            _effects.send(DeckPickerEffect.NavigateToStudyOptions)
+        }
 
-    fun exportDeck(deckId: DeckId) = launchCatchingIO {
-        _effects.send(DeckPickerEffect.ShowExportDialog(deckId))
-    }
+    fun exportDeck(deckId: DeckId) =
+        launchCatchingIO {
+            _effects.send(DeckPickerEffect.ShowExportDialog(deckId))
+        }
 
-    fun showCustomStudyDialog(deckId: DeckId) = launchCatchingIO {
-        _effects.send(DeckPickerEffect.ShowCustomStudyDialog(deckId))
-    }
+    fun showCustomStudyDialog(deckId: DeckId) =
+        launchCatchingIO {
+            _effects.send(DeckPickerEffect.ShowCustomStudyDialog(deckId))
+        }
 
-    fun checkDatabase() = launchCatchingIO {
-        _effects.send(DeckPickerEffect.CheckDatabase)
-    }
+    fun checkDatabase() =
+        launchCatchingIO {
+            _effects.send(DeckPickerEffect.CheckDatabase)
+        }
 
-    fun showEmptyCardsDialog() = launchCatchingIO {
-        _effects.send(DeckPickerEffect.ShowEmptyCardsDialog)
-    }
-
+    fun showEmptyCardsDialog() =
+        launchCatchingIO {
+            _effects.send(DeckPickerEffect.ShowEmptyCardsDialog)
+        }
 
     fun addNote(
         deckId: DeckId?,
@@ -707,8 +752,7 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     /**
      * Opens the Manage Note Types screen.
      */
-    fun openManageNoteTypes() =
-        launchCatchingIO { flowOfDestination.emit(ManageNoteTypesDestination()) }
+    fun openManageNoteTypes() = launchCatchingIO { flowOfDestination.emit(ManageNoteTypesDestination()) }
 
     /**
      * Opens study options for the provided deck
@@ -725,11 +769,11 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         flowOfDestination.emit(DeckOptionsDestination(deckId = deckId, isFiltered = filtered))
     }
 
-    fun unburyDeck(deckId: DeckId) = launchCatchingIO {
-        undoableOp { sched.unburyDeck(deckId) }
-        updateDeckList()
-    }
-
+    fun unburyDeck(deckId: DeckId) =
+        launchCatchingIO {
+            undoableOp { sched.unburyDeck(deckId) }
+            updateDeckList()
+        }
 
     /**
      * Launch an asynchronous task to rebuild the deck list and recalculate the deck counts. Use this
@@ -754,68 +798,74 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
 
     fun reloadDeckCounts(): Job {
         loadDeckCounts?.cancel()
-        val loadDeckCounts = viewModelScope.launch {
-            Timber.d("Refreshing deck list")
-            val (deckDueTree, collectionHasNoCards, buriedDecks) = withCol {
-                val buried =
-                    db.queryLongList("SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})")
-                        .toSet()
-                Triple(sched.deckDueTree(), isEmpty, buried)
+        val loadDeckCounts =
+            viewModelScope.launch {
+                Timber.d("Refreshing deck list")
+                val (deckDueTree, collectionHasNoCards, buriedDecks) =
+                    withCol {
+                        val buried =
+                            db
+                                .queryLongList(
+                                    "SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})",
+                                ).toSet()
+                        Triple(sched.deckDueTree(), isEmpty, buried)
+                    }
+
+                ensureActive()
+
+                dueTree = deckDueTree
+                flowOfCollectionHasNoCards.value = collectionHasNoCards
+                flowOfBuriedDecks.value = buriedDecks
+
+                launch { refreshSyncState() }
+
+                // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
+                val studiedToday = withCol { sched.studiedToday().replace("\n", " ") }
+
+                ensureActive()
+                flowOfStudiedTodayStats.value = studiedToday
+
+                val timeUntilNextDay =
+                    withCol {
+                        calculateTimeUntilNextDay(sched)
+                    }
+                ensureActive()
+                _flowOfTimeUntilNextDay.value = timeUntilNextDay
+
+                /**
+                 * Checks the current scheduler version and prompts the upgrade dialog if using the legacy version.
+                 * Ensures the dialog is only shown once per collection load, even if [updateDeckList()] is called multiple times.
+                 */
+                val currentSchedulerVersion = withCol { config.get("schedVer") as? Long ?: 1L }
+
+                ensureActive()
+
+                if (currentSchedulerVersion == 1L && schedulerUpgradeDialogShownForVersion != 1L) {
+                    schedulerUpgradeDialogShownForVersion = 1L
+                    flowOfPromptUserToUpdateScheduler.emit(Unit)
+                } else {
+                    schedulerUpgradeDialogShownForVersion = currentSchedulerVersion
+                }
+
+                // TODO: This is in the wrong place
+                // current deck may have changed
+                val currentDeckId = withCol { decks.current().id }
+                ensureActive()
+                focusedDeck = currentDeckId
+
+                flowOfUndoUpdated.emit(Unit)
+
+                flowOfDecksReloaded.emit(Unit)
             }
-
-            ensureActive()
-
-            dueTree = deckDueTree
-            flowOfCollectionHasNoCards.value = collectionHasNoCards
-            flowOfBuriedDecks.value = buriedDecks
-
-            launch { refreshSyncState() }
-
-            // Backend returns studiedToday() with newlines for HTML formatting,so we replace them with spaces.
-            val studiedToday = withCol { sched.studiedToday().replace("\n", " ") }
-
-            ensureActive()
-            flowOfStudiedTodayStats.value = studiedToday
-
-            val timeUntilNextDay = withCol {
-                calculateTimeUntilNextDay(sched)
-            }
-            ensureActive()
-            _flowOfTimeUntilNextDay.value = timeUntilNextDay
-
-            /**
-             * Checks the current scheduler version and prompts the upgrade dialog if using the legacy version.
-             * Ensures the dialog is only shown once per collection load, even if [updateDeckList()] is called multiple times.
-             */
-            val currentSchedulerVersion = withCol { config.get("schedVer") as? Long ?: 1L }
-
-            ensureActive()
-
-            if (currentSchedulerVersion == 1L && schedulerUpgradeDialogShownForVersion != 1L) {
-                schedulerUpgradeDialogShownForVersion = 1L
-                flowOfPromptUserToUpdateScheduler.emit(Unit)
-            } else {
-                schedulerUpgradeDialogShownForVersion = currentSchedulerVersion
-            }
-
-            // TODO: This is in the wrong place
-            // current deck may have changed
-            val currentDeckId = withCol { decks.current().id }
-            ensureActive()
-            focusedDeck = currentDeckId
-
-            flowOfUndoUpdated.emit(Unit)
-
-            flowOfDecksReloaded.emit(Unit)
-        }
         this.loadDeckCounts = loadDeckCounts
         return loadDeckCounts
     }
 
     suspend fun refreshSyncState() {
-        _syncState.value = withContext(Dispatchers.IO) {
-            withCol { fetchSyncIconState() }
-        }
+        _syncState.value =
+            withContext(Dispatchers.IO) {
+                withCol { fetchSyncIconState() }
+            }
     }
 
     private fun Collection.fetchSyncIconState(): SyncIconState {
@@ -850,24 +900,26 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
         flowOfCurrentDeckFilter.value = filterText
     }
 
-    fun toggleDeckExpand(deckId: DeckId) = viewModelScope.launch {
-        // update DB
-        withCol { decks.collapse(deckId) }
-        // update stored state
-        dueTree?.find(deckId)?.run {
-            collapsed = !collapsed
+    fun toggleDeckExpand(deckId: DeckId) =
+        viewModelScope.launch {
+            // update DB
+            withCol { decks.collapse(deckId) }
+            // update stored state
+            dueTree?.find(deckId)?.run {
+                collapsed = !collapsed
+            }
+            flowOfRefreshDeckList.emit(Unit)
         }
-        flowOfRefreshDeckList.emit(Unit)
-    }
 
     sealed class CreateDeckDialogState {
         data object Hidden : CreateDeckDialogState()
+
         data class Visible(
             val type: DeckDialogType,
             val titleResId: Int,
             val initialName: String = "",
             val parentId: DeckId? = null,
-            val deckIdToRename: DeckId? = null
+            val deckIdToRename: DeckId? = null,
         ) : CreateDeckDialogState()
     }
 
@@ -921,9 +973,8 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
      * @param sched The scheduler to get the day cutoff from
      * @return Time in milliseconds until next day, or 0 if already past cutoff
      */
-    private fun calculateTimeUntilNextDay(sched: Scheduler): Long {
-        return (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
-    }
+    private fun calculateTimeUntilNextDay(sched: Scheduler): Long =
+        (sched.dayCutoff * 1000 - TimeManager.time.intTimeMS()).coerceAtLeast(0L)
 
     interface AnkiDroidEnvironment {
         fun hasRequiredPermissions(): Boolean
@@ -944,7 +995,9 @@ class DeckPickerViewModel : ViewModel(), OnErrorListener {
     }
 
     data class SyncDialogState(
-        val title: String, val message: String, val onCancel: () -> Unit
+        val title: String,
+        val message: String,
+        val onCancel: () -> Unit,
     )
 }
 
@@ -958,10 +1011,11 @@ data class DeckDeletionResult(
      */
     // TODO: Somewhat questionable meaning: {count} cards deleted from {deck_name}.
     @CheckResult
-    fun toHumanReadableString() = TR.browsingCardsDeletedWithDeckname(
-        count = cardsDeleted,
-        deckName = deckName,
-    )
+    fun toHumanReadableString() =
+        TR.browsingCardsDeletedWithDeckname(
+            count = cardsDeleted,
+            deckName = deckName,
+        )
 }
 
 /** Result of [DeckPickerViewModel.deleteEmptyCards] */
@@ -981,24 +1035,30 @@ data class EmptyCardsResult(
  */
 sealed class DeckPickerComposeEffect {
     /** Show a snackbar with an undo action */
-    data class ShowUndoSnackbar(val message: String) : DeckPickerComposeEffect()
+    data class ShowUndoSnackbar(
+        val message: String,
+    ) : DeckPickerComposeEffect()
 
     /** Show a simple snackbar from a string resource ID */
-    data class ShowSnackbar(val messageResId: Int) : DeckPickerComposeEffect()
+    data class ShowSnackbar(
+        val messageResId: Int,
+    ) : DeckPickerComposeEffect()
 
     /** Show a simple snackbar from a string message */
-    data class ShowSnackbarMessage(val message: String) : DeckPickerComposeEffect()
+    data class ShowSnackbarMessage(
+        val message: String,
+    ) : DeckPickerComposeEffect()
 
     /** Handle the result of a deck selection (study, empty, congrats) */
-    data class HandleDeckSelection(val result: DeckSelectionResult) : DeckPickerComposeEffect()
-
+    data class HandleDeckSelection(
+        val result: DeckSelectionResult,
+    ) : DeckPickerComposeEffect()
 }
 
 /**
  * A one-shot side effect emitted by [DeckPickerViewModel] and consumed by [DeckPicker].
  */
 sealed class DeckPickerEffect {
-
     /** Trigger a sync operation */
     data object Sync : DeckPickerEffect()
 
@@ -1009,13 +1069,19 @@ sealed class DeckPickerEffect {
     data object NavigateToStudyOptions : DeckPickerEffect()
 
     /** Show the export options dialog for the given deck */
-    data class ShowExportDialog(val deckId: DeckId) : DeckPickerEffect()
+    data class ShowExportDialog(
+        val deckId: DeckId,
+    ) : DeckPickerEffect()
 
     /** Show custom study dialog */
-    data class ShowCustomStudyDialog(val deckId: DeckId) : DeckPickerEffect()
+    data class ShowCustomStudyDialog(
+        val deckId: DeckId,
+    ) : DeckPickerEffect()
 
     /** Rebuild a filtered deck */
-    data class RebuildFilteredDeck(val deckId: DeckId) : DeckPickerEffect()
+    data class RebuildFilteredDeck(
+        val deckId: DeckId,
+    ) : DeckPickerEffect()
 
     /** Check database */
     data object CheckDatabase : DeckPickerEffect()

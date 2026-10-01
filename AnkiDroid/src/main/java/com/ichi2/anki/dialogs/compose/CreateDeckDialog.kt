@@ -41,11 +41,13 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.delay
 
 enum class DeckDialogType {
-    DECK, SUB_DECK, RENAME_DECK, FILTERED_DECK
+    DECK,
+    SUB_DECK,
+    RENAME_DECK,
+    FILTERED_DECK,
 }
 
-fun String.containsNumberLargerThanNine(): Boolean =
-    Regex("""(?:[^:]|^)[1-9]\d+(?:[^:]|$)""").find(this) != null
+fun String.containsNumberLargerThanNine(): Boolean = Regex("""(?:[^:]|^)[1-9]\d+(?:[^:]|$)""").find(this) != null
 
 @Composable
 fun CreateDeckDialog(
@@ -54,7 +56,7 @@ fun CreateDeckDialog(
     dialogType: DeckDialogType,
     title: String,
     initialDeckName: String = "",
-    validateDeckName: suspend (String) -> DeckNameError? // Suspend function for async validation
+    validateDeckName: suspend (String) -> DeckNameError?, // Suspend function for async validation
 ) {
     var deckName by remember { mutableStateOf(initialDeckName) }
     val focusRequester = remember { FocusRequester() }
@@ -74,11 +76,12 @@ fun CreateDeckDialog(
         isValidating = false
     }
 
-    val errorMessage = when (error) {
-        DeckNameError.INVALID_NAME -> stringResource(R.string.invalid_deck_name)
-        DeckNameError.ALREADY_EXISTS -> stringResource(R.string.deck_already_exists)
-        null -> null
-    }
+    val errorMessage =
+        when (error) {
+            DeckNameError.INVALID_NAME -> stringResource(R.string.invalid_deck_name)
+            DeckNameError.ALREADY_EXISTS -> stringResource(R.string.deck_already_exists)
+            null -> null
+        }
     // Autofocus the text field
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -89,9 +92,10 @@ fun CreateDeckDialog(
             OutlinedTextField(
                 value = deckName,
                 onValueChange = { deckName = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester),
                 label = { Text(stringResource(R.string.deck_name)) },
                 isError = errorMessage != null,
                 supportingText = {
@@ -102,18 +106,22 @@ fun CreateDeckDialog(
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        if (error == null && deckName.isNotBlank() && !isValidating) onConfirm(
-                            deckName
-                        )
-                    })
+                keyboardActions =
+                    KeyboardActions(
+                        onDone = {
+                            if (error == null && deckName.isNotBlank() && !isValidating) {
+                                onConfirm(
+                                    deckName,
+                                )
+                            }
+                        },
+                    ),
             )
         }
     }, confirmButton = {
         TextButton(
             onClick = { onConfirm(deckName) },
-            enabled = error == null && deckName.isNotBlank() && !isValidating
+            enabled = error == null && deckName.isNotBlank() && !isValidating,
         ) {
             Text(stringResource(R.string.dialog_ok))
         }
@@ -133,7 +141,8 @@ private fun CreateDeckDialogPreview() {
             onConfirm = {},
             dialogType = DeckDialogType.DECK,
             title = "Create Deck",
-            validateDeckName = { null })
+            validateDeckName = { null },
+        )
     }
 }
 
@@ -147,7 +156,8 @@ private fun CreateDeckDialogErrorPreview() {
             dialogType = DeckDialogType.DECK,
             title = "Create Deck",
             initialDeckName = "Existing Deck",
-            validateDeckName = { DeckNameError.ALREADY_EXISTS })
+            validateDeckName = { DeckNameError.ALREADY_EXISTS },
+        )
     }
 }
 
@@ -161,7 +171,8 @@ private fun CreateDeckDialogRenamePreview() {
             dialogType = DeckDialogType.RENAME_DECK,
             title = "Rename Deck",
             initialDeckName = "My Study Deck",
-            validateDeckName = { null })
+            validateDeckName = { null },
+        )
     }
 }
 
@@ -175,6 +186,7 @@ private fun CreateDeckDialogNumericHintPreview() {
             dialogType = DeckDialogType.DECK,
             title = "Create Deck",
             initialDeckName = "10. Chemistry",
-            validateDeckName = { null })
+            validateDeckName = { null },
+        )
     }
 }

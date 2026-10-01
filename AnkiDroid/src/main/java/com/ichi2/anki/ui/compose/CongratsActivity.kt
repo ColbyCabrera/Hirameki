@@ -56,13 +56,16 @@ class CongratsActivity : AnkiActivity() {
 
             setContent {
                 CongratsScreen(
-                    onNavigateUp = { finish() }, onDeckOptions = {
-                    val intent = DeckOptions.getIntent(this, col.decks.current().id)
-                    startActivity(intent)
-                }, onCustomStudy = {
-                    val customStudy = CustomStudyDialog.createInstance(col.decks.current().id)
-                    showDialogFragment(customStudy)
-                }, timeUntilNextDay = timeUntilNextDay
+                    onNavigateUp = { finish() },
+                    onDeckOptions = {
+                        val intent = DeckOptions.getIntent(this, col.decks.current().id)
+                        startActivity(intent)
+                    },
+                    onCustomStudy = {
+                        val customStudy = CustomStudyDialog.createInstance(col.decks.current().id)
+                        showDialogFragment(customStudy)
+                    },
+                    timeUntilNextDay = timeUntilNextDay,
                 )
             }
         } catch (e: Exception) {

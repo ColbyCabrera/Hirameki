@@ -52,18 +52,20 @@ object WidgetStatus {
         }
     }
 
-    private fun launchUpdateJob(context: Context): Job = widgetScope.launch {
-        try {
-            // Update Heatmap Widget
-            if (GlanceAppWidgetManager(context).getGlanceIds(HeatmapWidget::class.java)
-                    .isNotEmpty()
-            ) {
-                HeatmapWidget().updateAll(context)
-            }
+    private fun launchUpdateJob(context: Context): Job =
+        widgetScope.launch {
+            try {
+                // Update Heatmap Widget
+                if (GlanceAppWidgetManager(context)
+                        .getGlanceIds(HeatmapWidget::class.java)
+                        .isNotEmpty()
+                ) {
+                    HeatmapWidget().updateAll(context)
+                }
 
-            Timber.v("launchUpdateJob completed")
-        } catch (exc: Exception) {
-            Timber.w(exc, "failure in widget update")
+                Timber.v("launchUpdateJob completed")
+            } catch (exc: Exception) {
+                Timber.w(exc, "failure in widget update")
+            }
         }
-    }
 }

@@ -28,14 +28,13 @@ import timber.log.Timber
  * This ensures the server survives configuration changes.
  */
 class PageWebViewViewModel(
-    application: Application
-) : AndroidViewModel(application), PostRequestHandler {
-
+    application: Application,
+) : AndroidViewModel(application),
+    PostRequestHandler {
     private val server = AnkiServer(this)
 
     private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
     val serverState = _serverState.asStateFlow()
-
 
     init {
         try {
@@ -56,12 +55,16 @@ class PageWebViewViewModel(
         super.onCleared()
     }
 
-    override suspend fun handlePostRequest(uri: String, bytes: ByteArray): ByteArray {
-        val methodName = if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-            uri.substring(AnkiServer.ANKI_PREFIX.length)
-        } else {
-            throw IllegalArgumentException("unhandled request: $uri")
-        }
+    override suspend fun handlePostRequest(
+        uri: String,
+        bytes: ByteArray,
+    ): ByteArray {
+        val methodName =
+            if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
+                uri.substring(AnkiServer.ANKI_PREFIX.length)
+            } else {
+                throw IllegalArgumentException("unhandled request: $uri")
+            }
         // Try UI methods first, then collection methods
         // Note: UI methods require FragmentActivity context which we don't have here
         // So we only use collection methods for now
@@ -71,7 +74,13 @@ class PageWebViewViewModel(
 }
 
 sealed interface ServerState {
-    data class Running(val serverBaseUrl: String) : ServerState
+    data class Running(
+        val serverBaseUrl: String,
+    ) : ServerState
+
     data object Stopped : ServerState
-    data class Error(val exception: Exception) : ServerState
+
+    data class Error(
+        val exception: Exception,
+    ) : ServerState
 }

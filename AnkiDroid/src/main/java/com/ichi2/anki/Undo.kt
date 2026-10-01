@@ -27,13 +27,14 @@ import com.ichi2.anki.snackbar.canProperlyShowSnackbars
 import com.ichi2.anki.snackbar.showSnackbar
 
 private suspend fun getUndoResultMessage(): String {
-    val changes = undoableOp {
-        if (!undoAvailable()) {
-            OpChangesAfterUndo.getDefaultInstance()
-        } else {
-            undo()
+    val changes =
+        undoableOp {
+            if (!undoAvailable()) {
+                OpChangesAfterUndo.getDefaultInstance()
+            } else {
+                undo()
+            }
         }
-    }
     return if (changes.operation.isEmpty()) {
         TR.actionsNothingToUndo()
     } else {
@@ -41,7 +42,10 @@ private suspend fun getUndoResultMessage(): String {
     }
 }
 
-private fun FragmentActivity.showUndoSnackbarMessage(message: String, duration: Int) {
+private fun FragmentActivity.showUndoSnackbarMessage(
+    message: String,
+    duration: Int,
+) {
     when {
         this is SnackbarForwarder -> forwardSnackbar(message)
         canProperlyShowSnackbars() -> showSnackbar(message, duration)
@@ -61,18 +65,20 @@ suspend fun undoAndGetSnackbarMessage(): String = getUndoResultMessage()
 
 suspend fun FragmentActivity.redoAndShowSnackbar(duration: Int = Snackbar.LENGTH_SHORT) {
     withProgress {
-        val changes = undoableOp {
-            if (redoAvailable()) {
-                redo()
-            } else {
-                OpChangesAfterUndo.getDefaultInstance()
+        val changes =
+            undoableOp {
+                if (redoAvailable()) {
+                    redo()
+                } else {
+                    OpChangesAfterUndo.getDefaultInstance()
+                }
             }
-        }
-        val message = if (changes.operation.isEmpty()) {
-            TR.actionsNothingToRedo()
-        } else {
-            TR.undoActionRedone(changes.operation)
-        }
+        val message =
+            if (changes.operation.isEmpty()) {
+                TR.actionsNothingToRedo()
+            } else {
+                TR.undoActionRedone(changes.operation)
+            }
         showUndoSnackbarMessage(message, duration)
     }
 }

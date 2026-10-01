@@ -48,9 +48,11 @@ class MyAccountTest : RobolectricTest() {
         val testPassword = "randomStrongPassword"
         val testEmail = "random.email@example.com"
 
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.username))
+        composeTestRule
+            .onNodeWithText(composeTestRule.activity.getString(R.string.username))
             .performTextInput(testEmail)
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.password))
+        composeTestRule
+            .onNodeWithText(composeTestRule.activity.getString(R.string.password))
             .performTextInput(testPassword)
 
         composeTestRule.onLoginButton().assertIsEnabled()
@@ -60,7 +62,8 @@ class MyAccountTest : RobolectricTest() {
     fun testLoginFailsNoEmailProvided() {
         val testPassword = "randomStrongPassword"
 
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.password))
+        composeTestRule
+            .onNodeWithText(composeTestRule.activity.getString(R.string.password))
             .performTextInput(testPassword)
 
         composeTestRule.onLoginButton().assertIsNotEnabled()
@@ -70,12 +73,12 @@ class MyAccountTest : RobolectricTest() {
     fun testLoginFailsNoPasswordProvided() {
         val testEmail = "random.email@example.com"
 
-        composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.username))
+        composeTestRule
+            .onNodeWithText(composeTestRule.activity.getString(R.string.username))
             .performTextInput(testEmail)
 
         composeTestRule.onLoginButton().assertIsNotEnabled()
     }
 
-    private fun AndroidComposeTestRule<*, *>.onLoginButton() =
-        onNode(hasText(activity.getString(R.string.log_in)) and hasClickAction())
+    private fun AndroidComposeTestRule<*, *>.onLoginButton() = onNode(hasText(activity.getString(R.string.log_in)) and hasClickAction())
 }

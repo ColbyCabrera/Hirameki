@@ -62,50 +62,59 @@ fun ColorBrushButton(
     onLongClick: () -> Unit,
     colorNormal: Color,
     colorHighlight: Color,
-    minTouchTargetSize: Dp = 48.dp
+    minTouchTargetSize: Dp = 48.dp,
 ) {
     val view = LocalView.current
     val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val brushContentDescription = stringResource(
-        if (isSelected) R.string.brush_content_description_selected
-        else R.string.brush_content_description, brush.width.roundToInt()
-    )
+    val brushContentDescription =
+        stringResource(
+            if (isSelected) {
+                R.string.brush_content_description_selected
+            } else {
+                R.string.brush_content_description
+            },
+            brush.width.roundToInt(),
+        )
 
     Box(
-        modifier = Modifier
-            .requiredSize(minTouchTargetSize)
-            .clip(RoundedCornerShape(100))
-            .background(backgroundColor)
-            .semantics(mergeDescendants = true) {
-                role = Role.Button
-                contentDescription = brushContentDescription
-            }
-            .combinedClickable(
-                onClick = { onClick(view) }, onLongClick = onLongClick
-            )
-            .padding(4.dp), contentAlignment = Alignment.BottomCenter
+        modifier =
+            Modifier
+                .requiredSize(minTouchTargetSize)
+                .clip(RoundedCornerShape(100))
+                .background(backgroundColor)
+                .semantics(mergeDescendants = true) {
+                    role = Role.Button
+                    contentDescription = brushContentDescription
+                }.combinedClickable(
+                    onClick = { onClick(view) },
+                    onLongClick = onLongClick,
+                ).padding(4.dp),
+        contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(4.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(4.dp),
             shape = CircleShape,
             color = Color(brush.color),
-            border = BorderStroke(
-                width = 2.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-            )
+            border =
+                BorderStroke(
+                    width = 2.dp,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                ),
         ) { }
         Box(
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraExtraLarge)
-                .background(MaterialTheme.colorScheme.tertiary),
+            modifier =
+                Modifier
+                    .clip(MaterialTheme.shapes.extraExtraLarge)
+                    .background(MaterialTheme.colorScheme.tertiary),
         ) {
             Text(
                 modifier = Modifier.padding(vertical = 0.dp, horizontal = 4.dp),
                 text = brush.width.roundToInt().toString(),
                 color = MaterialTheme.colorScheme.onTertiary,
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelMedium,
             )
         }
     }
@@ -113,21 +122,25 @@ fun ColorBrushButton(
 
 @Composable
 fun AddBrushButton(
-    onClick: () -> Unit, colorNormal: Color, tooltip: String, minTouchTargetSize: Dp = 48.dp
+    onClick: () -> Unit,
+    colorNormal: Color,
+    tooltip: String,
+    minTouchTargetSize: Dp = 48.dp,
 ) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .requiredSize(minTouchTargetSize)
-            .clip(RoundedCornerShape(100))
-            .clickable(
-                onClick = onClick
-            )
-            .semantics { contentDescription = tooltip }) {
+        modifier =
+            Modifier
+                .requiredSize(minTouchTargetSize)
+                .clip(RoundedCornerShape(100))
+                .clickable(
+                    onClick = onClick,
+                ).semantics { contentDescription = tooltip },
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.add_24px),
             contentDescription = null,
-            tint = colorNormal
+            tint = colorNormal,
         )
     }
 }
@@ -142,7 +155,7 @@ fun PreviewColorBrushButton() {
             onClick = {},
             onLongClick = {},
             colorNormal = Color.Black,
-            colorHighlight = Color.LightGray
+            colorHighlight = Color.LightGray,
         )
         ColorBrushButton(
             brush = BrushInfo(android.graphics.Color.BLUE, 25f),
@@ -150,7 +163,7 @@ fun PreviewColorBrushButton() {
             onClick = {},
             onLongClick = {},
             colorNormal = Color.Black,
-            colorHighlight = Color.LightGray
+            colorHighlight = Color.LightGray,
         )
     }
 }

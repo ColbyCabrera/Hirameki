@@ -30,18 +30,23 @@ object HelpScreen : NavKey
 object ContributeScreen : NavKey
 
 @Serializable
-data class CongratsScreen(val deckId: Long) : NavKey
+data class CongratsScreen(
+    val deckId: Long,
+) : NavKey
 
 @Serializable
 object StatisticsDestination : NavKey
 
 @Serializable
-data class DeckOptionsDestination(val deckId: Long) : NavKey
+data class DeckOptionsDestination(
+    val deckId: Long,
+) : NavKey
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Serializable
-data class CardInfoDestination(val cardId: Long) : NavKey
+data class CardInfoDestination(
+    val cardId: Long,
+) : NavKey
 
 @Serializable
 object ManageNoteTypesDestination : NavKey
-

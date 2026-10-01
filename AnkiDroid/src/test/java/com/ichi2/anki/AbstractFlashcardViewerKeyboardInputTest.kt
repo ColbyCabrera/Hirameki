@@ -53,7 +53,7 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
 
         assertThat(
             "NumPad Enter should display answer on any card viewer",
-            underTest.didDisplayAnswer()
+            underTest.didDisplayAnswer(),
         )
     }
 
@@ -102,15 +102,14 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
         }
 
         fun focusTextField() {
-            focusedView = mockk<EditText>(relaxed = true) {
-                every { onCheckIsTextEditor() } returns true
-            }
+            focusedView =
+                mockk<EditText>(relaxed = true) {
+                    every { onCheckIsTextEditor() } returns true
+                }
         }
 
         companion object {
-            fun create(): KeyboardInputTestCardViewer {
-                return KeyboardInputTestCardViewer()
-            }
+            fun create(): KeyboardInputTestCardViewer = KeyboardInputTestCardViewer()
         }
     }
 }

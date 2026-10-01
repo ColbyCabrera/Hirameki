@@ -10,7 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -25,33 +24,35 @@ fun ConfirmDeleteDeckDialog(
     totalCards: Int,
     isFiltered: Boolean,
     onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
 ) {
-    val messageText = if (isFiltered) {
-        stringResource(id = R.string.delete_cram_deck_message, "<b>$deckName</b>")
-    } else {
-        pluralStringResource(
-            id = R.plurals.delete_deck_message,
-            count = totalCards,
-            "<b>$deckName</b>",
-            totalCards
-        )
-    }
+    val messageText =
+        if (isFiltered) {
+            stringResource(id = R.string.delete_cram_deck_message, "<b>$deckName</b>")
+        } else {
+            pluralStringResource(
+                id = R.plurals.delete_deck_message,
+                count = totalCards,
+                "<b>$deckName</b>",
+                totalCards,
+            )
+        }
 
-    val annotatedMessage = remember(messageText) {
-        val spanned = HtmlCompat.fromHtml(messageText, HtmlCompat.FROM_HTML_MODE_LEGACY)
-        buildAnnotatedString {
-            append(spanned.toString())
-            val styleSpans = spanned.getSpans(0, spanned.length, android.text.style.StyleSpan::class.java)
-            for (span in styleSpans) {
-                val start = spanned.getSpanStart(span)
-                val end = spanned.getSpanEnd(span)
-                if (span.style == android.graphics.Typeface.BOLD) {
-                    addStyle(SpanStyle(fontWeight = FontWeight.Bold), start, end)
+    val annotatedMessage =
+        remember(messageText) {
+            val spanned = HtmlCompat.fromHtml(messageText, HtmlCompat.FROM_HTML_MODE_LEGACY)
+            buildAnnotatedString {
+                append(spanned.toString())
+                val styleSpans = spanned.getSpans(0, spanned.length, android.text.style.StyleSpan::class.java)
+                for (span in styleSpans) {
+                    val start = spanned.getSpanStart(span)
+                    val end = spanned.getSpanEnd(span)
+                    if (span.style == android.graphics.Typeface.BOLD) {
+                        addStyle(SpanStyle(fontWeight = FontWeight.Bold), start, end)
+                    }
                 }
             }
         }
-    }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -59,7 +60,7 @@ fun ConfirmDeleteDeckDialog(
             Icon(
                 painter = painterResource(id = R.drawable.ic_warning),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.error
+                tint = MaterialTheme.colorScheme.error,
             )
         },
         title = {
@@ -77,7 +78,7 @@ fun ConfirmDeleteDeckDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(id = R.string.dialog_cancel))
             }
-        }
+        },
     )
 }
 
@@ -90,7 +91,7 @@ private fun ConfirmDeleteDeckDialogNormalPreview() {
             totalCards = 15,
             isFiltered = false,
             onDismissRequest = {},
-            onConfirm = {}
+            onConfirm = {},
         )
     }
 }
@@ -104,7 +105,7 @@ private fun ConfirmDeleteDeckDialogFilteredPreview() {
             totalCards = 0,
             isFiltered = true,
             onDismissRequest = {},
-            onConfirm = {}
+            onConfirm = {},
         )
     }
 }

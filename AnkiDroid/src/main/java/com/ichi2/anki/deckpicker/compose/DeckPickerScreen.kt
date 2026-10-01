@@ -137,21 +137,22 @@ private fun RenderDeck(
         rememberedChildren = children
     }
 
-    val actions = remember(deck, deckRowActions) {
-        DeckItemActions(
-            onDeckClick = { deckRowActions.onDeckClick(deck) },
-            onExpandClick = { deckRowActions.onExpandClick(deck) },
-            onDeckOptions = { deckRowActions.onDeckOptions(deck) },
-            onRename = { deckRowActions.onRename(deck) },
-            onCustomStudy = { deckRowActions.onCustomStudy(deck) },
-            onUnbury = { deckRowActions.onUnbury(deck) },
-            onExportDeck = { deckRowActions.onExportDeck(deck) },
-            onDelete = { deckRowActions.onDelete(deck) },
-            onRebuild = { deckRowActions.onRebuild(deck) },
-            onEmpty = { deckRowActions.onEmpty(deck) },
-            onCreateSubdeck = { deckRowActions.onCreateSubdeck(deck) },
-        )
-    }
+    val actions =
+        remember(deck, deckRowActions) {
+            DeckItemActions(
+                onDeckClick = { deckRowActions.onDeckClick(deck) },
+                onExpandClick = { deckRowActions.onExpandClick(deck) },
+                onDeckOptions = { deckRowActions.onDeckOptions(deck) },
+                onRename = { deckRowActions.onRename(deck) },
+                onCustomStudy = { deckRowActions.onCustomStudy(deck) },
+                onUnbury = { deckRowActions.onUnbury(deck) },
+                onExportDeck = { deckRowActions.onExportDeck(deck) },
+                onDelete = { deckRowActions.onDelete(deck) },
+                onRebuild = { deckRowActions.onRebuild(deck) },
+                onEmpty = { deckRowActions.onEmpty(deck) },
+                onCreateSubdeck = { deckRowActions.onCreateSubdeck(deck) },
+            )
+        }
 
     val content = @Composable {
         DeckItem(
@@ -160,14 +161,18 @@ private fun RenderDeck(
         )
         AnimatedVisibility(
             visible = !deck.collapsed,
-            enter = expandVertically(motionScheme.defaultSpatialSpec()) + fadeIn(motionScheme.defaultEffectsSpec()) + scaleIn(
-                initialScale = 0.3f,
-                animationSpec = motionScheme.defaultSpatialSpec(),
-            ),
-            exit = shrinkVertically(motionScheme.fastSpatialSpec()) + fadeOut(motionScheme.defaultEffectsSpec()) + scaleOut(
-                targetScale = 0.92f,
-                animationSpec = motionScheme.fastSpatialSpec(),
-            ),
+            enter =
+                expandVertically(motionScheme.defaultSpatialSpec()) + fadeIn(motionScheme.defaultEffectsSpec()) +
+                    scaleIn(
+                        initialScale = 0.3f,
+                        animationSpec = motionScheme.defaultSpatialSpec(),
+                    ),
+            exit =
+                shrinkVertically(motionScheme.fastSpatialSpec()) + fadeOut(motionScheme.defaultEffectsSpec()) +
+                    scaleOut(
+                        targetScale = 0.92f,
+                        animationSpec = motionScheme.fastSpatialSpec(),
+                    ),
         ) {
             Column {
                 for (child in (rememberedChildren ?: emptyList())) {
@@ -187,14 +192,16 @@ private fun RenderDeck(
 
     if (deck.depth == 0) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
             shape = RoundedCornerShape(cornerRadius),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ),
         ) {
             Column(Modifier.padding(8.dp)) {
                 content()
@@ -202,9 +209,10 @@ private fun RenderDeck(
         }
     } else {
         Column(
-            modifier = Modifier.padding(
-                start = if (deck.depth == 1) 0.dp else subDeckPadding,
-            ),
+            modifier =
+                Modifier.padding(
+                    start = if (deck.depth == 1) 0.dp else subDeckPadding,
+                ),
         ) {
             content()
         }
@@ -256,41 +264,48 @@ fun DeckPickerContent(
         }
     }
 
-    val morph = remember {
-        Morph(
-            start = MaterialShapes.Pentagon,
-            end = MaterialShapes.Cookie12Sided,
-        )
-    }
-    val morphingShape = remember(state.distanceFraction) {
-        MorphShape(
-            morph = morph,
-            percentage = state.distanceFraction,
-        )
-    }
+    val morph =
+        remember {
+            Morph(
+                start = MaterialShapes.Pentagon,
+                end = MaterialShapes.Cookie12Sided,
+            )
+        }
+    val morphingShape =
+        remember(state.distanceFraction) {
+            MorphShape(
+                morph = morph,
+                percentage = state.distanceFraction,
+            )
+        }
 
     // Rebuild the parent -> children lookup only when the flattened deck list changes.
-    val (deckToChildrenMap, rootDecks) = remember(decks) {
-        val deckToChildrenMap = mutableMapOf<DisplayDeckNode, MutableList<DisplayDeckNode>>()
-        val rootDecks = mutableListOf<DisplayDeckNode>()
-        val deckMap = decks.associateBy { it.did }
+    val (deckToChildrenMap, rootDecks) =
+        remember(decks) {
+            val deckToChildrenMap = mutableMapOf<DisplayDeckNode, MutableList<DisplayDeckNode>>()
+            val rootDecks = mutableListOf<DisplayDeckNode>()
+            val deckMap = decks.associateBy { it.did }
 
-        for (deck in decks) {
-            val parentId = deck.deckNode.parent?.get()?.did
-            if (parentId != null && deckMap.containsKey(parentId)) {
-                val parent = deckMap[parentId]!!
-                deckToChildrenMap.getOrPut(parent) { mutableListOf() }.add(deck)
-            } else {
-                rootDecks.add(deck)
+            for (deck in decks) {
+                val parentId =
+                    deck.deckNode.parent
+                        ?.get()
+                        ?.did
+                if (parentId != null && deckMap.containsKey(parentId)) {
+                    val parent = deckMap[parentId]!!
+                    deckToChildrenMap.getOrPut(parent) { mutableListOf() }.add(deck)
+                } else {
+                    rootDecks.add(deck)
+                }
             }
+            deckToChildrenMap to rootDecks
         }
-        deckToChildrenMap to rootDecks
-    }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
     ) {
         PullToRefreshBox(
             isRefreshing = false, // Always false to prevent pinning and allow immediate retraction animation
@@ -302,18 +317,18 @@ fun DeckPickerContent(
             modifier = Modifier.fillMaxSize(),
             indicator = {
                 Box(
-                    modifier = Modifier
-                        .padding(top = contentPadding.calculateTopPadding() + 16.dp)
-                        .align(Alignment.TopCenter)
-                        .width(42.dp)
-                        .height(42.dp)
-                        .graphicsLayer {
-                            alpha = state.distanceFraction * 5
-                            rotationZ = state.distanceFraction * 180
-                            translationY = (state.distanceFraction * 140) - 60
-                        }
-                        .clip(morphingShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                    modifier =
+                        Modifier
+                            .padding(top = contentPadding.calculateTopPadding() + 16.dp)
+                            .align(Alignment.TopCenter)
+                            .width(42.dp)
+                            .height(42.dp)
+                            .graphicsLayer {
+                                alpha = state.distanceFraction * 5
+                                rotationZ = state.distanceFraction * 180
+                                translationY = (state.distanceFraction * 140) - 60
+                            }.clip(morphingShape)
+                            .background(MaterialTheme.colorScheme.primary),
                 ) {
                     Box(modifier = Modifier.padding(16.dp))
                 }
@@ -325,9 +340,10 @@ fun DeckPickerContent(
 
             AnimatedVisibility(visible = isLoading) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = contentPadding.calculateTopPadding()),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(top = contentPadding.calculateTopPadding()),
                     contentAlignment = Alignment.TopCenter,
                 ) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -343,15 +359,18 @@ fun DeckPickerContent(
 
             AnimatedVisibility(
                 visible = hasDecks,
-                enter = fadeIn(motionScheme.slowEffectsSpec()) + scaleIn(
-                    initialScale = 0.85f,
-                    animationSpec = motionScheme.slowSpatialSpec(),
-                ) + slideInVertically(motionScheme.defaultSpatialSpec()) { it / 4 },
+                enter =
+                    fadeIn(motionScheme.slowEffectsSpec()) +
+                        scaleIn(
+                            initialScale = 0.85f,
+                            animationSpec = motionScheme.slowSpatialSpec(),
+                        ) + slideInVertically(motionScheme.defaultSpatialSpec()) { it / 4 },
             ) {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
                     contentPadding = contentPadding,
                     state = listState,
                 ) {
@@ -402,9 +421,10 @@ private fun DeckPickerTopBar(
                 Text(
                     stringResource(R.string.app_name),
                     style = MaterialTheme.typography.displayMediumEmphasized,
-                    modifier = Modifier.graphicsLayer {
-                        alpha = 1f - searchAnim
-                    },
+                    modifier =
+                        Modifier.graphicsLayer {
+                            alpha = 1f - searchAnim
+                        },
                 )
             }
         },
@@ -413,10 +433,11 @@ private fun DeckPickerTopBar(
                 FilledIconButton(
                     modifier = Modifier.padding(end = 8.dp),
                     onClick = onNavigationIconClick,
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.menu_24px),
@@ -435,23 +456,25 @@ private fun DeckPickerTopBar(
                     placeholder = stringResource(R.string.search_decks),
                     focusRequester = searchFocusRequester,
                     searchAnim = searchAnim,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 16.dp, end = 12.dp),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(start = 16.dp, end = 12.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 )
             } else {
                 Row(
                     modifier = Modifier.graphicsLayer { alpha = 1f - searchAnim },
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     FilledIconButton(
                         onClick = { onSearchOpenChange(true) },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                        colors =
+                            IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.search_24px),
@@ -462,9 +485,10 @@ private fun DeckPickerTopBar(
                         isSyncing = isSyncing,
                         syncState = syncState,
                         onRefresh = onRefresh,
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(48.dp)
+                        modifier =
+                            Modifier
+                                .height(40.dp)
+                                .width(48.dp),
                     )
                     MoreOptionsMenu(
                         isMoreOptionsMenuOpen,
@@ -474,12 +498,13 @@ private fun DeckPickerTopBar(
                 }
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            scrolledContainerColor = MaterialTheme.colorScheme.surface,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
         scrollBehavior = scrollBehavior,
     )
 }
@@ -497,10 +522,11 @@ fun MoreOptionsMenu(
     Box(modifier = modifier) {
         FilledIconButton(
             onClick = { onMoreOptionsMenuOpenChange(true) },
-            colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            colors =
+                IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
         ) {
             Icon(
                 Icons.Default.MoreVert,
@@ -641,9 +667,10 @@ fun DeckPickerScreen(
                     onRefresh = onRefresh,
                     onNavigationIconClick = if (!fragmented) onNavigationIconClick else null,
                     moreOptionsMenuActions = moreOptionsMenuActions,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
-            }) { paddingValues ->
+            },
+        ) { paddingValues ->
             if (fragmented) {
                 Row(
                     Modifier
@@ -735,12 +762,14 @@ fun DeckPickerTopBarPreview() {
             syncState = SyncIconState.Normal,
             onRefresh = {},
             onNavigationIconClick = {},
-            moreOptionsMenuActions = MoreOptionsMenuActions(
-                onDeleteEmptyCards = {},
-                onCheckDatabase = {},
-                onExport = {},
-                onManageNoteTypes = {}),
-            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+            moreOptionsMenuActions =
+                MoreOptionsMenuActions(
+                    onDeleteEmptyCards = {},
+                    onCheckDatabase = {},
+                    onExport = {},
+                    onManageNoteTypes = {},
+                ),
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(),
         )
     }
 }
@@ -759,12 +788,14 @@ fun DeckPickerTopBarSearchOpenPreview() {
             syncState = SyncIconState.Normal,
             onRefresh = {},
             onNavigationIconClick = {},
-            moreOptionsMenuActions = MoreOptionsMenuActions(
-                onDeleteEmptyCards = {},
-                onCheckDatabase = {},
-                onExport = {},
-                onManageNoteTypes = {}),
-            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+            moreOptionsMenuActions =
+                MoreOptionsMenuActions(
+                    onDeleteEmptyCards = {},
+                    onCheckDatabase = {},
+                    onExport = {},
+                    onManageNoteTypes = {},
+                ),
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(),
         )
     }
 }
@@ -774,51 +805,62 @@ fun DeckPickerTopBarSearchOpenPreview() {
 @Composable
 fun RenderDeckPreview() {
     AnkiDroidTheme {
-        val rootDeckNode = DeckNode(
-            node = deckTreeNode {
-                name = "Japanese"
-                deckId = 1
-                level = 1
-                collapsed = false
-                reviewCount = 10
-                newCount = 5
-                learnCount = 2
-                filtered = false
-                // Add a child node to the underlying DeckTreeNode to ensure canCollapse is true
-                children.add(deckTreeNode {
-                    name = "Kanji"
-                    deckId = 2
-                    level = 2
-                })
-            }, fullDeckName = "Japanese"
-        )
-        val rootDeck = DisplayDeckNode.from(
-            node = rootDeckNode, matchesSearchOrChild = true, selectedDeckId = 1L, hasBuried = false
-        )
+        val rootDeckNode =
+            DeckNode(
+                node =
+                    deckTreeNode {
+                        name = "Japanese"
+                        deckId = 1
+                        level = 1
+                        collapsed = false
+                        reviewCount = 10
+                        newCount = 5
+                        learnCount = 2
+                        filtered = false
+                        // Add a child node to the underlying DeckTreeNode to ensure canCollapse is true
+                        children.add(
+                            deckTreeNode {
+                                name = "Kanji"
+                                deckId = 2
+                                level = 2
+                            },
+                        )
+                    },
+                fullDeckName = "Japanese",
+            )
+        val rootDeck =
+            DisplayDeckNode.from(
+                node = rootDeckNode,
+                matchesSearchOrChild = true,
+                selectedDeckId = 1L,
+                hasBuried = false,
+            )
 
-        val childDeck = DisplayDeckNode.from(
-            node = rootDeckNode.children[0],
-            matchesSearchOrChild = true,
-            selectedDeckId = 0L,
-            hasBuried = false
-        )
+        val childDeck =
+            DisplayDeckNode.from(
+                node = rootDeckNode.children[0],
+                matchesSearchOrChild = true,
+                selectedDeckId = 0L,
+                hasBuried = false,
+            )
         RenderDeck(
             deck = rootDeck,
             children = listOf(childDeck),
             deckToChildrenMap = mapOf(rootDeck to listOf(childDeck)),
-            deckRowActions = DeckRowActions(
-                onDeckClick = {},
-                onExpandClick = {},
-                onDeckOptions = {},
-                onRename = {},
-                onExportDeck = {},
-                onDelete = {},
-                onRebuild = {},
-                onEmpty = {},
-                onCreateSubdeck = {},
-                onCustomStudy = {},
-                onUnbury = {},
-            ),
+            deckRowActions =
+                DeckRowActions(
+                    onDeckClick = {},
+                    onExpandClick = {},
+                    onDeckOptions = {},
+                    onRename = {},
+                    onExportDeck = {},
+                    onDelete = {},
+                    onRebuild = {},
+                    onEmpty = {},
+                    onCreateSubdeck = {},
+                    onCustomStudy = {},
+                    onUnbury = {},
+                ),
         )
     }
 }

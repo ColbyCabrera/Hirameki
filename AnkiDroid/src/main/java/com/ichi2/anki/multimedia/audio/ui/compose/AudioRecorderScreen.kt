@@ -52,7 +52,7 @@ fun AudioRecorderScreen(
     title: String,
     onBackClick: () -> Unit,
     viewModel: AudioRecorderViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -61,7 +61,7 @@ fun AudioRecorderScreen(
         onBackClick = onBackClick,
         uiState = uiState,
         onIntent = viewModel::processIntent,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -72,88 +72,101 @@ fun AudioRecorderContent(
     onBackClick: () -> Unit,
     uiState: AudioRecorderViewModel.UiState,
     onIntent: (AudioRecorderViewModel.Intent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
-        modifier = modifier.fillMaxSize(), topBar = {
+        modifier = modifier.fillMaxSize(),
+        topBar = {
             NoteEditorTopAppBar(
                 title = title,
                 onBackClick = onBackClick,
                 showSaveAction = false,
-                showPreviewAction = false
+                showPreviewAction = false,
             )
-        }, containerColor = MaterialTheme.colorScheme.surface
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Surface(
                 Modifier
                     .weight(1f)
                     .padding(16.dp),
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                shape = MaterialTheme.shapes.large
+                shape = MaterialTheme.shapes.large,
             ) {
                 Box {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.End
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         if (uiState.state != AudioRecorderViewModel.RecordingState.Idle) {
                             IconButton(onClick = { onIntent(AudioRecorderViewModel.Intent.DiscardRecording) }) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.delete_24px),
                                     contentDescription = stringResource(R.string.delete_note_message),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
                     }
                     AudioWaveformCompose(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(horizontal = 16.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.Center)
+                                .padding(horizontal = 16.dp),
                         amplitudes = uiState.amplitudes,
                         showAmplitudes = uiState.state != AudioRecorderViewModel.RecordingState.Idle,
-                        currentIndex = if (uiState.state in listOf(
-                                AudioRecorderViewModel.RecordingState.Playing,
-                                AudioRecorderViewModel.RecordingState.PlaybackPaused,
-                                AudioRecorderViewModel.RecordingState.PlaybackReady
-                            )
-                        ) {
-                            (uiState.playbackProgressMillis / uiState.amplitudeSampleMs).toInt()
-                        } else {
-                            -1
-                        }
+                        currentIndex =
+                            if (uiState.state in
+                                listOf(
+                                    AudioRecorderViewModel.RecordingState.Playing,
+                                    AudioRecorderViewModel.RecordingState.PlaybackPaused,
+                                    AudioRecorderViewModel.RecordingState.PlaybackReady,
+                                )
+                            ) {
+                                (uiState.playbackProgressMillis / uiState.amplitudeSampleMs).toInt()
+                            } else {
+                                -1
+                            },
                     )
                 }
             }
 
             // Text / Time
-            Text(text = formatDuration(uiState.durationMillis.takeIf {
-                uiState.state in listOf(
-                    AudioRecorderViewModel.RecordingState.Recording,
-                    AudioRecorderViewModel.RecordingState.RecordingPaused,
-                    AudioRecorderViewModel.RecordingState.PlaybackReady
-                )
-            } ?: uiState.playbackProgressMillis),
+            Text(
+                text =
+                    formatDuration(
+                        uiState.durationMillis.takeIf {
+                            uiState.state in
+                                listOf(
+                                    AudioRecorderViewModel.RecordingState.Recording,
+                                    AudioRecorderViewModel.RecordingState.RecordingPaused,
+                                    AudioRecorderViewModel.RecordingState.PlaybackReady,
+                                )
+                        } ?: uiState.playbackProgressMillis,
+                    ),
                 fontFamily = RobotoMono,
                 fontSize = 84.sp,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 32.dp))
+                modifier = Modifier.padding(bottom = 32.dp),
+            )
 
             // Controls
             AudioRecorderControls(
                 state = uiState.state,
                 isSaveEnabled = uiState.isSaveEnabled,
                 onIntent = onIntent,
-                modifier = Modifier.padding(bottom = 48.dp, start = 16.dp, end = 16.dp)
+                modifier = Modifier.padding(bottom = 48.dp, start = 16.dp, end = 16.dp),
             )
         }
     }
@@ -165,25 +178,30 @@ fun AudioRecorderControls(
     state: AudioRecorderViewModel.RecordingState,
     isSaveEnabled: Boolean,
     onIntent: (AudioRecorderViewModel.Intent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     ButtonGroup(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .animateContentSize(),
         expandedRatio = 0.05f,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        overflowIndicator = {}) {
+        overflowIndicator = {},
+    ) {
         // Slot 1: Play/Pause/Resume (Hidden in Idle)
         if (state != AudioRecorderViewModel.RecordingState.Idle) {
             customItem(buttonGroupContent = {
                 val interactionSource = remember { MutableInteractionSource() }
-                if (state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                if (state == AudioRecorderViewModel.RecordingState.Recording ||
+                    state == AudioRecorderViewModel.RecordingState.RecordingPaused
+                ) {
                     PauseResumeButton(
-                        modifier = Modifier
-                            .weight(1f)
-                            .animateWidth(interactionSource),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .animateWidth(interactionSource),
                         isPaused = state == AudioRecorderViewModel.RecordingState.RecordingPaused,
                         onClick = {
                             if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
@@ -196,9 +214,10 @@ fun AudioRecorderControls(
                     )
                 } else {
                     PlayPauseButton(
-                        modifier = Modifier
-                            .weight(1f)
-                            .animateWidth(interactionSource),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .animateWidth(interactionSource),
                         isPlaying = state == AudioRecorderViewModel.RecordingState.Playing,
                         onClick = {
                             if (state == AudioRecorderViewModel.RecordingState.Playing) {
@@ -214,22 +233,33 @@ fun AudioRecorderControls(
         }
 
         // Slot 2: Record/Stop (Hidden in Playback)
-        if (state == AudioRecorderViewModel.RecordingState.Idle || state == AudioRecorderViewModel.RecordingState.Recording || state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+        if (state == AudioRecorderViewModel.RecordingState.Idle ||
+            state == AudioRecorderViewModel.RecordingState.Recording ||
+            state == AudioRecorderViewModel.RecordingState.RecordingPaused
+        ) {
             customItem(buttonGroupContent = {
                 val interactionSource = remember { MutableInteractionSource() }
                 if (state == AudioRecorderViewModel.RecordingState.Idle) {
                     RecordButton(
-                        modifier = Modifier
-                            .weight(1f)
-                            .animateWidth(interactionSource),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .animateWidth(interactionSource),
                         onClick = { onIntent(AudioRecorderViewModel.Intent.StartRecording) },
                         interactionSource = interactionSource,
                     )
                 } else {
                     StopButton(
-                        modifier = (if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) Modifier else Modifier.weight(
-                            1f
-                        )).animateWidth(interactionSource),
+                        modifier =
+                            (
+                                if (state == AudioRecorderViewModel.RecordingState.RecordingPaused) {
+                                    Modifier
+                                } else {
+                                    Modifier.weight(
+                                        1f,
+                                    )
+                                }
+                            ).animateWidth(interactionSource),
                         onClick = { onIntent(AudioRecorderViewModel.Intent.StopRecording) },
                         interactionSource = interactionSource,
                     )
@@ -268,7 +298,7 @@ fun RecordButton(
         Icon(
             painter = painterResource(id = R.drawable.ic_record),
             contentDescription = stringResource(R.string.record_voice),
-            tint = MaterialTheme.colorScheme.onErrorContainer
+            tint = MaterialTheme.colorScheme.onErrorContainer,
         )
     }
 }
@@ -278,7 +308,7 @@ fun StopButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = CircleShape
+    shape: Shape = CircleShape,
 ) {
     Button(
         onClick = onClick,
@@ -286,12 +316,12 @@ fun StopButton(
         modifier = modifier.height(80.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer),
         interactionSource = interactionSource,
-        contentPadding = PaddingValues(horizontal = 24.dp)
+        contentPadding = PaddingValues(horizontal = 24.dp),
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_stop),
             contentDescription = stringResource(R.string.stop_recording),
-            tint = MaterialTheme.colorScheme.onErrorContainer
+            tint = MaterialTheme.colorScheme.onErrorContainer,
         )
         Text(
             text = stringResource(R.string.stop_recording),
@@ -299,7 +329,7 @@ fun StopButton(
             modifier = Modifier.padding(start = 8.dp),
             fontSize = 18.sp,
             softWrap = false,
-            overflow = TextOverflow.Clip
+            overflow = TextOverflow.Clip,
         )
     }
 }
@@ -311,7 +341,7 @@ fun PauseResumeButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shapes: ButtonShapes = ButtonDefaults.shapes()
+    shapes: ButtonShapes = ButtonDefaults.shapes(),
 ) {
     Button(
         onClick = onClick,
@@ -319,14 +349,19 @@ fun PauseResumeButton(
         modifier = modifier.height(80.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
         interactionSource = interactionSource,
-        contentPadding = PaddingValues(horizontal = 24.dp)
+        contentPadding = PaddingValues(horizontal = 24.dp),
     ) {
         Icon(
             painter = painterResource(id = if (isPaused) R.drawable.round_play_arrow_24 else R.drawable.round_pause_24),
-            contentDescription = if (isPaused) stringResource(R.string.resume_recording) else stringResource(
-                R.string.pause_playback
-            ),
-            tint = MaterialTheme.colorScheme.onSecondaryContainer
+            contentDescription =
+                if (isPaused) {
+                    stringResource(R.string.resume_recording)
+                } else {
+                    stringResource(
+                        R.string.pause_playback,
+                    )
+                },
+            tint = MaterialTheme.colorScheme.onSecondaryContainer,
         )
         Text(
             text = if (isPaused) stringResource(R.string.resume_recording) else stringResource(R.string.pause_playback),
@@ -334,7 +369,7 @@ fun PauseResumeButton(
             modifier = Modifier.padding(start = 8.dp),
             fontSize = 18.sp,
             softWrap = false,
-            overflow = TextOverflow.Clip
+            overflow = TextOverflow.Clip,
         )
     }
 }
@@ -346,7 +381,7 @@ fun PlayPauseButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shapes: ButtonShapes = ButtonDefaults.shapes()
+    shapes: ButtonShapes = ButtonDefaults.shapes(),
 ) {
     Button(
         onClick = onClick,
@@ -354,14 +389,19 @@ fun PlayPauseButton(
         modifier = modifier.height(80.dp),
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
         interactionSource = interactionSource,
-        contentPadding = PaddingValues(horizontal = 24.dp)
+        contentPadding = PaddingValues(horizontal = 24.dp),
     ) {
         Icon(
             painter = painterResource(id = if (isPlaying) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24),
-            contentDescription = if (isPlaying) stringResource(R.string.pause_playback) else stringResource(
-                R.string.play_recording
-            ),
-            tint = MaterialTheme.colorScheme.onSecondaryContainer
+            contentDescription =
+                if (isPlaying) {
+                    stringResource(R.string.pause_playback)
+                } else {
+                    stringResource(
+                        R.string.play_recording,
+                    )
+                },
+            tint = MaterialTheme.colorScheme.onSecondaryContainer,
         )
         Text(
             text = if (isPlaying) stringResource(R.string.pause_playback) else stringResource(R.string.play_recording),
@@ -369,11 +409,10 @@ fun PlayPauseButton(
             modifier = Modifier.padding(start = 8.dp),
             fontSize = 18.sp,
             softWrap = false,
-            overflow = TextOverflow.Clip
+            overflow = TextOverflow.Clip,
         )
     }
 }
-
 
 @Composable
 fun SaveButton(
@@ -381,7 +420,7 @@ fun SaveButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    shape: Shape = CircleShape
+    shape: Shape = CircleShape,
 ) {
     FilledIconButton(
         onClick = onClick,
@@ -410,11 +449,29 @@ private fun formatDuration(millis: Long): String {
 private fun AudioRecorderScreenIdlePreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
-            title = "Audio Recorder", onBackClick = {}, uiState = AudioRecorderViewModel.UiState(
-                state = AudioRecorderViewModel.RecordingState.Idle, amplitudes = listOf(
-                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
-                )
-            ), onIntent = {})
+            title = "Audio Recorder",
+            onBackClick = {},
+            uiState =
+                AudioRecorderViewModel.UiState(
+                    state = AudioRecorderViewModel.RecordingState.Idle,
+                    amplitudes =
+                        listOf(
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                        ),
+                ),
+            onIntent = {},
+        )
     }
 }
 
@@ -423,14 +480,31 @@ private fun AudioRecorderScreenIdlePreview() {
 private fun AudioRecorderScreenRecordingPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
-            title = "Audio Recorder", onBackClick = {}, uiState = AudioRecorderViewModel.UiState(
-                state = AudioRecorderViewModel.RecordingState.Recording,
-                durationMillis = 12300L,
-                isSaveEnabled = true,
-                amplitudes = listOf(
-                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
-                )
-            ), onIntent = {})
+            title = "Audio Recorder",
+            onBackClick = {},
+            uiState =
+                AudioRecorderViewModel.UiState(
+                    state = AudioRecorderViewModel.RecordingState.Recording,
+                    durationMillis = 12300L,
+                    isSaveEnabled = true,
+                    amplitudes =
+                        listOf(
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                        ),
+                ),
+            onIntent = {},
+        )
     }
 }
 
@@ -439,14 +513,31 @@ private fun AudioRecorderScreenRecordingPreview() {
 private fun AudioRecorderScreenRecordingPausedPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
-            title = "Audio Recorder", onBackClick = {}, uiState = AudioRecorderViewModel.UiState(
-                state = AudioRecorderViewModel.RecordingState.RecordingPaused,
-                durationMillis = 15000L,
-                isSaveEnabled = true,
-                amplitudes = listOf(
-                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
-                )
-            ), onIntent = {})
+            title = "Audio Recorder",
+            onBackClick = {},
+            uiState =
+                AudioRecorderViewModel.UiState(
+                    state = AudioRecorderViewModel.RecordingState.RecordingPaused,
+                    durationMillis = 15000L,
+                    isSaveEnabled = true,
+                    amplitudes =
+                        listOf(
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                        ),
+                ),
+            onIntent = {},
+        )
     }
 }
 
@@ -455,15 +546,32 @@ private fun AudioRecorderScreenRecordingPausedPreview() {
 private fun AudioRecorderScreenPlaybackReadyPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
-            title = "Audio Recorder", onBackClick = {}, uiState = AudioRecorderViewModel.UiState(
-                state = AudioRecorderViewModel.RecordingState.PlaybackReady,
-                durationMillis = 30000L,
-                playbackProgressMillis = 0L,
-                isSaveEnabled = true,
-                amplitudes = listOf(
-                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
-                )
-            ), onIntent = {})
+            title = "Audio Recorder",
+            onBackClick = {},
+            uiState =
+                AudioRecorderViewModel.UiState(
+                    state = AudioRecorderViewModel.RecordingState.PlaybackReady,
+                    durationMillis = 30000L,
+                    playbackProgressMillis = 0L,
+                    isSaveEnabled = true,
+                    amplitudes =
+                        listOf(
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                        ),
+                ),
+            onIntent = {},
+        )
     }
 }
 
@@ -472,15 +580,32 @@ private fun AudioRecorderScreenPlaybackReadyPreview() {
 private fun AudioRecorderScreenPlayingPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
-            title = "Audio Recorder", onBackClick = {}, uiState = AudioRecorderViewModel.UiState(
-                state = AudioRecorderViewModel.RecordingState.Playing,
-                durationMillis = 30000L,
-                playbackProgressMillis = 10500L,
-                isSaveEnabled = true,
-                amplitudes = listOf(
-                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
-                )
-            ), onIntent = {})
+            title = "Audio Recorder",
+            onBackClick = {},
+            uiState =
+                AudioRecorderViewModel.UiState(
+                    state = AudioRecorderViewModel.RecordingState.Playing,
+                    durationMillis = 30000L,
+                    playbackProgressMillis = 10500L,
+                    isSaveEnabled = true,
+                    amplitudes =
+                        listOf(
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                        ),
+                ),
+            onIntent = {},
+        )
     }
 }
 
@@ -489,15 +614,32 @@ private fun AudioRecorderScreenPlayingPreview() {
 private fun AudioRecorderScreenPlaybackPausedPreview() {
     AnkiDroidTheme {
         AudioRecorderContent(
-            title = "Audio Recorder", onBackClick = {}, uiState = AudioRecorderViewModel.UiState(
-                state = AudioRecorderViewModel.RecordingState.PlaybackPaused,
-                durationMillis = 30000L,
-                playbackProgressMillis = 10500L,
-                isSaveEnabled = true,
-                amplitudes = listOf(
-                    0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f, 0.1f, 0.5f, 0.3f, 0.6f, 0.4f, 0.8f
-                )
-            ), onIntent = {})
+            title = "Audio Recorder",
+            onBackClick = {},
+            uiState =
+                AudioRecorderViewModel.UiState(
+                    state = AudioRecorderViewModel.RecordingState.PlaybackPaused,
+                    durationMillis = 30000L,
+                    playbackProgressMillis = 10500L,
+                    isSaveEnabled = true,
+                    amplitudes =
+                        listOf(
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                            0.1f,
+                            0.5f,
+                            0.3f,
+                            0.6f,
+                            0.4f,
+                            0.8f,
+                        ),
+                ),
+            onIntent = {},
+        )
     }
 }
 
@@ -509,15 +651,18 @@ private fun AudioRecorderControlsPreview() {
             AudioRecorderControls(
                 state = AudioRecorderViewModel.RecordingState.Idle,
                 isSaveEnabled = false,
-                onIntent = {})
+                onIntent = {},
+            )
             AudioRecorderControls(
                 state = AudioRecorderViewModel.RecordingState.Recording,
                 isSaveEnabled = true,
-                onIntent = {})
+                onIntent = {},
+            )
             AudioRecorderControls(
                 state = AudioRecorderViewModel.RecordingState.Playing,
                 isSaveEnabled = true,
-                onIntent = {})
+                onIntent = {},
+            )
         }
     }
 }
@@ -531,7 +676,7 @@ private fun AudioRecorderButtonsPreview() {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     RecordButton(onClick = {})

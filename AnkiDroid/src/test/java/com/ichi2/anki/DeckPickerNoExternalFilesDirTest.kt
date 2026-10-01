@@ -75,9 +75,11 @@ class DeckPickerNoExternalFilesDirTest : RobolectricTest() {
     }
 }
 
-private fun getLatestAlertDialog(): AlertDialog = assertNotNull(
-    ShadowDialog.getLatestDialog() as? AlertDialog, "An AlertDialog should be displayed"
-)
+private fun getLatestAlertDialog(): AlertDialog =
+    assertNotNull(
+        ShadowDialog.getLatestDialog() as? AlertDialog,
+        "An AlertDialog should be displayed",
+    )
 
 /**
  * A shadow which makes [Context.getExternalFilesDir] return `null`
@@ -93,20 +95,22 @@ class ShadowNullExternalFilesDir {
 }
 
 class AnkiDroidAppWithCollectionButUnwritableStorage : AnkiDroidApp() {
-    override fun onCreate() = withTempDir("DeckPickerNoExternalFilesDirTest") { path ->
-        try {
-            mockkObject(CollectionHelper)
-            every { CollectionHelper.initializeAnkiDroidDirectory(any()) } throws StorageAccessException(
-                "testing"
-            )
-            this.sharedPrefs().edit {
-                putString(CollectionHelper.PREF_COLLECTION_PATH, path.absolutePathString())
+    override fun onCreate() =
+        withTempDir("DeckPickerNoExternalFilesDirTest") { path ->
+            try {
+                mockkObject(CollectionHelper)
+                every { CollectionHelper.initializeAnkiDroidDirectory(any()) } throws
+                    StorageAccessException(
+                        "testing",
+                    )
+                this.sharedPrefs().edit {
+                    putString(CollectionHelper.PREF_COLLECTION_PATH, path.absolutePathString())
+                }
+                super.onCreate()
+            } finally {
+                unmockkObject(CollectionHelper)
             }
-            super.onCreate()
-        } finally {
-            unmockkObject(CollectionHelper)
         }
-    }
 }
 
 fun <T> withTempDir(

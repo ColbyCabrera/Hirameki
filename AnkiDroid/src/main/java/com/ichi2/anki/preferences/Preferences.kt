@@ -237,7 +237,6 @@ class PreferencesFragment :
 class PreferencesActivity :
     SingleFragmentActivity(),
     SearchPreferenceResultListener {
-
     override val applyInsetsPadding: Boolean = false
 
     override fun onSearchResultClicked(result: SearchPreferenceResult) {

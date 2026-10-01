@@ -83,13 +83,14 @@ abstract class MultimediaFragment(
         requireAnkiActivity().setToolbarTitle(title)
 
         Timber.d("Getting MultimediaActivityExtra values from arguments")
-        val multimediaActivityExtra = requireNotNull(
-            arguments?.getSerializableCompat<MultimediaActivityExtra>(
-                MultimediaActivity.MULTIMEDIA_ARGS_EXTRA,
-            ),
-        ) {
-            "MultimediaFragment requires ${MultimediaActivity.MULTIMEDIA_ARGS_EXTRA} arguments"
-        }
+        val multimediaActivityExtra =
+            requireNotNull(
+                arguments?.getSerializableCompat<MultimediaActivityExtra>(
+                    MultimediaActivity.MULTIMEDIA_ARGS_EXTRA,
+                ),
+            ) {
+                "MultimediaFragment requires ${MultimediaActivity.MULTIMEDIA_ARGS_EXTRA} arguments"
+            }
 
         indexValue = multimediaActivityExtra.index
         field = multimediaActivityExtra.field

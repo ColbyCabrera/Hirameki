@@ -20,7 +20,6 @@ package com.ichi2.anki.noteeditor
  * This primarily exists so we can use saved instance state to repopulate the dynamically created FieldEditLine
  */
 class FieldState private constructor() {
-
     /** How fields should be changed when the UI is rebuilt  */
     class FieldChangeType(
         val type: Type,

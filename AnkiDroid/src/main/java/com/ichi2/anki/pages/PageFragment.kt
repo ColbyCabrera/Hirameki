@@ -42,7 +42,8 @@ import kotlin.reflect.KClass
  */
 open class PageFragment(
     @LayoutRes contentLayoutId: Int = R.layout.page_fragment,
-) : Fragment(contentLayoutId), PostRequestHandler {
+) : Fragment(contentLayoutId),
+    PostRequestHandler {
     lateinit var webView: WebView
     private lateinit var server: AnkiServer
 
@@ -104,16 +105,17 @@ open class PageFragment(
     ) {
         val pageWebViewClient = onCreateWebViewClient(savedInstanceState)
         server = AnkiServer(this).also { it.start() }
-        webView = view.findViewById<WebView>(R.id.webview).apply {
-            with(settings) {
-                javaScriptEnabled = true
-                displayZoomControls = false
-                builtInZoomControls = true
-                setSupportZoom(true)
+        webView =
+            view.findViewById<WebView>(R.id.webview).apply {
+                with(settings) {
+                    javaScriptEnabled = true
+                    displayZoomControls = false
+                    builtInZoomControls = true
+                    setSupportZoom(true)
+                }
+                webViewClient = pageWebViewClient
+                webChromeClient = PageChromeClient()
             }
-            webViewClient = pageWebViewClient
-            webChromeClient = PageChromeClient()
-        }
         setupBridgeCommand(pageWebViewClient)
         onWebViewCreated(webView)
 
@@ -146,14 +148,15 @@ open class PageFragment(
         uri: String,
         bytes: ByteArray,
     ): ByteArray {
-        val methodName = if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-            uri.substring(AnkiServer.ANKI_PREFIX.length)
-        } else {
-            throw IllegalArgumentException("unhandled request: $uri")
-        }
+        val methodName =
+            if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
+                uri.substring(AnkiServer.ANKI_PREFIX.length)
+            } else {
+                throw IllegalArgumentException("unhandled request: $uri")
+            }
         return activity.handleUiPostRequest(methodName, bytes) ?: handleCollectionPostRequest(
             methodName,
-            bytes
+            bytes,
         ) ?: throw IllegalArgumentException("unhandled method: $methodName")
     }
 
@@ -175,10 +178,11 @@ open class PageFragment(
             title: String? = null,
             clazz: KClass<out PageFragment> = PageFragment::class,
         ): Intent {
-            val arguments = Bundle().apply {
-                putString(PATH_ARG_KEY, path)
-                putString(TITLE_ARG_KEY, title)
-            }
+            val arguments =
+                Bundle().apply {
+                    putString(PATH_ARG_KEY, path)
+                    putString(TITLE_ARG_KEY, title)
+                }
             return SingleFragmentActivity.getIntent(context, clazz, arguments).apply {
                 putExtra(SingleFragmentActivity.EXTRA_APPLY_INSETS_PADDING, false)
             }

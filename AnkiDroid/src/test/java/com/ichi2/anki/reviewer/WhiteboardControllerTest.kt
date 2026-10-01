@@ -34,7 +34,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class WhiteboardControllerTest : RobolectricTest() {
-
     @Before
     override fun setUp() {
         super.setUp()

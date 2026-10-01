@@ -88,17 +88,18 @@ open class BackupManager {
                 val dumpProcess = ProcessBuilder("sqlite3", colPath, ".dump").start()
                 val restoreProcess = ProcessBuilder("sqlite3", "$colPath.tmp").start()
 
-                val pipeThread = Thread {
-                    try {
-                        dumpProcess.inputStream.use { input ->
-                            restoreProcess.outputStream.use { output ->
-                                input.copyTo(output)
+                val pipeThread =
+                    Thread {
+                        try {
+                            dumpProcess.inputStream.use { input ->
+                                restoreProcess.outputStream.use { output ->
+                                    input.copyTo(output)
+                                }
                             }
+                        } catch (e: Exception) {
+                            Timber.w(e, "repairCollection - pipe error")
                         }
-                    } catch (e: Exception) {
-                        Timber.w(e, "repairCollection - pipe error")
                     }
-                }
                 pipeThread.start()
 
                 dumpProcess.waitFor()

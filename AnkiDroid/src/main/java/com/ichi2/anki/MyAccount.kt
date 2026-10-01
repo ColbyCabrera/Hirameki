@@ -61,17 +61,18 @@ open class MyAccount : AnkiActivity() {
         }
         mayOpenUrl(R.string.register_url)
 
-        val onBackPressedCallback = object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                val state = viewModel.state.value
-                if (state.screenState == MyAccountScreenState.REMOVE_ACCOUNT) {
-                    closeRemoveAccountScreen()
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
+        val onBackPressedCallback =
+            object : OnBackPressedCallback(false) {
+                override fun handleOnBackPressed() {
+                    val state = viewModel.state.value
+                    if (state.screenState == MyAccountScreenState.REMOVE_ACCOUNT) {
+                        closeRemoveAccountScreen()
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
                 }
             }
-        }
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
 
         setContent {
@@ -83,7 +84,8 @@ open class MyAccount : AnkiActivity() {
                         viewModel.login(password = password, onSuccess = {
                             setResult(RESULT_OK)
                             checkNotificationPermission(
-                                this@MyAccount, notificationPermissionLauncher
+                                this@MyAccount,
+                                notificationPermissionLauncher,
                             )
                             finish()
                         })
@@ -101,7 +103,6 @@ open class MyAccount : AnkiActivity() {
             }
         }
     }
-
 
     private fun logout() {
         viewModel.logout()
@@ -149,7 +150,8 @@ open class MyAccount : AnkiActivity() {
                 return
             }
             val permission = Permissions.postNotification
-            if (permission != null && ContextCompat.checkSelfPermission(
+            if (permission != null &&
+                ContextCompat.checkSelfPermission(
                     context,
                     permission,
                 ) != PackageManager.PERMISSION_GRANTED

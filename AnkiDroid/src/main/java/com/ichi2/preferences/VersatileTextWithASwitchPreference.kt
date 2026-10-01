@@ -19,8 +19,8 @@ import android.util.AttributeSet
 import androidx.core.content.edit
 import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceViewHolder
-import com.ichi2.anki.ui.compose.components.AnkiToggleView
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.AnkiToggleView
 
 /**
  * A combination of an EditTextPreference and a SwitchPreference.

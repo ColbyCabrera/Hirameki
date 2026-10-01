@@ -116,7 +116,8 @@ class ManageNotetypes : AnkiActivity() {
                 onSelectAll = { viewModel.selectAllNoteTypes() },
                 onDeselectAll = { viewModel.deselectAllNoteTypes() },
                 onDeleteSelected = { viewModel.deleteSelectedNoteTypes() },
-                onNavigateUp = { finish() })
+                onNavigateUp = { finish() },
+            )
 
             if (showBatchDeleteConfirmation) {
                 DeleteSelectedNoteTypesDialog(
@@ -132,9 +133,10 @@ class ManageNotetypes : AnkiActivity() {
     }
 
     private inline fun <reified T : AnkiActivity> launchForChanges(extras: Map<String, Any>) {
-        val targetIntent = Intent(this@ManageNotetypes, T::class.java).apply {
-            extras.forEach { toExtra(it) }
-        }
+        val targetIntent =
+            Intent(this@ManageNotetypes, T::class.java).apply {
+                extras.forEach { toExtra(it) }
+            }
         outsideChangesLauncher.launch(targetIntent)
     }
 

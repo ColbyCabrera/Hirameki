@@ -45,9 +45,8 @@ import timber.log.Timber
  * processing UI intents, and maintaining the [DownloadUiState].
  */
 class SharedDecksDownloadViewModel(
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(DownloadUiState())
     val uiState: StateFlow<DownloadUiState> = _uiState.asStateFlow()
 
@@ -64,8 +63,10 @@ class SharedDecksDownloadViewModel(
      * @param intent The user action to process.
      * @param downloadManager Optional [DownloadManager] for executing download-related commands.
      */
-    fun onIntent(intent: DownloadIntent, downloadManager: DownloadManager? = null) {
-
+    fun onIntent(
+        intent: DownloadIntent,
+        downloadManager: DownloadManager? = null,
+    ) {
         when (intent) {
             DownloadIntent.CancelClicked -> showCancelDialog()
             DownloadIntent.ConfirmCancel -> {
@@ -74,7 +75,7 @@ class SharedDecksDownloadViewModel(
                 } else {
                     Timber.w(
                         "ConfirmCancel: downloadManager is null, cannot cancel download ID %d",
-                        currentDownloadId
+                        currentDownloadId,
                     )
                     resetState()
                 }
@@ -116,18 +117,20 @@ class SharedDecksDownloadViewModel(
      * @param downloadId The unique ID of the download to track.
      */
     fun startPolling(
-        downloadManager: DownloadManager, downloadId: Long
+        downloadManager: DownloadManager,
+        downloadId: Long,
     ) {
         setDownloadId(downloadId)
         viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
             progressJobMutex.withLock {
                 clearProgressJobLocked()
-                progressJob = viewModelScope.launch(dispatcher) {
-                    while (isActive) {
-                        checkDownloadProgress(downloadManager, downloadId)
-                        delay(1000)
+                progressJob =
+                    viewModelScope.launch(dispatcher) {
+                        while (isActive) {
+                            checkDownloadProgress(downloadManager, downloadId)
+                            delay(1000)
+                        }
                     }
-                }
             }
         }
     }
@@ -157,15 +160,17 @@ class SharedDecksDownloadViewModel(
     }
 
     private fun checkDownloadProgress(
-        downloadManager: DownloadManager, downloadId: Long
+        downloadManager: DownloadManager,
+        downloadId: Long,
     ) {
         val query = DownloadManager.Query().setFilterById(downloadId)
-        val cursor = try {
-            downloadManager.query(query)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to query DownloadManager for downloadId=%d", downloadId)
-            null
-        }
+        val cursor =
+            try {
+                downloadManager.query(query)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to query DownloadManager for downloadId=%d", downloadId)
+                null
+            }
 
         cursor?.use {
             if (!it.moveToFirst()) return
@@ -181,28 +186,30 @@ class SharedDecksDownloadViewModel(
             val downloadedBytes = it.getLong(downloadedBytesIdx)
             val totalBytes = it.getLong(totalBytesIdx)
 
-            val downloadProgress: Float = if (totalBytes > 0L) {
-                (downloadedBytes.toDouble() / totalBytes * 100).toFloat()
-            } else {
-                0f
-            }
+            val downloadProgress: Float =
+                if (totalBytes > 0L) {
+                    (downloadedBytes.toDouble() / totalBytes * 100).toFloat()
+                } else {
+                    0f
+                }
 
             val isWaitingForNetwork =
                 it.getInt(statusIdx) == DownloadManager.STATUS_PAUSED && it.getInt(reasonIdx) == DownloadManager.PAUSED_WAITING_FOR_NETWORK
 
             _uiState.update { state ->
-                    if (state.status == DownloadStatus.Complete || state.status == DownloadStatus.Failed) {
-                        state
-                    } else {
-                        state.copy(
-                            progress = downloadProgress,
-                            status = if (isWaitingForNetwork) {
+                if (state.status == DownloadStatus.Complete || state.status == DownloadStatus.Failed) {
+                    state
+                } else {
+                    state.copy(
+                        progress = downloadProgress,
+                        status =
+                            if (isWaitingForNetwork) {
                                 DownloadStatus.WaitingForNetwork
                             } else {
                                 DownloadStatus.Downloading
-                            }
-                        )
-                    }
+                            },
+                    )
+                }
             }
         }
     }
@@ -214,7 +221,8 @@ class SharedDecksDownloadViewModel(
         stopPolling()
         _uiState.update {
             it.copy(
-                progress = 100f, status = DownloadStatus.Complete
+                progress = 100f,
+                status = DownloadStatus.Complete,
             )
         }
     }
@@ -223,7 +231,6 @@ class SharedDecksDownloadViewModel(
      * Updates the UI state to reflect a failed download attempt.
      */
     fun onDownloadFailed() {
-
         stopPolling()
         _uiState.update { it.copy(status = DownloadStatus.Failed) }
     }
@@ -248,7 +255,10 @@ class SharedDecksDownloadViewModel(
         _uiState.value = DownloadUiState()
     }
 
-    private fun cancelDownload(downloadManager: DownloadManager, downloadId: Long) {
+    private fun cancelDownload(
+        downloadManager: DownloadManager,
+        downloadId: Long,
+    ) {
         downloadManager.remove(downloadId)
         resetState()
     }
@@ -261,7 +271,7 @@ class SharedDecksDownloadViewModel(
             currentDownloadId,
             state.status,
             state.showCancelDialog,
-            state.fileName
+            state.fileName,
         )
     }
 

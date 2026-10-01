@@ -39,8 +39,7 @@ import kotlin.coroutines.resume
  * This should amount to the sum of User data and Cache in App info -> Storage and cache.
  * @throws NoSuchMethodException occasionally on some phones < [Build.VERSION_CODES.O] (#17387)
  */
-fun Context.getUserDataAndCacheSize(): Long =
-    getUserDataAndCacheSizeUsingStorageStatsManager()
+fun Context.getUserDataAndCacheSize(): Long = getUserDataAndCacheSizeUsingStorageStatsManager()
 
 /*
  * The logic was taken from this SO question: https://stackoverflow.com/q/43472398/#44708209

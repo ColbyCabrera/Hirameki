@@ -10,10 +10,16 @@ plugins {
 
 configure<LibraryExtension> {
     namespace = "com.ichi2.anki.libanki"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
 
         consumerProguardFiles("consumer-rules.pro")
     }

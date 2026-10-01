@@ -19,7 +19,6 @@ import android.content.Context
 import android.media.MediaRecorder
 import android.os.VibrationEffect
 import android.os.VibratorManager
-import androidx.annotation.RequiresApi
 import kotlin.time.Duration
 
 /** Implementation of [Compat] for SDK level 31  */

@@ -33,9 +33,7 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @Composable
-fun FlagRenameDialog(
-    onDismissRequest: () -> Unit,
-) {
+fun FlagRenameDialog(onDismissRequest: () -> Unit) {
     var flags by remember { mutableStateOf<List<Pair<Flag, String>>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
@@ -54,15 +52,17 @@ fun FlagRenameDialog(
         }
     }, title = { Text(stringResource(R.string.rename_flag)) }, text = {
         FlagRenameScreen(
-            flags = flags, onRename = { flag, newName ->
+            flags = flags,
+            onRename = { flag, newName ->
                 val trimmedName = newName.trim()
                 if (trimmedName.isNotEmpty()) {
                     scope.launch {
                         try {
                             // Optimistic update
-                            val updatedFlags = flags.map {
-                                if (it.first == flag) flag to trimmedName else it
-                            }
+                            val updatedFlags =
+                                flags.map {
+                                    if (it.first == flag) flag to trimmedName else it
+                                }
                             flags = updatedFlags
 
                             flag.rename(trimmedName)
@@ -77,11 +77,13 @@ fun FlagRenameDialog(
                         }
                     }
                 }
-            })
+            },
+        )
     })
 }
 
-private suspend fun loadFlags(): List<Pair<Flag, String>> {
-    return Flag.queryDisplayNames().filter { it.key != Flag.NONE }
+private suspend fun loadFlags(): List<Pair<Flag, String>> =
+    Flag
+        .queryDisplayNames()
+        .filter { it.key != Flag.NONE }
         .map { (flag, displayName) -> flag to displayName }
-}

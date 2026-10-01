@@ -23,12 +23,11 @@ import android.graphics.Color
 import androidx.core.app.NotificationCompat
 import androidx.core.app.PendingIntentCompat
 import com.ichi2.anki.Channel
+import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.preferences.PENDING_NOTIFICATIONS_ONLY
 import com.ichi2.anki.preferences.sharedPrefs
-
-import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.utils.ext.allDecksCounts
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,15 +51,16 @@ class NotificationService : BroadcastReceiver() {
                         PENDING_NOTIFICATIONS_ONLY.toString(),
                     )!!
                     .toInt()
-            val dueCardsCount = try {
-                CollectionManager.withCol {
-                    val counts = sched.allDecksCounts()
-                    counts.new + counts.lrn + counts.rev
+            val dueCardsCount =
+                try {
+                    CollectionManager.withCol {
+                        val counts = sched.allDecksCounts()
+                        counts.new + counts.lrn + counts.rev
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to fetch due counts")
+                    0
                 }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to fetch due counts")
-                0
-            }
             if (dueCardsCount >= minCardsDue) {
                 // Build basic notification
                 val cardsDueText =

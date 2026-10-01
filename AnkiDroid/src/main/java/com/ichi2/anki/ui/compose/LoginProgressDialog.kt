@@ -45,9 +45,10 @@ fun LoginProgressDialog(onCancel: () -> Unit) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(text = stringResource(R.string.sign_in))
                 LinearWavyProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
                 )
             }
         },

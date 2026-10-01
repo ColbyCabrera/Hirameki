@@ -41,56 +41,63 @@ import com.ichi2.anki.R
 import com.ichi2.themes.Themes
 
 @ColorInt
-private fun ankiColor(context: Context, @AttrRes attr: Int): Int {
+private fun ankiColor(
+    context: Context,
+    @AttrRes attr: Int,
+): Int {
     val typedValue = TypedValue()
     context.theme.resolveAttribute(attr, typedValue, true)
     return typedValue.data
 }
 
-val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp), // Default M3
-    small = RoundedCornerShape(8.dp), // Expressive: Slightly more rounded
-    medium = RoundedCornerShape(16.dp), // Expressive: More pronounced rounding for cards/buttons
-    large = RoundedCornerShape(24.dp), // Expressive: Very rounded for larger elements like dialogs
-    extraLarge = RoundedCornerShape(32.dp), // Expressive: For prominent elements like FABs or hero containers
-)
+val AppShapes =
+    Shapes(
+        extraSmall = RoundedCornerShape(4.dp), // Default M3
+        small = RoundedCornerShape(8.dp), // Expressive: Slightly more rounded
+        medium = RoundedCornerShape(16.dp), // Expressive: More pronounced rounding for cards/buttons
+        large = RoundedCornerShape(24.dp), // Expressive: Very rounded for larger elements like dialogs
+        extraLarge = RoundedCornerShape(32.dp), // Expressive: For prominent elements like FABs or hero containers
+    )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnkiDroidTheme(
     harmonizeRatings: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
     val currentAnkiTheme = Themes.currentTheme
     val isNightMode = currentAnkiTheme.isNightMode
-    val colorScheme = if (isNightMode) {
-        dynamicDarkColorScheme(context)
-    } else {
-        dynamicLightColorScheme(context)
-    }
+    val colorScheme =
+        if (isNightMode) {
+            dynamicDarkColorScheme(context)
+        } else {
+            dynamicLightColorScheme(context)
+        }
 
-    val ratingColors = remember(colorScheme.primary, isNightMode, harmonizeRatings) {
-        RatingColorFactory.createRatingColorScheme(
-            primaryColor = colorScheme.primary,
-            isDark = isNightMode,
-            harmonize = harmonizeRatings
-        )
-    }
+    val ratingColors =
+        remember(colorScheme.primary, isNightMode, harmonizeRatings) {
+            RatingColorFactory.createRatingColorScheme(
+                primaryColor = colorScheme.primary,
+                isDark = isNightMode,
+                harmonize = harmonizeRatings,
+            )
+        }
 
-    val ankiColors = remember(ratingColors, colorScheme, context) {
-        AnkiColors(
-            ratings = ratingColors,
-            againButton = ratingColors.again.color,
-            hardButton = ratingColors.hard.color,
-            goodButton = ratingColors.good.color,
-            easyButton = ratingColors.easy.color,
-            newCount = Color(ankiColor(context, R.attr.newCountColor)),
-            learnCount = Color(ankiColor(context, R.attr.learnCountColor)),
-            reviewCount = Color(ankiColor(context, R.attr.reviewCountColor)),
-            topBar = Color(ankiColor(context, R.attr.topBarColor))
-        )
-    }
+    val ankiColors =
+        remember(ratingColors, colorScheme, context) {
+            AnkiColors(
+                ratings = ratingColors,
+                againButton = ratingColors.again.color,
+                hardButton = ratingColors.hard.color,
+                goodButton = ratingColors.good.color,
+                easyButton = ratingColors.easy.color,
+                newCount = Color(ankiColor(context, R.attr.newCountColor)),
+                learnCount = Color(ankiColor(context, R.attr.learnCountColor)),
+                reviewCount = Color(ankiColor(context, R.attr.reviewCountColor)),
+                topBar = Color(ankiColor(context, R.attr.topBarColor)),
+            )
+        }
 
     CompositionLocalProvider(LocalAnkiColors provides ankiColors) {
         MaterialTheme(
@@ -98,7 +105,7 @@ fun AnkiDroidTheme(
             typography = AppTypography,
             shapes = AppShapes,
             motionScheme = MotionScheme.expressive(),
-            content = content
+            content = content,
         )
     }
 }

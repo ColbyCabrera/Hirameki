@@ -87,12 +87,13 @@ private object AnswerButtonsConstants {
     val AdjustedButtonHorizontalPadding = 28.dp
 }
 
-private val ratings = listOf(
-    R.string.ease_button_again to CardAnswer.Rating.AGAIN,
-    R.string.ease_button_hard to CardAnswer.Rating.HARD,
-    R.string.ease_button_good to CardAnswer.Rating.GOOD,
-    R.string.ease_button_easy to CardAnswer.Rating.EASY
-)
+private val ratings =
+    listOf(
+        R.string.ease_button_again to CardAnswer.Rating.AGAIN,
+        R.string.ease_button_hard to CardAnswer.Rating.HARD,
+        R.string.ease_button_good to CardAnswer.Rating.GOOD,
+        R.string.ease_button_easy to CardAnswer.Rating.EASY,
+    )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -108,21 +109,21 @@ fun AnswerButtons(
     onRateCard: (CardAnswer.Rating) -> Unit,
     nextTimes: List<String>,
     moreOptionsInTopAppBar: Boolean = false,
-    onMoreOptionsClick: () -> Unit
+    onMoreOptionsClick: () -> Unit,
 ) {
     val adjustButtonStylesForBadges = showButtonBadges && moreOptionsInTopAppBar
 
     Column(
         modifier = modifier.imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(AnswerButtonsConstants.ColumnSpacing)
+        verticalArrangement = Arrangement.spacedBy(AnswerButtonsConstants.ColumnSpacing),
     ) {
         if (showTypeInAnswer) {
             AnswerTypeInTextField(
                 typedAnswer = typedAnswer,
                 onTypedAnswerChanged = onTypedAnswerChanged,
                 isAnswerShown = isAnswerShown,
-                onShowAnswer = onShowAnswer
+                onShowAnswer = onShowAnswer,
             )
         }
 
@@ -138,17 +139,17 @@ fun AnswerButtons(
                     ) {
                         Icon(
                             Icons.Filled.MoreVert,
-                            contentDescription = stringResource(R.string.more_options)
+                            contentDescription = stringResource(R.string.more_options),
                         )
                     }
                 }
                 Box(
-                    modifier = Modifier.animateContentSize(motionScheme.fastSpatialSpec())
+                    modifier = Modifier.animateContentSize(motionScheme.fastSpatialSpec()),
                 ) {
                     if (!isAnswerShown) {
                         ShowAnswerButton(
                             moreOptionsInTopAppBar = moreOptionsInTopAppBar,
-                            onShowAnswer = onShowAnswer
+                            onShowAnswer = onShowAnswer,
                         )
                     } else {
                         RatingButtons(
@@ -156,7 +157,7 @@ fun AnswerButtons(
                             colorizeAnswerButtons = colorizeAnswerButtons,
                             adjustButtonStylesForBadges = adjustButtonStylesForBadges,
                             onRateCard = onRateCard,
-                            nextTimes = nextTimes
+                            nextTimes = nextTimes,
                         )
                     }
                 }
@@ -170,7 +171,7 @@ private fun AnswerTypeInTextField(
     typedAnswer: String,
     onTypedAnswerChanged: (String) -> Unit,
     isAnswerShown: Boolean,
-    onShowAnswer: () -> Unit
+    onShowAnswer: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -179,45 +180,50 @@ private fun AnswerTypeInTextField(
         value = typedAnswer,
         onValueChange = onTypedAnswerChanged,
         label = { Text(stringResource(R.string.type_in_the_answer)) },
-        modifier = Modifier
-            .fillMaxWidth(AnswerButtonsConstants.TEXT_FIELD_MAX_WIDTH_FRACTION)
-            .border(
-                AnswerButtonsConstants.TextFieldBorderWidth,
-                if (isFocused) MaterialTheme.colorScheme.tertiary else Color.Transparent,
-                MaterialTheme.shapes.extraLargeIncreased
-            ),
+        modifier =
+            Modifier
+                .fillMaxWidth(AnswerButtonsConstants.TEXT_FIELD_MAX_WIDTH_FRACTION)
+                .border(
+                    AnswerButtonsConstants.TextFieldBorderWidth,
+                    if (isFocused) MaterialTheme.colorScheme.tertiary else Color.Transparent,
+                    MaterialTheme.shapes.extraLargeIncreased,
+                ),
         shape = MaterialTheme.shapes.extraLargeIncreased,
         interactionSource = interactionSource,
         readOnly = isAnswerShown,
         singleLine = true,
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-        ),
+        colors =
+            TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = {
-            if (!isAnswerShown) {
-                onShowAnswer()
-            }
-        }),
+        keyboardActions =
+            KeyboardActions(onDone = {
+                if (!isAnswerShown) {
+                    onShowAnswer()
+                }
+            }),
     )
 }
 
 @Composable
 private fun ShowAnswerButton(
-    moreOptionsInTopAppBar: Boolean, onShowAnswer: () -> Unit
+    moreOptionsInTopAppBar: Boolean,
+    onShowAnswer: () -> Unit,
 ) {
     val view = LocalView.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val baseHorizontalPadding = ButtonDefaults.MediumContentPadding.calculateLeftPadding(
-        layoutDirection = LocalLayoutDirection.current
-    ) + if (moreOptionsInTopAppBar) AnswerButtonsConstants.ExpandedButtonHorizontalPadding else 0.dp
+    val baseHorizontalPadding =
+        ButtonDefaults.MediumContentPadding.calculateLeftPadding(
+            layoutDirection = LocalLayoutDirection.current,
+        ) + if (moreOptionsInTopAppBar) AnswerButtonsConstants.ExpandedButtonHorizontalPadding else 0.dp
 
     val horizontalPadding by animateDpAsState(
         if (isPressed) baseHorizontalPadding + AnswerButtonsConstants.PressedAnimationExtraPadding else baseHorizontalPadding,
         motionScheme.fastSpatialSpec(),
-        label = "ShowAnswerButtonPadding"
+        label = "ShowAnswerButtonPadding",
     )
 
     Button(
@@ -228,14 +234,16 @@ private fun ShowAnswerButton(
         modifier = Modifier.height(AnswerButtonsConstants.MainButtonHeight),
         interactionSource = interactionSource,
         contentPadding = PaddingValues(horizontal = horizontalPadding),
-        colors = ButtonDefaults.buttonColors(
-            MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary
-        )
+        colors =
+            ButtonDefaults.buttonColors(
+                MaterialTheme.colorScheme.primary,
+                MaterialTheme.colorScheme.onPrimary,
+            ),
     ) {
         Text(
             text = stringResource(R.string.show_answer),
             softWrap = false,
-            overflow = TextOverflow.Clip
+            overflow = TextOverflow.Clip,
         )
     }
 }
@@ -247,14 +255,15 @@ private fun RatingButtons(
     colorizeAnswerButtons: Boolean,
     adjustButtonStylesForBadges: Boolean,
     onRateCard: (CardAnswer.Rating) -> Unit,
-    nextTimes: List<String>
+    nextTimes: List<String>,
 ) {
     val view = LocalView.current
     val ratingColors = LocalAnkiColors.current.ratings
 
     ButtonGroup(
         horizontalArrangement = Arrangement.spacedBy(AnswerButtonsConstants.RatingButtonGroupSpacing),
-        overflowIndicator = { }) {
+        overflowIndicator = { },
+    ) {
         ratings.forEachIndexed { index, (labelResId, rating) ->
             customItem(
                 buttonGroupContent = {
@@ -263,76 +272,94 @@ private fun RatingButtons(
                     val nextTime = nextTimes.getOrElse(index) { "" }
                     val tonalRole = ratingColors.forRating(rating)
 
-                    val (buttonContainerColor, buttonContentColor) = if (colorizeAnswerButtons) {
-                        tonalRole.colorContainer to tonalRole.onColorContainer
-                    } else {
-                        MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
-                    }
+                    val (buttonContainerColor, buttonContentColor) =
+                        if (colorizeAnswerButtons) {
+                            tonalRole.colorContainer to tonalRole.onColorContainer
+                        } else {
+                            MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+                        }
 
                     Box(
-                        modifier = Modifier
-                            .animateWidth(interactionSource)
-                            .semantics {
-                                contentDescription = "$labelText, $nextTime"
-                            }, contentAlignment = Alignment.BottomCenter
+                        modifier =
+                            Modifier
+                                .animateWidth(interactionSource)
+                                .semantics {
+                                    contentDescription = "$labelText, $nextTime"
+                                },
+                        contentAlignment = Alignment.BottomCenter,
                     ) {
                         Button(
                             onClick = {
                                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                                 onRateCard(rating)
                             },
-                            modifier = Modifier
-                                .height(AnswerButtonsConstants.MainButtonHeight)
-                                .fillMaxWidth()
-                                .then(
-                                    if (showButtonBadges && !adjustButtonStylesForBadges) {
-                                        Modifier.padding(bottom = AnswerButtonsConstants.BadgeBottomPadding)
-                                    } else Modifier
-                                ),
-                            contentPadding = if (adjustButtonStylesForBadges) {
-                                PaddingValues(horizontal = AnswerButtonsConstants.AdjustedButtonHorizontalPadding)
-                            } else ButtonDefaults.ExtraSmallContentPadding,
-                            shape = when (index) {
-                                0 -> ButtonGroupDefaults.connectedLeadingButtonShape
-                                ratings.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShape
-                                else -> ButtonGroupDefaults.connectedMiddleButtonShapes().shape
-                            },
+                            modifier =
+                                Modifier
+                                    .height(AnswerButtonsConstants.MainButtonHeight)
+                                    .fillMaxWidth()
+                                    .then(
+                                        if (showButtonBadges && !adjustButtonStylesForBadges) {
+                                            Modifier.padding(bottom = AnswerButtonsConstants.BadgeBottomPadding)
+                                        } else {
+                                            Modifier
+                                        },
+                                    ),
+                            contentPadding =
+                                if (adjustButtonStylesForBadges) {
+                                    PaddingValues(horizontal = AnswerButtonsConstants.AdjustedButtonHorizontalPadding)
+                                } else {
+                                    ButtonDefaults.ExtraSmallContentPadding
+                                },
+                            shape =
+                                when (index) {
+                                    0 -> ButtonGroupDefaults.connectedLeadingButtonShape
+                                    ratings.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShape
+                                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes().shape
+                                },
                             interactionSource = interactionSource,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = buttonContainerColor,
-                                contentColor = buttonContentColor
-                            )
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = buttonContainerColor,
+                                    contentColor = buttonContentColor,
+                                ),
                         ) {
                             Text(
-                                modifier = if (adjustButtonStylesForBadges) {
-                                    Modifier
-                                        .fillMaxHeight()
-                                        .padding(top = AnswerButtonsConstants.AdjustedTextTopPadding)
-                                } else Modifier,
+                                modifier =
+                                    if (adjustButtonStylesForBadges) {
+                                        Modifier
+                                            .fillMaxHeight()
+                                            .padding(top = AnswerButtonsConstants.AdjustedTextTopPadding)
+                                    } else {
+                                        Modifier
+                                    },
                                 text = nextTime,
                                 softWrap = false,
-                                overflow = TextOverflow.Visible
+                                overflow = TextOverflow.Visible,
                             )
                         }
 
                         if (showButtonBadges) {
-                            val (badgeContainerColor, badgeContentColor) = if (colorizeAnswerButtons) {
-                                tonalRole.color to tonalRole.onColor
-                            } else {
-                                MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-                            }
+                            val (badgeContainerColor, badgeContentColor) =
+                                if (colorizeAnswerButtons) {
+                                    tonalRole.color to tonalRole.onColor
+                                } else {
+                                    MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+                                }
 
                             Badge(
-                                modifier = if (adjustButtonStylesForBadges) {
-                                    Modifier.padding(bottom = AnswerButtonsConstants.AdjustedBadgeBottomPadding)
-                                } else Modifier,
+                                modifier =
+                                    if (adjustButtonStylesForBadges) {
+                                        Modifier.padding(bottom = AnswerButtonsConstants.AdjustedBadgeBottomPadding)
+                                    } else {
+                                        Modifier
+                                    },
                                 containerColor = badgeContainerColor,
                                 contentColor = badgeContentColor,
                             ) {
                                 Text(
                                     modifier = Modifier.padding(1.dp),
                                     text = labelText,
-                                    style = MaterialTheme.typography.labelSmall
+                                    style = MaterialTheme.typography.labelSmall,
                                 )
                             }
                         }
@@ -358,7 +385,8 @@ fun AnswerButtonsShowAnswerPreview() {
             onShowAnswer = {},
             onRateCard = {},
             nextTimes = emptyList(),
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -376,7 +404,8 @@ fun AnswerButtonsRatingPreview() {
             onShowAnswer = {},
             onRateCard = {},
             nextTimes = listOf("1m", "2d", "4d", "7d"),
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -394,7 +423,8 @@ fun AnswerButtonsColorizedRatingPreview() {
             onShowAnswer = {},
             onRateCard = {},
             nextTimes = listOf("1m", "2d", "4d", "7d"),
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -412,7 +442,8 @@ fun AnswerButtonsColorizedNoBadgesPreview() {
             onShowAnswer = {},
             onRateCard = {},
             nextTimes = listOf("1m", "2d", "4d", "7d"),
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -430,7 +461,8 @@ fun AnswerButtonsNoFeedbackPreview() {
             onShowAnswer = {},
             onRateCard = {},
             nextTimes = listOf("1m", "2d", "4d", "7d"),
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -448,7 +480,8 @@ fun AnswerButtonsTypeInPreview() {
             onShowAnswer = {},
             onRateCard = {},
             nextTimes = emptyList(),
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -467,7 +500,8 @@ fun AnswerButtonsExpandedRatingPreview() {
             onRateCard = {},
             nextTimes = listOf("1m", "2d", "4d", "7d"),
             moreOptionsInTopAppBar = true,
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -486,7 +520,8 @@ fun AnswerButtonsExpandedColorizedRatingPreview() {
             onRateCard = {},
             nextTimes = listOf("1m", "2d", "4d", "7d"),
             moreOptionsInTopAppBar = true,
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
 
@@ -505,7 +540,7 @@ fun AnswerButtonsExpandedShowAnswerPreview() {
             onRateCard = {},
             nextTimes = emptyList(),
             moreOptionsInTopAppBar = true,
-            onMoreOptionsClick = {})
+            onMoreOptionsClick = {},
+        )
     }
 }
-

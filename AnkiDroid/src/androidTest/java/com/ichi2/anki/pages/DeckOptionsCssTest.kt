@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class DeckOptionsCssTest : InstrumentedTest() {
-
     @get:Rule
     val runtimePermissionRule = grantPermissions(GrantStoragePermission.storagePermission)
 
@@ -55,7 +54,11 @@ class DeckOptionsCssTest : InstrumentedTest() {
     @Test
     fun testCssInjection() {
         // Use a random deck if possible, or just the first one
-        val deckId = col.decks.allNamesAndIds().random().id
+        val deckId =
+            col.decks
+                .allNamesAndIds()
+                .random()
+                .id
         val intent = DeckOptions.getIntent(testContext, deckId)
 
         ActivityScenario.launch<SingleFragmentActivity>(intent).use { scenario ->
@@ -69,7 +72,7 @@ class DeckOptionsCssTest : InstrumentedTest() {
                 // The PageWebViewClient manages the injection logic.
                 val webViewClient = webView.webViewClient as PageWebViewClient
 
-                // WAIT for the WebView to become visible "naturally" 
+                // WAIT for the WebView to become visible "naturally"
                 // (i.e. via the deckOptionsReady call from the JS side)
                 // In the test, we'll poll for fragment.webView.isVisible
                 // This replaces the "cheat" of manually calling activity.deckOptionsReady(byteArrayOf())
@@ -79,7 +82,9 @@ class DeckOptionsCssTest : InstrumentedTest() {
 
                 webViewClient.runWhenPageStyled(webView) {
                     webView.evaluateJavascript(
-                        "(function() { " + "  var style = document.getElementById('material3-theme'); " + "  return style ? style.textContent : null; " + "})();"
+                        "(function() { " + "  var style = document.getElementById('material3-theme'); " +
+                            "  return style ? style.textContent : null; " +
+                            "})();",
                     ) { result ->
                         // result will be like "\"some-css-content\"" or "null"
                         if (result != "null") {
@@ -104,7 +109,7 @@ class DeckOptionsCssTest : InstrumentedTest() {
             assertThat(
                 "WebView should become visible naturally (deckOptionsReady)",
                 isVisible,
-                `is`(true)
+                `is`(true),
             )
 
             // Wait for the style to be injected and verified
@@ -119,17 +124,17 @@ class DeckOptionsCssTest : InstrumentedTest() {
             assertThat(
                 "CSS content should contain --canvas variable",
                 cssContent!!.contains("--canvas"),
-                `is`(true)
+                `is`(true),
             )
             assertThat(
                 "CSS content should contain --fg variable",
                 cssContent.contains("--fg"),
-                `is`(true)
+                `is`(true),
             )
             assertThat(
                 "CSS content should contain .deck-options-page selector",
                 cssContent.contains(".deck-options-page"),
-                `is`(true)
+                `is`(true),
             )
         }
     }
@@ -137,7 +142,11 @@ class DeckOptionsCssTest : InstrumentedTest() {
     @Test
     @Repeat(20)
     fun testCssApplication() {
-        val deckId = col.decks.allNamesAndIds().random().id
+        val deckId =
+            col.decks
+                .allNamesAndIds()
+                .random()
+                .id
         val intent = DeckOptions.getIntent(testContext, deckId)
 
         ActivityScenario.launch<SingleFragmentActivity>(intent).use { scenario ->
@@ -155,7 +164,9 @@ class DeckOptionsCssTest : InstrumentedTest() {
                 webViewClient.runWhenPageStyled(webView) {
                     // Check computed style of the body
                     webView.evaluateJavascript(
-                        "(function() { " + "  var style = getComputedStyle(document.documentElement); " + "  return style.getPropertyValue('--canvas').trim(); " + "})();"
+                        "(function() { " + "  var style = getComputedStyle(document.documentElement); " +
+                            "  return style.getPropertyValue('--canvas').trim(); " +
+                            "})();",
                     ) { result ->
                         // result is like "\"#ffffff\"" or null
                         try {
@@ -194,7 +205,9 @@ class DeckOptionsCssTest : InstrumentedTest() {
                     val pollLatch = CountDownLatch(1)
                     scenario.onActivity { activity ->
                         activity.requireDeckOptionsFragment().webView.evaluateJavascript(
-                            "(function() { " + "  var style = getComputedStyle(document.documentElement); " + "  return style.getPropertyValue('--canvas').trim(); " + "})();"
+                            "(function() { " + "  var style = getComputedStyle(document.documentElement); " +
+                                "  return style.getPropertyValue('--canvas').trim(); " +
+                                "})();",
                         ) { result ->
                             latestColor = result.replace("\"", "").lowercase()
                             pollLatch.countDown()
@@ -210,13 +223,13 @@ class DeckOptionsCssTest : InstrumentedTest() {
                 assertThat(
                     "Applied CSS variable --canvas should match theme background",
                     latestColor,
-                    `is`(expectedBgColor)
+                    `is`(expectedBgColor),
                 )
             } else {
                 assertThat(
                     "Applied CSS variable --canvas should match theme background",
                     actualBgColor,
-                    `is`(expectedBgColor)
+                    `is`(expectedBgColor),
                 )
             }
         }

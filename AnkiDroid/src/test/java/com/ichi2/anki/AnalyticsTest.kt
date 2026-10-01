@@ -44,11 +44,12 @@ class AnalyticsTest {
 
     @Before
     fun setUp() {
-        sharedPreferences = SPMockBuilder().createSharedPreferences().apply {
-            edit {
-                putBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, true)
+        sharedPreferences =
+            SPMockBuilder().createSharedPreferences().apply {
+                edit {
+                    putBoolean(UsageAnalytics.ANALYTICS_OPTIN_KEY, true)
+                }
             }
-        }
         UsageAnalytics.resetForTests()
         AnkiDroidApp.sharedPreferencesTestingOverride = sharedPreferences
         MockitoAnnotations.openMocks(this)
@@ -61,8 +62,9 @@ class AnalyticsTest {
         whenever(mockContext.packageName).thenReturn("mock_context")
         whenever(
             mockContext.getSharedPreferences(
-                "mock_context_preferences", Context.MODE_PRIVATE
-            )
+                "mock_context_preferences",
+                Context.MODE_PRIVATE,
+            ),
         ).thenReturn(sharedPreferences)
     }
 

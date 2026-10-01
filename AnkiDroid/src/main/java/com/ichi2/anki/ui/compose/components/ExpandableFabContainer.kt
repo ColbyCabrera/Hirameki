@@ -27,14 +27,13 @@ import com.ichi2.anki.ui.compose.FabPaddingBottom
 import com.ichi2.anki.ui.compose.FabPaddingEnd
 
 @Composable
-fun ExpandableFabContainer(
-    content: @Composable () -> Unit
-) {
+fun ExpandableFabContainer(content: @Composable () -> Unit) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(end = FabPaddingEnd, bottom = FabPaddingBottom),
-        contentAlignment = Alignment.BottomEnd
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(end = FabPaddingEnd, bottom = FabPaddingBottom),
+        contentAlignment = Alignment.BottomEnd,
     ) {
         content()
     }

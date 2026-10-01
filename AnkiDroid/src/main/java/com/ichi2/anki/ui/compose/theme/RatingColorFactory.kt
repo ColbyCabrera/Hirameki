@@ -50,13 +50,14 @@ data class RatingColorScheme(
     val good: TonalRole,
     val easy: TonalRole,
 ) {
-    fun forRating(rating: CardAnswer.Rating): TonalRole = when (rating) {
-        CardAnswer.Rating.AGAIN -> again
-        CardAnswer.Rating.HARD -> hard
-        CardAnswer.Rating.GOOD -> good
-        CardAnswer.Rating.EASY -> easy
-        else -> good
-    }
+    fun forRating(rating: CardAnswer.Rating): TonalRole =
+        when (rating) {
+            CardAnswer.Rating.AGAIN -> again
+            CardAnswer.Rating.HARD -> hard
+            CardAnswer.Rating.GOOD -> good
+            CardAnswer.Rating.EASY -> easy
+            else -> good
+        }
 }
 
 /**
@@ -70,9 +71,9 @@ data class RatingColorScheme(
 object RatingColorFactory {
     // Canonical Anki Semantic Seed Colors
     const val SEED_AGAIN: Int = 0xFFE53935.toInt() // Material Red 600
-    const val SEED_HARD: Int = 0xFFFB8C00.toInt()  // Material Orange 600 / Amber
-    const val SEED_GOOD: Int = 0xFF43A047.toInt()  // Material Green 600
-    const val SEED_EASY: Int = 0xFF1E88E5.toInt()  // Material Blue 600
+    const val SEED_HARD: Int = 0xFFFB8C00.toInt() // Material Orange 600 / Amber
+    const val SEED_GOOD: Int = 0xFF43A047.toInt() // Material Green 600
+    const val SEED_EASY: Int = 0xFF1E88E5.toInt() // Material Blue 600
 
     fun createRatingColorScheme(
         primaryColor: Color,
@@ -82,11 +83,12 @@ object RatingColorFactory {
         val primaryArgb = primaryColor.toArgb()
 
         fun buildRole(seedColor: Int): TonalRole {
-            val finalArgb = if (harmonize) {
-                Blend.harmonize(seedColor, primaryArgb)
-            } else {
-                seedColor
-            }
+            val finalArgb =
+                if (harmonize) {
+                    Blend.harmonize(seedColor, primaryArgb)
+                } else {
+                    seedColor
+                }
             val hct = Hct.fromInt(finalArgb)
             val palette = TonalPalette.fromHueAndChroma(hct.hue, hct.chroma)
 

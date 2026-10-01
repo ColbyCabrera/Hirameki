@@ -21,10 +21,10 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.FrameLayout
 import android.widget.ImageView
-import com.ichi2.anki.ui.compose.components.AnkiToggleView
 import androidx.core.content.withStyledAttributes
 import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.AnkiToggleView
 import com.ichi2.anki.utils.ext.usingStyledAttributes
 import com.ichi2.ui.FixedTextView
 import com.ichi2.utils.Permissions

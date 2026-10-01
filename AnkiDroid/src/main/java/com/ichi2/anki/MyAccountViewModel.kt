@@ -61,7 +61,8 @@ data class MyAccountState(
 )
 
 enum class MyAccountScreenState {
-    ACCOUNT_MANAGEMENT, REMOVE_ACCOUNT,
+    ACCOUNT_MANAGEMENT,
+    REMOVE_ACCOUNT,
 }
 
 class MyAccountViewModel : ViewModel() {
@@ -102,57 +103,61 @@ class MyAccountViewModel : ViewModel() {
 
         _state.update { it.copy(isLoginLoading = true, loginError = null) }
 
-        loginJob = viewModelScope.launch {
-            try {
-                val endpoint = if (Prefs.isCustomSyncEnabled) Prefs.customSyncUri else null
-                val auth = withCol {
-                    syncLogin(email, password, endpoint)
+        loginJob =
+            viewModelScope.launch {
+                try {
+                    val endpoint = if (Prefs.isCustomSyncEnabled) Prefs.customSyncUri else null
+                    val auth =
+                        withCol {
+                            syncLogin(email, password, endpoint)
+                        }
+                    Prefs.username = email
+                    Prefs.hkey = auth.hkey
+                    _state.update {
+                        it.copy(
+                            isLoginLoading = false,
+                            isLoggedIn = true,
+                            username = email,
+                        )
+                    }
+                    onSuccess()
+                } catch (e: BackendInterruptedException) {
+                    // User cancelled - just clear loading state, don't show error
+                    Timber.i("Login cancelled by user")
+                    _state.update { it.copy(isLoginLoading = false) }
+                } catch (e: BackendSyncException.BackendSyncAuthFailedException) {
+                    _state.update {
+                        it.copy(
+                            isLoginLoading = false,
+                            loginError =
+                                LoginError.StringResource(
+                                    resId = R.string.login_error_authentication_failed,
+                                    requiresPasswordReset = true,
+                                ),
+                        )
+                    }
+                } catch (e: BackendNetworkException) {
+                    Timber.w(e, "Network error during login")
+                    _state.update {
+                        it.copy(
+                            isLoginLoading = false,
+                            loginError = LoginError.StringResource(R.string.login_error_network),
+                        )
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "Login failed")
+                    _state.update {
+                        it.copy(
+                            isLoginLoading = false,
+                            loginError =
+                                e.message?.let { message -> LoginError.DynamicString(message) }
+                                    ?: LoginError.StringResource(R.string.login_error_unknown),
+                        )
+                    }
+                } finally {
+                    loginJob = null
                 }
-                Prefs.username = email
-                Prefs.hkey = auth.hkey
-                _state.update {
-                    it.copy(
-                        isLoginLoading = false,
-                        isLoggedIn = true,
-                        username = email
-                    )
-                }
-                onSuccess()
-            } catch (e: BackendInterruptedException) {
-                // User cancelled - just clear loading state, don't show error
-                Timber.i("Login cancelled by user")
-                _state.update { it.copy(isLoginLoading = false) }
-            } catch (e: BackendSyncException.BackendSyncAuthFailedException) {
-                _state.update {
-                    it.copy(
-                        isLoginLoading = false,
-                        loginError = LoginError.StringResource(
-                            resId = R.string.login_error_authentication_failed,
-                            requiresPasswordReset = true,
-                        ),
-                    )
-                }
-            } catch (e: BackendNetworkException) {
-                Timber.w(e, "Network error during login")
-                _state.update {
-                    it.copy(
-                        isLoginLoading = false,
-                        loginError = LoginError.StringResource(R.string.login_error_network),
-                    )
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Login failed")
-                _state.update {
-                    it.copy(
-                        isLoginLoading = false,
-                        loginError = e.message?.let { message -> LoginError.DynamicString(message) }
-                            ?: LoginError.StringResource(R.string.login_error_unknown),
-                    )
-                }
-            } finally {
-                loginJob = null
             }
-        }
     }
 
     /**

@@ -27,22 +27,24 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class SessionStorageIntegrationTest : RobolectricTest() {
-
     @Test
     fun productionShellTemplatesIncludePolyfill() {
         val context = ApplicationProvider.getApplicationContext<Context>()
 
         val cardTemplateContent =
-            context.assets.open("card_template.html").reader().use { it.readText() }
+            context.assets
+                .open("card_template.html")
+                .reader()
+                .use { it.readText() }
         assertTrue(
             cardTemplateContent.contains("scripts/session_storage_polyfill.js"),
-            "card_template.html must include polyfill"
+            "card_template.html must include polyfill",
         )
 
         val stdHtmlOutput = stdHtml(context)
         assertTrue(
             stdHtmlOutput.contains("scripts/session_storage_polyfill.js"),
-            "stdHtml must include polyfill"
+            "stdHtml must include polyfill",
         )
     }
 }

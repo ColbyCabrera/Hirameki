@@ -4,9 +4,7 @@ package com.ichi2.anki
 import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteException
 import androidx.annotation.WorkerThread
-import androidx.core.database.sqlite.transaction
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.model.WhiteboardPenColor
@@ -123,8 +121,6 @@ object MetaDB {
         }
     }
 
-
-
     /** Open the meta-db but only if it currently closed.  */
     private fun openDBIfClosed(context: Context) {
         if (!isDBOpen()) {
@@ -182,8 +178,6 @@ object MetaDB {
         }
         return false
     }
-
-
 
     /**
      * Associates a language to a deck, model, and card model for a given type.
@@ -571,8 +565,6 @@ object MetaDB {
             Timber.e(e, "Error storing mic toolbar state in MetaDB ")
         }
     }
-
-
 
     fun close() {
         metaDb?.run {

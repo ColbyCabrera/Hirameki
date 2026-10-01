@@ -1,8 +1,6 @@
 package com.ichi2.anki.ui.compose.components
 
-import android.widget.FrameLayout
 import androidx.test.core.app.ApplicationProvider
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -11,7 +9,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class AnkiToggleViewTest {
-
     @Test
     fun testInitialStateAndSetChecked() {
         val toggleView = AnkiToggleView(ApplicationProvider.getApplicationContext())
