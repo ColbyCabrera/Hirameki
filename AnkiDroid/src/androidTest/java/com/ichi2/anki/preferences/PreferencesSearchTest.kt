@@ -46,7 +46,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class PreferencesNavigationTest {
+class PreferencesSearchTest {
     @get:Rule
     val runtimePermissionRule = grantPermissions(GrantStoragePermission.storagePermission)
 
@@ -56,7 +56,7 @@ class PreferencesNavigationTest {
      * - The back button should not close the entire preferences activity.
      */
     @Test
-    fun testOnCompactMode() {
+    fun testSearchOnCompactMode() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         assumeTrue(context.resources.isWindowCompact())
         ActivityScenario.launch<PreferencesActivity>(PreferencesActivity.getIntent(context))
@@ -79,7 +79,7 @@ class PreferencesNavigationTest {
      * close the preference activity instead of navigating back through the previously opened menus.
      */
     @Test
-    fun testOnNonCompactMode() {
+    fun testSearchOnNonCompactMode() {
         fun isTablet(context: Context): Boolean = context.resources.configuration.smallestScreenWidthDp >= 600
 
         val context = ApplicationProvider.getApplicationContext<Context>()
