@@ -224,6 +224,11 @@ extensions.configure<ApplicationExtension> {
                 storePassword = System.getenv("KEYSTOREPWD") ?: System.getenv("KSTOREPWD")
                 keyAlias = System.getenv("KEYALIAS")
                 keyPassword = System.getenv("KEYPWD")
+            } else {
+                storeFile = rootProject.file("tools/fallback-release-keystore.jks")
+                storePassword = "Test@123"
+                keyAlias = "my-key"
+                keyPassword = "Test@123"
             }
         }
     }
