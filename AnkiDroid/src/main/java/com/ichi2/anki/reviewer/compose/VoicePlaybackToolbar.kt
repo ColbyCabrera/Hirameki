@@ -39,7 +39,6 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +47,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ichi2.anki.R
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -60,7 +60,7 @@ fun VoicePlaybackToolbar(
     viewModel: VoicePlaybackViewModel,
     onToggleRecording: () -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val amplitude by viewModel.amplitude.collectAsStateWithLifecycle()
@@ -72,7 +72,7 @@ fun VoicePlaybackToolbar(
         onTogglePlayback = viewModel::togglePlayback,
         onDiscardRecording = viewModel::discardRecording,
         onDismiss = onDismiss,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -85,44 +85,48 @@ fun VoicePlaybackToolbarContent(
     onTogglePlayback: () -> Unit,
     onDiscardRecording: () -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val animatedAmplitude by animateFloatAsState(targetValue = amplitude, label = "amplitude")
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = MaterialTheme.shapes.extraExtraLarge,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp
+        tonalElevation = 2.dp,
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .animateContentSize(),
+            modifier =
+                Modifier
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Waveform / Progress indicator area
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .clip(MaterialTheme.shapes.extraExtraLarge)
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .height(40.dp)
+                        .clip(MaterialTheme.shapes.extraExtraLarge)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                contentAlignment = Alignment.Center,
             ) {
                 when (state) {
                     is VoicePlaybackViewModel.RecordingState.Recording -> {
                         // Simple amplitude visualization
                         Box(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(fraction = 0.1f + (animatedAmplitude * 0.9f))
-                                .height(20.dp)
-                                .clip(MaterialTheme.shapes.extraExtraLarge)
-                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(fraction = 0.1f + (animatedAmplitude * 0.9f))
+                                    .height(20.dp)
+                                    .clip(MaterialTheme.shapes.extraExtraLarge)
+                                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.7f)),
                         )
                     }
 
@@ -130,21 +134,23 @@ fun VoicePlaybackToolbarContent(
                         val progress = state.progress
                         LinearWavyProgressIndicator(
                             progress = { progress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
                         )
                     }
 
                     else -> {
                         // Idle or PlaybackReady - show placeholder
                         Box(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .clip(MaterialTheme.shapes.extraExtraLarge)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .clip(MaterialTheme.shapes.extraExtraLarge)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
                         )
                     }
                 }
@@ -154,57 +160,79 @@ fun VoicePlaybackToolbarContent(
             FilledIconButton(
                 onClick = {
                     when (state) {
-                        is VoicePlaybackViewModel.RecordingState.Idle, is VoicePlaybackViewModel.RecordingState.Recording -> onToggleRecording()
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> onTogglePlayback()
+                        is VoicePlaybackViewModel.RecordingState.Idle,
+                        is VoicePlaybackViewModel.RecordingState.Recording,
+                        -> onToggleRecording()
+
+                        is VoicePlaybackViewModel.RecordingState.PlaybackReady,
+                        is VoicePlaybackViewModel.RecordingState.Playing,
+                        -> onTogglePlayback()
                     }
                 },
                 modifier = Modifier.size(48.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.Recording -> MaterialTheme.colorScheme.error
-                        else -> IconButtonDefaults.filledIconButtonColors().containerColor
-                    }, contentColor = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.Recording -> MaterialTheme.colorScheme.onError
-                        else -> IconButtonDefaults.filledIconButtonColors().contentColor
-                    }
-                )
+                colors =
+                    IconButtonDefaults.filledIconButtonColors(
+                        containerColor =
+                            when (state) {
+                                is VoicePlaybackViewModel.RecordingState.Recording -> MaterialTheme.colorScheme.error
+                                else -> IconButtonDefaults.filledIconButtonColors().containerColor
+                            },
+                        contentColor =
+                            when (state) {
+                                is VoicePlaybackViewModel.RecordingState.Recording -> MaterialTheme.colorScheme.onError
+                                else -> IconButtonDefaults.filledIconButtonColors().contentColor
+                            },
+                    ),
             ) {
                 Icon(
-                    imageVector = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.Idle -> Icons.Default.Mic
-                        is VoicePlaybackViewModel.RecordingState.Recording -> Icons.Default.Stop
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady -> Icons.Default.PlayArrow
-                        is VoicePlaybackViewModel.RecordingState.Playing -> Icons.Default.Pause
-                    },
-                    contentDescription = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.Idle -> stringResource(R.string.start_recording)
-                        is VoicePlaybackViewModel.RecordingState.Recording -> stringResource(R.string.stop_recording)
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady -> stringResource(R.string.play_recording)
-                        is VoicePlaybackViewModel.RecordingState.Playing -> stringResource(R.string.pause_playback)
-                    },
+                    imageVector =
+                        when (state) {
+                            is VoicePlaybackViewModel.RecordingState.Idle -> Icons.Default.Mic
+                            is VoicePlaybackViewModel.RecordingState.Recording -> Icons.Default.Stop
+                            is VoicePlaybackViewModel.RecordingState.PlaybackReady -> Icons.Default.PlayArrow
+                            is VoicePlaybackViewModel.RecordingState.Playing -> Icons.Default.Pause
+                        },
+                    contentDescription =
+                        when (state) {
+                            is VoicePlaybackViewModel.RecordingState.Idle -> stringResource(R.string.start_recording)
+                            is VoicePlaybackViewModel.RecordingState.Recording -> stringResource(R.string.stop_recording)
+                            is VoicePlaybackViewModel.RecordingState.PlaybackReady -> stringResource(R.string.play_recording)
+                            is VoicePlaybackViewModel.RecordingState.Playing -> stringResource(R.string.pause_playback)
+                        },
                 )
             }
 
             // Secondary action (Discard or Close)
             FilledTonalIconButton(
-                modifier = Modifier.size(48.dp), onClick = {
+                modifier = Modifier.size(48.dp),
+                onClick = {
                     when (state) {
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> onDiscardRecording()
+                        is VoicePlaybackViewModel.RecordingState.PlaybackReady,
+                        is VoicePlaybackViewModel.RecordingState.Playing,
+                        -> onDiscardRecording()
+
                         else -> onDismiss()
                     }
-                }) {
+                },
+            ) {
                 Icon(
-                    painter = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> painterResource(
-                            R.drawable.delete_24px
-                        )
+                    painter =
+                        when (state) {
+                            is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing ->
+                                painterResource(
+                                    R.drawable.delete_24px,
+                                )
 
-                        else -> painterResource(R.drawable.close_24px)
-                    },
-                    contentDescription = when (state) {
-                        is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing -> stringResource(R.string.discard)
-                        else -> stringResource(R.string.dialog_cancel)
-                    },
+                            else -> painterResource(R.drawable.close_24px)
+                        },
+                    contentDescription =
+                        when (state) {
+                            is VoicePlaybackViewModel.RecordingState.PlaybackReady, is VoicePlaybackViewModel.RecordingState.Playing ->
+                                stringResource(
+                                    R.string.discard,
+                                )
+                            else -> stringResource(R.string.dialog_cancel)
+                        },
                 )
             }
         }
@@ -221,7 +249,8 @@ private fun VoicePlaybackToolbarPreview_Idle() {
             onToggleRecording = {},
             onTogglePlayback = {},
             onDiscardRecording = {},
-            onDismiss = {})
+            onDismiss = {},
+        )
     }
 }
 
@@ -235,7 +264,8 @@ private fun VoicePlaybackToolbarPreview_Recording() {
             onToggleRecording = {},
             onTogglePlayback = {},
             onDiscardRecording = {},
-            onDismiss = {})
+            onDismiss = {},
+        )
     }
 }
 
@@ -249,7 +279,8 @@ private fun VoicePlaybackToolbarPreview_PlaybackReady() {
             onToggleRecording = {},
             onTogglePlayback = {},
             onDiscardRecording = {},
-            onDismiss = {})
+            onDismiss = {},
+        )
     }
 }
 
@@ -263,6 +294,7 @@ private fun VoicePlaybackToolbarPreview_Playing() {
             onToggleRecording = {},
             onTogglePlayback = {},
             onDiscardRecording = {},
-            onDismiss = {})
+            onDismiss = {},
+        )
     }
 }

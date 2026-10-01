@@ -238,12 +238,13 @@ class ReviewerViewModel(
     private val server = AnkiServer(this)
     var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
 
-    private val _state = MutableStateFlow(
-        ReviewerState(
-            colorizeAnswerButtons = Prefs.colorizeAnswerButtons,
-            showAnswerButtonBadges = Prefs.showAnswerButtonBadges,
+    private val _state =
+        MutableStateFlow(
+            ReviewerState(
+                colorizeAnswerButtons = Prefs.colorizeAnswerButtons,
+                showAnswerButtonBadges = Prefs.showAnswerButtonBadges,
+            ),
         )
-    )
     val state: StateFlow<ReviewerState> = _state.asStateFlow()
 
     private val _effect = MutableSharedFlow<ReviewerEffect>()
@@ -252,13 +253,13 @@ class ReviewerViewModel(
     private val _evalCommand = MutableStateFlow<List<ReviewerJavascriptCommand>>(emptyList())
     val evalCommand: StateFlow<List<ReviewerJavascriptCommand>> = _evalCommand.asStateFlow()
 
-    private val _currentCard = MutableStateFlow<Card?>(null)
-    val currentCardFlow: StateFlow<Card?> = _currentCard.asStateFlow()
+    private val _currentCardFlow = MutableStateFlow<Card?>(null)
+    val currentCardFlow: StateFlow<Card?> = _currentCardFlow.asStateFlow()
 
     internal var currentCard: Card?
-        get() = _currentCard.value
+        get() = _currentCardFlow.value
         set(value) {
-            _currentCard.value = value
+            _currentCardFlow.value = value
         }
     private var queueState: CurrentQueueState? = null
     private val _queueStateFlow = MutableStateFlow<CurrentQueueState?>(null)
