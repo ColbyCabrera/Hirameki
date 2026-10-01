@@ -123,7 +123,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private val WhiteboardToolbarWidth = 56.dp
 private val WhiteboardBottomBarOffset = 48.dp
-private const val AnswerIndicatorDuration = 1000L
+private const val ANSWER_INDICATOR_DURATION = 1000L
 
 // You can rename this class to be more descriptive
 class InvertedTopCornersShape(
@@ -559,7 +559,11 @@ fun ReviewerContent(
                                 viewModel.onEvent(ReviewerEvent.ReplayMedia)
                             },
                             Triple(
-                                if (state.isVoicePlaybackEnabled) R.string.menu_disable_voice_playback else R.string.menu_enable_voice_playback,
+                                if (state.isVoicePlaybackEnabled) {
+                                    R.string.menu_disable_voice_playback
+                                } else {
+                                    R.string.menu_enable_voice_playback
+                                },
                                 Icons.Filled.RecordVoiceOver,
                             ) {
                                 viewModel.onEvent(ReviewerEvent.ToggleVoicePlayback)
@@ -712,7 +716,7 @@ fun AnswerIndicator(
     LaunchedEffect(feedback) {
         if (feedback != null) {
             lastFeedback = feedback
-            delay(AnswerIndicatorDuration.milliseconds)
+            delay(ANSWER_INDICATOR_DURATION.milliseconds)
             currentOnDismissed()
         }
     }

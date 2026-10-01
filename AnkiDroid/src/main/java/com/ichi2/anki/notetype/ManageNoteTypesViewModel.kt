@@ -52,12 +52,21 @@ import timber.log.Timber
 
 sealed interface ManageNoteTypesUiEvent {
     /** Message is already localized and ready to display to the user. */
-    data class ShowErrorMessage(val message: String) : ManageNoteTypesUiEvent
-    data class ShowSnackbar(@StringRes val messageId: Int) : ManageNoteTypesUiEvent
-    data class PromptSchemaChangeWarning(val noteType: ManageNoteTypeUiModel) :
-        ManageNoteTypesUiEvent
+    data class ShowErrorMessage(
+        val message: String,
+    ) : ManageNoteTypesUiEvent
 
-    data class PromptDeleteSelectedConfirmation(val ids: Set<Long>) : ManageNoteTypesUiEvent
+    data class ShowSnackbar(
+        @StringRes val messageId: Int,
+    ) : ManageNoteTypesUiEvent
+
+    data class PromptSchemaChangeWarning(
+        val noteType: ManageNoteTypeUiModel,
+    ) : ManageNoteTypesUiEvent
+
+    data class PromptDeleteSelectedConfirmation(
+        val ids: Set<Long>,
+    ) : ManageNoteTypesUiEvent
 }
 
 data class ManageNoteTypesUiState(
@@ -76,49 +85,54 @@ class ManageNoteTypesViewModel(
     private val _uiEvents = MutableSharedFlow<ManageNoteTypesUiEvent>()
     val uiEvents: SharedFlow<ManageNoteTypesUiEvent> = _uiEvents.asSharedFlow()
 
-    private val _allNoteTypes = MutableStateFlow<List<ManageNoteTypeUiModel>>(emptyList())
-    private val _addOptions = MutableStateFlow<List<AddNotetypeUiModel>>(emptyList())
-    private val _searchQuery = MutableStateFlow("")
-    private val _isLoading = MutableStateFlow(true)
-    private val _deleteConfirmationNoteType = MutableStateFlow<ManageNoteTypeUiModel?>(null)
-    private val _selectedNoteTypeIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val allNoteTypesState = MutableStateFlow<List<ManageNoteTypeUiModel>>(emptyList())
+    private val addOptionsState = MutableStateFlow<List<AddNotetypeUiModel>>(emptyList())
+    private val searchQueryState = MutableStateFlow("")
+    private val isLoadingState = MutableStateFlow(true)
+    private val deleteConfirmationNoteTypeState = MutableStateFlow<ManageNoteTypeUiModel?>(null)
+    private val selectedNoteTypeIdsState = MutableStateFlow<Set<Long>>(emptySet())
 
-    val uiState: StateFlow<ManageNoteTypesUiState> = combine(
-        _allNoteTypes,
-        _addOptions,
-        _searchQuery,
-        _isLoading,
-        _deleteConfirmationNoteType,
-        _selectedNoteTypeIds
-    ) { values ->
-        @Suppress("UNCHECKED_CAST") val noteTypes = values[0] as List<ManageNoteTypeUiModel>
+    val uiState: StateFlow<ManageNoteTypesUiState> =
+        combine(
+            allNoteTypesState,
+            addOptionsState,
+            searchQueryState,
+            isLoadingState,
+            deleteConfirmationNoteTypeState,
+            selectedNoteTypeIdsState,
+        ) { values ->
+            @Suppress("UNCHECKED_CAST")
+            val noteTypes = values[0] as List<ManageNoteTypeUiModel>
 
-        @Suppress("UNCHECKED_CAST") val addOptions = values[1] as List<AddNotetypeUiModel>
-        val query = values[2] as String
-        val isLoading = values[3] as Boolean
-        val deleteConfirmationNoteType = values[4] as ManageNoteTypeUiModel?
+            @Suppress("UNCHECKED_CAST")
+            val addOptions = values[1] as List<AddNotetypeUiModel>
+            val query = values[2] as String
+            val isLoading = values[3] as Boolean
+            val deleteConfirmationNoteType = values[4] as ManageNoteTypeUiModel?
 
-        @Suppress("UNCHECKED_CAST") val selectedIds = values[5] as Set<Long>
+            @Suppress("UNCHECKED_CAST")
+            val selectedIds = values[5] as Set<Long>
 
-        val filtered = if (query.isEmpty()) {
-            noteTypes
-        } else {
-            noteTypes.filter { it.name.contains(query, ignoreCase = true) }
-        }
-        ManageNoteTypesUiState(
-            noteTypes = filtered,
-            addOptions = addOptions,
-            searchQuery = query,
-            isLoading = isLoading,
-            deleteConfirmationNoteType = deleteConfirmationNoteType,
-            selectedNoteTypeIds = selectedIds,
-            isInMultiSelectMode = selectedIds.isNotEmpty(),
+            val filtered =
+                if (query.isEmpty()) {
+                    noteTypes
+                } else {
+                    noteTypes.filter { it.name.contains(query, ignoreCase = true) }
+                }
+            ManageNoteTypesUiState(
+                noteTypes = filtered,
+                addOptions = addOptions,
+                searchQuery = query,
+                isLoading = isLoading,
+                deleteConfirmationNoteType = deleteConfirmationNoteType,
+                selectedNoteTypeIds = selectedIds,
+                isInMultiSelectMode = selectedIds.isNotEmpty(),
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ManageNoteTypesUiState(),
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = ManageNoteTypesUiState()
-    )
 
     init {
         refresh()
@@ -132,7 +146,7 @@ class ManageNoteTypesViewModel(
                 throw cancellationException
             } catch (exception: Exception) {
                 Timber.w(exception)
-                _isLoading.value = false
+                isLoadingState.value = false
                 _uiEvents.emit(
                     ManageNoteTypesUiEvent.ShowErrorMessage(
                         AnkiDroidApp.instance.getUserFriendlyErrorText(exception),
@@ -143,44 +157,51 @@ class ManageNoteTypesViewModel(
 
     fun refresh() {
         launchManageNoteTypesAction {
-            _isLoading.value = true
-            val (updated, options) = withCol {
-                val types = getNotetypeNameIdUseCount().map { it.toUiModel() }
-                val standardNotetypesModels =
-                    StockNotetype.Kind.entries.filter { it != StockNotetype.Kind.UNRECOGNIZED }
-                        .map {
-                            AddNotetypeUiModel(
-                                id = it.number.toLong(),
-                                name = getStockNotetype(it).name,
-                                isStandard = true,
-                            )
-                        }
-                val currentNotetypes = getNotetypeNames().map { it.toUiModel() }
-                val allOptions = standardNotetypesModels + currentNotetypes
-                Pair(types, allOptions)
-            }
-            _allNoteTypes.value = updated
-            _addOptions.value = options
-            _isLoading.value = false
+            isLoadingState.value = true
+            val (updated, options) =
+                withCol {
+                    val types = getNotetypeNameIdUseCount().map { it.toUiModel() }
+                    val standardNotetypesModels =
+                        StockNotetype.Kind.entries
+                            .filter { it != StockNotetype.Kind.UNRECOGNIZED }
+                            .map {
+                                AddNotetypeUiModel(
+                                    id = it.number.toLong(),
+                                    name = getStockNotetype(it).name,
+                                    isStandard = true,
+                                )
+                            }
+                    val currentNotetypes = getNotetypeNames().map { it.toUiModel() }
+                    val allOptions = standardNotetypesModels + currentNotetypes
+                    Pair(types, allOptions)
+                }
+            allNoteTypesState.value = updated
+            addOptionsState.value = options
+            isLoadingState.value = false
         }
     }
 
-    fun addNoteType(newName: String, selectedOption: AddNotetypeUiModel) {
+    fun addNoteType(
+        newName: String,
+        selectedOption: AddNotetypeUiModel,
+    ) {
         launchManageNoteTypesAction {
-            _isLoading.value = true
+            isLoadingState.value = true
             withCol {
                 if (selectedOption.isStandard) {
                     val kind = StockNotetype.Kind.forNumber(selectedOption.id.toInt())
-                    val updatedStandardNotetype = getStockNotetype(kind).apply {
-                        name = newName
-                    }
+                    val updatedStandardNotetype =
+                        getStockNotetype(kind).apply {
+                            name = newName
+                        }
                     addNotetypeLegacy(BackendUtils.toJsonBytes(updatedStandardNotetype))
                 } else {
                     val targetNotetype = getNotetype(selectedOption.id)
-                    val newNotetype = targetNotetype.copy {
-                        id = 0
-                        name = newName
-                    }
+                    val newNotetype =
+                        targetNotetype.copy {
+                            id = 0
+                            name = newName
+                        }
                     addNotetype(newNotetype)
                 }
             }
@@ -189,7 +210,7 @@ class ManageNoteTypesViewModel(
     }
 
     fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
+        searchQueryState.value = query
     }
 
     fun requestDeleteNoteType(noteType: ManageNoteTypeUiModel) {
@@ -204,17 +225,17 @@ class ManageNoteTypesViewModel(
     }
 
     fun showDeleteConfirmation(noteType: ManageNoteTypeUiModel) {
-        _deleteConfirmationNoteType.value = noteType
+        deleteConfirmationNoteTypeState.value = noteType
     }
 
     fun dismissDeleteConfirmation() {
-        _deleteConfirmationNoteType.value = null
+        deleteConfirmationNoteTypeState.value = null
     }
 
     fun confirmDeleteNoteType(id: Long) {
-        _deleteConfirmationNoteType.value = null
+        deleteConfirmationNoteTypeState.value = null
         launchManageNoteTypesAction {
-            _isLoading.value = true
+            isLoadingState.value = true
             withCol {
                 removeNotetype(id)
             }
@@ -222,9 +243,12 @@ class ManageNoteTypesViewModel(
         }
     }
 
-    fun renameNoteType(id: Long, newName: String) {
+    fun renameNoteType(
+        id: Long,
+        newName: String,
+    ) {
         launchManageNoteTypesAction {
-            _isLoading.value = true
+            isLoadingState.value = true
             withCol {
                 val nt = getNotetype(id).toBuilder().setName(newName).build()
                 updateNotetype(nt)
@@ -236,23 +260,27 @@ class ManageNoteTypesViewModel(
     // region Multiselect
 
     fun toggleNoteTypeSelection(id: Long) {
-        _selectedNoteTypeIds.value = _selectedNoteTypeIds.value.let { current ->
-            if (current.contains(id)) current - id else current + id
-        }
+        selectedNoteTypeIdsState.value =
+            selectedNoteTypeIdsState.value.let { current ->
+                if (current.contains(id)) current - id else current + id
+            }
     }
 
     fun selectAllNoteTypes() {
-        val visibleIds = uiState.value.noteTypes.map { it.id }.toSet()
-        _selectedNoteTypeIds.value = visibleIds
+        val visibleIds =
+            uiState.value.noteTypes
+                .map { it.id }
+                .toSet()
+        selectedNoteTypeIdsState.value = visibleIds
     }
 
     fun deselectAllNoteTypes() {
-        _selectedNoteTypeIds.value = emptySet()
+        selectedNoteTypeIdsState.value = emptySet()
     }
 
     fun deleteSelectedNoteTypes() {
         launchManageNoteTypesAction {
-            val selectedIds = _selectedNoteTypeIds.value
+            val selectedIds = selectedNoteTypeIdsState.value
             if (selectedIds.isEmpty()) return@launchManageNoteTypesAction
 
             val totalCount = withCol { getNotetypeNames().size }
@@ -265,15 +293,15 @@ class ManageNoteTypesViewModel(
     }
 
     fun confirmDeleteSelectedNoteTypes() {
-        val idsToDelete = _selectedNoteTypeIds.value
+        val idsToDelete = selectedNoteTypeIdsState.value
         launchManageNoteTypesAction {
-            _isLoading.value = true
+            isLoadingState.value = true
             withCol {
                 for (id in idsToDelete) {
                     removeNotetype(id)
                 }
             }
-            _selectedNoteTypeIds.value = emptySet()
+            selectedNoteTypeIdsState.value = emptySet()
             refresh()
         }
     }
