@@ -19,6 +19,7 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withResourceName
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.libanki.Collection
@@ -121,7 +122,8 @@ class ReviewerFragmentTest : InstrumentedTest() {
     private fun clickShowAnswerAndAnswerGood() {
         clickShowAnswer()
         ensureAnswerButtonsAreDisplayed()
-        onView(withId(R.id.good_button)).perform(click())
+        // The button is rendered by Compose, so match it by resource name as ReviewerTest does
+        onView(withResourceName("good_button")).perform(click())
     }
 
     private fun clickShowAnswer() {
@@ -133,7 +135,7 @@ class ReviewerFragmentTest : InstrumentedTest() {
         // the messages to be passed in and out of the WebView when evaluating
         // the custom JS scheduler code. The ease buttons are hidden until the
         // custom scheduler has finished running
-        onView(withId(R.id.good_button)).checkWithTimeout(
+        onView(withResourceName("good_button")).checkWithTimeout(
             matches(isDisplayed()),
             100,
             // Increase to a max of 30 seconds because CI builds can be very
