@@ -68,18 +68,24 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
         assertNotNull(continueButtonAgain, "Continue button should be visible after pressing back")
     }
 
-    private fun UiDevice.findOrScrollTo(text: String): UiObject2? {
-        var obj = wait(Until.findObject(By.text(text)), 2_000)
-        if (obj == null) {
-            swipe(
-                displayWidth / 2,
-                (displayHeight * 0.75).toInt(),
-                displayWidth / 2,
-                (displayHeight * 0.25).toInt(),
-                20,
-            )
-            obj = wait(Until.findObject(By.text(text)), 2_000)
+    private fun UiDevice.findOrScrollTo(
+        text: String,
+        attempts: Int = 5,
+    ): UiObject2? {
+        repeat(attempts) { attempt ->
+            wait(Until.findObject(By.text(text)), 2_000)?.let { return it }
+            // The introduction screens may be taller than the emulator display,
+            // and page transitions can be slow there: scroll and retry
+            if (attempt < attempts - 1) {
+                swipe(
+                    displayWidth / 2,
+                    (displayHeight * 0.75).toInt(),
+                    displayWidth / 2,
+                    (displayHeight * 0.25).toInt(),
+                    20,
+                )
+            }
         }
-        return obj
+        return null
     }
 }
