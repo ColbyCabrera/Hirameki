@@ -215,7 +215,7 @@ jobs:
             $ANDROID_HOME/platform-tools/adb logcat '*:D' >> adb-log.txt &
             adb emu screenrecord start --time-limit 1800 video.webm
             sleep 5
-            ./gradlew uninstallAll jacocoAndroidTestReport --daemon
+            ./gradlew uninstallAll connectedPlayReleaseAndroidTest assertNonzeroAndroidTests --daemon
 
       - name: Upload Test Report
         uses: actions/upload-artifact@v4

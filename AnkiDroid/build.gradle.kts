@@ -5,6 +5,7 @@ import com.github.triplet.gradle.play.PlayPublisherExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Properties
+import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
     alias(libs.plugins.tripletPlay)
@@ -437,12 +438,22 @@ val assertNonzeroAndroidTests =
                 throw GradleException("No androidTest result files found in $resultsDir")
             }
             // An aggregate result file contains one <testsuite> entry per test class
-            val testsPattern = Regex("""tests="(\d+)"""")
+            val documentBuilderFactory =
+                DocumentBuilderFactory.newInstance().apply {
+                    setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+                }
             val totalTests =
                 resultFiles.sumOf { file ->
-                    testsPattern
-                        .findAll(file.readText())
-                        .sumOf { it.groupValues[1].toInt() }
+                    val document = documentBuilderFactory.newDocumentBuilder().parse(file)
+                    val testSuites = document.getElementsByTagName("testsuite")
+                    (0 until testSuites.length).sumOf { index ->
+                        testSuites
+                            .item(index)
+                            .attributes
+                            .getNamedItem("tests")
+                            ?.nodeValue
+                            ?.toInt() ?: 0
+                    }
                 }
             if (totalTests == 0) {
                 throw GradleException("androidTest executed 0 tests - Probably a bug with the emulator. Try another image.")
