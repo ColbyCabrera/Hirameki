@@ -20,8 +20,11 @@ import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.Fragment
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.R
@@ -35,7 +38,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import net.ankiweb.rsdroid.BuildConfig as BackendBuildConfig
 
 class AboutFragment : Fragment() {
@@ -50,28 +52,34 @@ class AboutFragment : Fragment() {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 AnkiDroidTheme {
+                    val locale = LocalLocale.current.platformLocale
                     val apkBuildDate =
-                        SimpleDateFormat(DateFormat.getBestDateTimePattern(Locale.getDefault(), "d MMM yyyy"))
-                            .format(Date(BuildConfig.BUILD_TIME))
+                        remember(locale) {
+                            val pattern = DateFormat.getBestDateTimePattern(locale, "d MMM yyyy")
+                            SimpleDateFormat(pattern, locale).format(Date(BuildConfig.BUILD_TIME))
+                        }
 
                     val backendText =
-                        "(anki " + BackendBuildConfig.ANKI_DESKTOP_VERSION + " / " + BackendBuildConfig.ANKI_COMMIT_HASH.subSequence(0, 8) +
-                            ")"
+                        "(anki ${BackendBuildConfig.ANKI_DESKTOP_VERSION} / ${BackendBuildConfig.ANKI_COMMIT_HASH.take(8)})"
 
                     val fsrsText = Fsrs.displayVersion?.let { "($it)" } ?: ""
 
-                    val contributorsLink = getString(R.string.link_contributors)
-                    val contributingGuideLink = getString(R.string.link_contribution)
-                    val contributorsText = getString(R.string.about_contributors_description, contributorsLink, contributingGuideLink)
+                    val contributorsLink = stringResource(R.string.link_contributors)
+                    val contributingGuideLink = stringResource(R.string.link_contribution)
+                    val contributorsText =
+                        stringResource(R.string.about_contributors_description, contributorsLink, contributingGuideLink)
 
-                    val gplLicenseLink = getString(R.string.licence_wiki)
-                    val agplLicenseLink = getString(R.string.link_agpl_wiki)
-                    val sourceCodeLink = getString(R.string.link_source)
-                    val dependencyLicenseLink = getString(R.string.dependency_license_wiki)
-                    val licenseText = (
-                        getString(R.string.license_description, gplLicenseLink, agplLicenseLink, sourceCodeLink) + "<br>" +
-                            getString(R.string.other_licenses, dependencyLicenseLink)
-                    )
+                    val gplLicenseLink = stringResource(R.string.licence_wiki)
+                    val agplLicenseLink = stringResource(R.string.link_agpl_wiki)
+                    val sourceCodeLink = stringResource(R.string.link_source)
+                    val dependencyLicenseLink = stringResource(R.string.dependency_license_wiki)
+                    val licenseText =
+                        stringResource(
+                            R.string.license_description,
+                            gplLicenseLink,
+                            agplLicenseLink,
+                            sourceCodeLink,
+                        ) + "<br>" + stringResource(R.string.other_licenses, dependencyLicenseLink)
 
                     AboutScreen(
                         versionText = pkgVersionName,
