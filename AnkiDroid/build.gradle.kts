@@ -425,11 +425,16 @@ tasks.matching { it.name.startsWith("runKtlint") && it.name.contains("AndroidTes
 
 val assertNonzeroAndroidTests =
     tasks.register("assertNonzeroAndroidTests") {
-        val folder = file("./build/outputs/androidTest-results/connected/flavors/play")
+        // The results directory layout depends on the tested build type and flavor
+        val resultsDir = file("./build/outputs/androidTest-results/connected")
         doLast {
-            val listOfFiles = folder.listFiles { _, name -> name.endsWith(".xml") } ?: emptyArray()
+            val listOfFiles =
+                resultsDir
+                    .walkTopDown()
+                    .filter { it.isFile && it.name.startsWith("TEST-") && it.extension == "xml" }
+                    .toList()
             if (listOfFiles.isEmpty()) {
-                throw GradleException("No androidTest result files found in $folder")
+                throw GradleException("No androidTest result files found in $resultsDir")
             }
             for (file in listOfFiles) {
                 val lines = file.readLines()
