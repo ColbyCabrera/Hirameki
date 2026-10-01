@@ -1358,36 +1358,38 @@ class ContentProviderTest : InstrumentedTest() {
     fun testMediaFilesAddedCorrectlyInReviewInfo() {
         val imageFileName = "img.jpg"
         val audioFileName = "test.mp3"
-        // Use a dedicated deck so the queued card returned by the provider is deterministic
-        val deckId = col.decks.id("ContentProviderTest::mediaFiles")
+        // Use a dedicated deck so the queued card returned by the provider is deterministic.
+        // A flat name is used so no parent deck is created and the tearDown deck count holds.
+        val deckName = "ContentProviderTestMediaFiles"
+        val deckId = col.decks.byName(deckName)?.id ?: col.decks.id(deckName)
         testDeckIds.add(deckId)
-        val previouslySelectedDeck = col.decks.selected()
-        col.decks.select(deckId)
-        addNoteUsingBasicNoteType("""Hello <img src="$imageFileName"> [sound:$audioFileName]""")
-            .firstCard(col)
-            .update {
-                queue = QueueType.New
-                due = col.sched.today
-            }
+        val note = Note.fromNotetypeId(col, noteTypeId)
+        note.setField(0, """Hello <img src="$imageFileName"> [sound:$audioFileName]""")
+        note.addTag(TEST_TAG)
+        assertThat("At least one card added for note", col.addNote(note), greaterThanOrEqualTo(1))
+        for (card in note.cards(col)) {
+            card.did = deckId
+            col.updateCard(card, skipUndoEntry = true)
+        }
+        note.firstCard(col).update {
+            queue = QueueType.New
+            due = col.sched.today
+        }
 
-        try {
-            queryReviewInfo(deckId) { cursor ->
-                val media =
-                    cursor
-                        .getString(cursor.getColumnIndex(FlashCardsContract.ReviewInfo.MEDIA_FILES))
-                        .let { Json.decodeFromString<List<String>>(it) }
+        queryReviewInfo(deckId) { cursor ->
+            val media =
+                cursor
+                    .getString(cursor.getColumnIndex(FlashCardsContract.ReviewInfo.MEDIA_FILES))
+                    .let { Json.decodeFromString<List<String>>(it) }
 
-                assertThat(
-                    "media files returned",
-                    media,
-                    allOf(
-                        hasItem(imageFileName),
-                        hasItem(audioFileName),
-                    ),
-                )
-            }
-        } finally {
-            col.decks.select(previouslySelectedDeck)
+            assertThat(
+                "media files returned",
+                media,
+                allOf(
+                    hasItem(imageFileName),
+                    hasItem(audioFileName),
+                ),
+            )
         }
     }
 
