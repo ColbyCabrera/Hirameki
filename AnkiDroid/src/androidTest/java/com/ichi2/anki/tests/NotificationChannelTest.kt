@@ -17,10 +17,8 @@ package com.ichi2.anki.tests
 
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
 import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.Channel
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
@@ -36,8 +34,6 @@ import timber.log.Timber
 import kotlin.test.junit.JUnitAsserter.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O) // getNotificationChannels, NotificationChannel.getId
-
 @KotlinCleanup("Enable JUnit 5 in androidTest and use JUnit5Asserter to match the standard tests")
 class NotificationChannelTest : InstrumentedTest() {
     @get:Rule

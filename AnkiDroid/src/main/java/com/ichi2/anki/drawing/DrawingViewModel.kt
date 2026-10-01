@@ -235,6 +235,8 @@ class DrawingViewModel : ViewModel() {
      * @return URI of the saved file, or null if save failed
      */
     @CheckResult
+    // Drawing filenames are wall-clock timestamps, not collection scheduling
+    @Suppress("DirectDateInstantiation")
     suspend fun saveDrawing(
         context: Context,
         width: Int,

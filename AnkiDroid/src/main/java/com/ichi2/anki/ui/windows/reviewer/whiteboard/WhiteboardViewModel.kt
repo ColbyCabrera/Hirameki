@@ -16,10 +16,12 @@
 package com.ichi2.anki.ui.windows.reviewer.whiteboard
 
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Path
 import android.graphics.PathMeasure
 import androidx.annotation.CheckResult
+import androidx.core.graphics.createBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -514,10 +516,10 @@ class WhiteboardViewModel(
                 // Create a transparent bitmap
                 val bitmap =
                     try {
-                        android.graphics.Bitmap.createBitmap(
+                        createBitmap(
                             effectiveWidth,
                             effectiveHeight,
-                            android.graphics.Bitmap.Config.ARGB_8888,
+                            Bitmap.Config.ARGB_8888,
                         )
                     } catch (e: OutOfMemoryError) {
                         Timber.w(
@@ -528,10 +530,10 @@ class WhiteboardViewModel(
                         // PorterDuff.Mode.CLEAR will render as black instead of transparent.
                         // This is an acceptable trade-off for low-memory situations.
                         try {
-                            android.graphics.Bitmap.createBitmap(
+                            createBitmap(
                                 effectiveWidth,
                                 effectiveHeight,
-                                android.graphics.Bitmap.Config.RGB_565,
+                                Bitmap.Config.RGB_565,
                             )
                         } catch (e2: OutOfMemoryError) {
                             Timber.e(e2, "Failed to create bitmap even with RGB_565")

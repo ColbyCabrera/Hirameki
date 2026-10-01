@@ -16,7 +16,6 @@
 
 package com.ichi2.anki.utils
 
-import android.os.Build
 import android.os.Environment
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.utils.Permissions
@@ -36,8 +35,7 @@ class EnsureAllFilesAccessRule : TestRule {
 
 fun ensureAllFilesAccess() {
     // PERF: Could be sped up - only need to calculate this once.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-        Permissions.canManageExternalStorage(InstrumentationRegistry.getInstrumentation().targetContext) &&
+    if (Permissions.canManageExternalStorage(InstrumentationRegistry.getInstrumentation().targetContext) &&
         !Environment.isExternalStorageManager() &&
         !Environment.isExternalStorageLegacy()
     ) {

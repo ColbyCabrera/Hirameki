@@ -53,6 +53,8 @@ class CompatHasFilesTest : Test21And26() {
     }
 
     @Test
+    // BaseCompat is exercised directly in this test and does not provide NotDirectoryException
+    @Suppress("ObsoleteSdkInt")
     fun has_files_on_file() {
         val file = createTransientFile("hello")
 

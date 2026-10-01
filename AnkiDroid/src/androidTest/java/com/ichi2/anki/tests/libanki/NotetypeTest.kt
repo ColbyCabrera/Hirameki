@@ -17,12 +17,10 @@
 
 package com.ichi2.anki.tests.libanki
 
-import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.tests.InstrumentedTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -37,10 +35,6 @@ class NotetypeTest : InstrumentedTest() {
 
     @Test
     fun bigQuery() {
-        assumeTrue(
-            "This test is flaky on API29, ignoring",
-            Build.VERSION.SDK_INT != Build.VERSION_CODES.Q,
-        )
         val noteTypes = testCol.notetypes
         val noteType = noteTypes.all()[0]
         val testString = "test"

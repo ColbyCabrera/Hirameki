@@ -1,3 +1,19 @@
+/*
+ *  Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+ *
+ *  This program is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free Software
+ *  Foundation; either version 3 of the License, or (at your option) any later
+ *  version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ *  PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along with
+ *  this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.ichi2.anki
 
 import android.content.Intent
@@ -12,14 +28,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 class SharedDecksActivityTest : RobolectricTest() {
@@ -47,9 +63,9 @@ class SharedDecksActivityTest : RobolectricTest() {
 
         var fragment =
             activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
-        assertNotNull("Fragment should be added for deck info URL", fragment)
+        assertNotNull(fragment, "Fragment should be added for deck info URL")
         val downloadFile =
-            fragment?.arguments?.getSerializableCompat<DownloadFile>(SharedDecksActivity.DOWNLOAD_FILE)
+            fragment.arguments?.getSerializableCompat<DownloadFile>(SharedDecksActivity.DOWNLOAD_FILE)
         assertTrue("DOWNLOAD_FILE argument should be a DownloadFile", downloadFile is DownloadFile)
         downloadFile as DownloadFile
         assertEquals("https://ankiweb.net/shared/info/12345678", downloadFile.url)
@@ -62,7 +78,7 @@ class SharedDecksActivityTest : RobolectricTest() {
         activity.supportFragmentManager.executePendingTransactions()
         fragment =
             activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
-        assertNull("Fragment should be removed", fragment)
+        assertNull(fragment, "Fragment should be removed")
 
         // 2. Test a search URL - should be ignored
         downloadListener.onDownloadStart(
@@ -76,7 +92,7 @@ class SharedDecksActivityTest : RobolectricTest() {
 
         fragment =
             activity.supportFragmentManager.findFragmentByTag(SharedDecksActivity.SHARED_DECKS_DOWNLOAD_FRAGMENT)
-        assertNull("Fragment should NOT be added for search URL", fragment)
+        assertNull(fragment, "Fragment should NOT be added for search URL")
     }
 
     @Test
@@ -90,7 +106,7 @@ class SharedDecksActivityTest : RobolectricTest() {
 
         // Capture initial state
         val initialLast = shadowWebView.lastLoadedUrl
-        assertNotNull("Initial load should have occurred", initialLast)
+        assertNotNull(initialLast, "Initial load should have occurred")
 
         // Click search icon to open search bar
         composeTestRule

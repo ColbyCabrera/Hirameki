@@ -277,6 +277,5 @@ class SharedDecksDownloadViewModel(
 
     override fun onCleared() {
         stopPollingBlocking()
-        super.onCleared()
     }
 }
