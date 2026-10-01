@@ -45,6 +45,8 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
     fun backFromSetupScreenReshowsDisclaimer() {
         // The introduction rotates an icon forever, so the test clock must be controlled manually
         composeTestRule.mainClock.autoAdvance = false
+        // Let the initial composition and entrance animation lay out the disclaimer
+        composeTestRule.mainClock.advanceTimeBy(2_000)
         val continueText =
             InstrumentationRegistry
                 .getInstrumentation()
