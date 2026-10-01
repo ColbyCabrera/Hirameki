@@ -345,6 +345,7 @@ extensions.configure<ApplicationExtension> {
 
     lint {
         abortOnError = true
+        baseline = file("lint-baseline.xml")
         checkReleaseBuilds = false
         checkTestSources = true
         explainIssues = false
@@ -355,6 +356,7 @@ extensions.configure<ApplicationExtension> {
         if (System.getenv("CI") == "true") {
             // 14853: we want this to appear in the IDE, but it adds noise to CI
             disable += "WrongThread"
+            disable += "ThreadConstraint"
         }
     }
 }

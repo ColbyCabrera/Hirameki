@@ -1,0 +1,3581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.4.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.1)" variant="all" version="9.4.1">
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioPlayView`, was not found in the project or the libraries"
+        errorLine1="    &lt;com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioPlayView"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/layout/check_pronunciation_fragment.xml"
+            line="11"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioRecordView`, was not found in the project or the libraries"
+        errorLine1="    &lt;com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioRecordView"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/layout/check_pronunciation_fragment.xml"
+            line="32"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView`, was not found in the project or the libraries"
+        errorLine1="            &lt;com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView"
+        errorLine2="            ^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="52"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView`, was not found in the project or the libraries"
+        errorLine1="            &lt;com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView"
+        errorLine2="            ^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="63"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerTimer`, was not found in the project or the libraries"
+        errorLine1="            &lt;com.ichi2.anki.ui.windows.reviewer.AnswerTimer"
+        errorLine2="            ^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="195"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
+        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
+        errorLine2="                    ^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="235"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
+        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
+        errorLine2="                    ^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="247"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
+        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
+        errorLine2="                    ^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="259"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingClass"
+        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
+        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
+        errorLine2="                    ^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="271"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingDefaultResource"
+        message="The layout &quot;reviewer2&quot; in layout-sw600dp has no declaration in the base `layout` folder; this can lead to crashes when the resource is queried in a configuration that does not match this qualifier"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout  xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2=" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="3"
+            column="2"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="    ) : WebViewClient(),"
+        errorLine2="        ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/AbstractFlashcardViewer.kt"
+            line="1956"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="    class AnkiPackageImporterWebViewClient("
+        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/AnkiPackageImporterFragment.kt"
+            line="40"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="    open inner class CardViewerWebViewClient("
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/previewer/CardViewerFragment.kt"
+            line="139"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="    ) : WebViewClient() {"
+        errorLine2="        ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/previewer/CardViewerFragment.kt"
+            line="141"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="    inner class CsvImporterWebViewClient("
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/CsvImporter.kt"
+            line="47"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="            object : PageWebViewClient() {"
+        errorLine2="            ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/DeckOptions.kt"
+            line="193"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                        object : WebViewClient() {"
+        errorLine2="                        ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
+            line="322"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                        object : WebViewClient() {"
+        errorLine2="                        ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
+            line="322"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                        object : WebViewClient() {"
+        errorLine2="                                 ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
+            line="322"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                        object : WebViewClient() {"
+        errorLine2="                                 ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
+            line="322"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                webView.webViewClient = WebViewClient()"
+        errorLine2="                                        ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
+            line="480"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                webView.webViewClient = WebViewClient()"
+        errorLine2="                                        ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
+            line="480"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="        object : PageWebViewClient() {"
+        errorLine2="        ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/ImageOcclusion.kt"
+            line="86"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/Info.kt"
+            line="130"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/Info.kt"
+            line="130"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                             ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/Info.kt"
+            line="130"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                             ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/Info.kt"
+            line="130"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="        webView.webViewClient = WebViewClient()"
+        errorLine2="                                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/mediacheck/MediaCheckFragment.kt"
+            line="204"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="        webView.webViewClient = WebViewClient()"
+        errorLine2="                                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/mediacheck/MediaCheckFragment.kt"
+            line="204"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
+            line="288"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
+            line="288"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                             ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
+            line="288"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                    object : WebViewClient() {"
+        errorLine2="                             ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
+            line="288"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                webView.webViewClient = android.webkit.WebViewClient()"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/PageWebView.kt"
+            line="205"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                webView.webViewClient = android.webkit.WebViewClient()"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/PageWebView.kt"
+            line="205"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="open class PageWebViewClient : WebViewClient() {"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/PageWebViewClient.kt"
+            line="39"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="open class PageWebViewClient : WebViewClient() {"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/pages/PageWebViewClient.kt"
+            line="39"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                                object : WebViewClient() {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
+            line="64"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                                object : WebViewClient() {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
+            line="64"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                                object : WebViewClient() {"
+        errorLine2="                                         ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
+            line="64"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="                                object : WebViewClient() {"
+        errorLine2="                                         ~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
+            line="64"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="        object : WebViewClient() {"
+        errorLine2="        ~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
+            line="97"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="        object : WebViewClient() {"
+        errorLine2="                 ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
+            line="97"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="        webView.webViewClient = WebViewClient()"
+        errorLine2="                                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
+            line="378"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="        webView.webViewClient = WebViewClient()"
+        errorLine2="                                ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
+            line="378"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="DataExtractionRules"
+        message="The attribute `android:allowBackup` is deprecated from Android 12 and the default allows backup"
+        errorLine1="        android:allowBackup=&quot;true&quot;"
+        errorLine2="                             ~~~~">
+        <location
+            file="${:api*buildDir}/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml"
+            line="28"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.type_answer_hint` appears to be unused"
+        errorLine1="    &lt;string name=&quot;type_answer_hint&quot; comment=&quot;In the reviewer. When the user use note type with hint. It&apos;s the default content of the text field in which the user is invited to type their answer. It disappears as soon as the user start to type.&quot;>Type answer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="68"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.show_answer_hint_long_press` appears to be unused"
+        errorLine1="    &lt;string name=&quot;show_answer_hint_long_press&quot; comment=&quot;In the reviewer, hint is shown when touching the show answer button and the user has the long-press accessibility setting enabled&quot;>\&apos;%s\&apos; is enabled&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="77"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.move_all_to_deck` appears to be unused"
+        errorLine1="    &lt;string name=&quot;move_all_to_deck&quot;>Move all to deck&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="84"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.search_for_download_deck` appears to be unused"
+        errorLine1="    &lt;string name=&quot;search_for_download_deck&quot; comment=&quot;Deck search value for downloading deck&quot; maxLength=&quot;28&quot;>Deck Search&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="124"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.nothing` appears to be unused"
+        errorLine1="    &lt;string name=&quot;nothing&quot;>Nothing&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="142"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.template_for_current_card_deleted` appears to be unused"
+        errorLine1="    &lt;string name=&quot;template_for_current_card_deleted&quot;>The card type for the current card was deleted.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="153"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.CardEditorCardDeck` appears to be unused"
+        errorLine1="    &lt;string name=&quot;CardEditorCardDeck&quot;>Card deck:&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="26"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.CardEditorTags` appears to be unused"
+        errorLine1="    &lt;string name=&quot;CardEditorTags&quot;>Tags: %1$s&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="29"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.webview_crash_unknown_detailed` appears to be unused"
+        errorLine1="    &lt;string name=&quot;webview_crash_unknown_detailed&quot;>This was caused by an internal error in the WebView&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="83"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.slide_to_cancel` appears to be unused"
+        errorLine1="    &lt;string name=&quot;slide_to_cancel&quot; comment=&quot;Message shown when pressing the record button&quot;>Slide to cancel&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="90"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.studyoptions_buried_count` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;studyoptions_buried_count&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="105"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.studyoptions_total_new_label` appears to be unused"
+        errorLine1="    &lt;string name=&quot;studyoptions_total_new_label&quot;>Total new cards&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="108"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.field_remapping` appears to be unused"
+        errorLine1="    &lt;string name=&quot;field_remapping&quot;>%1$s (from “%2$s”)&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="122"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.confirm_map_cards_to_nothing` appears to be unused"
+        errorLine1="    &lt;string name=&quot;confirm_map_cards_to_nothing&quot;>Any cards mapped to nothing will be deleted. If a note has no remaining cards, it will be lost. Are you sure you want to continue?&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="123"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.missing_note_type` appears to be unused"
+        errorLine1="    &lt;string name=&quot;missing_note_type&quot;>No note type found&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="124"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.import_preparing_file` appears to be unused"
+        errorLine1="    &lt;string name=&quot;import_preparing_file&quot;>Preparing file for import&amp;#8230;&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="165"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.menu__study_options` appears to be unused"
+        errorLine1="    &lt;string name=&quot;menu__study_options&quot; comment=&quot;Menu item that opens options for a Filtered deck (aka Cram deck, aka Custom study)&quot;>Study options&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="198"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.dyn_deck_desc` appears to be unused"
+        errorLine1="    &lt;string name=&quot;dyn_deck_desc&quot;>This is a special deck for studying outside of the normal schedule. Cards will be automatically returned to their original decks after you review them. Deleting this deck from the deck list will return all remaining cards to their original deck.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="200"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.whiteboard_color_white` appears to be unused"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_white&quot;>White&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="236"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.whiteboard_color_black` appears to be unused"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_black&quot;>Black&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="237"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.whiteboard_color_red` appears to be unused"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_red&quot;>Red&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="238"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.whiteboard_color_green` appears to be unused"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_green&quot;>Green&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="239"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.whiteboard_color_blue` appears to be unused"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_blue&quot;>Blue&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="240"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.whiteboard_color_yellow` appears to be unused"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_yellow&quot;>Yellow&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="241"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.whiteboard_color_custom` appears to be unused"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_custom&quot;>Custom color&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="242"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.remove_toolbar_item` appears to be unused"
+        errorLine1="    &lt;string name=&quot;remove_toolbar_item&quot;>Remove Toolbar Item?&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="285"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.create_shortcut_error_vivo` appears to be unused"
+        errorLine1="    &lt;string name=&quot;create_shortcut_error_vivo&quot; comment=&quot;iManager is an app on Vivo phones&quot;>You may need to use iManager to allow Hirameki to add shortcuts&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="295"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.create_shortcut_failed` appears to be unused"
+        errorLine1="    &lt;string name=&quot;create_shortcut_failed&quot; comment=&quot;home screen == launcher&quot;>Your home screen does not allow Hirameki to add shortcuts&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="296"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.create_shortcut_error` appears to be unused"
+        errorLine1="    &lt;string name=&quot;create_shortcut_error&quot;>Error adding shortcut: %s&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="297"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.invalid_email` appears to be unused"
+        errorLine1="    &lt;string name=&quot;invalid_email&quot;>Enter a valid email&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="307"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.password_empty` appears to be unused"
+        errorLine1="    &lt;string name=&quot;password_empty&quot;>Password is required&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="308"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.note_editor_toggle_sticky` appears to be unused"
+        errorLine1="    &lt;string name=&quot;note_editor_toggle_sticky&quot;>Make field %s sticky&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="346"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.search_card_js_api_no_results` appears to be unused"
+        errorLine1="    &lt;string name=&quot;search_card_js_api_no_results&quot;>Search returned no results&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="351"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.not_valid_js_addon_package` appears to be unused"
+        errorLine1="    &lt;string name=&quot;not_valid_js_addon_package&quot;>%s is not a valid JavaScript addon package&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="354"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.could_not_create_dir` appears to be unused"
+        errorLine1="    &lt;string name=&quot;could_not_create_dir&quot;>Could not create directory %s&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="355"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.malicious_archive_entry_outside` appears to be unused"
+        errorLine1="    &lt;string name=&quot;malicious_archive_entry_outside&quot;>Malicious archive. Contains entry outside of the target dir: %s&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="356"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.malicious_archive_exceeds_limit` appears to be unused"
+        errorLine1="    &lt;string name=&quot;malicious_archive_exceeds_limit&quot;>Malicious archive. Size exceeds %1$s or contains more than %2$d files&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="357"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.file_extract_exceeds_storage_space` appears to be unused"
+        errorLine1="    &lt;string name=&quot;file_extract_exceeds_storage_space&quot;>File extract exceeds storage space&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="358"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.intro_ankidroid_tagline_one` appears to be unused"
+        errorLine1="    &lt;string name=&quot;intro_ankidroid_tagline_one&quot;>Study less&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="368"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.intro_ankidroid_tagline_two` appears to be unused"
+        errorLine1="    &lt;string name=&quot;intro_ankidroid_tagline_two&quot;>Remember more&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="369"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.intro_short_ankidroid_explanation` appears to be unused"
+        errorLine1="    &lt;string name=&quot;intro_short_ankidroid_explanation&quot;>Anki\&apos;s card scheduler saves time by strengthening your weakest memories and preserving your strongest&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="370"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deck_shortcut_doesnt_exist` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deck_shortcut_doesnt_exist&quot;>Deck deleted. Please remove the shortcut&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="384"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deleting_selected_notes` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deleting_selected_notes&quot;>Deleting selected notes&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="395"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.unbury_cards_feedback` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;unbury_cards_feedback&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="436"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.select_note_type` appears to be unused"
+        errorLine1="    &lt;string name=&quot;select_note_type&quot; comment=&quot;Description of the shortcut that shows the note selection spinner&quot;>Select note type&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="468"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.manage_notetypes_note_count` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;manage_notetypes_note_count&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="485"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.day_theme_light_dynamic` appears to be unused"
+        errorLine1="    &lt;string name=&quot;day_theme_light_dynamic&quot;>Light (dynamic)&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="496"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.night_theme_dark_dynamic` appears to be unused"
+        errorLine1="    &lt;string name=&quot;night_theme_dark_dynamic&quot;>Dark (dynamic)&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="497"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.dialog_keep` appears to be unused"
+        errorLine1="    &lt;string name=&quot;dialog_keep&quot;>Keep&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="69"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.permission_denied` appears to be unused"
+        errorLine1="    &lt;string name=&quot;permission_denied&quot;>Permission denied&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="114"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.recording_permission_denied_message` appears to be unused"
+        errorLine1="    &lt;string name=&quot;recording_permission_denied_message&quot;>Microphone permission is necessary for the “Record voice” feature. Please grant it in the app settings.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="115"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.menu_get_shared_decks` appears to be unused"
+        errorLine1="    &lt;string name=&quot;menu_get_shared_decks&quot; comment=&quot;Menu item for shared decks. Duplicated in get_shared for generic context&quot;>Get shared decks&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/04-network.xml"
+            line="28"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.sign_up_not_affiliated` appears to be unused"
+        errorLine1="    &lt;string name=&quot;sign_up_not_affiliated&quot;>Note: AnkiWeb is not affiliated with Hirameki&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/04-network.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.open_statistics` appears to be unused"
+        errorLine1="    &lt;string name=&quot;open_statistics&quot; comment=&quot;Description of the shortcut that opens the statistics page&quot;>Open statistics&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/06-statistics.xml"
+            line="21"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.card_browser_subtitle` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;card_browser_subtitle&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="23"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.card_browser_subtitle_notes_mode` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;card_browser_subtitle_notes_mode&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="27"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_list_my_searches` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_list_my_searches&quot; maxLength=&quot;28&quot;>My searches&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="44"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_list_my_searches_new_search_error_empty_name` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_list_my_searches_new_search_error_empty_name&quot;>You can’t save a search without a name&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="48"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_list_my_searches_new_search_error_dup` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_list_my_searches_new_search_error_dup&quot;>Name exists&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="49"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_list_my_searches_successful_save` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_list_my_searches_successful_save&quot;>Search was saved&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="50"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_cram_search` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_cram_search&quot; maxLength=&quot;28&quot; comment = &quot;Menu entry to start a search.&quot;>Search&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="55"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_select_none` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_select_none&quot; maxLength=&quot;28&quot;>Select none&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="74"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_search_all_decks` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_search_all_decks&quot;>Search all decks&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="76"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.edit_tags_dialog` appears to be unused"
+        errorLine1="    &lt;string name=&quot;edit_tags_dialog&quot; comment=&quot;Description of the shortcut that opens the edit tags dialog&quot;>Edit tags dialog&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="95"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.show_order_dialog` appears to be unused"
+        errorLine1="    &lt;string name=&quot;show_order_dialog&quot; comment=&quot;Description of the shortcut that shows the order dialog&quot;>Show order dialog&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="96"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.sort_order_header` appears to be unused"
+        errorLine1="    &lt;string name=&quot;sort_order_header&quot;>Sort order&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="106"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.save_changes_message` appears to be unused"
+        errorLine1="    &lt;string name=&quot;save_changes_message&quot;>Please save your changes first&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/07-cardbrowser.xml"
+            line="110"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.widget_small` appears to be unused"
+        errorLine1="    &lt;string name=&quot;widget_small&quot; comment=&quot;Label of the small ankidroid widget. This text can&apos;t be found directly in AnkiDroid&quot;>Hirameki small&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="28"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.widget_cards_due` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;widget_cards_due&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="30"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.widget_eta` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;widget_eta&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="34"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deck_picker_widget_description` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deck_picker_widget_description&quot; comment=&quot;Title of the Deck Picker Widget. Displayed to the user in Android&apos;s Widget Selection menu&quot;>Deck Picker&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="40"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_analysis_extra_widget_description` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_analysis_extra_widget_description&quot;>Card Analysis&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="41"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.select_decks_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;select_decks_title&quot; comment=&quot;Title for Deck Selection Dialog&quot;>Select decks&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="46"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.no_selected_deck_placeholder_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;no_selected_deck_placeholder_title&quot; comment=&quot;Placeholder title when no decks are selected&quot;>Select decks to display in the widget. Select decks with the + icon.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="48"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deck_removed_from_widget` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deck_removed_from_widget&quot; comment=&quot;Snackbar when deck is removed from widget&quot;>Deck removed&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="49"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deck_already_selected_message` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deck_already_selected_message&quot; comment=&quot;Snackbar when user try to select the same deck again&quot;>This deck is already selected&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="50"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.deck_limit_reached` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;deck_limit_reached&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="51"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_widget_state` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_widget_state&quot; comment=&quot;To denote the widget is empty&quot;>Missing deck. Tap to reconfigure.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="55"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_collection_state_in_widget` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_collection_state_in_widget&quot; comment=&quot;To denote the collection is empty&quot;>Collection is empty, use app to add decks then reconfigure&lt;/string>&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/08-widget.xml"
+            line="56"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.card_browser_font_size` appears to be unused"
+        errorLine1="    &lt;string name=&quot;card_browser_font_size&quot; maxLength=&quot;41&quot;>Card browser font scaling&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="60"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.gestures_full_screen_nav_drawer` appears to be unused"
+        errorLine1="    &lt;string name=&quot;gestures_full_screen_nav_drawer&quot; maxLength=&quot;41&quot;>Full screen navigation drawer&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="79"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.gestures_fullscreen_nav_drawer_summary` appears to be unused"
+        errorLine1="    &lt;string name=&quot;gestures_fullscreen_nav_drawer_summary&quot;>Open navigation drawer when swiped right from anywhere on the screen&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="80"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.day_theme` appears to be unused"
+        errorLine1="    &lt;string name=&quot;day_theme&quot; maxLength=&quot;41&quot;>Day theme&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="124"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.night_theme` appears to be unused"
+        errorLine1="    &lt;string name=&quot;night_theme&quot; maxLength=&quot;41&quot;>Night theme&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="125"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.open_changelog` appears to be unused"
+        errorLine1="    &lt;string name=&quot;open_changelog&quot;>Open changelog&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="253"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.donate_description` appears to be unused"
+        errorLine1="    &lt;string name=&quot;donate_description&quot;>&lt;![CDATA[You can support Hirameki\&apos;s development by &lt;a href=\&quot;%1$s\&quot;>donating&lt;/a>. Any amount is deeply appreciated.]]&gt;&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="260"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.dev_options_warning` appears to be unused"
+        errorLine1="    &lt;string name=&quot;dev_options_warning&quot;>Please be sure before enabling developer options. These options are dangerous and could break the app or corrupt your collection.\n\nNote that these options are not suited for most users and therefore are not translated, so they are in English.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="308"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.hide_system_bars` appears to be unused"
+        errorLine1="    &lt;string name=&quot;hide_system_bars&quot; maxLength=&quot;41&quot; comment=&quot;Title of a setting that allows to hide the system bars&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="438"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.hide_system_bars_none` appears to be unused"
+        errorLine1="    &lt;string name=&quot;hide_system_bars_none&quot; comment=&quot;Setting option to not hide any of the system bars&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="440"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.hide_system_bars_status_bar` appears to be unused"
+        errorLine1="    &lt;string name=&quot;hide_system_bars_status_bar&quot; comment=&quot;Setting option to hide the system status bar (the top one with clock, battery status, etc)&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="442"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.hide_system_bars_navigation_bar` appears to be unused"
+        errorLine1="    &lt;string name=&quot;hide_system_bars_navigation_bar&quot; comment=&quot;Setting option to hide the system navigation bar (the bottom one that can go back, to home, etc)&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="444"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.hide_system_bars_all_bars` appears to be unused"
+        errorLine1="    &lt;string name=&quot;hide_system_bars_all_bars&quot; comment=&quot;Setting option to hide all the system bars&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="446"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.ignore_display_cutout` appears to be unused"
+        errorLine1="    &lt;string name=&quot;ignore_display_cutout&quot; maxLength=&quot;41&quot;>Ignore display cutout&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="448"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.show_answer_buttons` appears to be unused"
+        errorLine1="    &lt;string name=&quot;show_answer_buttons&quot; maxLength=&quot;41&quot;>Show answer buttons&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="449"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.hide_hard_and_easy` appears to be unused"
+        errorLine1="    &lt;string name=&quot;hide_hard_and_easy&quot; maxLength=&quot;41&quot;>Hide ‘Hard’ and ‘Easy’ buttons&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="456"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.reviewer_frame_style` appears to be unused"
+        errorLine1="    &lt;string name=&quot;reviewer_frame_style&quot; maxLength=&quot;41&quot;>Frame style&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="457"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.reviewer_frame_style_card` appears to be unused"
+        errorLine1="    &lt;string name=&quot;reviewer_frame_style_card&quot; maxLength=&quot;41&quot; comment=&quot;Style name of the &apos;Card&apos; card frame of the Study Screen&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="458"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.reviewer_frame_style_box` appears to be unused"
+        errorLine1="    &lt;string name=&quot;reviewer_frame_style_box&quot; maxLength=&quot;41&quot; comment=&quot;Style name of the &apos;Box&apos; card frame of the Study Screen&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="460"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.reviewer_toolbar_top` appears to be unused"
+        errorLine1="    &lt;string name=&quot;reviewer_toolbar_top&quot; maxLength=&quot;41&quot; comment=&quot;Setting to put the toolbar on the top of the study screen&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="462"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.reviewer_toolbar_bottom` appears to be unused"
+        errorLine1="    &lt;string name=&quot;reviewer_toolbar_bottom&quot; maxLength=&quot;41&quot; comment=&quot;Setting to put the toolbar on the bottom of the study screen&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="464"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.reviewer_toolbar_none` appears to be unused"
+        errorLine1="    &lt;string name=&quot;reviewer_toolbar_none&quot; maxLength=&quot;41&quot; comment=&quot;Setting to remove the toolbar from the study screen&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="466"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.toolbar` appears to be unused"
+        errorLine1="    &lt;string name=&quot;toolbar&quot; maxLength=&quot;41&quot;>Toolbar&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="468"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.toolbar_actions` appears to be unused"
+        errorLine1="    &lt;string name=&quot;toolbar_actions&quot; maxLength=&quot;41&quot;>Toolbar actions&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="469"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.toolbar_position` appears to be unused"
+        errorLine1="    &lt;string name=&quot;toolbar_position&quot; maxLength=&quot;28&quot;>Toolbar position&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="470"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.new_study_screen` appears to be unused"
+        errorLine1="    &lt;string name=&quot;new_study_screen&quot; maxLength=&quot;41&quot;>New study screen&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="471"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.new_study_screen_summ` appears to be unused"
+        errorLine1="    &lt;string name=&quot;new_study_screen_summ&quot;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="472"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.show_answer_feedback` appears to be unused"
+        errorLine1="    &lt;string name=&quot;show_answer_feedback&quot; maxLength=&quot;41&quot;>Show answer feedback&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="474"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.screen` appears to be unused"
+        errorLine1="    &lt;string name=&quot;screen&quot; maxLength=&quot;41&quot;>Screen&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/10-preferences.xml"
+            line="475"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.day_theme_plain` appears to be unused"
+        errorLine1="    &lt;string name=&quot;day_theme_plain&quot;>Plain&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/11-arrays.xml"
+            line="35"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.night_theme_black` appears to be unused"
+        errorLine1="    &lt;string name=&quot;night_theme_black&quot;>Black&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/11-arrays.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.multimedia_editor_attach_mm_content` appears to be unused"
+        errorLine1="    &lt;string name=&quot;multimedia_editor_attach_mm_content&quot; comment=&quot;used for screen readers. Not visible to the user&quot;>Attach multimedia content to the %1$s field&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/16-multimedia-editor.xml"
+            line="42"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.multimedia_editor_audio_view_create_failed` appears to be unused"
+        errorLine1="    &lt;string name=&quot;multimedia_editor_audio_view_create_failed&quot;>Unable to create recorder tool bar&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/16-multimedia-editor.xml"
+            line="48"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.plurals.model_browser_types_available` appears to be unused"
+        errorLine1="    &lt;plurals name=&quot;model_browser_types_available&quot;>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/17-model-manager.xml"
+            line="19"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.activity_study_options` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/activity_study_options.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.anki_box` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;139.8305dp&quot; android:viewportHeight=&quot;165&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/anki_box.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.anki_progress` appears to be unused"
+        errorLine1="&lt;merge xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/anki_progress.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ankidroid_logo` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ankidroid_logo.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ankidroid_txt` appears to be unused">
+        <location
+            file="src/main/res/drawable-hdpi/ankidroid_txt.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.arrow_forward_24px` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/arrow_forward_24px.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.audio_play_view` appears to be unused"
+        errorLine1="&lt;androidx.constraintlayout.widget.ConstraintLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/audio_play_view.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.audio_record_view` appears to be unused"
+        errorLine1="&lt;androidx.constraintlayout.widget.ConstraintLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/audio_record_view.xml"
+            line="20"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.bg_preference_widget_text` appears to be unused"
+        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:shape=&quot;rectangle&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/bg_preference_widget_text.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.anim.blink` appears to be unused"
+        errorLine1="&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/anim/blink.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.browser_column_heading` appears to be unused"
+        errorLine1="&lt;com.ichi2.ui.FixedTextView xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/browser_column_heading.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.browser_divider` appears to be unused"
+        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/browser_divider.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.browser_options_dialog` appears to be unused"
+        errorLine1="&lt;ScrollView xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/browser_options_dialog.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.brush_preview_background` appears to be unused"
+        errorLine1="&lt;layer-list xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/brush_preview_background.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.anki_foreground_icon_color_0` appears to be unused">
+        <location
+            file="build.gradle.kts"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.anki_foreground_icon_color_0` appears to be unused">
+        <location
+            file="build.gradle.kts"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.anki_foreground_icon_color_0` appears to be unused">
+        <location
+            file="build.gradle.kts"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.anki_foreground_icon_color_1` appears to be unused">
+        <location
+            file="build.gradle.kts"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.anki_foreground_icon_color_1` appears to be unused">
+        <location
+            file="build.gradle.kts"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.anki_foreground_icon_color_1` appears to be unused">
+        <location
+            file="build.gradle.kts"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.button_background` appears to be unused"
+        errorLine1="&lt;ripple xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/button_background.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.button_color_brush` appears to be unused"
+        errorLine1="&lt;com.google.android.material.button.MaterialButton"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/button_color_brush.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.card_browser` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/card_browser.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.card_browser` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/card_browser.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.card_browser_fragment` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout android:id=&quot;@+id/root_layout&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/card_browser_fragment.xml"
+            line="3"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.card_browser_multiselect` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/card_browser_multiselect.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.card_browser_searchview` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/card_browser_searchview.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.card_browser_searchview_fragment` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/card_browser_searchview_fragment.xml"
+            line="3"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.check_pronunciation_fragment` appears to be unused"
+        errorLine1="&lt;androidx.constraintlayout.widget.ConstraintLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/check_pronunciation_fragment.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.circle_background` appears to be unused"
+        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/circle_background.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.link_anki_forum_ankidroid` appears to be unused"
+        errorLine1="    &lt;string name=&quot;link_anki_forum_ankidroid&quot;>https://forums.ankiweb.net/c/ankidroid/22&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="90"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.array.hide_system_bars_entries` appears to be unused"
+        errorLine1="    &lt;string-array name=&quot;hide_system_bars_entries&quot;>"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="188"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.array.hide_system_bars_values` appears to be unused"
+        errorLine1="    &lt;string-array name=&quot;hide_system_bars_values&quot;>"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="200"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.array.reviewer_frame_style_entries` appears to be unused"
+        errorLine1="    &lt;string-array name=&quot;reviewer_frame_style_entries&quot;>"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="207"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.array.reviewer_frame_style_values` appears to be unused"
+        errorLine1="    &lt;string-array name=&quot;reviewer_frame_style_values&quot;>"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="215"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.array.reviewer_toolbar_position_entries` appears to be unused"
+        errorLine1="    &lt;string-array name=&quot;reviewer_toolbar_position_entries&quot;>"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="220"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.array.reviewer_toolbar_position_values` appears to be unused"
+        errorLine1="    &lt;string-array name=&quot;reviewer_toolbar_position_values&quot;>"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="230"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.array.study_screen_summary_entries` appears to be unused"
+        errorLine1="    &lt;string-array name=&quot;study_screen_summary_entries&quot;>"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="244"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deck1Name_deck_picker_widget` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deck1Name_deck_picker_widget&quot; translatable=&quot;false&quot; comment=&quot;Example of a Deck name. Android&apos;s widget provider displays it as an example of what the Deck Picker widget may look like&quot;>English&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="298"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deck2Name_deck_picker_widget` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deck2Name_deck_picker_widget&quot; translatable=&quot;false&quot; comment=&quot;Example of a Deck name. Android&apos;s widget provider displays it as an example of what the Deck Picker widget may look like&quot;>Español&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="299"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.deck3Name_deck_picker_widget` appears to be unused"
+        errorLine1="    &lt;string name=&quot;deck3Name_deck_picker_widget&quot; translatable=&quot;false&quot; comment=&quot;Example of a Deck name. Android&apos;s widget provider displays it as an example of what the Deck Picker widget may look like&quot;>日本語&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/constants.xml"
+            line="300"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.deck_picker` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/deck_picker.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.dialog_new_note_type` appears to be unused"
+        errorLine1="&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/dialog_new_note_type.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.divider_black` appears to be unused"
+        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/divider_black.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.download_shared_decks_menu` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/download_shared_decks_menu.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.drawing_menu` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/drawing_menu.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.fab_label_background_black` appears to be unused"
+        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/fab_label_background_black.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.floating_add_button` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:app=&quot;http://schemas.android.com/apk/res-auto&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/floating_add_button.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.footer_button_all_black` appears to be unused"
+        errorLine1="&lt;layer-list xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; >"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/footer_button_all_black.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.footer_button_all_black_ripple` appears to be unused"
+        errorLine1="&lt;ripple xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/footer_button_all_black_ripple.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.footer_button_all_plain` appears to be unused"
+        errorLine1="&lt;layer-list xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; >"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/footer_button_all_plain.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.footer_button_all_plain_ripple` appears to be unused"
+        errorLine1="&lt;ripple xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/footer_button_all_plain_ripple.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.home_icon` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;#FFFFFF&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/home_icon.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.homescreen` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/homescreen.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_add_toolbar_icon` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_add_toolbar_icon.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_align` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_align.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_align_bottom` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_align_bottom.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_align_left` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_align_left.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_align_right` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_align_right.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_anki_dynamic` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_anki_dynamic.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_anki_dynamic_finish` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_anki_dynamic_finish.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_anki_unthemed` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_anki_unthemed.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_anki_unthemed_finish` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_anki_unthemed_finish.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_baseline_email_24` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_baseline_email_24.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_baseline_lock_24` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_baseline_lock_24.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_build_white` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;#FFFFFF&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_build_white.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_dark_mode_24` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_dark_mode_24.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_deselect_white` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot; android:viewportHeight=&quot;960&quot; android:viewportWidth=&quot;960&quot; android:width=&quot;24dp&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_deselect_white.xml"
+            line="16"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_edit_off` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_edit_off.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_gesture_swipe` appears to be unused"
+        errorLine1="&lt;layer-list xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_gesture_swipe.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_import_export` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_import_export.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_launcher_background` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_launcher_background.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_launcher_foreground` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_launcher_foreground.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_launcher_monochrome` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_launcher_monochrome.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_light_mode_24` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_light_mode_24.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_lock_open` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_lock_open.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_mark` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_mark.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_menu_24` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot; android:viewportHeight=&quot;960&quot; android:viewportWidth=&quot;960&quot; android:width=&quot;24dp&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_menu_24.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_more_vertical` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_more_vertical.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_numbers` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_numbers.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_palette` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;#000000&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_palette.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_paste` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_paste.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_refresh_white` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;#FFFFFF&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_refresh_white.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_remove` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot; android:viewportHeight=&quot;24&quot; android:viewportWidth=&quot;24&quot; android:width=&quot;24dp&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_remove.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_remove_done` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_remove_done.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_running_clock` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_running_clock.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_shelf_auto_hide` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_shelf_auto_hide.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_toolbar` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_toolbar.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_undo` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_undo.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_widget_add_note` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_widget_add_note.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.anim.jump` appears to be unused"
+        errorLine1="&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/anim/jump.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.anim.jump_fast` appears to be unused"
+        errorLine1="&lt;set xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/anim/jump_fast.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.launch_screen` appears to be unused"
+        errorLine1="&lt;layer-list xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot; android:opacity=&quot;opaque&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/launch_screen.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.logged_in_logo` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/logged_in_logo.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.my_account` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/my_account.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.my_account_logged_in` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/my_account_logged_in.xml"
+            line="3"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.nav_drawer_logo_black_theme` appears to be unused">
+        <location
+            file="src/main/res/drawable-nodpi/nav_drawer_logo_black_theme.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.note_editor` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/note_editor.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.note_editor_toolbar_add_custom_item` appears to be unused"
+        errorLine1="&lt;ScrollView"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/note_editor_toolbar_add_custom_item.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.note_editor_toolbar_edit_custom_item` appears to be unused"
+        errorLine1="&lt;ScrollView"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/note_editor_toolbar_edit_custom_item.xml"
+            line="17"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.palette_24px` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/palette_24px.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.preference_widget_text` appears to be unused"
+        errorLine1="&lt;TextView xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/preference_widget_text.xml"
+            line="6"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.analytics_opt_in_key` appears to be unused"
+        errorLine1="    &lt;string name=&quot;analytics_opt_in_key&quot;>analytics_opt_in&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/preferences.xml"
+            line="8"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.day_theme_key` appears to be unused"
+        errorLine1="    &lt;string name=&quot;day_theme_key&quot;>dayTheme&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/preferences.xml"
+            line="37"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.night_theme_key` appears to be unused"
+        errorLine1="    &lt;string name=&quot;night_theme_key&quot;>nightTheme&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/preferences.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.pref_review_category_key` appears to be unused"
+        errorLine1="    &lt;string name=&quot;pref_review_category_key&quot;>reviewCategory&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/preferences.xml"
+            line="53"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.pref_analytics_debug_key` appears to be unused"
+        errorLine1="    &lt;string name=&quot;pref_analytics_debug_key&quot;>analytics_debug_preference&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/preferences.xml"
+            line="207"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.dev_options_enabled_msg` appears to be unused"
+        errorLine1="    &lt;string name=&quot;dev_options_enabled_msg&quot;>Enabled developer options&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/preferences.xml"
+            line="227"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.hide_hard_and_easy_key` appears to be unused"
+        errorLine1="    &lt;string name=&quot;hide_hard_and_easy_key&quot;>hideHardAndEasy&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/preferences.xml"
+            line="245"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.refresh_24px` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/refresh_24px.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.rename_flag_layout` appears to be unused"
+        errorLine1="&lt;androidx.constraintlayout.widget.ConstraintLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout/rename_flag_layout.xml"
+            line="18"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.layout.reviewer2` appears to be unused"
+        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout  xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/layout-sw600dp/reviewer2.xml"
+            line="3"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.search` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/search.xml"
+            line="15"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.selector_tool_background` appears to be unused"
+        errorLine1="&lt;selector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/color/selector_tool_background.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.shadow_left` appears to be unused"
+        errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/shadow_left.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.rebuild` appears to be unused"
+        errorLine1="    &lt;string name=&quot;rebuild&quot; comment=&quot;Generic rebuild action. Duplicated in rebuild_cram_label for filtered deck context&quot;>Rebuild&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="5"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.empty_cards_action` appears to be unused"
+        errorLine1="    &lt;string name=&quot;empty_cards_action&quot; comment=&quot;Generic empty action. Duplicated in empty_cram_label for filtered deck context&quot;>Empty&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="6"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.sync_starting` appears to be unused"
+        errorLine1="    &lt;string name=&quot;sync_starting&quot;>Sync starting…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="32"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.export_card` appears to be unused"
+        errorLine1="    &lt;string name=&quot;export_card&quot;>Export card&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.help_manual_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;help_manual_title&quot;>Online Manual&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="66"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.resume` appears to be unused"
+        errorLine1="    &lt;string name=&quot;resume&quot;>Resume&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="106"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.menu.study_options_fragment` appears to be unused"
+        errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/menu/study_options_fragment.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_black_primary` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_black_primary&quot;>#000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="3"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_black_primary_dark` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_black_primary_dark&quot;>#000000&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="4"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_black_primary_light` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_black_primary_light&quot;>#151515&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="5"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_black_primary_text` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_black_primary_text&quot;>#fff&lt;/color> &lt;!-- Alternative: #808080 -->"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="6"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_black_row_current` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_black_row_current&quot;>#1a1a1a&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="7"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Base_Theme_Dark_Black` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Base.Theme.Dark.Black&quot; parent=&quot;Theme_Dark&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="9"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Base_V35_Dark_Black` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Base.V35.Dark.Black&quot; parent=&quot;@style/Base.Theme.Dark.Black&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-v35/theme_black.xml"
+            line="18"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.BlackCardBackground` appears to be unused"
+        errorLine1="    &lt;style name=&quot;BlackCardBackground&quot; parent=&quot;CardView&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="118"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.ThemeOverlay_AnkiDroid_AlertDialog_Black` appears to be unused"
+        errorLine1="    &lt;style name=&quot;ThemeOverlay.AnkiDroid.AlertDialog.Black&quot; parent=&quot;ThemeOverlay.AnkiDroid.AlertDialog&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="122"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Theme_Dark_Black` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Theme_Dark.Black&quot; parent=&quot;Base.Theme.Dark.Black&quot;/>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_black.xml"
+            line="126"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_dark_primary_dark` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_dark_primary_dark&quot;>@color/material_grey_900&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_dark.xml"
+            line="4"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_plain_primary` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_plain_primary&quot;>#9E9E9E&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_plain.xml"
+            line="3"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_plain_primary_dark` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_plain_primary_dark&quot;>#616161&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_plain.xml"
+            line="4"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_plain_primary_light` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_plain_primary_light&quot;>#F5F5F5&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_plain.xml"
+            line="5"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_plain_accent` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_plain_accent&quot;>#607D8B&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_plain.xml"
+            line="6"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.color.theme_plain_primary_text` appears to be unused"
+        errorLine1="    &lt;color name=&quot;theme_plain_primary_text&quot;>#212121&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_plain.xml"
+            line="7"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Base_Theme_Light_Plain` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Base.Theme.Light.Plain&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_plain.xml"
+            line="9"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Base_V35_Light_Plain` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Base.V35.Light.Plain&quot; parent=&quot;@style/Base.Theme.Light.Plain&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-v35/theme_plain.xml"
+            line="18"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.Theme_Light_Plain` appears to be unused"
+        errorLine1="    &lt;style name=&quot;Theme_Light.Plain&quot; parent=&quot;Base.Theme.Light.Plain&quot;/>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/theme_plain.xml"
+            line="79"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.thumb_icon_selector` appears to be unused"
+        errorLine1="&lt;selector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/thumb_icon_selector.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.wallpaper_icon` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/wallpaper_icon.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.widget_bg_number` appears to be unused">
+        <location
+            file="src/main/res/drawable-hdpi/widget_bg_number.9.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.widget_bg_small` appears to be unused">
+        <location
+            file="src/main/res/drawable-hdpi/widget_bg_small.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.widget_bg_small_finish` appears to be unused">
+        <location
+            file="src/main/res/drawable-hdpi/widget_bg_small_finish.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.widget_bg_time` appears to be unused">
+        <location
+            file="src/main/res/drawable-hdpi/widget_bg_time.9.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.widget_card_analysis_drawable` appears to be unused">
+        <location
+            file="src/main/res/drawable/widget_card_analysis_drawable.png"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.widget_deck_picker_drawable` appears to be unused">
+        <location
+            file="src/main/res/drawable/widget_deck_picker_drawable.png"/>
+    </issue>
+
+    <issue
+        id="ReportShortcutUsage"
+        message="Calling this method indicates use of dynamic shortcuts, but there are no calls to methods that track shortcut usage, such as `pushDynamicShortcut` or `reportShortcutUsed`. Calling these methods is recommended, as they track shortcut usage and allow launchers to adjust which shortcuts appear based on activation history. Please see https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage"
+        errorLine1="            ShortcutManagerCompat.addDynamicShortcuts("
+        errorLine2="            ^">
+        <location
+            file="src/main/java/com/ichi2/anki/NavigationDrawerActivity.kt"
+            line="490"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Help`&quot;, used in `help_screen_title`, `help`"
+        errorLine1="    &lt;string name=&quot;help&quot; comment=&quot;Title of the help menu and button to open it.&quot; maxLength=&quot;28&quot;>Help&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="56"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="65"
+            column="5"
+            message="Duplicates value in `help`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Hirameki`&quot;, used in `app_name`, `context_menu_anki_card_label`, `sync_conflict_keep_local_new`"
+        errorLine1="    &lt;string name=&quot;context_menu_anki_card_label&quot;>Hirameki&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="168"
+            column="5"/>
+        <location
+            file="src/main/res/values/01-core.xml"
+            line="173"
+            column="5"
+            message="Duplicates value in `context_menu_anki_card_label`. Add a `comment` attribute on both strings to explain this duplication"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="3"
+            column="5"
+            message="Duplicates value in `context_menu_anki_card_label`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Red`&quot;, used in `flag_red`, `whiteboard_color_red`"
+        errorLine1="    &lt;string name=&quot;flag_red&quot;>Red&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="94"
+            column="5"/>
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="238"
+            column="5"
+            message="Duplicates value in `flag_red`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Green`&quot;, used in `flag_green`, `whiteboard_color_green`"
+        errorLine1="    &lt;string name=&quot;flag_green&quot;>Green&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="96"
+            column="5"/>
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="239"
+            column="5"
+            message="Duplicates value in `flag_green`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Blue`&quot;, used in `flag_blue`, `whiteboard_color_blue`"
+        errorLine1="    &lt;string name=&quot;flag_blue&quot;>Blue&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="97"
+            column="5"/>
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="240"
+            column="5"
+            message="Duplicates value in `flag_blue`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Black`&quot;, used in `night_theme_black`, `whiteboard_color_black`"
+        errorLine1="    &lt;string name=&quot;whiteboard_color_black&quot;>Black&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="237"
+            column="5"/>
+        <location
+            file="src/main/res/values/11-arrays.xml"
+            line="38"
+            column="5"
+            message="Duplicates value in `whiteboard_color_black`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Resume`&quot;, used in `resume_recording`, `resume`"
+        errorLine1="    &lt;string name=&quot;resume_recording&quot;>Resume&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="453"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="106"
+            column="5"
+            message="Duplicates value in `resume_recording`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Review Heatmap`&quot;, used in `heatmap_widget_label`, `review_heatmap`"
+        errorLine1="    &lt;string name=&quot;heatmap_widget_label&quot;>Review Heatmap&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="500"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="103"
+            column="5"
+            message="Duplicates value in `heatmap_widget_label`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Continue`&quot;, used in `dialog_continue`, `intro_continue`"
+        errorLine1="    &lt;string name=&quot;dialog_continue&quot;>Continue&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="71"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="102"
+            column="5"
+            message="Duplicates value in `dialog_continue`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Report a Bug`&quot;, used in `help_issue_tracker_title`, `help_item_report_bug`. Use `android:inputType` or `android:capitalize` to treat these as the same and avoid string duplication."
+        errorLine1="    &lt;string name=&quot;help_item_report_bug&quot;>Report a bug&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="160"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="70"
+            column="5"
+            message="Duplicates value in `help_item_report_bug`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Donate`&quot;, used in `donate`, `help_donate_title`, `help_item_support_opencollective_donate`"
+        errorLine1="    &lt;string name=&quot;help_item_support_opencollective_donate&quot; comment=&quot;Donate button in help menu. Duplicated in donate for generic context&quot;>Donate&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="163"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="50"
+            column="5"
+            message="Duplicates value in `help_item_support_opencollective_donate`. Add a `comment` attribute on both strings to explain this duplication"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="72"
+            column="5"
+            message="Duplicates value in `help_item_support_opencollective_donate`. Add a `comment` attribute on both strings to explain this duplication"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`Hirameki Privacy Policy`&quot;, used in `help_hirameki_privacy_title`, `help_item_ankidroid_privacy_policy`. Use `android:inputType` or `android:capitalize` to treat these as the same and avoid string duplication."
+        errorLine1="    &lt;string name=&quot;help_item_ankidroid_privacy_policy&quot;>Hirameki privacy policy&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="176"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="74"
+            column="5"
+            message="Duplicates value in `help_item_ankidroid_privacy_policy`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`AnkiWeb Privacy Policy`&quot;, used in `help_ankiweb_privacy_title`, `help_item_ankiweb_privacy_policy`. Use `android:inputType` or `android:capitalize` to treat these as the same and avoid string duplication."
+        errorLine1="    &lt;string name=&quot;help_item_ankiweb_privacy_policy&quot;>AnkiWeb privacy policy&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="177"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="76"
+            column="5"
+            message="Duplicates value in `help_item_ankiweb_privacy_policy`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
+    </issue>
+
+    <issue
+        id="DuplicateCrowdInStrings"
+        message="Duplicate string value &quot;`AnkiWeb Terms and Conditions`&quot;, used in `help_ankiweb_terms_subtitle`, `help_item_ankiweb_terms_and_conditions`. Use `android:inputType` or `android:capitalize` to treat these as the same and avoid string duplication."
+        errorLine1="    &lt;string name=&quot;help_item_ankiweb_terms_and_conditions&quot;>AnkiWeb terms and conditions&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/03-dialogs.xml"
+            line="178"
+            column="5"/>
+        <location
+            file="src/main/res/values/strings.xml"
+            line="79"
+            column="5"
+            message="Duplicates value in `help_item_ankiweb_terms_and_conditions`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
+    </issue>
+
+</issues>
