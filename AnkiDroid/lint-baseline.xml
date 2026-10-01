@@ -2,116 +2,6 @@
 <issues format="6" by="lint 9.4.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.1)" variant="all" version="9.4.1">
 
     <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioPlayView`, was not found in the project or the libraries"
-        errorLine1="    &lt;com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioPlayView"
-        errorLine2="    ^">
-        <location
-            file="src/main/res/layout/check_pronunciation_fragment.xml"
-            line="11"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioRecordView`, was not found in the project or the libraries"
-        errorLine1="    &lt;com.ichi2.anki.ui.windows.reviewer.audiorecord.AudioRecordView"
-        errorLine2="    ^">
-        <location
-            file="src/main/res/layout/check_pronunciation_fragment.xml"
-            line="32"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView`, was not found in the project or the libraries"
-        errorLine1="            &lt;com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView"
-        errorLine2="            ^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="52"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView`, was not found in the project or the libraries"
-        errorLine1="            &lt;com.ichi2.anki.ui.windows.reviewer.AnswerFeedbackView"
-        errorLine2="            ^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="63"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerTimer`, was not found in the project or the libraries"
-        errorLine1="            &lt;com.ichi2.anki.ui.windows.reviewer.AnswerTimer"
-        errorLine2="            ^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="195"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
-        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
-        errorLine2="                    ^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="235"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
-        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
-        errorLine2="                    ^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="247"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
-        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
-        errorLine2="                    ^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="259"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingClass"
-        message="Class referenced in the layout file, `com.ichi2.anki.ui.windows.reviewer.AnswerButton`, was not found in the project or the libraries"
-        errorLine1="                    &lt;com.ichi2.anki.ui.windows.reviewer.AnswerButton"
-        errorLine2="                    ^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="271"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingDefaultResource"
-        message="The layout &quot;reviewer2&quot; in layout-sw600dp has no declaration in the base `layout` folder; this can lead to crashes when the resource is queried in a configuration that does not match this qualifier"
-        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout  xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2=" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="3"
-            column="2"/>
-    </issue>
-
-    <issue
         id="MissingOnRenderProcessGone"
         message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
         errorLine1="    ) : WebViewClient(),"
@@ -503,7 +393,7 @@
         errorLine2="                             ~~~~">
         <location
             file="${:api*buildDir}/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml"
-            line="28"
+            line="27"
             column="30"/>
     </issue>
 
@@ -669,6 +559,17 @@
         <location
             file="src/main/res/values/02-strings.xml"
             line="124"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.delete_deck` appears to be unused"
+        errorLine1="    &lt;string name=&quot;delete_deck&quot; comment=&quot;Message on a progress bar starting a deck is being deleted.&quot;>Deleting deck…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/02-strings.xml"
+            line="161"
             column="13"/>
     </issue>
 
@@ -2032,17 +1933,6 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.layout.check_pronunciation_fragment` appears to be unused"
-        errorLine1="&lt;androidx.constraintlayout.widget.ConstraintLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout/check_pronunciation_fragment.xml"
-            line="2"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.drawable.circle_background` appears to be unused"
         errorLine1="&lt;shape xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
         errorLine2="^">
@@ -2936,17 +2826,6 @@
         <location
             file="src/main/res/layout/rename_flag_layout.xml"
             line="18"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.layout.reviewer2` appears to be unused"
-        errorLine1="&lt;androidx.coordinatorlayout.widget.CoordinatorLayout  xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/layout-sw600dp/reviewer2.xml"
-            line="3"
             column="1"/>
     </issue>
 
