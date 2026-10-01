@@ -18,6 +18,7 @@ package com.ichi2.anki.multimedia.audio
 
 import android.app.Application
 import android.media.MediaPlayer
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.multimediacard.AudioRecorder
@@ -36,8 +37,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 
-// Recording duration is wall-clock based and not tied to collection scheduling
-@Suppress("DirectSystemCurrentTimeMillisUsage")
 class AudioRecorderViewModel
     @JvmOverloads
     constructor(
@@ -135,7 +134,7 @@ class AudioRecorderViewModel
                         audioFile = tempFile
 
                         accumulatedDurationMillis = 0L
-                        startTimeMillis = System.currentTimeMillis()
+                        startTimeMillis = SystemClock.elapsedRealtime()
 
                         _uiState.update {
                             it.copy(
@@ -168,7 +167,7 @@ class AudioRecorderViewModel
 
             timerJob?.cancel()
             amplitudeJob?.cancel()
-            accumulatedDurationMillis += System.currentTimeMillis() - startTimeMillis
+            accumulatedDurationMillis += SystemClock.elapsedRealtime() - startTimeMillis
 
             _uiState.update { it.copy(state = RecordingState.RecordingPaused, amplitude = 0f) }
         }
@@ -178,7 +177,7 @@ class AudioRecorderViewModel
             Timber.i("AudioRecorderViewModel: resuming recording")
             audioRecorder?.resume()
 
-            startTimeMillis = System.currentTimeMillis()
+            startTimeMillis = SystemClock.elapsedRealtime()
 
             _uiState.update { it.copy(state = RecordingState.Recording) }
 
@@ -198,7 +197,7 @@ class AudioRecorderViewModel
             Timber.i("AudioRecorderViewModel: stopping recording")
 
             if (_uiState.value.state == RecordingState.Recording) {
-                accumulatedDurationMillis += System.currentTimeMillis() - startTimeMillis
+                accumulatedDurationMillis += SystemClock.elapsedRealtime() - startTimeMillis
             }
 
             // Isolate reference to prevent concurrent calls during stopAndReset
@@ -348,7 +347,7 @@ class AudioRecorderViewModel
                 viewModelScope.launch {
                     while (isActive && _uiState.value.state == RecordingState.Recording) {
                         val currentDuration =
-                            accumulatedDurationMillis + (System.currentTimeMillis() - startTimeMillis)
+                            accumulatedDurationMillis + (SystemClock.elapsedRealtime() - startTimeMillis)
                         _uiState.update { it.copy(durationMillis = currentDuration) }
                         delay(AMPLITUDE_SAMPLE_MS)
                     }
