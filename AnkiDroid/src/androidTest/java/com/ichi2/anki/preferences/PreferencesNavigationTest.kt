@@ -38,7 +38,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.IntentHandler
 import com.ichi2.anki.R
 import com.ichi2.anki.testutil.GrantStoragePermission
-import com.ichi2.anki.testutil.closeGetStartedScreenIfExists
+import com.ichi2.anki.testutil.disableBackupPrompt
+import com.ichi2.anki.testutil.disableIntroductionSlide
 import com.ichi2.anki.testutil.grantPermissions
 import com.ichi2.anki.utils.isWindowCompact
 import org.hamcrest.Matchers.allOf
@@ -62,8 +63,9 @@ class PreferencesNavigationTest {
     fun testOnCompactMode() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         assumeTrue(context.resources.isWindowCompact())
+        disableIntroductionSlide()
+        disableBackupPrompt()
         ActivityScenario.launch(IntentHandler::class.java)
-        closeGetStartedScreenIfExists()
         onView(withId(R.id.drawer_layout)).perform(DrawerActions.open())
         onView(withId(R.id.nav_settings)).perform(click())
         onView(withId(R.id.search)).perform(click())
@@ -90,8 +92,9 @@ class PreferencesNavigationTest {
 
         val context = ApplicationProvider.getApplicationContext<Context>()
         assumeTrue(isTablet(context))
+        disableIntroductionSlide()
+        disableBackupPrompt()
         ActivityScenario.launch(IntentHandler::class.java)
-        closeGetStartedScreenIfExists()
         onView(withId(R.id.drawer_layout)).perform(DrawerActions.open())
         onView(withId(R.id.nav_settings)).perform(click())
         onView(withId(R.id.search)).perform(click())

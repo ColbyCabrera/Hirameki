@@ -15,55 +15,50 @@
  */
 
 /*
- * Test to ensure going back from DeckPicker returns to the introduction screen
- * and the "Before continuing!" text is visible again.
+ * Test to ensure that pressing back on the introduction's setup page
+ * returns to the disclaimer page instead of closing the activity.
  */
 package com.ichi2.anki
 
-import androidx.test.ext.junit.rules.ActivityScenarioRule
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
 import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission
 import com.ichi2.anki.testutil.grantPermissions
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class IntroductionBackNavigationTest : InstrumentedTest() {
     @get:Rule
-    val activityScenarioRule = ActivityScenarioRule(IntroductionActivity::class.java)
+    val composeTestRule = createAndroidComposeRule<IntroductionActivity>()
 
     @get:Rule
     val runtimePermissionRule = grantPermissions(GrantStoragePermission.storagePermission)
 
     @Test
-    fun backFromDeckPickerReshowsFirstThingsFirst() {
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    fun backFromSetupScreenReshowsDisclaimer() {
+        // The introduction rotates an icon forever, so the test clock must be controlled manually
+        composeTestRule.mainClock.autoAdvance = false
         val continueText =
             InstrumentationRegistry
                 .getInstrumentation()
                 .targetContext
                 .getString(R.string.intro_continue)
 
-        // Wait for and click the "Continue" button by its localized text
-        val continueButton = device.wait(Until.findObject(By.text(continueText)), 5000)
-        assertNotNull(continueButton, "Continue button should be visible")
-        continueButton.click()
+        // The disclaimer is the first page of the introduction
+        composeTestRule.onNodeWithText(continueText).assertIsDisplayed().performClick()
+        composeTestRule.mainClock.advanceTimeBy(1_000)
 
-        // Wait a moment for navigation
-        device.waitForIdle()
+        // Back from the setup page returns to the disclaimer instead of closing the activity
+        composeTestRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        composeTestRule.mainClock.advanceTimeBy(1_000)
 
-        // Press back to return to the IntroductionActivity
-        device.pressBack()
-
-        // The "Continue" button should be visible again after pressing back
-        val continueButtonAgain = device.wait(Until.findObject(By.text(continueText)), 5000)
-        assertNotNull(continueButtonAgain, "Continue button should be visible after pressing back")
+        composeTestRule.onNodeWithText(continueText).assertIsDisplayed()
     }
 }
