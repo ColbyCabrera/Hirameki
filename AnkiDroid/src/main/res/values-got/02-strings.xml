@@ -151,7 +151,6 @@
     <string name="check_media" maxLength="28">𐌼𐌰𐌹𐌳𐌾𐌰 𐌿𐍃𐍃𐍉𐌺𐌾𐌰𐌽</string>
     <string name="empty_cards" maxLength="28">𐌺𐌰𐍂𐍄𐍉𐍃 𐌻𐌰𐌿𐍃𐍉𐍃</string>
     <string name="unknown_type_field_warning">𐌰𐌽𐌳𐌰𐌷𐌰𐍆𐍄 𐌼𐌴𐌻𐌾𐌰𐌽: 𐌿𐌽𐌺𐌿𐌽𐌸𐍃 𐍃𐍄𐌰𐌸𐍃 %s</string>
-    <string name="delete_deck" comment="Message on a progress bar starting a deck is being deleted.">𐍅𐌹𐌺𐍉 𐌿𐍃𐌽𐌹𐌼𐌰𐌳𐌰&#8230;</string>
     <string name="info_rate">𐍅𐌰𐌹𐍂𐌸 𐌳𐌿 𐌰𐌽𐌺𐌴𐌹𐌳𐍂𐌰𐌿𐌳 𐌲𐌹𐌱𐌰𐌽</string>
     <string name="import_title">𐌹𐌽𐌽𐌰𐍄𐌱𐌰𐌹𐍂𐌰𐌳𐌰</string>
     <string name="import_preparing_file">𐌼𐌰𐌽𐍅𐌾𐌰𐌳𐌰 𐍆𐌰𐌾𐌻 𐌳𐌿 𐌹𐌽𐌽𐌰𐍄𐌱𐌰𐌹𐍂𐌰𐌽&#8230;</string>

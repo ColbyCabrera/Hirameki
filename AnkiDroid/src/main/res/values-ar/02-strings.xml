@@ -163,7 +163,6 @@
     <string name="check_media" maxLength="28">فحص الوسائط</string>
     <string name="empty_cards" maxLength="28">بطاقات فارغة</string>
     <string name="unknown_type_field_warning">إدخال الجواب: حقل مجهول %s</string>
-    <string name="delete_deck" comment="Message on a progress bar starting a deck is being deleted.">جارٍ حذف الرزمة&#8230;</string>
     <string name="info_rate">قيِّم آنكي درويد</string>
     <string name="import_title">الاستيراد</string>
     <string name="import_preparing_file">يتم تجهيز المِلف للاستيراد&#8230;</string>

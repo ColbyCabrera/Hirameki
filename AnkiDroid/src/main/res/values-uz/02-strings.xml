@@ -151,7 +151,6 @@
     <string name="check_media" maxLength="28">Media fayllarni tekshirish</string>
     <string name="empty_cards" maxLength="28">Boʻsh kartalar</string>
     <string name="unknown_type_field_warning">Kiritish javobi: nomaʼlum %s maydoni</string>
-    <string name="delete_deck" comment="Message on a progress bar starting a deck is being deleted.">Dasta oʻchirilmoqda&#8230;</string>
     <string name="info_rate">AnkiDroidʼga baho berish</string>
     <string name="import_title">Import qilish</string>
     <string name="import_preparing_file">Fayl import uchun tayyorlanmoqda&#8230;</string>
