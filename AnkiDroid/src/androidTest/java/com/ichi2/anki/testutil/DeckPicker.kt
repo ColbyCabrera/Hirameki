@@ -40,8 +40,8 @@ import com.ichi2.anki.testutil.ThreadUtils.sleep
  */
 
 /**
- * The backup prompt is a Compose dialog, so it cannot be dismissed with Espresso.
- * Disable it before the DeckPicker is started instead.
+ * Prevent the backup prompt from interrupting a test by disabling it in preferences
+ * before the DeckPicker is started.
  */
 fun disableBackupPrompt() {
     AnkiDroidApp.sharedPrefs().edit { putBoolean(BackupPromptDialog.BACKUP_PROMPT_DISABLED, true) }

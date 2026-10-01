@@ -15,6 +15,7 @@ package com.ichi2.anki
 
 import androidx.core.content.edit
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -122,8 +123,13 @@ class ReviewerFragmentTest : InstrumentedTest() {
     private fun clickShowAnswerAndAnswerGood() {
         clickShowAnswer()
         ensureAnswerButtonsAreDisplayed()
-        // The button is rendered by Compose, so match it by resource name as ReviewerTest does
-        onView(withResourceName("good_button")).perform(click())
+        try {
+            // ...on the command line it has resource name "good_button"...
+            onView(withResourceName("good_button")).perform(click())
+        } catch (_: NoMatchingViewException) {
+            // ...but in Android Studio it has resource name "flashcard_layout_ease3"
+            onView(withResourceName("flashcard_layout_ease3")).perform(click())
+        }
     }
 
     private fun clickShowAnswer() {
@@ -135,13 +141,23 @@ class ReviewerFragmentTest : InstrumentedTest() {
         // the messages to be passed in and out of the WebView when evaluating
         // the custom JS scheduler code. The ease buttons are hidden until the
         // custom scheduler has finished running
-        onView(withResourceName("good_button")).checkWithTimeout(
-            matches(isDisplayed()),
-            100,
-            // Increase to a max of 30 seconds because CI builds can be very
-            // slow
-            TimeUnit.SECONDS.toMillis(30),
-        )
+        try {
+            // ...on the command line it has resource name "good_button"...
+            onView(withResourceName("good_button")).checkWithTimeout(
+                matches(isDisplayed()),
+                100,
+                // Increase to a max of 30 seconds because CI builds can be very
+                // slow
+                TimeUnit.SECONDS.toMillis(30),
+            )
+        } catch (_: AssertionError) {
+            // ...but in Android Studio it has resource name "flashcard_layout_ease3"
+            onView(withResourceName("flashcard_layout_ease3")).checkWithTimeout(
+                matches(isDisplayed()),
+                100,
+                TimeUnit.SECONDS.toMillis(30),
+            )
+        }
     }
 
     private fun setNewReviewer() {
