@@ -87,7 +87,6 @@ jobs:
     needs: matrix_prep
     timeout-minutes: 75
     env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       TEST_RELEASE_BUILD: true
     strategy:
       fail-fast: false
