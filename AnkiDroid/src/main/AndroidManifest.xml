@@ -610,7 +610,7 @@
 
         <provider
             android:name=".provider.CardContentProvider"
-            android:authorities="${applicationId}.flashcards"
+            android:authorities="${applicationId}"
             android:enabled="true"
             android:exported="true"
             tools:ignore="ExportedContentProvider"
