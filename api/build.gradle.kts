@@ -29,9 +29,9 @@ extensions.configure<LibraryExtension> {
         buildConfigField(
             "String",
             "READ_WRITE_PERMISSION",
-            "\"com.ichi2.anki.permission.READ_WRITE_DATABASE\"",
+            "\"com.hirameki.flashcards.permission.READ_WRITE_DATABASE\"",
         )
-        buildConfigField("String", "AUTHORITY", "\"com.ichi2.anki.flashcards\"")
+        buildConfigField("String", "AUTHORITY", "\"com.hirameki.flashcards.flashcards\"")
     }
 
     buildTypes {
@@ -39,9 +39,9 @@ extensions.configure<LibraryExtension> {
             buildConfigField(
                 "String",
                 "READ_WRITE_PERMISSION",
-                "\"com.ichi2.anki.debug.permission.READ_WRITE_DATABASE\"",
+                "\"com.hirameki.flashcards.debug.permission.READ_WRITE_DATABASE\"",
             )
-            buildConfigField("String", "AUTHORITY", "\"com.ichi2.anki.debug.flashcards\"")
+            buildConfigField("String", "AUTHORITY", "\"com.hirameki.flashcards.debug.flashcards\"")
         }
         getByName("release") {
             isMinifyEnabled = false
