@@ -88,7 +88,6 @@ class MediaCheckViewModel : ViewModel() {
         get() = taggedFilesCount.value
 
     override fun onCleared() {
-        super.onCleared()
         _uiEvent.close()
     }
 

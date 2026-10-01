@@ -52,7 +52,6 @@ class PageWebViewViewModel(
         server.stop()
         _serverState.value = ServerState.Stopped
         Timber.d("PageWebViewViewModel: AnkiServer stopped")
-        super.onCleared()
     }
 
     override suspend fun handlePostRequest(

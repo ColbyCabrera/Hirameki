@@ -242,7 +242,6 @@ class VoicePlaybackViewModel : ViewModel() {
     }
 
     override fun onCleared() {
-        super.onCleared()
         stopAndReset()
     }
 }

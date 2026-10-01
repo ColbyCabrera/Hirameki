@@ -70,7 +70,6 @@ abstract class CardViewerViewModel :
     @CallSuper
     override fun onCleared() {
         server.stop()
-        super.onCleared()
     }
 
     /* *********************************************************************************************

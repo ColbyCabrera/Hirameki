@@ -29,8 +29,7 @@ object GrantStoragePermission {
             .targetContext.applicationInfo.targetSdkVersion
     val storagePermission =
         if (
-            targetSdkVersion >= Build.VERSION_CODES.R &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+            targetSdkVersion >= Build.VERSION_CODES.R
         ) {
             null
         } else {

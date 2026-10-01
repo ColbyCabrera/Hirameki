@@ -17,6 +17,7 @@ package com.ichi2.anki.ui.windows.reviewer.whiteboard
 
 import android.content.Context
 import android.graphics.Path
+import androidx.core.content.edit
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
@@ -36,7 +37,7 @@ class WhiteboardViewModelTest : RobolectricTest() {
         super.setUp()
         val context = ApplicationProvider.getApplicationContext<Context>()
         val sharedPreferences = context.getSharedPreferences("whiteboard_test_prefs", Context.MODE_PRIVATE)
-        sharedPreferences.edit().clear().commit()
+        sharedPreferences.edit(commit = true) { clear() }
         val repository = WhiteboardRepository(sharedPreferences)
         viewModel = WhiteboardViewModel(repository)
         viewModel.loadState(isDarkMode = false)
