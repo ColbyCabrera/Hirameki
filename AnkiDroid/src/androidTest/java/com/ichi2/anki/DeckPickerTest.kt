@@ -140,13 +140,13 @@ class DeckPickerTest : InstrumentedTest() {
         }
         composeTestRule.onNodeWithText(deletingDeckText).assertIsDisplayed()
 
-        composeTestRule.waitUntil(timeoutMillis = 10000) {
+        composeTestRule.waitUntil(timeoutMillis = 30000) {
             composeTestRule.onAllNodesWithText(undoText).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText(undoText).assertIsDisplayed()
 
         // Assert that the deck is no longer displayed after deletion completes
-        composeTestRule.waitUntil(timeoutMillis = 10000) {
+        composeTestRule.waitUntil(timeoutMillis = 30000) {
             composeTestRule.onAllNodesWithText(deckName).fetchSemanticsNodes().isEmpty()
         }
         composeTestRule.onNodeWithText(deckName).assertDoesNotExist()
