@@ -410,6 +410,12 @@ tasks.named("preBuild").configure {
     dependsOn(copyTestLibIntoAndroidTest)
 }
 
+// The copy task writes into the androidTest source directory, which ktlint reads as an input.
+// Declare the dependency explicitly so Gradle task validation does not fail on implicit ordering.
+tasks.matching { it.name.startsWith("runKtlint") && it.name.contains("AndroidTest") }.configureEach {
+    dependsOn(copyTestLibIntoAndroidTest)
+}
+
 val assertNonzeroAndroidTests =
     tasks.register("assertNonzeroAndroidTests") {
         val folder = file("./build/outputs/androidTest-results/connected/flavors/play")
