@@ -77,20 +77,22 @@ class BrowserColumnSelectionFragment : DialogFragment(R.layout.browser_columns_s
         get() = (dialog as ComponentDialog).onBackPressedDispatcher
 
     private val cardsOrNotes: CardsOrNotes
-        get() = requireNotNull(
-            BundleCompat.getParcelable(requireArguments(), ARG_MODE, CardsOrNotes::class.java),
-        )
+        get() =
+            requireNotNull(
+                BundleCompat.getParcelable(requireArguments(), ARG_MODE, CardsOrNotes::class.java),
+            )
 
-    private val discardChangesCallback = object : OnBackPressedCallback(enabled = false) {
-        override fun handleOnBackPressed() {
-            Timber.d("discardChangesCallback")
-            DiscardChangesDialog.showDialog(requireContext()) {
-                Timber.i("OK button pressed to confirm discard changes")
-                isEnabled = false
-                onBackPressedDispatcher.onBackPressed()
+    private val discardChangesCallback =
+        object : OnBackPressedCallback(enabled = false) {
+            override fun handleOnBackPressed() {
+                Timber.d("discardChangesCallback")
+                DiscardChangesDialog.showDialog(requireContext()) {
+                    Timber.i("OK button pressed to confirm discard changes")
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
             }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,11 +103,11 @@ class BrowserColumnSelectionFragment : DialogFragment(R.layout.browser_columns_s
         super.onSaveInstanceState(outState)
         outState.putParcelableArrayList(
             STATE_ACTIVE,
-            columnAdapter.displayed.toCollection(ArrayList())
+            columnAdapter.displayed.toCollection(ArrayList()),
         )
         outState.putParcelableArrayList(
             STATE_AVAILABLE,
-            columnAdapter.available.toCollection(ArrayList())
+            columnAdapter.available.toCollection(ArrayList()),
         )
     }
 
@@ -115,18 +117,20 @@ class BrowserColumnSelectionFragment : DialogFragment(R.layout.browser_columns_s
     ) {
         super.onViewCreated(view, savedInstanceState)
 
-        val (active, available) = if (savedInstanceState == null) {
-            // TODO: runBlocking shouldn't be necessary here.
-            runBlocking { viewModel.previewColumnHeadings(cardsOrNotes) }
-        } else {
-            fun getSavedList(key: String) = BundleCompat.getParcelableArrayList(
-                savedInstanceState,
-                key,
-                ColumnWithSample::class.java
-            )!!
+        val (active, available) =
+            if (savedInstanceState == null) {
+                // TODO: runBlocking shouldn't be necessary here.
+                runBlocking { viewModel.previewColumnHeadings(cardsOrNotes) }
+            } else {
+                fun getSavedList(key: String) =
+                    BundleCompat.getParcelableArrayList(
+                        savedInstanceState,
+                        key,
+                        ColumnWithSample::class.java,
+                    )!!
 
-            Pair(getSavedList(STATE_ACTIVE), getSavedList(STATE_AVAILABLE))
-        }
+                Pair(getSavedList(STATE_ACTIVE), getSavedList(STATE_AVAILABLE))
+            }
         setupRecyclerView(view, active, available)
 
         this.toolbar = view.findViewById(R.id.toolbar)
@@ -179,29 +183,32 @@ class BrowserColumnSelectionFragment : DialogFragment(R.layout.browser_columns_s
         // Columns are draggable elements, the usage elements act as headings
         this.initiallySelectedColumns = active.map { it.columnType }
 
-        val recyclerViewItems = sequence {
-            yield(UsageItem(ACTIVE))
-            yieldAll(active.map(::ColumnItem))
+        val recyclerViewItems =
+            sequence {
+                yield(UsageItem(ACTIVE))
+                yieldAll(active.map(::ColumnItem))
 
-            yield(UsageItem(AVAILABLE))
-            yieldAll(available.map(::ColumnItem))
-        }.toMutableList()
+                yield(UsageItem(AVAILABLE))
+                yieldAll(available.map(::ColumnItem))
+            }.toMutableList()
 
-        val callback = object : BrowserColumnSelectionTouchHelperCallback(recyclerViewItems) {
-            override fun clearView(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-            ) {
-                columnAdapter.refreshDataset()
+        val callback =
+            object : BrowserColumnSelectionTouchHelperCallback(recyclerViewItems) {
+                override fun clearView(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                ) {
+                    columnAdapter.refreshDataset()
+                }
             }
-        }
         val itemTouchHelper = ItemTouchHelper(callback)
 
-        this.columnAdapter = BrowserColumnSelectionAdapter(recyclerViewItems).apply {
-            setOnDragHandleTouchedListener { viewHolder ->
-                itemTouchHelper.startDrag(viewHolder)
+        this.columnAdapter =
+            BrowserColumnSelectionAdapter(recyclerViewItems).apply {
+                setOnDragHandleTouchedListener { viewHolder ->
+                    itemTouchHelper.startDrag(viewHolder)
+                }
             }
-        }
 
         // handle 'discard changes'
 
@@ -245,9 +252,10 @@ class BrowserColumnSelectionFragment : DialogFragment(R.layout.browser_columns_s
         fun createInstance(cardsOrNotes: CardsOrNotes): BrowserColumnSelectionFragment =
             BrowserColumnSelectionFragment().apply {
                 Timber.d("Building 'Manage columns' dialog for %s mode", cardsOrNotes)
-                arguments = Bundle().apply {
-                    putParcelable(ARG_MODE, cardsOrNotes)
-                }
+                arguments =
+                    Bundle().apply {
+                        putParcelable(ARG_MODE, cardsOrNotes)
+                    }
             }
     }
 }

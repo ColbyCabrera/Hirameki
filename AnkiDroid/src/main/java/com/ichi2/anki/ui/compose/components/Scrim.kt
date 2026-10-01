@@ -33,22 +33,25 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun Scrim(
-    visible: Boolean, opacity: Float = 0.4f, onDismiss: () -> Unit
+    visible: Boolean,
+    opacity: Float = 0.4f,
+    onDismiss: () -> Unit,
 ) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn(animationSpec = tween(500)),
-        exit = fadeOut(animationSpec = tween(500))
+        exit = fadeOut(animationSpec = tween(500)),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = opacity))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = opacity))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismiss,
+                    ),
         )
     }
 }

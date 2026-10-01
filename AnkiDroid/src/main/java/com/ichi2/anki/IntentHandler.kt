@@ -159,9 +159,10 @@ class IntentHandler : AbstractIntentHandler() {
         val deckId = intent.getLongExtra(REVIEW_DECK_INTENT_EXTRA_DECK_ID, 0)
         Timber.i("Handling intent to review deck '%d'", deckId)
 
-        val reviewIntent = Intent(this, Reviewer::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
+        val reviewIntent =
+            Intent(this, Reviewer::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
         CollectionManager.getColUnsafe().decks.select(deckId)
         // Clean the stack out under the reviewer to avoid any incorrect activities / dialogs /
         // data state from prior app usage showing after reviewer exits if going to reviewer directly
@@ -390,7 +391,6 @@ class IntentHandler : AbstractIntentHandler() {
             storeMessage(DoSync().toMessage())
         }
 
-
         fun requiresCollectionAccess(launchType: LaunchType): Boolean =
             when (launchType) {
                 LaunchType.SYNC,
@@ -463,6 +463,5 @@ class IntentHandler : AbstractIntentHandler() {
             context: Context,
             deckId: DeckId,
         ): Intent = Intent(context, IntentHandler::class.java).putExtra(REVIEW_DECK_INTENT_EXTRA_DECK_ID, deckId)
-
     }
 }

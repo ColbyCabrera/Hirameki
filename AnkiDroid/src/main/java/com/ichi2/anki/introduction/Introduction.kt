@@ -121,9 +121,10 @@ fun IntroductionScreen(
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(IntroConstants.ROTATION_DURATION_MS, easing = LinearEasing),
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(IntroConstants.ROTATION_DURATION_MS, easing = LinearEasing),
+            ),
         label = "IntroIconRotationAngle",
     )
 
@@ -136,14 +137,16 @@ fun IntroductionScreen(
         ) { padding ->
             AnimatedContent(
                 targetState = acknowledged,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 transitionSpec = {
                     val direction = if (targetState) 1 else -1
-                    (slideInVertically { it * direction } + fadeIn()).togetherWith(
-                        slideOutVertically { -it * direction } + fadeOut(),
-                    ).using(SizeTransform(clip = false))
+                    (slideInVertically { it * direction } + fadeIn())
+                        .togetherWith(
+                            slideOutVertically { -it * direction } + fadeOut(),
+                        ).using(SizeTransform(clip = false))
                 },
                 label = "IntroTransition",
             ) { isAcknowledged ->
@@ -191,28 +194,31 @@ private fun DisclaimerContent(
     onContinue: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .padding(bottom = 32.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntroConstants.HeroAreaHeight),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(IntroConstants.HeroAreaHeight),
             contentAlignment = Alignment.Center,
         ) {
             Box(
-                modifier = Modifier
-                    .size(IntroConstants.BurstSize)
-                    .offset(x = IntroConstants.BurstOffsetX, y = IntroConstants.BurstOffsetY)
-                    .graphicsLayer { rotationZ = rotation }
-                    .background(
-                        MaterialTheme.colorScheme.tertiaryContainer,
-                        shape = SoftBurstShape,
-                    ),
+                modifier =
+                    Modifier
+                        .size(IntroConstants.BurstSize)
+                        .offset(x = IntroConstants.BurstOffsetX, y = IntroConstants.BurstOffsetY)
+                        .graphicsLayer { rotationZ = rotation }
+                        .background(
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                            shape = SoftBurstShape,
+                        ),
             )
             Text(
                 text = stringResource(R.string.app_name),
@@ -220,26 +226,27 @@ private fun DisclaimerContent(
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                 fontSize = IntroConstants.TitleFontSize,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier
-                    .offset(
-                        x = IntroConstants.BurstOffsetX, y = IntroConstants.BurstOffsetY
-                    )
-                    .rotate(IntroConstants.TITLE_ROTATION)
-                    .testTag("app_name"),
+                modifier =
+                    Modifier
+                        .offset(
+                            x = IntroConstants.BurstOffsetX,
+                            y = IntroConstants.BurstOffsetY,
+                        ).rotate(IntroConstants.TITLE_ROTATION)
+                        .testTag("app_name"),
             )
             Box(
-                modifier = Modifier
-                    .height(IntroConstants.WelcomeBannerHeight)
-                    .width(IntroConstants.WelcomeBannerWidth)
-                    .offset(
-                        x = IntroConstants.WelcomeBannerOffsetX,
-                        y = IntroConstants.WelcomeBannerOffsetY,
-                    )
-                    .rotate(IntroConstants.WELCOME_BANNER_ROTATION)
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        shape = MaterialTheme.shapes.extraExtraLarge,
-                    ),
+                modifier =
+                    Modifier
+                        .height(IntroConstants.WelcomeBannerHeight)
+                        .width(IntroConstants.WelcomeBannerWidth)
+                        .offset(
+                            x = IntroConstants.WelcomeBannerOffsetX,
+                            y = IntroConstants.WelcomeBannerOffsetY,
+                        ).rotate(IntroConstants.WELCOME_BANNER_ROTATION)
+                        .background(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialTheme.shapes.extraExtraLarge,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -255,19 +262,20 @@ private fun DisclaimerContent(
 
         // Disclaimer 1
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .rotate(-2f)
-                .background(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(
-                        topStart = 40.dp,
-                        bottomEnd = 40.dp,
-                        topEnd = 12.dp,
-                        bottomStart = 12.dp,
-                    ),
-                )
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .rotate(-2f)
+                    .background(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape =
+                            RoundedCornerShape(
+                                topStart = 40.dp,
+                                bottomEnd = 40.dp,
+                                topEnd = 12.dp,
+                                bottomStart = 12.dp,
+                            ),
+                    ).padding(24.dp),
         ) {
             Text(
                 text = stringResource(R.string.intro_fork_disclaimer_1),
@@ -281,20 +289,21 @@ private fun DisclaimerContent(
 
         // Disclaimer 2
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .rotate(3f)
-                .background(
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(
-                        topStart = 12.dp,
-                        bottomEnd = 12.dp,
-                        topEnd = 40.dp,
-                        bottomStart = 40.dp,
-                    ),
-                )
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .rotate(3f)
+                    .background(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape =
+                            RoundedCornerShape(
+                                topStart = 12.dp,
+                                bottomEnd = 12.dp,
+                                topEnd = 40.dp,
+                                bottomStart = 40.dp,
+                            ),
+                    ).padding(24.dp),
         ) {
             Text(
                 text = stringResource(R.string.intro_fork_disclaimer_2),
@@ -310,17 +319,19 @@ private fun DisclaimerContent(
 
         Button(
             onClick = onContinue,
-            modifier = Modifier
-                .align(Alignment.End)
-                .navigationBarsPadding()
-                .rotate(-4f)
-                .testTag("continue_button"),
+            modifier =
+                Modifier
+                    .align(Alignment.End)
+                    .navigationBarsPadding()
+                    .rotate(-4f)
+                    .testTag("continue_button"),
             shapes = ButtonDefaults.shapesFor(largeButtonHeight),
             contentPadding = ButtonDefaults.contentPaddingFor(largeButtonHeight),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
         ) {
             Text(
                 stringResource(R.string.intro_continue),
@@ -342,18 +353,20 @@ private fun ActionContent(
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .requiredSize(IntroConstants.ActionBackgroundSize)
-                .graphicsLayer { rotationZ = rotation / 2 }
-                .background(
-                    MaterialTheme.colorScheme.surfaceContainer,
-                    shape = CookieShape,
-                ),
+            modifier =
+                Modifier
+                    .requiredSize(IntroConstants.ActionBackgroundSize)
+                    .graphicsLayer { rotationZ = rotation / 2 }
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainer,
+                        shape = CookieShape,
+                    ),
         )
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -361,15 +374,17 @@ private fun ActionContent(
 
             Button(
                 onClick = onGetStarted,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(mediumButtonHeight)
-                    .testTag("get_started"),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(mediumButtonHeight)
+                        .testTag("get_started"),
                 shapes = ButtonDefaults.shapesFor(mediumButtonHeight),
                 contentPadding = ButtonDefaults.contentPaddingFor(mediumButtonHeight),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                    ),
             ) {
                 Text(
                     stringResource(R.string.intro_get_started),
@@ -381,16 +396,18 @@ private fun ActionContent(
 
             Button(
                 onClick = onSync,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(mediumButtonHeight)
-                    .testTag("sync_button"),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(mediumButtonHeight)
+                        .testTag("sync_button"),
                 shapes = ButtonDefaults.shapesFor(mediumButtonHeight),
                 contentPadding = ButtonDefaults.contentPaddingFor(mediumButtonHeight),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
+                colors =
+                    ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ),
             ) {
                 Text(
                     stringResource(R.string.intro_sync_from_ankiweb),

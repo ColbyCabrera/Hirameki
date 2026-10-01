@@ -49,10 +49,13 @@ import kotlinx.parcelize.Parcelize
 
 class SetupCollectionFragment : Fragment() {
     private var acknowledged by mutableStateOf(false)
+
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View =
+        ComposeView(requireContext()).apply {
             setContent {
                 AnkiDroidTheme {
                     IntroductionScreen(
@@ -64,7 +67,6 @@ class SetupCollectionFragment : Fragment() {
                 }
             }
         }
-    }
 
     private fun setResult(option: CollectionSetupOption) {
         setFragmentResult(FRAGMENT_KEY, Bundle().apply { putParcelable(RESULT_KEY, option) })

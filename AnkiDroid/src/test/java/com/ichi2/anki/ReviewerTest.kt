@@ -53,33 +53,34 @@ class ReviewerTest : RobolectricTest() {
             Shadows.shadowOf(ApplicationProvider.getApplicationContext<Application>())
         val intent = shadowApplication.nextStartedActivity
         val fragmentBundle = intent.getBundleExtra(NoteEditorActivity.FRAGMENT_ARGS_EXTRA)
-        val actualAnimation = BundleCompat.getParcelable(
-            fragmentBundle!!,
-            AnkiActivity.FINISH_ANIMATION_EXTRA,
-            ActivityTransitionAnimation.Direction::class.java,
-        )
-        val expectedAnimation = ActivityTransitionAnimation.getInverseTransition(
-            AbstractFlashcardViewer.getAnimationTransitionFromGesture(fromGesture),
-        )
+        val actualAnimation =
+            BundleCompat.getParcelable(
+                fragmentBundle!!,
+                AnkiActivity.FINISH_ANIMATION_EXTRA,
+                ActivityTransitionAnimation.Direction::class.java,
+            )
+        val expectedAnimation =
+            ActivityTransitionAnimation.getInverseTransition(
+                AbstractFlashcardViewer.getAnimationTransitionFromGesture(fromGesture),
+            )
 
         assertEquals(
             "Animation from swipe should be inverse to the finishing one",
             expectedAnimation,
-            actualAnimation
+            actualAnimation,
         )
     }
 
     companion object {
-        fun startReviewer(testClass: RobolectricTest): Reviewer =
-            startReviewer(testClass, Reviewer::class.java)
+        fun startReviewer(testClass: RobolectricTest): Reviewer = startReviewer(testClass, Reviewer::class.java)
 
         fun <T : Reviewer?> startReviewer(
             testClass: RobolectricTest,
             clazz: Class<T>,
-        ): T = startActivityNormallyOpenCollectionWithIntent(testClass, clazz, Intent()).apply {
-            this?.onCollectionLoaded(testClass.col)
-            advanceRobolectricLooper()
-        }
+        ): T =
+            startActivityNormallyOpenCollectionWithIntent(testClass, clazz, Intent()).apply {
+                this?.onCollectionLoaded(testClass.col)
+                advanceRobolectricLooper()
+            }
     }
 }
-

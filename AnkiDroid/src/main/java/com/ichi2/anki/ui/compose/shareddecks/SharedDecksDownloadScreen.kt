@@ -85,7 +85,7 @@ import java.util.Locale
 @OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3WindowSizeClassApi::class
+    ExperimentalMaterial3WindowSizeClassApi::class,
 )
 @Composable
 fun SharedDecksDownloadScreen(
@@ -94,17 +94,17 @@ fun SharedDecksDownloadScreen(
     onIntent: (DownloadIntent) -> Unit,
     windowWidthSizeClass: WindowWidthSizeClass? = null,
 ) {
-
     val context = LocalContext.current
     val windowInfo = LocalWindowInfo.current
 
-    val widthSizeClass = windowWidthSizeClass ?: context.findActivity()?.let {
-        calculateWindowSizeClass(it).widthSizeClass
-    } ?: when {
-        windowInfo.containerDpSize.width >= 840.dp -> WindowWidthSizeClass.Expanded
-        windowInfo.containerDpSize.width >= 600.dp -> WindowWidthSizeClass.Medium
-        else -> WindowWidthSizeClass.Compact
-    }
+    val widthSizeClass =
+        windowWidthSizeClass ?: context.findActivity()?.let {
+            calculateWindowSizeClass(it).widthSizeClass
+        } ?: when {
+            windowInfo.containerDpSize.width >= 840.dp -> WindowWidthSizeClass.Expanded
+            windowInfo.containerDpSize.width >= 600.dp -> WindowWidthSizeClass.Medium
+            else -> WindowWidthSizeClass.Compact
+        }
 
     val isExpanded =
         widthSizeClass == WindowWidthSizeClass.Expanded || widthSizeClass == WindowWidthSizeClass.Medium
@@ -128,13 +128,15 @@ fun SharedDecksDownloadScreen(
     Scaffold(
         topBar = {
             AnkiTopAppBar(onNavigateUp = onNavigateUp)
-        }) { innerPadding ->
+        },
+    ) { innerPadding ->
         if (isExpanded) {
             Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 24.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = 24.dp),
             ) {
                 DownloadStatusContent(state = state, modifier = Modifier.weight(1f))
 
@@ -142,23 +144,27 @@ fun SharedDecksDownloadScreen(
                 Column(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                        contentAlignment = Alignment.Center,
                     ) {
                         DownloadProgressSection(
-                            state = state, modifier = Modifier.aspectRatio(1f)
+                            state = state,
+                            modifier = Modifier.aspectRatio(1f),
                         )
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     DownloadActions(
-                        state = state, onIntent = onIntent, modifier = Modifier.fillMaxWidth()
+                        state = state,
+                        onIntent = onIntent,
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -166,29 +172,35 @@ fun SharedDecksDownloadScreen(
             }
         } else {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 DownloadStatusContent(state = state)
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    contentAlignment = Alignment.Center,
                 ) {
                     DownloadProgressSection(
-                        state = state, modifier = Modifier
-                            .aspectRatio(1f)
-                            .padding(20.dp)
+                        state = state,
+                        modifier =
+                            Modifier
+                                .aspectRatio(1f)
+                                .padding(20.dp),
                     )
                 }
 
                 DownloadActions(
-                    state = state, onIntent = onIntent, modifier = Modifier.fillMaxWidth()
+                    state = state,
+                    onIntent = onIntent,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -202,41 +214,45 @@ fun SharedDecksDownloadScreen(
  */
 @Composable
 private fun DownloadStatusContent(
-    state: DownloadUiState, modifier: Modifier = Modifier
+    state: DownloadUiState,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         DownloadHero(
-            status = state.status, modifier = Modifier.size(120.dp)
+            status = state.status,
+            modifier = Modifier.size(120.dp),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = when (state.status) {
-                DownloadStatus.Failed -> stringResource(R.string.download_failed)
-                DownloadStatus.Complete -> stringResource(R.string.import_deck)
-                else -> stringResource(R.string.downloading_file, state.fileName)
-            },
+            text =
+                when (state.status) {
+                    DownloadStatus.Failed -> stringResource(R.string.download_failed)
+                    DownloadStatus.Complete -> stringResource(R.string.import_deck)
+                    else -> stringResource(R.string.downloading_file, state.fileName)
+                },
             style = MaterialTheme.typography.displayMediumEmphasized,
             textAlign = TextAlign.Center,
-            color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = when (state.status) {
-                DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
-                DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
-                else -> stringResource(R.string.deck_download_progress_message)
-            },
+            text =
+                when (state.status) {
+                    DownloadStatus.Failed -> stringResource(R.string.deck_download_failed_message)
+                    DownloadStatus.Complete -> stringResource(R.string.deck_download_complete_message)
+                    else -> stringResource(R.string.deck_download_progress_message)
+                },
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -249,46 +265,53 @@ private fun DownloadStatusContent(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadHero(
-    status: DownloadStatus, modifier: Modifier = Modifier
+    status: DownloadStatus,
+    modifier: Modifier = Modifier,
 ) {
+    val containerColor =
+        when (status) {
+            DownloadStatus.Failed -> MaterialTheme.colorScheme.errorContainer
+            DownloadStatus.Complete -> MaterialTheme.colorScheme.primaryContainer
+            else -> MaterialTheme.colorScheme.secondaryContainer
+        }
 
-    val containerColor = when (status) {
-        DownloadStatus.Failed -> MaterialTheme.colorScheme.errorContainer
-        DownloadStatus.Complete -> MaterialTheme.colorScheme.primaryContainer
-        else -> MaterialTheme.colorScheme.secondaryContainer
-    }
+    val icon =
+        when (status) {
+            DownloadStatus.Failed -> R.drawable.error_24px
+            DownloadStatus.Complete -> R.drawable.ic_done_white
+            else -> R.drawable.download_24px
+        }
 
-    val icon = when (status) {
-        DownloadStatus.Failed -> R.drawable.error_24px
-        DownloadStatus.Complete -> R.drawable.ic_done_white
-        else -> R.drawable.download_24px
-    }
+    val iconTint =
+        when (status) {
+            DownloadStatus.Failed -> MaterialTheme.colorScheme.onErrorContainer
+            DownloadStatus.Complete -> MaterialTheme.colorScheme.onPrimaryContainer
+            else -> MaterialTheme.colorScheme.onSecondaryContainer
+        }
 
-    val iconTint = when (status) {
-        DownloadStatus.Failed -> MaterialTheme.colorScheme.onErrorContainer
-        DownloadStatus.Complete -> MaterialTheme.colorScheme.onPrimaryContainer
-        else -> MaterialTheme.colorScheme.onSecondaryContainer
-    }
-
-    val shape = when (status) {
-        DownloadStatus.Failed -> RoundedPolygonShape(MaterialShapes.Triangle)
-        else -> RoundedPolygonShape(MaterialShapes.Cookie4Sided)
-    }
+    val shape =
+        when (status) {
+            DownloadStatus.Failed -> RoundedPolygonShape(MaterialShapes.Triangle)
+            else -> RoundedPolygonShape(MaterialShapes.Cookie4Sided)
+        }
 
     Box(
-        modifier = modifier, contentAlignment = Alignment.Center
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
     ) {
-
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(6.dp), shape = shape, color = containerColor
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(6.dp),
+            shape = shape,
+            color = containerColor,
         ) {}
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
             modifier = Modifier.size(48.dp),
-            tint = iconTint
+            tint = iconTint,
         )
     }
 }
@@ -300,27 +323,32 @@ private fun DownloadHero(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadProgressSection(
-    state: DownloadUiState, modifier: Modifier = Modifier
+    state: DownloadUiState,
+    modifier: Modifier = Modifier,
 ) {
-
     val animatedProgress by animateFloatAsState(
-        targetValue = state.progress / 100f, animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow
-        ), label = "DownloadProgress"
+        targetValue = state.progress / 100f,
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
+        label = "DownloadProgress",
     )
     Box(
-        modifier = modifier, contentAlignment = Alignment.Center
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize(0.95f)
-                .graphicsLayer(
-                    rotationZ = animatedProgress * 360f
-                )
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
-                    shape = RoundedPolygonShape(MaterialShapes.Arrow)
-                )
+            modifier =
+                Modifier
+                    .fillMaxSize(0.95f)
+                    .graphicsLayer(
+                        rotationZ = animatedProgress * 360f,
+                    ).background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f),
+                        shape = RoundedPolygonShape(MaterialShapes.Arrow),
+                    ),
         )
 
         // Pulsing technical wavy ring
@@ -328,46 +356,58 @@ private fun DownloadProgressSection(
             modifier = Modifier.fillMaxSize(),
             progress = { animatedProgress },
             trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
         )
 
         val isHalted =
             state.status == DownloadStatus.Failed || state.status == DownloadStatus.WaitingForNetwork
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = when (state.status) {
-                    DownloadStatus.WaitingForNetwork -> stringResource(R.string.download_status_waiting_for_network)
-                    else -> stringResource(R.string.download_status_downloading)
-                },
+                text =
+                    when (state.status) {
+                        DownloadStatus.WaitingForNetwork -> stringResource(R.string.download_status_waiting_for_network)
+                        else -> stringResource(R.string.download_status_downloading)
+                    },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = RobotoMono,
                 fontWeight = FontWeight.Bold,
-                color = if (isHalted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary.copy(
-                    alpha = 0.8f
-                )
+                color =
+                    if (isHalted) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary.copy(
+                            alpha = 0.8f,
+                        )
+                    },
             )
-            val progressText = remember(state.progress) {
-                if (state.progress <= 0f || state.progress >= 100f) {
-                    "%.0f".format(Locale.getDefault(), state.progress)
-                } else {
-                    "%.1f".format(Locale.getDefault(), state.progress)
+            val progressText =
+                remember(state.progress) {
+                    if (state.progress <= 0f || state.progress >= 100f) {
+                        "%.0f".format(Locale.getDefault(), state.progress)
+                    } else {
+                        "%.1f".format(Locale.getDefault(), state.progress)
+                    }
                 }
-            }
             Text(
                 text = stringResource(R.string.percentage, progressText),
                 fontFamily = RobotoMono,
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Black,
                 lineHeight = 64.sp,
-                color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                color = if (state.status == DownloadStatus.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = if (isHalted) stringResource(R.string.download_status_halted) else stringResource(
-                    R.string.download_status_active
-                ),
+                text =
+                    if (isHalted) {
+                        stringResource(R.string.download_status_halted)
+                    } else {
+                        stringResource(
+                            R.string.download_status_active,
+                        )
+                    },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = RobotoMono,
-                color = if (isHalted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isHalted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -380,24 +420,27 @@ private fun DownloadProgressSection(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadActions(
-    state: DownloadUiState, onIntent: (DownloadIntent) -> Unit, modifier: Modifier = Modifier
+    state: DownloadUiState,
+    onIntent: (DownloadIntent) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         when (state.status) {
             DownloadStatus.Complete -> {
                 Button(
                     onClick = { onIntent(DownloadIntent.ImportClicked) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    shape = MaterialTheme.shapes.extraLarge
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ) {
                     Text(
                         text = stringResource(R.string.import_deck),
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
@@ -406,27 +449,29 @@ private fun DownloadActions(
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Button(
                         onClick = { onIntent(DownloadIntent.RetryClicked) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp),
-                        shape = MaterialTheme.shapes.extraLarge
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(64.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
                     ) {
                         Text(
                             text = stringResource(R.string.try_again),
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
 
                     FilledTonalButton(
                         onClick = { onIntent(DownloadIntent.OpenInBrowserClicked) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp),
-                        shape = MaterialTheme.shapes.extraLarge
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(64.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
                     ) {
                         Text(
                             text = stringResource(R.string.open_in_browser),
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
@@ -435,18 +480,20 @@ private fun DownloadActions(
             else -> {
                 Button(
                     onClick = { onIntent(DownloadIntent.CancelClicked) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = ButtonDefaults.buttonColors(
-                        contentColor = MaterialTheme.colorScheme.onError,
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            contentColor = MaterialTheme.colorScheme.onError,
+                            containerColor = MaterialTheme.colorScheme.error,
+                        ),
                 ) {
                     Text(
                         text = stringResource(R.string.cancel_download),
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
@@ -459,11 +506,15 @@ private fun DownloadActions(
 fun SharedDecksDownloadScreenPreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
-            state = DownloadUiState(
-            fileName = "Medical Terminology.apkg",
-            progress = 45f,
-            status = DownloadStatus.Downloading
-        ), onNavigateUp = {}, onIntent = {})
+            state =
+                DownloadUiState(
+                    fileName = "Medical Terminology.apkg",
+                    progress = 45f,
+                    status = DownloadStatus.Downloading,
+                ),
+            onNavigateUp = {},
+            onIntent = {},
+        )
     }
 }
 
@@ -472,11 +523,15 @@ fun SharedDecksDownloadScreenPreview() {
 fun SharedDecksDownloadScreenLandscapePreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
-            state = DownloadUiState(
-            fileName = "Medical Terminology.apkg",
-            progress = 45f,
-            status = DownloadStatus.Downloading
-        ), onNavigateUp = {}, onIntent = {}, windowWidthSizeClass = WindowWidthSizeClass.Medium
+            state =
+                DownloadUiState(
+                    fileName = "Medical Terminology.apkg",
+                    progress = 45f,
+                    status = DownloadStatus.Downloading,
+                ),
+            onNavigateUp = {},
+            onIntent = {},
+            windowWidthSizeClass = WindowWidthSizeClass.Medium,
         )
     }
 }
@@ -486,9 +541,14 @@ fun SharedDecksDownloadScreenLandscapePreview() {
 fun SharedDecksDownloadScreenFailedPreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
-            state = DownloadUiState(
-            fileName = "Medical Terminology.apkg", status = DownloadStatus.Failed
-        ), onNavigateUp = {}, onIntent = {})
+            state =
+                DownloadUiState(
+                    fileName = "Medical Terminology.apkg",
+                    status = DownloadStatus.Failed,
+                ),
+            onNavigateUp = {},
+            onIntent = {},
+        )
     }
 }
 
@@ -497,11 +557,15 @@ fun SharedDecksDownloadScreenFailedPreview() {
 fun SharedDecksDownloadScreenCompletePreview() {
     AnkiDroidTheme {
         SharedDecksDownloadScreen(
-            state = DownloadUiState(
-            fileName = "Medical Terminology.apkg",
-            progress = 100f,
-            status = DownloadStatus.Complete
-        ), onNavigateUp = {}, onIntent = {})
+            state =
+                DownloadUiState(
+                    fileName = "Medical Terminology.apkg",
+                    progress = 100f,
+                    status = DownloadStatus.Complete,
+                ),
+            onNavigateUp = {},
+            onIntent = {},
+        )
     }
 }
 
@@ -510,11 +574,15 @@ fun SharedDecksDownloadScreenCompletePreview() {
 fun DownloadProgressSectionPreview() {
     AnkiDroidTheme {
         DownloadProgressSection(
-            state = DownloadUiState(
-                progress = 75f, status = DownloadStatus.Downloading
-            ), modifier = Modifier
-                .aspectRatio(1f)
-                .padding(20.dp)
+            state =
+                DownloadUiState(
+                    progress = 75f,
+                    status = DownloadStatus.Downloading,
+                ),
+            modifier =
+                Modifier
+                    .aspectRatio(1f)
+                    .padding(20.dp),
         )
     }
 }

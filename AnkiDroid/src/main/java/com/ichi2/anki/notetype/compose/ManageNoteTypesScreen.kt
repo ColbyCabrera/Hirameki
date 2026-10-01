@@ -59,6 +59,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -68,7 +69,6 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberBottomSheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -99,7 +99,7 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalMaterial3WindowSizeClassApi::class
+    ExperimentalMaterial3WindowSizeClassApi::class,
 )
 @Composable
 fun ManageNoteTypesScreen(
@@ -120,9 +120,10 @@ fun ManageNoteTypesScreen(
     windowWidthSizeClass: WindowWidthSizeClass? = null,
 ) {
     val context = LocalContext.current
-    val widthSizeClass = windowWidthSizeClass ?: (context as? Activity)?.let {
-        calculateWindowSizeClass(it).widthSizeClass
-    }
+    val widthSizeClass =
+        windowWidthSizeClass ?: (context as? Activity)?.let {
+            calculateWindowSizeClass(it).widthSizeClass
+        }
     val isExpanded =
         widthSizeClass == WindowWidthSizeClass.Expanded || widthSizeClass == WindowWidthSizeClass.Medium
 
@@ -155,14 +156,14 @@ fun ManageNoteTypesScreen(
                     onSearchOpenChange = { isSearchOpen = it },
                     onSearchQueryChange = onSearch,
                     onNavigateUp = onNavigateUp,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
                 )
             },
             floatingActionButton = {
                 if (!uiState.isInMultiSelectMode) {
                     FloatingActionButton(
                         onClick = { showAddDialog = true },
-                        shape = FloatingActionButtonDefaults.smallShape
+                        shape = FloatingActionButtonDefaults.smallShape,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.add_24px),
@@ -178,11 +179,12 @@ fun ManageNoteTypesScreen(
                         onDeselectAll = onDeselectAll,
                         onSelectAll = onSelectAll,
                         onDeleteSelected = onDeleteSelected,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .offset(y = -ScreenOffset)
-                            .padding(bottom = padding.calculateBottomPadding())
-                            .zIndex(1f),
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .offset(y = -ScreenOffset)
+                                .padding(bottom = padding.calculateBottomPadding())
+                                .zIndex(1f),
                     )
                 }
 
@@ -219,7 +221,8 @@ fun ManageNoteTypesScreen(
                         onDelete = {
                             onDeleteRequest(noteType)
                             selectedNoteType = null
-                        })
+                        },
+                    )
                 }
             }
 
@@ -227,7 +230,7 @@ fun ManageNoteTypesScreen(
                 RenameNoteTypeDialog(
                     noteType = noteType,
                     onDismissRequest = { noteTypeToRename = null },
-                    onRename = onRename
+                    onRename = onRename,
                 )
             }
 
@@ -235,7 +238,7 @@ fun ManageNoteTypesScreen(
                 DeleteNoteTypeDialog(
                     noteType = noteType,
                     onDismissRequest = onDeleteDismiss,
-                    onDelete = onDeleteConfirm
+                    onDelete = onDeleteConfirm,
                 )
             }
 
@@ -245,7 +248,8 @@ fun ManageNoteTypesScreen(
                     onDismissRequest = { showAddDialog = false },
                     onConfirm = { name, option ->
                         onAddNoteType(name, option)
-                    })
+                    },
+                )
             }
         }
     }
@@ -268,9 +272,10 @@ fun NoteTypeSelectionToolbar(
                 shape = FloatingActionButtonDefaults.smallShape,
             ) {
                 TooltipBox(
-                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                        positioning = TooltipAnchorPosition.Above,
-                    ),
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            positioning = TooltipAnchorPosition.Above,
+                        ),
                     tooltip = {
                         PlainTooltip { Text(stringResource(R.string.deselect_all)) }
                     },
@@ -287,9 +292,10 @@ fun NoteTypeSelectionToolbar(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                    positioning = TooltipAnchorPosition.Above,
-                ),
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(
+                        positioning = TooltipAnchorPosition.Above,
+                    ),
                 tooltip = {
                     PlainTooltip { Text(stringResource(R.string.card_browser_select_all)) }
                 },
@@ -303,9 +309,10 @@ fun NoteTypeSelectionToolbar(
                 }
             }
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                    positioning = TooltipAnchorPosition.Above,
-                ),
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(
+                        positioning = TooltipAnchorPosition.Above,
+                    ),
                 tooltip = {
                     PlainTooltip { Text(stringResource(R.string.model_browser_delete)) }
                 },
@@ -337,64 +344,73 @@ fun ManageNoteTypesTopAppBar(
     val searchAnim by animateFloatAsState(
         targetValue = if (isSearchOpen) 1f else 0f,
         animationSpec = motionScheme.defaultEffectsSpec(),
-        label = "searchAnim"
+        label = "searchAnim",
     )
 
     LargeFlexibleTopAppBar(
-        modifier = modifier, title = {
-        if (!isSearchOpen) {
-            Text(
-                stringResource(R.string.model_browser_label),
-                style = MaterialTheme.typography.displayMediumEmphasized,
-                modifier = Modifier.graphicsLayer {
-                    alpha = 1f - searchAnim
-                })
-        }
-    }, navigationIcon = {
-        if (!isSearchOpen) {
-            FilledIconButton(
-                onClick = onNavigateUp,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.arrow_back_24px),
-                    contentDescription = stringResource(id = R.string.back)
+        modifier = modifier,
+        title = {
+            if (!isSearchOpen) {
+                Text(
+                    stringResource(R.string.model_browser_label),
+                    style = MaterialTheme.typography.displayMediumEmphasized,
+                    modifier =
+                        Modifier.graphicsLayer {
+                            alpha = 1f - searchAnim
+                        },
                 )
             }
-        }
-    }, actions = {
-        if (isSearchOpen) {
-            AnkiSearchBar(
-                query = searchQuery,
-                onQueryChange = onSearchQueryChange,
-                onSearch = { /* Done as user types */ },
-                onActiveChange = onSearchOpenChange,
-                placeholder = stringResource(R.string.card_browser_search_hint),
-                focusRequester = searchFocusRequester,
-                searchAnim = searchAnim,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp, end = 12.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-            )
-        } else {
-            FilledIconButton(
-                onClick = { onSearchOpenChange(true) },
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.search_24px),
-                    contentDescription = stringResource(id = R.string.menu_search)
-                )
+        },
+        navigationIcon = {
+            if (!isSearchOpen) {
+                FilledIconButton(
+                    onClick = onNavigateUp,
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.arrow_back_24px),
+                        contentDescription = stringResource(id = R.string.back),
+                    )
+                }
             }
-        }
-    }, scrollBehavior = scrollBehavior
+        },
+        actions = {
+            if (isSearchOpen) {
+                AnkiSearchBar(
+                    query = searchQuery,
+                    onQueryChange = onSearchQueryChange,
+                    onSearch = { /* Done as user types */ },
+                    onActiveChange = onSearchOpenChange,
+                    placeholder = stringResource(R.string.card_browser_search_hint),
+                    focusRequester = searchFocusRequester,
+                    searchAnim = searchAnim,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(start = 16.dp, end = 12.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                )
+            } else {
+                FilledIconButton(
+                    onClick = { onSearchOpenChange(true) },
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.search_24px),
+                        contentDescription = stringResource(id = R.string.menu_search),
+                    )
+                }
+            }
+        },
+        scrollBehavior = scrollBehavior,
     )
 }
 
@@ -409,12 +425,13 @@ fun ManageNoteTypesContent(
     onNoteTypeLongClick: (ManageNoteTypeUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val combinedPadding = PaddingValues(
-        start = 8.dp,
-        top = padding.calculateTopPadding() + 24.dp,
-        end = 8.dp,
-        bottom = padding.calculateBottomPadding() + if (isInMultiSelectMode) 96.dp else 24.dp
-    )
+    val combinedPadding =
+        PaddingValues(
+            start = 8.dp,
+            top = padding.calculateTopPadding() + 24.dp,
+            end = 8.dp,
+            bottom = padding.calculateBottomPadding() + if (isInMultiSelectMode) 96.dp else 24.dp,
+        )
 
     if (isExpanded) {
         LazyVerticalStaggeredGrid(
@@ -422,7 +439,7 @@ fun ManageNoteTypesContent(
             modifier = modifier.fillMaxSize(),
             contentPadding = combinedPadding,
             verticalItemSpacing = 8.dp,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(noteTypes, key = { it.id }) { noteType ->
                 NoteTypeItem(
@@ -438,7 +455,7 @@ fun ManageNoteTypesContent(
         LazyColumn(
             modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = combinedPadding
+            contentPadding = combinedPadding,
         ) {
             items(noteTypes, key = { it.id }) { noteType ->
                 NoteTypeItem(
@@ -471,7 +488,7 @@ fun RenameNoteTypeDialog(
                 onValueChange = { newName = it },
                 label = { Text(stringResource(R.string.note_type_name)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         },
         confirmButton = {
@@ -479,7 +496,8 @@ fun RenameNoteTypeDialog(
                 onClick = {
                     onRename(noteType.copy(name = newName))
                     onDismissRequest()
-                }, enabled = newName.isNotBlank() && newName != noteType.name
+                },
+                enabled = newName.isNotBlank() && newName != noteType.name,
             ) {
                 Text(stringResource(R.string.rename))
             }
@@ -488,7 +506,8 @@ fun RenameNoteTypeDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 @Composable
@@ -510,7 +529,8 @@ fun DeleteNoteTypeDialog(
                 onClick = {
                     onDelete(noteType)
                     onDismissRequest()
-                }) {
+                },
+            ) {
                 Text(stringResource(R.string.dialog_positive_delete))
             }
         },
@@ -518,7 +538,8 @@ fun DeleteNoteTypeDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 @Composable
@@ -540,7 +561,8 @@ fun DeleteSelectedNoteTypesDialog(
                 onClick = {
                     onConfirm()
                     onDismissRequest()
-                }) {
+                },
+            ) {
                 Text(stringResource(R.string.dialog_positive_delete))
             }
         },
@@ -548,7 +570,8 @@ fun DeleteSelectedNoteTypesDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -570,28 +593,34 @@ fun AddNoteTypeDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 ExposedDropdownMenuBox(
-                    expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                ) {
                     TextField(
                         value = selectedOption?.name ?: "",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.note_type_type)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier
-                            .menuAnchor(
-                                ExposedDropdownMenuAnchorType.PrimaryEditable, true
-                            )
-                            .fillMaxWidth()
+                        modifier =
+                            Modifier
+                                .menuAnchor(
+                                    ExposedDropdownMenuAnchorType.PrimaryEditable,
+                                    true,
+                                ).fillMaxWidth(),
                     )
                     ExposedDropdownMenu(
-                        expanded = expanded, onDismissRequest = { expanded = false }) {
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                    ) {
                         uiState.addOptions.forEach { option ->
                             DropdownMenuItem(text = {
-                                val prefixRes = if (option.isStandard) {
-                                    R.string.model_browser_add_add
-                                } else {
-                                    R.string.model_browser_add_clone
-                                }
+                                val prefixRes =
+                                    if (option.isStandard) {
+                                        R.string.model_browser_add_add
+                                    } else {
+                                        R.string.model_browser_add_clone
+                                    }
                                 Text(stringResource(prefixRes, option.name))
                             }, onClick = {
                                 selectedOption = option
@@ -609,7 +638,7 @@ fun AddNoteTypeDialog(
                     onValueChange = { newName = it },
                     label = { Text(stringResource(R.string.note_type_name)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
@@ -618,7 +647,8 @@ fun AddNoteTypeDialog(
                 onClick = {
                     selectedOption?.let { onConfirm(newName, it) }
                     onDismissRequest()
-                }, enabled = newName.isNotBlank() && selectedOption != null
+                },
+                enabled = newName.isNotBlank() && selectedOption != null,
             ) {
                 Text(stringResource(R.string.dialog_ok))
             }
@@ -627,19 +657,22 @@ fun AddNoteTypeDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(R.string.dialog_cancel))
             }
-        })
+        },
+    )
 }
 
 @Preview
 @Composable
 fun PreviewManageNoteTypesScreen() {
-    val uiState = ManageNoteTypesUiState(
-        noteTypes = listOf(
-            ManageNoteTypeUiModel(0, "Basic", 1),
-            ManageNoteTypeUiModel(1, "Basic (and reversed card)", 2),
-            ManageNoteTypeUiModel(2, "Cloze", 3),
+    val uiState =
+        ManageNoteTypesUiState(
+            noteTypes =
+                listOf(
+                    ManageNoteTypeUiModel(0, "Basic", 1),
+                    ManageNoteTypeUiModel(1, "Basic (and reversed card)", 2),
+                    ManageNoteTypeUiModel(2, "Cloze", 3),
+                ),
         )
-    )
     AnkiDroidTheme {
         ManageNoteTypesScreen(
             uiState = uiState,
@@ -663,16 +696,18 @@ fun PreviewManageNoteTypesScreen() {
 @Preview(device = "spec:width=1280dp,height=800dp,dpi=240")
 @Composable
 fun PreviewManageNoteTypesScreenExpanded() {
-    val uiState = ManageNoteTypesUiState(
-        noteTypes = listOf(
-            ManageNoteTypeUiModel(0, "Basic", 1),
-            ManageNoteTypeUiModel(1, "Basic (and reversed card)", 2),
-            ManageNoteTypeUiModel(2, "Cloze", 3),
-            ManageNoteTypeUiModel(3, "Japanese Basic", 4),
-            ManageNoteTypeUiModel(4, "Medical Note", 5),
-            ManageNoteTypeUiModel(5, "Anatomy", 6),
+    val uiState =
+        ManageNoteTypesUiState(
+            noteTypes =
+                listOf(
+                    ManageNoteTypeUiModel(0, "Basic", 1),
+                    ManageNoteTypeUiModel(1, "Basic (and reversed card)", 2),
+                    ManageNoteTypeUiModel(2, "Cloze", 3),
+                    ManageNoteTypeUiModel(3, "Japanese Basic", 4),
+                    ManageNoteTypeUiModel(4, "Medical Note", 5),
+                    ManageNoteTypeUiModel(5, "Anatomy", 6),
+                ),
         )
-    )
     AnkiDroidTheme {
         ManageNoteTypesScreen(
             uiState = uiState,
@@ -689,7 +724,7 @@ fun PreviewManageNoteTypesScreenExpanded() {
             onDeselectAll = {},
             onDeleteSelected = {},
             onNavigateUp = {},
-            windowWidthSizeClass = WindowWidthSizeClass.Expanded
+            windowWidthSizeClass = WindowWidthSizeClass.Expanded,
         )
     }
 }

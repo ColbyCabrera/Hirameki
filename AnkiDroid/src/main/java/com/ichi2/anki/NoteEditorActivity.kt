@@ -57,12 +57,10 @@ import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.android.input.ShortcutGroup
-import com.ichi2.anki.dialogs.ConfirmationDialog
-import com.ichi2.anki.libanki.exception.ConfirmModSchemaException
-import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.android.input.ShortcutGroupProvider
 import com.ichi2.anki.android.input.shortcut
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.dialogs.ConfirmationDialog
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.DeckId
@@ -70,6 +68,7 @@ import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.libanki.Utils
 import com.ichi2.anki.libanki.clozeNumbersInNote
+import com.ichi2.anki.libanki.exception.ConfirmModSchemaException
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.multimedia.AudioRecordingFragment
 import com.ichi2.anki.multimedia.AudioVideoFragment
@@ -107,6 +106,7 @@ import com.ichi2.anki.servicelayer.NoteService
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import com.ichi2.utils.ClipboardUtil
 import com.ichi2.utils.HashUtil
@@ -119,9 +119,11 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.function.Consumer
 
-class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, DispatchKeyEventListener,
+class NoteEditorActivity :
+    AnkiActivity(),
+    BaseSnackbarBuilderProvider,
+    DispatchKeyEventListener,
     ShortcutGroupProvider {
-
     override val baseSnackbarBuilder: SnackbarBuilder = { }
 
     private var changed: Boolean
@@ -130,11 +132,9 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
 
     private var multimediaActionJob: Job? = null
 
-
     private var reloadRequired: Boolean
         get() = noteEditorViewModel.reloadRequired.value
         set(value) = noteEditorViewModel.setReloadRequired(value)
-
 
     private var editorNote: Note? = null
 
@@ -172,93 +172,99 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     private val inCardBrowserActivity
         get() = arguments.getBoolean(IN_CARD_BROWSER_ACTIVITY)
 
-    private val requestAddLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-        NoteEditorActivityResultCallback {
-            if (it.resultCode != RESULT_CANCELED) {
-                changed = true
-            }
-        },
-    )
+    private val requestAddLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+            NoteEditorActivityResultCallback {
+                if (it.resultCode != RESULT_CANCELED) {
+                    changed = true
+                }
+            },
+        )
 
-    private val multimediaFragmentLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-        NoteEditorActivityResultCallback { result ->
-            if (result.resultCode == RESULT_CANCELED) {
-                Timber.d("Multimedia result canceled")
-                val index = result.data?.extras?.getInt(MULTIMEDIA_RESULT_FIELD_INDEX)
-                    ?: return@NoteEditorActivityResultCallback
-                showMultimediaBottomSheet()
-                handleMultimediaActions(index)
-                return@NoteEditorActivityResultCallback
-            }
+    private val multimediaFragmentLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+            NoteEditorActivityResultCallback { result ->
+                if (result.resultCode == RESULT_CANCELED) {
+                    Timber.d("Multimedia result canceled")
+                    val index =
+                        result.data?.extras?.getInt(MULTIMEDIA_RESULT_FIELD_INDEX)
+                            ?: return@NoteEditorActivityResultCallback
+                    showMultimediaBottomSheet()
+                    handleMultimediaActions(index)
+                    return@NoteEditorActivityResultCallback
+                }
 
-            Timber.d("Getting multimedia result")
-            val extras = result.data?.extras ?: return@NoteEditorActivityResultCallback
-            handleMultimediaResult(extras)
-        },
-    )
+                Timber.d("Getting multimedia result")
+                val extras = result.data?.extras ?: return@NoteEditorActivityResultCallback
+                handleMultimediaResult(extras)
+            },
+        )
 
-    private val requestTemplateEditLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-        NoteEditorActivityResultCallback {
-            reloadRequired = true
+    private val requestTemplateEditLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+            NoteEditorActivityResultCallback {
+                reloadRequired = true
 
-            Timber.d("onActivityResult() template edit return")
-            lifecycleScope.launch {
-                try {
-                    val col = getColUnsafe
-                    val currentNote = noteEditorViewModel.currentNote.value
-                    if (currentNote != null) {
-                        editorNote = currentNote
-                        val notetype = col.notetypes.get(currentNote.noteTypeId)
-                        if (notetype != null) {
-                            updateCards(notetype)
-                            Timber.d("Updated cards for note type: %s", notetype.name)
+                Timber.d("onActivityResult() template edit return")
+                lifecycleScope.launch {
+                    try {
+                        val col = getColUnsafe
+                        val currentNote = noteEditorViewModel.currentNote.value
+                        if (currentNote != null) {
+                            editorNote = currentNote
+                            val notetype = col.notetypes.get(currentNote.noteTypeId)
+                            if (notetype != null) {
+                                updateCards(notetype)
+                                Timber.d("Updated cards for note type: %s", notetype.name)
+                            } else {
+                                Timber.w("Note type not found for note")
+                                noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
+                            }
                         } else {
-                            Timber.w("Note type not found for note")
+                            Timber.w("current note is null after template edit")
                             noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
                         }
-                    } else {
-                        Timber.w("current note is null after template edit")
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error updating editor after template edit")
                         noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
                     }
-                } catch (e: Exception) {
-                    Timber.e(e, "Error updating editor after template edit")
-                    noteEditorViewModel.showSnackbar(getString(R.string.something_wrong))
                 }
-            }
-        },
-    )
+            },
+        )
 
-    private val ioEditorLauncher = registerForActivityResult(
-        ActivityResultContracts.GetContent(),
-    ) { uri ->
-        if (uri != null) {
-            ImportUtils.getFileCachedCopy(this, uri)?.let { path ->
-                setupImageOcclusionEditor(path)
+    private val ioEditorLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.GetContent(),
+        ) { uri ->
+            if (uri != null) {
+                ImportUtils.getFileCachedCopy(this, uri)?.let { path ->
+                    setupImageOcclusionEditor(path)
+                }
             }
         }
-    }
 
-    private val requestIOEditorCloser = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-        NoteEditorActivityResultCallback { result ->
-            if (result.resultCode != RESULT_CANCELED) {
-                changed = true
-                if (!addNote) {
-                    reloadRequired = true
-                    closeNoteEditor(RESULT_UPDATED_IO_NOTE, null)
-                } else if (caller == NoteEditorCaller.IMG_OCCLUSION) {
-                    closeNoteEditor()
+    private val requestIOEditorCloser =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult(),
+            NoteEditorActivityResultCallback { result ->
+                if (result.resultCode != RESULT_CANCELED) {
+                    changed = true
+                    if (!addNote) {
+                        reloadRequired = true
+                        closeNoteEditor(RESULT_UPDATED_IO_NOTE, null)
+                    } else if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                        closeNoteEditor()
+                    }
+                } else {
+                    if (caller == NoteEditorCaller.IMG_OCCLUSION) {
+                        closeNoteEditor()
+                    }
                 }
-            } else {
-                if (caller == NoteEditorCaller.IMG_OCCLUSION) {
-                    closeNoteEditor()
-                }
-            }
-        },
-    )
+            },
+        )
 
     private inner class NoteEditorActivityResultCallback(
         private val callback: (result: ActivityResult) -> Unit,
@@ -272,7 +278,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
     }
 
-
     @VisibleForTesting
     fun onDeckSelected(deck: SelectableDeck?) {
         if (deck == null) {
@@ -284,7 +289,8 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     }
 
     private enum class AddClozeType {
-        SAME_NUMBER, INCREMENT_NUMBER,
+        SAME_NUMBER,
+        INCREMENT_NUMBER,
     }
 
     @VisibleForTesting
@@ -362,27 +368,30 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean =
-        handleKeyEvent(event) || super.dispatchKeyEvent(event)
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean = handleKeyEvent(event) || super.dispatchKeyEvent(event)
 
     override val shortcuts: ShortcutGroup
-        get() = ShortcutGroup(
-            listOf(
-                shortcut("Ctrl+ENTER") { getString(R.string.save) },
-                shortcut("Ctrl+D") { getString(R.string.select_deck) },
-                shortcut("Ctrl+L") { getString(R.string.card_template_editor_group) },
-                shortcut("Ctrl+Shift+T") { getString(R.string.tag_editor) },
-                shortcut("Ctrl+Shift+C") { getString(R.string.multimedia_editor_popup_cloze) },
-                shortcut("Ctrl+P") { getString(R.string.card_editor_preview_card) },
-            ),
-            R.string.note_editor_group,
-        )
+        get() =
+            ShortcutGroup(
+                listOf(
+                    shortcut("Ctrl+ENTER") { getString(R.string.save) },
+                    shortcut("Ctrl+D") { getString(R.string.select_deck) },
+                    shortcut("Ctrl+L") { getString(R.string.card_template_editor_group) },
+                    shortcut("Ctrl+Shift+T") { getString(R.string.tag_editor) },
+                    shortcut("Ctrl+Shift+C") { getString(R.string.multimedia_editor_popup_cloze) },
+                    shortcut("Ctrl+P") { getString(R.string.card_editor_preview_card) },
+                ),
+                R.string.note_editor_group,
+            )
 
     private fun resolveThemeSurfaceColor(): Int {
         val typedValue = TypedValue()
-        val resolved = theme.resolveAttribute(
-            com.google.android.material.R.attr.colorSurface, typedValue, true
-        )
+        val resolved =
+            theme.resolveAttribute(
+                com.google.android.material.R.attr.colorSurface,
+                typedValue,
+                true,
+            )
 
         if (!resolved) {
             return Color.DKGRAY
@@ -446,7 +455,7 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
 
             NoteEditorCaller.NOTEEDITOR_INTENT_ADD,
             NoteEditorCaller.INSTANT_NOTE_EDITOR,
-                -> {
+            -> {
                 fetchIntentInformation(intent)
                 val text = sourceText
                 if (text == null) {
@@ -491,11 +500,12 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     if (caller == NoteEditorCaller.IMG_OCCLUSION) {
                         val imageOcclusionLoadFailedMessage =
                             getString(R.string.image_occlusion_load_failed)
-                        val imageUri = BundleCompat.getParcelable(
-                            arguments,
-                            EXTRA_IMG_OCCLUSION,
-                            Uri::class.java,
-                        )
+                        val imageUri =
+                            BundleCompat.getParcelable(
+                                arguments,
+                                EXTRA_IMG_OCCLUSION,
+                                Uri::class.java,
+                            )
                         if (imageUri == null) {
                             Timber.w("Could not load image for image occlusion: missing URI")
                             noteEditorViewModel.showSnackbar(imageOcclusionLoadFailedMessage)
@@ -541,10 +551,11 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                 }
             } else {
                 Timber.e(error, "NoteEditorActivity init failed")
-                val message = when (error) {
-                    is ImageOcclusionNotetypeMissingException -> getString(R.string.image_occlusion_notetype_missing)
-                    else -> getString(R.string.something_wrong)
-                }
+                val message =
+                    when (error) {
+                        is ImageOcclusionNotetypeMissingException -> getString(R.string.image_occlusion_notetype_missing)
+                        else -> getString(R.string.something_wrong)
+                    }
                 noteEditorViewModel.showSnackbar(message)
                 closeNoteEditor()
             }
@@ -609,9 +620,10 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     },
                     onDeckSelected = { deckName ->
                         launchCatchingTask {
-                            val deck = withCol {
-                                decks.allNamesAndIds().find { it.name == deckName }
-                            }
+                            val deck =
+                                withCol {
+                                    decks.allNamesAndIds().find { it.name == deckName }
+                                }
                             if (deck == null) {
                                 Timber.w("onDeckSelected: Deck not found for name '%s'", deckName)
                                 noteEditorViewModel.showSnackbar(getString(R.string.deck_not_found))
@@ -685,72 +697,74 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                         noteEditorViewModel.addTag(tag)
                     },
                     topBar = {
-                        val title = stringResource(
-                            if (noteEditorState.isAddingNote) {
-                                R.string.cardeditor_title_add_note
-                            } else {
-                                R.string.cardeditor_title_edit_card
-                            },
-                        )
+                        val title =
+                            stringResource(
+                                if (noteEditorState.isAddingNote) {
+                                    R.string.cardeditor_title_add_note
+                                } else {
+                                    R.string.cardeditor_title_edit_card
+                                },
+                            )
                         val allowSaveAndPreview =
                             !(noteEditorState.isAddingNote && noteEditorState.isImageOcclusion)
                         val copyEnabled = noteEditorState.fields.any { it.value.text.isNotBlank() }
 
-                        val overflowItems = listOf(
-                            NoteEditorSimpleOverflowItem(
-                                id = "add_note",
-                                title = stringResource(R.string.menu_add),
-                                visible = !inCardBrowserActivity && !noteEditorState.isAddingNote,
-                            ) {
-                                addNewNote()
-                            },
-                            NoteEditorSimpleOverflowItem(
-                                id = "copy_note",
-                                title = stringResource(R.string.note_editor_copy_note),
-                                visible = !noteEditorState.isAddingNote,
-                                enabled = copyEnabled,
-                            ) {
-                                copyNote()
-                            },
-                            NoteEditorSimpleOverflowItem(
-                                id = "font_size",
-                                title = stringResource(R.string.menu_font_size),
-                            ) {
-                                noteEditorViewModel.showFontSizeDialog(true)
-                            },
-                            NoteEditorToggleOverflowItem(
-                                id = "show_toolbar",
-                                title = stringResource(R.string.menu_show_toolbar),
-                                checked = showToolbar,
-                                onCheckedChange = { isChecked ->
-                                    sharedPrefs().edit {
-                                        putBoolean(PREF_NOTE_EDITOR_SHOW_TOOLBAR, isChecked)
-                                    }
-                                    updateToolbar()
+                        val overflowItems =
+                            listOf(
+                                NoteEditorSimpleOverflowItem(
+                                    id = "add_note",
+                                    title = stringResource(R.string.menu_add),
+                                    visible = !inCardBrowserActivity && !noteEditorState.isAddingNote,
+                                ) {
+                                    addNewNote()
                                 },
-                            ),
-                            NoteEditorToggleOverflowItem(
-                                id = "capitalize",
-                                title = stringResource(R.string.note_editor_capitalize),
-                                checked = capitalizeChecked,
-                                onCheckedChange = { isChecked ->
-                                    capitalizeChecked = isChecked
-                                    toggleCapitalize(isChecked)
+                                NoteEditorSimpleOverflowItem(
+                                    id = "copy_note",
+                                    title = stringResource(R.string.note_editor_copy_note),
+                                    visible = !noteEditorState.isAddingNote,
+                                    enabled = copyEnabled,
+                                ) {
+                                    copyNote()
                                 },
-                            ),
-                            NoteEditorToggleOverflowItem(
-                                id = "scroll_toolbar",
-                                title = stringResource(R.string.menu_scroll_toolbar),
-                                checked = scrollToolbarChecked,
-                                onCheckedChange = { isChecked ->
-                                    scrollToolbarChecked = isChecked
-                                    sharedPrefs().edit {
-                                        putBoolean(PREF_NOTE_EDITOR_SCROLL_TOOLBAR, isChecked)
-                                    }
-                                    updateToolbar()
+                                NoteEditorSimpleOverflowItem(
+                                    id = "font_size",
+                                    title = stringResource(R.string.menu_font_size),
+                                ) {
+                                    noteEditorViewModel.showFontSizeDialog(true)
                                 },
-                            ),
-                        )
+                                NoteEditorToggleOverflowItem(
+                                    id = "show_toolbar",
+                                    title = stringResource(R.string.menu_show_toolbar),
+                                    checked = showToolbar,
+                                    onCheckedChange = { isChecked ->
+                                        sharedPrefs().edit {
+                                            putBoolean(PREF_NOTE_EDITOR_SHOW_TOOLBAR, isChecked)
+                                        }
+                                        updateToolbar()
+                                    },
+                                ),
+                                NoteEditorToggleOverflowItem(
+                                    id = "capitalize",
+                                    title = stringResource(R.string.note_editor_capitalize),
+                                    checked = capitalizeChecked,
+                                    onCheckedChange = { isChecked ->
+                                        capitalizeChecked = isChecked
+                                        toggleCapitalize(isChecked)
+                                    },
+                                ),
+                                NoteEditorToggleOverflowItem(
+                                    id = "scroll_toolbar",
+                                    title = stringResource(R.string.menu_scroll_toolbar),
+                                    checked = scrollToolbarChecked,
+                                    onCheckedChange = { isChecked ->
+                                        scrollToolbarChecked = isChecked
+                                        sharedPrefs().edit {
+                                            putBoolean(PREF_NOTE_EDITOR_SCROLL_TOOLBAR, isChecked)
+                                        }
+                                        updateToolbar()
+                                    },
+                                ),
+                            )
 
                         NoteEditorTopAppBar(
                             title = title,
@@ -779,14 +793,16 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     onImageOcclusionPasteImage = {
                         if (ClipboardUtil.hasImage(clipboard)) {
                             val uri = ClipboardUtil.getUri(clipboard)
-                            val i = Intent().apply {
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                clipData = ClipData.newUri(
-                                    contentResolver,
-                                    uri.toString(),
-                                    uri,
-                                )
-                            }
+                            val i =
+                                Intent().apply {
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    clipData =
+                                        ClipData.newUri(
+                                            contentResolver,
+                                            uri.toString(),
+                                            uri,
+                                        )
+                                }
                             ImportUtils.getFileCachedCopy(this@NoteEditorActivity, i)?.let { path ->
                                 setupImageOcclusionEditor(path)
                             }
@@ -845,20 +861,20 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                             addToolbarButton(icon, prefix, suffix)
                         }
                     },
-                    onDelete = if (toolbarDialogState.isEditMode) {
-                        {
-                            val index = toolbarDialogState.buttonIndex
-                            noteEditorViewModel.dismissToolbarDialog()
-                            removeToolbarButton(index)
-                        }
-                    } else {
-                        null
-                    },
+                    onDelete =
+                        if (toolbarDialogState.isEditMode) {
+                            {
+                                val index = toolbarDialogState.buttonIndex
+                                noteEditorViewModel.dismissToolbarDialog()
+                                removeToolbarButton(index)
+                            }
+                        } else {
+                            null
+                        },
                     onHelpClick = {
                         openUrl(R.string.link_manual_note_format_toolbar)
                     },
                 )
-
             }
         }
     }
@@ -881,7 +897,6 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         noteEditorViewModel.formatSelection(prefix, suffix)
     }
 
-
     private fun handleClozeInsertion(mode: ClozeInsertionMode) {
         val isClozeType = noteEditorViewModel.noteEditorState.value.isClozeType
         if (!isClozeType) {
@@ -898,27 +913,31 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
         val keyCode = event.keyCode
         when (keyCode) {
-            KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_ENTER -> if (event.isCtrlPressed) {
-                if (allowSaveAndPreview()) {
-                    saveNoteWithSchemaConfirmation()
+            KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_ENTER ->
+                if (event.isCtrlPressed) {
+                    if (allowSaveAndPreview()) {
+                        saveNoteWithSchemaConfirmation()
+                        return true
+                    }
+                }
+
+            KeyEvent.KEYCODE_D ->
+                if (event.isCtrlPressed) {
+                    noteEditorViewModel.showDeckSelectionDialog(true)
                     return true
                 }
-            }
 
-            KeyEvent.KEYCODE_D -> if (event.isCtrlPressed) {
-                noteEditorViewModel.showDeckSelectionDialog(true)
-                return true
-            }
+            KeyEvent.KEYCODE_L ->
+                if (event.isCtrlPressed) {
+                    showCardTemplateEditor()
+                    return true
+                }
 
-            KeyEvent.KEYCODE_L -> if (event.isCtrlPressed) {
-                showCardTemplateEditor()
-                return true
-            }
-
-            KeyEvent.KEYCODE_T -> if (event.isCtrlPressed && event.isShiftPressed) {
-                noteEditorViewModel.showTagsDialog(true)
-                return true
-            }
+            KeyEvent.KEYCODE_T ->
+                if (event.isCtrlPressed && event.isShiftPressed) {
+                    noteEditorViewModel.showTagsDialog(true)
+                    return true
+                }
 
             KeyEvent.KEYCODE_C -> {
                 if (event.isCtrlPressed && event.isShiftPressed) {
@@ -945,29 +964,31 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         if (!event.isCtrlPressed || event.isAltPressed || event.isMetaPressed || event.isShiftPressed) {
             return false
         }
-        val digit = when (event.keyCode) {
-            KeyEvent.KEYCODE_0, KeyEvent.KEYCODE_NUMPAD_0 -> 0
-            KeyEvent.KEYCODE_1, KeyEvent.KEYCODE_NUMPAD_1 -> 1
-            KeyEvent.KEYCODE_2, KeyEvent.KEYCODE_NUMPAD_2 -> 2
-            KeyEvent.KEYCODE_3, KeyEvent.KEYCODE_NUMPAD_3 -> 3
-            KeyEvent.KEYCODE_4, KeyEvent.KEYCODE_NUMPAD_4 -> 4
-            KeyEvent.KEYCODE_5, KeyEvent.KEYCODE_NUMPAD_5 -> 5
-            KeyEvent.KEYCODE_6, KeyEvent.KEYCODE_NUMPAD_6 -> 6
-            KeyEvent.KEYCODE_7, KeyEvent.KEYCODE_NUMPAD_7 -> 7
-            KeyEvent.KEYCODE_8, KeyEvent.KEYCODE_NUMPAD_8 -> 8
-            KeyEvent.KEYCODE_9, KeyEvent.KEYCODE_NUMPAD_9 -> 9
-            else -> return false
-        }
+        val digit =
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_0, KeyEvent.KEYCODE_NUMPAD_0 -> 0
+                KeyEvent.KEYCODE_1, KeyEvent.KEYCODE_NUMPAD_1 -> 1
+                KeyEvent.KEYCODE_2, KeyEvent.KEYCODE_NUMPAD_2 -> 2
+                KeyEvent.KEYCODE_3, KeyEvent.KEYCODE_NUMPAD_3 -> 3
+                KeyEvent.KEYCODE_4, KeyEvent.KEYCODE_NUMPAD_4 -> 4
+                KeyEvent.KEYCODE_5, KeyEvent.KEYCODE_NUMPAD_5 -> 5
+                KeyEvent.KEYCODE_6, KeyEvent.KEYCODE_NUMPAD_6 -> 6
+                KeyEvent.KEYCODE_7, KeyEvent.KEYCODE_NUMPAD_7 -> 7
+                KeyEvent.KEYCODE_8, KeyEvent.KEYCODE_NUMPAD_8 -> 8
+                KeyEvent.KEYCODE_9, KeyEvent.KEYCODE_NUMPAD_9 -> 9
+                else -> return false
+            }
         return noteEditorViewModel.applyToolbarShortcut(digit)
     }
 
     private fun ToolbarButtonModel.toCustomToolbarButton(): CustomToolbarButton =
         CustomToolbarButton(index = index, buttonText = text, prefix = prefix, suffix = suffix)
 
-    private fun AddClozeType.toClozeMode(): ClozeInsertionMode = when (this) {
-        AddClozeType.SAME_NUMBER -> ClozeInsertionMode.SAME_NUMBER
-        AddClozeType.INCREMENT_NUMBER -> ClozeInsertionMode.INCREMENT_NUMBER
-    }
+    private fun AddClozeType.toClozeMode(): ClozeInsertionMode =
+        when (this) {
+            AddClozeType.SAME_NUMBER -> ClozeInsertionMode.SAME_NUMBER
+            AddClozeType.INCREMENT_NUMBER -> ClozeInsertionMode.INCREMENT_NUMBER
+        }
 
     override fun onStop() {
         super.onStop()
@@ -1049,13 +1070,14 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     sourceText = null
                     noteEditorViewModel.showSnackbar(TR.addingAdded())
 
-                    val shouldClose = when (caller) {
-                        NoteEditorCaller.NOTEEDITOR,
-                        NoteEditorCaller.NOTEEDITOR_INTENT_ADD,
+                    val shouldClose =
+                        when (caller) {
+                            NoteEditorCaller.NOTEEDITOR,
+                            NoteEditorCaller.NOTEEDITOR_INTENT_ADD,
                             -> true
 
-                        else -> aedictIntent
-                    }
+                            else -> aedictIntent
+                        }
 
                     if (shouldClose) {
                         if (caller == NoteEditorCaller.NOTEEDITOR_INTENT_ADD || aedictIntent) {
@@ -1065,19 +1087,22 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                                 shortLength = true,
                             )
                         }
-                        val closeIntent = if (caller == NoteEditorCaller.NOTEEDITOR_INTENT_ADD) {
-                            Intent().apply {
-                                putExtra(
-                                    EXTRA_ID,
-                                    arguments.getString(EXTRA_ID),
-                                )
+                        val closeIntent =
+                            if (caller == NoteEditorCaller.NOTEEDITOR_INTENT_ADD) {
+                                Intent().apply {
+                                    putExtra(
+                                        EXTRA_ID,
+                                        arguments.getString(EXTRA_ID),
+                                    )
+                                }
+                            } else {
+                                null
                             }
-                        } else {
-                            null
-                        }
                         closeNoteEditor(closeIntent ?: Intent())
                     } else {
-                        noteEditorViewModel.currentNote.value?.notetype?.let(::updateCards)
+                        noteEditorViewModel.currentNote.value
+                            ?.notetype
+                            ?.let(::updateCards)
                     }
                 } else {
                     closeNoteEditor()
@@ -1115,10 +1140,11 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         updateToolbar()
     }
 
-    private fun allowSaveAndPreview(): Boolean = when {
-        addNote && noteEditorViewModel.noteEditorState.value.isImageOcclusion -> false
-        else -> true
-    }
+    private fun allowSaveAndPreview(): Boolean =
+        when {
+            addNote && noteEditorViewModel.noteEditorState.value.isImageOcclusion -> false
+            else -> true
+        }
 
     private fun toggleCapitalize(value: Boolean) {
         this.sharedPrefs().edit {
@@ -1149,40 +1175,44 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     suspend fun performPreview() {
         val convertNewlines = shouldReplaceNewlines()
 
-        fun String?.toFieldText(): String =
-            NoteService.convertToHtmlNewline(this.orEmpty(), convertNewlines)
+        fun String?.toFieldText(): String = NoteService.convertToHtmlNewline(this.orEmpty(), convertNewlines)
 
         val fields =
-            noteEditorViewModel.noteEditorState.value.fields.map { fieldState -> fieldState.value.text.toFieldText() }
+            noteEditorViewModel.noteEditorState.value.fields
+                .map { fieldState -> fieldState.value.text.toFieldText() }
                 .toMutableList()
 
-        val tags = noteEditorViewModel.noteEditorState.value.tags.toMutableList()
+        val tags =
+            noteEditorViewModel.noteEditorState.value.tags
+                .toMutableList()
 
         val notetype = editorNote?.notetype ?: withCol { notetypes.current() }
 
         val noteId = editorNote?.id ?: 0L
 
-        val ord = if (notetype.isCloze) {
-            val tempNote = withCol { Note.fromNotetypeId(this, notetype.id) }
-            tempNote.fields = fields
-            val clozeNumbers = withCol { clozeNumbersInNote(tempNote) }
-            if (clozeNumbers.isNotEmpty()) {
-                clozeNumbers.first() - 1
+        val ord =
+            if (notetype.isCloze) {
+                val tempNote = withCol { Note.fromNotetypeId(this, notetype.id) }
+                tempNote.fields = fields
+                val clozeNumbers = withCol { clozeNumbersInNote(tempNote) }
+                if (clozeNumbers.isNotEmpty()) {
+                    clozeNumbers.first() - 1
+                } else {
+                    0
+                }
             } else {
-                0
+                currentEditedCard?.ord ?: 0
             }
-        } else {
-            currentEditedCard?.ord ?: 0
-        }
 
-        val args = TemplatePreviewerArguments(
-            notetypeFile = NotetypeFile(this, notetype),
-            fields = fields,
-            tags = tags,
-            id = noteId,
-            ord = ord,
-            fillEmpty = false,
-        )
+        val args =
+            TemplatePreviewerArguments(
+                notetypeFile = NotetypeFile(this, notetype),
+                fields = fields,
+                tags = tags,
+                id = noteId,
+                ord = ord,
+                fillEmpty = false,
+            )
         val intent = TemplatePreviewerPage.getIntent(this, args)
         startActivity(intent)
     }
@@ -1200,11 +1230,12 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     }
 
     private fun closeNoteEditor(intent: Intent = Intent()) {
-        val result: Int = if (changed) {
-            RESULT_OK
-        } else {
-            RESULT_CANCELED
-        }
+        val result: Int =
+            if (changed) {
+                RESULT_OK
+            } else {
+                RESULT_CANCELED
+            }
         if (reloadRequired) {
             intent.putExtra(RELOAD_REQUIRED_EXTRA_KEY, true)
         }
@@ -1227,11 +1258,12 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
 
         Timber.i("Closing note editor")
 
-        val animation = BundleCompat.getParcelable(
-            arguments,
-            FINISH_ANIMATION_EXTRA,
-            ActivityTransitionAnimation.Direction::class.java,
-        )
+        val animation =
+            BundleCompat.getParcelable(
+                arguments,
+                FINISH_ANIMATION_EXTRA,
+                ActivityTransitionAnimation.Direction::class.java,
+            )
         if (animation != null) {
             finishWithAnimation(animation)
         } else {
@@ -1239,11 +1271,14 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         }
     }
 
-
     private fun showCardTemplateEditor() {
         val intent = Intent(this, CardTemplateEditor::class.java)
         val noteTypeName = noteEditorViewModel.noteEditorState.value.selectedNoteTypeName
-        val noteTypeId = getColUnsafe.notetypes.all().find { it.name == noteTypeName }?.id
+        val noteTypeId =
+            getColUnsafe.notetypes
+                .all()
+                .find { it.name == noteTypeName }
+                ?.id
 
         if (noteTypeId == null) {
             Timber.w("showCardTemplateEditor(): noteTypeId is null")
@@ -1296,81 +1331,87 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
     private fun handleMultimediaActions(fieldIndex: Int) {
         multimediaActionJob?.cancel()
 
-        multimediaActionJob = lifecycleScope.launch {
-            val note: MultimediaEditableNote = getCurrentMultimediaEditableNote()
-            if (note.isEmpty) return@launch
+        multimediaActionJob =
+            lifecycleScope.launch {
+                val note: MultimediaEditableNote = getCurrentMultimediaEditableNote()
+                if (note.isEmpty) return@launch
 
-            multimediaViewModel.multimediaAction.first { action ->
-                when (action) {
-                    MultimediaBottomSheet.MultimediaAction.SELECT_IMAGE_FILE -> {
-                        val field = ImageField()
-                        note.setField(fieldIndex, field)
-                        openMultimediaImageFragment(fieldIndex = fieldIndex, field, note)
+                multimediaViewModel.multimediaAction.first { action ->
+                    when (action) {
+                        MultimediaBottomSheet.MultimediaAction.SELECT_IMAGE_FILE -> {
+                            val field = ImageField()
+                            note.setField(fieldIndex, field)
+                            openMultimediaImageFragment(fieldIndex = fieldIndex, field, note)
+                        }
+
+                        MultimediaBottomSheet.MultimediaAction.SELECT_AUDIO_FILE -> {
+                            val field = MediaClipField()
+                            note.setField(fieldIndex, field)
+                            val mediaIntent =
+                                AudioVideoFragment.getIntent(
+                                    this@NoteEditorActivity,
+                                    MultimediaActivityExtra(fieldIndex, field, note),
+                                    AudioVideoFragment.MediaOption.AUDIO_CLIP,
+                                )
+
+                            multimediaFragmentLauncher.launch(mediaIntent)
+                        }
+
+                        MultimediaBottomSheet.MultimediaAction.OPEN_DRAWING -> {
+                            val field = ImageField()
+                            note.setField(fieldIndex, field)
+
+                            val drawingIntent =
+                                MultimediaImageFragment.getIntent(
+                                    this@NoteEditorActivity,
+                                    MultimediaActivityExtra(fieldIndex, field, note),
+                                    MultimediaImageFragment.ImageOptions.DRAWING,
+                                )
+
+                            multimediaFragmentLauncher.launch(drawingIntent)
+                        }
+
+                        MultimediaBottomSheet.MultimediaAction.SELECT_AUDIO_RECORDING -> {
+                            val field = AudioRecordingField()
+                            note.setField(fieldIndex, field)
+                            val audioRecordingIntent =
+                                AudioRecordingFragment.getIntent(
+                                    this@NoteEditorActivity,
+                                    MultimediaActivityExtra(fieldIndex, field, note),
+                                )
+
+                            multimediaFragmentLauncher.launch(audioRecordingIntent)
+                        }
+
+                        MultimediaBottomSheet.MultimediaAction.SELECT_VIDEO_FILE -> {
+                            val field = MediaClipField()
+                            note.setField(fieldIndex, field)
+                            val mediaIntent =
+                                AudioVideoFragment.getIntent(
+                                    this@NoteEditorActivity,
+                                    MultimediaActivityExtra(fieldIndex, field, note),
+                                    AudioVideoFragment.MediaOption.VIDEO_CLIP,
+                                )
+
+                            multimediaFragmentLauncher.launch(mediaIntent)
+                        }
+
+                        MultimediaBottomSheet.MultimediaAction.OPEN_CAMERA -> {
+                            val field = ImageField()
+                            note.setField(fieldIndex, field)
+                            val imageIntent =
+                                MultimediaImageFragment.getIntent(
+                                    this@NoteEditorActivity,
+                                    MultimediaActivityExtra(fieldIndex, field, note),
+                                    MultimediaImageFragment.ImageOptions.CAMERA,
+                                )
+
+                            multimediaFragmentLauncher.launch(imageIntent)
+                        }
                     }
-
-                    MultimediaBottomSheet.MultimediaAction.SELECT_AUDIO_FILE -> {
-                        val field = MediaClipField()
-                        note.setField(fieldIndex, field)
-                        val mediaIntent = AudioVideoFragment.getIntent(
-                            this@NoteEditorActivity,
-                            MultimediaActivityExtra(fieldIndex, field, note),
-                            AudioVideoFragment.MediaOption.AUDIO_CLIP,
-                        )
-
-                        multimediaFragmentLauncher.launch(mediaIntent)
-                    }
-
-                    MultimediaBottomSheet.MultimediaAction.OPEN_DRAWING -> {
-                        val field = ImageField()
-                        note.setField(fieldIndex, field)
-
-                        val drawingIntent = MultimediaImageFragment.getIntent(
-                            this@NoteEditorActivity,
-                            MultimediaActivityExtra(fieldIndex, field, note),
-                            MultimediaImageFragment.ImageOptions.DRAWING,
-                        )
-
-                        multimediaFragmentLauncher.launch(drawingIntent)
-                    }
-
-                    MultimediaBottomSheet.MultimediaAction.SELECT_AUDIO_RECORDING -> {
-                        val field = AudioRecordingField()
-                        note.setField(fieldIndex, field)
-                        val audioRecordingIntent = AudioRecordingFragment.getIntent(
-                            this@NoteEditorActivity,
-                            MultimediaActivityExtra(fieldIndex, field, note),
-                        )
-
-                        multimediaFragmentLauncher.launch(audioRecordingIntent)
-                    }
-
-                    MultimediaBottomSheet.MultimediaAction.SELECT_VIDEO_FILE -> {
-                        val field = MediaClipField()
-                        note.setField(fieldIndex, field)
-                        val mediaIntent = AudioVideoFragment.getIntent(
-                            this@NoteEditorActivity,
-                            MultimediaActivityExtra(fieldIndex, field, note),
-                            AudioVideoFragment.MediaOption.VIDEO_CLIP,
-                        )
-
-                        multimediaFragmentLauncher.launch(mediaIntent)
-                    }
-
-                    MultimediaBottomSheet.MultimediaAction.OPEN_CAMERA -> {
-                        val field = ImageField()
-                        note.setField(fieldIndex, field)
-                        val imageIntent = MultimediaImageFragment.getIntent(
-                            this@NoteEditorActivity,
-                            MultimediaActivityExtra(fieldIndex, field, note),
-                            MultimediaImageFragment.ImageOptions.CAMERA,
-                        )
-
-                        multimediaFragmentLauncher.launch(imageIntent)
-                    }
+                    true
                 }
-                true
             }
-        }
     }
 
     private fun openMultimediaImageFragment(
@@ -1382,11 +1423,12 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         val multimediaExtra =
             MultimediaActivityExtra(fieldIndex, field, multimediaNote, imageUri?.toString())
 
-        val imageIntent = MultimediaImageFragment.getIntent(
-            this,
-            multimediaExtra,
-            MultimediaImageFragment.ImageOptions.GALLERY,
-        )
+        val imageIntent =
+            MultimediaImageFragment.getIntent(
+                this,
+                multimediaExtra,
+                MultimediaImageFragment.ImageOptions.GALLERY,
+            )
 
         multimediaFragmentLauncher.launch(imageIntent)
     }
@@ -1427,11 +1469,12 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
                     val currentValue = fieldState.value
                     val start = currentValue.selection.start
                     val end = currentValue.selection.end
-                    val newText = buildString {
-                        append(currentValue.text.substring(0, start))
-                        append(formattedValue)
-                        append(currentValue.text.substring(end))
-                    }
+                    val newText =
+                        buildString {
+                            append(currentValue.text.substring(0, start))
+                            append(formattedValue)
+                            append(currentValue.text.substring(end))
+                        }
                     val newCursor = start + formattedValue.length
                     noteEditorViewModel.updateFieldValue(
                         index,
@@ -1487,21 +1530,24 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             return
         }
 
-        val buttons = toolbarButtons.map { button ->
-            ToolbarButtonModel(
-                index = button.index,
-                text = button.buttonText,
-                prefix = button.prefix,
-                suffix = button.suffix,
-            )
-        }
+        val buttons =
+            toolbarButtons.map { button ->
+                ToolbarButtonModel(
+                    index = button.index,
+                    text = button.buttonText,
+                    prefix = button.prefix,
+                    suffix = button.suffix,
+                )
+            }
         noteEditorViewModel.setToolbarButtons(buttons)
     }
 
     private val toolbarButtons: ArrayList<CustomToolbarButton>
         get() {
-            val set = this.sharedPrefs()
-                .getStringSet(PREF_NOTE_EDITOR_CUSTOM_BUTTONS, HashUtil.hashSetInit(0))
+            val set =
+                this
+                    .sharedPrefs()
+                    .getStringSet(PREF_NOTE_EDITOR_CUSTOM_BUTTONS, HashUtil.hashSetInit(0))
             return CustomToolbarButton.fromStringSet(set!!)
         }
 
@@ -1573,9 +1619,16 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
         val card = currentEditedCard
         for ((i, tmpl) in tmpls.withIndex()) {
             var name = tmpl.jsonObject.optString("name")
-            if (!addNote && tmpls.length() > 1 && note != null && noteType.jsonObject === note.notetype.jsonObject && card != null && card.template(
-                    getColUnsafe,
-                ).jsonObject.optString("name") == name
+            if (!addNote &&
+                tmpls.length() > 1 &&
+                note != null &&
+                noteType.jsonObject === note.notetype.jsonObject &&
+                card != null &&
+                card
+                    .template(
+                        getColUnsafe,
+                    ).jsonObject
+                    .optString("name") == name
             ) {
                 name = "<u>$name</u>"
             }
@@ -1647,16 +1700,16 @@ class NoteEditorActivity : AnkiActivity(), BaseSnackbarBuilderProvider, Dispatch
             context: Context,
             arguments: Bundle? = null,
             intentAction: String? = null,
-        ): Intent = Intent(context, NoteEditorActivity::class.java).apply {
-            putExtra(FRAGMENT_ARGS_EXTRA, arguments)
-            action = intentAction
-        }
+        ): Intent =
+            Intent(context, NoteEditorActivity::class.java).apply {
+                putExtra(FRAGMENT_ARGS_EXTRA, arguments)
+                action = intentAction
+            }
 
         private fun shouldReplaceNewlines(): Boolean =
             AnkiDroidApp.instance.sharedPrefs().getBoolean(PREF_NOTE_EDITOR_NEWLINE_REPLACE, true)
 
-        private fun shouldHideToolbar(): Boolean =
-            !AnkiDroidApp.instance.sharedPrefs().getBoolean(PREF_NOTE_EDITOR_SHOW_TOOLBAR, true)
+        private fun shouldHideToolbar(): Boolean = !AnkiDroidApp.instance.sharedPrefs().getBoolean(PREF_NOTE_EDITOR_SHOW_TOOLBAR, true)
 
         @JvmStatic
         fun intentLaunchedWithImage(intent: Intent): Boolean {

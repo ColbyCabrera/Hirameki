@@ -22,14 +22,18 @@ import androidx.activity.result.contract.ActivityResultContract
 import com.ichi2.anki.CardBrowser
 
 class MySearchesContract : ActivityResultContract<Unit, String?>() {
-
-    override fun createIntent(context: Context, input: Unit): Intent {
-        return Intent(context, CardBrowser::class.java).apply {
+    override fun createIntent(
+        context: Context,
+        input: Unit,
+    ): Intent =
+        Intent(context, CardBrowser::class.java).apply {
             putExtra("target", "my_searches")
         }
-    }
 
-    override fun parseResult(resultCode: Int, intent: Intent?): String? {
+    override fun parseResult(
+        resultCode: Int,
+        intent: Intent?,
+    ): String? {
         if (resultCode != Activity.RESULT_OK) {
             return null
         }

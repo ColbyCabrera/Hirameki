@@ -150,10 +150,11 @@ fun DrawingScreen(
             FilledIconButton(
                 modifier = Modifier.padding(end = 8.dp),
                 onClick = onFinish,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
+                colors =
+                    IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back_24px),
@@ -163,9 +164,10 @@ fun DrawingScreen(
         }, actions = {
             val nothingToSaveMessage = stringResource(R.string.nothing_to_save)
             Button(
-                modifier = Modifier
-                    .height(48.dp)
-                    .padding(end = 8.dp),
+                modifier =
+                    Modifier
+                        .height(48.dp)
+                        .padding(end = 8.dp),
                 enabled = hasContent,
                 onClick = {
                     scope.launch {
@@ -178,17 +180,18 @@ fun DrawingScreen(
                     }
                 },
                 contentPadding = PaddingValues(horizontal = 24.dp),
-                shapes = ButtonDefaults.shapes()
+                shapes = ButtonDefaults.shapes(),
             ) {
                 Text(stringResource(R.string.save))
             }
         })
     }, snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.CenterEnd
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+            contentAlignment = Alignment.CenterEnd,
         ) {
             DrawingCanvas(
                 paths = paths,
@@ -205,9 +208,10 @@ fun DrawingScreen(
                 modifier = Modifier.fillMaxSize(),
             )
             Box(
-                modifier = Modifier
-                    .width(80.dp)
-                    .heightIn(max = 400.dp)
+                modifier =
+                    Modifier
+                        .width(80.dp)
+                        .heightIn(max = 400.dp),
             ) {
                 WhiteboardToolbarContent(
                     canUndo = canUndo,
@@ -237,12 +241,12 @@ fun DrawingScreen(
                     },
                     onBrushLongClick = { /* Handle long click if needed for color picker */ },
                     onAddBrush = viewModel::addBrush,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
                 )
             }
-
         }
     }
 
@@ -257,7 +261,8 @@ fun DrawingScreen(
                     showBrushOptions = false
                     showColorPicker = true
                 },
-                onDismissRequest = { showBrushOptions = false })
+                onDismissRequest = { showBrushOptions = false },
+            )
         }
     }
 
@@ -270,7 +275,8 @@ fun DrawingScreen(
                 viewModel.updateBrushColor(color)
                 showColorPicker = false
             },
-            onDismiss = { showColorPicker = false })
+            onDismiss = { showColorPicker = false },
+        )
     }
 
     // Eraser Options Dialog
@@ -279,7 +285,8 @@ fun DrawingScreen(
             eraserWidth = strokeWidth,
             onWidthChange = { viewModel.setStrokeWidth(it) },
             onClearCanvas = { viewModel.clearCanvas() },
-            onDismissRequest = { showEraserOptions = false })
+            onDismissRequest = { showEraserOptions = false },
+        )
     }
 }
 
@@ -315,11 +322,12 @@ fun DrawingBrushOptionsDialog(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(CircleShape)
-                            .background(Color(brush.color))
-                            .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                        modifier =
+                            Modifier
+                                .size(64.dp)
+                                .clip(CircleShape)
+                                .background(Color(brush.color))
+                                .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape),
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     OutlinedButton(onClick = onColorPickerRequest) {
@@ -330,13 +338,14 @@ fun DrawingBrushOptionsDialog(
                 // Width Slider
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val lastBrushWidth = remember { floatArrayOf(brush.width) }
-                    val sliderState = remember {
-                        SliderState(
-                            value = brush.width,
-                            steps = 7,
-                            trackRange = 1f..70f,
-                        )
-                    }
+                    val sliderState =
+                        remember {
+                            SliderState(
+                                value = brush.width,
+                                steps = 7,
+                                trackRange = 1f..70f,
+                            )
+                        }
                     LaunchedEffect(brush.width) {
                         if (sliderState.value != brush.width) {
                             sliderState.value = brush.width
@@ -402,13 +411,14 @@ fun DrawingEraserOptionsDialog(
                 // Width Slider
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val lastEraserWidth = remember { floatArrayOf(eraserWidth) }
-                    val sliderState = remember {
-                        SliderState(
-                            value = eraserWidth,
-                            steps = 8,
-                            trackRange = 5f..200f,
-                        )
-                    }
+                    val sliderState =
+                        remember {
+                            SliderState(
+                                value = eraserWidth,
+                                steps = 8,
+                                trackRange = 5f..200f,
+                            )
+                        }
                     LaunchedEffect(eraserWidth) {
                         if (sliderState.value != eraserWidth) {
                             sliderState.value = eraserWidth
@@ -450,9 +460,10 @@ fun DrawingEraserOptionsDialog(
                         onDismissRequest()
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
                 ) {
                     Text(stringResource(R.string.whiteboard_clear))
                 }
@@ -479,46 +490,52 @@ fun DrawingCanvas(
     // Current path state for live drawing
     var currentPath by remember { mutableStateOf<Path?>(null, policy = neverEqualPolicy()) }
 
-    Canvas(modifier = modifier
-        .background(Color(backgroundColor))
-        .onSizeChanged {
-            onSizeChanged(it.width, it.height)
-        }
-        .pointerInput(isStylusOnlyMode) {
-            detectDragGestures(onDragStart = { offset ->
-                val newPath = Path().apply {
-                    moveTo(offset.x, offset.y)
-                }
-                currentPath = newPath
-            }, onDrag = { change, _ ->
-                // Filter non-stylus input when stylus-only mode is enabled
-                if (isStylusOnlyMode && change.type != PointerType.Stylus) {
-                    // Clear path to prevent spurious dots from being added in onDragEnd
-                    currentPath = null
-                    return@detectDragGestures
-                }
-                val path = currentPath ?: return@detectDragGestures
-                val offset = change.position
-                path.lineTo(offset.x, offset.y)
-                // We need to recompose to show the new line - handled by neverEqualPolicy
-                currentPath = path
-            }, onDragEnd = {
-                currentPath?.let { path ->
-                    onPathDrawn(path)
-                }
-                currentPath = null
-            }, onDragCancel = {
-                currentPath = null
-            })
-        }) {
+    Canvas(
+        modifier =
+            modifier
+                .background(Color(backgroundColor))
+                .onSizeChanged {
+                    onSizeChanged(it.width, it.height)
+                }.pointerInput(isStylusOnlyMode) {
+                    detectDragGestures(onDragStart = { offset ->
+                        val newPath =
+                            Path().apply {
+                                moveTo(offset.x, offset.y)
+                            }
+                        currentPath = newPath
+                    }, onDrag = { change, _ ->
+                        // Filter non-stylus input when stylus-only mode is enabled
+                        if (isStylusOnlyMode && change.type != PointerType.Stylus) {
+                            // Clear path to prevent spurious dots from being added in onDragEnd
+                            currentPath = null
+                            return@detectDragGestures
+                        }
+                        val path = currentPath ?: return@detectDragGestures
+                        val offset = change.position
+                        path.lineTo(offset.x, offset.y)
+                        // We need to recompose to show the new line - handled by neverEqualPolicy
+                        currentPath = path
+                    }, onDragEnd = {
+                        currentPath?.let { path ->
+                            onPathDrawn(path)
+                        }
+                        currentPath = null
+                    }, onDragCancel = {
+                        currentPath = null
+                    })
+                },
+    ) {
         // Draw all completed paths
         paths.forEach { drawingPath ->
             drawPath(
                 path = drawingPath.path.asComposePath(),
                 color = if (drawingPath.isEraser) Color(backgroundColor) else Color(drawingPath.color),
-                style = Stroke(
-                    width = drawingPath.strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round
-                )
+                style =
+                    Stroke(
+                        width = drawingPath.strokeWidth,
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round,
+                    ),
             )
         }
 
@@ -527,9 +544,12 @@ fun DrawingCanvas(
             drawPath(
                 path = path.asComposePath(),
                 color = if (isEraserActive) Color(backgroundColor) else Color(brushColor),
-                style = Stroke(
-                    width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round
-                )
+                style =
+                    Stroke(
+                        width = strokeWidth,
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round,
+                    ),
             )
         }
     }

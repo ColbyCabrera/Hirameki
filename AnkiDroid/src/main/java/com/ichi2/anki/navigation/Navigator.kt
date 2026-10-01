@@ -21,7 +21,9 @@ import androidx.navigation3.runtime.NavKey
 /**
  * Handles navigation events (forward and back) by updating the navigation state.
  */
-class Navigator(val state: NavigationState) {
+class Navigator(
+    val state: NavigationState,
+) {
     /**
      * Navigate to the specified route.
      * If the route is a top-level route, switches to that stack.
@@ -40,9 +42,10 @@ class Navigator(val state: NavigationState) {
      * Navigate back. If at the base of the current stack, returns to the start route.
      */
     fun goBack() {
-        val currentStack = checkNotNull(state.backStacks[state.topLevelRoute]) {
-            "Stack for ${state.topLevelRoute} not found"
-        }
+        val currentStack =
+            checkNotNull(state.backStacks[state.topLevelRoute]) {
+                "Stack for ${state.topLevelRoute} not found"
+            }
         val currentRoute = currentStack.last()
 
         // If we're at the base of the current route, go back to the start route stack.

@@ -154,35 +154,36 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
         val menuHost: MenuHost = requireActivity()
         previousMenuProvider?.let { menuHost.removeMenuProvider(it) }
 
-        val newProvider = object : MenuProvider {
-            override fun onCreateMenu(
-                menu: Menu,
-                menuInflater: MenuInflater,
-            ) {
-                menuInflater.inflate(R.menu.media_check_menu, menu)
-                menu.findItem(R.id.action_restore_trash).apply {
-                    isVisible = true
-                    title = TR.mediaCheckRestoreTrash().toSentenceCase(requireContext(), R.string.sentence_restore_deleted)
+        val newProvider =
+            object : MenuProvider {
+                override fun onCreateMenu(
+                    menu: Menu,
+                    menuInflater: MenuInflater,
+                ) {
+                    menuInflater.inflate(R.menu.media_check_menu, menu)
+                    menu.findItem(R.id.action_restore_trash).apply {
+                        isVisible = true
+                        title = TR.mediaCheckRestoreTrash().toSentenceCase(requireContext(), R.string.sentence_restore_deleted)
+                    }
+                    menu.findItem(R.id.action_empty_trash).apply {
+                        isVisible = true
+                        title = TR.mediaCheckEmptyTrash().toSentenceCase(requireContext(), R.string.sentence_empty_trash)
+                    }
                 }
-                menu.findItem(R.id.action_empty_trash).apply {
-                    isVisible = true
-                    title = TR.mediaCheckEmptyTrash().toSentenceCase(requireContext(), R.string.sentence_empty_trash)
-                }
-            }
 
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
-                when (menuItem.itemId) {
-                    R.id.action_restore_trash -> {
-                        confirmMediaRestore()
-                        true
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean =
+                    when (menuItem.itemId) {
+                        R.id.action_restore_trash -> {
+                            confirmMediaRestore()
+                            true
+                        }
+                        R.id.action_empty_trash -> {
+                            deleteTrash()
+                            true
+                        }
+                        else -> false
                     }
-                    R.id.action_empty_trash -> {
-                        deleteTrash()
-                        true
-                    }
-                    else -> false
-                }
-        }
+            }
 
         menuHost.addMenuProvider(newProvider, viewLifecycleOwner)
         previousMenuProvider = newProvider

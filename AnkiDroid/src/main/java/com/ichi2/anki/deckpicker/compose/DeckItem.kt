@@ -55,9 +55,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -112,7 +112,8 @@ data class DeckItemActions(
  * @param actions Callbacks already scoped to [deck].
  */
 @OptIn(
-    ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class
+    ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalFoundationApi::class,
 )
 @Composable
 fun DeckItem(
@@ -124,25 +125,25 @@ fun DeckItem(
 
     val cornerRadius by animateDpAsState(
         targetValue = if (!deck.collapsed && deck.canCollapse) expandedDeckCardRadius else collapsedDeckCardRadius,
-        animationSpec = motionScheme.defaultEffectsSpec()
+        animationSpec = motionScheme.defaultEffectsSpec(),
     )
 
     val content = @Composable {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (deck.depth == 0) {
-                        Modifier.clip(RoundedCornerShape(cornerRadius))
-                    } else {
-                        Modifier
-                    }
-                )
-                .combinedClickable(onClick = {
-                    isContextMenuOpen = false
-                    actions.onDeckClick()
-                }, onLongClick = { isContextMenuOpen = true })
-                .padding(horizontal = 8.dp, vertical = if (deck.depth > 0) 4.dp else 0.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (deck.depth == 0) {
+                            Modifier.clip(RoundedCornerShape(cornerRadius))
+                        } else {
+                            Modifier
+                        },
+                    ).combinedClickable(onClick = {
+                        isContextMenuOpen = false
+                        actions.onDeckClick()
+                    }, onLongClick = { isContextMenuOpen = true })
+                    .padding(horizontal = 8.dp, vertical = if (deck.depth > 0) 4.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Add space between the edge of the deck for the circle shape
@@ -151,19 +152,21 @@ fun DeckItem(
             }
             Text(
                 text = deck.lastDeckNameComponent,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(vertical = 12.dp, horizontal = 8.dp),
                 style = if (deck.depth == 0) MaterialTheme.typography.titleLargeEmphasized else MaterialTheme.typography.titleMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             Row(
-                modifier = Modifier
-                    .height(70.dp)
-                    .padding(start = 4.dp),
+                modifier =
+                    Modifier
+                        .height(70.dp)
+                        .padding(start = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 CardCountsContainer(
                     cardCount = deck.newCount,
@@ -183,22 +186,28 @@ fun DeckItem(
             if (deck.canCollapse) {
                 IconButton(
                     onClick = { actions.onExpandClick() },
-                    modifier = Modifier
-                        .padding(start = 6.dp)
-                        .size(36.dp)
+                    modifier =
+                        Modifier
+                            .padding(start = 6.dp)
+                            .size(36.dp),
                 ) {
                     val rotation by animateFloatAsState(
                         targetValue = if (deck.collapsed) -90f else 0f,
                         animationSpec = motionScheme.defaultSpatialSpec(),
-                        label = "ExpandCollapseIconRotation"
+                        label = "ExpandCollapseIconRotation",
                     )
                     Icon(
                         painter = painterResource(R.drawable.keyboard_arrow_down_24px),
-                        contentDescription = if (deck.collapsed) stringResource(R.string.expand) else stringResource(
-                            R.string.collapse
-                        ),
+                        contentDescription =
+                            if (deck.collapsed) {
+                                stringResource(R.string.expand)
+                            } else {
+                                stringResource(
+                                    R.string.collapse,
+                                )
+                            },
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.graphicsLayer { rotationZ = rotation }
+                        modifier = Modifier.graphicsLayer { rotationZ = rotation },
                     )
                 }
             } else {
@@ -207,7 +216,7 @@ fun DeckItem(
             DropdownMenu(
                 expanded = isContextMenuOpen,
                 onDismissRequest = { isContextMenuOpen = false },
-                shape = MaterialTheme.shapes.large
+                shape = MaterialTheme.shapes.large,
             ) {
                 if (deck.filtered) {
                     DropdownMenuItem(
@@ -218,7 +227,8 @@ fun DeckItem(
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Refresh, contentDescription = null)
-                        })
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.empty_cram_label)) },
                         onClick = {
@@ -227,7 +237,8 @@ fun DeckItem(
                         },
                         leadingIcon = {
                             Icon(Icons.Filled.Close, contentDescription = null)
-                        })
+                        },
+                    )
                 } else {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.custom_study)) },
@@ -237,9 +248,11 @@ fun DeckItem(
                         },
                         leadingIcon = {
                             Icon(
-                                painterResource(R.drawable.star_24px), contentDescription = null
+                                painterResource(R.drawable.star_24px),
+                                contentDescription = null,
                             )
-                        })
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.create_subdeck)) },
                         onClick = {
@@ -249,16 +262,18 @@ fun DeckItem(
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(R.drawable.ic_add_deck_filled),
-                                contentDescription = null
+                                contentDescription = null,
                             )
-                        })
+                        },
+                    )
                 }
                 DropdownMenuItem(text = { Text(stringResource(R.string.rename_deck)) }, onClick = {
                     isContextMenuOpen = false
                     actions.onRename()
                 }, leadingIcon = {
                     Icon(
-                        painter = painterResource(R.drawable.edit_24px), contentDescription = null
+                        painter = painterResource(R.drawable.edit_24px),
+                        contentDescription = null,
                     )
                 })
                 if (deck.hasBuried) {
@@ -268,7 +283,7 @@ fun DeckItem(
                     }, leadingIcon = {
                         Icon(
                             painter = painterResource(R.drawable.undo_24px),
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     })
                 }
@@ -277,7 +292,8 @@ fun DeckItem(
                     actions.onExportDeck()
                 }, leadingIcon = {
                     Icon(
-                        painter = painterResource(R.drawable.share_24px), contentDescription = null
+                        painter = painterResource(R.drawable.share_24px),
+                        contentDescription = null,
                     )
                 })
                 DropdownMenuItem(text = { Text(stringResource(R.string.deck_options)) }, onClick = {
@@ -295,9 +311,10 @@ fun DeckItem(
                     leadingIcon = {
                         Icon(
                             painter = painterResource(R.drawable.delete_24px),
-                            contentDescription = null
+                            contentDescription = null,
                         )
-                    })
+                    },
+                )
             }
         }
     }
@@ -309,15 +326,17 @@ fun DeckItem(
 
         1 -> {
             Card(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 2.dp, vertical = 2.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
+                modifier =
+                    modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 2.dp, vertical = 2.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ),
                 shape = RoundedCornerShape(cornerRadius),
-                elevation = CardDefaults.cardElevation(0.dp)
+                elevation = CardDefaults.cardElevation(0.dp),
             ) {
                 content()
             }
@@ -325,18 +344,18 @@ fun DeckItem(
 
         else -> {
             Box(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 2.dp, bottom = 2.dp)
-                    .clip(RoundedCornerShape(cornerRadius))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                modifier =
+                    modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp, bottom = 2.dp)
+                        .clip(RoundedCornerShape(cornerRadius))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             ) {
                 content()
             }
         }
     }
 }
-
 
 /**
  * Displays one numeric deck count inside a shaped badge.
@@ -353,32 +372,36 @@ fun CardCountsContainer(
     containerColor: Color = MaterialTheme.colorScheme.secondary,
 ) {
     Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(shape)
-            .background(containerColor)
-            .semantics(mergeDescendants = true) {
-                this.contentDescription = contentDescription
-            }, contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .size(32.dp)
+                .clip(shape)
+                .background(containerColor)
+                .semantics(mergeDescendants = true) {
+                    this.contentDescription = contentDescription
+                },
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = cardCount.toString(),
             color = MaterialTheme.colorScheme.onSecondary,
             style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier
-                .padding(0.dp)
-                .basicMarquee()
+            modifier =
+                Modifier
+                    .padding(0.dp)
+                    .basicMarquee(),
         )
     }
 }
-
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 fun CardCountsContainerPreview() {
     CardCountsContainer(
-        cardCount = 10, contentDescription = "New: 10", shape = CloverShape
+        cardCount = 10,
+        contentDescription = "New: 10",
+        shape = CloverShape,
     )
 }
 
@@ -387,29 +410,36 @@ fun CardCountsContainerPreview() {
 @Composable
 private fun DeckItemPreview() {
     AnkiDroidTheme {
-        val node = DeckNode(
-            node = deckTreeNode {
-                name = "Japanese"
-                deckId = 1L
-                level = 1
-                reviewCount = 10
-                newCount = 5
-                learnCount = 2
-                children.add(deckTreeNode {
-                    name = "Kanji"
-                    deckId = 2L
-                    level = 2
-                })
-            }, fullDeckName = "Japanese"
-        )
-        val deck = DisplayDeckNode.from(
-            node,
-            matchesSearchOrChild = true,
-            selectedDeckId = 0L,
-            hasBuried = false
-        )
+        val node =
+            DeckNode(
+                node =
+                    deckTreeNode {
+                        name = "Japanese"
+                        deckId = 1L
+                        level = 1
+                        reviewCount = 10
+                        newCount = 5
+                        learnCount = 2
+                        children.add(
+                            deckTreeNode {
+                                name = "Kanji"
+                                deckId = 2L
+                                level = 2
+                            },
+                        )
+                    },
+                fullDeckName = "Japanese",
+            )
+        val deck =
+            DisplayDeckNode.from(
+                node,
+                matchesSearchOrChild = true,
+                selectedDeckId = 0L,
+                hasBuried = false,
+            )
         DeckItem(
-            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            deck = deck,
+            actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
 }
@@ -419,23 +449,28 @@ private fun DeckItemPreview() {
 @Composable
 private fun DeckItemSubdeckPreview() {
     AnkiDroidTheme {
-        val node = DeckNode(
-            node = deckTreeNode {
-                name = "Kanji"
-                deckId = 2L
-                level = 2
-                reviewCount = 5
-                newCount = 3
-            }, fullDeckName = "Japanese::Kanji"
-        )
-        val deck = DisplayDeckNode.from(
-            node,
-            matchesSearchOrChild = true,
-            selectedDeckId = 0L,
-            hasBuried = false
-        )
+        val node =
+            DeckNode(
+                node =
+                    deckTreeNode {
+                        name = "Kanji"
+                        deckId = 2L
+                        level = 2
+                        reviewCount = 5
+                        newCount = 3
+                    },
+                fullDeckName = "Japanese::Kanji",
+            )
+        val deck =
+            DisplayDeckNode.from(
+                node,
+                matchesSearchOrChild = true,
+                selectedDeckId = 0L,
+                hasBuried = false,
+            )
         DeckItem(
-            deck = deck, actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            deck = deck,
+            actions = DeckItemActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}),
         )
     }
 }

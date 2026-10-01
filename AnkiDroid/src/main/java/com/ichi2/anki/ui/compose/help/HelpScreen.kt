@@ -65,9 +65,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -87,47 +87,54 @@ private data class HelpLink(
     @StringRes val titleRes: Int,
     @StringRes val subtitleRes: Int,
     @DrawableRes val icon: Int,
-    val url: String
+    val url: String,
 )
 
-private val helpLinks = listOf(
-    HelpLink(
-        R.string.help_item_anki_manual,
-        R.string.help_manual_subtitle,
-        R.drawable.help_24px,
-        "https://docs.ankidroid.org"
-    ), HelpLink(
-        R.string.help_forum_title,
-        R.string.help_forum_subtitle,
-        R.drawable.forum_24px,
-        "https://forums.ankiweb.net"
-    ), HelpLink(
-        R.string.help_issue_tracker_title,
-        R.string.help_issue_tracker_subtitle,
-        R.drawable.bug_report_24px,
-        "https://github.com/ColbyCabrera/Hirameki/issues"
-    ), HelpLink(
-        R.string.help_donate_title,
-        R.string.help_donate_subtitle,
-        R.drawable.volunteer_activism_24px,
-        "https://ankidroid.org/#donations"
-    ), HelpLink(
-        R.string.help_hirameki_privacy_title,
-        R.string.help_hirameki_privacy_subtitle,
-        R.drawable.policy_24px,
-        "https://github.com/ColbyCabrera/Hirameki/wiki/Privacy-Policy"
-    ), HelpLink(
-        R.string.help_ankiweb_privacy_title,
-        R.string.help_ankiweb_privacy_subtitle,
-        R.drawable.policy_24px,
-        "https://ankiweb.net/account/privacy"
-    ), HelpLink(
-        R.string.help_ankiweb_terms_title,
-        R.string.help_ankiweb_terms_subtitle,
-        R.drawable.info_24px,
-        "https://ankiweb.net/account/terms"
+private val helpLinks =
+    listOf(
+        HelpLink(
+            R.string.help_item_anki_manual,
+            R.string.help_manual_subtitle,
+            R.drawable.help_24px,
+            "https://docs.ankidroid.org",
+        ),
+        HelpLink(
+            R.string.help_forum_title,
+            R.string.help_forum_subtitle,
+            R.drawable.forum_24px,
+            "https://forums.ankiweb.net",
+        ),
+        HelpLink(
+            R.string.help_issue_tracker_title,
+            R.string.help_issue_tracker_subtitle,
+            R.drawable.bug_report_24px,
+            "https://github.com/ColbyCabrera/Hirameki/issues",
+        ),
+        HelpLink(
+            R.string.help_donate_title,
+            R.string.help_donate_subtitle,
+            R.drawable.volunteer_activism_24px,
+            "https://ankidroid.org/#donations",
+        ),
+        HelpLink(
+            R.string.help_hirameki_privacy_title,
+            R.string.help_hirameki_privacy_subtitle,
+            R.drawable.policy_24px,
+            "https://github.com/ColbyCabrera/Hirameki/wiki/Privacy-Policy",
+        ),
+        HelpLink(
+            R.string.help_ankiweb_privacy_title,
+            R.string.help_ankiweb_privacy_subtitle,
+            R.drawable.policy_24px,
+            "https://ankiweb.net/account/privacy",
+        ),
+        HelpLink(
+            R.string.help_ankiweb_terms_title,
+            R.string.help_ankiweb_terms_subtitle,
+            R.drawable.info_24px,
+            "https://ankiweb.net/account/terms",
+        ),
     )
-)
 
 // Changed top-level vals to `by lazy` to prevent NoClassDefFoundError during static initialization in Compose Previews.
 // Compose previews evaluate top-level variables at class load time, and Android graphic dependencies can crash.
@@ -159,33 +166,38 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
         topBar = {
             LargeTopAppBar(
                 navigationIcon = {
-                FilledIconButton(
-                    modifier = Modifier.padding(end = 8.dp),
-                    onClick = onNavigateUp,
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.arrow_back_24px),
-                        contentDescription = stringResource(R.string.back),
+                    FilledIconButton(
+                        modifier = Modifier.padding(end = 8.dp),
+                        onClick = onNavigateUp,
+                        colors =
+                            IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.arrow_back_24px),
+                            contentDescription = stringResource(R.string.back),
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(id = R.string.help_screen_title),
+                        style = MaterialTheme.typography.displayMediumEmphasized,
                     )
-                }
-            }, title = {
-                Text(
-                    text = stringResource(id = R.string.help_screen_title),
-                    style = MaterialTheme.typography.displayMediumEmphasized,
-                )
-            }, scrollBehavior = scrollBehavior
+                },
+                scrollBehavior = scrollBehavior,
             )
-        }) { innerPadding ->
+        },
+    ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             item {
                 HelpHeroSection()
@@ -210,36 +222,37 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
                 val alpha by animateFloatAsState(
                     targetValue = if (visible) 1f else 0f,
                     animationSpec = tween(300),
-                    label = "alpha"
+                    label = "alpha",
                 )
-                
+
                 val entranceOffsetPx = with(LocalDensity.current) { 50.dp.toPx() }
                 val offsetY by animateFloatAsState(
                     targetValue = if (visible) 0f else entranceOffsetPx,
                     animationSpec = spring(dampingRatio = 0.8f),
-                    label = "offsetY"
+                    label = "offsetY",
                 )
 
                 Box(
-                    modifier = Modifier
-                        .graphicsLayer {
-                            this.alpha = alpha
-                            this.translationY = offsetY
-                        }
-                        .then(
-                            if (!visible) {
-                            Modifier.pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        awaitPointerEvent(PointerEventPass.Initial).changes.forEach {
-                                            it.consume()
+                    modifier =
+                        Modifier
+                            .graphicsLayer {
+                                this.alpha = alpha
+                                this.translationY = offsetY
+                            }.then(
+                                if (!visible) {
+                                    Modifier.pointerInput(Unit) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                awaitPointerEvent(PointerEventPass.Initial).changes.forEach {
+                                                    it.consume()
+                                                }
+                                            }
                                         }
                                     }
-                                }
-                            }
-                        } else {
-                            Modifier
-                        })
+                                } else {
+                                    Modifier
+                                },
+                            ),
                 ) {
                     HelpItem(
                         titleRes = helpLink.titleRes,
@@ -256,7 +269,8 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
                                 Timber.w("No application found to open link: %s", helpLink.url)
                                 showThemedToast(context, R.string.no_application_to_open_link, true)
                             }
-                        })
+                        },
+                    )
                 }
             }
 
@@ -272,33 +286,43 @@ fun HelpScreen(onNavigateUp: () -> Unit) {
 private fun HelpHeroSection() {
     val infiniteTransition = rememberInfiniteTransition(label = "HeroRotation")
     val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 360f, animationSpec = infiniteRepeatable(
-            animation = tween(12000, easing = LinearEasing)
-        ), label = "HeroRotationAngle"
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(12000, easing = LinearEasing),
+            ),
+        label = "HeroRotationAngle",
     )
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier.size(100.dp), contentAlignment = Alignment.Center
+            modifier = Modifier.size(100.dp),
+            contentAlignment = Alignment.Center,
         ) {
             // Animated background shape
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { rotationZ = rotation }
-                .background(
-                    MaterialTheme.colorScheme.primaryContainer, shape = HeroShape
-                ))
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { rotationZ = rotation }
+                        .background(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            shape = HeroShape,
+                        ),
+            )
             // Help icon
             Icon(
                 painter = painterResource(R.drawable.help_filled_24px),
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
 
@@ -307,7 +331,7 @@ private fun HelpHeroSection() {
         Text(
             text = stringResource(R.string.help_hero_subtitle),
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -321,38 +345,44 @@ private fun HelpItem(
     iconShape: RoundedPolygonShape,
     containerColor: Color,
     contentColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraExtraLarge,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = containerColor, contentColor = contentColor
-        ),
-        elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = 0.dp, pressedElevation = 2.dp
-        )
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = containerColor,
+                contentColor = contentColor,
+            ),
+        elevation =
+            CardDefaults.elevatedCardElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 2.dp,
+            ),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Icon with shaped background
             Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.tertiaryContainer, shape = iconShape
-                    ), contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(56.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                            shape = iconShape,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     painter = painterResource(icon),
                     contentDescription = null,
                     modifier = Modifier.size(26.dp),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
             }
 
@@ -360,12 +390,12 @@ private fun HelpItem(
                 Text(
                     modifier = Modifier.padding(bottom = 1.dp),
                     text = stringResource(id = titleRes),
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
                 )
                 Text(
                     text = stringResource(id = subtitleRes),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = contentColor.copy(alpha = 0.8f)
+                    color = contentColor.copy(alpha = 0.8f),
                 )
             }
 
@@ -373,7 +403,7 @@ private fun HelpItem(
                 painter = painterResource(R.drawable.arrow_outward_24px),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = contentColor
+                tint = contentColor,
             )
         }
     }

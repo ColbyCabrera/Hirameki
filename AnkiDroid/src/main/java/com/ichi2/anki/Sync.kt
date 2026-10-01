@@ -58,7 +58,8 @@ object SyncPreferences {
 }
 
 enum class ConflictResolution {
-    FULL_DOWNLOAD, FULL_UPLOAD,
+    FULL_DOWNLOAD,
+    FULL_UPLOAD,
 }
 
 fun syncAuth(): SyncAuth? {
@@ -79,11 +80,12 @@ fun syncAuth(): SyncAuth? {
 
 fun getEndpoint(): String? {
     val currentEndpoint = Prefs.currentSyncUri?.ifEmpty { null }
-    val customEndpoint = if (Prefs.isCustomSyncEnabled) {
-        Prefs.customSyncUri
-    } else {
-        null
-    }
+    val customEndpoint =
+        if (Prefs.isCustomSyncEnabled) {
+            Prefs.customSyncUri
+        } else {
+            null
+        }
     return currentEndpoint ?: customEndpoint
 }
 
@@ -108,27 +110,28 @@ fun DeckPicker.handleNewSync(
     val deckPicker = this
     launchCatchingTask {
         try {
-            val syncCompleted = when (conflict) {
-                ConflictResolution.FULL_DOWNLOAD -> {
-                    handleDownload(
-                        deckPicker,
-                        auth,
-                        deckPicker.mediaUsnOnConflict,
-                    )
-                    true
-                }
+            val syncCompleted =
+                when (conflict) {
+                    ConflictResolution.FULL_DOWNLOAD -> {
+                        handleDownload(
+                            deckPicker,
+                            auth,
+                            deckPicker.mediaUsnOnConflict,
+                        )
+                        true
+                    }
 
-                ConflictResolution.FULL_UPLOAD -> {
-                    handleUpload(
-                        deckPicker,
-                        auth,
-                        deckPicker.mediaUsnOnConflict,
-                    )
-                    true
-                }
+                    ConflictResolution.FULL_UPLOAD -> {
+                        handleUpload(
+                            deckPicker,
+                            auth,
+                            deckPicker.mediaUsnOnConflict,
+                        )
+                        true
+                    }
 
-                null -> handleNormalSync(deckPicker, auth, syncMedia)
-            }
+                    null -> handleNormalSync(deckPicker, auth, syncMedia)
+                }
             if (syncCompleted) {
                 withCol { notetypes.clearCache() }
                 notifySubscribersAllValuesChanged(deckPicker)
@@ -172,18 +175,22 @@ private suspend fun handleNormalSync(
     val viewModel = deckPicker.viewModel
     val backend = CollectionManager.getBackend()
 
-    val hasChanges = try {
-        withContext(Dispatchers.IO) {
-            val status = backend.syncStatus(auth)
-            status.required != SyncStatusResponse.Required.NO_CHANGES
+    val hasChanges =
+        try {
+            withContext(Dispatchers.IO) {
+                val status = backend.syncStatus(auth)
+                status.required != SyncStatusResponse.Required.NO_CHANGES
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to get sync status")
+            true
         }
-    } catch (e: Exception) {
-        Timber.e(e, "Failed to get sync status")
-        true
-    }
-    val showDialog = hasChanges || millisecondsSinceLastSync() > TimeUnit.SECONDS.toMillis(
-        SYNC_DIALOG_MINIMUM_INTERVAL_SECONDS,
-    )
+    val showDialog =
+        hasChanges ||
+            millisecondsSinceLastSync() >
+            TimeUnit.SECONDS.toMillis(
+                SYNC_DIALOG_MINIMUM_INTERVAL_SECONDS,
+            )
 
     if (showDialog) {
         viewModel.showSyncDialog(deckPicker.getString(R.string.syncing), "") {
@@ -191,46 +198,50 @@ private suspend fun handleNormalSync(
         }
     }
 
-    val syncJob = if (showDialog) {
-        deckPicker.lifecycleScope.launch {
-            while (isActive) {
-                val progress = backend.latestProgress()
-                if (progress.hasNormalSync()) {
-                    val added = progress.normalSync.added
-                    val removed = progress.normalSync.removed
-                    viewModel.updateSyncDialog("$added\n$removed")
+    val syncJob =
+        if (showDialog) {
+            deckPicker.lifecycleScope.launch {
+                while (isActive) {
+                    val progress = backend.latestProgress()
+                    if (progress.hasNormalSync()) {
+                        val added = progress.normalSync.added
+                        val removed = progress.normalSync.removed
+                        viewModel.updateSyncDialog("$added\n$removed")
+                    }
+                    delay(100.milliseconds)
                 }
-                delay(100.milliseconds)
+            }
+        } else {
+            null
+        }
+
+    val output =
+        try {
+            withCol {
+                syncCollection(auth2, syncMedia = false) // media is synced by SyncMediaWorker
+            }
+        } finally {
+            syncJob?.cancel()
+            if (showDialog) {
+                viewModel.hideSyncDialog()
             }
         }
-    } else {
-        null
-    }
-
-    val output = try {
-        withCol {
-            syncCollection(auth2, syncMedia = false) // media is synced by SyncMediaWorker
-        }
-    } finally {
-        syncJob?.cancel()
-        if (showDialog) {
-            viewModel.hideSyncDialog()
-        }
-    }
 
     if (output.hasNewEndpoint() && output.newEndpoint.isNotEmpty()) {
         Timber.i("sync endpoint updated")
         Prefs.currentSyncUri = output.newEndpoint
-        auth2 = syncAuth {
-            this.hkey = auth.hkey
-            endpoint = output.newEndpoint
+        auth2 =
+            syncAuth {
+                this.hkey = auth.hkey
+                endpoint = output.newEndpoint
+            }
+    }
+    val mediaUsn =
+        if (syncMedia) {
+            output.serverMediaUsn
+        } else {
+            null
         }
-    }
-    val mediaUsn = if (syncMedia) {
-        output.serverMediaUsn
-    } else {
-        null
-    }
 
     Timber.i("sync result: ${output.required}")
     return when (output.required) {
@@ -239,11 +250,12 @@ private suspend fun handleNormalSync(
             // scheduler version may have changed
             withCol { _loadScheduler() }
             if (hasChanges) {
-                val message = if (syncMedia) {
-                    R.string.col_synced_media_in_background
-                } else {
-                    R.string.sync_database_acknowledge
-                }
+                val message =
+                    if (syncMedia) {
+                        R.string.col_synced_media_in_background
+                    } else {
+                        R.string.sync_database_acknowledge
+                    }
                 deckPicker.showSyncLogMessage(message, output.serverMessage)
             }
             if (syncMedia) {
@@ -271,22 +283,24 @@ private suspend fun handleNormalSync(
         SyncCollectionResponse.ChangesRequired.NORMAL_SYNC,
         SyncCollectionResponse.ChangesRequired.UNRECOGNIZED,
         null,
-            -> {
+        -> {
             Timber.e("Unexpected sync status: ${output.required}")
             throw BackendNetworkException(backendError {})
         }
     }
 }
 
-private fun fullDownloadProgress(title: String): ProgressContext.() -> Unit = {
-    fun Progress.FullSync.toAmount() = ProgressContext.Amount(transferred.toLong(), total.toLong())
-    text = title
-    amount = if (progress.hasFullSync() && progress.fullSync.total > 0) {
-        progress.fullSync.toAmount()
-    } else {
-        null
+private fun fullDownloadProgress(title: String): ProgressContext.() -> Unit =
+    {
+        fun Progress.FullSync.toAmount() = ProgressContext.Amount(transferred.toLong(), total.toLong())
+        text = title
+        amount =
+            if (progress.hasFullSync() && progress.fullSync.total > 0) {
+                progress.fullSync.toAmount()
+            } else {
+                null
+            }
     }
-}
 
 private suspend fun handleDownload(
     deckPicker: DeckPicker,
@@ -363,7 +377,8 @@ fun cancelMediaSync(backend: Backend) {
  */
 fun shouldFetchMedia(): Boolean {
     val shouldFetchMedia = Prefs.shouldFetchMedia
-    return shouldFetchMedia == ShouldFetchMedia.ALWAYS || (shouldFetchMedia == ShouldFetchMedia.ONLY_UNMETERED && !NetworkUtils.isActiveNetworkMetered())
+    return shouldFetchMedia == ShouldFetchMedia.ALWAYS ||
+        (shouldFetchMedia == ShouldFetchMedia.ONLY_UNMETERED && !NetworkUtils.isActiveNetworkMetered())
 }
 
 suspend fun monitorMediaSync(deckPicker: DeckPicker) {

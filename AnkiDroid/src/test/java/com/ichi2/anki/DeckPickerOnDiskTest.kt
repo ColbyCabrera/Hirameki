@@ -32,11 +32,11 @@ import org.hamcrest.Matchers.equalTo
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import kotlin.test.assertNotNull
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.File
+import kotlin.test.assertNotNull
 
 @KotlinCleanup("SPMockBuilder")
 @RunWith(ParameterizedRobolectricTestRunner::class)
@@ -63,34 +63,38 @@ class DeckPickerOnDiskTest : RobolectricTest() {
 
     @Test
     @Flaky(OS.WINDOWS)
-    fun version16CollectionOpens() = runTest {
-        try {
-            setupColV16()
-            InitialActivityWithConflictTest.setupForValid(targetContext)
-            val deckPicker: DeckPicker = super.startActivityNormallyOpenCollectionWithIntent(
-                DeckPicker::class.java,
-                Intent(),
-            )
-            advanceRobolectricLooper()
-            assertThat(
-                "Collection should now be open",
-                CollectionManager.isOpenUnsafe(),
-            )
-            assertThat(
-                CollectionType.SCHEMA_V_16.isCollection(
-                    col,
-                ),
-                equalTo(true),
-            )
-            assertThat(
-                "Decks should be visible",
-                deckPicker.viewModel.flowOfDeckList.first().data.size,
-                equalTo(1),
-            )
-        } finally {
-            InitialActivityWithConflictTest.setupForDefault()
+    fun version16CollectionOpens() =
+        runTest {
+            try {
+                setupColV16()
+                InitialActivityWithConflictTest.setupForValid(targetContext)
+                val deckPicker: DeckPicker =
+                    super.startActivityNormallyOpenCollectionWithIntent(
+                        DeckPicker::class.java,
+                        Intent(),
+                    )
+                advanceRobolectricLooper()
+                assertThat(
+                    "Collection should now be open",
+                    CollectionManager.isOpenUnsafe(),
+                )
+                assertThat(
+                    CollectionType.SCHEMA_V_16.isCollection(
+                        col,
+                    ),
+                    equalTo(true),
+                )
+                assertThat(
+                    "Decks should be visible",
+                    deckPicker.viewModel.flowOfDeckList
+                        .first()
+                        .data.size,
+                    equalTo(1),
+                )
+            } finally {
+                InitialActivityWithConflictTest.setupForDefault()
+            }
         }
-    }
 
     @Ignore("needs refactoring")
     @Test
@@ -101,10 +105,11 @@ class DeckPickerOnDiskTest : RobolectricTest() {
             // corrupt col
             DbUtils.performQuery(targetContext, "drop table decks")
             InitialActivityWithConflictTest.setupForValid(targetContext)
-            val deckPicker = super.startActivityNormallyOpenCollectionWithIntent(
-                DeckPicker::class.java,
-                Intent(),
-            )
+            val deckPicker =
+                super.startActivityNormallyOpenCollectionWithIntent(
+                    DeckPicker::class.java,
+                    Intent(),
+                )
             advanceRobolectricLooper()
             assertThat(
                 "Collection should not be open",
@@ -126,10 +131,11 @@ class DeckPickerOnDiskTest : RobolectricTest() {
         try {
             setupColV250()
             InitialActivityWithConflictTest.setupForValid(targetContext)
-            val deckPicker = super.startActivityNormallyOpenCollectionWithIntent(
-                DeckPicker::class.java,
-                Intent(),
-            )
+            val deckPicker =
+                super.startActivityNormallyOpenCollectionWithIntent(
+                    DeckPicker::class.java,
+                    Intent(),
+                )
             advanceRobolectricLooper()
             assertThat(
                 "Collection should not be open",
@@ -159,7 +165,9 @@ class DeckPickerOnDiskTest : RobolectricTest() {
             } as? com.ichi2.anki.dialogs.DatabaseErrorDialog
         assertNotNull(dialogFragment)
         return androidx.core.os.BundleCompat.getParcelable(
-            dialogFragment.requireArguments(), "dialog", DatabaseErrorDialogType::class.java
+            dialogFragment.requireArguments(),
+            "dialog",
+            DatabaseErrorDialogType::class.java,
         )
     }
 
@@ -195,12 +203,12 @@ class DeckPickerOnDiskTest : RobolectricTest() {
         val assetFile: String,
         private val deckName: String,
     ) {
-        SCHEMA_V_16("schema16.anki2", "ThisIsSchema16"), SCHEMA_V_250(
+        SCHEMA_V_16("schema16.anki2", "ThisIsSchema16"),
+        SCHEMA_V_250(
             "schema250.anki2",
             "ThisIsSchema250",
         ), ;
 
-        fun isCollection(col: com.ichi2.anki.libanki.Collection): Boolean =
-            col.decks.byName(deckName) != null
+        fun isCollection(col: com.ichi2.anki.libanki.Collection): Boolean = col.decks.byName(deckName) != null
     }
 }

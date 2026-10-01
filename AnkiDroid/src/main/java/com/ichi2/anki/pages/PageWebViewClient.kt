@@ -52,13 +52,16 @@ open class PageWebViewClient : WebViewClient() {
     private var cachedMaterial3ThemeCss: String? = null
     private var cachedMaterial3ThemeAssetCss: String? = null
 
-    private fun loadMaterial3ThemeCss(webView: WebView): String = try {
-        webView.context.assets.open(MATERIAL3_THEME_CSS_ASSET).bufferedReader()
-            .use { it.readText() }
-    } catch (e: IOException) {
-        Timber.w(e, "Unable to load CSS asset %s", MATERIAL3_THEME_CSS_ASSET)
-        ""
-    }
+    private fun loadMaterial3ThemeCss(webView: WebView): String =
+        try {
+            webView.context.assets
+                .open(MATERIAL3_THEME_CSS_ASSET)
+                .bufferedReader()
+                .use { it.readText() }
+        } catch (e: IOException) {
+            Timber.w(e, "Unable to load CSS asset %s", MATERIAL3_THEME_CSS_ASSET)
+            ""
+        }
 
     override fun shouldInterceptRequest(
         view: WebView,
@@ -70,13 +73,14 @@ open class PageWebViewClient : WebViewClient() {
             return WebResourceResponse("image/x-icon", null, ByteArrayInputStream(byteArrayOf()))
         }
 
-        val assetPath = if (path.startsWith("/_app/")) {
-            "backend/sveltekit/app/${path.substring(6)}"
-        } else if (isSvelteKitPage(path.substring(1))) {
-            "backend/sveltekit/index.html"
-        } else {
-            return null
-        }
+        val assetPath =
+            if (path.startsWith("/_app/")) {
+                "backend/sveltekit/app/${path.substring(6)}"
+            } else if (isSvelteKitPage(path.substring(1))) {
+                "backend/sveltekit/index.html"
+            } else {
+                return null
+            }
 
         try {
             val mimeType = guessMimeType(assetPath)
@@ -111,80 +115,85 @@ open class PageWebViewClient : WebViewClient() {
         val colors = Material3Colors.from(webView)
         cachedMaterial3ThemeCss?.takeIf { colors == cachedMaterial3Colors }?.let { return it }
 
-        val assetCss = cachedMaterial3ThemeAssetCss
-            ?: loadMaterial3ThemeCss(webView).also { cachedMaterial3ThemeAssetCss = it }
+        val assetCss =
+            cachedMaterial3ThemeAssetCss
+                ?: loadMaterial3ThemeCss(webView).also { cachedMaterial3ThemeAssetCss = it }
 
-        val css = with(colors) {
-            """
-            /* Override ALL Anki + Bootstrap CSS variables with Material 3 */
-            :root, :root.night-mode {
-                /* Foreground */
-                --fg: $textColor !important;
-                --fg-subtle: $onSurfaceVariantColor !important;
-                --fg-disabled: $outlineColor !important;
-                --fg-faint: $outlineColor !important;
-                --fg-link: $primaryColor !important;
-                /* Canvas / Background */
-                --canvas: $bgColor !important;
-                --canvas-elevated: $surfaceColor !important;
-                --canvas-inset: $surfaceContainerColor !important;
-                --canvas-overlay: $surfaceContainerHighColor !important;
-                --canvas-code: $surfaceContainerColor !important;
-                /* Borders */
-                --border: $outlineColor !important;
-                --border-subtle: $surfaceContainerHighColor !important;
-                --border-strong: $outlineColor !important;
-                --border-focus: $primaryColor !important;
-                /* Buttons */
-                --button-bg: $surfaceContainerColor !important;
-                --button-gradient-start: $surfaceContainerColor !important;
-                --button-gradient-end: $surfaceContainerColor !important;
-                --button-hover-border: $outlineColor !important;
-                --button-disabled: $surfaceContainerColor !important;
-                --button-primary-bg: $primaryColor !important;
-                --button-primary-gradient-start: $primaryColor !important;
-                --button-primary-gradient-end: $primaryColor !important;
-                --button-primary-disabled: $primaryColor !important;
-                /* Shadows */
-                --shadow: transparent !important;
-                --shadow-inset: transparent !important;
-                --shadow-subtle: transparent !important;
-                --shadow-focus: $primaryColor !important;
-                /* Accents */
-                --accent-card: $primaryColor !important;
-                --accent-note: $secondaryColor !important;
-                --accent-danger: $errorContainerColor !important;
-                /* Bootstrap body / text */
-                --bs-body-bg: $bgColor !important;
-                --bs-body-color: $textColor !important;
-                --bs-emphasis-color: $textColor !important;
-                --bs-secondary-color: $onSurfaceVariantColor !important;
-                --bs-tertiary-color: $outlineColor !important;
-                --bs-secondary-bg: $surfaceContainerColor !important;
-                --bs-tertiary-bg: $surfaceContainerColor !important;
-                /* Bootstrap brand */
-                --bs-primary: $primaryColor !important;
-                --bs-secondary: $secondaryColor !important;
-                --bs-link-color: $primaryColor !important;
-                --bs-link-hover-color: $primaryColor !important;
-                /* Bootstrap borders */
-                --bs-border-color: $outlineColor !important;
-                --bs-border-color-translucent: $outlineColor !important;
-                /* Deck options */
-                --deck-options-on-surface: $onSurfaceColor !important;
-                --deck-options-on-primary: $onPrimaryColor !important;
-                --deck-options-tertiary-container: $tertiaryContainerColor !important;
-                --deck-options-on-tertiary-container: $onTertiaryContainerColor !important;
+        val css =
+            with(colors) {
+                """
+                /* Override ALL Anki + Bootstrap CSS variables with Material 3 */
+                :root, :root.night-mode {
+                    /* Foreground */
+                    --fg: $textColor !important;
+                    --fg-subtle: $onSurfaceVariantColor !important;
+                    --fg-disabled: $outlineColor !important;
+                    --fg-faint: $outlineColor !important;
+                    --fg-link: $primaryColor !important;
+                    /* Canvas / Background */
+                    --canvas: $bgColor !important;
+                    --canvas-elevated: $surfaceColor !important;
+                    --canvas-inset: $surfaceContainerColor !important;
+                    --canvas-overlay: $surfaceContainerHighColor !important;
+                    --canvas-code: $surfaceContainerColor !important;
+                    /* Borders */
+                    --border: $outlineColor !important;
+                    --border-subtle: $surfaceContainerHighColor !important;
+                    --border-strong: $outlineColor !important;
+                    --border-focus: $primaryColor !important;
+                    /* Buttons */
+                    --button-bg: $surfaceContainerColor !important;
+                    --button-gradient-start: $surfaceContainerColor !important;
+                    --button-gradient-end: $surfaceContainerColor !important;
+                    --button-hover-border: $outlineColor !important;
+                    --button-disabled: $surfaceContainerColor !important;
+                    --button-primary-bg: $primaryColor !important;
+                    --button-primary-gradient-start: $primaryColor !important;
+                    --button-primary-gradient-end: $primaryColor !important;
+                    --button-primary-disabled: $primaryColor !important;
+                    /* Shadows */
+                    --shadow: transparent !important;
+                    --shadow-inset: transparent !important;
+                    --shadow-subtle: transparent !important;
+                    --shadow-focus: $primaryColor !important;
+                    /* Accents */
+                    --accent-card: $primaryColor !important;
+                    --accent-note: $secondaryColor !important;
+                    --accent-danger: $errorContainerColor !important;
+                    /* Bootstrap body / text */
+                    --bs-body-bg: $bgColor !important;
+                    --bs-body-color: $textColor !important;
+                    --bs-emphasis-color: $textColor !important;
+                    --bs-secondary-color: $onSurfaceVariantColor !important;
+                    --bs-tertiary-color: $outlineColor !important;
+                    --bs-secondary-bg: $surfaceContainerColor !important;
+                    --bs-tertiary-bg: $surfaceContainerColor !important;
+                    /* Bootstrap brand */
+                    --bs-primary: $primaryColor !important;
+                    --bs-secondary: $secondaryColor !important;
+                    --bs-link-color: $primaryColor !important;
+                    --bs-link-hover-color: $primaryColor !important;
+                    /* Bootstrap borders */
+                    --bs-border-color: $outlineColor !important;
+                    --bs-border-color-translucent: $outlineColor !important;
+                    /* Deck options */
+                    --deck-options-on-surface: $onSurfaceColor !important;
+                    --deck-options-on-primary: $onPrimaryColor !important;
+                    --deck-options-tertiary-container: $tertiaryContainerColor !important;
+                    --deck-options-on-tertiary-container: $onTertiaryContainerColor !important;
+                }
+
+                /* Style Bootstrap switch handle */
+                .form-switch .form-check-input:checked {
+                    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='${onPrimaryColor.replace(
+                    "#",
+                    "%23",
+                )}'/%3e%3c/svg%3e") !important;
+                }
+
+                $assetCss
+                """.trimIndent()
             }
-
-            /* Style Bootstrap switch handle */
-            .form-switch .form-check-input:checked {
-                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='${onPrimaryColor.replace("#", "%23")}'/%3e%3c/svg%3e") !important;
-            }
-
-            $assetCss
-        """.trimIndent()
-        }
 
         cachedMaterial3Colors = colors
         cachedMaterial3ThemeCss = css
@@ -232,9 +241,10 @@ open class PageWebViewClient : WebViewClient() {
     ) {
         cancelPendingVisualStateCallback()
 
-        val timeoutRunnable = Runnable {
-            completeVisualStateCallback(requestId, onApplied)
-        }
+        val timeoutRunnable =
+            Runnable {
+                completeVisualStateCallback(requestId, onApplied)
+            }
         pendingVisualStateCallback = PendingVisualStateCallback(requestId, timeoutRunnable)
         mainHandler.postDelayed(timeoutRunnable, VISUAL_STATE_CALLBACK_TIMEOUT_MS)
 
@@ -358,45 +368,59 @@ open class PageWebViewClient : WebViewClient() {
         val errorContainerColor: String,
     ) {
         companion object {
-            fun from(webView: WebView): Material3Colors = Material3Colors(
-                bgColor = colorHex(webView, android.R.attr.colorBackground),
-                textColor = colorHex(webView, com.google.android.material.R.attr.colorOnBackground),
-                primaryColor = colorHex(webView, androidx.appcompat.R.attr.colorPrimary),
-                onPrimaryColor = colorHex(
-                    webView, com.google.android.material.R.attr.colorOnPrimary
-                ),
-                surfaceColor = colorHex(webView, com.google.android.material.R.attr.colorSurface),
-                onSurfaceColor = colorHex(
-                    webView, com.google.android.material.R.attr.colorOnSurface
-                ),
-                surfaceContainerColor = colorHex(
-                    webView, com.google.android.material.R.attr.colorSurfaceContainer
-                ),
-                outlineColor = colorHex(webView, com.google.android.material.R.attr.colorOutline),
-                secondaryColor = colorHex(
-                    webView, com.google.android.material.R.attr.colorSecondary
-                ),
-                tertiaryContainerColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorTertiaryContainer,
-                ),
-                onTertiaryContainerColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorOnTertiaryContainer,
-                ),
-                onSurfaceVariantColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorOnSurfaceVariant,
-                ),
-                surfaceContainerHighColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorSurfaceContainerHigh,
-                ),
-                errorContainerColor = colorHex(
-                    webView,
-                    com.google.android.material.R.attr.colorErrorContainer,
-                ),
-            )
+            fun from(webView: WebView): Material3Colors =
+                Material3Colors(
+                    bgColor = colorHex(webView, android.R.attr.colorBackground),
+                    textColor = colorHex(webView, com.google.android.material.R.attr.colorOnBackground),
+                    primaryColor = colorHex(webView, androidx.appcompat.R.attr.colorPrimary),
+                    onPrimaryColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorOnPrimary,
+                        ),
+                    surfaceColor = colorHex(webView, com.google.android.material.R.attr.colorSurface),
+                    onSurfaceColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorOnSurface,
+                        ),
+                    surfaceContainerColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorSurfaceContainer,
+                        ),
+                    outlineColor = colorHex(webView, com.google.android.material.R.attr.colorOutline),
+                    secondaryColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorSecondary,
+                        ),
+                    tertiaryContainerColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorTertiaryContainer,
+                        ),
+                    onTertiaryContainerColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorOnTertiaryContainer,
+                        ),
+                    onSurfaceVariantColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorOnSurfaceVariant,
+                        ),
+                    surfaceContainerHighColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorSurfaceContainerHigh,
+                        ),
+                    errorContainerColor =
+                        colorHex(
+                            webView,
+                            com.google.android.material.R.attr.colorErrorContainer,
+                        ),
+                )
 
             private fun colorHex(
                 webView: WebView,
@@ -456,7 +480,9 @@ open class PageWebViewClient : WebViewClient() {
     }
 
     override fun onReceivedError(
-        view: WebView, request: WebResourceRequest, error: WebResourceError
+        view: WebView,
+        request: WebResourceRequest,
+        error: WebResourceError,
     ) {
         super.onReceivedError(view, request, error)
         if (request.isForMainFrame) {
@@ -488,7 +514,7 @@ fun isSvelteKitPage(path: String): Boolean {
         "import-csv",
         "import-page",
         "image-occlusion",
-            -> true
+        -> true
 
         else -> false
     }

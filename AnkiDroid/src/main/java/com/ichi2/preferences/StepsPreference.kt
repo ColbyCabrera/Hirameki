@@ -32,7 +32,7 @@ import timber.log.Timber
 
 @Suppress(
     "deprecation",
-    "OVERRIDE_DEPRECATION"
+    "OVERRIDE_DEPRECATION",
 ) // TODO Tracked in https://github.com/ankidroid/Anki-Android/issues/5019
 class StepsPreference : android.preference.EditTextPreference {
     private val allowEmpty: Boolean
@@ -41,7 +41,7 @@ class StepsPreference : android.preference.EditTextPreference {
     constructor(context: Context?, attrs: AttributeSet?, defStyle: Int) : super(
         context,
         attrs,
-        defStyle
+        defStyle,
     ) {
         allowEmpty = getAllowEmptyFromAttributes(attrs)
         updateSettings()

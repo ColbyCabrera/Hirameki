@@ -22,7 +22,7 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @Composable
 fun AnalyticsOptInDialog(
     onDismissRequest: () -> Unit,
-    onConfirm: (Boolean) -> Unit
+    onConfirm: (Boolean) -> Unit,
 ) {
     var isChecked by remember { mutableStateOf(true) }
 
@@ -39,7 +39,7 @@ fun AnalyticsOptInDialog(
                     text = stringResource(id = R.string.analytics_title),
                     isChecked = isChecked,
                     onCheckedChange = { isChecked = it },
-                    horizontalPadding = 0.dp
+                    horizontalPadding = 0.dp,
                 )
             }
         },
@@ -47,11 +47,11 @@ fun AnalyticsOptInDialog(
             TextButton(
                 onClick = {
                     onConfirm(isChecked)
-                }
+                },
             ) {
                 Text(text = stringResource(id = R.string.dialog_continue))
             }
-        }
+        },
     )
 }
 
@@ -61,7 +61,7 @@ private fun AnalyticsOptInDialogPreview() {
     AnkiDroidTheme {
         AnalyticsOptInDialog(
             onDismissRequest = {},
-            onConfirm = {}
+            onConfirm = {},
         )
     }
 }

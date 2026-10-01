@@ -37,7 +37,6 @@ import org.robolectric.annotation.LooperMode
 @RunWith(AndroidJUnit4::class)
 @LooperMode(LooperMode.Mode.PAUSED)
 class DeckPickerFloatingActionMenuTest : RobolectricTest() {
-
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
@@ -47,7 +46,8 @@ class DeckPickerFloatingActionMenuTest : RobolectricTest() {
             putBoolean(IntroductionActivity.INTRODUCTION_SLIDES_SHOWN, true)
         }
         BackupManagerTestUtilities.setupSpaceForBackup(targetContext)
-        targetContext.sharedPrefs()
+        targetContext
+            .sharedPrefs()
             .edit { putBoolean(BackupPromptDialog.BACKUP_PROMPT_DISABLED, true) }
     }
 
@@ -76,9 +76,10 @@ class DeckPickerFloatingActionMenuTest : RobolectricTest() {
             composeTestRule.onNodeWithContentDescription(fabToggleDesc).performClick()
 
             // Check if the state description is updated to "expanded"
-            composeTestRule.onNode(
-                hasContentDescription(fabToggleDesc) and hasStateDescription(expandedDesc)
-            ).assertIsDisplayed()
+            composeTestRule
+                .onNode(
+                    hasContentDescription(fabToggleDesc) and hasStateDescription(expandedDesc),
+                ).assertIsDisplayed()
         }
     }
 }

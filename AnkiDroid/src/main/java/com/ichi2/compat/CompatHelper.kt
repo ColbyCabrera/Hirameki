@@ -77,7 +77,6 @@ class CompatHelper private constructor() {
                     "novato_cheets".equals(Build.DEVICE, ignoreCase = true)
             )
 
-
         fun hasScrollKeys(): Boolean = deviceHasKey(KEYCODE_PAGE_UP) || deviceHasKey(KEYCODE_PAGE_DOWN)
 
         inline fun <reified T : Serializable?> Bundle.getSerializableCompat(name: String): T? =

@@ -38,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -119,10 +118,11 @@ fun NoteEditorTopAppBar(
         navigationIcon = {
             FilledIconButton(
                 onClick = onBackClick,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
+                colors =
+                    IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back_24px),
@@ -135,10 +135,11 @@ fun NoteEditorTopAppBar(
             if (visibleOverflowItems.isNotEmpty()) {
                 FilledIconButton(
                     onClick = { overflowExpanded = true },
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.MoreVert,
@@ -176,9 +177,10 @@ fun NoteEditorTopAppBar(
                                             checked = item.checked,
                                             enabled = item.enabled,
                                             onCheckedChange = null,
-                                            modifier = Modifier.semantics {
-                                                contentDescription = item.title
-                                            },
+                                            modifier =
+                                                Modifier.semantics {
+                                                    contentDescription = item.title
+                                                },
                                         )
                                     },
                                 )
@@ -191,10 +193,11 @@ fun NoteEditorTopAppBar(
                 FilledIconButton(
                     onClick = onPreviewClick,
                     enabled = previewEnabled,
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.visibility_24px),
@@ -204,24 +207,25 @@ fun NoteEditorTopAppBar(
             }
             if (showSaveAction && onSaveClick != null) {
                 Button(
-                    modifier = Modifier
-                        .padding(start = 6.dp, end = 12.dp)
-                        .height(48.dp),
+                    modifier =
+                        Modifier
+                            .padding(start = 6.dp, end = 12.dp)
+                            .height(48.dp),
                     onClick = onSaveClick,
                     enabled = saveEnabled,
                     contentPadding = PaddingValues(horizontal = 24.dp),
-                    shapes = ButtonDefaults.shapes()
+                    shapes = ButtonDefaults.shapes(),
                 ) {
                     Text(stringResource(R.string.save))
                 }
             }
-
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-        ),
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+            ),
     )
 }

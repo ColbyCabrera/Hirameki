@@ -16,11 +16,11 @@
 package com.ichi2.anki
 
 import android.os.Environment
-import org.robolectric.shadows.ShadowEnvironment
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.junit.Assert.assertEquals
+import org.robolectric.shadows.ShadowEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class EnvironmentTest {

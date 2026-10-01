@@ -84,9 +84,10 @@ class DrawingViewModel : ViewModel() {
 
     init {
         // Initialize brushes with presets
-        val initialBrushes = PRESET_COLORS.map {
-            BrushInfo(it, 8f) // Default stroke width
-        }
+        val initialBrushes =
+            PRESET_COLORS.map {
+                BrushInfo(it, 8f) // Default stroke width
+            }
         brushes.value = initialBrushes
     }
 
@@ -106,12 +107,13 @@ class DrawingViewModel : ViewModel() {
      * Adds a completed path to the drawing history.
      */
     fun addPath(path: Path) {
-        val drawingPath = DrawingPath(
-            path = path,
-            color = _brushColor.value,
-            strokeWidth = _strokeWidth.value,
-            isEraser = isEraserActive.value
-        )
+        val drawingPath =
+            DrawingPath(
+                path = path,
+                color = _brushColor.value,
+                strokeWidth = _strokeWidth.value,
+                isEraser = isEraserActive.value,
+            )
         _paths.value += drawingPath
         undoStack.add(drawingPath)
 
@@ -256,11 +258,13 @@ class DrawingViewModel : ViewModel() {
                 val canvas = Canvas(bitmap)
 
                 // Calculate average brightness, excluding eraser paths
-                val avgBrightness = currentPaths.asSequence()
-                    .filterNot { it.isEraser }
-                    .map { (Color.red(it.color) + Color.green(it.color) + Color.blue(it.color)) / 3.0 }
-                    .average()
-                    .let { if (it.isNaN()) 0.0 else it }
+                val avgBrightness =
+                    currentPaths
+                        .asSequence()
+                        .filterNot { it.isEraser }
+                        .map { (Color.red(it.color) + Color.green(it.color) + Color.blue(it.color)) / 3.0 }
+                        .average()
+                        .let { if (it.isNaN()) 0.0 else it }
 
                 if (avgBrightness > 128) {
                     canvas.drawColor(Color.BLACK)
@@ -269,13 +273,14 @@ class DrawingViewModel : ViewModel() {
                 }
 
                 // Draw all paths
-                val paint = Paint().apply {
-                    isAntiAlias = true
-                    isDither = true
-                    style = Paint.Style.STROKE
-                    strokeJoin = Paint.Join.ROUND
-                    strokeCap = Paint.Cap.ROUND
-                }
+                val paint =
+                    Paint().apply {
+                        isAntiAlias = true
+                        isDither = true
+                        style = Paint.Style.STROKE
+                        strokeJoin = Paint.Join.ROUND
+                        strokeCap = Paint.Cap.ROUND
+                    }
 
                 // Determine background color based on average brightness
                 val backgroundColor = if (avgBrightness > 128) Color.BLACK else Color.WHITE
@@ -327,13 +332,14 @@ class DrawingViewModel : ViewModel() {
 
     companion object {
         // Predefined colors matching reviewer_whiteboard_editor.xml
-        val PRESET_COLORS = listOf(
-            Color.WHITE,
-            Color.BLACK,
-            "#F44336".toColorInt(), // Red
-            "#4CAF50".toColorInt(), // Green
-            "#2196F3".toColorInt(), // Blue
-            "#FFEB3B".toColorInt(), // Yellow
-        )
+        val PRESET_COLORS =
+            listOf(
+                Color.WHITE,
+                Color.BLACK,
+                "#F44336".toColorInt(), // Red
+                "#4CAF50".toColorInt(), // Green
+                "#2196F3".toColorInt(), // Blue
+                "#FFEB3B".toColorInt(), // Yellow
+            )
     }
 }

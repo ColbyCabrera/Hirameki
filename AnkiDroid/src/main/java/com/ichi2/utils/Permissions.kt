@@ -103,9 +103,7 @@ object Permissions {
      * On < Android 11, returns false.
      * On >= Android 11, returns [isExternalStorageManager]
      */
-    fun isExternalStorageManagerCompat(): Boolean {
-        return isExternalStorageManager()
-    }
+    fun isExternalStorageManagerCompat(): Boolean = isExternalStorageManager()
 
     /**
      * Check if we have write access permission to the external storage

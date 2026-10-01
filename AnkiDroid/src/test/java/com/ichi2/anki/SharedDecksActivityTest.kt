@@ -23,7 +23,6 @@ import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class SharedDecksActivityTest : RobolectricTest() {
-
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
@@ -42,7 +41,7 @@ class SharedDecksActivityTest : RobolectricTest() {
             "userAgent",
             "attachment; filename=deck.apkg",
             "application/octet-stream",
-            1000L
+            1000L,
         )
         activity.supportFragmentManager.executePendingTransactions()
 
@@ -71,7 +70,7 @@ class SharedDecksActivityTest : RobolectricTest() {
             "userAgent",
             "contentDisposition",
             "text/html",
-            0L
+            0L,
         )
         activity.supportFragmentManager.executePendingTransactions()
 
@@ -94,7 +93,8 @@ class SharedDecksActivityTest : RobolectricTest() {
         assertNotNull("Initial load should have occurred", initialLast)
 
         // Click search icon to open search bar
-        composeTestRule.onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
+        composeTestRule
+            .onNodeWithContentDescription(activity.getString(R.string.search_using_deck_name))
             .performClick()
 
         // Type search query

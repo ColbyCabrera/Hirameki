@@ -70,57 +70,61 @@ fun CongratsScreen(
     onNavigateUp: () -> Unit,
     onDeckOptions: () -> Unit,
     onCustomStudy: () -> Unit,
-    timeUntilNextDay: Long
+    timeUntilNextDay: Long,
 ) {
     BackHandler { onNavigateUp() }
     AnkiDroidTheme {
         Scaffold(topBar = {
             TopAppBar(
                 title = {
-                Text(
-                    text = stringResource(id = R.string.app_name),
-                    style = MaterialTheme.typography.displayMediumEmphasized
-                )
-            },
+                    Text(
+                        text = stringResource(id = R.string.app_name),
+                        style = MaterialTheme.typography.displayMediumEmphasized,
+                    )
+                },
                 subtitle = {},
                 titleHorizontalAlignment = Alignment.CenterHorizontally,
                 navigationIcon = {
                     FilledIconButton(
                         modifier = Modifier.padding(end = 8.dp),
                         onClick = onNavigateUp,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                        colors =
+                            IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back_24px),
-                            contentDescription = stringResource(R.string.back)
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
                 actions = {
                     FilledIconButton(
                         onClick = onDeckOptions,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                        colors =
+                            IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.tune_24px),
-                            contentDescription = stringResource(R.string.deck_options)
+                            contentDescription = stringResource(R.string.deck_options),
                         )
                     }
-                })
+                },
+            )
         }, content = { contentPadding ->
             val scrollState = rememberScrollState()
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding)
-                    .verticalScroll(scrollState)
-                    .padding(top = 48.dp, start = 16.dp, end = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding)
+                        .verticalScroll(scrollState)
+                        .padding(top = 48.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
@@ -129,21 +133,22 @@ fun CongratsScreen(
                 )
                 Text(
                     text = stringResource(R.string.daily_limit_reached),
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
                 )
                 StudyMoreClickableText(
-                    onCustomStudy = onCustomStudy
+                    onCustomStudy = onCustomStudy,
                 )
 
                 Column(
-                    modifier = Modifier
-                        .padding(top = 32.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    modifier =
+                        Modifier
+                            .padding(top = 32.dp)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(MaterialTheme.colorScheme.tertiaryContainer),
                 ) {
                     var remainingTime by remember(timeUntilNextDay) {
                         mutableLongStateOf(
-                            timeUntilNextDay.coerceAtLeast(0L)
+                            timeUntilNextDay.coerceAtLeast(0L),
                         )
                     }
 
@@ -172,18 +177,22 @@ fun CongratsScreen(
                         Modifier
                             .fillMaxSize()
                             .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "%02d:%02d:%02d".format(
-                                Locale.current.platformLocale, hours, minutes, seconds
-                            ),
+                            text =
+                                "%02d:%02d:%02d".format(
+                                    Locale.current.platformLocale,
+                                    hours,
+                                    minutes,
+                                    seconds,
+                                ),
                             fontFamily = RobotoMono,
                             fontSize = 70.sp,
                             fontWeight = FontWeight.SemiBold,
                             lineHeight = 70.sp,
                             color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            softWrap = false
+                            softWrap = false,
                         )
                     }
                 }
@@ -192,48 +201,53 @@ fun CongratsScreen(
     }
 }
 
-
 @Composable
 fun StudyMoreClickableText(
-    onCustomStudy: () -> Unit, modifier: Modifier = Modifier
+    onCustomStudy: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val customStudyText = stringResource(id = R.string.custom_study)
     val studyMoreText = stringResource(id = R.string.study_more, customStudyText)
 
-    val range = remember(studyMoreText, customStudyText) {
-        findSubstringRange(studyMoreText, customStudyText)
-    }
+    val range =
+        remember(studyMoreText, customStudyText) {
+            findSubstringRange(studyMoreText, customStudyText)
+        }
 
     val primaryColor = MaterialTheme.colorScheme.primary
-    val annotatedString = remember(studyMoreText, range, primaryColor) {
-        buildAnnotatedString {
-            append(studyMoreText)
-            if (range != null) {
-                addLink(
-                    LinkAnnotation.Clickable(tag = "custom_study") { onCustomStudy() },
-                    range.first,
-                    range.last + 1
-                )
-                addStyle(
-                    style = SpanStyle(
-                        color = primaryColor,
-                        textDecoration = TextDecoration.Underline,
-                        fontWeight = FontWeight.Bold
-                    ), range.first, range.last + 1
-                )
+    val annotatedString =
+        remember(studyMoreText, range, primaryColor) {
+            buildAnnotatedString {
+                append(studyMoreText)
+                if (range != null) {
+                    addLink(
+                        LinkAnnotation.Clickable(tag = "custom_study") { onCustomStudy() },
+                        range.first,
+                        range.last + 1,
+                    )
+                    addStyle(
+                        style =
+                            SpanStyle(
+                                color = primaryColor,
+                                textDecoration = TextDecoration.Underline,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        range.first,
+                        range.last + 1,
+                    )
+                }
             }
         }
-    }
 
     Text(
         text = annotatedString,
         modifier = modifier,
-        style = MaterialTheme.typography.bodyLarge.copy(
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        style =
+            MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+            ),
     )
 }
-
 
 @Preview
 @Composable
@@ -242,10 +256,14 @@ fun CongratsScreenPreview() {
         onNavigateUp = {},
         onDeckOptions = {},
         timeUntilNextDay = 1000 * 60 * 60 * 4,
-        onCustomStudy = { })
+        onCustomStudy = { },
+    )
 }
 
-private fun findSubstringRange(mainString: String, subString: String): IntRange? {
+private fun findSubstringRange(
+    mainString: String,
+    subString: String,
+): IntRange? {
     val index = mainString.indexOf(subString, ignoreCase = true)
     return if (index != -1) {
         index until (index + subString.length)

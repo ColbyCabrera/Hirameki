@@ -21,12 +21,11 @@ import org.junit.Test
 
 /**
  * Unit tests for the Compose [CreateDeckDialog] helper functions.
- * 
- * Note: Compose UI tests require `ui-test-junit4` dependency which is not currently 
+ *
+ * Note: Compose UI tests require `ui-test-junit4` dependency which is not currently
  * configured in the project. These tests focus on the non-UI logic.
  */
 class CreateDeckDialogTest {
-
     @Test
     fun `number larger than nine detection - empty string`() {
         assertThat("".containsNumberLargerThanNine(), equalTo(false))

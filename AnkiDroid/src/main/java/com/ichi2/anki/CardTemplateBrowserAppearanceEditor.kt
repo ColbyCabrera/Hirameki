@@ -23,9 +23,8 @@ import android.view.MenuItem
 import android.widget.EditText
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.CheckResult
-import androidx.appcompat.app.AlertDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.core.widget.doAfterTextChanged
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.dialogs.DiscardChangesDialog
 import com.ichi2.anki.libanki.CardTemplate
 import com.ichi2.utils.message

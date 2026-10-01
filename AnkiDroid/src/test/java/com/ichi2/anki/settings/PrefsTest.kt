@@ -61,7 +61,7 @@ class PrefsTest {
             assertThat(
                 "The getter and setter of '${property.name}' use the same key",
                 getterKey,
-                equalTo(setterKey)
+                equalTo(setterKey),
             )
         }
         unmockkObject(Prefs)
@@ -82,14 +82,16 @@ class PrefsTest {
 
             sharedPrefs.edit(commit = true) {
                 putString(
-                    "applyHiramekiCss", Prefs.HIRAMEKI_CSS_NO_FONT_SIZE
+                    "applyHiramekiCss",
+                    Prefs.HIRAMEKI_CSS_NO_FONT_SIZE,
                 )
             }
             assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_NO_FONT_SIZE))
 
             sharedPrefs.edit(commit = true) {
                 putString(
-                    "applyHiramekiCss", Prefs.HIRAMEKI_CSS_DISABLED
+                    "applyHiramekiCss",
+                    Prefs.HIRAMEKI_CSS_DISABLED,
                 )
             }
             assertThat(Prefs.applyHiramekiCss, equalTo(Prefs.HIRAMEKI_CSS_DISABLED))

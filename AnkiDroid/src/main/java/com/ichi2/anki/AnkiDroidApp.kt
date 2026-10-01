@@ -36,7 +36,6 @@ import androidx.lifecycle.MutableLiveData
 import anki.collection.OpChanges
 import com.ichi2.anki.AnkiDroidApp.Companion.sharedPreferencesTestingOverride
 import com.ichi2.anki.CrashReportService.sendExceptionReport
-import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.browser.SharedPreferencesLastDeckIdRepository
 import com.ichi2.anki.common.annotations.LegacyNotifications
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -75,7 +74,9 @@ import java.util.Locale
  * Application class.
  */
 @KotlinCleanup("IDE Lint")
-open class AnkiDroidApp : Application(), ChangeManager.Subscriber {
+open class AnkiDroidApp :
+    Application(),
+    ChangeManager.Subscriber {
     /** An exception if AnkiDroidApp fails to load  */
     private var fatalInitializationError: FatalInitializationError? = null
 
@@ -194,7 +195,7 @@ open class AnkiDroidApp : Application(), ChangeManager.Subscriber {
             notifications.observeForever {
                 applicationScope.launch(Dispatchers.Default) {
                     NotificationService.triggerNotificationFor(
-                        this@AnkiDroidApp
+                        this@AnkiDroidApp,
                     )
                 }
             }
@@ -211,9 +212,9 @@ open class AnkiDroidApp : Application(), ChangeManager.Subscriber {
                 ) {
                     Timber.i("${activity::class.simpleName}::onCreate")
                     (activity as? FragmentActivity)?.supportFragmentManager?.registerFragmentLifecycleCallbacks(
-                            FragmentLifecycleLogger(activity),
-                            true,
-                        )
+                        FragmentLifecycleLogger(activity),
+                        true,
+                    )
                 }
 
                 override fun onActivityStarted(activity: Activity) {
@@ -280,18 +281,19 @@ open class AnkiDroidApp : Application(), ChangeManager.Subscriber {
     }
 
     @Suppress("deprecation") // 7109: setAcceptFileSchemeCookies
-    protected fun acceptFileSchemeCookies(): Boolean = try {
-        CookieManager.setAcceptFileSchemeCookies(true)
-        true
-    } catch (e: Throwable) {
-        // 5794: Errors occur if the WebView fails to load
-        // android.webkit.WebViewFactory.MissingWebViewPackageException.MissingWebViewPackageException
-        // Error may be excessive, but I expect a UnsatisfiedLinkError to be possible here.
-        fatalInitializationError = FatalInitializationError.WebViewError(e)
-        sendExceptionReport(e, "setAcceptFileSchemeCookies")
-        Timber.e(e, "setAcceptFileSchemeCookies")
-        false
-    }
+    protected fun acceptFileSchemeCookies(): Boolean =
+        try {
+            CookieManager.setAcceptFileSchemeCookies(true)
+            true
+        } catch (e: Throwable) {
+            // 5794: Errors occur if the WebView fails to load
+            // android.webkit.WebViewFactory.MissingWebViewPackageException.MissingWebViewPackageException
+            // Error may be excessive, but I expect a UnsatisfiedLinkError to be possible here.
+            fatalInitializationError = FatalInitializationError.WebViewError(e)
+            sendExceptionReport(e, "setAcceptFileSchemeCookies")
+            Timber.e(e, "setAcceptFileSchemeCookies")
+            false
+        }
 
     /**
      * Manually initializes the collection directory and `.nomedia` if
@@ -301,12 +303,13 @@ open class AnkiDroidApp : Application(), ChangeManager.Subscriber {
      */
     private fun initializeAnkiDroidDirectory() {
         // #13207: `getCurrentAnkiDroidDirectory` failing is unconditionally a fatal error
-        val ankiDroidDir = try {
-            CollectionHelper.getCurrentAnkiDroidDirectory(this)
-        } catch (e: SystemStorageException) {
-            fatalInitializationError = FatalInitializationError.StorageError(e)
-            return
-        }
+        val ankiDroidDir =
+            try {
+                CollectionHelper.getCurrentAnkiDroidDirectory(this)
+            } catch (e: SystemStorageException) {
+                fatalInitializationError = FatalInitializationError.StorageError(e)
+                return
+            }
 
         if (!Permissions.hasLegacyStorageAccessPermission(this)) return
 
@@ -512,14 +515,16 @@ sealed class FatalInitializationError {
 
     /** Advanced/developer-facing string representing the error */
     val errorDetail: String
-        get() = when (this) {
-            is WebViewError -> ExceptionUtil.getExceptionMessage(error)
-            is StorageError -> error.message
-        }
+        get() =
+            when (this) {
+                is WebViewError -> ExceptionUtil.getExceptionMessage(error)
+                is StorageError -> error.message
+            }
 
     val infoLink: android.net.Uri?
-        get() = when (this) {
-            is WebViewError -> null
-            is StorageError -> error.infoUri?.toUri()
-        }
+        get() =
+            when (this) {
+                is WebViewError -> null
+                is StorageError -> error.infoUri?.toUri()
+            }
 }

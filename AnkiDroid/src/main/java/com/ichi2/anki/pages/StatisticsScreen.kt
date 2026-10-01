@@ -67,8 +67,9 @@ fun StatisticsScreen(
                     selectedDeck = selectedDeck,
                     availableDecks = availableDecks,
                     onDeckSelected = { viewModel.selectDeck(it) },
-                    showAllDecksOption = false
+                    showAllDecksOption = false,
                 )
             }
-        })
+        },
+    )
 }

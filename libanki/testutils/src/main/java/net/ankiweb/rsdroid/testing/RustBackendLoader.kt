@@ -45,13 +45,17 @@ object RustBackendLoader {
         print("loading rsdroid-testing for: $osName")
         when {
             normalizedOsName.contains("win") -> load("rsdroid", ".dll")
-            normalizedOsName.contains("mac") || normalizedOsName.contains("darwin") -> load(
-                "librsdroid", ".dylib"
-            )
+            normalizedOsName.contains("mac") || normalizedOsName.contains("darwin") ->
+                load(
+                    "librsdroid",
+                    ".dylib",
+                )
 
-            normalizedOsName.contains("nix") || normalizedOsName.contains("nux") || normalizedOsName.contains(
-                "linux"
-            ) -> load("librsdroid", ".so")
+            normalizedOsName.contains("nix") ||
+                normalizedOsName.contains("nux") ||
+                normalizedOsName.contains(
+                    "linux",
+                ) -> load("librsdroid", ".so")
 
             else -> throw IllegalStateException("Could not determine OS Type for: '$osName'")
         }
@@ -98,12 +102,16 @@ object RustBackendLoader {
         return patterns.any {
             message.contains(
                 it,
-                ignoreCase = true
+                ignoreCase = true,
             )
-        } || (message.contains("loaded", ignoreCase = true) && message.contains(
-            "classloader",
-            ignoreCase = true
-        ))
+        } ||
+            (
+                message.contains("loaded", ignoreCase = true) &&
+                    message.contains(
+                        "classloader",
+                        ignoreCase = true,
+                    )
+            )
     }
 
     @Throws(IOException::class)
@@ -120,14 +128,15 @@ object RustBackendLoader {
         }
 
         val buffer = ByteArray(8 * 1024)
-        val checksum = withStream(fullFilename) { stream ->
-            val digest = MessageDigest.getInstance("SHA-1")
-            var bytesRead: Int
-            while (stream.read(buffer).also { bytesRead = it } != -1) {
-                digest.update(buffer, 0, bytesRead)
+        val checksum =
+            withStream(fullFilename) { stream ->
+                val digest = MessageDigest.getInstance("SHA-1")
+                var bytesRead: Int
+                while (stream.read(buffer).also { bytesRead = it } != -1) {
+                    digest.update(buffer, 0, bytesRead)
+                }
+                digest.digest().joinToString("") { "%02x".format(it) }
             }
-            digest.digest().joinToString("") { "%02x".format(it) }
-        }
 
         val loaderId = System.identityHashCode(RustBackendLoader::class.java.classLoader)
         val expectedFile =
@@ -152,7 +161,10 @@ object RustBackendLoader {
         return expectedFile.absolutePath
     }
 
-    private fun moveOrReplace(tempFile: File, expectedFile: File): Boolean {
+    private fun moveOrReplace(
+        tempFile: File,
+        expectedFile: File,
+    ): Boolean {
         if (tempFile.renameTo(expectedFile)) {
             return true
         }
@@ -176,10 +188,12 @@ object RustBackendLoader {
         fullFilename: String,
         func: (InputStream) -> T,
     ): T {
-        val loader = RustBackendLoader::class.java.classLoader
-            ?: throw IllegalStateException("Could not retrieve classloader for RustBackendLoader")
-        val stream = loader.getResourceAsStream(fullFilename)
-            ?: throw IllegalStateException("Could not find bundled backend resource '$fullFilename'")
+        val loader =
+            RustBackendLoader::class.java.classLoader
+                ?: throw IllegalStateException("Could not retrieve classloader for RustBackendLoader")
+        val stream =
+            loader.getResourceAsStream(fullFilename)
+                ?: throw IllegalStateException("Could not find bundled backend resource '$fullFilename'")
         return stream.use(func)
     }
 }

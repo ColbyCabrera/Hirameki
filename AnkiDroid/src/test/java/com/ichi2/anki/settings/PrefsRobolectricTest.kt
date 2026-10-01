@@ -71,9 +71,13 @@ class PrefsRobolectricTest : RobolectricTest() {
             callOriginal()
         }
 
-        val allowedNonPreferenceProperties = setOf(
-            "resources", "HIRAMEKI_CSS_ALL", "HIRAMEKI_CSS_NO_FONT_SIZE", "HIRAMEKI_CSS_DISABLED"
-        )
+        val allowedNonPreferenceProperties =
+            setOf(
+                "resources",
+                "HIRAMEKI_CSS_ALL",
+                "HIRAMEKI_CSS_NO_FONT_SIZE",
+                "HIRAMEKI_CSS_DISABLED",
+            )
         val unexpectedExceptions = mutableListOf<Throwable>()
         for (property in Prefs::class.memberProperties) {
             if (property.visibility != KVisibility.PUBLIC) continue
@@ -90,7 +94,7 @@ class PrefsRobolectricTest : RobolectricTest() {
         if (unexpectedExceptions.isNotEmpty()) {
             throw AssertionError(
                 "Unexpected exceptions thrown during Prefs property inspection: $unexpectedExceptions",
-                unexpectedExceptions.first()
+                unexpectedExceptions.first(),
             )
         }
         unmockkObject(Prefs)
@@ -102,14 +106,20 @@ class PrefsRobolectricTest : RobolectricTest() {
     fun `all default values match the preference XMLs`() {
         val keysAndDefaultValues = getKeysAndDefaultValues()
         val devOptionsKeys = PreferenceTestUtils.getDevOptionsKeys(targetContext)
-        val prefs = PreferenceTestUtils.getAllPreferencesFragments(targetContext).asSequence()
-            .filterIsInstance<SettingsFragment>().map { it.preferenceResource }
-            .flatMap { getAttrsFromXml(targetContext, it, listOf("defaultValue", "key")) }
-            .filter { it["key"] != null }.associate {
-                PreferenceTestUtils.attrValueToString(
-                    it["key"]!!, targetContext
-                ) to it["defaultValue"]
-            }
+        val prefs =
+            PreferenceTestUtils
+                .getAllPreferencesFragments(targetContext)
+                .asSequence()
+                .filterIsInstance<SettingsFragment>()
+                .map { it.preferenceResource }
+                .flatMap { getAttrsFromXml(targetContext, it, listOf("defaultValue", "key")) }
+                .filter { it["key"] != null }
+                .associate {
+                    PreferenceTestUtils.attrValueToString(
+                        it["key"]!!,
+                        targetContext,
+                    ) to it["defaultValue"]
+                }
 
         for ((key, defaultValue) in keysAndDefaultValues.entries) {
             if (key !in prefs || key in devOptionsKeys) continue
@@ -117,7 +127,7 @@ class PrefsRobolectricTest : RobolectricTest() {
             assertThat(
                 "The default value of '$key' matches the preference XML",
                 defaultValue.toString(),
-                equalTo(prefsDefaultValue)
+                equalTo(prefsDefaultValue),
             )
         }
     }
@@ -148,9 +158,13 @@ class PrefsRobolectricTest : RobolectricTest() {
             callOriginal()
         }
         val propertyNamesAndKeys = mutableMapOf<String, String>()
-        val allowedNonPreferenceProperties = setOf(
-            "resources", "HIRAMEKI_CSS_ALL", "HIRAMEKI_CSS_NO_FONT_SIZE", "HIRAMEKI_CSS_DISABLED"
-        )
+        val allowedNonPreferenceProperties =
+            setOf(
+                "resources",
+                "HIRAMEKI_CSS_ALL",
+                "HIRAMEKI_CSS_NO_FONT_SIZE",
+                "HIRAMEKI_CSS_DISABLED",
+            )
         val unexpectedExceptions = mutableListOf<Throwable>()
         for (property in Prefs::class.memberProperties) {
             if (property.visibility != KVisibility.PUBLIC) continue
@@ -171,7 +185,7 @@ class PrefsRobolectricTest : RobolectricTest() {
         if (unexpectedExceptions.isNotEmpty()) {
             throw AssertionError(
                 "Unexpected exceptions thrown during Prefs property key mapping: $unexpectedExceptions",
-                unexpectedExceptions.first()
+                unexpectedExceptions.first(),
             )
         }
         unmockkObject(Prefs)
@@ -183,30 +197,39 @@ class PrefsRobolectricTest : RobolectricTest() {
     @Test
     fun `PrefEnum values match their preference entries`() {
         val listPreferences =
-            PreferenceTestUtils.getAllPreferencesFragments(targetContext).asSequence()
-                .filterIsInstance<SettingsFragment>().map { it.preferenceResource }
+            PreferenceTestUtils
+                .getAllPreferencesFragments(targetContext)
+                .asSequence()
+                .filterIsInstance<SettingsFragment>()
+                .map { it.preferenceResource }
                 .flatMap { getAttrsFromXml(targetContext, it, listOf("key", "entryValues")) }
-                .filter { it["key"] != null && it["entryValues"] != null }.associate {
+                .filter { it["key"] != null && it["entryValues"] != null }
+                .associate {
                     PreferenceTestUtils.attrValueToString(
-                        it["key"]!!, targetContext
-                    ) to PreferenceTestUtils.attrToStringArray(it["entryValues"]!!, targetContext)
-                        .toList()
+                        it["key"]!!,
+                        targetContext,
+                    ) to
+                        PreferenceTestUtils
+                            .attrToStringArray(it["entryValues"]!!, targetContext)
+                            .toList()
                 }
 
         // Prefs property name (String) -> Key (String)
         val allPropertiesAndKeys = getPropertyNamesAndKeys()
-        val enumProperties = Prefs::class.memberProperties.filter {
-            it.returnType.isSubtypeOf(PrefEnum::class.createType())
-        }
+        val enumProperties =
+            Prefs::class.memberProperties.filter {
+                it.returnType.isSubtypeOf(PrefEnum::class.createType())
+            }
         // Only enum-backed prefs that are exposed as list preferences in settings XML should be validated here.
         val enumPropertiesMap =
-            enumProperties.associateBy { allPropertiesAndKeys.getValue(it.name) }
+            enumProperties
+                .associateBy { allPropertiesAndKeys.getValue(it.name) }
                 .filterKeys { it in listPreferences }
 
         assertThat(
             "Expected at least one enum-backed list preference to be validated",
             enumPropertiesMap.isNotEmpty(),
-            equalTo(true)
+            equalTo(true),
         )
 
         // Key (String) -> PrefEnum entryValues (List<String>)
@@ -221,7 +244,7 @@ class PrefsRobolectricTest : RobolectricTest() {
         assertThat(
             "Expected at least one enum key-value pair to be validated",
             prefsEnumKeysAndValues.isNotEmpty(),
-            equalTo(true)
+            equalTo(true),
         )
 
         for ((key, enumValues) in prefsEnumKeysAndValues) {

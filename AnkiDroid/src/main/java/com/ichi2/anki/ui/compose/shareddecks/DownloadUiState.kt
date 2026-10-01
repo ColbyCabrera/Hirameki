@@ -21,9 +21,13 @@ package com.ichi2.anki.ui.compose.shareddecks
 sealed interface DownloadStatus {
     /** The download has not started yet. */
     data object Idle : DownloadStatus
+
     data object Downloading : DownloadStatus
+
     data object WaitingForNetwork : DownloadStatus
+
     data object Failed : DownloadStatus
+
     data object Complete : DownloadStatus
 }
 
@@ -64,5 +68,5 @@ data class DownloadUiState(
     val fileName: String = "",
     val progress: Float = 0f,
     val status: DownloadStatus = DownloadStatus.Idle,
-    val showCancelDialog: Boolean = false
+    val showCancelDialog: Boolean = false,
 )

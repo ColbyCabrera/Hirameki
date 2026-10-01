@@ -32,7 +32,6 @@ import kotlin.math.max
 class RoundedPolygonShape(
     private val polygon: RoundedPolygon,
 ) : Shape {
-
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
@@ -45,11 +44,11 @@ class RoundedPolygonShape(
 
         // Center the polygon around its own logical center
         matrix.postTranslate(-polygon.centerX, -polygon.centerY)
-        
-        // Scale to fit the target size. If the target size isn't square, 
+
+        // Scale to fit the target size. If the target size isn't square,
         // this preserves the original behavior of potentially stretching.
         matrix.postScale(size.width / maxDimension, size.height / maxDimension)
-        
+
         // Move the center of the scaled polygon to the center of the Composable
         matrix.postTranslate(size.width / 2f, size.height / 2f)
 

@@ -67,14 +67,15 @@ class WhiteboardFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = ComposeView(requireContext()).apply {
-        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        setContent {
-            AnkiDroidTheme {
-                WhiteboardScreen(viewModel)
+    ): View =
+        ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                AnkiDroidTheme {
+                    WhiteboardScreen(viewModel)
+                }
             }
         }
-    }
 
     override fun onViewCreated(
         view: View,
@@ -82,9 +83,10 @@ class WhiteboardFragment : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
         // Collect snackbar events with lifecycle-aware scope
-        viewModel.snackbarEvent.onEach { messageResId ->
-            showSnackbar(messageResId)
-        }.launchIn(viewLifecycleOwner.lifecycleScope)
+        viewModel.snackbarEvent
+            .onEach { messageResId ->
+                showSnackbar(messageResId)
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
     }
 
     @Composable
@@ -123,27 +125,31 @@ class WhiteboardFragment : Fragment() {
             )
 
             // Toolbar Positioning logic
-            val toolbarAlignment = when (alignment) {
-                ToolbarAlignment.BOTTOM -> Alignment.BottomCenter
-                ToolbarAlignment.LEFT -> Alignment.CenterStart
-                ToolbarAlignment.RIGHT -> Alignment.CenterEnd
-            }
+            val toolbarAlignment =
+                when (alignment) {
+                    ToolbarAlignment.BOTTOM -> Alignment.BottomCenter
+                    ToolbarAlignment.LEFT -> Alignment.CenterStart
+                    ToolbarAlignment.RIGHT -> Alignment.CenterEnd
+                }
 
-            val toolbarPadding = when (alignment) {
-                ToolbarAlignment.BOTTOM -> Modifier.padding(
-                    bottom = 8.dp,
-                    start = 24.dp,
-                    end = 24.dp,
-                )
+            val toolbarPadding =
+                when (alignment) {
+                    ToolbarAlignment.BOTTOM ->
+                        Modifier.padding(
+                            bottom = 8.dp,
+                            start = 24.dp,
+                            end = 24.dp,
+                        )
 
-                ToolbarAlignment.LEFT -> Modifier.padding(start = 8.dp)
-                ToolbarAlignment.RIGHT -> Modifier.padding(end = 8.dp)
-            }
+                    ToolbarAlignment.LEFT -> Modifier.padding(start = 8.dp)
+                    ToolbarAlignment.RIGHT -> Modifier.padding(end = 8.dp)
+                }
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(toolbarPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .then(toolbarPadding),
                 contentAlignment = toolbarAlignment,
             ) {
                 // Popups are placed relative to the toolbar in the composition
@@ -155,7 +161,6 @@ class WhiteboardFragment : Fragment() {
                     } else {
                         viewModel.setActiveBrush(index)
                     }
-
                 }, onBrushLongClick = { index ->
                     if (brushes.size > 1) {
                         showRemoveBrushDialogIndex.value = index

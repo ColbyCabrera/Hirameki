@@ -16,7 +16,6 @@
 package com.ichi2.anki.dialogs
 
 import android.content.Context
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R

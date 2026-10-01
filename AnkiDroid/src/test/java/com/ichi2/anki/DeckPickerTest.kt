@@ -49,7 +49,8 @@ class DeckPickerTest : RobolectricTest() {
         // Prevent BackupPromptDialog Compose overlay from blocking tests.
         // In Robolectric, getFirstInstallTime() returns 0 (epoch), making
         // the user appear non-new, so the dialog would otherwise show.
-        targetContext.sharedPrefs()
+        targetContext
+            .sharedPrefs()
             .edit { putBoolean(BackupPromptDialog.BACKUP_PROMPT_DISABLED, true) }
     }
 
@@ -122,7 +123,10 @@ class DeckPickerTest : RobolectricTest() {
             scenario.onActivity { deckPicker ->
                 assertEquals(
                     10,
-                    deckPicker.viewModel.dueTree!!.children[0].newCount.toLong(),
+                    deckPicker.viewModel.dueTree!!
+                        .children[0]
+                        .newCount
+                        .toLong(),
                 )
             }
         }
@@ -142,7 +146,7 @@ class DeckPickerTest : RobolectricTest() {
                 scenario.onActivity { activity ->
                     assertFalse(
                         "Analytics opt-in should not be displayed",
-                        activity.viewModel.showAnalyticsOptInDialog.value
+                        activity.viewModel.showAnalyticsOptInDialog.value,
                     )
                 }
             }
@@ -160,63 +164,66 @@ class DeckPickerTest : RobolectricTest() {
     //  menu can be inspected. Fix: use a mechanism that delays the lock until after startup.
     @Ignore("BackendDbLockedException thrown during startup when null collection is enabled")
     @Test
-    fun doNotShowOptionsMenuWhenCollectionInaccessible() = runTest {
-        try {
-            enableNullCollection()
-            ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
-                composeTestRule.waitForIdle()
-                advanceUntilIdle()
-                ShadowLooper.idleMainLooper()
-                var optionsMenuState: DeckPicker.OptionsMenuState? = null
-                scenario.onActivity { optionsMenuState = it.optionsMenuState }
-                assertNull(optionsMenuState)
+    fun doNotShowOptionsMenuWhenCollectionInaccessible() =
+        runTest {
+            try {
+                enableNullCollection()
+                ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
+                    composeTestRule.waitForIdle()
+                    advanceUntilIdle()
+                    ShadowLooper.idleMainLooper()
+                    var optionsMenuState: DeckPicker.OptionsMenuState? = null
+                    scenario.onActivity { optionsMenuState = it.optionsMenuState }
+                    assertNull(optionsMenuState)
+                }
+            } finally {
+                disableNullCollection()
             }
-        } finally {
-            disableNullCollection()
         }
-    }
 
     @Test
-    fun showOptionsMenuWhenCollectionAccessible() = runTest {
-        try {
-            grantWritePermissions()
-            ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
-                composeTestRule.waitForIdle()
-                advanceUntilIdle()
-                ShadowLooper.idleMainLooper()
-                var deckPicker: DeckPicker? = null
-                scenario.onActivity { deckPicker = it }
-                assertNotNull(deckPicker)
-                deckPicker.updateMenuState()
+    fun showOptionsMenuWhenCollectionAccessible() =
+        runTest {
+            try {
+                grantWritePermissions()
+                ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
+                    composeTestRule.waitForIdle()
+                    advanceUntilIdle()
+                    ShadowLooper.idleMainLooper()
+                    var deckPicker: DeckPicker? = null
+                    scenario.onActivity { deckPicker = it }
+                    assertNotNull(deckPicker)
+                    deckPicker.updateMenuState()
 
-                scenario.onActivity { activity ->
-                    val menu = MenuBuilder(activity)
-                    activity.menuInflater.inflate(R.menu.deck_picker, menu)
-                    menu.findItem(R.id.action_sync).actionView
-                    activity.updateMenuFromState(menu)
+                    scenario.onActivity { activity ->
+                        val menu = MenuBuilder(activity)
+                        activity.menuInflater.inflate(R.menu.deck_picker, menu)
+                        menu.findItem(R.id.action_sync).actionView
+                        activity.updateMenuFromState(menu)
 
-                    val expectedSyncLabel = when (activity.optionsMenuState?.syncIcon) {
-                        SyncIconState.OneWay -> targetContext.getString(R.string.sync_menu_title_one_way_sync)
-                        SyncIconState.NotLoggedIn -> targetContext.getString(R.string.sync_menu_title_no_account)
-                        SyncIconState.PendingChanges,
-                        SyncIconState.Normal,
-                        null,
-                            -> targetContext.getString(R.string.button_sync)
+                        val expectedSyncLabel =
+                            when (activity.optionsMenuState?.syncIcon) {
+                                SyncIconState.OneWay -> targetContext.getString(R.string.sync_menu_title_one_way_sync)
+                                SyncIconState.NotLoggedIn -> targetContext.getString(R.string.sync_menu_title_no_account)
+                                SyncIconState.PendingChanges,
+                                SyncIconState.Normal,
+                                null,
+                                -> targetContext.getString(R.string.button_sync)
+                            }
+
+                        val syncButton =
+                            menu.findItem(R.id.action_sync).actionView?.findViewById<AppCompatImageButton>(
+                                R.id.button,
+                            )
+
+                        assertNotNull(syncButton)
+                        assertEquals(expectedSyncLabel, syncButton.contentDescription)
                     }
-
-                    val syncButton =
-                        menu.findItem(R.id.action_sync).actionView?.findViewById<AppCompatImageButton>(
-                            R.id.button,
-                        )
-
-                    assertNotNull(syncButton)
-                    assertEquals(expectedSyncLabel, syncButton.contentDescription)
                 }
+            } finally {
+                revokeWritePermissions()
             }
-        } finally {
-            revokeWritePermissions()
         }
-    }
 
     @Test
     fun onResumeLoadCollectionFailureWithInaccessibleCollection() {
@@ -255,54 +262,57 @@ class DeckPickerTest : RobolectricTest() {
     //  Fix: assert on FragmentManager dialog fragments or Compose dialog state instead.
 
     @Test
-    fun `ContextMenu starts deck options for normal deck`() = deckPicker {
-        val didA = addDeck("Deck 1")
-        viewModel.openDeckOptions(didA).join()
-        composeTestRule.waitForIdle()
-        ShadowLooper.idleMainLooper()
-        val deckOptionsNormal = Shadows.shadowOf(this).nextStartedActivity
-        assertNotNull(deckOptionsNormal)
-        assertEquals(
-            "com.ichi2.anki.SingleFragmentActivity",
-            deckOptionsNormal.component!!.className,
-        )
-    }
-
-    @Test
-    fun `ContextMenu starts deck options for dynamic deck`() = deckPicker {
-        val didDynamicA = addDynamicDeck("Deck Dynamic 1")
-        viewModel.openDeckOptions(didDynamicA).join()
-        composeTestRule.waitForIdle()
-        ShadowLooper.idleMainLooper()
-        val deckOptionsDynamic = Shadows.shadowOf(this).nextStartedActivity
-        assertNotNull(deckOptionsDynamic)
-        assertEquals("com.ichi2.anki.FilteredDeckOptions", deckOptionsDynamic.component!!.className)
-    }
-
-    @Test
-    fun `More menu 'Empty Cards' starts EmptyCardsDialogFragment`() = deckPicker {
-        val menu = MenuBuilder(this)
-        menuInflater.inflate(R.menu.deck_picker, menu)
-
-        assertTrue(onOptionsItemSelected(menu.findItem(R.id.action_empty_cards)))
-        supportFragmentManager.executePendingTransactions()
-
-        val dialogFragment =
-            supportFragmentManager.findFragmentByTag(EmptyCardsDialogFragment.TAG) as? EmptyCardsDialogFragment
-        assertNotNull(dialogFragment, "EmptyCardsDialogFragment should be displayed")
-        dismissAllDialogFragments()
-    }
-
-    private fun deckPicker(function: suspend DeckPicker.() -> Unit) = runTest {
-        ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
+    fun `ContextMenu starts deck options for normal deck`() =
+        deckPicker {
+            val didA = addDeck("Deck 1")
+            viewModel.openDeckOptions(didA).join()
             composeTestRule.waitForIdle()
-            var deckPicker: DeckPicker? = null
-            scenario.onActivity { activity ->
-                deckPicker = activity
-            }
-            assertNotNull(deckPicker).function()
-            composeTestRule.waitForIdle()
+            ShadowLooper.idleMainLooper()
+            val deckOptionsNormal = Shadows.shadowOf(this).nextStartedActivity
+            assertNotNull(deckOptionsNormal)
+            assertEquals(
+                "com.ichi2.anki.SingleFragmentActivity",
+                deckOptionsNormal.component!!.className,
+            )
         }
-    }
 
+    @Test
+    fun `ContextMenu starts deck options for dynamic deck`() =
+        deckPicker {
+            val didDynamicA = addDynamicDeck("Deck Dynamic 1")
+            viewModel.openDeckOptions(didDynamicA).join()
+            composeTestRule.waitForIdle()
+            ShadowLooper.idleMainLooper()
+            val deckOptionsDynamic = Shadows.shadowOf(this).nextStartedActivity
+            assertNotNull(deckOptionsDynamic)
+            assertEquals("com.ichi2.anki.FilteredDeckOptions", deckOptionsDynamic.component!!.className)
+        }
+
+    @Test
+    fun `More menu 'Empty Cards' starts EmptyCardsDialogFragment`() =
+        deckPicker {
+            val menu = MenuBuilder(this)
+            menuInflater.inflate(R.menu.deck_picker, menu)
+
+            assertTrue(onOptionsItemSelected(menu.findItem(R.id.action_empty_cards)))
+            supportFragmentManager.executePendingTransactions()
+
+            val dialogFragment =
+                supportFragmentManager.findFragmentByTag(EmptyCardsDialogFragment.TAG) as? EmptyCardsDialogFragment
+            assertNotNull(dialogFragment, "EmptyCardsDialogFragment should be displayed")
+            dismissAllDialogFragments()
+        }
+
+    private fun deckPicker(function: suspend DeckPicker.() -> Unit) =
+        runTest {
+            ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
+                composeTestRule.waitForIdle()
+                var deckPicker: DeckPicker? = null
+                scenario.onActivity { activity ->
+                    deckPicker = activity
+                }
+                assertNotNull(deckPicker).function()
+                composeTestRule.waitForIdle()
+            }
+        }
 }

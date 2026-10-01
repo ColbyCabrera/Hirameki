@@ -18,7 +18,6 @@ package com.ichi2.anki
 import android.content.Intent
 import android.os.Bundle
 import androidx.lifecycle.Lifecycle
-import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.NoteEditorActivity.Companion.intentLaunchedWithImage
 import com.ichi2.anki.noteeditor.NoteEditorLauncher

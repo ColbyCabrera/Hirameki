@@ -61,29 +61,35 @@ fun FlagRenameScreen(
     LazyColumn {
         items(items = flags, key = { it.first.code }) { (flag, name) ->
             FlagRow(
-                flag = flag, name = name, onRename = { newName -> onRename(flag, newName) })
+                flag = flag,
+                name = name,
+                onRename = { newName -> onRename(flag, newName) },
+            )
         }
     }
 }
 
 @Composable
 private fun FlagRow(
-    flag: Flag, name: String, onRename: (String) -> Unit
+    flag: Flag,
+    name: String,
+    onRename: (String) -> Unit,
 ) {
     var isEditing by remember { mutableStateOf(false) }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
             painter = painterResource(id = flag.drawableRes),
             contentDescription = null,
             tint = Color.Unspecified,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
         )
 
         if (isEditing) {
@@ -93,32 +99,36 @@ private fun FlagRow(
             }, onCancel = { isEditing = false })
         } else {
             DisplayFlagName(
-                name = name, onEdit = { isEditing = true })
+                name = name,
+                onEdit = { isEditing = true },
+            )
         }
     }
 }
 
 @Composable
 private fun DisplayFlagName(
-    name: String, onEdit: () -> Unit
+    name: String,
+    onEdit: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp)
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp),
         )
         IconButton(onClick = onEdit) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_mode_edit_white),
                 contentDescription = stringResource(id = R.string.edit),
-                tint = MaterialTheme.colorScheme.onSurface
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -126,7 +136,9 @@ private fun DisplayFlagName(
 
 @Composable
 private fun EditFlagName(
-    initialName: String, onSave: (String) -> Unit, onCancel: () -> Unit
+    initialName: String,
+    onSave: (String) -> Unit,
+    onCancel: () -> Unit,
 ) {
     // using TextFieldValue to handle selection
     var textState by remember { mutableStateOf(TextFieldValue(initialName)) }
@@ -139,38 +151,43 @@ private fun EditFlagName(
     }
 
     Row(
-        modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         TextField(
             value = textState,
             onValueChange = { textState = it },
-            modifier = Modifier
-                .weight(1f)
-                .focusRequester(focusRequester),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester),
             singleLine = true,
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
-            ),
+            colors =
+                TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = {
-                if (isValid) onSave(textState.text.trim())
-            })
+            keyboardActions =
+                KeyboardActions(onDone = {
+                    if (isValid) onSave(textState.text.trim())
+                }),
         )
         IconButton(onClick = onCancel) {
             Icon(
                 painter = painterResource(id = R.drawable.close_icon),
-                contentDescription = stringResource(id = R.string.dialog_cancel)
+                contentDescription = stringResource(id = R.string.dialog_cancel),
             )
         }
         IconButton(
-            onClick = { onSave(textState.text.trim()) }, enabled = isValid
+            onClick = { onSave(textState.text.trim()) },
+            enabled = isValid,
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_done),
-                contentDescription = stringResource(id = R.string.save)
+                contentDescription = stringResource(id = R.string.save),
             )
         }
     }
@@ -197,12 +214,13 @@ private fun FlagRowEditPreview() {
 private fun FlagRenameScreenPreview() {
     MaterialTheme {
         FlagRenameScreen(
-            flags = listOf(
-                Flag.RED to "Red",
-                Flag.ORANGE to "Orange",
-                Flag.GREEN to "Green"
-            ),
-            onRename = { _, _ -> }
+            flags =
+                listOf(
+                    Flag.RED to "Red",
+                    Flag.ORANGE to "Orange",
+                    Flag.GREEN to "Green",
+                ),
+            onRename = { _, _ -> },
         )
     }
 }

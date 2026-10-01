@@ -65,7 +65,6 @@ class DeckConfigTest {
         assertTrue(dc.stopTimerOnAnswer)
     }
 
-
     @Test
     fun testSecondsToShowQuestion() {
         assertEquals(0.0, dc.secondsToShowQuestion)

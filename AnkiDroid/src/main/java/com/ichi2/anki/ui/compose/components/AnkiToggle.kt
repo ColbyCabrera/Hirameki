@@ -54,7 +54,6 @@ fun AnkiToggle(
     colors: SwitchColors = SwitchDefaults.colors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,

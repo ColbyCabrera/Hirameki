@@ -50,13 +50,13 @@ fun LoginErrorCard(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                color = MaterialTheme.colorScheme.errorContainer,
-                shape = RoundedCornerShape(16.dp),
-            )
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(16.dp),
+                ).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
@@ -81,10 +81,11 @@ fun LoginErrorCard(
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Text(
-                    text = when (error) {
-                        is LoginError.StringResource -> stringResource(error.resId)
-                        is LoginError.DynamicString -> error.text
-                    },
+                    text =
+                        when (error) {
+                            is LoginError.StringResource -> stringResource(error.resId)
+                            is LoginError.DynamicString -> error.text
+                        },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
@@ -113,10 +114,11 @@ fun LoginErrorCard(
 private fun LoginErrorCardAuthPreview() {
     AnkiDroidTheme {
         LoginErrorCard(
-            error = LoginError.StringResource(
-                resId = R.string.login_error_authentication_failed,
-                requiresPasswordReset = true,
-            ),
+            error =
+                LoginError.StringResource(
+                    resId = R.string.login_error_authentication_failed,
+                    requiresPasswordReset = true,
+                ),
             onResetPasswordClick = {},
         )
     }

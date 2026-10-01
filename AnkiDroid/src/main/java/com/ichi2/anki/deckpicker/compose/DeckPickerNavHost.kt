@@ -219,7 +219,8 @@ fun DeckPickerNavHost(
 
     DisposableEffect(fragmentActivity, lifecycleOwner, navigator) {
         fragmentActivity?.supportFragmentManager?.setFragmentResultListener(
-            CustomStudyDialog.CustomStudyAction.REQUEST_KEY, lifecycleOwner
+            CustomStudyDialog.CustomStudyAction.REQUEST_KEY,
+            lifecycleOwner,
         ) { _, bundle ->
             val action = CustomStudyDialog.CustomStudyAction.fromBundle(bundle)
             val currentStack = navigator.state.backStacks[navigator.state.topLevelRoute]
@@ -246,144 +247,148 @@ fun DeckPickerNavHost(
         }
         onDispose {
             fragmentActivity?.supportFragmentManager?.clearFragmentResultListener(
-                CustomStudyDialog.CustomStudyAction.REQUEST_KEY
+                CustomStudyDialog.CustomStudyAction.REQUEST_KEY,
             )
         }
     }
 
-
-    val entryProvider = entryProvider {
-        entry<DeckPickerScreen> {
-            DeckPickerMainContent(
-                navigator = navigator,
-                viewModel = viewModel,
-                cardBrowserViewModel = cardBrowserViewModel,
-                actionHandler = actionHandler,
-                fragmented = fragmented,
-                onLaunchIntent = onLaunchIntent,
-                onAddNote = onAddNote,
-                onAddSharedDeck = onAddSharedDeck,
-                onAddFilteredDeck = onAddFilteredDeck,
-                onShowDialogFragment = onShowDialogFragment,
-                onInvalidateOptionsMenu = onInvalidateOptionsMenu,
-                onLoginToAnkiWeb = onLoginToAnkiWeb,
-                onImport = onImport,
-                onExport = onExport,
-                lifecycle = lifecycle,
-                onFinish = onFinish
-            )
-        }
-
-        entry<HelpScreen> {
-            HelpScreen(onNavigateUp = { navigator.goBack() })
-        }
-
-        entry<ContributeScreen> {
-            ContributeScreen(onNavigateUp = { navigator.goBack() })
-        }
-
-        entry<CongratsScreen> { key ->
-            CongratsComposable(
-                onNavigateUp = { navigator.goBack() },
-                onDeckOptions = { viewModel.openDeckOptions(key.deckId) },
-                onCustomStudy = { viewModel.showCustomStudyDialog(key.deckId) },
-                timeUntilNextDay = timeUntilNextDay
-            )
-        }
-
-        entry<StatisticsDestination> {
-            StatisticsScreen(onNavigateUp = { navigator.goBack() })
-        }
-
-        entry<ManageNoteTypesDestination> {
-            val noteTypesViewModel: ManageNoteTypesViewModel = viewModel()
-            val uiState by noteTypesViewModel.uiState.collectAsStateWithLifecycle()
-            val context = LocalContext.current
-            val lifecycleOwner = LocalLifecycleOwner.current
-            val activity = context as AnkiActivity
-            var showBatchDeleteConfirmation by remember { mutableStateOf(false) }
-
-            DisposableEffect(lifecycleOwner) {
-                val observer = LifecycleEventObserver { _, event ->
-                    if (event == Lifecycle.Event.ON_RESUME) {
-                        noteTypesViewModel.refresh()
-                    }
-                }
-                lifecycleOwner.lifecycle.addObserver(observer)
-                onDispose {
-                    lifecycleOwner.lifecycle.removeObserver(observer)
-                }
-            }
-
-            LaunchedEffect(noteTypesViewModel) {
-                noteTypesViewModel.uiEvents.collect { event ->
-                    when (event) {
-                        is ManageNoteTypesUiEvent.ShowErrorMessage -> {
-                            activity.showSnackbar(event.message)
-                        }
-
-                        is ManageNoteTypesUiEvent.ShowSnackbar -> {
-                            activity.showSnackbar(activity.getString(event.messageId))
-                        }
-
-                        is ManageNoteTypesUiEvent.PromptSchemaChangeWarning -> {
-                            activity.launchCatchingTask {
-                                if (activity.userAcceptsSchemaChange()) {
-                                    noteTypesViewModel.showDeleteConfirmation(event.noteType)
-                                }
-                            }
-                        }
-
-                        is ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation -> {
-                            activity.launchCatchingTask {
-                                if (activity.userAcceptsSchemaChange()) {
-                                    showBatchDeleteConfirmation = true
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            ManageNoteTypesScreen(
-                uiState = uiState,
-                onSearch = { noteTypesViewModel.updateSearchQuery(it) },
-                onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
-                onShowFields = {
-                    onLaunchIntent(
-                        Intent(context, NoteTypeFieldEditor::class.java).apply {
-                            putExtra("title", it.name)
-                            putExtra("noteTypeID", it.id)
-                        })
-                },
-                onEditCards = {
-                    onLaunchIntent(
-                        Intent(context, CardTemplateEditor::class.java).apply {
-                            putExtra("noteTypeId", it.id)
-                        })
-                },
-                onRename = { noteTypesViewModel.renameNoteType(it.id, it.name) },
-                onDeleteRequest = { noteTypesViewModel.requestDeleteNoteType(it) },
-                onDeleteConfirm = { noteTypesViewModel.confirmDeleteNoteType(it.id) },
-                onDeleteDismiss = { noteTypesViewModel.dismissDeleteConfirmation() },
-                onToggleSelection = { noteTypesViewModel.toggleNoteTypeSelection(it) },
-                onSelectAll = { noteTypesViewModel.selectAllNoteTypes() },
-                onDeselectAll = { noteTypesViewModel.deselectAllNoteTypes() },
-                onDeleteSelected = { noteTypesViewModel.deleteSelectedNoteTypes() },
-                onNavigateUp = { navigator.goBack() })
-
-            if (showBatchDeleteConfirmation) {
-                DeleteSelectedNoteTypesDialog(
-                    count = uiState.selectedNoteTypeIds.size,
-                    onDismissRequest = { showBatchDeleteConfirmation = false },
-                    onConfirm = {
-                        noteTypesViewModel.confirmDeleteSelectedNoteTypes()
-                        showBatchDeleteConfirmation = false
-                    },
+    val entryProvider =
+        entryProvider {
+            entry<DeckPickerScreen> {
+                DeckPickerMainContent(
+                    navigator = navigator,
+                    viewModel = viewModel,
+                    cardBrowserViewModel = cardBrowserViewModel,
+                    actionHandler = actionHandler,
+                    fragmented = fragmented,
+                    onLaunchIntent = onLaunchIntent,
+                    onAddNote = onAddNote,
+                    onAddSharedDeck = onAddSharedDeck,
+                    onAddFilteredDeck = onAddFilteredDeck,
+                    onShowDialogFragment = onShowDialogFragment,
+                    onInvalidateOptionsMenu = onInvalidateOptionsMenu,
+                    onLoginToAnkiWeb = onLoginToAnkiWeb,
+                    onImport = onImport,
+                    onExport = onExport,
+                    lifecycle = lifecycle,
+                    onFinish = onFinish,
                 )
             }
+
+            entry<HelpScreen> {
+                HelpScreen(onNavigateUp = { navigator.goBack() })
+            }
+
+            entry<ContributeScreen> {
+                ContributeScreen(onNavigateUp = { navigator.goBack() })
+            }
+
+            entry<CongratsScreen> { key ->
+                CongratsComposable(
+                    onNavigateUp = { navigator.goBack() },
+                    onDeckOptions = { viewModel.openDeckOptions(key.deckId) },
+                    onCustomStudy = { viewModel.showCustomStudyDialog(key.deckId) },
+                    timeUntilNextDay = timeUntilNextDay,
+                )
+            }
+
+            entry<StatisticsDestination> {
+                StatisticsScreen(onNavigateUp = { navigator.goBack() })
+            }
+
+            entry<ManageNoteTypesDestination> {
+                val noteTypesViewModel: ManageNoteTypesViewModel = viewModel()
+                val uiState by noteTypesViewModel.uiState.collectAsStateWithLifecycle()
+                val context = LocalContext.current
+                val lifecycleOwner = LocalLifecycleOwner.current
+                val activity = context as AnkiActivity
+                var showBatchDeleteConfirmation by remember { mutableStateOf(false) }
+
+                DisposableEffect(lifecycleOwner) {
+                    val observer =
+                        LifecycleEventObserver { _, event ->
+                            if (event == Lifecycle.Event.ON_RESUME) {
+                                noteTypesViewModel.refresh()
+                            }
+                        }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose {
+                        lifecycleOwner.lifecycle.removeObserver(observer)
+                    }
+                }
+
+                LaunchedEffect(noteTypesViewModel) {
+                    noteTypesViewModel.uiEvents.collect { event ->
+                        when (event) {
+                            is ManageNoteTypesUiEvent.ShowErrorMessage -> {
+                                activity.showSnackbar(event.message)
+                            }
+
+                            is ManageNoteTypesUiEvent.ShowSnackbar -> {
+                                activity.showSnackbar(activity.getString(event.messageId))
+                            }
+
+                            is ManageNoteTypesUiEvent.PromptSchemaChangeWarning -> {
+                                activity.launchCatchingTask {
+                                    if (activity.userAcceptsSchemaChange()) {
+                                        noteTypesViewModel.showDeleteConfirmation(event.noteType)
+                                    }
+                                }
+                            }
+
+                            is ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation -> {
+                                activity.launchCatchingTask {
+                                    if (activity.userAcceptsSchemaChange()) {
+                                        showBatchDeleteConfirmation = true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ManageNoteTypesScreen(
+                    uiState = uiState,
+                    onSearch = { noteTypesViewModel.updateSearchQuery(it) },
+                    onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
+                    onShowFields = {
+                        onLaunchIntent(
+                            Intent(context, NoteTypeFieldEditor::class.java).apply {
+                                putExtra("title", it.name)
+                                putExtra("noteTypeID", it.id)
+                            },
+                        )
+                    },
+                    onEditCards = {
+                        onLaunchIntent(
+                            Intent(context, CardTemplateEditor::class.java).apply {
+                                putExtra("noteTypeId", it.id)
+                            },
+                        )
+                    },
+                    onRename = { noteTypesViewModel.renameNoteType(it.id, it.name) },
+                    onDeleteRequest = { noteTypesViewModel.requestDeleteNoteType(it) },
+                    onDeleteConfirm = { noteTypesViewModel.confirmDeleteNoteType(it.id) },
+                    onDeleteDismiss = { noteTypesViewModel.dismissDeleteConfirmation() },
+                    onToggleSelection = { noteTypesViewModel.toggleNoteTypeSelection(it) },
+                    onSelectAll = { noteTypesViewModel.selectAllNoteTypes() },
+                    onDeselectAll = { noteTypesViewModel.deselectAllNoteTypes() },
+                    onDeleteSelected = { noteTypesViewModel.deleteSelectedNoteTypes() },
+                    onNavigateUp = { navigator.goBack() },
+                )
+
+                if (showBatchDeleteConfirmation) {
+                    DeleteSelectedNoteTypesDialog(
+                        count = uiState.selectedNoteTypeIds.size,
+                        onDismissRequest = { showBatchDeleteConfirmation = false },
+                        onConfirm = {
+                            noteTypesViewModel.confirmDeleteSelectedNoteTypes()
+                            showBatchDeleteConfirmation = false
+                        },
+                    )
+                }
+            }
         }
-    }
 
     NavDisplay(
         entries = navigator.state.toEntries(entryProvider),
@@ -394,7 +399,8 @@ fun DeckPickerNavHost(
         popTransitionSpec = {
             fadeIn() togetherWith fadeOut()
         },
-        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() })
+        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
+    )
 }
 
 /**
@@ -421,7 +427,7 @@ private fun DeckPickerMainContent(
     onImport: () -> Unit,
     onExport: () -> Unit,
     lifecycle: Lifecycle,
-    onFinish: () -> Unit
+    onFinish: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -445,7 +451,9 @@ private fun DeckPickerMainContent(
     var errorMessage by remember(errorMessageState.value) { mutableStateOf(errorMessageState.value) }
     errorMessage?.let { message ->
         ErrorDialog(
-            errorMessage = message, onDismissRequest = { errorMessage = null })
+            errorMessage = message,
+            onDismissRequest = { errorMessage = null },
+        )
     }
 
     if (showLoginToAnkiWebDialog) {
@@ -454,7 +462,8 @@ private fun DeckPickerMainContent(
             onLoginClick = {
                 viewModel.setShowLoginToAnkiWebDialog(false)
                 onLoginToAnkiWeb()
-            })
+            },
+        )
     }
 
     if (showNetworkErrorDialog) {
@@ -463,7 +472,8 @@ private fun DeckPickerMainContent(
             onRetry = {
                 viewModel.setShowNetworkErrorDialog(false)
                 viewModel.sync()
-            })
+            },
+        )
     }
 
     syncDialogState?.let {
@@ -482,7 +492,8 @@ private fun DeckPickerMainContent(
                 dialogType = state.type,
                 title = stringResource(state.titleResId),
                 initialDeckName = state.initialName,
-                validateDeckName = { viewModel.validateDeckName(it, state) })
+                validateDeckName = { viewModel.validateDeckName(it, state) },
+            )
         }
 
         DeckPickerViewModel.CreateDeckDialogState.Hidden -> {}
@@ -490,15 +501,18 @@ private fun DeckPickerMainContent(
 
     if (showNoSpaceLeftDialog) {
         NoSpaceLeftDialog(
-            onDismissRequest = { viewModel.setShowNoSpaceLeftDialog(false) })
+            onDismissRequest = { viewModel.setShowNoSpaceLeftDialog(false) },
+        )
     }
 
     showBackupNoSpaceLeftDialog?.let { space ->
         BackupNoSpaceLeftDialog(
-            space = space, onConfirm = {
+            space = space,
+            onConfirm = {
                 viewModel.setShowBackupNoSpaceLeftDialog(null)
                 onFinish()
-            })
+            },
+        )
     }
 
     if (showAnalyticsOptInDialog) {
@@ -506,7 +520,8 @@ private fun DeckPickerMainContent(
             onDismissRequest = { viewModel.setShowAnalyticsOptInDialog(false) },
             onConfirm = { optIn ->
                 viewModel.setAnalyticsOptIn(optIn)
-            })
+            },
+        )
     }
 
     showDeleteDeckConfirmation?.let { state ->
@@ -518,7 +533,8 @@ private fun DeckPickerMainContent(
             onConfirm = {
                 viewModel.deleteDeck(state.deckId)
                 viewModel.dismissDeleteDeckConfirmation()
-            })
+            },
+        )
     }
 
     var searchQuery by remember { mutableStateOf("") }
@@ -526,7 +542,7 @@ private fun DeckPickerMainContent(
     val studyOptionsData by viewModel.studyOptionsData.collectAsStateWithLifecycle()
     var selectedNavigationItem by remember {
         mutableStateOf(
-            AppNavigationItem.Decks
+            AppNavigationItem.Decks,
         )
     } // For NavigationRail
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -541,8 +557,9 @@ private fun DeckPickerMainContent(
                 if (!fragmented) {
                     onLaunchIntent(
                         Intent(
-                            applicationContext, CardBrowser::class.java
-                        )
+                            applicationContext,
+                            CardBrowser::class.java,
+                        ),
                     )
                 }
             }
@@ -565,67 +582,69 @@ private fun DeckPickerMainContent(
         }
     }
 
-    val deckPickerDrawerActions = DeckPickerDrawerActions(
-        onSync = { viewModel.sync() },
-        onSearchQueryChanged = {
-            searchQuery = it
-            viewModel.updateDeckFilter(it)
-        },
-        onDeckClick = { deck ->
-            viewModel.onDeckSelected(deck.did, DeckSelectionType.DEFAULT)
-        },
-        onExpandClick = { deck -> viewModel.toggleDeckExpand(deck.did) },
-        onAddNote = onAddNote,
-        onAddDeck = { viewModel.showCreateDeckDialog() },
-        onAddSharedDeck = onAddSharedDeck,
-        onAddFilteredDeck = onAddFilteredDeck,
-        onCheckDatabase = { viewModel.checkDatabase() },
-        onCreateSubdeck = { viewModel.showCreateSubdeckDialog(it) },
-        onDeckOptions = { viewModel.openDeckOptions(it) },
-        onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
-        onRename = { viewModel.showRenameDeckDialog(it) },
-        onExportDeck = { viewModel.exportDeck(it) },
-        onDelete = { deckId -> viewModel.showDeleteDeckConfirmation(deckId) },
-        onRebuild = { viewModel.rebuildFilteredDeck(it) },
-        onEmpty = { viewModel.emptyFilteredDeck(it) },
-        onStartStudy = { viewModel.openReviewer() },
-        onRebuildDeck = { viewModel.rebuildFilteredDeck(it) },
-        onEmptyDeck = { viewModel.emptyFilteredDeck(it) },
-        onCustomStudy = { viewModel.showCustomStudyDialog(it) },
-        onUnbury = { viewModel.unburyDeck(it) },
-        onSearchFocusRequested = { requestSearchFocus = false },
-        onNavigationItemClick = { item ->
-            selectedNavigationItem = item
-            coroutineScope.launch {
-                drawerState.close()
-                handleNavigation(item)
-                selectedNavigationItem = AppNavigationItem.Decks
-            }
-        },
-        onNavigationIconClick = {
-            coroutineScope.launch { drawerState.open() }
-        },
-        onImport = onImport,
-        onExport = onExport,
-        onDeleteEmptyCards = { viewModel.showEmptyCardsDialog() },
-        onManageNoteTypes = {
-            navigator.navigate(ManageNoteTypesDestination)
-        },
-    )
+    val deckPickerDrawerActions =
+        DeckPickerDrawerActions(
+            onSync = { viewModel.sync() },
+            onSearchQueryChanged = {
+                searchQuery = it
+                viewModel.updateDeckFilter(it)
+            },
+            onDeckClick = { deck ->
+                viewModel.onDeckSelected(deck.did, DeckSelectionType.DEFAULT)
+            },
+            onExpandClick = { deck -> viewModel.toggleDeckExpand(deck.did) },
+            onAddNote = onAddNote,
+            onAddDeck = { viewModel.showCreateDeckDialog() },
+            onAddSharedDeck = onAddSharedDeck,
+            onAddFilteredDeck = onAddFilteredDeck,
+            onCheckDatabase = { viewModel.checkDatabase() },
+            onCreateSubdeck = { viewModel.showCreateSubdeckDialog(it) },
+            onDeckOptions = { viewModel.openDeckOptions(it) },
+            onDeckOptionsItemSelected = { viewModel.openDeckOptions(it) },
+            onRename = { viewModel.showRenameDeckDialog(it) },
+            onExportDeck = { viewModel.exportDeck(it) },
+            onDelete = { deckId -> viewModel.showDeleteDeckConfirmation(deckId) },
+            onRebuild = { viewModel.rebuildFilteredDeck(it) },
+            onEmpty = { viewModel.emptyFilteredDeck(it) },
+            onStartStudy = { viewModel.openReviewer() },
+            onRebuildDeck = { viewModel.rebuildFilteredDeck(it) },
+            onEmptyDeck = { viewModel.emptyFilteredDeck(it) },
+            onCustomStudy = { viewModel.showCustomStudyDialog(it) },
+            onUnbury = { viewModel.unburyDeck(it) },
+            onSearchFocusRequested = { requestSearchFocus = false },
+            onNavigationItemClick = { item ->
+                selectedNavigationItem = item
+                coroutineScope.launch {
+                    drawerState.close()
+                    handleNavigation(item)
+                    selectedNavigationItem = AppNavigationItem.Decks
+                }
+            },
+            onNavigationIconClick = {
+                coroutineScope.launch { drawerState.open() }
+            },
+            onImport = onImport,
+            onExport = onExport,
+            onDeleteEmptyCards = { viewModel.showEmptyCardsDialog() },
+            onManageNoteTypes = {
+                navigator.navigate(ManageNoteTypesDestination)
+            },
+        )
 
-    val deckPickerDrawerState = DeckPickerDrawerState(
-        fragmented = fragmented,
-        deckList = deckList,
-        isSyncing = isSyncing,
-        searchQuery = searchQuery,
-        studyOptionsData = studyOptionsData,
-        requestSearchFocus = requestSearchFocus,
-        snackbarHostState = snackbarHostState,
-        syncState = syncState,
-        isInInitialState = isInInitialState,
-        drawerState = drawerState,
-        selectedNavigationItem = selectedNavigationItem,
-    )
+    val deckPickerDrawerState =
+        DeckPickerDrawerState(
+            fragmented = fragmented,
+            deckList = deckList,
+            isSyncing = isSyncing,
+            searchQuery = searchQuery,
+            studyOptionsData = studyOptionsData,
+            requestSearchFocus = requestSearchFocus,
+            snackbarHostState = snackbarHostState,
+            syncState = syncState,
+            isInInitialState = isInInitialState,
+            drawerState = drawerState,
+            selectedNavigationItem = selectedNavigationItem,
+        )
 
     if (fragmented) {
         Row {
@@ -646,11 +665,12 @@ private fun DeckPickerMainContent(
                     onAddFilteredDeck = onAddFilteredDeck,
                     onAddNote = onAddNote,
                     onShowDialogFragment = onShowDialogFragment,
-                    onInvalidateOptionsMenu = onInvalidateOptionsMenu
+                    onInvalidateOptionsMenu = onInvalidateOptionsMenu,
                 )
             } else {
                 DeckPickerWithDrawer(
-                    state = deckPickerDrawerState, actions = deckPickerDrawerActions
+                    state = deckPickerDrawerState,
+                    actions = deckPickerDrawerActions,
                 )
             }
         }
@@ -663,7 +683,7 @@ private fun DeckPickerMainContent(
         viewModel = viewModel,
         cardBrowserViewModel = cardBrowserViewModel,
         snackbarHostState = snackbarHostState,
-        lifecycle = lifecycle
+        lifecycle = lifecycle,
     )
 }
 
@@ -674,7 +694,8 @@ private fun DeckPickerMainContent(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckPickerWithDrawer(
-    state: DeckPickerDrawerState, actions: DeckPickerDrawerActions
+    state: DeckPickerDrawerState,
+    actions: DeckPickerDrawerActions,
 ) {
     ModalNavigationDrawer(
         drawerState = state.drawerState,
@@ -692,17 +713,19 @@ private fun DeckPickerWithDrawer(
                     Text(
                         text = stringResource(R.string.app_name),
                         style = MaterialTheme.typography.displayLargeEmphasized,
-                        modifier = Modifier.padding(
-                            start = 8.dp,
-                            bottom = 24.dp,
-                        ),
+                        modifier =
+                            Modifier.padding(
+                                start = 8.dp,
+                                bottom = 24.dp,
+                            ),
                     )
                     AppNavigationItem.entries.forEach { item ->
                         if (item == AppNavigationItem.Settings) {
                             HorizontalDivider(
-                                modifier = Modifier
-                                    .padding(vertical = 12.dp)
-                                    .clip(RoundedCornerShape(12.dp)),
+                                modifier =
+                                    Modifier
+                                        .padding(vertical = 12.dp)
+                                        .clip(RoundedCornerShape(12.dp)),
                                 thickness = 3.dp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                             )
@@ -725,32 +748,35 @@ private fun DeckPickerWithDrawer(
             onRefresh = actions.onSync,
             searchQuery = state.searchQuery,
             onSearchQueryChanged = actions.onSearchQueryChanged,
-            deckRowActions = DeckRowActions(
-                onDeckClick = actions.onDeckClick,
-                onExpandClick = actions.onExpandClick,
-                onDeckOptions = { deck -> actions.onDeckOptions(deck.did) },
-                onRename = { deck -> actions.onRename(deck.did) },
-                onCustomStudy = { deck -> actions.onCustomStudy(deck.did) },
-                onUnbury = { deck -> actions.onUnbury(deck.did) },
-                onExportDeck = { deck -> actions.onExportDeck(deck.did) },
-                onDelete = { deck -> actions.onDelete(deck.did) },
-                onRebuild = { deck -> actions.onRebuild(deck.did) },
-                onEmpty = { deck -> actions.onEmpty(deck.did) },
-                onCreateSubdeck = { deck -> actions.onCreateSubdeck(deck.did) },
-            ),
-            fabActions = FabActions(
-                onAddNote = actions.onAddNote,
-                onAddDeck = actions.onAddDeck,
-                onAddSharedDeck = actions.onAddSharedDeck,
-                onAddFilteredDeck = actions.onAddFilteredDeck,
-                onImport = actions.onImport,
-            ),
-            moreOptionsMenuActions = MoreOptionsMenuActions(
-                onDeleteEmptyCards = actions.onDeleteEmptyCards,
-                onCheckDatabase = actions.onCheckDatabase,
-                onExport = actions.onExport,
-                onManageNoteTypes = actions.onManageNoteTypes,
-            ),
+            deckRowActions =
+                DeckRowActions(
+                    onDeckClick = actions.onDeckClick,
+                    onExpandClick = actions.onExpandClick,
+                    onDeckOptions = { deck -> actions.onDeckOptions(deck.did) },
+                    onRename = { deck -> actions.onRename(deck.did) },
+                    onCustomStudy = { deck -> actions.onCustomStudy(deck.did) },
+                    onUnbury = { deck -> actions.onUnbury(deck.did) },
+                    onExportDeck = { deck -> actions.onExportDeck(deck.did) },
+                    onDelete = { deck -> actions.onDelete(deck.did) },
+                    onRebuild = { deck -> actions.onRebuild(deck.did) },
+                    onEmpty = { deck -> actions.onEmpty(deck.did) },
+                    onCreateSubdeck = { deck -> actions.onCreateSubdeck(deck.did) },
+                ),
+            fabActions =
+                FabActions(
+                    onAddNote = actions.onAddNote,
+                    onAddDeck = actions.onAddDeck,
+                    onAddSharedDeck = actions.onAddSharedDeck,
+                    onAddFilteredDeck = actions.onAddFilteredDeck,
+                    onImport = actions.onImport,
+                ),
+            moreOptionsMenuActions =
+                MoreOptionsMenuActions(
+                    onDeleteEmptyCards = actions.onDeleteEmptyCards,
+                    onCheckDatabase = actions.onCheckDatabase,
+                    onExport = actions.onExport,
+                    onManageNoteTypes = actions.onManageNoteTypes,
+                ),
             onNavigationIconClick = actions.onNavigationIconClick,
             onStartStudy = actions.onStartStudy,
             onCustomStudy = actions.onCustomStudy,
@@ -776,7 +802,7 @@ private fun SetupFlows(
     viewModel: DeckPickerViewModel,
     cardBrowserViewModel: CardBrowserViewModel,
     snackbarHostState: SnackbarHostState,
-    lifecycle: Lifecycle
+    lifecycle: Lifecycle,
 ) {
     val applicationContext = LocalContext.current.applicationContext
 
@@ -788,20 +814,21 @@ private fun SetupFlows(
                         showUndoSnackbar(
                             snackbarHostState,
                             effect.message,
-                            applicationContext.getString(R.string.undo)
+                            applicationContext.getString(R.string.undo),
                         ) { viewModel.undo() }
                     }
 
                     is DeckPickerComposeEffect.ShowSnackbar -> {
                         snackbarHostState.showSnackbar(
                             applicationContext.getString(effect.messageResId),
-                            duration = SnackbarDuration.Short
+                            duration = SnackbarDuration.Short,
                         )
                     }
 
                     is DeckPickerComposeEffect.ShowSnackbarMessage -> {
                         snackbarHostState.showSnackbar(
-                            effect.message, duration = SnackbarDuration.Short
+                            effect.message,
+                            duration = SnackbarDuration.Short,
                         )
                     }
 
@@ -816,11 +843,12 @@ private fun SetupFlows(
                             }
 
                             is DeckSelectionResult.Empty -> {
-                                val snackbarResult = snackbarHostState.showSnackbar(
-                                    message = applicationContext.getString(R.string.empty_deck),
-                                    actionLabel = applicationContext.getString(R.string.menu_add),
-                                    duration = SnackbarDuration.Short,
-                                )
+                                val snackbarResult =
+                                    snackbarHostState.showSnackbar(
+                                        message = applicationContext.getString(R.string.empty_deck),
+                                        actionLabel = applicationContext.getString(R.string.menu_add),
+                                        duration = SnackbarDuration.Short,
+                                    )
                                 if (snackbarResult == SnackbarResult.ActionPerformed) {
                                     viewModel.addNote(result.deckId, true)
                                 }
@@ -837,11 +865,13 @@ private fun SetupFlows(
     }
 
     LaunchedEffect(Unit) {
-        cardBrowserViewModel.flowOfSnackbarMessage.flowWithLifecycle(lifecycle)
+        cardBrowserViewModel.flowOfSnackbarMessage
+            .flowWithLifecycle(lifecycle)
             .collect { messageRes ->
                 launch {
                     snackbarHostState.showSnackbar(
-                        applicationContext.getString(messageRes), duration = SnackbarDuration.Short
+                        applicationContext.getString(messageRes),
+                        duration = SnackbarDuration.Short,
                     )
                 }
             }
@@ -852,13 +882,17 @@ private fun SetupFlows(
  * Shows an undo snackbar and invokes [onUndo] only when the action is pressed.
  */
 private suspend fun showUndoSnackbar(
-    snackbarHostState: SnackbarHostState, message: String, undoLabel: String, onUndo: () -> Unit
+    snackbarHostState: SnackbarHostState,
+    message: String,
+    undoLabel: String,
+    onUndo: () -> Unit,
 ) {
-    val result = snackbarHostState.showSnackbar(
-        message = message,
-        actionLabel = undoLabel,
-        duration = SnackbarDuration.Long,
-    )
+    val result =
+        snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = undoLabel,
+            duration = SnackbarDuration.Long,
+        )
     if (result == SnackbarResult.ActionPerformed) {
         onUndo()
     }

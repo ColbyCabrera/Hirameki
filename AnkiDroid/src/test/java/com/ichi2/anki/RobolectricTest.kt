@@ -68,7 +68,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import net.ankiweb.rsdroid.BackendException
-import org.robolectric.annotation.Config
 import net.ankiweb.rsdroid.testing.RustBackendLoader
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
@@ -82,6 +81,7 @@ import org.junit.rules.TestName
 import org.robolectric.Robolectric
 import org.robolectric.Shadows
 import org.robolectric.android.controller.ActivityController
+import org.robolectric.annotation.Config
 import org.robolectric.junit.rules.TimeoutRule
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLog
@@ -92,7 +92,9 @@ import kotlin.test.assertNotNull
 
 // Add this line:
 @Config(sdk = [34])
-open class RobolectricTest : AnkiTest, AndroidTest {
+open class RobolectricTest :
+    AnkiTest,
+    AndroidTest {
     @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
     private fun Any.wait(timeMs: Long) = (this as Object).wait(timeMs)
 
@@ -130,7 +132,9 @@ open class RobolectricTest : AnkiTest, AndroidTest {
     protected open fun getCollectionStorageMode(): CollectionStorageMode = IN_MEMORY_NO_FOLDERS
 
     protected enum class CollectionStorageMode {
-        IN_MEMORY_NO_FOLDERS, IN_MEMORY_WITH_MEDIA, ON_DISK,
+        IN_MEMORY_NO_FOLDERS,
+        IN_MEMORY_WITH_MEDIA,
+        ON_DISK,
     }
 
     @Before
@@ -142,11 +146,12 @@ open class RobolectricTest : AnkiTest, AndroidTest {
         throwOnShowError = true
 
         // See the Android logging (from Timber)
-        ShadowLog.stream = System.out
-            // Filters for non-Timber sources. Prefer filtering in RobolectricDebugTree if possible
-            // LifecycleMonitor: not needed as we already use registerActivityLifecycleCallbacks for logs
-            // W/ShadowLegacyPath: android.graphics.Path#op() not supported yet.
-            .filter("^(?!(W/ShadowLegacyPath|D/LifecycleMonitor)).*$")
+        ShadowLog.stream =
+            System.out
+                // Filters for non-Timber sources. Prefer filtering in RobolectricDebugTree if possible
+                // LifecycleMonitor: not needed as we already use registerActivityLifecycleCallbacks for logs
+                // W/ShadowLegacyPath: android.graphics.Path#op() not supported yet.
+                .filter("^(?!(W/ShadowLegacyPath|D/LifecycleMonitor)).*$")
 
         ChangeManager.clearSubscribers()
 
@@ -289,7 +294,13 @@ open class RobolectricTest : AnkiTest, AndroidTest {
                     ShadowMediaPlayer.MediaInfo(1, 0)
                 }
             }
-            val controller = Robolectric.buildActivity(clazz, i).create().start().resume().visible()
+            val controller =
+                Robolectric
+                    .buildActivity(clazz, i)
+                    .create()
+                    .start()
+                    .resume()
+                    .visible()
             advanceRobolectricLooper()
             testClass.saveControllerForCleanup(controller)
             return controller.get()
@@ -318,11 +329,12 @@ open class RobolectricTest : AnkiTest, AndroidTest {
      * we don't get two equal time. */
 
     override val col: Collection
-        get() = try {
-            collectionManager.getColUnsafe()
-        } catch (e: UnsatisfiedLinkError) {
-            throw RuntimeException("Failed to load collection. Did you call super.setUp()?", e)
-        }
+        get() =
+            try {
+                collectionManager.getColUnsafe()
+            } catch (e: UnsatisfiedLinkError) {
+                throw RuntimeException("Failed to load collection. Did you call super.setUp()?", e)
+            }
 
     protected val collectionTime: MockTime
         get() = TimeManager.time as MockTime
@@ -350,8 +362,7 @@ open class RobolectricTest : AnkiTest, AndroidTest {
         i: Intent?,
     ): T = startActivityNormallyOpenCollectionWithIntent(this, clazz, i)
 
-    internal inline fun <reified T : AnkiActivity?> startRegularActivity(): T =
-        startRegularActivity(null)
+    internal inline fun <reified T : AnkiActivity?> startRegularActivity(): T = startRegularActivity(null)
 
     internal inline fun <reified T : AnkiActivity?> startRegularActivity(i: Intent? = null): T =
         startActivityNormallyOpenCollectionWithIntent(T::class.java, i)
@@ -362,7 +373,7 @@ open class RobolectricTest : AnkiTest, AndroidTest {
     ) {
         MatcherAssert.assertThat(
             obtained.note().fields[0],
-            Matchers.equalTo(expected.note().fields[0])
+            Matchers.equalTo(expected.note().fields[0]),
         )
     }
 
@@ -374,8 +385,7 @@ open class RobolectricTest : AnkiTest, AndroidTest {
      * ```
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    fun editPreferences(action: SharedPreferences.Editor.() -> Unit) =
-        getPreferences().edit(action = action)
+    fun editPreferences(action: SharedPreferences.Editor.() -> Unit) = getPreferences().edit(action = action)
 
     protected fun grantRecordAudioPermission() {
         val application = ApplicationProvider.getApplicationContext<Application>()
@@ -398,10 +408,11 @@ open class RobolectricTest : AnkiTest, AndroidTest {
     /** Helper method to update a note */
     @SuppressLint("CheckResult")
     @UseContextParameter("TestClass")
-    suspend fun Note.updateOp(block: Note.() -> Unit): Note = this.also { note ->
-        block(note)
-        undoableOp<OpChanges> { col.updateNote(note) }
-    }
+    suspend fun Note.updateOp(block: Note.() -> Unit): Note =
+        this.also { note ->
+            block(note)
+            undoableOp<OpChanges> { col.updateNote(note) }
+        }
 
     private fun maybeSetupBackend() {
         try {
@@ -442,8 +453,8 @@ open class RobolectricTest : AnkiTest, AndroidTest {
 
     override suspend fun TestScope.runTestInner(testBody: suspend TestScope.() -> Unit) {
         (collectionManager as? ProductionCollectionManager)?.setTestDispatcher(
-                UnconfinedTestDispatcher(testScheduler)
-            )
+            UnconfinedTestDispatcher(testScheduler),
+        )
         testBody()
     }
 }

@@ -68,13 +68,14 @@ import timber.log.Timber
 import java.util.Calendar
 
 class HeatmapWidget : GlanceAppWidget() {
-    override val previewSizeMode: PreviewSizeMode = SizeMode.Responsive(
-        setOf(
-            DpSize(200.dp, 100.dp), // min size
-            DpSize(300.dp, 150.dp), // medium
-            DpSize(400.dp, 170.dp), // large
-        ),
-    )
+    override val previewSizeMode: PreviewSizeMode =
+        SizeMode.Responsive(
+            setOf(
+                DpSize(200.dp, 100.dp), // min size
+                DpSize(300.dp, 150.dp), // medium
+                DpSize(400.dp, 170.dp), // large
+            ),
+        )
 
     override suspend fun provideGlance(
         context: Context,
@@ -121,12 +122,14 @@ class HeatmapWidget : GlanceAppWidget() {
 
         // Widgets run outside the main app context and don't have collection access,
         // so direct time APIs are appropriate here rather than collection.getTime()
-        @Suppress("DirectSystemCurrentTimeMillisUsage") val today = System.currentTimeMillis()
+        @Suppress("DirectSystemCurrentTimeMillisUsage")
+        val today = System.currentTimeMillis()
         val dayMillis = DAY_IN_MILLIS
         val currentDayIndex = today / dayMillis
 
         // Calculate ISO Day of Week (0 = Mon, 6 = Sun)
-        @Suppress("DirectCalendarInstanceUsage") val calendar = Calendar.getInstance()
+        @Suppress("DirectCalendarInstanceUsage")
+        val calendar = Calendar.getInstance()
         calendar.timeInMillis = today
         // Calendar.DAY_OF_WEEK: Sun=1, Mon=2, ... Sat=7
         // Convert to Mon=0, ... Sun=6
@@ -136,8 +139,12 @@ class HeatmapWidget : GlanceAppWidget() {
         val todayCount = data[currentDayIndex] ?: 0
 
         Row(
-            modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.background)
-                .padding(16.dp).clickable(actionStartActivity<IntentHandler>()),
+            modifier =
+                GlanceModifier
+                    .fillMaxSize()
+                    .background(GlanceTheme.colors.background)
+                    .padding(16.dp)
+                    .clickable(actionStartActivity<IntentHandler>()),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // --- Left Section: Heatmap ---
@@ -147,11 +154,12 @@ class HeatmapWidget : GlanceAppWidget() {
             ) {
                 Text(
                     text = context.getString(R.string.history),
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onBackground,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        TextStyle(
+                            color = GlanceTheme.colors.onBackground,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
 
                 Spacer(GlanceModifier.height(8.dp))
@@ -172,15 +180,16 @@ class HeatmapWidget : GlanceAppWidget() {
                         // DateFormatSymbols.shortWeekdays is 1-indexed: [0]="", [1]=Sun, [2]=Mon, ..., [7]=Sat
                         val dateSymbols = java.text.DateFormatSymbols.getInstance()
                         val shortWeekdays = dateSymbols.shortWeekdays
-                        val days = listOf(
-                            shortWeekdays[Calendar.MONDAY],
-                            shortWeekdays[Calendar.TUESDAY],
-                            shortWeekdays[Calendar.WEDNESDAY],
-                            shortWeekdays[Calendar.THURSDAY],
-                            shortWeekdays[Calendar.FRIDAY],
-                            shortWeekdays[Calendar.SATURDAY],
-                            shortWeekdays[Calendar.SUNDAY],
-                        )
+                        val days =
+                            listOf(
+                                shortWeekdays[Calendar.MONDAY],
+                                shortWeekdays[Calendar.TUESDAY],
+                                shortWeekdays[Calendar.WEDNESDAY],
+                                shortWeekdays[Calendar.THURSDAY],
+                                shortWeekdays[Calendar.FRIDAY],
+                                shortWeekdays[Calendar.SATURDAY],
+                                shortWeekdays[Calendar.SUNDAY],
+                            )
                         days.forEachIndexed { _, day ->
                             Box(
                                 modifier = GlanceModifier.height(16.dp),
@@ -188,10 +197,11 @@ class HeatmapWidget : GlanceAppWidget() {
                             ) {
                                 Text(
                                     text = day,
-                                    style = TextStyle(
-                                        color = GlanceTheme.colors.onSurfaceVariant,
-                                        fontSize = 10.sp,
-                                    ),
+                                    style =
+                                        TextStyle(
+                                            color = GlanceTheme.colors.onSurfaceVariant,
+                                            fontSize = 10.sp,
+                                        ),
                                 )
                             }
                         }
@@ -208,10 +218,11 @@ class HeatmapWidget : GlanceAppWidget() {
                                     val dayOffset = (w * 7) + (todayDoW - d)
                                     val checkDayIndex = currentDayIndex - dayOffset
                                     val count = data[checkDayIndex] ?: 0
-                                    val (colorProvider, alpha) = getColorForCount(
-                                        count,
-                                        GlanceTheme.colors,
-                                    )
+                                    val (colorProvider, alpha) =
+                                        getColorForCount(
+                                            count,
+                                            GlanceTheme.colors,
+                                        )
 
                                     // Wrapper Box with built-in spacing (12.dp = 10.dp cell + 2.dp gap)
                                     Box(
@@ -219,9 +230,12 @@ class HeatmapWidget : GlanceAppWidget() {
                                         contentAlignment = Alignment.TopCenter,
                                     ) {
                                         Box(
-                                            modifier = GlanceModifier.size(14.dp).background(
-                                                colorProvider.getColor(context).copy(alpha = alpha),
-                                            ).cornerRadius(2.dp),
+                                            modifier =
+                                                GlanceModifier
+                                                    .size(14.dp)
+                                                    .background(
+                                                        colorProvider.getColor(context).copy(alpha = alpha),
+                                                    ).cornerRadius(2.dp),
                                         ) {}
                                     }
                                 }
@@ -240,17 +254,19 @@ class HeatmapWidget : GlanceAppWidget() {
             ) {
                 Column {
                     Text(
-                        text = context.resources.getQuantityString(
-                            R.plurals.heatmap_widget_reviewed_count,
-                            todayCount,
-                            todayCount,
-                        ),
-                        style = TextStyle(
-                            color = GlanceTheme.colors.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                        ),
+                        text =
+                            context.resources.getQuantityString(
+                                R.plurals.heatmap_widget_reviewed_count,
+                                todayCount,
+                                todayCount,
+                            ),
+                        style =
+                            TextStyle(
+                                color = GlanceTheme.colors.onSurfaceVariant,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                            ),
                     )
                 }
 
@@ -258,15 +274,19 @@ class HeatmapWidget : GlanceAppWidget() {
 
                 // Add Card Button
                 Box(
-                    modifier = GlanceModifier.size(56.dp).background(GlanceTheme.colors.tertiary)
-                        .cornerRadius(200.dp).clickable(
-                            actionStartActivity(
-                                NoteEditorActivity::class.java,
-                                actionParametersOf(
-                                    ActionParameters.Key<Int>(NoteEditorActivity.EXTRA_CALLER) to NoteEditorCaller.DECKPICKER.value,
+                    modifier =
+                        GlanceModifier
+                            .size(56.dp)
+                            .background(GlanceTheme.colors.tertiary)
+                            .cornerRadius(200.dp)
+                            .clickable(
+                                actionStartActivity(
+                                    NoteEditorActivity::class.java,
+                                    actionParametersOf(
+                                        ActionParameters.Key<Int>(NoteEditorActivity.EXTRA_CALLER) to NoteEditorCaller.DECKPICKER.value,
+                                    ),
                                 ),
                             ),
-                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(
@@ -303,55 +323,60 @@ class HeatmapWidget : GlanceAppWidget() {
         fun getColorForCount(
             count: Int,
             colors: ColorProviders,
-        ): Pair<ColorProvider, Float> = when {
-            count == 0 -> colors.surfaceVariant to 0.5f
-            count <= HEATMAP_LEVEL_1_MAX_COUNT -> colors.primary to 0.25f
-            count <= HEATMAP_LEVEL_2_MAX_COUNT -> colors.primary to 0.5f
-            count <= HEATMAP_LEVEL_3_MAX_COUNT -> colors.primary to 0.8f
-            else -> colors.primary to 1f
-        }
+        ): Pair<ColorProvider, Float> =
+            when {
+                count == 0 -> colors.surfaceVariant to 0.5f
+                count <= HEATMAP_LEVEL_1_MAX_COUNT -> colors.primary to 0.25f
+                count <= HEATMAP_LEVEL_2_MAX_COUNT -> colors.primary to 0.5f
+                count <= HEATMAP_LEVEL_3_MAX_COUNT -> colors.primary to 0.8f
+                else -> colors.primary to 1f
+            }
 
-        suspend fun fetchHeatmapData(): Map<Long, Int> = try {
-            CollectionManager.withCol {
-                // Limit query to recent history for performance.
-                // revlog.id is the primary key (timestamp in ms), so the WHERE clause
-                // enables an efficient index range scan instead of a full table scan.
-                // Widgets run outside the main app context and may not have collection access,
-                // so direct time APIs are appropriate here
-                @Suppress("DirectSystemCurrentTimeMillisUsage") val cutoffMillis =
-                    System.currentTimeMillis() - (MAX_HEATMAP_DAYS * DAY_IN_MILLIS)
-                val query =
-                    "SELECT CAST(id/$DAY_IN_MILLIS AS INTEGER) as day, count() FROM revlog WHERE id >= $cutoffMillis GROUP BY day"
+        suspend fun fetchHeatmapData(): Map<Long, Int> =
+            try {
+                CollectionManager.withCol {
+                    // Limit query to recent history for performance.
+                    // revlog.id is the primary key (timestamp in ms), so the WHERE clause
+                    // enables an efficient index range scan instead of a full table scan.
+                    // Widgets run outside the main app context and may not have collection access,
+                    // so direct time APIs are appropriate here
+                    @Suppress("DirectSystemCurrentTimeMillisUsage")
+                    val cutoffMillis =
+                        System.currentTimeMillis() - (MAX_HEATMAP_DAYS * DAY_IN_MILLIS)
+                    val query =
+                        "SELECT CAST(id/$DAY_IN_MILLIS AS INTEGER) as day, count() FROM revlog WHERE id >= $cutoffMillis GROUP BY day"
 
-                buildMap {
-                    this@withCol.db.query(query).use { c ->
-                        while (c.moveToNext()) {
-                            put(c.getLong(0), c.getInt(1))
+                    buildMap {
+                        this@withCol.db.query(query).use { c ->
+                            while (c.moveToNext()) {
+                                put(c.getLong(0), c.getInt(1))
+                            }
                         }
                     }
                 }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to fetch heatmap data")
+                emptyMap()
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch heatmap data")
-            emptyMap()
-        }
 
-        fun getDummyHeatmapData(): Map<Long, Int> = buildMap {
-            @Suppress("DirectSystemCurrentTimeMillisUsage") val today =
-                System.currentTimeMillis() / DAY_IN_MILLIS
-            // Fill some days
-            for (i in 0..100) {
-                // Use when to explicitly define precedence (first matching condition wins)
-                when {
-                    i % 11 == 0 -> put(today - i, 21)
-                    i % 5 == 0 -> put(today - i, 11)
-                    i % 13 == 0 -> put(today - i, 6)
-                    i % 2 == 0 -> put(today - i, 1)
-                    i % 3 == 0 -> put(today - i, 0)
+        fun getDummyHeatmapData(): Map<Long, Int> =
+            buildMap {
+                @Suppress("DirectSystemCurrentTimeMillisUsage")
+                val today =
+                    System.currentTimeMillis() / DAY_IN_MILLIS
+                // Fill some days
+                for (i in 0..100) {
+                    // Use when to explicitly define precedence (first matching condition wins)
+                    when {
+                        i % 11 == 0 -> put(today - i, 21)
+                        i % 5 == 0 -> put(today - i, 11)
+                        i % 13 == 0 -> put(today - i, 6)
+                        i % 2 == 0 -> put(today - i, 1)
+                        i % 3 == 0 -> put(today - i, 0)
+                    }
                 }
+                put(today, 294)
             }
-            put(today, 294)
-        }
 
         suspend fun updateHeatmapWidgetPreview(context: Context) {
             try {

@@ -109,14 +109,16 @@ class InstantEditorViewModel :
             }
 
             // setup the note type
-            val noteType = withCol {
-                decks.getLegacy(deckId ?: return@withCol notetypes.all().firstOrNull { it.isCloze })
-                    ?.optLong("mid")
-                    ?.takeIf { it != 0L }
-                    ?.let { mid -> notetypes.get(mid) }
-                    ?.takeIf { it.isCloze }
-                    ?: notetypes.all().firstOrNull { it.isCloze }
-            }
+            val noteType =
+                withCol {
+                    decks
+                        .getLegacy(deckId ?: return@withCol notetypes.all().firstOrNull { it.isCloze })
+                        ?.optLong("mid")
+                        ?.takeIf { it != 0L }
+                        ?.let { mid -> notetypes.get(mid) }
+                        ?.takeIf { it.isCloze }
+                        ?: notetypes.all().firstOrNull { it.isCloze }
+                }
             if (noteType == null) {
                 _dialogType.emit(DialogType.NO_CLOZE_NOTE_TYPES_DIALOG)
                 return@launch

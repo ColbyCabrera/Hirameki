@@ -19,6 +19,7 @@ package com.ichi2.anki.pages
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.R
 import com.ichi2.anki.model.SelectableDeck
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +29,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject.quote
 import timber.log.Timber
-import com.ichi2.anki.R
 
 /**
  * ViewModel for [StatisticsScreen] to manage deck selection and JavaScript injection.
@@ -53,10 +53,12 @@ class StatisticsViewModel : ViewModel() {
     private fun loadDecks() {
         viewModelScope.launch {
             try {
-                val deckValues = withCol {
-                    decks.allNamesAndIds(includeFiltered = false, skipEmptyDefault = true)
-                        .map { SelectableDeck.Deck(it.id, it.name) }
-                }
+                val deckValues =
+                    withCol {
+                        decks
+                            .allNamesAndIds(includeFiltered = false, skipEmptyDefault = true)
+                            .map { SelectableDeck.Deck(it.id, it.name) }
+                    }
                 _availableDecks.value = deckValues
 
                 // Set initial deck to currently selected deck in collection
@@ -103,7 +105,8 @@ class StatisticsViewModel : ViewModel() {
         // Anki search requires deck:"name with spaces" for deck names containing spaces
         val escapedDeckName = quote(deckName)
 
-        val javascriptCode = """
+        val javascriptCode =
+            """
             function setDeck(retries) {
                 var textBox = document.getElementById("statisticsSearchText");
                 if (textBox) {
@@ -115,7 +118,7 @@ class StatisticsViewModel : ViewModel() {
                 }
             }
             setDeck(5);
-        """.trimIndent()
+            """.trimIndent()
 
         viewModelScope.launch {
             _jsInjectionEvent.emit(javascriptCode)

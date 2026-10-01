@@ -51,24 +51,25 @@ import timber.log.Timber
 private typealias CardSelectionOrder = Deck.Filtered.SearchTerm.Order
 
 @NeedsTest("construction + onCreate - do this after converting to fragment-based preferences.")
-class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.DeckPreferenceHack>(),
+class FilteredDeckOptions :
+    AppCompatPreferenceActivity<FilteredDeckOptions.DeckPreferenceHack>(),
     SharedPreferences.OnSharedPreferenceChangeListener {
     private var allowCommit = true
 
     // TODO: not anymore used in libanki?
-    private val dynExamples = arrayOf(
-        null,
-        "{'search'=\"is:new\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
-        "{'search'=\"added:1\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
-        "{'search'=\"rated:1:1\", 'order'=4}",
-        "{'search'=\"prop:due<=2\", 'order'=6}",
-        "{'search'=\"is:due tag:TAG\", 'order'=6}",
-        "{'search'=\"is:due\", 'order'=3}",
-        "{'search'=\"\", 'steps'=\"1 10 20\", 'order'=0}",
-    )
+    private val dynExamples =
+        arrayOf(
+            null,
+            "{'search'=\"is:new\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
+            "{'search'=\"added:1\", 'resched'=False, 'steps'=\"1\", 'order'=5}",
+            "{'search'=\"rated:1:1\", 'order'=4}",
+            "{'search'=\"prop:due<=2\", 'order'=6}",
+            "{'search'=\"is:due tag:TAG\", 'order'=6}",
+            "{'search'=\"is:due\", 'order'=3}",
+            "{'search'=\"\", 'steps'=\"1 10 20\", 'order'=0}",
+        )
 
-    inner class DeckPreferenceHack :
-        AppCompatPreferenceActivity<DeckPreferenceHack>.AbstractPreferenceHack() {
+    inner class DeckPreferenceHack : AppCompatPreferenceActivity<DeckPreferenceHack>.AbstractPreferenceHack() {
         var secondFilter = false
 
         override fun cacheValues() {
@@ -99,18 +100,18 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
             values["previewGoodSecs"] = deck.getString("previewGoodSecs")
         }
 
-        inner class Editor :
-            AppCompatPreferenceActivity<DeckPreferenceHack>.AbstractPreferenceHack.Editor() {
+        inner class Editor : AppCompatPreferenceActivity<DeckPreferenceHack>.AbstractPreferenceHack.Editor() {
             private fun Any?.toBoundedIntOrCurrent(
                 current: Int,
                 min: Int,
                 max: Int = 99999,
             ): Int {
-                val parsed = when (this) {
-                    is Int -> this
-                    is String -> this.toIntOrNull()
-                    else -> this?.toString()?.toIntOrNull()
-                } ?: return current
+                val parsed =
+                    when (this) {
+                        is Int -> this
+                        is String -> this.toIntOrNull()
+                        else -> this?.toString()?.toIntOrNull()
+                    } ?: return current
                 return parsed.coerceIn(min, max)
             }
 
@@ -129,7 +130,7 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                                 val secondFilter = ar.getJSONArray(1)
                                 secondFilter.put(
                                     1,
-                                    value.toBoundedIntOrCurrent(secondFilter.optInt(1, 20), min = 1)
+                                    value.toBoundedIntOrCurrent(secondFilter.optInt(1, 20), min = 1),
                                 )
                             }
 
@@ -147,7 +148,7 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                             val firstFilter = ar.getJSONArray(0)
                             firstFilter.put(
                                 1,
-                                value.toBoundedIntOrCurrent(firstFilter.optInt(1, 20), min = 1)
+                                value.toBoundedIntOrCurrent(firstFilter.optInt(1, 20), min = 1),
                             )
                         }
 
@@ -164,7 +165,7 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                                 "previewAgainSecs",
                                 value.toBoundedIntOrCurrent(
                                     deck.optInt("previewAgainSecs", 1),
-                                    min = 1
+                                    min = 1,
                                 ),
                             )
                         }
@@ -174,7 +175,7 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                                 "previewHardSecs",
                                 value.toBoundedIntOrCurrent(
                                     deck.optInt("previewHardSecs", 0),
-                                    min = 0
+                                    min = 0,
                                 ),
                             )
                         }
@@ -184,7 +185,7 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
                                 "previewGoodSecs",
                                 value.toBoundedIntOrCurrent(
                                     deck.optInt("previewGoodSecs", 0),
-                                    min = 0
+                                    min = 0,
                                 ),
                             )
                         }
@@ -296,12 +297,13 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
         // Set the activity title to include the name of the deck
         var title = resources.getString(R.string.deckpreferences_title)
         if (title.contains("XXX")) {
-            title = try {
-                title.replace("XXX", deck.getString("name"))
-            } catch (e: JSONException) {
-                Timber.w(e)
-                title.replace("XXX", "???")
-            }
+            title =
+                try {
+                    title.replace("XXX", deck.getString("name"))
+                } catch (e: JSONException) {
+                    Timber.w(e)
+                    title.replace("XXX", "???")
+                }
         }
         this.title = title
 
@@ -356,16 +358,17 @@ class FilteredDeckOptions : AppCompatPreferenceActivity<FilteredDeckOptions.Deck
         val keys: Set<String> = pref.values.keys
         for (key in keys) {
             val pref = findPreference(key)
-            val value: String? = if (pref == null) {
-                continue
-            } else if (pref is CheckBoxPreference) {
-                continue
-            } else if (pref is ListPreference) {
-                val entry = pref.entry
-                entry?.toString() ?: ""
-            } else {
-                this.pref.getString(key, "")
-            }
+            val value: String? =
+                if (pref == null) {
+                    continue
+                } else if (pref is CheckBoxPreference) {
+                    continue
+                } else if (pref is ListPreference) {
+                    val entry = pref.entry
+                    entry?.toString() ?: ""
+                } else {
+                    this.pref.getString(key, "")
+                }
             // update value for EditTexts
             if (pref is EditTextPreference) {
                 pref.text = value

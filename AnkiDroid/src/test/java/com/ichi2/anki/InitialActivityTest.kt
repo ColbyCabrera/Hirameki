@@ -149,10 +149,11 @@ class InitialActivityTest : RobolectricTest() {
 
     @Test
     fun non_legacy_folder_with_external_manager_uses_public_folder() {
-        val folder = selectAnkiDroidFolder(
-            canManageExternalStorage = true,
-            currentFolderIsAccessibleAndLegacy = false,
-        )
+        val folder =
+            selectAnkiDroidFolder(
+                canManageExternalStorage = true,
+                currentFolderIsAccessibleAndLegacy = false,
+            )
         assertThat(folder, instanceOf(PublicFolder::class.java))
         assertThat(
             (folder as PublicFolder).requiredPermissions.asIterable(),

@@ -169,7 +169,10 @@ class CardMediaPlayer : Closeable {
         playAllForSide(cardSide, isAutomaticPlayback = true)
     }
 
-    suspend fun playAllForSide(cardSide: CardSide, isAutomaticPlayback: Boolean) {
+    suspend fun playAllForSide(
+        cardSide: CardSide,
+        isAutomaticPlayback: Boolean,
+    ) {
         if (!isEnabled) return
         if (isAutomaticPlayback && !config.autoplay) {
             onMediaGroupCompleted?.invoke()
@@ -330,7 +333,15 @@ class CardMediaPlayer : Closeable {
      */
     suspend fun replayAll(side: SingleCardSide) =
         when (side) {
-            SingleCardSide.BACK -> if (config.replayQuestion) playAllForSide(CardSide.BOTH, isAutomaticPlayback = false) else playAllForSide(CardSide.ANSWER, isAutomaticPlayback = false)
+            SingleCardSide.BACK ->
+                if (config.replayQuestion) {
+                    playAllForSide(
+                        CardSide.BOTH,
+                        isAutomaticPlayback = false,
+                    )
+                } else {
+                    playAllForSide(CardSide.ANSWER, isAutomaticPlayback = false)
+                }
             SingleCardSide.FRONT -> playAllForSide(CardSide.QUESTION, isAutomaticPlayback = false)
         }
 

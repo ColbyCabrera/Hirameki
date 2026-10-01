@@ -26,18 +26,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RatingColorFactoryTest {
-
     @Test
     fun `light mode generates expected tonal roles`() {
         val primary = Color(0xFF6750A4) // M3 baseline Purple
         val scheme = RatingColorFactory.createRatingColorScheme(primaryColor = primary, isDark = false)
 
-        val ratings = listOf(
-            CardAnswer.Rating.AGAIN,
-            CardAnswer.Rating.HARD,
-            CardAnswer.Rating.GOOD,
-            CardAnswer.Rating.EASY,
-        )
+        val ratings =
+            listOf(
+                CardAnswer.Rating.AGAIN,
+                CardAnswer.Rating.HARD,
+                CardAnswer.Rating.GOOD,
+                CardAnswer.Rating.EASY,
+            )
 
         for (rating in ratings) {
             val role = scheme.forRating(rating)
@@ -72,12 +72,13 @@ class RatingColorFactoryTest {
         val primary = Color(0xFFD0BCFF) // M3 baseline Purple Dark
         val scheme = RatingColorFactory.createRatingColorScheme(primaryColor = primary, isDark = true)
 
-        val ratings = listOf(
-            CardAnswer.Rating.AGAIN,
-            CardAnswer.Rating.HARD,
-            CardAnswer.Rating.GOOD,
-            CardAnswer.Rating.EASY,
-        )
+        val ratings =
+            listOf(
+                CardAnswer.Rating.AGAIN,
+                CardAnswer.Rating.HARD,
+                CardAnswer.Rating.GOOD,
+                CardAnswer.Rating.EASY,
+            )
 
         for (rating in ratings) {
             val role = scheme.forRating(rating)
@@ -107,7 +108,10 @@ class RatingColorFactoryTest {
         }
     }
 
-    private fun contrastRatio(tone1: Double, tone2: Double): Double {
+    private fun contrastRatio(
+        tone1: Double,
+        tone2: Double,
+    ): Double {
         val y1 = ColorUtils.yFromLstar(tone1)
         val y2 = ColorUtils.yFromLstar(tone2)
         val lighter = maxOf(y1, y2)

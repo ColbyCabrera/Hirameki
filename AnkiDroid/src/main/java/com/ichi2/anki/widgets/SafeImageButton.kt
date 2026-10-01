@@ -28,34 +28,35 @@ import com.ichi2.anki.common.utils.annotation.KotlinCleanup
  * See https://issuetracker.google.com/issues/143646422
  */
 @KotlinCleanup("remove when minSdk >= 34? assuming it's fixed in later versions")
-class SafeImageButton @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = androidx.appcompat.R.attr.imageButtonStyle
-) : AppCompatImageButton(context, attrs, defStyleAttr) {
+class SafeImageButton
+    @JvmOverloads
+    constructor(
+        context: Context,
+        attrs: AttributeSet? = null,
+        defStyleAttr: Int = androidx.appcompat.R.attr.imageButtonStyle,
+    ) : AppCompatImageButton(context, attrs, defStyleAttr) {
+        private var savedContentDescription: CharSequence? = null
+        private var savedTooltipText: CharSequence? = null
 
-    private var savedContentDescription: CharSequence? = null
-    private var savedTooltipText: CharSequence? = null
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        // Workaround for memory leak: View.TooltipInfo.HideTooltipRunnable
-        // If a tooltip was triggered (e.g. by long press on a view with contentDescription),
-        // a runnable is posted to hide it. If the view is detached before the runnable runs,
-        // it might not be removed, leaking the View and Context.
-        // Clearing contentDescription (and tooltipText) forces the tooltip to hide and removes the runnable.
-        if (contentDescription != null) {
-            savedContentDescription = contentDescription
-            contentDescription = null
+        override fun onDetachedFromWindow() {
+            super.onDetachedFromWindow()
+            // Workaround for memory leak: View.TooltipInfo.HideTooltipRunnable
+            // If a tooltip was triggered (e.g. by long press on a view with contentDescription),
+            // a runnable is posted to hide it. If the view is detached before the runnable runs,
+            // it might not be removed, leaking the View and Context.
+            // Clearing contentDescription (and tooltipText) forces the tooltip to hide and removes the runnable.
+            if (contentDescription != null) {
+                savedContentDescription = contentDescription
+                contentDescription = null
+            }
+            tooltipText = null
         }
-        tooltipText = null
-    }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (contentDescription == null && savedContentDescription != null) {
-            contentDescription = savedContentDescription
-            savedContentDescription = null
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            if (contentDescription == null && savedContentDescription != null) {
+                contentDescription = savedContentDescription
+                savedContentDescription = null
+            }
         }
     }
-}

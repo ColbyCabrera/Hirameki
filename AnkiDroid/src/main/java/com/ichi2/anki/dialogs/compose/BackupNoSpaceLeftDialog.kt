@@ -13,14 +13,15 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @Composable
 fun BackupNoSpaceLeftDialog(
     space: Long,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = {}, // Disallow dismiss on back/outside
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false
-        ),
+        properties =
+            DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
         title = {
             Text(text = stringResource(id = R.string.storage_almost_full_title))
         },
@@ -31,7 +32,7 @@ fun BackupNoSpaceLeftDialog(
             TextButton(onClick = onConfirm) {
                 Text(text = stringResource(id = R.string.dialog_ok))
             }
-        }
+        },
     )
 }
 
@@ -41,7 +42,7 @@ private fun BackupNoSpaceLeftDialogPreview() {
     AnkiDroidTheme {
         BackupNoSpaceLeftDialog(
             space = 50 * 1024 * 1024,
-            onConfirm = {}
+            onConfirm = {},
         )
     }
 }

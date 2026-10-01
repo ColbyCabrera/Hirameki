@@ -91,11 +91,12 @@ class ColumnSelectionDialogFragment : DialogFragment() {
 
         lifecycleScope.launch {
             // Load the available columns either from the viewModel or savedInstanceState bundle
-            availableColumns = if (savedInstanceState == null) {
-                viewModel.previewColumnHeadings(viewModel.cardsOrNotes).second
-            } else {
-                BundleCompat.getParcelableArrayList(savedInstanceState, AVAILABLE_COLUMNS, ColumnWithSample::class.java)!!.toList()
-            }
+            availableColumns =
+                if (savedInstanceState == null) {
+                    viewModel.previewColumnHeadings(viewModel.cardsOrNotes).second
+                } else {
+                    BundleCompat.getParcelableArrayList(savedInstanceState, AVAILABLE_COLUMNS, ColumnWithSample::class.java)!!.toList()
+                }
             adapter.clear()
             adapter.addAll(availableColumns)
             adapter.notifyDataSetChanged()
@@ -133,9 +134,10 @@ class ColumnSelectionDialogFragment : DialogFragment() {
 
         fun newInstance(selectedColumn: ColumnHeading): ColumnSelectionDialogFragment =
             ColumnSelectionDialogFragment().apply {
-                arguments = Bundle().apply {
-                    putParcelable(SELECTED_COLUMN, selectedColumn)
-                }
+                arguments =
+                    Bundle().apply {
+                        putParcelable(SELECTED_COLUMN, selectedColumn)
+                    }
             }
     }
 }

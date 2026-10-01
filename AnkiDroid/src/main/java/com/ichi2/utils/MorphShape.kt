@@ -36,12 +36,12 @@ import androidx.graphics.shapes.toPath
  */
 class MorphShape(
     private val morph: Morph,
-    private val percentage: Float
+    private val percentage: Float,
 ) : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         // To draw the morph, we need to scale the path to the component size.
         val matrix = Matrix()

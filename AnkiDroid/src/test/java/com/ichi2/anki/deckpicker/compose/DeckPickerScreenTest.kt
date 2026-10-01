@@ -50,7 +50,6 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w1280dp-h1280dp")
 class DeckPickerScreenTest : RobolectricTest() {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -64,7 +63,8 @@ class DeckPickerScreenTest : RobolectricTest() {
         setDeckPickerContent(
             onSearchQueryChanged = {
                 queryEvents += it
-            })
+            },
+        )
 
         composeTestRule.onNodeWithContentDescription(searchDecksLabel).performClick()
         composeTestRule.onNodeWithText(searchDecksLabel).performTextInput("spanish")
@@ -81,7 +81,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            fabActions = emptyFabActions().copy(onAddSharedDeck = { callbackInvoked = true })
+            fabActions = emptyFabActions().copy(onAddSharedDeck = { callbackInvoked = true }),
         )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
@@ -100,7 +100,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            fabActions = emptyFabActions().copy(onAddFilteredDeck = { callbackInvoked = true })
+            fabActions = emptyFabActions().copy(onAddFilteredDeck = { callbackInvoked = true }),
         )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
@@ -118,7 +118,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            fabActions = emptyFabActions().copy(onAddDeck = { callbackInvoked = true })
+            fabActions = emptyFabActions().copy(onAddDeck = { callbackInvoked = true }),
         )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
@@ -137,7 +137,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            fabActions = emptyFabActions().copy(onAddNote = { callbackInvoked = true })
+            fabActions = emptyFabActions().copy(onAddNote = { callbackInvoked = true }),
         )
 
         composeTestRule.onNodeWithContentDescription(fabMenuToggleLabel).performClick()
@@ -170,7 +170,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName),
-            deckRowActions = emptyDeckRowActions().copy(onRename = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onRename = { callbackInvoked = true }),
         )
 
         openContextMenu(deckName)
@@ -190,7 +190,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName),
-            deckRowActions = emptyDeckRowActions().copy(onExportDeck = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onExportDeck = { callbackInvoked = true }),
         )
 
         openContextMenu(deckName)
@@ -210,7 +210,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName),
-            deckRowActions = emptyDeckRowActions().copy(onCustomStudy = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onCustomStudy = { callbackInvoked = true }),
         )
 
         openContextMenu(deckName)
@@ -230,7 +230,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName, filtered = true),
-            deckRowActions = emptyDeckRowActions().copy(onRebuild = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onRebuild = { callbackInvoked = true }),
         )
 
         openContextMenu(deckName)
@@ -250,7 +250,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName, filtered = true),
-            deckRowActions = emptyDeckRowActions().copy(onEmpty = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onEmpty = { callbackInvoked = true }),
         )
 
         openContextMenu(deckName)
@@ -270,9 +270,10 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName),
-            deckRowActions = emptyDeckRowActions().copy(onCreateSubdeck = {
-                callbackInvoked = true
-            })
+            deckRowActions =
+                emptyDeckRowActions().copy(onCreateSubdeck = {
+                    callbackInvoked = true
+                }),
         )
 
         openContextMenu(deckName)
@@ -292,7 +293,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName),
-            deckRowActions = emptyDeckRowActions().copy(onDelete = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onDelete = { callbackInvoked = true }),
         )
 
         openContextMenu(deckName)
@@ -312,7 +313,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName, collapsed = true),
-            deckRowActions = emptyDeckRowActions().copy(onExpandClick = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onExpandClick = { callbackInvoked = true }),
         )
 
         composeTestRule.onNodeWithContentDescription(expandLabel).performClick()
@@ -330,7 +331,7 @@ class DeckPickerScreenTest : RobolectricTest() {
 
         setDeckPickerContent(
             deck = displayDeck(deckName, hasBuried = true),
-            deckRowActions = emptyDeckRowActions().copy(onUnbury = { callbackInvoked = true })
+            deckRowActions = emptyDeckRowActions().copy(onUnbury = { callbackInvoked = true }),
         )
 
         openContextMenu(deckName)
@@ -349,9 +350,10 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onDeleteEmptyCards = {
-                callbackInvoked = true
-            })
+            moreOptionsMenuActions =
+                emptyMoreOptionsMenuActions().copy(onDeleteEmptyCards = {
+                    callbackInvoked = true
+                }),
         )
 
         composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
@@ -370,9 +372,10 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onCheckDatabase = {
-                callbackInvoked = true
-            })
+            moreOptionsMenuActions =
+                emptyMoreOptionsMenuActions().copy(onCheckDatabase = {
+                    callbackInvoked = true
+                }),
         )
 
         composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
@@ -391,9 +394,10 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onExport = {
-                callbackInvoked = true
-            })
+            moreOptionsMenuActions =
+                emptyMoreOptionsMenuActions().copy(onExport = {
+                    callbackInvoked = true
+                }),
         )
 
         composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
@@ -412,9 +416,10 @@ class DeckPickerScreenTest : RobolectricTest() {
         var callbackInvoked = false
 
         setDeckPickerContent(
-            moreOptionsMenuActions = emptyMoreOptionsMenuActions().copy(onManageNoteTypes = {
-                callbackInvoked = true
-            })
+            moreOptionsMenuActions =
+                emptyMoreOptionsMenuActions().copy(onManageNoteTypes = {
+                    callbackInvoked = true
+                }),
         )
 
         composeTestRule.onNodeWithContentDescription(moreOptionsLabel).performClick()
@@ -467,20 +472,29 @@ class DeckPickerScreenTest : RobolectricTest() {
         deckName: String,
         filtered: Boolean = false,
         collapsed: Boolean = false,
-        hasBuried: Boolean = false
+        hasBuried: Boolean = false,
     ): DisplayDeckNode {
-        val deckNode = DeckNode(
-            node = deckTreeNode {
-                name = deckName
-                deckId = 1L
-                level = 1
-                this.filtered = filtered
-                this.collapsed = collapsed
-                if (collapsed) {
-                    children.add(deckTreeNode { name = "Child"; deckId = 2L; level = 2 })
-                }
-            }, fullDeckName = deckName
-        )
+        val deckNode =
+            DeckNode(
+                node =
+                    deckTreeNode {
+                        name = deckName
+                        deckId = 1L
+                        level = 1
+                        this.filtered = filtered
+                        this.collapsed = collapsed
+                        if (collapsed) {
+                            children.add(
+                                deckTreeNode {
+                                    name = "Child"
+                                    deckId = 2L
+                                    level = 2
+                                },
+                            )
+                        }
+                    },
+                fullDeckName = deckName,
+            )
         return DisplayDeckNode.from(deckNode, collapsed, 0L, hasBuried)
     }
 
@@ -494,7 +508,7 @@ class DeckPickerScreenTest : RobolectricTest() {
         onNavigationIconClick: () -> Unit = {},
         searchQuery: String = "",
         onSearchQueryChanged: (String) -> Unit = {},
-        isInInitialState: Boolean = decks.isEmpty()
+        isInInitialState: Boolean = decks.isEmpty(),
     ) {
         composeTestRule.setContent {
             var currentSearchQuery by remember { mutableStateOf(searchQuery) }
@@ -531,32 +545,35 @@ class DeckPickerScreenTest : RobolectricTest() {
         composeTestRule.waitForIdle()
     }
 
-    private fun emptyDeckRowActions() = DeckRowActions(
-        onDeckClick = {},
-        onExpandClick = {},
-        onDeckOptions = {},
-        onRename = {},
-        onCustomStudy = {},
-        onUnbury = {},
-        onExportDeck = {},
-        onDelete = {},
-        onRebuild = {},
-        onEmpty = {},
-        onCreateSubdeck = {},
-    )
+    private fun emptyDeckRowActions() =
+        DeckRowActions(
+            onDeckClick = {},
+            onExpandClick = {},
+            onDeckOptions = {},
+            onRename = {},
+            onCustomStudy = {},
+            onUnbury = {},
+            onExportDeck = {},
+            onDelete = {},
+            onRebuild = {},
+            onEmpty = {},
+            onCreateSubdeck = {},
+        )
 
-    private fun emptyFabActions() = FabActions(
-        onAddNote = {},
-        onAddDeck = {},
-        onAddSharedDeck = {},
-        onAddFilteredDeck = {},
-        onImport = {},
-    )
+    private fun emptyFabActions() =
+        FabActions(
+            onAddNote = {},
+            onAddDeck = {},
+            onAddSharedDeck = {},
+            onAddFilteredDeck = {},
+            onImport = {},
+        )
 
-    private fun emptyMoreOptionsMenuActions() = MoreOptionsMenuActions(
-        onDeleteEmptyCards = {},
-        onCheckDatabase = {},
-        onExport = {},
-        onManageNoteTypes = {},
-    )
+    private fun emptyMoreOptionsMenuActions() =
+        MoreOptionsMenuActions(
+            onDeleteEmptyCards = {},
+            onCheckDatabase = {},
+            onExport = {},
+            onManageNoteTypes = {},
+        )
 }

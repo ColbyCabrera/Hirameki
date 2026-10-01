@@ -718,9 +718,10 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
          */
         fun createInstance(deckId: DeckId): CustomStudyDialog =
             CustomStudyDialog().apply {
-                arguments = Bundle().apply {
-                    putLong(ARG_DID, deckId)
-                }
+                arguments =
+                    Bundle().apply {
+                        putLong(ARG_DID, deckId)
+                    }
             }
 
         /**
@@ -734,10 +735,11 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             contextMenuAttribute: ContextMenuOption,
         ): CustomStudyDialog =
             CustomStudyDialog().apply {
-                arguments = Bundle().apply {
-                    putLong(ARG_DID, deckId)
-                    putInt(ARG_SUB_DIALOG_ID, contextMenuAttribute.ordinal)
-                }
+                arguments =
+                    Bundle().apply {
+                        putLong(ARG_DID, deckId)
+                        putInt(ARG_SUB_DIALOG_ID, contextMenuAttribute.ordinal)
+                    }
             }
 
         /**

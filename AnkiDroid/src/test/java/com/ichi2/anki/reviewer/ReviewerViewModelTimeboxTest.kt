@@ -36,43 +36,46 @@ class ReviewerViewModelTimeboxTest : RobolectricTest() {
                 advanceRobolectricLooper()
 
                 val events = cancelAndConsumeRemainingEvents()
-                val hasDialog = events.filterIsInstance<Event.Item<ReviewerEffect>>()
-                    .any { it.value is ReviewerEffect.ShowTimeboxReachedDialog }
+                val hasDialog =
+                    events
+                        .filterIsInstance<Event.Item<ReviewerEffect>>()
+                        .any { it.value is ReviewerEffect.ShowTimeboxReachedDialog }
                 assertFalse("Timebox dialog should NOT appear initially", hasDialog)
             }
         }
 
     @Test
-    fun `timebox dialog appears when limit is reached after initialization`() = runTest {
-        // Given we have a card and a 5-minute limit
-        addBasicNote("Front", "Back")
-        col.config.set("timeLim", 300)
+    fun `timebox dialog appears when limit is reached after initialization`() =
+        runTest {
+            // Given we have a card and a 5-minute limit
+            addBasicNote("Front", "Back")
+            col.config.set("timeLim", 300)
 
-        // Initialize ViewModel (resets timebox start time to current collectionTime)
-        val app = ApplicationProvider.getApplicationContext<Application>()
-        val viewModel = ReviewerViewModel(app)
-        advanceUntilIdle()
-
-        // When we advance time significantly (1000 seconds)
-        collectionTime.addS(1000)
-
-        // And trigger a card reload which checks the timebox status
-        viewModel.effect.test {
-            viewModel.onEvent(ReviewerEvent.ReloadCard)
-
-            // Ensure all coroutines and looper tasks complete
+            // Initialize ViewModel (resets timebox start time to current collectionTime)
+            val app = ApplicationProvider.getApplicationContext<Application>()
+            val viewModel = ReviewerViewModel(app)
             advanceUntilIdle()
-            advanceRobolectricLooper()
 
-            // We use a loop with awaitItem to find the specific effect.
-            // This is more robust than cancelAndConsumeRemainingEvents() which might miss the event
-            // if it hasn't been emitted yet (even with advanceUntilIdle).
-            // ReviewerViewModel might emit other effects (like ReplayMedia) during reload.
-            // Turbine will time out if we wait too long without receiving the expected event.
-            while (awaitItem() !is ReviewerEffect.ShowTimeboxReachedDialog) {
-                // Ignore other effects until we find the dialog reached event
+            // When we advance time significantly (1000 seconds)
+            collectionTime.addS(1000)
+
+            // And trigger a card reload which checks the timebox status
+            viewModel.effect.test {
+                viewModel.onEvent(ReviewerEvent.ReloadCard)
+
+                // Ensure all coroutines and looper tasks complete
+                advanceUntilIdle()
+                advanceRobolectricLooper()
+
+                // We use a loop with awaitItem to find the specific effect.
+                // This is more robust than cancelAndConsumeRemainingEvents() which might miss the event
+                // if it hasn't been emitted yet (even with advanceUntilIdle).
+                // ReviewerViewModel might emit other effects (like ReplayMedia) during reload.
+                // Turbine will time out if we wait too long without receiving the expected event.
+                while (awaitItem() !is ReviewerEffect.ShowTimeboxReachedDialog) {
+                    // Ignore other effects until we find the dialog reached event
+                }
+                cancelAndIgnoreRemainingEvents()
             }
-            cancelAndIgnoreRemainingEvents()
         }
-    }
 }

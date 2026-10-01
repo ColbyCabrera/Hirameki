@@ -92,20 +92,22 @@ fun AnkiSearchBar(
     Surface(
         shape = SearchBarDefaults.inputFieldShape,
         color = containerColor,
-        modifier = modifier.graphicsLayer {
-            alpha = searchAnim
-            translationY = searchOffsetPx * (1f - searchAnim)
-            scaleX = 0.98f + 0.02f * searchAnim
-            scaleY = 0.98f + 0.02f * searchAnim
-        },
+        modifier =
+            modifier.graphicsLayer {
+                alpha = searchAnim
+                translationY = searchOffsetPx * (1f - searchAnim)
+                scaleX = 0.98f + 0.02f * searchAnim
+                scaleY = 0.98f + 0.02f * searchAnim
+            },
     ) {
         TextField(
             value = query,
             onValueChange = onQueryChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("search_field")
-                .focusRequester(focusRequester),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag("search_field")
+                    .focusRequester(focusRequester),
             placeholder = { Text(placeholder) },
             leadingIcon = {
                 Icon(
@@ -126,21 +128,23 @@ fun AnkiSearchBar(
                     )
                 }
             },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-            ),
+            colors =
+                TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                ),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = {
-                keyboardController?.hide()
-                focusManager.clearFocus()
-                onSearch(query)
-            }),
+            keyboardActions =
+                KeyboardActions(onSearch = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    onSearch(query)
+                }),
         )
     }
 }

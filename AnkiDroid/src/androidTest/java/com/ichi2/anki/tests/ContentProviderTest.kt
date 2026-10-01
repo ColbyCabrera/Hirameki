@@ -351,7 +351,7 @@ class ContentProviderTest : InstrumentedTest() {
         val fieldUri = cr.insert(Uri.withAppendedPath(noteTypeUri, "fields"), insertFieldValues)
         assertNotNull("Check field uri", fieldUri)
         // Ensure that the changes are physically saved to the DB
-        val col:com.ichi2.anki.libanki.Collection = reopenCol()
+        val col: com.ichi2.anki.libanki.Collection = reopenCol()
         noteType = col.notetypes.get(noteTypeId)
         // Test the field is as expected
         val fieldId = ContentUris.parseId(fieldUri!!)

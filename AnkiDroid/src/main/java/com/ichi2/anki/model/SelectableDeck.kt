@@ -76,11 +76,14 @@ sealed class SelectableDeck : Parcelable {
          * @return all [SelectableDecks][SelectableDeck] in the collection satisfying the filter
          */
         suspend fun fromCollection(
-            includeFiltered: Boolean, skipEmptyDefault: Boolean = true
-        ): List<Deck> = withCol {
-            decks.allNamesAndIds(
-                includeFiltered = includeFiltered, skipEmptyDefault = skipEmptyDefault
-            )
-        }.map { nameAndId -> Deck(nameAndId) }
+            includeFiltered: Boolean,
+            skipEmptyDefault: Boolean = true,
+        ): List<Deck> =
+            withCol {
+                decks.allNamesAndIds(
+                    includeFiltered = includeFiltered,
+                    skipEmptyDefault = skipEmptyDefault,
+                )
+            }.map { nameAndId -> Deck(nameAndId) }
     }
 }

@@ -58,32 +58,33 @@ import com.ichi2.anki.ui.compose.components.MorphingCardCount
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val MORPHING_SHAPES = listOf(
-    MaterialShapes.Circle,
-    MaterialShapes.Pill,
-    MaterialShapes.SoftBurst,
-    MaterialShapes.Pentagon,
-    MaterialShapes.Sunny,
-    MaterialShapes.Square,
-    MaterialShapes.Slanted,
-    MaterialShapes.Arch,
-    MaterialShapes.Cookie4Sided,
-    MaterialShapes.Cookie6Sided,
-    MaterialShapes.Cookie7Sided,
-    MaterialShapes.Cookie9Sided,
-    MaterialShapes.Cookie12Sided,
-    MaterialShapes.Clover4Leaf,
-    MaterialShapes.Clover8Leaf,
-    MaterialShapes.SoftBoom,
-    MaterialShapes.Ghostish,
-    MaterialShapes.Puffy,
-    MaterialShapes.Flower
-)
+private val MORPHING_SHAPES =
+    listOf(
+        MaterialShapes.Circle,
+        MaterialShapes.Pill,
+        MaterialShapes.SoftBurst,
+        MaterialShapes.Pentagon,
+        MaterialShapes.Sunny,
+        MaterialShapes.Square,
+        MaterialShapes.Slanted,
+        MaterialShapes.Arch,
+        MaterialShapes.Cookie4Sided,
+        MaterialShapes.Cookie6Sided,
+        MaterialShapes.Cookie7Sided,
+        MaterialShapes.Cookie9Sided,
+        MaterialShapes.Cookie12Sided,
+        MaterialShapes.Clover4Leaf,
+        MaterialShapes.Clover8Leaf,
+        MaterialShapes.SoftBoom,
+        MaterialShapes.Ghostish,
+        MaterialShapes.Puffy,
+        MaterialShapes.Flower,
+    )
 
 @OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalMaterial3ExpressiveApi::class,
-    ExperimentalFoundationApi::class
+    ExperimentalFoundationApi::class,
 )
 @Composable
 fun NoteTypeItem(
@@ -94,41 +95,54 @@ fun NoteTypeItem(
     onLongClick: () -> Unit = {},
 ) {
     val animatedContainerColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow
-        }, animationSpec = motionScheme.defaultEffectsSpec(), label = "containerColor"
+        targetValue =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            },
+        animationSpec = motionScheme.defaultEffectsSpec(),
+        label = "containerColor",
     )
 
     val animatedCountsContainerColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.tertiaryContainer
-        }, animationSpec = motionScheme.defaultEffectsSpec(), label = "countsContainerColor"
+        targetValue =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.tertiaryContainer
+            },
+        animationSpec = motionScheme.defaultEffectsSpec(),
+        label = "countsContainerColor",
     )
 
     val animatedCountsContentColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onTertiaryContainer
-        }, animationSpec = motionScheme.defaultEffectsSpec(), label = "countsContentColor"
+        targetValue =
+            if (isSelected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            },
+        animationSpec = motionScheme.defaultEffectsSpec(),
+        label = "countsContentColor",
     )
-
 
     val animatedCornerRadius by animateDpAsState(
         targetValue = if (isSelected) 48.dp else 24.dp,
         animationSpec = motionScheme.fastSpatialSpec(),
-        label = "cornerRadius"
+        label = "cornerRadius",
     )
 
     val infiniteTransition = rememberInfiniteTransition(label = "wobble")
     val wobbleRotation by infiniteTransition.animateFloat(
-        initialValue = -5f, targetValue = 5f, animationSpec = infiniteRepeatable(
-            animation = tween(250, easing = LinearEasing), repeatMode = RepeatMode.Reverse
-        ), label = "wobbleRotation"
+        initialValue = -5f,
+        targetValue = 5f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(250, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "wobbleRotation",
     )
 
     Surface(
@@ -136,26 +150,35 @@ fun NoteTypeItem(
         color = animatedContainerColor,
     ) {
         ListItem(
-            modifier = Modifier.combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-            ), supportingContent = {
+            modifier =
+                Modifier.combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                ),
+            supportingContent = {
                 Text(
-                    text = pluralStringResource(
-                        R.plurals.model_browser_of_type, noteType.useCount, noteType.useCount
-                    ), style = MaterialTheme.typography.bodySmall
+                    text =
+                        pluralStringResource(
+                            R.plurals.model_browser_of_type,
+                            noteType.useCount,
+                            noteType.useCount,
+                        ),
+                    style = MaterialTheme.typography.bodySmall,
                 )
-            }, leadingContent = {
+            },
+            leadingContent = {
                 MorphingCardCount(
-                    modifier = Modifier.graphicsLayer {
-                        rotationZ = if (isSelected) wobbleRotation else 0f
-                    },
+                    modifier =
+                        Modifier.graphicsLayer {
+                            rotationZ = if (isSelected) wobbleRotation else 0f
+                        },
                     cardCount = noteType.useCount,
                     containerColor = animatedCountsContainerColor,
                     contentColor = animatedCountsContentColor,
-                    shapes = MORPHING_SHAPES
+                    shapes = MORPHING_SHAPES,
                 )
-            }, trailingContent = {
+            },
+            trailingContent = {
                 if (isInMultiSelectMode) {
                     Checkbox(
                         modifier = Modifier.padding(horizontal = 15.dp), // match total width of IconButton
@@ -165,7 +188,7 @@ fun NoteTypeItem(
                 } else {
                     IconButton(
                         onClick = onClick,
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
@@ -173,15 +196,17 @@ fun NoteTypeItem(
                         )
                     }
                 }
-            }, colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent
-            )
+            },
+            colors =
+                ListItemDefaults.colors(
+                    containerColor = Color.Transparent,
+                ),
         ) {
             Text(
                 text = noteType.name,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -192,7 +217,9 @@ fun NoteTypeItem(
 fun NoteTypeItemPreview() {
     AnkiDroidTheme {
         NoteTypeItem(
-            noteType = ManageNoteTypeUiModel(0, "Basic", 10), onClick = {})
+            noteType = ManageNoteTypeUiModel(0, "Basic", 10),
+            onClick = {},
+        )
     }
 }
 

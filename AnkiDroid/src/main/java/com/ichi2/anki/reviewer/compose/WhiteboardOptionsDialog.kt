@@ -93,9 +93,7 @@ fun BrushOptionsDialog(
  * UI content for adjusting brush properties.
  */
 @Composable
-fun BrushOptionsContent(
-    viewModel: WhiteboardViewModel,
-) {
+fun BrushOptionsContent(viewModel: WhiteboardViewModel) {
     val brushes by viewModel.brushes.collectAsStateWithLifecycle()
     val activeIndex by viewModel.activeBrushIndex.collectAsStateWithLifecycle()
     val brush = brushes.getOrNull(activeIndex) ?: return
@@ -126,11 +124,12 @@ fun BrushOptionsContent(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(Color(brush.color))
-                    .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                modifier =
+                    Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(Color(brush.color))
+                        .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape),
             )
             Spacer(modifier = Modifier.width(16.dp))
             OutlinedButton(onClick = { showColorPicker = true }) {
@@ -141,13 +140,14 @@ fun BrushOptionsContent(
         // Width Slider
         Column(modifier = Modifier.fillMaxWidth()) {
             val lastBrushWidth = remember(activeIndex) { floatArrayOf(brush.width) }
-            val sliderState = remember(activeIndex) {
-                SliderState(
-                    value = brush.width,
-                    steps = 7,
-                    trackRange = 1f..70f,
-                )
-            }
+            val sliderState =
+                remember(activeIndex) {
+                    SliderState(
+                        value = brush.width,
+                        steps = 7,
+                        trackRange = 1f..70f,
+                    )
+                }
             LaunchedEffect(brush.width) {
                 if (sliderState.value != brush.width) {
                     sliderState.value = brush.width
@@ -243,13 +243,14 @@ fun EraserOptionsContent(
         // Width Slider
         Column(modifier = Modifier.fillMaxWidth()) {
             val lastWidth = remember(mode) { floatArrayOf(width) }
-            val sliderState = remember(mode) {
-                SliderState(
-                    value = width,
-                    steps = 8,
-                    trackRange = 5f..200f,
-                )
-            }
+            val sliderState =
+                remember(mode) {
+                    SliderState(
+                        value = width,
+                        steps = 8,
+                        trackRange = 5f..200f,
+                    )
+                }
             LaunchedEffect(width) {
                 if (sliderState.value != width) {
                     sliderState.value = width
@@ -291,9 +292,10 @@ fun EraserOptionsContent(
                 onClearCanvas()
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = MaterialTheme.colorScheme.error,
-            ),
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error,
+                ),
         ) {
             Text(stringResource(R.string.whiteboard_clear))
         }
@@ -340,17 +342,16 @@ fun EraserOptionsPopup(
  * A common surface for whiteboard popups to provide consistent styling.
  */
 @Composable
-private fun PopupSurface(
-    content: @Composable () -> Unit,
-) {
+private fun PopupSurface(content: @Composable () -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp,
         shadowElevation = 8.dp,
-        modifier = Modifier
-            .width(320.dp) // Standardized width for popups
-            .padding(8.dp),
+        modifier =
+            Modifier
+                .width(320.dp) // Standardized width for popups
+                .padding(8.dp),
     ) {
         Box(modifier = Modifier.padding(16.dp)) {
             content()
@@ -366,10 +367,11 @@ private fun provideFakeWhiteboardViewModel(): WhiteboardViewModel {
 
     return remember {
         WhiteboardViewModel(WhiteboardRepository(sharedPreferences)).apply {
-            brushes.value = listOf(
-                BrushInfo(color = android.graphics.Color.RED, width = 10f),
-                BrushInfo(color = android.graphics.Color.BLUE, width = 20f),
-            )
+            brushes.value =
+                listOf(
+                    BrushInfo(color = android.graphics.Color.RED, width = 10f),
+                    BrushInfo(color = android.graphics.Color.BLUE, width = 20f),
+                )
         }
     }
 }

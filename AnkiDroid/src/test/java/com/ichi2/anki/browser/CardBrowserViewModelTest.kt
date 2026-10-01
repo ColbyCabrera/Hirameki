@@ -102,192 +102,207 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 class CardBrowserViewModelTest : JvmTest() {
     @Test
-    fun `delete search history - Issue 14989`() = runViewModelTest {
-        saveSearch("hello", "aa").also { result ->
-            assertThat(result, equalTo(SaveSearchResult.SUCCESS))
+    fun `delete search history - Issue 14989`() =
+        runViewModelTest {
+            saveSearch("hello", "aa").also { result ->
+                assertThat(result, equalTo(SaveSearchResult.SUCCESS))
+            }
+            savedSearches().also { searches ->
+                assertThat("filters after saving", searches.size, equalTo(1))
+                assertThat("filters after saving", searches["hello"], equalTo("aa"))
+            }
+            removeSavedSearch("hello")
+            assertThat("filters should be empty after removing", savedSearches().size, equalTo(0))
         }
-        savedSearches().also { searches ->
-            assertThat("filters after saving", searches.size, equalTo(1))
-            assertThat("filters after saving", searches["hello"], equalTo("aa"))
-        }
-        removeSavedSearch("hello")
-        assertThat("filters should be empty after removing", savedSearches().size, equalTo(0))
-    }
 
     @Test
-    fun `undo with empty stack shows error message`() = runViewModelTest {
-        flowOfSnackbarMessage.test {
-            undo().join()
-            // Verify that snackbar event emitted corresponds to empty undo stack
-            assertThat(awaitItem(), equalTo(R.string.undo_empty))
+    fun `undo with empty stack shows error message`() =
+        runViewModelTest {
+            flowOfSnackbarMessage.test {
+                undo().join()
+                // Verify that snackbar event emitted corresponds to empty undo stack
+                assertThat(awaitItem(), equalTo(R.string.undo_empty))
+            }
         }
-    }
 
     @Test
-    fun `saving search with same name fails`() = runViewModelTest {
-        saveSearch("hello", "aa").also { result ->
-            assertThat(
-                "saving a new search succeeds",
-                result,
-                equalTo(SaveSearchResult.SUCCESS),
-            )
+    fun `saving search with same name fails`() =
+        runViewModelTest {
+            saveSearch("hello", "aa").also { result ->
+                assertThat(
+                    "saving a new search succeeds",
+                    result,
+                    equalTo(SaveSearchResult.SUCCESS),
+                )
+            }
+            saveSearch("hello", "bb").also { result ->
+                assertThat(
+                    "saving with same name fails",
+                    result,
+                    equalTo(SaveSearchResult.ALREADY_EXISTS),
+                )
+            }
         }
-        saveSearch("hello", "bb").also { result ->
-            assertThat(
-                "saving with same name fails", result, equalTo(SaveSearchResult.ALREADY_EXISTS)
-            )
-        }
-    }
-
 
     @Test
-    fun `change deck in notes mode 15444`() = runViewModelTest {
-        val newDeck = addDeck("World")
-        selectDefaultDeck()
+    fun `change deck in notes mode 15444`() =
+        runViewModelTest {
+            val newDeck = addDeck("World")
+            selectDefaultDeck()
 
-        repeat(5) {
-            addBasicAndReversedNote()
+            repeat(5) {
+                addBasicAndReversedNote()
+            }
+            setCardsOrNotes(CardsOrNotes.NOTES)
+            waitForSearchResults()
+
+            selectRowsWithPositions(0, 2)
+
+            val allCardIds = queryAllSelectedCardIds()
+            assertThat(allCardIds.size, equalTo(4))
+
+            moveSelectedCardsToDeck(newDeck).join()
+
+            for (cardId in allCardIds) {
+                assertThat("Deck should be changed", col.getCard(cardId).did, equalTo(newDeck))
+            }
+
+            val hasSomeDecksUnchanged =
+                cards.any { row -> col.getCard(row.toCardId(cardsOrNotes)).did != newDeck }
+            assertThat("some decks are unchanged", hasSomeDecksUnchanged)
         }
-        setCardsOrNotes(CardsOrNotes.NOTES)
-        waitForSearchResults()
-
-        selectRowsWithPositions(0, 2)
-
-        val allCardIds = queryAllSelectedCardIds()
-        assertThat(allCardIds.size, equalTo(4))
-
-        moveSelectedCardsToDeck(newDeck).join()
-
-        for (cardId in allCardIds) {
-            assertThat("Deck should be changed", col.getCard(cardId).did, equalTo(newDeck))
-        }
-
-        val hasSomeDecksUnchanged =
-            cards.any { row -> col.getCard(row.toCardId(cardsOrNotes)).did != newDeck }
-        assertThat("some decks are unchanged", hasSomeDecksUnchanged)
-    }
 
     /** 7420  */
     @Test
-    fun addCardDeckIsNotSetIfAllDecksSelectedAfterLoad() = runViewModelTest {
-        addDeck("NotDefault")
+    fun addCardDeckIsNotSetIfAllDecksSelectedAfterLoad() =
+        runViewModelTest {
+            addDeck("NotDefault")
 
-        assertThat("All decks should not be selected", !hasSelectedAllDecks())
+            assertThat("All decks should not be selected", !hasSelectedAllDecks())
 
-        setSelectedDeck(SelectableDeck.AllDecks)
+            setSelectedDeck(SelectableDeck.AllDecks)
 
-        assertThat("All decks should be selected", hasSelectedAllDecks())
+            assertThat("All decks should be selected", hasSelectedAllDecks())
 
-        val addIntent = com.ichi2.anki.noteeditor.NoteEditorLauncher.AddNoteFromCardBrowser(this)
-            .toIntent(mockIt())
-        val bundle = addIntent.getBundleExtra(NoteEditorActivity.FRAGMENT_ARGS_EXTRA)
-        IntentAssert.doesNotHaveExtra(bundle, NoteEditorActivity.EXTRA_DID)
-    }
+            val addIntent =
+                com.ichi2.anki.noteeditor.NoteEditorLauncher
+                    .AddNoteFromCardBrowser(this)
+                    .toIntent(mockIt())
+            val bundle = addIntent.getBundleExtra(NoteEditorActivity.FRAGMENT_ARGS_EXTRA)
+            IntentAssert.doesNotHaveExtra(bundle, NoteEditorActivity.EXTRA_DID)
+        }
 
     @Test
-    fun filterByFlagDisplaysProperly() = runViewModelTest {
-        val cardWithRedFlag = addBasicNote("Card with red flag", "Reverse")
-        flagCardForNote(cardWithRedFlag, Flag.RED)
+    fun filterByFlagDisplaysProperly() =
+        runViewModelTest {
+            val cardWithRedFlag = addBasicNote("Card with red flag", "Reverse")
+            flagCardForNote(cardWithRedFlag, Flag.RED)
 
-        val cardWithGreenFlag = addBasicNote("Card with green flag", "Reverse")
-        flagCardForNote(cardWithGreenFlag, Flag.GREEN)
+            val cardWithGreenFlag = addBasicNote("Card with green flag", "Reverse")
+            flagCardForNote(cardWithGreenFlag, Flag.GREEN)
 
-        val anotherCardWithRedFlag = addBasicNote("Second card with red flag", "Reverse")
-        flagCardForNote(anotherCardWithRedFlag, Flag.RED)
+            val anotherCardWithRedFlag = addBasicNote("Second card with red flag", "Reverse")
+            flagCardForNote(anotherCardWithRedFlag, Flag.RED)
 
-        setFlagFilterSync(Flag.RED)
+            setFlagFilterSync(Flag.RED)
 
-        assertThat("Flagged cards should be returned", rowCount, equalTo(2))
-    }
+            assertThat("Flagged cards should be returned", rowCount, equalTo(2))
+        }
 
     @Test
-    fun `toggle bury - single selection`() = runViewModelTest(notes = 1) {
-        assertThat("bury with no cards selected does nothing", toggleBury(), nullValue())
+    fun `toggle bury - single selection`() =
+        runViewModelTest(notes = 1) {
+            assertThat("bury with no cards selected does nothing", toggleBury(), nullValue())
 
-        selectRowAtPosition(0)
+            selectRowAtPosition(0)
 
-        // bury & unbury
-        toggleBury().also {
-            assertNotNull(it)
-            assertThat("toggle bury initially buries", it.wasBuried)
-            assertThat("1 card is buried", it.count, equalTo(1))
+            // bury & unbury
+            toggleBury().also {
+                assertNotNull(it)
+                assertThat("toggle bury initially buries", it.wasBuried)
+                assertThat("1 card is buried", it.count, equalTo(1))
+            }
+            toggleBury().also {
+                assertNotNull(it)
+                assertThat("toggle bury unburied on second press", !it.wasBuried)
+                assertThat("1 card is unburied", it.count, equalTo(1))
+            }
         }
-        toggleBury().also {
-            assertNotNull(it)
-            assertThat("toggle bury unburied on second press", !it.wasBuried)
-            assertThat("1 card is unburied", it.count, equalTo(1))
-        }
-    }
 
     @Test
-    fun `toggle bury - mixed selection`() = runViewModelTest(notes = 2) {
-        selectRowAtPosition(0)
-        toggleBury()
-        selectRowAtPosition(1)
+    fun `toggle bury - mixed selection`() =
+        runViewModelTest(notes = 2) {
+            selectRowAtPosition(0)
+            toggleBury()
+            selectRowAtPosition(1)
 
-        assertThat(selectedRowCount(), equalTo(2))
+            assertThat(selectedRowCount(), equalTo(2))
 
-        // 1 row is buried and 1 is unburied
-        toggleBury().also {
-            assertNotNull(it)
-            assertThat("toggle bury with mixed selection buried", it.wasBuried)
-            assertThat("2 cards are affected", it.count, equalTo(2))
+            // 1 row is buried and 1 is unburied
+            toggleBury().also {
+                assertNotNull(it)
+                assertThat("toggle bury with mixed selection buried", it.wasBuried)
+                assertThat("2 cards are affected", it.count, equalTo(2))
+            }
+
+            assertThat(selectedRowCount(), equalTo(2))
+
+            toggleBury().also {
+                assertNotNull(it)
+                assertThat("toggle bury with all buried performs 'unbury'", !it.wasBuried)
+                assertThat("2 cards are affected", it.count, equalTo(2))
+            }
+
+            toggleBury().also {
+                assertNotNull(it)
+                assertThat("toggle bury with all unburied performs 'bury'", it.wasBuried)
+                assertThat("2 cards are affected", it.count, equalTo(2))
+            }
+
+            assertThat(selectedRowCount(), equalTo(2))
         }
-
-        assertThat(selectedRowCount(), equalTo(2))
-
-        toggleBury().also {
-            assertNotNull(it)
-            assertThat("toggle bury with all buried performs 'unbury'", !it.wasBuried)
-            assertThat("2 cards are affected", it.count, equalTo(2))
-        }
-
-        toggleBury().also {
-            assertNotNull(it)
-            assertThat("toggle bury with all unburied performs 'bury'", it.wasBuried)
-            assertThat("2 cards are affected", it.count, equalTo(2))
-        }
-
-        assertThat(selectedRowCount(), equalTo(2))
-    }
 
     @Test
-    fun `toggle bury - queue changes`() = runViewModelTest(notes = 1) {
-        selectRowAtPosition(0)
+    fun `toggle bury - queue changes`() =
+        runViewModelTest(notes = 1) {
+            selectRowAtPosition(0)
 
-        suspend fun getQueue() = col.getCard(queryAllSelectedCardIds().single()).queue
+            suspend fun getQueue() = col.getCard(queryAllSelectedCardIds().single()).queue
 
-        assertThat("initial queue = NEW", getQueue(), equalTo(New))
+            assertThat("initial queue = NEW", getQueue(), equalTo(New))
 
-        toggleBury()
+            toggleBury()
 
-        assertThat("bury: queue -> MANUALLY_BURIED", getQueue(), equalTo(ManuallyBuried))
+            assertThat("bury: queue -> MANUALLY_BURIED", getQueue(), equalTo(ManuallyBuried))
 
-        toggleBury()
+            toggleBury()
 
-        assertThat("unbury: queue -> NEW", getQueue(), equalTo(New))
-    }
+            assertThat("unbury: queue -> NEW", getQueue(), equalTo(New))
+        }
 
     @Test
-    fun `default init`() = runTest {
-        viewModel().apply {
-            assertThat(searchTerms, equalTo(""))
+    fun `default init`() =
+        runTest {
+            viewModel().apply {
+                assertThat(searchTerms, equalTo(""))
+            }
         }
-    }
 
     @Test
-    fun `Card Browser menu init`() = runTest {
-        viewModel(intent = SystemContextMenu("Hello")).apply {
-            assertThat(searchTerms, equalTo("Hello"))
+    fun `Card Browser menu init`() =
+        runTest {
+            viewModel(intent = SystemContextMenu("Hello")).apply {
+                assertThat(searchTerms, equalTo("Hello"))
+            }
         }
-    }
 
     @Test
-    fun `Deep Link init`() = runTest {
-        viewModel(intent = DeepLink("Hello")).apply {
-            assertThat(searchTerms, equalTo("Hello"))
+    fun `Deep Link init`() =
+        runTest {
+            viewModel(intent = DeepLink("Hello")).apply {
+                assertThat(searchTerms, equalTo("Hello"))
+            }
         }
-    }
 
     @Test
     fun `sort order from notes is selected - 16514`() {
@@ -301,36 +316,37 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `selected rows are refreshed`() = runViewModelTest(notes = 2) {
-        flowOfSelectedRows.test {
-            // initially, flowOfSelectedRows should not have emitted anything
-            assertThat("initial empty", awaitItem(), empty())
+    fun `selected rows are refreshed`() =
+        runViewModelTest(notes = 2) {
+            flowOfSelectedRows.test {
+                // initially, flowOfSelectedRows should not have emitted anything
+                assertThat("initial empty", awaitItem(), empty())
 
-            selectAll()
-            assertThat("initial selection", awaitItem().size, equalTo(2))
+                selectAll()
+                assertThat("initial selection", awaitItem().size, equalTo(2))
 
-            selectNone()
-            assertThat("deselected all", awaitItem().size, equalTo(0))
+                selectNone()
+                assertThat("deselected all", awaitItem().size, equalTo(0))
 
-            toggleRowSelectionAtPosition(0)
-            assertThat("selected row", awaitItem().size, equalTo(1))
+                toggleRowSelectionAtPosition(0)
+                assertThat("selected row", awaitItem().size, equalTo(1))
 
-            toggleRowSelectionAtPosition(0)
-            assertThat("deselected rows", awaitItem().size, equalTo(0))
+                toggleRowSelectionAtPosition(0)
+                assertThat("deselected rows", awaitItem().size, equalTo(0))
 
-            selectRowAtPosition(0)
-            assertThat("select rows explicitly", awaitItem().size, equalTo(1))
+                selectRowAtPosition(0)
+                assertThat("select rows explicitly", awaitItem().size, equalTo(1))
 
-            selectRowAtPosition(0)
-            expectNoEvents()
+                selectRowAtPosition(0)
+                expectNoEvents()
 
-            selectRowsBetweenPositions(0, 1)
-            assertThat("select rows between positions", awaitItem().size, equalTo(2))
+                selectRowsBetweenPositions(0, 1)
+                assertThat("select rows between positions", awaitItem().size, equalTo(2))
 
-            selectRowsBetweenPositions(0, 1)
-            expectNoEvents()
+                selectRowsBetweenPositions(0, 1)
+                expectNoEvents()
+            }
         }
-    }
 
     @Test
     fun `selected card and note ids`() {
@@ -357,85 +373,90 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `executing select all twice does nothing`() = runViewModelTest(notes = 2) {
-        assertThat(selectedRowCount(), equalTo(0))
-        selectAll()
-        assertThat(selectedRowCount(), equalTo(2))
-        selectAll()
-        assertThat(selectedRowCount(), equalTo(2))
-    }
+    fun `executing select all twice does nothing`() =
+        runViewModelTest(notes = 2) {
+            assertThat(selectedRowCount(), equalTo(0))
+            selectAll()
+            assertThat(selectedRowCount(), equalTo(2))
+            selectAll()
+            assertThat(selectedRowCount(), equalTo(2))
+        }
 
     @Test
-    fun `cards - changing column index 1`() = runViewModelTest {
-        flowOfActiveColumns.test {
-            ignoreEventsDuringViewModelInit()
+    fun `cards - changing column index 1`() =
+        runViewModelTest {
+            flowOfActiveColumns.test {
+                ignoreEventsDuringViewModelInit()
 
-            assertThat("default column1 value", column1, equalTo(SFLD))
+                assertThat("default column1 value", column1, equalTo(SFLD))
 
-            setColumn(0, QUESTION)
+                setColumn(0, QUESTION)
 
-            assertThat("flowOfColumn1", awaitItem().columns[0], equalTo(QUESTION))
-            assertThat("column1", column1, equalTo(QUESTION))
+                assertThat("flowOfColumn1", awaitItem().columns[0], equalTo(QUESTION))
+                assertThat("column1", column1, equalTo(QUESTION))
 
-            // expect no change if the value is selected again
-            setColumn(0, QUESTION)
-            expectNoEvents()
+                // expect no change if the value is selected again
+                setColumn(0, QUESTION)
+                expectNoEvents()
+            }
         }
-    }
 
     @Test
-    fun `cards - changing column index 2`() = runViewModelTest {
-        flowOfActiveColumns.test {
-            ignoreEventsDuringViewModelInit()
+    fun `cards - changing column index 2`() =
+        runViewModelTest {
+            flowOfActiveColumns.test {
+                ignoreEventsDuringViewModelInit()
 
-            assertThat("default column2Index value", column2, equalTo(CARD))
+                assertThat("default column2Index value", column2, equalTo(CARD))
 
-            setColumn(1, ANSWER)
+                setColumn(1, ANSWER)
 
-            assertThat("flowOfColumnIndex2", awaitItem().columns[1], equalTo(ANSWER))
-            assertThat("column2Index", column2, equalTo(ANSWER))
+                assertThat("flowOfColumnIndex2", awaitItem().columns[1], equalTo(ANSWER))
+                assertThat("column2Index", column2, equalTo(ANSWER))
 
-            // expect no change if the value is selected again
-            setColumn(1, ANSWER)
-            expectNoEvents()
+                // expect no change if the value is selected again
+                setColumn(1, ANSWER)
+                expectNoEvents()
+            }
         }
-    }
 
     @Test
-    fun `notes - changing column index 1`() = runViewModelNotesTest {
-        flowOfActiveColumns.test {
-            ignoreEventsDuringViewModelInit()
+    fun `notes - changing column index 1`() =
+        runViewModelNotesTest {
+            flowOfActiveColumns.test {
+                ignoreEventsDuringViewModelInit()
 
-            assertThat("default column1 value", column1, equalTo(SFLD))
+                assertThat("default column1 value", column1, equalTo(SFLD))
 
-            setColumn(0, QUESTION)
+                setColumn(0, QUESTION)
 
-            assertThat("flowOfColumn1", awaitItem().columns[0], equalTo(QUESTION))
-            assertThat("column1", column1, equalTo(QUESTION))
+                assertThat("flowOfColumn1", awaitItem().columns[0], equalTo(QUESTION))
+                assertThat("column1", column1, equalTo(QUESTION))
 
-            // expect no change if the value is selected again
-            setColumn(0, QUESTION)
-            expectNoEvents()
+                // expect no change if the value is selected again
+                setColumn(0, QUESTION)
+                expectNoEvents()
+            }
         }
-    }
 
     @Test
-    fun `notes - changing column index 2`() = runViewModelNotesTest {
-        flowOfActiveColumns.test {
-            ignoreEventsDuringViewModelInit()
+    fun `notes - changing column index 2`() =
+        runViewModelNotesTest {
+            flowOfActiveColumns.test {
+                ignoreEventsDuringViewModelInit()
 
-            assertThat("default column2Index value", column2, equalTo(NOTE_TYPE))
+                assertThat("default column2Index value", column2, equalTo(NOTE_TYPE))
 
-            setColumn(1, ANSWER)
+                setColumn(1, ANSWER)
 
-            assertThat("flowOfColumnIndex2", awaitItem().columns[1], equalTo(ANSWER))
-            assertThat("column2Index", column2, equalTo(ANSWER))
+                assertThat("flowOfColumnIndex2", awaitItem().columns[1], equalTo(ANSWER))
+                assertThat("column2Index", column2, equalTo(ANSWER))
 
-            // expect no change if the value is selected again
-            setColumn(1, ANSWER)
-            expectNoEvents()
+                // expect no change if the value is selected again
+                setColumn(1, ANSWER)
+                expectNoEvents()
+            }
         }
-    }
 
     @Test
     fun `mode mismatch - changing columns`() {
@@ -461,50 +482,52 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `change card order to NO_SORTING is a no-op if done twice`() = runViewModelTest {
-        searchState.test {
-            ignoreEventsDuringViewModelInit()
-            assertThat("initial order", order, equalTo(SORT_FIELD))
-            assertThat("initial direction", !isSortDescendingValue)
+    fun `change card order to NO_SORTING is a no-op if done twice`() =
+        runViewModelTest {
+            searchState.test {
+                ignoreEventsDuringViewModelInit()
+                assertThat("initial order", order, equalTo(SORT_FIELD))
+                assertThat("initial direction", !isSortDescendingValue)
 
-            // changing the order performs a search & changes order
-            changeCardOrder(NO_SORTING)
-            // expectMostRecentItem() - removed due to StateFlow conflation
-            assertThat("order changed", order, equalTo(NO_SORTING))
-            assertThat("changed direction", !isSortDescendingValue)
+                // changing the order performs a search & changes order
+                changeCardOrder(NO_SORTING)
+                // expectMostRecentItem() - removed due to StateFlow conflation
+                assertThat("order changed", order, equalTo(NO_SORTING))
+                assertThat("changed direction", !isSortDescendingValue)
 
-            waitForSearchResults()
+                waitForSearchResults()
 
-            // pressing 'no sorting' again is a no-op
-            changeCardOrder(NO_SORTING)
-            expectNoEvents()
-            assertThat("order unchanged", order, equalTo(NO_SORTING))
-            assertThat("unchanged direction", !isSortDescendingValue)
+                // pressing 'no sorting' again is a no-op
+                changeCardOrder(NO_SORTING)
+                expectNoEvents()
+                assertThat("order unchanged", order, equalTo(NO_SORTING))
+                assertThat("unchanged direction", !isSortDescendingValue)
+            }
         }
-    }
 
     @Test
-    fun `change direction of results`() = runViewModelTest {
-        searchState.test {
-            ignoreEventsDuringViewModelInit()
-            assertThat("initial order", order, equalTo(SORT_FIELD))
-            assertThat("initial direction", !isSortDescendingValue)
+    fun `change direction of results`() =
+        runViewModelTest {
+            searchState.test {
+                ignoreEventsDuringViewModelInit()
+                assertThat("initial order", order, equalTo(SORT_FIELD))
+                assertThat("initial direction", !isSortDescendingValue)
 
-            // changing the order performs a search & changes order
-            changeCardOrder(SortType.EASE)
-            // expectMostRecentItem() - removed due to StateFlow conflation
-            assertThat("order changed", order, equalTo(SortType.EASE))
-            assertThat("changed direction is the default", !isSortDescendingValue)
+                // changing the order performs a search & changes order
+                changeCardOrder(SortType.EASE)
+                // expectMostRecentItem() - removed due to StateFlow conflation
+                assertThat("order changed", order, equalTo(SortType.EASE))
+                assertThat("changed direction is the default", !isSortDescendingValue)
 
-            waitForSearchResults()
+                waitForSearchResults()
 
-            // pressing 'ease' again changes direction
-            changeCardOrder(SortType.EASE)
-            // expectMostRecentItem() - removed due to StateFlow conflation
-            assertThat("order unchanged", order, equalTo(SortType.EASE))
-            assertThat("direction is changed", isSortDescendingValue)
+                // pressing 'ease' again changes direction
+                changeCardOrder(SortType.EASE)
+                // expectMostRecentItem() - removed due to StateFlow conflation
+                assertThat("order unchanged", order, equalTo(SortType.EASE))
+                assertThat("direction is changed", isSortDescendingValue)
+            }
         }
-    }
 
     /*
      * Note: suspension behavior has been questioned from a performance perspective and is
@@ -515,287 +538,309 @@ class CardBrowserViewModelTest : JvmTest() {
      */
 
     @Test
-    fun `suspend cards - cards - no selection`() = runViewModelTest(notes = 2) {
-        ensureNoOpsExecuted {
-            toggleSuspendCards()
+    fun `suspend cards - cards - no selection`() =
+        runViewModelTest(notes = 2) {
+            ensureNoOpsExecuted {
+                toggleSuspendCards()
 
-            assertAllUnsuspended("no selection")
+                assertAllUnsuspended("no selection")
+            }
         }
-    }
 
     @Test
-    fun `suspend - cards - all suspended`() = runViewModelTest(notes = 2) {
-        suspendAll()
-        ensureOpsExecuted(1) {
-            selectAll()
-            toggleSuspendCards()
+    fun `suspend - cards - all suspended`() =
+        runViewModelTest(notes = 2) {
+            suspendAll()
+            ensureOpsExecuted(1) {
+                selectAll()
+                toggleSuspendCards()
 
-            assertAllUnsuspended("all suspended: unsuspend")
+                assertAllUnsuspended("all suspended: unsuspend")
+            }
         }
-    }
 
     @Test
-    fun `suspend - cards - some suspended`() = runViewModelTest(notes = 2) {
-        suspendCards(cards.first().toCardId(cardsOrNotes))
-        ensureOpsExecuted(1) {
-            selectAll()
-            toggleSuspendCards()
+    fun `suspend - cards - some suspended`() =
+        runViewModelTest(notes = 2) {
+            suspendCards(cards.first().toCardId(cardsOrNotes))
+            ensureOpsExecuted(1) {
+                selectAll()
+                toggleSuspendCards()
 
-            assertAllSuspended("mixed selection: suspend all")
+                assertAllSuspended("mixed selection: suspend all")
+            }
         }
-    }
 
     @Test
-    fun `suspend - cards - none suspended`() = runViewModelTest(notes = 2) {
-        ensureOpsExecuted(1) {
-            selectAll()
-            toggleSuspendCards()
+    fun `suspend - cards - none suspended`() =
+        runViewModelTest(notes = 2) {
+            ensureOpsExecuted(1) {
+                selectAll()
+                toggleSuspendCards()
 
-            assertAllSuspended("none suspended: suspend all")
+                assertAllSuspended("none suspended: suspend all")
+            }
         }
-    }
 
     @Test
-    fun `suspend - notes - no selection`() = runViewModelNotesTest(notes = 2) {
-        ensureNoOpsExecuted {
-            toggleSuspendCards()
-            assertAllUnsuspended("none selected: do nothing")
+    fun `suspend - notes - no selection`() =
+        runViewModelNotesTest(notes = 2) {
+            ensureNoOpsExecuted {
+                toggleSuspendCards()
+                assertAllUnsuspended("none selected: do nothing")
+            }
         }
-    }
 
     @Test
-    fun `suspend - notes - all suspended`() = runViewModelNotesTest(notes = 2) {
-        suspendAll()
-        ensureOpsExecuted(1) {
-            selectAll()
-            toggleSuspendCards()
-            assertAllUnsuspended("all suspended -> unsuspend")
+    fun `suspend - notes - all suspended`() =
+        runViewModelNotesTest(notes = 2) {
+            suspendAll()
+            ensureOpsExecuted(1) {
+                selectAll()
+                toggleSuspendCards()
+                assertAllUnsuspended("all suspended -> unsuspend")
+            }
         }
-    }
 
     @Test
-    fun `suspend - notes - some notes suspended`() = runViewModelNotesTest(notes = 2) {
-        val nid = cards.first().cardOrNoteId
-        suspendNote(col.getNote(nid))
-        ensureOpsExecuted(1) {
-            selectAll()
-            toggleSuspendCards()
-            assertAllSuspended("mixed selection -> suspend all")
+    fun `suspend - notes - some notes suspended`() =
+        runViewModelNotesTest(notes = 2) {
+            val nid = cards.first().cardOrNoteId
+            suspendNote(col.getNote(nid))
+            ensureOpsExecuted(1) {
+                selectAll()
+                toggleSuspendCards()
+                assertAllSuspended("mixed selection -> suspend all")
+            }
         }
-    }
 
     @Test
-    fun `suspend - notes - some cards suspended`() = runViewModelNotesTest(notes = 2) {
-        // this suspends o single cid from a nid
-        suspendCards(cards.first().toCardId(cardsOrNotes))
-        ensureOpsExecuted(1) {
-            selectAll()
-            toggleSuspendCards()
-            assertAllSuspended("mixed selection -> suspend all")
+    fun `suspend - notes - some cards suspended`() =
+        runViewModelNotesTest(notes = 2) {
+            // this suspends o single cid from a nid
+            suspendCards(cards.first().toCardId(cardsOrNotes))
+            ensureOpsExecuted(1) {
+                selectAll()
+                toggleSuspendCards()
+                assertAllSuspended("mixed selection -> suspend all")
+            }
         }
-    }
 
-    fun `suspend cards - notes - none suspended`() = runViewModelNotesTest(notes = 2) {
-        ensureOpsExecuted(1) {
-            selectAll()
-            toggleSuspendCards()
-            assertAllSuspended("none suspended -> suspend all")
+    fun `suspend cards - notes - none suspended`() =
+        runViewModelNotesTest(notes = 2) {
+            ensureOpsExecuted(1) {
+                selectAll()
+                toggleSuspendCards()
+                assertAllSuspended("none suspended -> suspend all")
+            }
         }
-    }
 
     @Test
-    fun `export - no selection`() = runViewModelTest(notes = 2) {
-        assertNull(querySelectionExportData(), "no export data if no selection")
-    }
+    fun `export - no selection`() =
+        runViewModelTest(notes = 2) {
+            assertNull(querySelectionExportData(), "no export data if no selection")
+        }
 
     @Test
-    fun `export - one card`() = runViewModelTest(notes = 2) {
-        selectRowsWithPositions(0)
+    fun `export - one card`() =
+        runViewModelTest(notes = 2) {
+            selectRowsWithPositions(0)
 
-        val (exportType, ids) = assertNotNull(querySelectionExportData())
+            val (exportType, ids) = assertNotNull(querySelectionExportData())
 
-        assertThat(exportType, equalTo(ExportDialogFragment.ExportType.Cards))
-        assertThat(ids, hasSize(1))
+            assertThat(exportType, equalTo(ExportDialogFragment.ExportType.Cards))
+            assertThat(ids, hasSize(1))
 
-        assertThat(ids.single(), equalTo(cards[0].cardOrNoteId))
-    }
-
-    @Test
-    fun `export - one note`() = runViewModelNotesTest(notes = 2) {
-        selectRowsWithPositions(0)
-
-        val (exportType, ids) = assertNotNull(querySelectionExportData())
-
-        assertThat(exportType, equalTo(ExportDialogFragment.ExportType.Notes))
-        assertThat(ids, hasSize(1))
-
-        assertThat(ids.single(), equalTo(cards[0].cardOrNoteId))
-    }
+            assertThat(ids.single(), equalTo(cards[0].cardOrNoteId))
+        }
 
     @Test
-    fun `selection is maintained after toggle mark 14950`() = runViewModelTest(notes = 5) {
-        selectRowsWithPositions(0, 1, 2)
+    fun `export - one note`() =
+        runViewModelNotesTest(notes = 2) {
+            selectRowsWithPositions(0)
 
-        assertThat("3 rows are selected", selectedRows.size, equalTo(3))
-        assertThat("selection is not marked", queryAllSelectedNotes().all { !it.isMarked() })
+            val (exportType, ids) = assertNotNull(querySelectionExportData())
 
-        toggleMark()
+            assertThat(exportType, equalTo(ExportDialogFragment.ExportType.Notes))
+            assertThat(ids, hasSize(1))
 
-        assertThat("3 rows are still selected", selectedRows.size, equalTo(3))
-        assertThat("selection is now marked", queryAllSelectedNotes().all { it.isMarked() })
-    }
+            assertThat(ids.single(), equalTo(cards[0].cardOrNoteId))
+        }
 
-    private suspend fun CardBrowserViewModel.queryAllSelectedNotes() =
-        queryAllSelectedNoteIds().map { col.getNote(it) }
+    @Test
+    fun `selection is maintained after toggle mark 14950`() =
+        runViewModelTest(notes = 5) {
+            selectRowsWithPositions(0, 1, 2)
+
+            assertThat("3 rows are selected", selectedRows.size, equalTo(3))
+            assertThat("selection is not marked", queryAllSelectedNotes().all { !it.isMarked() })
+
+            toggleMark()
+
+            assertThat("3 rows are still selected", selectedRows.size, equalTo(3))
+            assertThat("selection is now marked", queryAllSelectedNotes().all { it.isMarked() })
+        }
+
+    private suspend fun CardBrowserViewModel.queryAllSelectedNotes() = queryAllSelectedNoteIds().map { col.getNote(it) }
 
     private suspend fun Note.isMarked(): Boolean = NoteService.isMarked(this)
 
     @Test
-    fun `changing note types changes columns`() = runViewModelTest {
-        // BrowserColumnCollection contains BOTH notes and cards column configs
-        BrowserColumnCollection.update(sharedPrefs(), CardsOrNotes.NOTES) {
-            it[0] = QUESTION
-            it[1] = FSRS_DIFFICULTY
-            true
-        }
-
-        assertThat("column 2 before", column2, not(equalTo(FSRS_DIFFICULTY)))
-
-        setCardsOrNotes(CardsOrNotes.NOTES)
-
-        assertThat("column 2 after", column2, equalTo(FSRS_DIFFICULTY))
-    }
-
-    @Test
-    fun `cards - delete one`() = runViewModelTest(notes = 2) {
-        assertThat("initial card count", col.cardCount(), equalTo(2))
-        selectRowsWithPositions(0)
-
-        ensureOpsExecuted(1) {
-            deleteSelectedNotes()
-        }
-
-        assertThat("1 card deleted", col.cardCount(), equalTo(1))
-        assertThat("no selection after", selectedRowCount(), equalTo(0))
-        assertThat("one row removed", rowCount, equalTo(1))
-    }
-
-    @Test
-    fun `notes - delete one`() = runViewModelNotesTest(notes = 2) {
-        assertThat("initial card count", col.cardCount(), equalTo(4))
-        selectRowsWithPositions(0)
-
-        ensureOpsExecuted(1) {
-            deleteSelectedNotes()
-        }
-
-        assertThat("1 note deleted - 2 cards deleted", col.cardCount(), equalTo(2))
-        assertThat("no selection after", selectedRowCount(), equalTo(0))
-        assertThat("one row removed", rowCount, equalTo(1))
-    }
-
-    @Test
-    fun `notes - search for marked`() = runTest {
-        addBasicAndReversedNote("hello", "world").also { note ->
-            NoteService.toggleMark(note)
-        }
-        addBasicAndReversedNote("hello2", "world")
-
-        runViewModelNotesTest {
-            searchForMarkedNotes()
-            waitForSearchResults()
-            assertThat("A marked note is found", rowCount, equalTo(1))
-        }
-    }
-
-    @Test
-    fun `cards - search for marked`() = runTest {
-        addBasicAndReversedNote("hello", "world").also { note ->
-            NoteService.toggleMark(note)
-        }
-        addBasicAndReversedNote("hello2", "world")
-
+    fun `changing note types changes columns`() =
         runViewModelTest {
-            searchForMarkedNotes()
-            waitForSearchResults()
-            assertThat("both cards of a marked note are found", rowCount, equalTo(2))
+            // BrowserColumnCollection contains BOTH notes and cards column configs
+            BrowserColumnCollection.update(sharedPrefs(), CardsOrNotes.NOTES) {
+                it[0] = QUESTION
+                it[1] = FSRS_DIFFICULTY
+                true
+            }
+
+            assertThat("column 2 before", column2, not(equalTo(FSRS_DIFFICULTY)))
+
+            setCardsOrNotes(CardsOrNotes.NOTES)
+
+            assertThat("column 2 after", column2, equalTo(FSRS_DIFFICULTY))
         }
-    }
 
     @Test
-    fun `notes - search for suspended`() = runTest {
-        addBasicAndReversedNote("hello", "world").also { note ->
-            col.sched.suspendCards(listOf(note.cardIds(col).first()))
-        }
-        addBasicAndReversedNote("hello2", "world")
+    fun `cards - delete one`() =
+        runViewModelTest(notes = 2) {
+            assertThat("initial card count", col.cardCount(), equalTo(2))
+            selectRowsWithPositions(0)
 
-        runViewModelNotesTest {
-            searchForSuspendedCards()
-            waitForSearchResults()
-            assertThat("A suspended card is found for the note", rowCount, equalTo(1))
+            ensureOpsExecuted(1) {
+                deleteSelectedNotes()
+            }
+
+            assertThat("1 card deleted", col.cardCount(), equalTo(1))
+            assertThat("no selection after", selectedRowCount(), equalTo(0))
+            assertThat("one row removed", rowCount, equalTo(1))
         }
-    }
 
     @Test
-    fun `cards - search for suspended`() = runTest {
-        addBasicAndReversedNote("hello", "world").also { note ->
-            col.sched.suspendCards(listOf(note.cardIds(col).first()))
+    fun `notes - delete one`() =
+        runViewModelNotesTest(notes = 2) {
+            assertThat("initial card count", col.cardCount(), equalTo(4))
+            selectRowsWithPositions(0)
+
+            ensureOpsExecuted(1) {
+                deleteSelectedNotes()
+            }
+
+            assertThat("1 note deleted - 2 cards deleted", col.cardCount(), equalTo(2))
+            assertThat("no selection after", selectedRowCount(), equalTo(0))
+            assertThat("one row removed", rowCount, equalTo(1))
         }
 
-        runViewModelTest {
-            searchForSuspendedCards()
-            waitForSearchResults()
-            assertThat("one suspended cards of a note is found", rowCount, equalTo(1))
+    @Test
+    fun `notes - search for marked`() =
+        runTest {
+            addBasicAndReversedNote("hello", "world").also { note ->
+                NoteService.toggleMark(note)
+            }
+            addBasicAndReversedNote("hello2", "world")
+
+            runViewModelNotesTest {
+                searchForMarkedNotes()
+                waitForSearchResults()
+                assertThat("A marked note is found", rowCount, equalTo(1))
+            }
         }
-    }
 
     @Test
-    fun `notes - preview intent`() = runViewModelNotesTest(notes = 5) {
-        assertThat("note count", col.noteCount(), equalTo(5))
-        assertThat("card count", col.cardCount(), equalTo(10))
-        val data = queryPreviewIntentData()
-        assertThat(data.currentIndex, equalTo(0))
+    fun `cards - search for marked`() =
+        runTest {
+            addBasicAndReversedNote("hello", "world").also { note ->
+                NoteService.toggleMark(note)
+            }
+            addBasicAndReversedNote("hello2", "world")
 
-        data.idsFile.getIds().also { actualCardIds ->
-            assertThat("previewing a note previews cards", actualCardIds, hasSize(5))
-
-            val firstCardIds = col.findCards("").filter { col.getCard(it).ord == 0 }
-
-            assertThat("first card ids", firstCardIds, hasSize(5))
-
-            // TODO: this behaviour is unconfirmed in Anki Desktop
-            assertThat(
-                "previewing first card in each note",
-                actualCardIds.toLongArray(),
-                equalTo(firstCardIds.toLongArray()),
-            )
+            runViewModelTest {
+                searchForMarkedNotes()
+                waitForSearchResults()
+                assertThat("both cards of a marked note are found", rowCount, equalTo(2))
+            }
         }
-    }
 
     @Test
-    fun `cards - preview intent - no selection`() = runViewModelTest(notes = 2) {
-        val data = queryPreviewIntentData()
-        assertThat(data.currentIndex, equalTo(0))
-        assertThat(data.idsFile.getIds(), hasSize(2))
-    }
+    fun `notes - search for suspended`() =
+        runTest {
+            addBasicAndReversedNote("hello", "world").also { note ->
+                col.sched.suspendCards(listOf(note.cardIds(col).first()))
+            }
+            addBasicAndReversedNote("hello2", "world")
+
+            runViewModelNotesTest {
+                searchForSuspendedCards()
+                waitForSearchResults()
+                assertThat("A suspended card is found for the note", rowCount, equalTo(1))
+            }
+        }
 
     @Test
-    fun `cards - preview intent - selection`() = runViewModelTest(notes = 2) {
-        selectRowsWithPositions(0).also {
+    fun `cards - search for suspended`() =
+        runTest {
+            addBasicAndReversedNote("hello", "world").also { note ->
+                col.sched.suspendCards(listOf(note.cardIds(col).first()))
+            }
+
+            runViewModelTest {
+                searchForSuspendedCards()
+                waitForSearchResults()
+                assertThat("one suspended cards of a note is found", rowCount, equalTo(1))
+            }
+        }
+
+    @Test
+    fun `notes - preview intent`() =
+        runViewModelNotesTest(notes = 5) {
+            assertThat("note count", col.noteCount(), equalTo(5))
+            assertThat("card count", col.cardCount(), equalTo(10))
             val data = queryPreviewIntentData()
             assertThat(data.currentIndex, equalTo(0))
-            assertThat(data.idsFile.getIds(), hasSize(1))
+
+            data.idsFile.getIds().also { actualCardIds ->
+                assertThat("previewing a note previews cards", actualCardIds, hasSize(5))
+
+                val firstCardIds = col.findCards("").filter { col.getCard(it).ord == 0 }
+
+                assertThat("first card ids", firstCardIds, hasSize(5))
+
+                // TODO: this behaviour is unconfirmed in Anki Desktop
+                assertThat(
+                    "previewing first card in each note",
+                    actualCardIds.toLongArray(),
+                    equalTo(firstCardIds.toLongArray()),
+                )
+            }
         }
 
-        selectNone()
-
-        // ensure currentIndex changes
-        selectRowsWithPositions(1).also {
+    @Test
+    fun `cards - preview intent - no selection`() =
+        runViewModelTest(notes = 2) {
             val data = queryPreviewIntentData()
             assertThat(data.currentIndex, equalTo(0))
-            assertThat(data.idsFile.getIds(), hasSize(1))
+            assertThat(data.idsFile.getIds(), hasSize(2))
         }
-    }
+
+    @Test
+    fun `cards - preview intent - selection`() =
+        runViewModelTest(notes = 2) {
+            selectRowsWithPositions(0).also {
+                val data = queryPreviewIntentData()
+                assertThat(data.currentIndex, equalTo(0))
+                assertThat(data.idsFile.getIds(), hasSize(1))
+            }
+
+            selectNone()
+
+            // ensure currentIndex changes
+            selectRowsWithPositions(1).also {
+                val data = queryPreviewIntentData()
+                assertThat(data.currentIndex, equalTo(0))
+                assertThat(data.idsFile.getIds(), hasSize(1))
+            }
+        }
 
     @Test
     fun `sound tags regression test`() {
@@ -896,29 +941,30 @@ class CardBrowserViewModelTest : JvmTest() {
     fun `preview - cards`() {
         runViewModelTest(notes = 1) {
             for (preview in previewColumnHeadings(CardsOrNotes.CARDS).allColumns) {
-                val (expectedLabel, expectedValue) = when (preview.columnType) {
-                    SFLD -> Pair("Sort Field", "Front")
-                    QUESTION -> Pair("Question", "Front")
-                    ANSWER -> Pair("Answer", "Back")
-                    DECK -> Pair("Deck", "Default")
-                    TAGS -> Pair("Tags", "")
-                    CARD -> Pair("Card Type", "Card 1")
-                    DUE -> Pair("Due", "New #\u20681\u2069")
-                    NOTE_TYPE -> Pair("Note Type", "Basic")
-                    EASE -> Pair("Ease", "(new)")
-                    INTERVAL -> Pair("Interval", "(new)")
-                    LAPSES -> Pair("Lapses", "0")
-                    REVIEWS -> Pair("Reviews", "0")
-                    ORIGINAL_POSITION -> Pair("Position", "1")
-                    CHANGED, CREATED, EDITED -> {
-                        assertDate(preview.sampleValue)
-                        continue
-                    }
+                val (expectedLabel, expectedValue) =
+                    when (preview.columnType) {
+                        SFLD -> Pair("Sort Field", "Front")
+                        QUESTION -> Pair("Question", "Front")
+                        ANSWER -> Pair("Answer", "Back")
+                        DECK -> Pair("Deck", "Default")
+                        TAGS -> Pair("Tags", "")
+                        CARD -> Pair("Card Type", "Card 1")
+                        DUE -> Pair("Due", "New #\u20681\u2069")
+                        NOTE_TYPE -> Pair("Note Type", "Basic")
+                        EASE -> Pair("Ease", "(new)")
+                        INTERVAL -> Pair("Interval", "(new)")
+                        LAPSES -> Pair("Lapses", "0")
+                        REVIEWS -> Pair("Reviews", "0")
+                        ORIGINAL_POSITION -> Pair("Position", "1")
+                        CHANGED, CREATED, EDITED -> {
+                            assertDate(preview.sampleValue)
+                            continue
+                        }
 
-                    FSRS_DIFFICULTY -> Pair("Difficulty", "")
-                    FSRS_RETRIEVABILITY -> Pair("Retrievability", "")
-                    FSRS_STABILITY -> Pair("Stability", "")
-                }
+                        FSRS_DIFFICULTY -> Pair("Difficulty", "")
+                        FSRS_RETRIEVABILITY -> Pair("Retrievability", "")
+                        FSRS_STABILITY -> Pair("Stability", "")
+                    }
                 assertThat(
                     "${preview.columnType} value",
                     preview.sampleValue,
@@ -937,29 +983,30 @@ class CardBrowserViewModelTest : JvmTest() {
     fun `preview - notes`() {
         runViewModelNotesTest(notes = 1) {
             for (preview in previewColumnHeadings(CardsOrNotes.NOTES).allColumns) {
-                val (expectedLabel, expectedValue) = when (preview.columnType) {
-                    SFLD -> Pair("Sort Field", "Front")
-                    QUESTION -> Pair("Question", "Front")
-                    ANSWER -> Pair("Answer", "Back")
-                    DECK -> Pair("Deck", "Default")
-                    TAGS -> Pair("Tags", "")
-                    CARD -> Pair("Cards", "2")
-                    DUE -> Pair("Due", "")
-                    NOTE_TYPE -> Pair("Note Type", "Basic (and reversed card)")
-                    EASE -> Pair("Avg. Ease", "(new)")
-                    INTERVAL -> Pair("Avg. Interval", "")
-                    LAPSES -> Pair("Lapses", "0")
-                    REVIEWS -> Pair("Reviews", "0")
-                    ORIGINAL_POSITION -> Pair("Position", "1")
-                    CHANGED, CREATED, EDITED -> {
-                        assertDate(preview.sampleValue)
-                        continue
-                    }
+                val (expectedLabel, expectedValue) =
+                    when (preview.columnType) {
+                        SFLD -> Pair("Sort Field", "Front")
+                        QUESTION -> Pair("Question", "Front")
+                        ANSWER -> Pair("Answer", "Back")
+                        DECK -> Pair("Deck", "Default")
+                        TAGS -> Pair("Tags", "")
+                        CARD -> Pair("Cards", "2")
+                        DUE -> Pair("Due", "")
+                        NOTE_TYPE -> Pair("Note Type", "Basic (and reversed card)")
+                        EASE -> Pair("Avg. Ease", "(new)")
+                        INTERVAL -> Pair("Avg. Interval", "")
+                        LAPSES -> Pair("Lapses", "0")
+                        REVIEWS -> Pair("Reviews", "0")
+                        ORIGINAL_POSITION -> Pair("Position", "1")
+                        CHANGED, CREATED, EDITED -> {
+                            assertDate(preview.sampleValue)
+                            continue
+                        }
 
-                    FSRS_DIFFICULTY -> Pair("Difficulty", "")
-                    FSRS_RETRIEVABILITY -> Pair("Retrievability", "")
-                    FSRS_STABILITY -> Pair("Stability", "")
-                }
+                        FSRS_DIFFICULTY -> Pair("Difficulty", "")
+                        FSRS_RETRIEVABILITY -> Pair("Retrievability", "")
+                        FSRS_STABILITY -> Pair("Stability", "")
+                    }
                 assertThat(
                     "${preview.columnType} value",
                     preview.sampleValue,
@@ -985,10 +1032,16 @@ class CardBrowserViewModelTest : JvmTest() {
                 )
             }
 
-            @Suppress("CheckResult") updateActiveColumns(
+            @Suppress("CheckResult")
+            updateActiveColumns(
                 listOf(
-                    CARD, DECK, SFLD, DUE, FSRS_STABILITY
-                ), cardsOrNotes
+                    CARD,
+                    DECK,
+                    SFLD,
+                    DUE,
+                    FSRS_STABILITY,
+                ),
+                cardsOrNotes,
             )
 
             previewColumnHeadings(cardsOrNotes).also { columns ->
@@ -1002,95 +1055,103 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `columns headings - language change`() = runViewModelTest {
-        fun firstHeading() = flowOfColumnHeadings.value.first().label
+    fun `columns headings - language change`() =
+        runViewModelTest {
+            fun firstHeading() = flowOfColumnHeadings.value.first().label
 
-        assertThat("English", firstHeading(), equalTo("Sort Field"))
+            assertThat("English", firstHeading(), equalTo("Sort Field"))
 
-        col.reopenWithLanguage("de")
-        onReinit()
+            col.reopenWithLanguage("de")
+            onReinit()
 
-        assertThat("German", firstHeading(), equalTo("Sortierfeld"))
-    }
-
-    @Test
-    fun `deck name with quotes is properly escaped in search query`() = runViewModelTest {
-        val deckWithQuotes = addDeck("Test\"Quotes\"In\"Deck")
-        val deckName = col.decks.name(deckWithQuotes)
-        setSelectedDeck(SelectableDeck.Deck(deckWithQuotes, deckName))
-
-        assertThat(
-            "Quotes in deck name should be escaped with backslashes",
-            restrictOnDeck,
-            equalTo("deck:\"Test\\\"Quotes\\\"In\\\"Deck\""),
-        )
-    }
+            assertThat("German", firstHeading(), equalTo("Sortierfeld"))
+        }
 
     @Test
-    fun `toggle is 'deselect' if only row is selected`() = runViewModelTest(notes = 1) {
-        this.toggleRowSelectionAtPosition(0)
-        assertThat("toggle selection", flowOfToggleSelectionState.value, equalTo(SELECT_NONE))
-        assertThat("multiselect after toggle", isInMultiSelectMode, equalTo(true))
-    }
+    fun `deck name with quotes is properly escaped in search query`() =
+        runViewModelTest {
+            val deckWithQuotes = addDeck("Test\"Quotes\"In\"Deck")
+            val deckName = col.decks.name(deckWithQuotes)
+            setSelectedDeck(SelectableDeck.Deck(deckWithQuotes, deckName))
+
+            assertThat(
+                "Quotes in deck name should be escaped with backslashes",
+                restrictOnDeck,
+                equalTo("deck:\"Test\\\"Quotes\\\"In\\\"Deck\""),
+            )
+        }
 
     @Test
-    fun `toggle is 'select all' after deselection - multi note`() = runViewModelTest(notes = 2) {
-        this.toggleRowSelectionAtPosition(0)
-        assertThat("toggle selection", flowOfToggleSelectionState.value, equalTo(SELECT_ALL))
-    }
-
-    @Test
-    fun `toggle all - multi note`() = runViewModelTest(notes = 2) {
-        flowOfToggleSelectionState.test {
-            assertThat(awaitItem(), equalTo(SELECT_ALL))
-
-            // select all
-            selectAll()?.join()
-            assertThat(awaitItem(), equalTo(SELECT_NONE))
+    fun `toggle is 'deselect' if only row is selected`() =
+        runViewModelTest(notes = 1) {
+            this.toggleRowSelectionAtPosition(0)
+            assertThat("toggle selection", flowOfToggleSelectionState.value, equalTo(SELECT_NONE))
             assertThat("multiselect after toggle", isInMultiSelectMode, equalTo(true))
-
-            // select none
-            toggleSelectAllOrNone()?.join()
-            assertThat("toggle selection after select none", awaitItem(), equalTo(SELECT_ALL))
-            assertThat("multiselect after toggle 2", isInMultiSelectMode, equalTo(true))
-
-            // select all manually
-            toggleRowSelectionAtPosition(0).join()
-            expectNoEvents() // remains 'select all'
-
-            // select the last row - emits 'select none'
-            toggleRowSelectionAtPosition(1).join()
-            assertThat(
-                "toggle selection after select all manually", awaitItem(), equalTo(SELECT_NONE)
-            )
-
-            // end select mode
-            endMultiSelectMode(SingleSelectCause.NavigateBack)
-            assertThat("multiselect after toggle 3", isInMultiSelectMode, equalTo(false))
-            cancelAndIgnoreRemainingEvents()
         }
-    }
 
     @Test
-    fun `toggleSelectAllOrNone - SELECT_ALL if partial selection`() = runViewModelTest(notes = 3) {
-        flowOfToggleSelectionState.test {
-            assertThat(
-                "toggle selection defaults to 'all' before selection",
-                awaitItem(),
-                equalTo(SELECT_ALL)
-            )
-            toggleRowSelectionAtPosition(2).join()
-            expectNoEvents() // "toggle selection remains at 'all' if 2/3 selected"
-
-            toggleSelectAllOrNone()?.join()
-            assertThat(selectedRowCount(), equalTo(3))
-            assertThat(
-                "toggle selection defaults to 'none' if 3/3 selected",
-                awaitItem(),
-                equalTo(SELECT_NONE)
-            )
+    fun `toggle is 'select all' after deselection - multi note`() =
+        runViewModelTest(notes = 2) {
+            this.toggleRowSelectionAtPosition(0)
+            assertThat("toggle selection", flowOfToggleSelectionState.value, equalTo(SELECT_ALL))
         }
-    }
+
+    @Test
+    fun `toggle all - multi note`() =
+        runViewModelTest(notes = 2) {
+            flowOfToggleSelectionState.test {
+                assertThat(awaitItem(), equalTo(SELECT_ALL))
+
+                // select all
+                selectAll()?.join()
+                assertThat(awaitItem(), equalTo(SELECT_NONE))
+                assertThat("multiselect after toggle", isInMultiSelectMode, equalTo(true))
+
+                // select none
+                toggleSelectAllOrNone()?.join()
+                assertThat("toggle selection after select none", awaitItem(), equalTo(SELECT_ALL))
+                assertThat("multiselect after toggle 2", isInMultiSelectMode, equalTo(true))
+
+                // select all manually
+                toggleRowSelectionAtPosition(0).join()
+                expectNoEvents() // remains 'select all'
+
+                // select the last row - emits 'select none'
+                toggleRowSelectionAtPosition(1).join()
+                assertThat(
+                    "toggle selection after select all manually",
+                    awaitItem(),
+                    equalTo(SELECT_NONE),
+                )
+
+                // end select mode
+                endMultiSelectMode(SingleSelectCause.NavigateBack)
+                assertThat("multiselect after toggle 3", isInMultiSelectMode, equalTo(false))
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `toggleSelectAllOrNone - SELECT_ALL if partial selection`() =
+        runViewModelTest(notes = 3) {
+            flowOfToggleSelectionState.test {
+                assertThat(
+                    "toggle selection defaults to 'all' before selection",
+                    awaitItem(),
+                    equalTo(SELECT_ALL),
+                )
+                toggleRowSelectionAtPosition(2).join()
+                expectNoEvents() // "toggle selection remains at 'all' if 2/3 selected"
+
+                toggleSelectAllOrNone()?.join()
+                assertThat(selectedRowCount(), equalTo(3))
+                assertThat(
+                    "toggle selection defaults to 'none' if 3/3 selected",
+                    awaitItem(),
+                    equalTo(SELECT_NONE),
+                )
+            }
+        }
 
     @Test
     fun `tap disables selection mode`() {
@@ -1115,11 +1176,15 @@ class CardBrowserViewModelTest : JvmTest() {
         runViewModelTest(savedStateHandle = handle, notes = 1) {
             assertThat(isInMultiSelectMode, equalTo(false))
             assertThat(
-                "initial multiselect state", handle.get<Boolean>("multiselect"), equalTo(false)
+                "initial multiselect state",
+                handle.get<Boolean>("multiselect"),
+                equalTo(false),
             )
             selectAll()
             assertThat(
-                "multiselect after select all", handle.get<Boolean>("multiselect"), equalTo(true)
+                "multiselect after select all",
+                handle.get<Boolean>("multiselect"),
+                equalTo(true),
             )
         }
 
@@ -1129,7 +1194,7 @@ class CardBrowserViewModelTest : JvmTest() {
             assertThat(
                 "multiselect after 'end multiselect'",
                 handle.get<Boolean>("multiselect"),
-                equalTo(false)
+                equalTo(false),
             )
         }
     }
@@ -1140,7 +1205,10 @@ class CardBrowserViewModelTest : JvmTest() {
         val cacheDir = createTransientDirectory()
         var idOfSelectedRow: CardOrNoteId? = null
         runViewModelTest(
-            savedStateHandle = handle, notes = 2, manualInit = false, cacheDir = cacheDir
+            savedStateHandle = handle,
+            notes = 2,
+            manualInit = false,
+            cacheDir = cacheDir,
         ) {
             selectRowAtPosition(1)
             idOfSelectedRow = selectedRows.single()
@@ -1156,27 +1224,29 @@ class CardBrowserViewModelTest : JvmTest() {
     }
 
     @Test
-    fun `saving a blank query does nothing`() = runViewModelTest {
-        flowOfSaveSearchNamePrompt.test {
-            updateQueryText("AAA")
-            updateQueryText("")
+    fun `saving a blank query does nothing`() =
+        runViewModelTest {
+            flowOfSaveSearchNamePrompt.test {
+                updateQueryText("AAA")
+                updateQueryText("")
 
-            saveCurrentSearch()
+                saveCurrentSearch()
 
-            expectNoEvents()
+                expectNoEvents()
+            }
         }
-    }
 
     @Test
-    fun `saving a search opens the 'name' dialog`() = runViewModelTest {
-        flowOfSaveSearchNamePrompt.test {
-            updateQueryText("AAA")
+    fun `saving a search opens the 'name' dialog`() =
+        runViewModelTest {
+            flowOfSaveSearchNamePrompt.test {
+                updateQueryText("AAA")
 
-            saveCurrentSearch()
+                saveCurrentSearch()
 
-            assertThat("save search is opened", expectMostRecentItem(), equalTo("AAA"))
+                assertThat("save search is opened", expectMostRecentItem(), equalTo("AAA"))
+            }
         }
-    }
 
     @Test
     fun `queryDataForCardEdit converts Note ID to Card ID in Notes mode - Issue 137`() =
@@ -1211,58 +1281,60 @@ class CardBrowserViewModelTest : JvmTest() {
             assertThat(
                 "Resolved Card IDs must be valid positive IDs",
                 firstResolvedCardId > 0,
-                equalTo(true)
+                equalTo(true),
             )
             assertThat(
                 "Resolved Card IDs must be valid positive IDs",
                 secondResolvedCardId > 0,
-                equalTo(true)
+                equalTo(true),
             )
         }
 
     @Test
-    fun `queryDataForCardEdit returns Card ID directly in Cards mode`() = runViewModelTest {
-        val note = addBasicAndReversedNote()
-        val noteCardIds = note.cardIds(col)
+    fun `queryDataForCardEdit returns Card ID directly in Cards mode`() =
+        runViewModelTest {
+            val note = addBasicAndReversedNote()
+            val noteCardIds = note.cardIds(col)
 
-        setCardsOrNotes(CardsOrNotes.CARDS)
-        waitForSearchResults()
+            setCardsOrNotes(CardsOrNotes.CARDS)
+            waitForSearchResults()
 
-        assertThat("Search should return 2 cards", rowCount, equalTo(2))
+            assertThat("Search should return 2 cards", rowCount, equalTo(2))
 
-        val firstRowId = cards[0]
-        val resolvedCardId = queryDataForCardEdit(firstRowId)
+            val firstRowId = cards[0]
+            val resolvedCardId = queryDataForCardEdit(firstRowId)
 
-        assertNotNull(resolvedCardId)
-        assertThat(resolvedCardId, equalTo(firstRowId.cardOrNoteId))
-        assertTrue(resolvedCardId in noteCardIds)
-    }
+            assertNotNull(resolvedCardId)
+            assertThat(resolvedCardId, equalTo(firstRowId.cardOrNoteId))
+            assertTrue(resolvedCardId in noteCardIds)
+        }
 
     @Test
-    fun `queryCardInfoDestination resolves correctly in Notes and Cards mode`() = runViewModelTest {
-        val note = addBasicAndReversedNote()
-        val noteCardIds = note.cardIds(col)
+    fun `queryCardInfoDestination resolves correctly in Notes and Cards mode`() =
+        runViewModelTest {
+            val note = addBasicAndReversedNote()
+            val noteCardIds = note.cardIds(col)
 
-        // Test in NOTES mode
-        setCardsOrNotes(CardsOrNotes.NOTES)
-        waitForSearchResults()
-        selectRowAtPosition(0)
+            // Test in NOTES mode
+            setCardsOrNotes(CardsOrNotes.NOTES)
+            waitForSearchResults()
+            selectRowAtPosition(0)
 
-        val destinationNotesMode = queryCardInfoDestination()
-        assertNotNull(destinationNotesMode)
-        assertTrue(destinationNotesMode.cardId in noteCardIds)
-        assertThat(destinationNotesMode.cardId > 0, equalTo(true))
+            val destinationNotesMode = queryCardInfoDestination()
+            assertNotNull(destinationNotesMode)
+            assertTrue(destinationNotesMode.cardId in noteCardIds)
+            assertThat(destinationNotesMode.cardId > 0, equalTo(true))
 
-        // Test in CARDS mode
-        setCardsOrNotes(CardsOrNotes.CARDS)
-        waitForSearchResults()
-        selectRowAtPosition(0)
+            // Test in CARDS mode
+            setCardsOrNotes(CardsOrNotes.CARDS)
+            waitForSearchResults()
+            selectRowAtPosition(0)
 
-        val destinationCardsMode = queryCardInfoDestination()
-        assertNotNull(destinationCardsMode)
-        assertTrue(destinationCardsMode.cardId in noteCardIds)
-        assertThat(destinationCardsMode.cardId > 0, equalTo(true))
-    }
+            val destinationCardsMode = queryCardInfoDestination()
+            assertNotNull(destinationCardsMode)
+            assertTrue(destinationCardsMode.cardId in noteCardIds)
+            assertThat(destinationCardsMode.cardId > 0, equalTo(true))
+        }
 
     @Test
     fun `browserRows emits BrowserRowWithId with strongly-typed CardOrNoteId in both modes`() =
@@ -1288,11 +1360,14 @@ class CardBrowserViewModelTest : JvmTest() {
 
     private var showMediaFilenamesPreference: Boolean
         // hardcoded @string/pref_display_filenames_in_browser_key
-        get() = AnkiDroidApp.sharedPreferencesProvider.sharedPrefs()
-            .getBoolean("card_browser_show_media_filenames", false)
-        set(value) = AnkiDroidApp.sharedPreferencesProvider.sharedPrefs().edit {
-            putBoolean("card_browser_show_media_filenames", value)
-        }
+        get() =
+            AnkiDroidApp.sharedPreferencesProvider
+                .sharedPrefs()
+                .getBoolean("card_browser_show_media_filenames", false)
+        set(value) =
+            AnkiDroidApp.sharedPreferencesProvider.sharedPrefs().edit {
+                putBoolean("card_browser_show_media_filenames", value)
+            }
 
     private fun runViewModelNotesTest(
         notes: Int = 0,
@@ -1304,15 +1379,16 @@ class CardBrowserViewModelTest : JvmTest() {
             // ensure 1 note = 2 cards
             addBasicAndReversedNote()
         }
-        val viewModel = CardBrowserViewModel(
-            lastDeckIdRepository = SharedPreferencesLastDeckIdRepository(),
-            cacheDir = createTransientDirectory(),
-            options = null,
-            preferences = AnkiDroidApp.sharedPreferencesProvider,
-            isFragmented = false,
-            manualInit = manualInit,
-            savedStateHandle = SavedStateHandle(),
-        )
+        val viewModel =
+            CardBrowserViewModel(
+                lastDeckIdRepository = SharedPreferencesLastDeckIdRepository(),
+                cacheDir = createTransientDirectory(),
+                options = null,
+                preferences = AnkiDroidApp.sharedPreferencesProvider,
+                isFragmented = false,
+                manualInit = manualInit,
+                savedStateHandle = SavedStateHandle(),
+            )
         // makes ignoreValuesFromViewModelLaunch work under test
         if (manualInit) {
             viewModel.manualInit()
@@ -1334,15 +1410,16 @@ class CardBrowserViewModelTest : JvmTest() {
                 addBasicNote()
             }
             notes.ifNotZero { count -> Timber.d("added %d notes", count) }
-            val viewModel = CardBrowserViewModel(
-                lastDeckIdRepository = SharedPreferencesLastDeckIdRepository(),
-                cacheDir = cacheDir,
-                options = null,
-                preferences = AnkiDroidApp.sharedPreferencesProvider,
-                isFragmented = false,
-                manualInit = manualInit,
-                savedStateHandle = savedStateHandle,
-            )
+            val viewModel =
+                CardBrowserViewModel(
+                    lastDeckIdRepository = SharedPreferencesLastDeckIdRepository(),
+                    cacheDir = cacheDir,
+                    options = null,
+                    preferences = AnkiDroidApp.sharedPreferencesProvider,
+                    isFragmented = false,
+                    manualInit = manualInit,
+                    savedStateHandle = savedStateHandle,
+                )
             // makes ignoreValuesFromViewModelLaunch work under test
             if (manualInit) {
                 viewModel.manualInit()
@@ -1364,9 +1441,10 @@ class CardBrowserViewModelTest : JvmTest() {
             intent: CardBrowserLaunchOptions? = null,
             mode: CardsOrNotes = CardsOrNotes.CARDS,
         ): CardBrowserViewModel {
-            val lastDeckIdRepository = object : LastDeckIdRepository {
-                override var lastDeckId: DeckId? = lastDeckId
-            }
+            val lastDeckIdRepository =
+                object : LastDeckIdRepository {
+                    override var lastDeckId: DeckId? = lastDeckId
+                }
 
             // default is CARDS, do nothing in this case
             if (mode == CardsOrNotes.NOTES) {
@@ -1488,8 +1566,7 @@ fun CardBrowserViewModel.setColumn(
 val Pair<List<ColumnWithSample>, List<ColumnWithSample>>.allColumns
     get() = this.first + this.second
 
-private fun CardBrowserViewModel.toggleRowSelectionAtPosition(position: Int) =
-    toggleRowSelection(cards[position].toRowSelection())
+private fun CardBrowserViewModel.toggleRowSelectionAtPosition(position: Int) = toggleRowSelection(cards[position].toRowSelection())
 
 fun CardBrowserViewModel.selectRowAtPosition(position: Int) {
     val rowId = this.getRowAtPosition(position)
@@ -1499,12 +1576,14 @@ fun CardBrowserViewModel.selectRowAtPosition(position: Int) {
 fun CardOrNoteId.toRowSelection() = RowSelection(rowId = this, topOffset = 0)
 
 @SuppressLint("CheckResult")
-private fun AnkiTest.flagCardForNote(note: Note, flag: Flag) {
+private fun AnkiTest.flagCardForNote(
+    note: Note,
+    flag: Flag,
+) {
     col.setUserFlagForCards(note.cardIds(col), flag.code)
 }
 
 private suspend fun CardBrowserViewModel.setFlagFilterSync(flag: Flag) {
     search("flag:${flag.code}")
     waitForSearchResults()
-
 }

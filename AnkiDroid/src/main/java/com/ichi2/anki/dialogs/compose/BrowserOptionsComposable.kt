@@ -61,17 +61,19 @@ fun BrowserOptions(
     val ignoreAccentsChecked = remember { mutableStateOf(initialIgnoreAccents) }
 
     Column(
-        modifier = Modifier
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier
+                .verticalScroll(rememberScrollState()),
     ) {
         Text(
             text = stringResource(id = R.string.toggle_cards_notes),
             style = MaterialTheme.typography.titleMedium,
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RadioButton(
@@ -87,9 +89,10 @@ fun BrowserOptions(
             )
         }
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RadioButton(
@@ -107,16 +110,17 @@ fun BrowserOptions(
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
             thickness = DividerDefaults.Thickness,
-            color = DividerDefaults.color
+            color = DividerDefaults.color,
         )
         Text(
             text = stringResource(id = R.string.card_browser_truncate),
             style = MaterialTheme.typography.titleMedium,
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
@@ -139,16 +143,17 @@ fun BrowserOptions(
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
             thickness = DividerDefaults.Thickness,
-            color = DividerDefaults.color
+            color = DividerDefaults.color,
         )
         Text(
             text = stringResource(id = R.string.pref_cat_studying),
             style = MaterialTheme.typography.titleMedium,
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
@@ -166,7 +171,7 @@ fun BrowserOptions(
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
             thickness = DividerDefaults.Thickness,
-            color = DividerDefaults.color
+            color = DividerDefaults.color,
         )
         Text(
             text = stringResource(id = R.string.browse_manage_columns_main_heading),
@@ -178,7 +183,7 @@ fun BrowserOptions(
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
             thickness = DividerDefaults.Thickness,
-            color = DividerDefaults.color
+            color = DividerDefaults.color,
         )
         Text(
             text = stringResource(id = R.string.menu_flag),

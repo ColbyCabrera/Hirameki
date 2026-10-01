@@ -51,8 +51,7 @@ data class DisplayDeckNode private constructor(
     lateinit var deckNode: DeckNode
         private set
 
-    fun withUpdatedDeckId(deckId: DeckId): DisplayDeckNode =
-        this.copy(isSelected = this.did == deckId).also { it.deckNode = this.deckNode }
+    fun withUpdatedDeckId(deckId: DeckId): DisplayDeckNode = this.copy(isSelected = this.did == deckId).also { it.deckNode = this.deckNode }
 
     companion object {
         fun from(
@@ -60,20 +59,21 @@ data class DisplayDeckNode private constructor(
             matchesSearchOrChild: Boolean,
             selectedDeckId: DeckId,
             hasBuried: Boolean,
-        ): DisplayDeckNode = DisplayDeckNode(
-            did = node.did,
-            fullDeckName = node.fullDeckName,
-            lastDeckNameComponent = node.lastDeckNameComponent,
-            collapsed = node.collapsed,
-            canCollapse = node.children.any() && matchesSearchOrChild,
-            depth = node.depth,
-            filtered = node.filtered,
-            newCount = node.newCount,
-            lrnCount = node.lrnCount,
-            revCount = node.revCount,
-            isSelected = node.did == selectedDeckId,
-            hasBuried = hasBuried,
-        ).apply { deckNode = node }
+        ): DisplayDeckNode =
+            DisplayDeckNode(
+                did = node.did,
+                fullDeckName = node.fullDeckName,
+                lastDeckNameComponent = node.lastDeckNameComponent,
+                collapsed = node.collapsed,
+                canCollapse = node.children.any() && matchesSearchOrChild,
+                depth = node.depth,
+                filtered = node.filtered,
+                newCount = node.newCount,
+                lrnCount = node.lrnCount,
+                revCount = node.revCount,
+                isSelected = node.did == selectedDeckId,
+                hasBuried = hasBuried,
+            ).apply { deckNode = node }
     }
 }
 
@@ -89,18 +89,19 @@ fun DeckNode.filterAndFlattenDisplay(
     selectedDeckId: DeckId,
     decksWithBuried: Set<DeckId>,
 ): List<DisplayDeckNode> {
-    val filterPattern = if (filter.isNullOrBlank()) {
-        null
-    } else {
-        filter.toString().lowercase(Locale.getDefault()).trim()
-    }
+    val filterPattern =
+        if (filter.isNullOrBlank()) {
+            null
+        } else {
+            filter.toString().lowercase(Locale.getDefault()).trim()
+        }
     val list = mutableListOf<DisplayDeckNode>()
     filterAndFlattenDisplayInner(
         filterPattern,
         list,
         parentMatched = false,
         selectedDeckId,
-        decksWithBuried
+        decksWithBuried,
     )
     return list
 }
@@ -140,7 +141,7 @@ private fun DeckNode.filterAndFlattenDisplayInner(
             list,
             parentMatched = false,
             selectedDeckId,
-            decksWithBuried
+            decksWithBuried,
         )
     }
     if (!isSyntheticDeck && startingLen == list.size) {
@@ -160,8 +161,8 @@ private fun DeckNode.addVisibleToList(
             this,
             matchesSearchOrChild,
             selectedDeckId,
-            hasBuriedRecursively(decksWithBuried)
-        )
+            hasBuriedRecursively(decksWithBuried),
+        ),
     )
     if (!collapsed) {
         for (child in children) {
@@ -181,11 +182,12 @@ fun DeckNode.addVisibleToList(list: MutableList<DeckNode>) {
 }
 
 @SuppressLint("LocaleRootUsage")
-private fun DeckNode.nameMatchesFilter(filter: CharSequence?): Boolean {
-    return if (filter == null) {
+private fun DeckNode.nameMatchesFilter(filter: CharSequence?): Boolean =
+    if (filter == null) {
         true
     } else {
-        node.name.lowercase(Locale.getDefault())
-            .contains(filter) || node.name.lowercase(Locale.ROOT).contains(filter)
+        node.name
+            .lowercase(Locale.getDefault())
+            .contains(filter) ||
+            node.name.lowercase(Locale.ROOT).contains(filter)
     }
-}

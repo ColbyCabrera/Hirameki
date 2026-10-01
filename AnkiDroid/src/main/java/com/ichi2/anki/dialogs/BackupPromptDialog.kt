@@ -20,8 +20,6 @@ import android.app.Activity
 import android.content.Context
 import android.view.ViewGroup
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AlertDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.edit
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.DeckPicker
@@ -78,8 +77,10 @@ class BackupPromptDialog private constructor(
 
     private var timesDialogDismissed: Int
         get() = windowContext.sharedPrefs().getInt("backupPromptDismissedCount", 0)
-        set(value) = windowContext.sharedPrefs()
-            .edit { putInt("backupPromptDismissedCount", value) }
+        set(value) =
+            windowContext
+                .sharedPrefs()
+                .edit { putInt("backupPromptDismissedCount", value) }
 
     private var dialogPermanentlyDismissed: Boolean
         get() = windowContext.sharedPrefs().getBoolean(BACKUP_PROMPT_DISABLED, false)
@@ -142,9 +143,10 @@ class BackupPromptDialog private constructor(
         dismiss()
         val activity = windowContext as? Activity ?: return
         val viewGroup = activity.findViewById<ViewGroup>(android.R.id.content)
-        val cv = ComposeView(activity).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        }
+        val cv =
+            ComposeView(activity).apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            }
         this.composeView = cv
         viewGroup.addView(cv)
 
@@ -179,7 +181,7 @@ class BackupPromptDialog private constructor(
                             Timber.d("Don't show again checked: %b", checked)
                             isDoNotShowAgainChecked = checked
                         },
-                        isDoNotShowAgainChecked = isDoNotShowAgainChecked
+                        isDoNotShowAgainChecked = isDoNotShowAgainChecked,
                     )
                 }
             }
@@ -241,7 +243,8 @@ class BackupPromptDialog private constructor(
                 // The user is very likely syncing
                 Timber.w("getPermanentlyDismissDialogMessage: unexpected state")
                 CrashReportService.sendExceptionReport(
-                    IllegalStateException("unexpected state"), "getPermanentlyDismissDialogMessage"
+                    IllegalStateException("unexpected state"),
+                    "getPermanentlyDismissDialogMessage",
                 )
                 // assume this is a mistake and show a scary confirmation prompt
                 R.string.dismiss_backup_warning_new_user // message stating collection will be deleted
@@ -271,8 +274,7 @@ class BackupPromptDialog private constructor(
         }
     }
 
-    private suspend fun shouldShowDialog(): Boolean =
-        !userIsNewToAnkiDroid() && canProvideBackupOption() && timeToShowDialogAgain()
+    private suspend fun shouldShowDialog(): Boolean = !userIsNewToAnkiDroid() && canProvideBackupOption() && timeToShowDialogAgain()
 
     /**
      * Whether:
@@ -302,8 +304,7 @@ class BackupPromptDialog private constructor(
         return collectionWillBeMadeInaccessibleAfterUninstall(windowContext)
     }
 
-    private fun timeToShowDialogAgain(): Boolean =
-        !dialogPermanentlyDismissed && nextTimeToShowDialog <= TimeManager.time.intTimeMS()
+    private fun timeToShowDialogAgain(): Boolean = !dialogPermanentlyDismissed && nextTimeToShowDialog <= TimeManager.time.intTimeMS()
 
     private suspend fun userIsNewToAnkiDroid(): Boolean {
         // A user is new if the app was installed > 7 days ago  OR if they have no cards
@@ -321,10 +322,11 @@ class BackupPromptDialog private constructor(
     /** The time at which the app was first installed. Units are as per [System.currentTimeMillis()]. */
     private fun getFirstInstallTime(): Long? {
         return try {
-            return windowContext.packageManager.getPackageInfoCompat(
-                windowContext.packageName,
-                PackageInfoFlagsCompat.of(0),
-            )?.firstInstallTime
+            return windowContext.packageManager
+                .getPackageInfoCompat(
+                    windowContext.packageName,
+                    PackageInfoFlagsCompat.of(0),
+                )?.firstInstallTime
         } catch (_: Exception) {
             Timber.w("failed to get first install time")
             null

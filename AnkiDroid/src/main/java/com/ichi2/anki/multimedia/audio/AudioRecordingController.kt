@@ -275,43 +275,44 @@ class AudioRecordingController(
         }
 
         (context as? Activity)?.let { activity ->
-            val callbacks = object : Application.ActivityLifecycleCallbacks {
-                override fun onActivityCreated(
-                    activity: Activity,
-                    savedInstanceState: Bundle?,
-                ) {
-                    // Not needed
-                }
+            val callbacks =
+                object : Application.ActivityLifecycleCallbacks {
+                    override fun onActivityCreated(
+                        activity: Activity,
+                        savedInstanceState: Bundle?,
+                    ) {
+                        // Not needed
+                    }
 
-                override fun onActivityStarted(activity: Activity) {
-                    // Not needed
-                }
+                    override fun onActivityStarted(activity: Activity) {
+                        // Not needed
+                    }
 
-                override fun onActivityResumed(activity: Activity) {
-                    // not needed
-                }
+                    override fun onActivityResumed(activity: Activity) {
+                        // not needed
+                    }
 
-                override fun onActivityPaused(activity: Activity) {
-                    if (activity == context) {
-                        onViewFocusChanged()
+                    override fun onActivityPaused(activity: Activity) {
+                        if (activity == context) {
+                            onViewFocusChanged()
+                        }
+                    }
+
+                    override fun onActivityStopped(activity: Activity) {
+                        // Not needed
+                    }
+
+                    override fun onActivitySaveInstanceState(
+                        activity: Activity,
+                        outState: Bundle,
+                    ) {
+                        // Not needed
+                    }
+
+                    override fun onActivityDestroyed(activity: Activity) {
+                        // not needed
                     }
                 }
-
-                override fun onActivityStopped(activity: Activity) {
-                    // Not needed
-                }
-
-                override fun onActivitySaveInstanceState(
-                    activity: Activity,
-                    outState: Bundle,
-                ) {
-                    // Not needed
-                }
-
-                override fun onActivityDestroyed(activity: Activity) {
-                    // not needed
-                }
-            }
             activityLifecycleCallbacks?.let {
                 activity.application.unregisterActivityLifecycleCallbacks(it)
             }

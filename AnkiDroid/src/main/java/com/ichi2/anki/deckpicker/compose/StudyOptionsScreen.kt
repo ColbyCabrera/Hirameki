@@ -104,14 +104,13 @@ fun StudyOptionsScreen(
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) {
         if (studyOptionsData == null) {
             // Show a loading indicator or an empty state
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-
         } else {
             when {
                 studyOptionsData.totalCards == 0 && !studyOptionsData.isFiltered -> {
@@ -141,9 +140,10 @@ fun StudyOptionsView(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(16.dp),
     ) {
         Text(
             text = studyOptionsData.deckName,
@@ -154,40 +154,47 @@ fun StudyOptionsView(
         Spacer(modifier = Modifier.height(16.dp))
         if (studyOptionsData.deckDescription.isNotEmpty()) {
             val linkColor = MaterialTheme.colorScheme.primary
-            val annotatedString = remember(studyOptionsData.deckDescription, linkColor) {
-                // Sanitize stored HTML before converting it into clickable Compose text spans.
-                val cleanDescription =
-                    Jsoup.clean(studyOptionsData.deckDescription, Safelist.basic())
-                val spanned = HtmlCompat.fromHtml(
-                    cleanDescription, HtmlCompat.FROM_HTML_MODE_LEGACY
-                )
-                buildAnnotatedString {
-                    append(spanned.toString())
-                    val urlSpans = spanned.getSpans(0, spanned.length, URLSpan::class.java)
-                    for (span in urlSpans) {
-                        val start = spanned.getSpanStart(span)
-                        val end = spanned.getSpanEnd(span)
-                        val url = span.url
-                        if (url.startsWith(
-                                "http://",
-                                ignoreCase = true
-                            ) || url.startsWith("https://", ignoreCase = true)
-                        ) {
-                            addLink(LinkAnnotation.Url(url), start, end)
-                            addStyle(
-                                SpanStyle(
-                                    color = linkColor, textDecoration = TextDecoration.Underline
-                                ), start, end
-                            )
+            val annotatedString =
+                remember(studyOptionsData.deckDescription, linkColor) {
+                    // Sanitize stored HTML before converting it into clickable Compose text spans.
+                    val cleanDescription =
+                        Jsoup.clean(studyOptionsData.deckDescription, Safelist.basic())
+                    val spanned =
+                        HtmlCompat.fromHtml(
+                            cleanDescription,
+                            HtmlCompat.FROM_HTML_MODE_LEGACY,
+                        )
+                    buildAnnotatedString {
+                        append(spanned.toString())
+                        val urlSpans = spanned.getSpans(0, spanned.length, URLSpan::class.java)
+                        for (span in urlSpans) {
+                            val start = spanned.getSpanStart(span)
+                            val end = spanned.getSpanEnd(span)
+                            val url = span.url
+                            if (url.startsWith(
+                                    "http://",
+                                    ignoreCase = true,
+                                ) ||
+                                url.startsWith("https://", ignoreCase = true)
+                            ) {
+                                addLink(LinkAnnotation.Url(url), start, end)
+                                addStyle(
+                                    SpanStyle(
+                                        color = linkColor,
+                                        textDecoration = TextDecoration.Underline,
+                                    ),
+                                    start,
+                                    end,
+                                )
+                            }
                         }
                     }
                 }
-            }
             Text(
                 text = annotatedString,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -203,21 +210,21 @@ fun StudyOptionsView(
                 count = studyOptionsData.newCount,
                 shape = RoundedPolygonShape(MaterialShapes.SoftBurst),
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             )
             StudyOptionCardCount(
                 label = stringResource(R.string.learning),
                 count = studyOptionsData.lrnCount,
                 shape = RoundedPolygonShape(MaterialShapes.Square),
                 containerColor = MaterialTheme.colorScheme.tertiary,
-                contentColor = MaterialTheme.colorScheme.onTertiary
+                contentColor = MaterialTheme.colorScheme.onTertiary,
             )
             StudyOptionCardCount(
                 label = stringResource(R.string.review),
                 count = studyOptionsData.revCount,
                 shape = RoundedPolygonShape(MaterialShapes.Ghostish),
                 containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
+                contentColor = MaterialTheme.colorScheme.onSecondary,
             )
         }
 
@@ -240,7 +247,7 @@ fun StudyOptionsView(
                     shape = RoundedPolygonShape(MaterialShapes.Sunny),
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                     contentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                    small = true
+                    small = true,
                 )
                 StudyOptionCardCount(
                     label = stringResource(R.string.learning),
@@ -248,7 +255,7 @@ fun StudyOptionsView(
                     shape = RoundedPolygonShape(MaterialShapes.Cookie4Sided),
                     containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f),
                     contentColor = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.8f),
-                    small = true
+                    small = true,
                 )
                 StudyOptionCardCount(
                     label = stringResource(R.string.review),
@@ -256,7 +263,7 @@ fun StudyOptionsView(
                     shape = RoundedPolygonShape(MaterialShapes.Cookie7Sided),
                     containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
                     contentColor = MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.8f),
-                    small = true
+                    small = true,
                 )
             }
         }
@@ -268,51 +275,52 @@ fun StudyOptionsView(
             color = MaterialTheme.colorScheme.tertiaryContainer,
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp, horizontal = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp, horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = stringResource(R.string.total_new),
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                     Text(
                         text = studyOptionsData.totalNewCards.toString(),
                         fontSize = 48.sp,
                         fontFamily = RobotoMono,
-                        lineHeight = 48.sp
+                        lineHeight = 48.sp,
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = stringResource(R.string.studyoptions_total_label),
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                     Text(
                         text = studyOptionsData.totalCards.toString(),
                         fontSize = 48.sp,
                         fontFamily = RobotoMono,
-                        lineHeight = 48.sp
+                        lineHeight = 48.sp,
                     )
                 }
             }
         }
 
-
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
             onClick = onStartStudy,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(96.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(96.dp),
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.book_ribbon_24px),
                 contentDescription = null,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(text = stringResource(R.string.studyoptions_start), fontSize = 24.sp)
@@ -330,9 +338,10 @@ fun EmptyDeckView(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -361,10 +370,11 @@ fun CongratsView(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         Text(
             text = stringResource(R.string.studyoptions_congrats_finished),
@@ -373,22 +383,25 @@ fun CongratsView(
         )
         Text(
             text = stringResource(R.string.daily_limit_reached),
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
         Text(
-            text = stringResource(R.string.study_more), style = MaterialTheme.typography.bodyLarge
+            text = stringResource(R.string.study_more),
+            style = MaterialTheme.typography.bodyLarge,
         )
         if (!studyOptionsData.isFiltered) {
             Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .padding(top = 12.dp),
-                onClick = { onCustomStudy(studyOptionsData.deckId) }) {
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(96.dp)
+                        .padding(top = 12.dp),
+                onClick = { onCustomStudy(studyOptionsData.deckId) },
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.book_ribbon_24px),
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(text = stringResource(R.string.custom_study), fontSize = 24.sp)
@@ -408,27 +421,29 @@ fun StudyOptionCardCount(
     containerColor: Color,
     contentColor: Color,
     modifier: Modifier = Modifier,
-    small: Boolean = false
+    small: Boolean = false,
 ) {
     val size = if (small) 40.dp else 64.dp
     val fontSize = if (small) 12.sp else 20.sp
 
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Box(
-            modifier = Modifier
-                .size(size)
-                .clip(shape)
-                .background(containerColor),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(size)
+                    .clip(shape)
+                    .background(containerColor),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = count.toString(),
                 color = contentColor,
                 fontFamily = RobotoMono,
                 fontSize = fontSize,
-                modifier = Modifier
-                    .padding(4.dp)
-                    .basicMarquee()
+                modifier =
+                    Modifier
+                        .padding(4.dp)
+                        .basicMarquee(),
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
@@ -439,62 +454,65 @@ fun StudyOptionCardCount(
 @Preview(showBackground = true)
 @Composable
 fun StudyOptionsScreenPreview() {
-    val sampleData = StudyOptionsData(
-        deckId = 1,
-        deckName = "My Awesome Deck",
-        deckDescription = "This is a great deck for learning Compose.",
-        newCount = 10,
-        lrnCount = 5,
-        revCount = 20,
-        buriedNew = 2,
-        buriedLrn = 1,
-        buriedRev = 3,
-        totalNewCards = 50,
-        totalCards = 200,
-        isFiltered = false,
-        haveBuried = true,
-    )
+    val sampleData =
+        StudyOptionsData(
+            deckId = 1,
+            deckName = "My Awesome Deck",
+            deckDescription = "This is a great deck for learning Compose.",
+            newCount = 10,
+            lrnCount = 5,
+            revCount = 20,
+            buriedNew = 2,
+            buriedLrn = 1,
+            buriedRev = 3,
+            totalNewCards = 50,
+            totalCards = 200,
+            isFiltered = false,
+            haveBuried = true,
+        )
     StudyOptionsScreen(studyOptionsData = sampleData, onStartStudy = {}, onCustomStudy = {})
 }
 
 @Preview(showBackground = true)
 @Composable
 fun CongratsViewPreview() {
-    val sampleData = StudyOptionsData(
-        deckId = 1,
-        deckName = "My Awesome Deck",
-        deckDescription = "",
-        newCount = 0,
-        lrnCount = 0,
-        revCount = 0,
-        buriedNew = 0,
-        buriedLrn = 0,
-        buriedRev = 0,
-        totalNewCards = 0,
-        totalCards = 100,
-        isFiltered = false,
-        haveBuried = false,
-    )
+    val sampleData =
+        StudyOptionsData(
+            deckId = 1,
+            deckName = "My Awesome Deck",
+            deckDescription = "",
+            newCount = 0,
+            lrnCount = 0,
+            revCount = 0,
+            buriedNew = 0,
+            buriedLrn = 0,
+            buriedRev = 0,
+            totalNewCards = 0,
+            totalCards = 100,
+            isFiltered = false,
+            haveBuried = false,
+        )
     CongratsView(studyOptionsData = sampleData, onCustomStudy = {})
 }
 
 @Preview(showBackground = true)
 @Composable
 fun EmptyDeckViewPreview() {
-    val sampleData = StudyOptionsData(
-        deckId = 1,
-        deckName = "My Awesome Deck",
-        deckDescription = "",
-        newCount = 0,
-        lrnCount = 0,
-        revCount = 0,
-        buriedNew = 0,
-        buriedLrn = 0,
-        buriedRev = 0,
-        totalNewCards = 0,
-        totalCards = 0,
-        isFiltered = false,
-        haveBuried = false,
-    )
+    val sampleData =
+        StudyOptionsData(
+            deckId = 1,
+            deckName = "My Awesome Deck",
+            deckDescription = "",
+            newCount = 0,
+            lrnCount = 0,
+            revCount = 0,
+            buriedNew = 0,
+            buriedLrn = 0,
+            buriedRev = 0,
+            totalNewCards = 0,
+            totalCards = 0,
+            isFiltered = false,
+            haveBuried = false,
+        )
     EmptyDeckView(studyOptionsData = sampleData)
 }

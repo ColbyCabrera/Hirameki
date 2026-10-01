@@ -41,7 +41,7 @@ fun BrowserOptionsDialog(
     initialIsTruncated: Boolean,
     initialShouldIgnoreAccents: Boolean,
     onManageColumnsClicked: () -> Unit,
-    onRenameFlagClicked: () -> Unit
+    onRenameFlagClicked: () -> Unit,
 ) {
     var cardsOrNotes by remember { mutableStateOf(initialCardsOrNotes) }
     var isTruncated by remember { mutableStateOf(initialIsTruncated) }
@@ -60,7 +60,7 @@ fun BrowserOptionsDialog(
                 onIgnoreAccentsChanged = { shouldIgnoreAccents = it },
                 initialIgnoreAccents = shouldIgnoreAccents,
                 onManageColumnsClicked = onManageColumnsClicked,
-                onRenameFlagClicked = onRenameFlagClicked
+                onRenameFlagClicked = onRenameFlagClicked,
             )
         },
         confirmButton = {
@@ -68,7 +68,8 @@ fun BrowserOptionsDialog(
                 onClick = {
                     onConfirm(cardsOrNotes, isTruncated, shouldIgnoreAccents)
                     onDismissRequest()
-                }) {
+                },
+            ) {
                 Text(stringResource(R.string.dialog_ok))
             }
         },
@@ -76,6 +77,6 @@ fun BrowserOptionsDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(R.string.dialog_cancel))
             }
-        }
+        },
     )
 }

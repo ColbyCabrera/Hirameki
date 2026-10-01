@@ -25,8 +25,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.ichi2.anki.ui.compose.components.AnkiToggleView
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.AnkiToggleView
 
 class ScheduleRemindersAdapter(
     private val setDeckNameFromScopeForView: (ReviewReminderScope, TextView) -> Unit,

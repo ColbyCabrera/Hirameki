@@ -36,8 +36,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class SessionStorageTest {
-
-    class WebViewTestHarness(private val baseUrl: String) {
+    class WebViewTestHarness(
+        private val baseUrl: String,
+    ) {
         private val context = ApplicationProvider.getApplicationContext<Context>()
         private val instrumentation = InstrumentationRegistry.getInstrumentation()
         private val webView: WebView
@@ -45,45 +46,52 @@ class SessionStorageTest {
         init {
             var createdView: WebView? = null
             instrumentation.runOnMainSync {
-                createdView = WebView(context).apply {
-                    settings.javaScriptEnabled = true
-                    settings.domStorageEnabled = true
-                }
+                createdView =
+                    WebView(context).apply {
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                    }
             }
             webView = requireNotNull(createdView)
         }
 
         suspend fun loadHtml(html: String) {
-            val loaded = withTimeoutOrNull(10_000.milliseconds) {
-                suspendCancellableCoroutine { continuation ->
-                    instrumentation.runOnMainSync {
-                        webView.webViewClient = object : WebViewClient() {
-                            override fun onPageFinished(view: WebView?, url: String?) {
-                                if (continuation.isActive) {
-                                    continuation.resume(Unit)
+            val loaded =
+                withTimeoutOrNull(10_000.milliseconds) {
+                    suspendCancellableCoroutine { continuation ->
+                        instrumentation.runOnMainSync {
+                            webView.webViewClient =
+                                object : WebViewClient() {
+                                    override fun onPageFinished(
+                                        view: WebView?,
+                                        url: String?,
+                                    ) {
+                                        if (continuation.isActive) {
+                                            continuation.resume(Unit)
+                                        }
+                                    }
                                 }
-                            }
+                            webView.loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null)
                         }
-                        webView.loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null)
                     }
+                    true
                 }
-                true
-            }
             assertTrue("Page load timed out", loaded == true)
         }
 
         suspend fun evalJs(script: String): String {
-            val result = withTimeoutOrNull(10_000.milliseconds) {
-                suspendCancellableCoroutine { continuation ->
-                    instrumentation.runOnMainSync {
-                        webView.evaluateJavascript(script) { res ->
-                            if (continuation.isActive) {
-                                continuation.resume(res ?: "null")
+            val result =
+                withTimeoutOrNull(10_000.milliseconds) {
+                    suspendCancellableCoroutine { continuation ->
+                        instrumentation.runOnMainSync {
+                            webView.evaluateJavascript(script) { res ->
+                                if (continuation.isActive) {
+                                    continuation.resume(res ?: "null")
+                                }
                             }
                         }
                     }
                 }
-            }
             assertTrue("JS evaluation timed out", result != null)
             return result ?: "null"
         }
@@ -97,75 +105,84 @@ class SessionStorageTest {
     }
 
     @Test
-    fun verifySessionStoragePersistsAcrossCardFlipWithProductionShell() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val harness = WebViewTestHarness("http://localhost/")
+    fun verifySessionStoragePersistsAcrossCardFlipWithProductionShell() =
+        runBlocking {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val harness = WebViewTestHarness("http://localhost/")
 
-        val frontHtml = stdHtml(context)
-        val backHtml = stdHtml(context)
+            val frontHtml = stdHtml(context)
+            val backHtml = stdHtml(context)
 
-        try {
-            // 1. Load Front card HTML
-            harness.loadHtml(frontHtml)
+            try {
+                // 1. Load Front card HTML
+                harness.loadHtml(frontHtml)
 
-            // 2. Set sessionStorage data via setItem and property assignment on Front card
-            harness.evalJs("sessionStorage.setItem('ankiTestKey', 'persistentValue123');")
-            harness.evalJs("sessionStorage.ankiPropKey = 'persistentPropValue456';")
+                // 2. Set sessionStorage data via setItem and property assignment on Front card
+                harness.evalJs("sessionStorage.setItem('ankiTestKey', 'persistentValue123');")
+                harness.evalJs("sessionStorage.ankiPropKey = 'persistentPropValue456';")
 
-            // Verify readable on Front card
-            assertEquals(
-                "\"persistentValue123\"", harness.evalJs("sessionStorage.getItem('ankiTestKey');")
-            )
-            assertEquals(
-                "\"persistentPropValue456\"", harness.evalJs("sessionStorage.ankiPropKey;")
-            )
+                // Verify readable on Front card
+                assertEquals(
+                    "\"persistentValue123\"",
+                    harness.evalJs("sessionStorage.getItem('ankiTestKey');"),
+                )
+                assertEquals(
+                    "\"persistentPropValue456\"",
+                    harness.evalJs("sessionStorage.ankiPropKey;"),
+                )
 
-            // 3. Reload WebView with Back card HTML via loadDataWithBaseURL (simulating card flip)
-            harness.loadHtml(backHtml)
+                // 3. Reload WebView with Back card HTML via loadDataWithBaseURL (simulating card flip)
+                harness.loadHtml(backHtml)
 
-            // 4. Verify sessionStorage data survived reload and is readable on Back card
-            assertEquals(
-                "\"persistentValue123\"", harness.evalJs("sessionStorage.getItem('ankiTestKey');")
-            )
-            assertEquals(
-                "\"persistentPropValue456\"", harness.evalJs("sessionStorage.ankiPropKey;")
-            )
+                // 4. Verify sessionStorage data survived reload and is readable on Back card
+                assertEquals(
+                    "\"persistentValue123\"",
+                    harness.evalJs("sessionStorage.getItem('ankiTestKey');"),
+                )
+                assertEquals(
+                    "\"persistentPropValue456\"",
+                    harness.evalJs("sessionStorage.ankiPropKey;"),
+                )
 
-            // 5. Test removal and clearing
-            harness.evalJs("sessionStorage.removeItem('ankiTestKey');")
-            assertEquals("null", harness.evalJs("sessionStorage.getItem('ankiTestKey');"))
-            assertEquals(
-                "\"persistentPropValue456\"", harness.evalJs("sessionStorage.ankiPropKey;")
-            )
+                // 5. Test removal and clearing
+                harness.evalJs("sessionStorage.removeItem('ankiTestKey');")
+                assertEquals("null", harness.evalJs("sessionStorage.getItem('ankiTestKey');"))
+                assertEquals(
+                    "\"persistentPropValue456\"",
+                    harness.evalJs("sessionStorage.ankiPropKey;"),
+                )
 
-            harness.evalJs("sessionStorage.clear();")
-            assertEquals("null", harness.evalJs("sessionStorage.ankiPropKey;"))
-
-        } finally {
-            harness.destroy()
+                harness.evalJs("sessionStorage.clear();")
+                assertEquals("null", harness.evalJs("sessionStorage.ankiPropKey;"))
+            } finally {
+                harness.destroy()
+            }
         }
-    }
 
     @Test
-    fun verifySessionStoragePersistsWithLegacyCardTemplate() = runBlocking {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val harness = WebViewTestHarness("file:///android_asset/")
-        val cardTemplateContent =
-            context.assets.open("card_template.html").reader().use { it.readText() }
+    fun verifySessionStoragePersistsWithLegacyCardTemplate() =
+        runBlocking {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val harness = WebViewTestHarness("file:///android_asset/")
+            val cardTemplateContent =
+                context.assets
+                    .open("card_template.html")
+                    .reader()
+                    .use { it.readText() }
 
-        val frontHtml = cardTemplateContent.replace("::content::", "<div>Front</div>")
-        val backHtml = cardTemplateContent.replace("::content::", "<div>Back</div>")
+            val frontHtml = cardTemplateContent.replace("::content::", "<div>Front</div>")
+            val backHtml = cardTemplateContent.replace("::content::", "<div>Back</div>")
 
-        try {
-            harness.loadHtml(frontHtml)
-            harness.evalJs("sessionStorage.setItem('legacyKey', 'legacyValue');")
-            assertEquals("\"legacyValue\"", harness.evalJs("sessionStorage.getItem('legacyKey');"))
+            try {
+                harness.loadHtml(frontHtml)
+                harness.evalJs("sessionStorage.setItem('legacyKey', 'legacyValue');")
+                assertEquals("\"legacyValue\"", harness.evalJs("sessionStorage.getItem('legacyKey');"))
 
-            // Flip card to Back
-            harness.loadHtml(backHtml)
-            assertEquals("\"legacyValue\"", harness.evalJs("sessionStorage.getItem('legacyKey');"))
-        } finally {
-            harness.destroy()
+                // Flip card to Back
+                harness.loadHtml(backHtml)
+                assertEquals("\"legacyValue\"", harness.evalJs("sessionStorage.getItem('legacyKey');"))
+            } finally {
+                harness.destroy()
+            }
         }
-    }
 }

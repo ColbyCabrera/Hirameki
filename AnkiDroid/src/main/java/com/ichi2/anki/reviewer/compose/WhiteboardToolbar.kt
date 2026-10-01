@@ -73,7 +73,7 @@ fun WhiteboardToolbar(
     onBrushLongClick: (Int) -> Unit,
     onAddBrush: () -> Unit,
     onEraserClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by viewModel.canRedo.collectAsStateWithLifecycle()
@@ -99,7 +99,7 @@ fun WhiteboardToolbar(
         onBrushClick = onBrushClick,
         onBrushLongClick = onBrushLongClick,
         onAddBrush = onAddBrush,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -124,7 +124,7 @@ fun WhiteboardToolbarContent(
     onBrushClick: (View, Int) -> Unit,
     onBrushLongClick: (Int) -> Unit,
     onAddBrush: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var showOverflowMenu by remember { mutableStateOf(false) }
 
@@ -136,28 +136,30 @@ fun WhiteboardToolbarContent(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.extraExtraLarge,
-        tonalElevation = 2.dp
+        tonalElevation = 2.dp,
     ) {
         val content = @Composable {
             // Undo button
             IconButton(
-                onClick = onUndo, enabled = canUndo
+                onClick = onUndo,
+                enabled = canUndo,
             ) {
                 Icon(
                     painter = painterResource(R.drawable.undo_24px),
                     contentDescription = stringResource(R.string.undo),
-                    tint = if (canUndo) colorNormal else colorNormal.copy(alpha = 0.38f)
+                    tint = if (canUndo) colorNormal else colorNormal.copy(alpha = 0.38f),
                 )
             }
 
             // Redo button
             IconButton(
-                onClick = onRedo, enabled = canRedo
+                onClick = onRedo,
+                enabled = canRedo,
             ) {
                 Icon(
                     painter = painterResource(R.drawable.redo_24px),
                     contentDescription = stringResource(R.string.redo),
-                    tint = if (canRedo) colorNormal else colorNormal.copy(alpha = 0.38f)
+                    tint = if (canRedo) colorNormal else colorNormal.copy(alpha = 0.38f),
                 )
             }
 
@@ -178,14 +180,14 @@ fun WhiteboardToolbarContent(
                     Icon(
                         imageVector = Icons.Default.MoreVert,
                         contentDescription = stringResource(R.string.whiteboard_more_options),
-                        tint = colorNormal
+                        tint = colorNormal,
                     )
                 }
 
                 DropdownMenu(
                     expanded = showOverflowMenu,
                     onDismissRequest = { showOverflowMenu = false },
-                    shape = MaterialTheme.shapes.large
+                    shape = MaterialTheme.shapes.large,
                 ) {
                     // Stylus mode toggle
                     DropdownMenuItem(
@@ -197,9 +199,10 @@ fun WhiteboardToolbarContent(
                         leadingIcon = {
                             Icon(
                                 painter = painterResource(if (isStylusOnlyMode) R.drawable.check_24px else R.drawable.edit_24px),
-                                contentDescription = null
+                                contentDescription = null,
                             )
-                        })
+                        },
+                    )
 
                     // Toolbar position submenu
                     HorizontalDivider()
@@ -209,7 +212,7 @@ fun WhiteboardToolbarContent(
                             showOverflowMenu = false
                             onSetAlignment(ToolbarAlignment.LEFT)
                         },
-                        enabled = alignment != ToolbarAlignment.LEFT
+                        enabled = alignment != ToolbarAlignment.LEFT,
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.whiteboard_align_bottom)) },
@@ -217,7 +220,7 @@ fun WhiteboardToolbarContent(
                             showOverflowMenu = false
                             onSetAlignment(ToolbarAlignment.BOTTOM)
                         },
-                        enabled = alignment != ToolbarAlignment.BOTTOM
+                        enabled = alignment != ToolbarAlignment.BOTTOM,
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.whiteboard_align_right)) },
@@ -225,7 +228,7 @@ fun WhiteboardToolbarContent(
                             showOverflowMenu = false
                             onSetAlignment(ToolbarAlignment.RIGHT)
                         },
-                        enabled = alignment != ToolbarAlignment.RIGHT
+                        enabled = alignment != ToolbarAlignment.RIGHT,
                     )
                 }
             }
@@ -233,17 +236,19 @@ fun WhiteboardToolbarContent(
             // Divider
             if (isVertical) {
                 HorizontalDivider(
-                    modifier = Modifier
-                        .width(32.dp)
-                        .padding(vertical = 4.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant
+                    modifier =
+                        Modifier
+                            .width(32.dp)
+                            .padding(vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
                 )
             } else {
                 VerticalDivider(
-                    modifier = Modifier
-                        .height(32.dp)
-                        .padding(horizontal = 4.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant
+                    modifier =
+                        Modifier
+                            .height(32.dp)
+                            .padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
                 )
             }
 
@@ -256,14 +261,14 @@ fun WhiteboardToolbarContent(
                         onClick = { view -> onBrushClick(view, index) },
                         onLongClick = { onBrushLongClick(index) },
                         colorNormal = colorNormal,
-                        colorHighlight = colorHighlight
+                        colorHighlight = colorHighlight,
                     )
                 }
 
                 AddBrushButton(
                     onClick = onAddBrush,
                     colorNormal = colorNormal,
-                    tooltip = stringResource(R.string.add_brush)
+                    tooltip = stringResource(R.string.add_brush),
                 )
             }
 
@@ -288,7 +293,7 @@ fun WhiteboardToolbarContent(
             Column(
                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 content()
             }
@@ -296,7 +301,7 @@ fun WhiteboardToolbarContent(
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 content()
             }
@@ -308,17 +313,20 @@ fun WhiteboardToolbarContent(
 @Composable
 private fun WhiteboardToolbarPreview() {
     val context = LocalContext.current
-    val viewModel: WhiteboardViewModel = viewModel(
-        factory = WhiteboardViewModel.factory(
-            context.getSharedPreferences("whiteboard-preview", Context.MODE_PRIVATE)
+    val viewModel: WhiteboardViewModel =
+        viewModel(
+            factory =
+                WhiteboardViewModel.factory(
+                    context.getSharedPreferences("whiteboard-preview", Context.MODE_PRIVATE),
+                ),
         )
-    )
     AnkiDroidTheme {
         WhiteboardToolbar(
             viewModel = viewModel,
             onBrushClick = { _, _ -> },
             onBrushLongClick = { },
             onAddBrush = { },
-            onEraserClick = { })
+            onEraserClick = { },
+        )
     }
 }

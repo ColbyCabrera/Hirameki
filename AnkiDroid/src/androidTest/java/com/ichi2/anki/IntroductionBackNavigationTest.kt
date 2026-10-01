@@ -29,8 +29,11 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
     @Test
     fun backFromDeckPickerReshowsFirstThingsFirst() {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        val continueText = InstrumentationRegistry.getInstrumentation()
-            .targetContext.getString(R.string.intro_continue)
+        val continueText =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext
+                .getString(R.string.intro_continue)
 
         // Wait for and click the "Continue" button by its localized text
         val continueButton = device.wait(Until.findObject(By.text(continueText)), 5000)

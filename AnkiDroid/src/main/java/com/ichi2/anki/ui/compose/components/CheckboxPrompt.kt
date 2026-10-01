@@ -38,29 +38,31 @@ fun CheckboxPrompt(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    horizontalPadding: Dp = 18.dp
+    horizontalPadding: Dp = 18.dp,
 ) {
     val haptic = LocalHapticFeedback.current
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .toggleable(value = isChecked, role = Role.Checkbox, onValueChange = {
-                onCheckedChange(it)
-                haptic.performHapticFeedback(
-                    if (it) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff
-                )
-            })
-            .padding(top = 8.dp, start = horizontalPadding, end = horizontalPadding),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .toggleable(value = isChecked, role = Role.Checkbox, onValueChange = {
+                    onCheckedChange(it)
+                    haptic.performHapticFeedback(
+                        if (it) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff,
+                    )
+                })
+                .padding(top = 8.dp, start = horizontalPadding, end = horizontalPadding),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(
-            checked = isChecked, onCheckedChange = null
+            checked = isChecked,
+            onCheckedChange = null,
         )
         Text(
             text = text,
             modifier = Modifier.padding(start = 8.dp),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -70,6 +72,9 @@ fun CheckboxPrompt(
 private fun CheckboxPromptPreview() {
     MaterialTheme {
         CheckboxPrompt(
-            text = "Enable analytics", isChecked = true, onCheckedChange = {})
+            text = "Enable analytics",
+            isChecked = true,
+            onCheckedChange = {},
+        )
     }
 }

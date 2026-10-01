@@ -35,32 +35,42 @@ import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 
 enum class AppNavigationItem(
-    @DrawableRes val icon: Int, @StringRes val labelResId: Int
+    @DrawableRes val icon: Int,
+    @StringRes val labelResId: Int,
 ) {
-    Decks(R.drawable.list_24px, R.string.decks), CardBrowser(
-        R.drawable.cards_stack_24px, R.string.browser
+    Decks(R.drawable.list_24px, R.string.decks),
+    CardBrowser(
+        R.drawable.cards_stack_24px,
+        R.string.browser,
     ),
-    Statistics(R.drawable.bar_chart_24px, R.string.statistics), Settings(
-        R.drawable.settings_24px, R.string.settings
+    Statistics(R.drawable.bar_chart_24px, R.string.statistics),
+    Settings(
+        R.drawable.settings_24px,
+        R.string.settings,
     ),
     Help(
-        R.drawable.help_filled_24px, R.string.help
+        R.drawable.help_filled_24px,
+        R.string.help,
     ),
-    Support(R.drawable.volunteer_activism_filled_24px, R.string.contribute_screen_title)
+    Support(R.drawable.volunteer_activism_filled_24px, R.string.contribute_screen_title),
 }
 
 @Composable
 fun AnkiNavigationRail(
-    selectedItem: AppNavigationItem, onNavigate: (AppNavigationItem) -> Unit
+    selectedItem: AppNavigationItem,
+    onNavigate: (AppNavigationItem) -> Unit,
 ) {
     NavigationRail {
         Column(
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(
-                12.dp, alignment = Alignment.CenterVertically
-            )
+            modifier =
+                Modifier
+                    .padding(horizontal = 8.dp)
+                    .fillMaxHeight(),
+            verticalArrangement =
+                Arrangement.spacedBy(
+                    12.dp,
+                    alignment = Alignment.CenterVertically,
+                ),
         ) {
             AppNavigationItem.entries.forEach { item ->
                 NavigationRailItem(

@@ -80,21 +80,22 @@ object Themes {
 
         val selectedTheme = prefs.getString(APP_THEME_KEY, FOLLOW_SYSTEM_MODE) ?: FOLLOW_SYSTEM_MODE
 
-        currentTheme = when (selectedTheme) {
-            Theme.LIGHT.id -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                Theme.LIGHT
+        currentTheme =
+            when (selectedTheme) {
+                Theme.LIGHT.id -> {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                    Theme.LIGHT
+                }
+                Theme.DARK.id -> {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                    Theme.DARK
+                }
+                else -> {
+                    // Handles FOLLOW_SYSTEM_MODE ("0") and any legacy preference values
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                    if (systemIsInNightMode(context)) Theme.DARK else Theme.LIGHT
+                }
             }
-            Theme.DARK.id -> {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                Theme.DARK
-            }
-            else -> {
-                // Handles FOLLOW_SYSTEM_MODE ("0") and any legacy preference values
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                if (systemIsInNightMode(context)) Theme.DARK else Theme.LIGHT
-            }
-        }
     }
 
     /**
@@ -143,8 +144,6 @@ object Themes {
         }
         return attrs
     }
-
-
 
     fun systemIsInNightMode(context: Context): Boolean =
         context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==

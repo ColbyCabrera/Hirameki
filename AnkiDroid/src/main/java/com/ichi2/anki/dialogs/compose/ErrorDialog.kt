@@ -12,7 +12,7 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @Composable
 fun ErrorDialog(
     errorMessage: String,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -26,7 +26,7 @@ fun ErrorDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(id = R.string.dialog_ok))
             }
-        }
+        },
     )
 }
 
@@ -36,7 +36,7 @@ private fun ErrorDialogPreview() {
     AnkiDroidTheme {
         ErrorDialog(
             errorMessage = "A network error occurred.\n\nError details: error sending request",
-            onDismissRequest = {}
+            onDismissRequest = {},
         )
     }
 }

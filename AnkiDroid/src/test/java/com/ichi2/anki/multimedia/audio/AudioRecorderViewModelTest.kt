@@ -14,7 +14,6 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AudioRecorderViewModelTest {
-
     private lateinit var viewModel: AudioRecorderViewModel
     private val application: Application = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
@@ -35,7 +34,7 @@ class AudioRecorderViewModelTest {
         assertEquals(emptyList<Float>(), viewModel.uiState.value.amplitudes)
     }
 
-    // Since startAmplitudeMonitoring is internal and uses Coroutines/delay, 
+    // Since startAmplitudeMonitoring is internal and uses Coroutines/delay,
     // it's hard to test without refactoring how audioRecorder is injected.
     // However, I can verify the MAX_AMPLITUDES logic if I could trigger the monitoring.
     // For now, this serves as a baseline check that the new field exists and is initialized.

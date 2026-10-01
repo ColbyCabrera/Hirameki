@@ -35,64 +35,70 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class ManageNoteTypesViewModelTest : RobolectricTest() {
-
     @Test
-    fun `refresh failure emits ui error event and clears loading`() = runTest {
-        val testDispatcher = StandardTestDispatcher(testScheduler)
-        val expectedMessage = "refresh failed"
-        val mockBackend = mockk<Backend> {
-            every { getNotetypeNamesAndCounts() } throws IllegalStateException("refresh failed")
-        }
-        val mockCollection = mockk<Collection> {
-            every { backend } returns mockBackend
-            every { dbClosed } returns false
-        }
+    fun `refresh failure emits ui error event and clears loading`() =
+        runTest {
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val expectedMessage = "refresh failed"
+            val mockBackend =
+                mockk<Backend> {
+                    every { getNotetypeNamesAndCounts() } throws IllegalStateException("refresh failed")
+                }
+            val mockCollection =
+                mockk<Collection> {
+                    every { backend } returns mockBackend
+                    every { dbClosed } returns false
+                }
 
-        CollectionManager.setColForTests(mockCollection)
+            CollectionManager.setColForTests(mockCollection)
 
-        try {
-            val viewModel = ManageNoteTypesViewModel(dispatcher = testDispatcher)
+            try {
+                val viewModel = ManageNoteTypesViewModel(dispatcher = testDispatcher)
 
-            viewModel.uiEvents.test {
-                advanceUntilIdle()
+                viewModel.uiEvents.test {
+                    advanceUntilIdle()
 
-                assertEquals(
-                    ManageNoteTypesUiEvent.ShowErrorMessage(expectedMessage),
-                    awaitItem(),
-                )
-                assertFalse(viewModel.uiState.value.isLoading)
+                    assertEquals(
+                        ManageNoteTypesUiEvent.ShowErrorMessage(expectedMessage),
+                        awaitItem(),
+                    )
+                    assertFalse(viewModel.uiState.value.isLoading)
 
-                cancelAndIgnoreRemainingEvents()
+                    cancelAndIgnoreRemainingEvents()
+                }
+            } finally {
+                CollectionManager.setColForTests(null)
             }
-        } finally {
-            CollectionManager.setColForTests(null)
         }
-    }
 
     @Test
-    fun `refresh success clears loading state after work completes`() = runTest {
-        val testDispatcher = StandardTestDispatcher(testScheduler)
-        val mockBackend = mockk<Backend> {
-            every { getNotetypeNamesAndCounts() } returns emptyList()
-            every { getNotetypeNames() } returns emptyList()
-            every { getStockNotetypeLegacy(any()) } returns com.google.protobuf.ByteString.copyFromUtf8(
-                "{\"name\": \"MockNotetype\"}"
-            )
-        }
-        val mockCollection = mockk<Collection> {
-            every { backend } returns mockBackend
-            every { dbClosed } returns false
-        }
+    fun `refresh success clears loading state after work completes`() =
+        runTest {
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val mockBackend =
+                mockk<Backend> {
+                    every { getNotetypeNamesAndCounts() } returns emptyList()
+                    every { getNotetypeNames() } returns emptyList()
+                    every { getStockNotetypeLegacy(any()) } returns
+                        com.google.protobuf.ByteString.copyFromUtf8(
+                            "{\"name\": \"MockNotetype\"}",
+                        )
+                }
+            val mockCollection =
+                mockk<Collection> {
+                    every { backend } returns mockBackend
+                    every { dbClosed } returns false
+                }
 
-        CollectionManager.setColForTests(mockCollection)
+            CollectionManager.setColForTests(mockCollection)
 
-        try {
-            val viewModel = ManageNoteTypesViewModel(dispatcher = testDispatcher)
+            try {
+                val viewModel = ManageNoteTypesViewModel(dispatcher = testDispatcher)
 
-            advanceUntilIdle()
-            assertFalse(viewModel.uiState.value.isLoading)
-        } finally {
-            CollectionManager.setColForTests(null)
+                advanceUntilIdle()
+                assertFalse(viewModel.uiState.value.isLoading)
+            } finally {
+                CollectionManager.setColForTests(null)
+            }
         }
-    }
 }

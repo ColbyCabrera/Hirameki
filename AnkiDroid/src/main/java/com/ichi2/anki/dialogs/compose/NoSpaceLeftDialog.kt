@@ -10,9 +10,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
 @Composable
-fun NoSpaceLeftDialog(
-    onDismissRequest: () -> Unit
-) {
+fun NoSpaceLeftDialog(onDismissRequest: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
@@ -25,7 +23,7 @@ fun NoSpaceLeftDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(text = stringResource(id = R.string.dialog_ok))
             }
-        }
+        },
     )
 }
 

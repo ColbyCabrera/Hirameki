@@ -88,13 +88,15 @@ fun PageWebView(
             AnkiTopAppBar(
                 titleText = title,
                 onNavigateUp = onNavigateUp,
-                actions = { topBarActions?.invoke(this) })
+                actions = { topBarActions?.invoke(this) },
+            )
         },
     ) { padding ->
         Box(
-            modifier = modifier
-                .padding(padding)
-                .fillMaxSize(),
+            modifier =
+                modifier
+                    .padding(padding)
+                    .fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
             when (val currentState = serverState) {
@@ -102,7 +104,7 @@ fun PageWebView(
                     PageWebViewInternal(
                         path = path,
                         serverBaseUrl = currentState.serverBaseUrl,
-                        jsCommands = jsCommands
+                        jsCommands = jsCommands,
                     )
                 }
 
@@ -123,11 +125,12 @@ private fun PageWebViewError() {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(imageVector = Icons.Default.Warning, contentDescription = null)
         Text(
-            text = stringResource(R.string.page_web_view_error), modifier = Modifier.padding(16.dp)
+            text = stringResource(R.string.page_web_view_error),
+            modifier = Modifier.padding(16.dp),
         )
     }
 }
@@ -159,47 +162,51 @@ private fun PageWebViewInternal(
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AndroidView(
             factory = { ctx ->
-            WebView(ctx).apply {
-                with(settings) {
-                    javaScriptEnabled = true
-                    displayZoomControls = false
-                    builtInZoomControls = true
-                    setSupportZoom(true)
-                }
-                setBackgroundColor(backgroundColorArgb)
-                webViewClient = PageWebViewClient().apply {
-                    onPageFinishedCallbacks.add { webView ->
-                        isLoading = false
-                        webView.visibility = View.VISIBLE
+                WebView(ctx).apply {
+                    with(settings) {
+                        javaScriptEnabled = true
+                        displayZoomControls = false
+                        builtInZoomControls = true
+                        setSupportZoom(true)
                     }
-                    onErrorCallbacks.add { error ->
-                        Timber.e("PageWebView error: %s", error.description)
-                        hasError = true
-                        isLoading = false
-                    }
+                    setBackgroundColor(backgroundColorArgb)
+                    webViewClient =
+                        PageWebViewClient().apply {
+                            onPageFinishedCallbacks.add { webView ->
+                                isLoading = false
+                                webView.visibility = View.VISIBLE
+                            }
+                            onErrorCallbacks.add { error ->
+                                Timber.e("PageWebView error: %s", error.description)
+                                hasError = true
+                                isLoading = false
+                            }
+                        }
+                    webChromeClient = PageChromeClient()
+                    visibility = View.INVISIBLE
+                    webViewRef = this
                 }
-                webChromeClient = PageChromeClient()
-                visibility = View.INVISIBLE
-                webViewRef = this
-            }
-        }, update = { webView ->
-            val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
-            val url = "$serverBaseUrl$path$nightMode"
-            if (webView.tag != url) {
-                webView.tag = url
-                isLoading = true
-                hasError = false
-                webView.visibility = View.INVISIBLE
-                Timber.i("PageWebView: Loading %s", url)
-                webView.loadUrl(url)
-            }
-        }, onRelease = { webView ->
-            webView.stopLoading()
-            (webView.webViewClient as? PageWebViewClient)?.release()
-            webView.webViewClient = android.webkit.WebViewClient()
-            webView.destroy()
-            webViewRef = null
-        }, modifier = Modifier.fillMaxSize()
+            },
+            update = { webView ->
+                val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
+                val url = "$serverBaseUrl$path$nightMode"
+                if (webView.tag != url) {
+                    webView.tag = url
+                    isLoading = true
+                    hasError = false
+                    webView.visibility = View.INVISIBLE
+                    Timber.i("PageWebView: Loading %s", url)
+                    webView.loadUrl(url)
+                }
+            },
+            onRelease = { webView ->
+                webView.stopLoading()
+                (webView.webViewClient as? PageWebViewClient)?.release()
+                webView.webViewClient = android.webkit.WebViewClient()
+                webView.destroy()
+                webViewRef = null
+            },
+            modifier = Modifier.fillMaxSize(),
         )
 
         if (isLoading) {

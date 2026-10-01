@@ -61,7 +61,9 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.math.round
 
-class CongratsPage : PageFragment(), ChangeManager.Subscriber {
+class CongratsPage :
+    PageFragment(),
+    ChangeManager.Subscriber {
     private val viewModel by viewModels<CongratsViewModel>()
 
     init {
@@ -85,32 +87,41 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
     ) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.onError.flowWithLifecycle(lifecycle).onEach { errorMessage ->
-                AlertDialog.Builder(requireContext()).setTitle(R.string.vague_error)
-                    .setMessage(errorMessage).show()
+        viewModel.onError
+            .flowWithLifecycle(lifecycle)
+            .onEach { errorMessage ->
+                AlertDialog
+                    .Builder(requireContext())
+                    .setTitle(R.string.vague_error)
+                    .setMessage(errorMessage)
+                    .show()
             }.launchIn(lifecycleScope)
 
-        viewModel.unburyState.flowWithLifecycle(lifecycle).onEach { state ->
+        viewModel.unburyState
+            .flowWithLifecycle(lifecycle)
+            .onEach { state ->
                 when (state) {
                     UnburyState.OpenStudy -> openStudyOptionsAndFinish()
                     UnburyState.SelectMode -> {
-                        val unburyOptions = mutableListOf(
-                            TR.studyingManuallyBuriedCards(),
-                            TR.studyingBuriedSiblings(),
-                            TR.studyingAllBuriedCards(),
-                        )
+                        val unburyOptions =
+                            mutableListOf(
+                                TR.studyingManuallyBuriedCards(),
+                                TR.studyingBuriedSiblings(),
+                                TR.studyingAllBuriedCards(),
+                            )
                         AlertDialog.Builder(requireContext()).show {
                             negativeButton(R.string.dialog_cancel)
                             listItemsAndMessage(
                                 TR.studyingWhatWouldYouLikeToUnbury(),
                                 unburyOptions,
                             ) { _, position ->
-                                val mode = when (position) {
-                                    0 -> UnburyDeckRequest.Mode.USER_ONLY
-                                    1 -> UnburyDeckRequest.Mode.SCHED_ONLY
-                                    2 -> UnburyDeckRequest.Mode.ALL
-                                    else -> error("Unhandled unbury option: ${unburyOptions[position]}")
-                                }
+                                val mode =
+                                    when (position) {
+                                        0 -> UnburyDeckRequest.Mode.USER_ONLY
+                                        1 -> UnburyDeckRequest.Mode.SCHED_ONLY
+                                        2 -> UnburyDeckRequest.Mode.ALL
+                                        else -> error("Unhandled unbury option: ${unburyOptions[position]}")
+                                    }
                                 viewModel.onUnburyModeSelected(mode)
                             }
                         }
@@ -118,7 +129,9 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
                 }
             }.launchIn(lifecycleScope)
 
-        viewModel.deckOptionsDestination.flowWithLifecycle(lifecycle).onEach { destination ->
+        viewModel.deckOptionsDestination
+            .flowWithLifecycle(lifecycle)
+            .onEach { destination ->
                 val intent = destination.toIntent(requireContext())
                 startActivity(intent, null)
             }.launchIn(lifecycleScope)
@@ -137,22 +150,24 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
             when (CustomStudyAction.fromBundle(bundle)) {
                 CustomStudyAction.CUSTOM_STUDY_SESSION,
                 CustomStudyAction.EXTEND_STUDY_LIMITS,
-                    -> openStudyOptionsAndFinish()
+                -> openStudyOptionsAndFinish()
             }
         }
     }
 
-    override val bridgeCommands = mapOf(
-        "unbury" to { viewModel.onUnbury() },
-        "customStudy" to { onStudyMore() },
-    )
+    override val bridgeCommands =
+        mapOf(
+            "unbury" to { viewModel.onUnbury() },
+            "customStudy" to { onStudyMore() },
+        )
 
     private fun openStudyOptionsAndFinish() {
         launchCatchingTask {
             val deckId = withCol { decks.selected() }
-            val intent = Intent(requireContext(), StudyOptionsComposeActivity::class.java).apply {
-                putExtra(StudyOptionsComposeActivity.DECK_ID, deckId)
-            }
+            val intent =
+                Intent(requireContext(), StudyOptionsComposeActivity::class.java).apply {
+                    putExtra(StudyOptionsComposeActivity.DECK_ID, deckId)
+                }
             startActivity(intent, null)
             requireActivity().finish()
         }
@@ -167,11 +182,9 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
     }
 
     companion object {
-        fun getIntent(context: Context): Intent =
-            getIntent(context, path = "congrats", clazz = CongratsPage::class)
+        fun getIntent(context: Context): Intent = getIntent(context, path = "congrats", clazz = CongratsPage::class)
 
-        private fun displayNewCongratsScreen(context: Context): Boolean =
-            context.sharedPrefs().getBoolean("new_congrats_screen", false)
+        private fun displayNewCongratsScreen(context: Context): Boolean = context.sharedPrefs().getBoolean("new_congrats_screen", false)
 
         fun display(activity: FragmentActivity) {
             if (displayNewCongratsScreen(activity)) {
@@ -228,13 +241,14 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
                 return activity.getString(R.string.studyoptions_congrats_finished)
             }
             // https://github.com/ankitects/anki/blob/9b4dd54312de8798a3f2bee07892bb3a488d1f9b/ts/lib/tslib/time.ts#L22
-            val (unit, amount) = if (secsUntilNextLearn < TIME_MINUTE) {
-                "seconds" to secsUntilNextLearn.toDouble()
-            } else if (secsUntilNextLearn < TIME_HOUR) {
-                "minutes" to secsUntilNextLearn / TIME_MINUTE
-            } else {
-                "hours" to secsUntilNextLearn / TIME_HOUR
-            }
+            val (unit, amount) =
+                if (secsUntilNextLearn < TIME_MINUTE) {
+                    "seconds" to secsUntilNextLearn.toDouble()
+                } else if (secsUntilNextLearn < TIME_HOUR) {
+                    "minutes" to secsUntilNextLearn / TIME_MINUTE
+                } else {
+                    "hours" to secsUntilNextLearn / TIME_HOUR
+                }
 
             val nextLearnDue = TR.schedulingNextLearnDue(unit, round(amount).toInt())
             return activity.getString(R.string.studyoptions_congrats_next_due_in, nextLearnDue)
@@ -242,7 +256,9 @@ class CongratsPage : PageFragment(), ChangeManager.Subscriber {
     }
 }
 
-class CongratsViewModel : ViewModel(), OnErrorListener {
+class CongratsViewModel :
+    ViewModel(),
+    OnErrorListener {
     override val onError = MutableSharedFlow<String>()
     val unburyState = MutableSharedFlow<UnburyState>()
     val deckOptionsDestination = MutableSharedFlow<DeckOptionsDestination>()
@@ -285,21 +301,23 @@ class DeckOptionsDestination(
     private val deckId: DeckId,
     private val isFiltered: Boolean,
 ) : Destination {
-    override fun toIntent(context: Context): Intent = if (isFiltered) {
-        FilteredDeckOptions.getIntent(context, deckId = deckId)
-    } else {
-        DeckOptions.getIntent(context, deckId)
-    }
+    override fun toIntent(context: Context): Intent =
+        if (isFiltered) {
+            FilteredDeckOptions.getIntent(context, deckId = deckId)
+        } else {
+            DeckOptions.getIntent(context, deckId)
+        }
 
     companion object {
         @CheckResult
-        suspend fun fromCurrentDeck() = withCol {
-            val deckId = decks.getCurrentId()
-            DeckOptionsDestination(
-                deckId = deckId,
-                isFiltered = decks.isFiltered(deckId),
-            )
-        }
+        suspend fun fromCurrentDeck() =
+            withCol {
+                val deckId = decks.getCurrentId()
+                DeckOptionsDestination(
+                    deckId = deckId,
+                    isFiltered = decks.isFiltered(deckId),
+                )
+            }
     }
 }
 

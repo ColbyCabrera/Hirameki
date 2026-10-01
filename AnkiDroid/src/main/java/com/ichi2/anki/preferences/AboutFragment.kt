@@ -42,9 +42,9 @@ class AboutFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
+        savedInstanceState: Bundle?,
+    ): View =
+        ComposeView(requireContext()).apply {
             // Dispose of the Composition when the view's LifecycleOwner
             // is destroyed
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -54,7 +54,9 @@ class AboutFragment : Fragment() {
                         SimpleDateFormat(DateFormat.getBestDateTimePattern(Locale.getDefault(), "d MMM yyyy"))
                             .format(Date(BuildConfig.BUILD_TIME))
 
-                    val backendText = "(anki " + BackendBuildConfig.ANKI_DESKTOP_VERSION + " / " + BackendBuildConfig.ANKI_COMMIT_HASH.subSequence(0, 8) + ")"
+                    val backendText =
+                        "(anki " + BackendBuildConfig.ANKI_DESKTOP_VERSION + " / " + BackendBuildConfig.ANKI_COMMIT_HASH.subSequence(0, 8) +
+                            ")"
 
                     val fsrsText = Fsrs.displayVersion?.let { "($it)" } ?: ""
 
@@ -79,12 +81,11 @@ class AboutFragment : Fragment() {
                         contributorsText = contributorsText,
                         licenseText = licenseText,
                         onBackClick = { requireActivity().onBackPressedDispatcher.onBackPressed() },
-                        onCopyDebugClick = { copyDebugInfo() }
+                        onCopyDebugClick = { copyDebugInfo() },
                     )
                 }
             }
         }
-    }
 
     /**
      * Copies debug info (from [DebugInfoService.getDebugInfo]) to the clipboard

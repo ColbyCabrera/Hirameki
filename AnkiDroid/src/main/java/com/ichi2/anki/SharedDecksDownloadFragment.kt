@@ -65,7 +65,6 @@ import java.net.URLConnection
  * simultaneously is not supported.
  */
 class SharedDecksDownloadFragment : Fragment() {
-
     private val viewModel: SharedDecksDownloadViewModel by viewModels()
 
     /**
@@ -77,11 +76,12 @@ class SharedDecksDownloadFragment : Fragment() {
      */
     private lateinit var downloadManager: DownloadManager
 
-    private val onBackPressedCallback = object : OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() {
-            showCancelConfirmationDialog()
+    private val onBackPressedCallback =
+        object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                showCancelConfirmationDialog()
+            }
         }
-    }
 
     companion object {
         const val EXTRA_IS_SHARED_DOWNLOAD = "extra_is_shared_download"
@@ -104,7 +104,11 @@ class SharedDecksDownloadFragment : Fragment() {
          */
         @VisibleForTesting
         fun getDeckIdFromDownloadURL(downloadUrl: String) =
-            deckIdRegex.find(downloadUrl)?.groups?.get(1)?.value
+            deckIdRegex
+                .find(downloadUrl)
+                ?.groups
+                ?.get(1)
+                ?.value
 
         /**
          * Given the URI of a deck's download URL such as
@@ -124,7 +128,9 @@ class SharedDecksDownloadFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View = ComposeView(requireContext())
 
     override fun onViewCreated(
@@ -163,26 +169,29 @@ class SharedDecksDownloadFragment : Fragment() {
                             DownloadIntent.OpenInBrowserClicked -> {
                                 viewModel.onIntent(intent, downloadManager)
                                 openUrl(
-                                    requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri()
+                                    requireContext().getDeckPageUri(fileToBeDownloaded.url).toUri(),
                                 )
                                 parentFragmentManager.popBackStack()
                             }
 
                             else -> viewModel.onIntent(intent)
                         }
-                    })
+                    },
+                )
             }
         }
 
         requireActivity().onBackPressedDispatcher.addCallback(
-            viewLifecycleOwner, onBackPressedCallback
+            viewLifecycleOwner,
+            onBackPressedCallback,
         )
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     onBackPressedCallback.isEnabled =
-                        state.status == DownloadStatus.Downloading || state.status == DownloadStatus.WaitingForNetwork
+                        state.status == DownloadStatus.Downloading ||
+                        state.status == DownloadStatus.WaitingForNetwork
                 }
             }
         }
@@ -234,7 +243,7 @@ class SharedDecksDownloadFragment : Fragment() {
         if (!decksDownloadFolder.exists() && !decksDownloadFolder.mkdirs()) {
             Timber.e(
                 "Failed to create shared decks download folder: %s",
-                decksDownloadFolder.absolutePath
+                decksDownloadFolder.absolutePath,
             )
             showSnackbar(R.string.external_storage_unavailable)
             parentFragmentManager.popBackStack()
@@ -290,103 +299,108 @@ class SharedDecksDownloadFragment : Fragment() {
      * Registered in downloadFile() method.
      * When onReceive() is called, open the deck file in AnkiDroid to import it.
      */
-    private var onComplete: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(
-            context: Context,
-            intent: Intent?,
-        ) {
-            Timber.i("Download might be complete now, verify and continue with import")
+    private var onComplete: BroadcastReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent?,
+            ) {
+                Timber.i("Download might be complete now, verify and continue with import")
 
-            /**
-             * @return Whether the data in the received data is an importable deck
-             */
-            fun verifyDeckIsImportable(): Boolean {
-                val fileName = viewModel.uiState.value.fileName
-                if (fileName.isEmpty()) {
-                    // Send ACRA report
-                    CrashReportService.sendExceptionReport(
-                        "File name is empty",
-                        "SharedDecksDownloadFragment::verifyDeckIsImportable",
-                    )
-                    return false
-                }
-
-                // Return if mDownloadId does not match with the ID of the completed download.
-                val downloadId = viewModel.uiState.value.downloadId
-                if (downloadId != intent?.getLongExtra(
-                        DownloadManager.EXTRA_DOWNLOAD_ID, 0
-                    )
-                ) {
-                    Timber.w("Download id did not match expected id. Ignoring this download completion")
-                    return false
-                }
-
-                // Halt execution if file doesn't have extension as 'apkg' or 'colpkg'
-                if (!ImportUtils.isFileAValidDeck(fileName)) {
-                    Timber.i("File does not have 'apkg' or 'colpkg' extension, abort the deck opening task")
-                    checkDownloadStatusAndUnregisterReceiver(
-                        isSuccessful = false, isInvalidDeckFile = true
-                    )
-                    return false
-                }
-
-                val query = DownloadManager.Query()
-                query.setFilterById(downloadId)
-                val cursor = downloadManager.query(query)
-
-                cursor.use {
-                    // Return if cursor is empty.
-                    if (!it.moveToFirst()) {
-                        Timber.i("Empty cursor, cannot continue further with success check and deck import")
-                        checkDownloadStatusAndUnregisterReceiver(isSuccessful = false)
-                        return false
-                    }
-
-                    val columnStatusIndex: Int = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                    val columnReasonIndex: Int = it.getColumnIndex(DownloadManager.COLUMN_REASON)
-
-                    // Return if download was not successful.
-                    if (it.getInt(columnStatusIndex) != DownloadManager.STATUS_SUCCESSFUL) {
-                        Timber.i("Download could not be successful, update UI and unregister receiver")
-                        Timber.d(
-                            "Status code -> ${it.getIntOrNull(columnStatusIndex)}, reason ${
-                                it.getIntOrNull(
-                                    columnReasonIndex
-                                )
-                            }"
+                /**
+                 * @return Whether the data in the received data is an importable deck
+                 */
+                fun verifyDeckIsImportable(): Boolean {
+                    val fileName = viewModel.uiState.value.fileName
+                    if (fileName.isEmpty()) {
+                        // Send ACRA report
+                        CrashReportService.sendExceptionReport(
+                            "File name is empty",
+                            "SharedDecksDownloadFragment::verifyDeckIsImportable",
                         )
-                        checkDownloadStatusAndUnregisterReceiver(isSuccessful = false)
                         return false
                     }
+
+                    // Return if mDownloadId does not match with the ID of the completed download.
+                    val downloadId = viewModel.uiState.value.downloadId
+                    if (downloadId !=
+                        intent?.getLongExtra(
+                            DownloadManager.EXTRA_DOWNLOAD_ID,
+                            0,
+                        )
+                    ) {
+                        Timber.w("Download id did not match expected id. Ignoring this download completion")
+                        return false
+                    }
+
+                    // Halt execution if file doesn't have extension as 'apkg' or 'colpkg'
+                    if (!ImportUtils.isFileAValidDeck(fileName)) {
+                        Timber.i("File does not have 'apkg' or 'colpkg' extension, abort the deck opening task")
+                        checkDownloadStatusAndUnregisterReceiver(
+                            isSuccessful = false,
+                            isInvalidDeckFile = true,
+                        )
+                        return false
+                    }
+
+                    val query = DownloadManager.Query()
+                    query.setFilterById(downloadId)
+                    val cursor = downloadManager.query(query)
+
+                    cursor.use {
+                        // Return if cursor is empty.
+                        if (!it.moveToFirst()) {
+                            Timber.i("Empty cursor, cannot continue further with success check and deck import")
+                            checkDownloadStatusAndUnregisterReceiver(isSuccessful = false)
+                            return false
+                        }
+
+                        val columnStatusIndex: Int = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                        val columnReasonIndex: Int = it.getColumnIndex(DownloadManager.COLUMN_REASON)
+
+                        // Return if download was not successful.
+                        if (it.getInt(columnStatusIndex) != DownloadManager.STATUS_SUCCESSFUL) {
+                            Timber.i("Download could not be successful, update UI and unregister receiver")
+                            Timber.d(
+                                "Status code -> ${it.getIntOrNull(columnStatusIndex)}, reason ${
+                                    it.getIntOrNull(
+                                        columnReasonIndex,
+                                    )
+                                }",
+                            )
+                            checkDownloadStatusAndUnregisterReceiver(isSuccessful = false)
+                            return false
+                        }
+                    }
+                    return true
                 }
-                return true
+
+                val verified =
+                    try {
+                        verifyDeckIsImportable()
+                    } catch (exception: Exception) {
+                        Timber.w(exception)
+                        checkDownloadStatusAndUnregisterReceiver(isSuccessful = false)
+                        return
+                    }
+
+                if (!verified) {
+                    // Could be a retryable fault (we received notification of another file)
+                    // Otherwise, checkDownloadStatusAndUnregisterReceiver should have been called
+                    // to update the UI
+                    return
+                }
+
+                // Setting these since progress checker can stop before progress is updated to represent 100%
+                viewModel.onDownloadComplete()
+
+                Timber.i("Opening downloaded deck for import")
+                openDownloadedDeck(context)
+
+                Timber.d("Checking download status and unregistering receiver")
+                checkDownloadStatusAndUnregisterReceiver(isSuccessful = true)
             }
-
-            val verified = try {
-                verifyDeckIsImportable()
-            } catch (exception: Exception) {
-                Timber.w(exception)
-                checkDownloadStatusAndUnregisterReceiver(isSuccessful = false)
-                return
-            }
-
-            if (!verified) {
-                // Could be a retryable fault (we received notification of another file)
-                // Otherwise, checkDownloadStatusAndUnregisterReceiver should have been called
-                // to update the UI
-                return
-            }
-
-            // Setting these since progress checker can stop before progress is updated to represent 100%
-            viewModel.onDownloadComplete()
-
-            Timber.i("Opening downloaded deck for import")
-            openDownloadedDeck(context)
-
-            Timber.d("Checking download status and unregistering receiver")
-            checkDownloadStatusAndUnregisterReceiver(isSuccessful = true)
         }
-    }
 
     /**
      * Open the downloaded deck using 'fileName'.
@@ -412,11 +426,12 @@ class SharedDecksDownloadFragment : Fragment() {
             return
         }
 
-        val fileUri = FileProvider.getUriForFile(
-            context,
-            context.applicationContext.packageName + ".apkgfileprovider",
-            File(File(externalFilesDir, SHARED_DECKS_DOWNLOAD_FOLDER), fileName),
-        )
+        val fileUri =
+            FileProvider.getUriForFile(
+                context,
+                context.applicationContext.packageName + ".apkgfileprovider",
+                File(File(externalFilesDir, SHARED_DECKS_DOWNLOAD_FOLDER), fileName),
+            )
 
         Timber.d("File URI -> $fileUri")
         fileIntent.setDataAndType(fileUri, mimeType)
@@ -436,15 +451,16 @@ class SharedDecksDownloadFragment : Fragment() {
      * @param columnIndex The index of the column from which to retrieve the integer value.
      * @return The integer value from the cursor at the specified column index, or null if invalid or undefined.
      */
-    private fun Cursor?.getIntOrNull(columnIndex: Int): Int? = try {
-        if (columnIndex != -1) {
-            this?.getInt(columnIndex)
-        } else {
+    private fun Cursor?.getIntOrNull(columnIndex: Int): Int? =
+        try {
+            if (columnIndex != -1) {
+                this?.getInt(columnIndex)
+            } else {
+                null
+            }
+        } catch (_: Exception) {
             null
         }
-    } catch (_: Exception) {
-        null
-    }
 
     /**
      * Resets the download state by unregistering the receiver and updating progress tracking flags.

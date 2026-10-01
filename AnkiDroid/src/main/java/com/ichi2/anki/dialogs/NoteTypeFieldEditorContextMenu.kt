@@ -7,7 +7,6 @@ import android.app.Dialog
 import android.os.Bundle
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R

@@ -36,13 +36,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberBottomSheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -74,7 +74,7 @@ fun NoteTypeActionBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainer
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         NoteTypeActionBottomSheetContent(
             noteType = noteType,
@@ -82,7 +82,7 @@ fun NoteTypeActionBottomSheet(
             onShowFields = onShowFields,
             onEditCards = onEditCards,
             onRename = onRename,
-            onDelete = onDelete
+            onDelete = onDelete,
         )
     }
 }
@@ -101,49 +101,55 @@ fun NoteTypeActionBottomSheetContent(
     val secondRowButtonHeight = ButtonDefaults.MediumContainerHeight
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp, start = 16.dp, end = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Contextual Preview
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
             shape = MaterialTheme.shapes.extraExtraLarge,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 MorphingCardCount(
                     cardCount = noteType.useCount,
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
                 Column {
                     Text(
                         modifier = Modifier.basicMarquee(),
                         text = noteType.name,
                         style = MaterialTheme.typography.titleLargeEmphasized,
-                        maxLines = 1
+                        maxLines = 1,
                     )
                     Text(
-                        text = pluralStringResource(
-                            R.plurals.model_browser_of_type, noteType.useCount, noteType.useCount
-                        ),
+                        text =
+                            pluralStringResource(
+                                R.plurals.model_browser_of_type,
+                                noteType.useCount,
+                                noteType.useCount,
+                            ),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ActionItem(
                 modifier = Modifier.weight(1f),
@@ -151,61 +157,69 @@ fun NoteTypeActionBottomSheetContent(
                 label = null,
                 contentDescription = stringResource(id = R.string.title_activity_template_editor),
                 height = firstRowButtonHeight,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
+                colors =
+                    ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ),
                 onClick = {
                     onEditCards()
                     onDismissRequest()
-                })
+                },
+            )
             ActionItem(
                 icon = painterResource(R.drawable.list_24px),
                 label = stringResource(id = R.string.fields),
                 height = firstRowButtonHeight,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
+                colors =
+                    ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
                 onClick = {
                     onShowFields()
                     onDismissRequest()
-                })
-
+                },
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(
-            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ActionItem(
                 modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.edit_24px),
                 label = stringResource(id = R.string.rename),
                 height = secondRowButtonHeight,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                ),
+                colors =
+                    ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    ),
                 onClick = {
                     onRename()
                     onDismissRequest()
-                })
+                },
+            )
             ActionItem(
                 modifier = Modifier.weight(1f),
                 icon = painterResource(R.drawable.delete_24px),
                 height = secondRowButtonHeight,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                ),
+                colors =
+                    ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    ),
                 label = null,
                 contentDescription = stringResource(id = R.string.model_browser_delete),
                 onClick = {
                     onDelete()
                     onDismissRequest()
-                })
+                },
+            )
         }
     }
 }
@@ -248,21 +262,24 @@ private fun ActionItem(
         }
         Box(modifier = modifier) {
             TooltipBox(
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                    positioning = TooltipAnchorPosition.Above
-                ),
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(
+                        positioning = TooltipAnchorPosition.Above,
+                    ),
                 tooltip = { PlainTooltip { Text(contentDescription) } },
                 state = tooltipState,
             ) {
                 FilledTonalButton(
                     onClick = onClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(height),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(height),
                     shapes = ButtonDefaults.shapesFor(height),
                     colors = colors,
                     contentPadding = ButtonDefaults.contentPaddingFor(height),
-                    content = { buttonContent() })
+                    content = { buttonContent() },
+                )
             }
         }
     } else {
@@ -272,7 +289,8 @@ private fun ActionItem(
             shapes = ButtonDefaults.shapesFor(height),
             colors = colors,
             contentPadding = ButtonDefaults.contentPaddingFor(height),
-            content = { buttonContent() })
+            content = { buttonContent() },
+        )
     }
 }
 
@@ -288,7 +306,8 @@ fun NoteTypeActionBottomSheetContentPreview() {
                 onShowFields = {},
                 onEditCards = {},
                 onRename = {},
-                onDelete = {})
+                onDelete = {},
+            )
         }
     }
 }
@@ -305,6 +324,7 @@ fun NoteTypeActionBottomSheetPreview() {
             onShowFields = {},
             onEditCards = {},
             onRename = {},
-            onDelete = {})
+            onDelete = {},
+        )
     }
 }

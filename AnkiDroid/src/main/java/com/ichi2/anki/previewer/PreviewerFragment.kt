@@ -51,8 +51,11 @@ import com.ichi2.utils.performClickIfEnabled
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class PreviewerFragment : CardViewerFragment(R.layout.previewer), Toolbar.OnMenuItemClickListener,
-    BaseSnackbarBuilderProvider, DispatchKeyEventListener,
+class PreviewerFragment :
+    CardViewerFragment(R.layout.previewer),
+    Toolbar.OnMenuItemClickListener,
+    BaseSnackbarBuilderProvider,
+    DispatchKeyEventListener,
     BindingProcessor<MappableBinding, PreviewerAction> {
     override val viewModel: PreviewerViewModel by viewModels()
     override val webView: WebView
@@ -61,11 +64,12 @@ class PreviewerFragment : CardViewerFragment(R.layout.previewer), Toolbar.OnMenu
     override val baseSnackbarBuilder: SnackbarBuilder
         get() = {
             val slider = this@PreviewerFragment.view?.findViewById<Slider>(R.id.slider)
-            anchorView = if (slider?.isVisible == true) {
-                slider
-            } else {
-                this@PreviewerFragment.view?.findViewById<MaterialButton>(R.id.show_next)
-            }
+            anchorView =
+                if (slider?.isVisible == true) {
+                    slider
+                } else {
+                    this@PreviewerFragment.view?.findViewById<MaterialButton>(R.id.show_next)
+                }
         }
 
     private lateinit var bindingMap: BindingMap<MappableBinding, PreviewerAction>
@@ -83,13 +87,13 @@ class PreviewerFragment : CardViewerFragment(R.layout.previewer), Toolbar.OnMenu
 
         lifecycleScope.launch {
             viewModel.currentIndex.flowWithLifecycle(lifecycle).collectLatest { currentIndex ->
-                    val displayIndex = currentIndex + 1
-                    if (cardsCount > 1) {
-                        slider.value = displayIndex.toFloat()
-                    }
-                    progressIndicator.text =
-                        getString(R.string.preview_progress_bar_text, displayIndex, cardsCount)
+                val displayIndex = currentIndex + 1
+                if (cardsCount > 1) {
+                    slider.value = displayIndex.toFloat()
                 }
+                progressIndicator.text =
+                    getString(R.string.preview_progress_bar_text, displayIndex, cardsCount)
+            }
         }
         // ************************************* Menu items *************************************
         val menu = view.findViewById<Toolbar>(R.id.toolbar).menu
@@ -97,32 +101,33 @@ class PreviewerFragment : CardViewerFragment(R.layout.previewer), Toolbar.OnMenu
 
         lifecycleScope.launch {
             viewModel.backSideOnly.flowWithLifecycle(lifecycle).collectLatest { isBackSideOnly ->
-                    setBackSideOnlyButtonIcon(menu, isBackSideOnly)
-                }
+                setBackSideOnlyButtonIcon(menu, isBackSideOnly)
+            }
         }
 
         lifecycleScope.launch {
             viewModel.isMarked.flowWithLifecycle(lifecycle).collectLatest { isMarked ->
-                    with(menu.findItem(R.id.action_mark)) {
-                        if (isMarked) {
-                            setIcon(R.drawable.ic_star)
-                            setTitle(R.string.menu_unmark_note)
-                        } else {
-                            setIcon(R.drawable.ic_star_border_white)
-                            setTitle(R.string.menu_mark_note)
-                        }
+                with(menu.findItem(R.id.action_mark)) {
+                    if (isMarked) {
+                        setIcon(R.drawable.ic_star)
+                        setTitle(R.string.menu_unmark_note)
+                    } else {
+                        setIcon(R.drawable.ic_star_border_white)
+                        setTitle(R.string.menu_mark_note)
                     }
                 }
+            }
         }
 
         // handle selection of a new flag
         lifecycleScope.launch {
             viewModel.flag.flowWithLifecycle(lifecycle).collectLatest { flag ->
-                    menu.findItem(R.id.action_flag).setIcon(flag.drawableRes)
-                }
+                menu.findItem(R.id.action_flag).setIcon(flag.drawableRes)
+            }
         }
 
-        @NeedsTest("webview doesn't vanish when only one card is in the list") if (cardsCount <= 1) {
+        @NeedsTest("webview doesn't vanish when only one card is in the list")
+        if (cardsCount <= 1) {
             slider.visibility = View.GONE
             progressIndicator.visibility = View.GONE
         }
@@ -228,7 +233,8 @@ class PreviewerFragment : CardViewerFragment(R.layout.previewer), Toolbar.OnMenu
             PreviewerAction.TOGGLE_FLAG_PURPLE -> viewModel.toggleFlag(Flag.PURPLE)
             PreviewerAction.UNSET_FLAG -> viewModel.setFlag(Flag.NONE)
             PreviewerAction.BACK -> {
-                requireView().findViewById<MaterialButton>(R.id.show_previous)
+                requireView()
+                    .findViewById<MaterialButton>(R.id.show_previous)
                     .performClickIfEnabled()
             }
 
@@ -278,10 +284,11 @@ class PreviewerFragment : CardViewerFragment(R.layout.previewer), Toolbar.OnMenu
             idsFile: IdsFile,
             currentIndex: Int,
         ): Intent {
-            val arguments = Bundle().apply {
-                putInt(CURRENT_INDEX_ARG, currentIndex)
-                putParcelable(CARD_IDS_FILE_ARG, idsFile)
-            }
+            val arguments =
+                Bundle().apply {
+                    putInt(CURRENT_INDEX_ARG, currentIndex)
+                    putParcelable(CARD_IDS_FILE_ARG, idsFile)
+                }
             return CardViewerActivity.getIntent(context, PreviewerFragment::class, arguments)
         }
     }

@@ -47,7 +47,7 @@ class ReviewerNoParamTest : RobolectricTest() {
         assertThat(
             "No color stored initially - null means use UI default",
             retrievedColor.lightPenColor,
-            equalTo(null)
+            equalTo(null),
         )
     }
 
@@ -59,7 +59,7 @@ class ReviewerNoParamTest : RobolectricTest() {
         assertThat(
             "Light mode color is stored",
             retrievedColor.lightPenColor,
-            equalTo(ARBITRARY_PEN_COLOR_VALUE)
+            equalTo(ARBITRARY_PEN_COLOR_VALUE),
         )
     }
 
@@ -71,7 +71,7 @@ class ReviewerNoParamTest : RobolectricTest() {
         assertThat(
             "Dark mode color is stored",
             retrievedColor.darkPenColor,
-            equalTo(ARBITRARY_PEN_COLOR_VALUE)
+            equalTo(ARBITRARY_PEN_COLOR_VALUE),
         )
     }
 
@@ -83,7 +83,7 @@ class ReviewerNoParamTest : RobolectricTest() {
         assertThat(
             "Light pen color is changed",
             penColorResult.lightPenColor,
-            equalTo(ARBITRARY_PEN_COLOR_VALUE)
+            equalTo(ARBITRARY_PEN_COLOR_VALUE),
         )
     }
 
@@ -95,7 +95,7 @@ class ReviewerNoParamTest : RobolectricTest() {
         assertThat(
             "Dark pen color is changed",
             penColorResult.darkPenColor,
-            equalTo(ARBITRARY_PEN_COLOR_VALUE)
+            equalTo(ARBITRARY_PEN_COLOR_VALUE),
         )
     }
 
@@ -108,7 +108,7 @@ class ReviewerNoParamTest : RobolectricTest() {
         assertThat(
             "Light pen color is null (use UI default) when only dark is set",
             retrievedColor.lightPenColor,
-            equalTo(null)
+            equalTo(null),
         )
         assertThat("Dark pen color is stored correctly", retrievedColor.darkPenColor, equalTo(555))
     }
@@ -122,7 +122,7 @@ class ReviewerNoParamTest : RobolectricTest() {
         assertThat(
             "Pen color for default deck is null (use UI default)",
             retrievedColor.lightPenColor,
-            equalTo(null)
+            equalTo(null),
         )
     }
 
@@ -136,7 +136,10 @@ class ReviewerNoParamTest : RobolectricTest() {
     }
 
     @Suppress("SameParameterValue")
-    private fun storeLightModeColor(value: Int, did: DeckId) {
+    private fun storeLightModeColor(
+        value: Int,
+        did: DeckId,
+    ) {
         MetaDB.storeWhiteboardPenColor(targetContext, did, true, value)
     }
 

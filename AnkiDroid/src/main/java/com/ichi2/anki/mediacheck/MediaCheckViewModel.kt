@@ -38,19 +38,33 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @NeedsTest("Test the media check process i.e. the buttons and views")
 class MediaCheckViewModel : ViewModel() {
-
     sealed class ProgressState {
         data object Idle : ProgressState()
-        data class ActiveRes(@StringRes val messageRes: Int) : ProgressState()
+
+        data class ActiveRes(
+            @StringRes val messageRes: Int,
+        ) : ProgressState()
     }
 
     sealed class UiEvent {
-        data class ShowResultDialog(@StringRes val titleRes: Int, val message: String) : UiEvent()
+        data class ShowResultDialog(
+            @StringRes val titleRes: Int,
+            val message: String,
+        ) : UiEvent()
+
         data object ShowTrashRestoredDialog : UiEvent()
+
         data object ShowTrashDeletedDialog : UiEvent()
+
         data object ShowDeletionResult : UiEvent()
-        data class ShowError(val message: String) : UiEvent()
-        data class ShowErrorRes(@StringRes val messageRes: Int) : UiEvent()
+
+        data class ShowError(
+            val message: String,
+        ) : UiEvent()
+
+        data class ShowErrorRes(
+            @StringRes val messageRes: Int,
+        ) : UiEvent()
     }
 
     private val _mediaCheckResult = MutableStateFlow<CheckMediaResponse?>(null)
@@ -80,7 +94,7 @@ class MediaCheckViewModel : ViewModel() {
 
     private fun launchWithProgress(
         @StringRes messageRes: Int,
-        block: suspend CoroutineScope.() -> Unit
+        block: suspend CoroutineScope.() -> Unit,
     ): Job? {
         if (!inFlight.compareAndSet(false, true)) {
             Timber.w("launchWithProgress: An operation is already running, dropping request.")
@@ -90,7 +104,8 @@ class MediaCheckViewModel : ViewModel() {
 
         return try {
             launchCatchingIO(
-                errorMessageHandler = { _uiEvent.send(UiEvent.ShowError(it)) }) {
+                errorMessageHandler = { _uiEvent.send(UiEvent.ShowError(it)) },
+            ) {
                 _progressState.value = ProgressState.ActiveRes(messageRes)
                 try {
                     block()
@@ -112,40 +127,45 @@ class MediaCheckViewModel : ViewModel() {
         }
 
         return launchWithProgress(R.string.check_media_adding_missing_tag) {
-            val taggedNotes = undoableOp {
-                tags.bulkAdd(notes, tag)
-            }
+            val taggedNotes =
+                undoableOp {
+                    tags.bulkAdd(notes, tag)
+                }
             taggedFilesCount.value = taggedNotes.count
             if (taggedNotes.count > 0) {
                 _uiEvent.send(
                     UiEvent.ShowResultDialog(
                         R.string.check_media_tags_added,
-                        TR.browsingNotesUpdated(taggedFilesCount.value)
-                    )
+                        TR.browsingNotesUpdated(taggedFilesCount.value),
+                    ),
                 )
             }
         }
     }
 
-    fun checkMedia(): Job? = launchWithProgress(R.string.check_media_message) {
-        val result = withCol { media.check() }
-        _mediaCheckResult.value = result
-    }
+    fun checkMedia(): Job? =
+        launchWithProgress(R.string.check_media_message) {
+            val result = withCol { media.check() }
+            _mediaCheckResult.value = result
+        }
 
-    fun deleteTrash(): Job? = launchWithProgress(R.string.dialog_processing) {
-        withCol { media.emptyTrash() }
-        _uiEvent.send(UiEvent.ShowTrashDeletedDialog)
-    }
+    fun deleteTrash(): Job? =
+        launchWithProgress(R.string.dialog_processing) {
+            withCol { media.emptyTrash() }
+            _uiEvent.send(UiEvent.ShowTrashDeletedDialog)
+        }
 
-    fun restoreTrash(): Job? = launchWithProgress(R.string.dialog_processing) {
-        withCol { media.restoreTrash() }
-        _uiEvent.send(UiEvent.ShowTrashRestoredDialog)
-    }
+    fun restoreTrash(): Job? =
+        launchWithProgress(R.string.dialog_processing) {
+            withCol { media.restoreTrash() }
+            _uiEvent.send(UiEvent.ShowTrashRestoredDialog)
+        }
 
-    fun deleteUnusedMedia(): Job? = launchWithProgress(R.string.delete_media_message) {
-        val deletedMedia =
-            withCol { deleteMedia(this@withCol, _mediaCheckResult.value?.unusedList ?: listOf()) }
-        deletedFilesCount.value = deletedMedia
-        _uiEvent.send(UiEvent.ShowDeletionResult)
-    }
+    fun deleteUnusedMedia(): Job? =
+        launchWithProgress(R.string.delete_media_message) {
+            val deletedMedia =
+                withCol { deleteMedia(this@withCol, _mediaCheckResult.value?.unusedList ?: listOf()) }
+            deletedFilesCount.value = deletedMedia
+            _uiEvent.send(UiEvent.ShowDeletionResult)
+        }
 }

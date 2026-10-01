@@ -41,12 +41,13 @@ class SystemStorageException private constructor(
             errorDetail: String,
             infoUri: String? = null,
         ): SystemStorageException {
-            val storageState = try {
-                Environment.getExternalStorageState()
-            } catch (e: Exception) {
-                Timber.w(e, "getExternalStorageState")
-                "ERROR"
-            }
+            val storageState =
+                try {
+                    Environment.getExternalStorageState()
+                } catch (e: Exception) {
+                    Timber.w(e, "getExternalStorageState")
+                    "ERROR"
+                }
             return SystemStorageException(
                 errorDetail = errorDetail,
                 externalStorageState = storageState,

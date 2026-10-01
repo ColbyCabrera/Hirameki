@@ -37,7 +37,6 @@ import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class AudioLifecycleTest : InstrumentedTest() {
-
     private lateinit var device: UiDevice
     private lateinit var audioManager: AudioManager
 
@@ -159,4 +158,3 @@ class AudioLifecycleTest : InstrumentedTest() {
         }
     }
 }
-
