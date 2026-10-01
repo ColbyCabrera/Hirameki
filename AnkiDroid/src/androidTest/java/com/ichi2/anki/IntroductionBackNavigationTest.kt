@@ -20,16 +20,14 @@
  */
 package com.ichi2.anki
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.tests.InstrumentedTest
-import com.ichi2.anki.testutil.GrantStoragePermission
-import com.ichi2.anki.testutil.grantPermissions
-import com.ichi2.testutils.common.Flaky
-import com.ichi2.testutils.common.OS
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,11 +37,7 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<IntroductionActivity>()
 
-    @get:Rule
-    val runtimePermissionRule = grantPermissions(GrantStoragePermission.storagePermission)
-
     @Test
-    @Flaky(os = OS.ALL, message = "The Compose test rule intermittently loses the introduction hierarchy on CI")
     fun backFromSetupScreenReshowsDisclaimer() {
         // The introduction rotates an icon forever, so the test clock must be controlled manually
         composeTestRule.mainClock.autoAdvance = false
@@ -55,14 +49,21 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
                 .targetContext
                 .getString(R.string.intro_continue)
 
-        // The disclaimer is the first page of the introduction
-        composeTestRule.onNodeWithText(continueText).assertExists().performClick()
+        // The disclaimer is the first page of the introduction and is scrollable
+        composeTestRule
+            .onNodeWithText(continueText)
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
         composeTestRule.mainClock.advanceTimeBy(1_000)
 
         // Back from the setup page returns to the disclaimer instead of closing the activity
         composeTestRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         composeTestRule.mainClock.advanceTimeBy(1_000)
 
-        composeTestRule.onNodeWithText(continueText).assertExists()
+        composeTestRule
+            .onNodeWithText(continueText)
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 }
