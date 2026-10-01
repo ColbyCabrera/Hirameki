@@ -428,29 +428,24 @@ val assertNonzeroAndroidTests =
         // The results directory layout depends on the tested build type and flavor
         val resultsDir = file("./build/outputs/androidTest-results/connected")
         doLast {
-            val listOfFiles =
+            val resultFiles =
                 resultsDir
                     .walkTopDown()
                     .filter { it.isFile && it.name.startsWith("TEST-") && it.extension == "xml" }
                     .toList()
-            if (listOfFiles.isEmpty()) {
+            if (resultFiles.isEmpty()) {
                 throw GradleException("No androidTest result files found in $resultsDir")
             }
-            for (file in listOfFiles) {
-                val lines = file.readLines()
-                val matches = lines.filter { it.contains("<testsuite") }
-                if (matches.size != 1) {
-                    throw GradleException("Unable to determine count of tests executed for ${file.name}. Regex pattern out of date?")
+            // An aggregate result file contains one <testsuite> entry per test class
+            val testsPattern = Regex("""tests="(\d+)"""")
+            val totalTests =
+                resultFiles.sumOf { file ->
+                    testsPattern
+                        .findAll(file.readText())
+                        .sumOf { it.groupValues[1].toInt() }
                 }
-                if (!Regex(""".* tests="\d+" .*""").containsMatchIn(matches[0]) ||
-                    matches[0].contains(
-                        """tests="0"""",
-                    )
-                ) {
-                    throw GradleException(
-                        "androidTest executed 0 tests for ${file.name} - Probably a bug with the emulator. Try another image.",
-                    )
-                }
+            if (totalTests == 0) {
+                throw GradleException("androidTest executed 0 tests - Probably a bug with the emulator. Try another image.")
             }
         }
     }
