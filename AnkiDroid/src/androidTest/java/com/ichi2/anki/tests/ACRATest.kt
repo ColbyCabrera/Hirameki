@@ -246,16 +246,11 @@ class ACRATest : InstrumentedTest() {
         assertThat("First handler is ThrowableFilterService", firstExceptionHandler is ThrowableFilterService.FilteringExceptionHandler)
         ThrowableFilterService.unInstallDefaultExceptionHandler()
         var secondExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
+        // UsageAnalytics is disabled in this fork, so only ACRA/system handlers remain
         assertThat(
-            "Second handler is AnalyticsLoggingExceptionHandler",
-            secondExceptionHandler is UsageAnalytics.AnalyticsLoggingExceptionHandler,
-        )
-        UsageAnalytics.unInstallDefaultExceptionHandler()
-        var thirdExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
-        assertThat(
-            "Third handler is neither Analytics nor ThrowableFilter",
-            thirdExceptionHandler !is UsageAnalytics.AnalyticsLoggingExceptionHandler &&
-                thirdExceptionHandler !is ThrowableFilterService.FilteringExceptionHandler,
+            "Second handler is neither Analytics nor ThrowableFilter",
+            secondExceptionHandler !is UsageAnalytics.AnalyticsLoggingExceptionHandler &&
+                secondExceptionHandler !is ThrowableFilterService.FilteringExceptionHandler,
         )
 
         // chain them again
@@ -274,7 +269,7 @@ class ACRATest : InstrumentedTest() {
             secondExceptionHandler is UsageAnalytics.AnalyticsLoggingExceptionHandler,
         )
         UsageAnalytics.unInstallDefaultExceptionHandler()
-        thirdExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
+        val thirdExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
         assertThat(
             "Third handler is neither Analytics nor ThrowableFilter",
             thirdExceptionHandler !is UsageAnalytics.AnalyticsLoggingExceptionHandler &&

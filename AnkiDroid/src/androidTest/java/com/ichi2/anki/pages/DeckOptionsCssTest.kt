@@ -53,10 +53,10 @@ class DeckOptionsCssTest : InstrumentedTest() {
 
     @Test
     fun testCssInjection() {
-        // Use a random deck if possible, or just the first one
+        // Deck options are only available for normal decks; the backend rejects filtered decks
         val deckId =
             col.decks
-                .allNamesAndIds()
+                .allNamesAndIds(includeFiltered = false)
                 .random()
                 .id
         val intent = DeckOptions.getIntent(testContext, deckId)
@@ -142,9 +142,10 @@ class DeckOptionsCssTest : InstrumentedTest() {
     @Test
     @Repeat(20)
     fun testCssApplication() {
+        // Deck options are only available for normal decks; the backend rejects filtered decks
         val deckId =
             col.decks
-                .allNamesAndIds()
+                .allNamesAndIds(includeFiltered = false)
                 .random()
                 .id
         val intent = DeckOptions.getIntent(testContext, deckId)

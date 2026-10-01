@@ -17,6 +17,7 @@
 package com.ichi2.anki.testutil
 
 import android.annotation.SuppressLint
+import androidx.core.content.edit
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
@@ -26,14 +27,25 @@ import androidx.test.espresso.contrib.RecyclerViewActions
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.R
 import com.ichi2.anki.TestUtils.clickChildViewWithId
+import com.ichi2.anki.dialogs.BackupPromptDialog
+import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.tests.checkWithTimeout
 import com.ichi2.anki.testutil.ThreadUtils.sleep
 
 /**
  * This file contains utility methods to interact with the DeckPicker.
  */
+
+/**
+ * The backup prompt is a Compose dialog, so it cannot be dismissed with Espresso.
+ * Disable it before the DeckPicker is started instead.
+ */
+fun disableBackupPrompt() {
+    AnkiDroidApp.sharedPrefs().edit { putBoolean(BackupPromptDialog.BACKUP_PROMPT_DISABLED, true) }
+}
 
 fun closeGetStartedScreenIfExists() {
     onView(withText(R.string.intro_get_started)).withFailureHandler { _, _ -> }.perform(click())

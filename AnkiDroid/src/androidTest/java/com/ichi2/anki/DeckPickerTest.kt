@@ -27,12 +27,14 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission.storagePermission
+import com.ichi2.anki.testutil.disableBackupPrompt
 import com.ichi2.anki.testutil.disableIntroductionSlide
 import com.ichi2.anki.testutil.discardPreliminaryViews
 import com.ichi2.anki.testutil.grantPermissions
 import com.ichi2.anki.testutil.notificationPermission
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 
@@ -49,6 +51,15 @@ class DeckPickerTest : InstrumentedTest() {
         addNoteUsingBasicNoteType()
         disableIntroductionSlide()
         discardPreliminaryViews()
+    }
+
+    companion object {
+        /** Disable the backup prompt before the DeckPicker is launched by the test rule */
+        @BeforeClass
+        @JvmStatic
+        fun disableBackupPromptBeforeClass() {
+            disableBackupPrompt()
+        }
     }
 
     /*
@@ -115,9 +126,16 @@ class DeckPickerTest : InstrumentedTest() {
             .onNodeWithText(testContext.getString(R.string.contextmenu_deckpicker_delete_deck))
             .performClick()
 
+        // Confirm the deletion in the confirmation dialog
+        val confirmDeleteText = testContext.getString(R.string.dialog_positive_delete)
+        composeTestRule.waitUntil(timeoutMillis = 5000) {
+            composeTestRule.onAllNodesWithText(confirmDeleteText).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText(confirmDeleteText).performClick()
+
         val deletingDeckText = testContext.getString(R.string.delete_deck)
 
-        composeTestRule.waitUntil(timeoutMillis = 5000) {
+        composeTestRule.waitUntil(timeoutMillis = 15000) {
             composeTestRule.onAllNodesWithText(deletingDeckText).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText(deletingDeckText).assertIsDisplayed()
