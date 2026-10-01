@@ -31,7 +31,7 @@ extensions.configure<LibraryExtension> {
             "READ_WRITE_PERMISSION",
             "\"com.hirameki.flashcards.permission.READ_WRITE_DATABASE\"",
         )
-        buildConfigField("String", "AUTHORITY", "\"com.hirameki.flashcards.flashcards\"")
+        buildConfigField("String", "AUTHORITY", "\"com.hirameki.flashcards\"")
     }
 
     buildTypes {
@@ -41,7 +41,7 @@ extensions.configure<LibraryExtension> {
                 "READ_WRITE_PERMISSION",
                 "\"com.hirameki.flashcards.debug.permission.READ_WRITE_DATABASE\"",
             )
-            buildConfigField("String", "AUTHORITY", "\"com.hirameki.flashcards.debug.flashcards\"")
+            buildConfigField("String", "AUTHORITY", "\"com.hirameki.flashcards.debug\"")
         }
         getByName("release") {
             isMinifyEnabled = false
