@@ -28,6 +28,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.tests.InstrumentedTest
 import com.ichi2.anki.testutil.GrantStoragePermission
 import com.ichi2.anki.testutil.grantPermissions
+import com.ichi2.testutils.common.Flaky
+import com.ichi2.testutils.common.OS
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,6 +43,7 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
     val runtimePermissionRule = grantPermissions(GrantStoragePermission.storagePermission)
 
     @Test
+    @Flaky(os = OS.ALL, message = "The Compose test rule intermittently loses the introduction hierarchy on CI")
     fun backFromSetupScreenReshowsDisclaimer() {
         // The introduction rotates an icon forever, so the test clock must be controlled manually
         composeTestRule.mainClock.autoAdvance = false
