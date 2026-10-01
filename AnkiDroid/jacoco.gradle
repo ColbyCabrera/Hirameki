@@ -102,6 +102,9 @@ if (rootProject.testReleaseBuild) {
     moduleClassDir += "debug"
 }
 
+// `testBuildType` follows TEST_RELEASE_BUILD, so only that unit test variant exists.
+def playUnitTestTask = rootProject.testReleaseBuild ? 'testPlayReleaseUnitTest' : 'testPlayDebugUnitTest'
+
 // Our merge report task
 tasks.register('jacocoTestReport', JacocoReport) {
     def htmlOutDir = project.layout.buildDirectory.dir("reports/jacoco/$name/html").get().asFile
@@ -124,7 +127,7 @@ tasks.register('jacocoTestReport', JacocoReport) {
             '**/*.exec',
             '**/*.ec'
     ])
-    dependsOn('testPlayDebugUnitTest')
+    dependsOn(playUnitTestTask)
     dependsOn("connectedPlay${rootProject.androidTestVariantName}AndroidTest")
 }
 
@@ -145,7 +148,7 @@ tasks.register('jacocoUnitTestReport', JacocoReport) {report ->
     }
 
     includeUnitTestCoverage(report, getProject(), flavorClassDir)
-    dependsOn('testPlayDebugUnitTest')
+    dependsOn(playUnitTestTask)
 
     for (module in modulesToUnitTest) {
         includeUnitTestCoverage(report, project(module), moduleClassDir)
@@ -155,7 +158,7 @@ tasks.register('jacocoUnitTestReport', JacocoReport) {report ->
 
 gradle.projectsEvaluated {
     // ensure test results aren't cached
-    tasks.named('testPlayDebugUnitTest') {task ->
+    tasks.named(playUnitTestTask) {task ->
         task.outputs.upToDateWhen { false }
         task.outputs.cacheIf { false }
     }
