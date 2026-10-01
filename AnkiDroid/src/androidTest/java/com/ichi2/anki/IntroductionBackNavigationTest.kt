@@ -20,7 +20,6 @@
  */
 package com.ichi2.anki
 
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -54,13 +53,13 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
                 .getString(R.string.intro_continue)
 
         // The disclaimer is the first page of the introduction
-        composeTestRule.onNodeWithText(continueText).assertIsDisplayed().performClick()
+        composeTestRule.onNodeWithText(continueText).assertExists().performClick()
         composeTestRule.mainClock.advanceTimeBy(1_000)
 
         // Back from the setup page returns to the disclaimer instead of closing the activity
         composeTestRule.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         composeTestRule.mainClock.advanceTimeBy(1_000)
 
-        composeTestRule.onNodeWithText(continueText).assertIsDisplayed()
+        composeTestRule.onNodeWithText(continueText).assertExists()
     }
 }

@@ -133,13 +133,7 @@ class DeckPickerTest : InstrumentedTest() {
         }
         composeTestRule.onNodeWithText(confirmDeleteText).performClick()
 
-        val deletingDeckText = testContext.getString(R.string.delete_deck)
-
-        composeTestRule.waitUntil(timeoutMillis = 15000) {
-            composeTestRule.onAllNodesWithText(deletingDeckText).fetchSemanticsNodes().isNotEmpty()
-        }
-        composeTestRule.onNodeWithText(deletingDeckText).assertIsDisplayed()
-
+        // The progress dialog is not asserted: deleting 200 notes can complete before it renders
         composeTestRule.waitUntil(timeoutMillis = 30000) {
             composeTestRule.onAllNodesWithText(undoText).fetchSemanticsNodes().isNotEmpty()
         }
