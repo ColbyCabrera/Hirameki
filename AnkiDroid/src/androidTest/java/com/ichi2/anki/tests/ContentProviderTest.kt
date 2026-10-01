@@ -51,8 +51,6 @@ import com.ichi2.anki.testutil.DatabaseUtils.cursorFillWindow
 import com.ichi2.anki.testutil.GrantStoragePermission.storagePermission
 import com.ichi2.anki.testutil.addNote
 import com.ichi2.anki.testutil.grantPermissions
-import com.ichi2.testutils.common.Flaky
-import com.ichi2.testutils.common.OS
 import com.ichi2.testutils.common.assertThrows
 import kotlinx.serialization.json.Json
 import net.ankiweb.rsdroid.exceptions.BackendNotFoundException
@@ -1357,10 +1355,14 @@ class ContentProviderTest : InstrumentedTest() {
     }
 
     @Test
-    @Flaky(os = OS.ALL, message = "Media file listing is state dependent on the CI emulator")
     fun testMediaFilesAddedCorrectlyInReviewInfo() {
         val imageFileName = "img.jpg"
         val audioFileName = "test.mp3"
+        // Use a dedicated deck so the queued card returned by the provider is deterministic
+        val deckId = col.decks.id("ContentProviderTest::mediaFiles")
+        testDeckIds.add(deckId)
+        val previouslySelectedDeck = col.decks.selected()
+        col.decks.select(deckId)
         addNoteUsingBasicNoteType("""Hello <img src="$imageFileName"> [sound:$audioFileName]""")
             .firstCard(col)
             .update {
@@ -1368,30 +1370,37 @@ class ContentProviderTest : InstrumentedTest() {
                 due = col.sched.today
             }
 
-        queryReviewInfo { cursor ->
-            val media =
-                cursor
-                    .getString(cursor.getColumnIndex(FlashCardsContract.ReviewInfo.MEDIA_FILES))
-                    .let { Json.decodeFromString<List<String>>(it) }
+        try {
+            queryReviewInfo(deckId) { cursor ->
+                val media =
+                    cursor
+                        .getString(cursor.getColumnIndex(FlashCardsContract.ReviewInfo.MEDIA_FILES))
+                        .let { Json.decodeFromString<List<String>>(it) }
 
-            assertThat(
-                "media files returned",
-                media,
-                allOf(
-                    hasItem(imageFileName),
-                    hasItem(audioFileName),
-                ),
-            )
+                assertThat(
+                    "media files returned",
+                    media,
+                    allOf(
+                        hasItem(imageFileName),
+                        hasItem(audioFileName),
+                    ),
+                )
+            }
+        } finally {
+            col.decks.select(previouslySelectedDeck)
         }
     }
 
-    private fun queryReviewInfo(block: (Cursor) -> Unit) {
+    private fun queryReviewInfo(
+        deckId: DeckId? = null,
+        block: (Cursor) -> Unit,
+    ) {
         contentResolver
             .query(
                 FlashCardsContract.ReviewInfo.CONTENT_URI,
                 null,
-                null,
-                null,
+                deckId?.let { "deckID=?" },
+                deckId?.let { arrayOf(it.toString()) },
                 null,
             )?.use { cursor ->
                 assertTrue("has rows") { cursor.moveToFirst() }
