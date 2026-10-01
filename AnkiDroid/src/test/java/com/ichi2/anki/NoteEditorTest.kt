@@ -1313,7 +1313,7 @@ class NoteEditorTest : RobolectricTest() {
             assertThat("card 2 should be deleted", col.findCards("cid:$card2Id"), empty())
 
             // Verify the fallback loader logic picked card 1
-            val currentCardField = NoteEditorViewModel::class.java.getDeclaredField("_currentCard")
+            val currentCardField = NoteEditorViewModel::class.java.getDeclaredField("currentCardState")
             currentCardField.isAccessible = true
             val currentCardFlow =
                 currentCardField.get(editor.viewModel) as kotlinx.coroutines.flow.StateFlow<*>
