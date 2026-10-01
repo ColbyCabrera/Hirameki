@@ -23,6 +23,7 @@ dependencies {
     testImplementation(libs.hamcrest.library)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.vintage.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.android.lint.api)
     testImplementation(libs.android.lint)
     testImplementation(libs.android.lint.tests)
