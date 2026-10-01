@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="com.ichi2.anki.permission.READ_WRITE_DATABASE"/>
+    <uses-permission android:name="com.hirameki.flashcards.permission.READ_WRITE_DATABASE"/>
     <application android:allowBackup="true" android:label="@string/app_name">
     </application>
 
