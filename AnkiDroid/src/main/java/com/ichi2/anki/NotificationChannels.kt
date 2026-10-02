@@ -44,7 +44,12 @@ fun setupNotificationChannels(context: Context) {
     for (channel in Channel.entries) {
         val id = channel.id
         val name = channel.getName(res)
-        val importance = NotificationManagerCompat.IMPORTANCE_DEFAULT
+        val importance =
+            if (channel == Channel.ANKICONNECT) {
+                NotificationManagerCompat.IMPORTANCE_LOW
+            } else {
+                NotificationManagerCompat.IMPORTANCE_DEFAULT
+            }
         Timber.i("Creating notification channel with id/name: %s/%s", id, name)
 
         // Vibration is enabled by default, but the user can turn it off from the system settings
@@ -53,9 +58,9 @@ fun setupNotificationChannels(context: Context) {
             NotificationChannelCompat
                 .Builder(id, importance)
                 .setName(name)
-                .setShowBadge(true)
-                .setVibrationPattern(longArrayOf(0, 500))
-                .setVibrationEnabled(true)
+                .setShowBadge(channel != Channel.ANKICONNECT)
+                .setVibrationPattern(if (channel == Channel.ANKICONNECT) null else longArrayOf(0, 500))
+                .setVibrationEnabled(channel != Channel.ANKICONNECT)
                 .build()
 
         manager.createNotificationChannel(notificationChannel)
@@ -75,6 +80,7 @@ enum class Channel(
     GENERAL("General Notifications", R.string.app_name),
     SYNC("Synchronization", R.string.sync_title),
     REVIEW_REMINDERS("Review Reminders", R.string.review_reminders_do_not_translate),
+    ANKICONNECT("AnkiConnect", R.string.ankiconnect_service_title),
     ;
 
     fun getName(res: Resources) = res.getString(nameId)

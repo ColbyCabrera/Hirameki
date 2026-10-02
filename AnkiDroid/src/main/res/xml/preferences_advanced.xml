@@ -98,6 +98,11 @@
             android:key="@string/pref_cat_plugins_key"
             android:title="@string/pref_cat_plugins" >
             <SwitchPreferenceCompat
+                android:defaultValue="false"
+                android:key="@string/ankiconnect_enable_key"
+                android:summary="@string/ankiconnect_enable_summary"
+                android:title="@string/ankiconnect_enable_title"/>
+            <SwitchPreferenceCompat
                 android:defaultValue="true"
                 android:key="@string/enable_api_key"
                 android:summary="@string/enable_api_summary"

@@ -27,6 +27,7 @@ import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.MetaDB
 import com.ichi2.anki.R
+import com.ichi2.anki.ankiconnect.AnkiConnectService
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.provider.CardContentProvider
@@ -115,6 +116,21 @@ class AdvancedSettingsFragment : SettingsFragment() {
         requirePreference<Preference>(R.string.thirdparty_apps_key).setOnPreferenceClickListener {
             requireContext().openUrl(R.string.link_third_party_api_apps)
             false
+        }
+
+        // Enable AnkiConnect server
+        val ankiConnectPref = findPreference<SwitchPreferenceCompat>(getString(R.string.ankiconnect_enable_key))
+        ankiConnectPref?.isChecked =
+            AnkiConnectService.isRunning ||
+            requireContext().sharedPrefs().getBoolean(getString(R.string.ankiconnect_enable_key), false)
+        ankiConnectPref?.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as Boolean
+            if (enabled) {
+                AnkiConnectService.start(requireContext())
+            } else {
+                AnkiConnectService.stop(requireContext())
+            }
+            true
         }
 
         // Enable API

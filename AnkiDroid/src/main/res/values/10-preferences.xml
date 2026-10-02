@@ -168,6 +168,11 @@
     <string name="pref_keep_screen_on_summ">Disable screen timeout</string>
     <string name="enable_api_title" maxLength="41">Enable Hirameki API</string>
     <string name="enable_api_summary">Let other apps connect to Hirameki and read / write data without your intervention</string>
+    <string name="ankiconnect_enable_title" maxLength="41">Enable AnkiConnect server</string>
+    <string name="ankiconnect_enable_summary">Run a local HTTP server on port 8765 for Yomitan and browser extensions</string>
+    <string name="ankiconnect_service_title">AnkiConnect Server</string>
+    <string name="ankiconnect_service_running">AnkiConnect listening on port %d</string>
+    <string name="ankiconnect_stop">Stop</string>
     <string name="custom_buttons" maxLength="41">App bar buttons</string>
     <string name="custom_buttons_summary">Customize which actions appear in the app bar</string>
     <string name="custom_buttons_setting_always_show">Always show</string>

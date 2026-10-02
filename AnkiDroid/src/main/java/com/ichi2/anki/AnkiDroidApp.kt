@@ -36,6 +36,7 @@ import androidx.lifecycle.MutableLiveData
 import anki.collection.OpChanges
 import com.ichi2.anki.AnkiDroidApp.Companion.sharedPreferencesTestingOverride
 import com.ichi2.anki.CrashReportService.sendExceptionReport
+import com.ichi2.anki.ankiconnect.AnkiConnectService
 import com.ichi2.anki.browser.SharedPreferencesLastDeckIdRepository
 import com.ichi2.anki.common.annotations.LegacyNotifications
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -219,6 +220,15 @@ open class AnkiDroidApp :
 
                 override fun onActivityStarted(activity: Activity) {
                     Timber.i("${activity::class.simpleName}::onStart")
+                    if (!AnkiConnectService.isRunning &&
+                        preferences.getBoolean(getString(R.string.ankiconnect_enable_key), false)
+                    ) {
+                        try {
+                            AnkiConnectService.start(activity)
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to auto-start AnkiConnect service on activity start")
+                        }
+                    }
                 }
 
                 override fun onActivityResumed(activity: Activity) {
