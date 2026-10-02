@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -52,7 +50,6 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SliderPreferenceContent(
     title: String,
@@ -231,7 +228,6 @@ fun SliderPreferenceContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SliderThumbWithLabel(
     isDragged: Boolean,
@@ -250,7 +246,8 @@ fun SliderThumbWithLabel(
                             .background(
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
                                 shape = MaterialTheme.shapes.extraExtraLarge,
-                            ).padding(horizontal = 10.dp, vertical = 4.dp),
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
                 ) {
                     Text(
                         text = displayText,
