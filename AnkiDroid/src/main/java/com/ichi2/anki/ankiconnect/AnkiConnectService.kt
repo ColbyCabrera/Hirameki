@@ -22,7 +22,9 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -31,6 +33,7 @@ import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.preferences.sharedPrefs
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AnkiConnectService : Service() {
     private var server: AnkiConnectServer? = null
@@ -42,26 +45,31 @@ class AnkiConnectService : Service() {
         flags: Int,
         startId: Int,
     ): Int {
-        when (intent?.action) {
-            ACTION_STOP -> {
-                Timber.i("AnkiConnectService: Stop requested")
-                try {
-                    val prefs = applicationContext.sharedPrefs()
-                    prefs.edit {
-                        putBoolean(getString(R.string.ankiconnect_enable_key), false)
-                    }
-                } catch (e: Exception) {
-                    Timber.w(e, "Failed to update preference on AnkiConnect stop")
-                }
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
-                return START_NOT_STICKY
-            }
-
-            else -> {
-                startServer()
-            }
+        if (intent?.action == ACTION_STOP) {
+            Timber.i("AnkiConnectService: Stop requested")
+            stopServer(clearPreference = true)
+            return START_NOT_STICKY
         }
+
+        // Always fulfill the startForegroundService contract FIRST before any potential failure
+        val notification = createNotification(AnkiConnectServer.DEFAULT_PORT)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "AnkiConnectService: Failed to enter foreground")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        startServer()
         return START_STICKY
     }
 
@@ -72,19 +80,35 @@ class AnkiConnectService : Service() {
             val newServer = AnkiConnectServer(port)
             newServer.start()
             server = newServer
-            isRunning = true
+            isRunning.set(true)
             Timber.i("AnkiConnect server started on port %d", port)
-
-            val notification = createNotification(port)
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-            )
         } catch (e: Exception) {
             Timber.e(e, "Failed to start AnkiConnect server")
-            stopSelf()
+            // Safely tear down now that startForeground has already been called
+            stopServer(clearPreference = false)
         }
+    }
+
+    private fun stopServer(clearPreference: Boolean) {
+        if (clearPreference) {
+            try {
+                applicationContext.sharedPrefs().edit {
+                    putBoolean(getString(R.string.ankiconnect_enable_key), false)
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to update preference on AnkiConnect stop")
+            }
+        }
+        isRunning.set(false)
+        try {
+            server?.stop()
+        } catch (e: Exception) {
+            Timber.e(e, "Error stopping AnkiConnect server")
+        } finally {
+            server = null
+        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     private fun createNotification(port: Int): Notification {
@@ -115,12 +139,22 @@ class AnkiConnectService : Service() {
             .build()
     }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    override fun onTimeout(
+        startId: Int,
+        fgsType: Int,
+    ) {
+        super.onTimeout(startId, fgsType)
+        Timber.w("AnkiConnectService: Foreground service timed out for fgsType %d", fgsType)
+        stopServer(clearPreference = false)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         try {
             server?.stop()
             server = null
-            isRunning = false
+            isRunning.set(false)
             Timber.i("AnkiConnect server stopped")
         } catch (e: Exception) {
             Timber.e(e, "Error stopping AnkiConnect server")
@@ -132,8 +166,7 @@ class AnkiConnectService : Service() {
         const val ACTION_START = "com.ichi2.anki.ankiconnect.START"
         const val ACTION_STOP = "com.ichi2.anki.ankiconnect.STOP"
 
-        var isRunning: Boolean = false
-            private set
+        val isRunning = AtomicBoolean(false)
 
         fun start(context: Context) {
             val intent =

@@ -18,19 +18,31 @@ package com.ichi2.anki.ankiconnect
 
 import androidx.annotation.WorkerThread
 import com.google.protobuf.kotlin.toByteString
+import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Collection
+import com.ichi2.anki.libanki.NoteType
+import com.ichi2.anki.syncAuth
 import com.ichi2.anki.web.HttpFetcher
+import com.ichi2.anki.worker.SyncWorker
 import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
 import java.util.Base64
 
 object AnkiConnectHandler {
+    private const val MAX_MEDIA_SIZE = 25 * 1024 * 1024 // 25 MB
+
+    private val httpClient: OkHttpClient by lazy {
+        HttpFetcher.getOkHttpBuilder(true).build()
+    }
+
     val SUPPORTED_ACTIONS =
         listOf(
             "version",
@@ -54,9 +66,6 @@ object AnkiConnectHandler {
             "retrieveMediaFile",
             "deleteMediaFile",
             "sync",
-            "guiBrowse",
-            "guiAddCards",
-            "guiCurrentCard",
         )
 
     fun handleAction(
@@ -70,12 +79,96 @@ object AnkiConnectHandler {
         if (action == "apiReflect") {
             return JSONObject().put("actions", JSONArray(SUPPORTED_ACTIONS))
         }
+        if (action == "sync") {
+            val auth = syncAuth() ?: throw IllegalStateException("Not logged in to AnkiWeb")
+            SyncWorker.start(AnkiDroidApp.instance, auth, true)
+            return null
+        }
+
+        // Perform any network downloads OUTSIDE the collection lock to prevent UI thread lockups
+        preprocessMediaDownloads(action, params)
 
         return runBlocking {
             CollectionManager.withCol {
                 handleActionWithCol(action, version, params, this)
             }
         }
+    }
+
+    private fun preprocessMediaDownloads(
+        action: String,
+        params: JSONObject?,
+    ) {
+        if (params == null) return
+        when (action) {
+            "storeMediaFile" -> {
+                val url = params.optString("url", "")
+                val data = params.optString("data", "")
+                if (data.isBlank() && url.isNotBlank()) {
+                    val bytes = downloadMedia(url)
+                    params.put("data", Base64.getEncoder().encodeToString(bytes))
+                    params.remove("url")
+                }
+            }
+            "addNote" -> {
+                val noteObj = params.optJSONObject("note") ?: return
+                preprocessNoteMedia(noteObj)
+            }
+            "addNotes" -> {
+                val notesArr = params.optJSONArray("notes") ?: return
+                for (i in 0 until notesArr.length()) {
+                    val noteObj = notesArr.optJSONObject(i) ?: continue
+                    preprocessNoteMedia(noteObj)
+                }
+            }
+        }
+    }
+
+    private fun preprocessNoteMedia(noteObj: JSONObject) {
+        for (mediaKey in listOf("audio", "picture", "video")) {
+            val arr = noteObj.optJSONArray(mediaKey) ?: continue
+            for (i in 0 until arr.length()) {
+                val mediaItem = arr.optJSONObject(i) ?: continue
+                val data = mediaItem.optString("data", "")
+                val url = mediaItem.optString("url", "")
+                if (data.isBlank() && url.isNotBlank()) {
+                    val bytes = downloadMedia(url)
+                    mediaItem.put("data", Base64.getEncoder().encodeToString(bytes))
+                    mediaItem.remove("url")
+                }
+            }
+        }
+    }
+
+    internal fun downloadMedia(url: String): ByteArray {
+        val request = Request.Builder().url(url).build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("Failed to download media from $url: HTTP ${response.code}")
+            }
+            val body = response.body ?: throw IOException("Empty response body from $url")
+            val bytes = body.bytes()
+            if (bytes.size > MAX_MEDIA_SIZE) {
+                throw IOException("Media file exceeds max size of $MAX_MEDIA_SIZE bytes")
+            }
+            return bytes
+        }
+    }
+
+    internal fun getSafeMediaFile(
+        mediaDir: String,
+        filename: String,
+    ): File {
+        require(filename.isNotBlank()) { "Missing or empty filename" }
+        require(!filename.contains("..") && !filename.contains("/") && !filename.contains("\\")) {
+            "Filename contains illegal characters or path traversal components: $filename"
+        }
+        val baseDir = File(mediaDir).canonicalFile
+        val targetFile = File(baseDir, filename).canonicalFile
+        if (targetFile.parentFile != baseDir) {
+            throw SecurityException("Path traversal detected for filename: $filename")
+        }
+        return targetFile
     }
 
     @WorkerThread
@@ -148,32 +241,29 @@ object AnkiConnectHandler {
                 val notesArr = params?.optJSONArray("notes") ?: throw IllegalArgumentException("Missing notes parameter")
                 val result = JSONArray()
                 for (i in 0 until notesArr.length()) {
-                    val noteObj = notesArr.getJSONObject(i)
-                    val modelName = noteObj.optString("modelName")
-                    val nt = col.notetypes.byName(modelName)
-                    if (nt == null) {
+                    val noteObj = notesArr.optJSONObject(i)
+                    if (noteObj == null) {
                         result.put(false)
                         continue
                     }
-                    val fieldsObj = noteObj.optJSONObject("fields")
-                    val options = noteObj.optJSONObject("options")
-                    val allowDuplicate = options?.optBoolean("allowDuplicate", false) ?: false
-                    if (allowDuplicate) {
-                        result.put(true)
-                    } else {
-                        val firstFieldName = nt.fieldsNames.firstOrNull()
-                        val firstFieldValue =
-                            if (firstFieldName != null && fieldsObj != null) {
-                                fieldsObj.optString(firstFieldName, "")
-                            } else {
-                                ""
-                            }
-                        if (firstFieldValue.isNotBlank()) {
-                            val dupes = col.findNotes("\"$firstFieldValue\"")
-                            result.put(dupes.isEmpty())
-                        } else {
-                            result.put(true)
+                    try {
+                        val modelName = noteObj.optString("modelName", "")
+                        val nt = col.notetypes.byName(modelName)
+                        if (nt == null) {
+                            result.put(false)
+                            continue
                         }
+                        val fieldsObj = noteObj.optJSONObject("fields")
+                        val options = noteObj.optJSONObject("options")
+                        val allowDuplicate = options?.optBoolean("allowDuplicate", false) ?: false
+                        if (allowDuplicate) {
+                            result.put(true)
+                        } else {
+                            val isDupe = isDuplicateNote(col, nt, fieldsObj)
+                            result.put(!isDupe)
+                        }
+                    } catch (_: Exception) {
+                        result.put(false)
                     }
                 }
                 result
@@ -282,13 +372,12 @@ object AnkiConnectHandler {
             "storeMediaFile" -> {
                 val filename = params?.optString("filename") ?: throw IllegalArgumentException("Missing filename parameter")
                 val data = params.optString("data", "")
-                val url = params.optString("url", "")
-                saveMedia(col, filename, data, url)
+                saveMedia(col, filename, data)
                 filename
             }
             "retrieveMediaFile" -> {
                 val filename = params?.optString("filename") ?: throw IllegalArgumentException("Missing filename parameter")
-                val file = File(col.media.dir, filename)
+                val file = getSafeMediaFile(col.media.dir, filename)
                 if (file.exists() && file.isFile) {
                     Base64.getEncoder().encodeToString(file.readBytes())
                 } else {
@@ -297,15 +386,28 @@ object AnkiConnectHandler {
             }
             "deleteMediaFile" -> {
                 val filename = params?.optString("filename") ?: throw IllegalArgumentException("Missing filename parameter")
-                val file = File(col.media.dir, filename)
-                if (file.exists()) {
-                    file.delete()
-                }
+                getSafeMediaFile(col.media.dir, filename)
+                col.media.trashFiles(listOf(filename))
                 null
             }
-            "sync", "guiBrowse", "guiAddCards", "guiCurrentCard" -> null
             else -> throw IllegalArgumentException("unsupported action: $action")
         }
+
+    private fun isDuplicateNote(
+        col: Collection,
+        nt: NoteType,
+        fieldsObj: JSONObject?,
+    ): Boolean {
+        if (fieldsObj == null) return false
+        val firstFieldName = nt.fieldsNames.firstOrNull() ?: return false
+        val firstFieldVal = fieldsObj.optString(firstFieldName, "")
+        if (firstFieldVal.isBlank()) return false
+
+        val escapedVal = firstFieldVal.replace("\\", "\\\\").replace("\"", "\\\"")
+        val query = "\"mid:${nt.id}\" \"$firstFieldName:$escapedVal\""
+        val dupes = col.findNotes(query)
+        return dupes.isNotEmpty()
+    }
 
     private fun createNoteInternal(
         noteObj: JSONObject,
@@ -331,7 +433,7 @@ object AnkiConnectHandler {
                 val audioObj = audioArr.getJSONObject(i)
                 val filename = audioObj.optString("filename", "")
                 if (filename.isNotBlank()) {
-                    saveMedia(col, filename, audioObj.optString("data", ""), audioObj.optString("url", ""))
+                    saveMedia(col, filename, audioObj.optString("data", ""))
                     val targetFields = audioObj.optJSONArray("fields")
                     if (targetFields != null) {
                         for (j in 0 until targetFields.length()) {
@@ -351,7 +453,7 @@ object AnkiConnectHandler {
                 val picObj = picArr.getJSONObject(i)
                 val filename = picObj.optString("filename", "")
                 if (filename.isNotBlank()) {
-                    saveMedia(col, filename, picObj.optString("data", ""), picObj.optString("url", ""))
+                    saveMedia(col, filename, picObj.optString("data", ""))
                     val targetFields = picObj.optJSONArray("fields")
                     if (targetFields != null) {
                         for (j in 0 until targetFields.length()) {
@@ -380,14 +482,8 @@ object AnkiConnectHandler {
 
         val options = noteObj.optJSONObject("options")
         val allowDuplicate = options?.optBoolean("allowDuplicate", false) ?: false
-        if (!allowDuplicate) {
-            val firstFieldVal = note.fields.firstOrNull() ?: ""
-            if (firstFieldVal.isNotBlank()) {
-                val dupes = col.findNotes("\"$firstFieldVal\"")
-                if (dupes.isNotEmpty()) {
-                    throw IllegalArgumentException("cannot create note because it is a duplicate")
-                }
-            }
+        if (!allowDuplicate && isDuplicateNote(col, nt, fieldsObj)) {
+            throw IllegalArgumentException("cannot create note because it is a duplicate")
         }
 
         col.addNote(note, did)
@@ -398,21 +494,11 @@ object AnkiConnectHandler {
         col: Collection,
         filename: String,
         data: String,
-        url: String,
     ) {
+        getSafeMediaFile(col.media.dir, filename)
         if (data.isNotBlank()) {
             val bytes = Base64.getDecoder().decode(data)
             col.backend.addMediaFile(filename, bytes.toByteString())
-        } else if (url.isNotBlank()) {
-            try {
-                val request = Request.Builder().url(url).build()
-                val client = HttpFetcher.getOkHttpBuilder(true).build()
-                val response = client.newCall(request).execute()
-                val bytes = response.body.bytes()
-                col.backend.addMediaFile(filename, bytes.toByteString())
-            } catch (e: Exception) {
-                Timber.w(e, "AnkiConnect: Failed to download media from %s", url)
-            }
         }
     }
 }

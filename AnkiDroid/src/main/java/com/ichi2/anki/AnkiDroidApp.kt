@@ -218,11 +218,15 @@ open class AnkiDroidApp :
                     )
                 }
 
+                private var hasAttemptedAnkiConnectStart = false
+
                 override fun onActivityStarted(activity: Activity) {
                     Timber.i("${activity::class.simpleName}::onStart")
-                    if (!AnkiConnectService.isRunning &&
+                    if (!hasAttemptedAnkiConnectStart &&
+                        !AnkiConnectService.isRunning.get() &&
                         preferences.getBoolean(getString(R.string.ankiconnect_enable_key), false)
                     ) {
+                        hasAttemptedAnkiConnectStart = true
                         try {
                             AnkiConnectService.start(activity)
                         } catch (e: Exception) {

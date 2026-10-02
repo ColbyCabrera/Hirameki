@@ -20,8 +20,10 @@ import com.ichi2.testutils.JvmTest
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Test
+import java.util.Base64
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -125,5 +127,63 @@ class AnkiConnectHandlerTest : JvmTest() {
         val noteInfo = notesInfo.getJSONObject(0)
         assertEquals(noteId, noteInfo.getLong("noteId"))
         assertEquals(modelName, noteInfo.getString("modelName"))
+    }
+
+    @Test
+    fun testMediaSafePathValidation() {
+        // Valid filename should succeed
+        val validFile = AnkiConnectHandler.getSafeMediaFile(col.media.dir, "test_audio.mp3")
+        assertEquals("test_audio.mp3", validFile.name)
+
+        // Path traversal attempts must be rejected
+        assertFailsWith<IllegalArgumentException> {
+            AnkiConnectHandler.getSafeMediaFile(col.media.dir, "../test.txt")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            AnkiConnectHandler.getSafeMediaFile(col.media.dir, "subdir/test.txt")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            AnkiConnectHandler.getSafeMediaFile(col.media.dir, "..\\test.txt")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            AnkiConnectHandler.getSafeMediaFile(col.media.dir, "")
+        }
+    }
+
+    @Test
+    fun testStoreRetrieveAndDeleteMedia() {
+        val testContent = "hirameki audio test data"
+        val base64Data = Base64.getEncoder().encodeToString(testContent.toByteArray())
+        val filename = "test_sound.mp3"
+
+        // Store media
+        val storeParams =
+            JSONObject()
+                .put("filename", filename)
+                .put("data", base64Data)
+        val storedName = AnkiConnectHandler.handleActionWithCol("storeMediaFile", 6, storeParams, col)
+        assertEquals(filename, storedName)
+
+        // Retrieve media
+        val retrieveParams = JSONObject().put("filename", filename)
+        val retrievedData = AnkiConnectHandler.handleActionWithCol("retrieveMediaFile", 6, retrieveParams, col)
+        assertEquals(base64Data, retrievedData)
+
+        // Path traversal in retrieve must fail
+        val traversalRetrieveParams = JSONObject().put("filename", "../../../evil.txt")
+        assertFailsWith<IllegalArgumentException> {
+            AnkiConnectHandler.handleActionWithCol("retrieveMediaFile", 6, traversalRetrieveParams, col)
+        }
+
+        // Delete media
+        val deleteParams = JSONObject().put("filename", filename)
+        val deleteResult = AnkiConnectHandler.handleActionWithCol("deleteMediaFile", 6, deleteParams, col)
+        assertEquals(null, deleteResult)
+
+        // Path traversal in delete must fail
+        val traversalDeleteParams = JSONObject().put("filename", "../../evil.txt")
+        assertFailsWith<IllegalArgumentException> {
+            AnkiConnectHandler.handleActionWithCol("deleteMediaFile", 6, traversalDeleteParams, col)
+        }
     }
 }
