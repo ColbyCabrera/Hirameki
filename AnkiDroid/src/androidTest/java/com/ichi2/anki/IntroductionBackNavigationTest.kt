@@ -32,6 +32,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertNotNull
+import kotlin.test.fail
 
 @RunWith(AndroidJUnit4::class)
 class IntroductionBackNavigationTest : InstrumentedTest() {
@@ -46,26 +47,41 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
                 .getInstrumentation()
                 .targetContext
                 .getString(R.string.intro_continue)
-
-        // The disclaimer is scrollable, so the button may start below the fold
-        val continueButton = device.findOrScrollTo(continueText)
-        assertNotNull(continueButton, "Continue button should be visible")
-        continueButton.click()
-        device.waitForIdle()
-
-        // Wait until the setup page is shown so its back handler is registered
         val getStartedText =
             InstrumentationRegistry
                 .getInstrumentation()
                 .targetContext
                 .getString(R.string.intro_get_started)
-        assertNotNull(device.findOrScrollTo(getStartedText), "Setup page should be shown")
+
+        // The disclaimer is scrollable, so the button may start below the fold. Scrolling can still
+        // be settling when the button is found, which would make the tap miss it entirely: retry
+        // until the setup page is actually reached rather than trusting a single click.
+        clickAndWaitFor(device, continueText, getStartedText, "Setup page should be shown")
 
         // Back from the setup page returns to the disclaimer instead of closing the activity
         device.pressBack()
 
-        val continueButtonAgain = device.findOrScrollTo(continueText)
-        assertNotNull(continueButtonAgain, "Continue button should be visible after pressing back")
+        assertNotNull(
+            device.findOrScrollTo(continueText),
+            "Continue button should be visible after pressing back",
+        )
+    }
+
+    /**
+     * Taps the button labelled [buttonText] and waits for [expectedText] to appear, retrying while
+     * the button cannot be reached.
+     */
+    private fun clickAndWaitFor(
+        device: UiDevice,
+        buttonText: String,
+        expectedText: String,
+        failureMessage: String,
+    ) {
+        repeat(CLICK_ATTEMPTS) {
+            device.findOrScrollTo(buttonText)?.click()
+            if (device.wait(Until.hasObject(By.text(expectedText)), EXPECTED_TIMEOUT_MS)) return
+        }
+        fail(failureMessage)
     }
 
     private fun UiDevice.findOrScrollTo(
@@ -73,6 +89,8 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
         attempts: Int = 5,
     ): UiObject2? {
         repeat(attempts) { attempt ->
+            // let any in-flight scroll settle so the bounds used for a click are current
+            waitForIdle()
             wait(Until.findObject(By.text(text)), 2_000)?.let { return it }
             // The introduction screens may be taller than the emulator display,
             // and page transitions can be slow there: scroll and retry
@@ -87,5 +105,10 @@ class IntroductionBackNavigationTest : InstrumentedTest() {
             }
         }
         return null
+    }
+
+    companion object {
+        private const val CLICK_ATTEMPTS = 5
+        private const val EXPECTED_TIMEOUT_MS = 2_000L
     }
 }

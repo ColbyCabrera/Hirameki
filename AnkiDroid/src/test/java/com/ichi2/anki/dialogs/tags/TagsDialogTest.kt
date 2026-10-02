@@ -36,6 +36,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import timber.log.Timber
+import kotlin.test.fail
+
+/** How many times to poll for the asynchronously-populated tag list before failing the test */
+private const val AWAIT_ADAPTER_ATTEMPTS = 100
+
+/** How long to wait between polls of the asynchronously-populated tag list */
+private const val AWAIT_ADAPTER_INTERVAL_MS = 10L
 
 @RunWith(AndroidJUnit4::class)
 class TagsDialogTest : RobolectricTest() {
@@ -600,8 +607,27 @@ class TagsDialogTest : RobolectricTest() {
         FragmentScenario.launch(TagsDialog::class.java, args, R.style.Theme_Light, factory).use { scenario ->
             scenario.moveToState(Lifecycle.State.STARTED)
             scenario.onFragment { tagsDialog: TagsDialog ->
+                // the adapter is set by a coroutine which awaits the tags, so it may not exist yet
+                awaitTagsAdapter(tagsDialog)
                 block(tagsDialog)
             }
         }
+    }
+
+    /**
+     * Waits until [TagsDialog] has attached its tag adapter.
+     *
+     * [TagsDialog] populates the list from a coroutine awaiting [TagsDialogViewModel.tags], which
+     * completes on a background dispatcher. Without this, `recycler.adapter` is intermittently
+     * null when the test body runs.
+     */
+    private fun awaitTagsAdapter(tagsDialog: TagsDialog) {
+        val recycler = tagsDialog.dialog?.findViewById<RecyclerView>(R.id.tags_dialog_tags_list)
+        repeat(AWAIT_ADAPTER_ATTEMPTS) {
+            RobolectricTest.advanceRobolectricLooper()
+            if (recycler?.adapter != null) return
+            Thread.sleep(AWAIT_ADAPTER_INTERVAL_MS)
+        }
+        fail("the tags list was never populated")
     }
 }
