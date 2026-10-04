@@ -1,6 +1,7 @@
 ---
 name: compose-navigation
 description: "Implement app navigation in Jetpack Compose using Navigation 3 (Nav3). Use when asked to set up Nav3, define NavKey destinations, create NavigationState or Navigator classes, replace NavController/NavHost with entryProvider and NavDisplay, migrate from Navigation Compose, or structure multi-screen Compose apps."
+upstream: android/skills navigation/navigation-3 (last-updated 2026-09-24)
 ---
 
 # Compose Navigation
@@ -231,7 +232,20 @@ Pass IDs, enum-like values, and compact immutable data. Fetch heavy data from re
 
 ### Dialogs and Metadata
 
-If a destination should render as a dialog or another custom scene, use entry metadata and scene strategies rather than trying to recreate NavHost dialog APIs directly. Follow the official Navigation 3 metadata and scene strategy docs for this.
+If a destination should render as a dialog or another custom scene, use entry metadata and scene strategies rather than trying to recreate NavHost dialog APIs directly. Upstream `navigation-3` recipes cover Dialog, BottomSheet, list-detail / two-pane scenes, and Material 3 Adaptive variants — check those before hand-rolling a custom scene.
+
+### Deep Links, Conditional Flows, Results (upstream recipes)
+
+Upstream `navigation-3` (2026-09-24) now publishes recipes for areas this file previously marked as uncovered:
+
+- **Deep links**: static URIs, URIs with arguments, synthetic back stacks, custom matchers.
+- **Conditional navigation**: switch flows on a condition (e.g. logged-in vs anonymous, onboarding).
+- **Returning results**: as events to another `NavEntry`, or as state in a `CompositionLocal`.
+- **ViewModel args**: pass typed key fields into a `viewModel()`-constructed ViewModel.
+- **Modularized code**: Hilt and Koin variants for decoupling navigation across modules.
+- **Animations**: per-destination and conditional transitions.
+
+Prefer those recipe patterns for new work instead of mirroring Navigation Compose one-to-one.
 
 ---
 
@@ -247,13 +261,13 @@ When migrating from Navigation Compose to Navigation 3, follow the official sequ
 6. Replace `NavHost` with `NavDisplay`.
 7. Remove obsolete Navigation 2 dependencies and imports.
 
-Important constraints from the current docs:
+Important constraints from the current docs (updated per upstream 2026-09-24):
 
-- Deep links are not covered by the official migration guide yet.
+- Deep links are now covered by upstream recipes (static URI, URI arguments, synthetic back stack, custom matcher) — use them instead of assuming Navigation Compose parity.
 - More than one level of nested navigation is not covered by the migration guide.
 - Shared destinations that move between stacks require custom navigation logic.
 
-Do not casually promise one-to-one replacements for advanced Navigation Compose features. Check the official recipes first.
+Do not casually promise one-to-one replacements for advanced Navigation Compose features. Check the upstream recipes first.
 
 ---
 
@@ -338,6 +352,8 @@ If you are modifying existing Navigation Compose code that has not migrated yet,
 ---
 
 ## References
+
+- Upstream skill: `android/skills` — `navigation/navigation-3` (recipes for deep links, scenes, animations, conditional flows, results, modular Hilt/Koin, ViewModel args)
 
 - [Navigation 3 overview](https://developer.android.com/guide/navigation/navigation-3)
 - [Navigation 3 get started](https://developer.android.com/guide/navigation/navigation-3/get-started)

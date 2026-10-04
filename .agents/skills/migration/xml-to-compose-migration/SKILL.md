@@ -1,6 +1,7 @@
 ---
 name: xml-to-compose-migration
 description: Convert Android XML layouts to Jetpack Compose. Use when asked to migrate Views to Compose, convert XML to Composables, or modernize UI from View system to Compose.
+upstream: android/skills jetpack-compose/migration/migrate-xml-views-to-jetpack-compose (last-updated 2026-09-18)
 ---
 
 # XML to Compose Migration
@@ -8,6 +9,21 @@ description: Convert Android XML layouts to Jetpack Compose. Use when asked to m
 ## Overview
 
 Systematically convert Android XML layouts to idiomatic Jetpack Compose, preserving functionality while embracing Compose patterns. This skill covers layout mapping, state migration, and incremental adoption strategies.
+
+Aligned with upstream `migrate-xml-views-to-jetpack-compose`: migrate one XML candidate at a time, capture a baseline screenshot before converting, set up only the minimum Compose dependencies/theming the candidate needs, add a Compose Preview for visual verification, validate against the baseline, then remove only unreferenced XML.
+
+## Upstream 10-Step Workflow
+
+1. **Pick one candidate** — migrate a single layout at a time; if the user didn't specify one, prefer leaf screens over shared theme/infrastructure.
+2. **Analyze project + layout** — audit structure, hierarchy, data binding / view binding refs, custom views, `include`/`merge`/`ViewStub` usage, and surrounding state sources.
+3. **Plan** — decide full rewrite vs incremental (`ComposeView`/`AndroidView` interop) and present the plan when user interaction is supported.
+4. **Capture baseline** — take a screenshot of the XML UI first (existing screenshot test, or minimum Espresso/UI Automator capture) for later visual-parity comparison.
+5. **Compose dependencies/compiler** — check `libs.versions.toml` / `build.gradle(.kts)` for Compose BOM + compiler; sync after adding.
+6. **Minimum theming only** — reuse existing Compose theme if present; otherwise add only the tokens the candidate needs. Do not migrate the whole app theme in this step.
+7. **Migrate layout** — convert using the mapping tables below; every new composable gets a `@Preview` for verification.
+8. **Replace usages** — `ComposeView` for Compose-in-Views, `AndroidView` for Views-in-Compose.
+9. **Validate** — compare Compose Preview against the baseline screenshot (layout/styling, ignoring string content); iterate to parity, then add a Compose UI test.
+10. **Remove XML cautiously** — delete the migrated XML file and legacy tests only after confirming no other references exist.
 
 ## Workflow
 
@@ -333,6 +349,7 @@ Button(onClick = { viewModel.submit() }) {
 
 ## References
 
+- Upstream skill: `android/skills` — `jetpack-compose/migration/migrate-xml-views-to-jetpack-compose`
 - [Interoperability APIs](https://developer.android.com/develop/ui/compose/migrate/interoperability-apis)
 - [Migration Strategy](https://developer.android.com/develop/ui/compose/migrate/strategy)
 - [Compose and Views side by side](https://developer.android.com/develop/ui/compose/migrate)

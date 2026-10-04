@@ -39,12 +39,15 @@ We follow the official Android Architecture Guidelines:
 | `architecture/`       | Clean architecture, ViewModels, and Data Layer.    |
 | `ui/`                 | Jetpack Compose best practices, Coil, Accessibility. |
 | `performance/`        | Auditing Compose and Gradle build performance.     |
+| `profilers/`          | Android profiler (upstream `android/skills`): traces, heap dumps, memory-leak analysis. |
 | `migration/`          | XML to Compose, RxJava to Coroutines.              |
 | `testing_and_automation/` | Unit/UI Testing setup, Emulator automation scripts. |
 | `concurrency_and_networking/` | Coroutines fixes, Retrofit networking.             |
 
+Official upstream source for synced skills: [`android/skills`](https://github.com/android/skills) (`migrate-xml-views-to-jetpack-compose` 2026-09-18, `testing-setup` 2026-09-23, `navigation-3` 2026-09-24, `android-profiler` 2026-08-06). Upstream has no standalone memory-leak SKILL.md — memory-leak workflows (heap dumps, allocations, Perfetto analysis) live in `profilers/android-profiler`.
+
 ---
 
-Following these practices ensures that the agent-assisted development workflow stays reliable and consistent. When in doubt, always refer to the specific agent skills provided in `.github/skills/` for deeper task-specific context!
+Following these practices ensures that the agent-assisted development workflow stays reliable and consistent. When in doubt, always refer to the specific agent skills provided in `.agents/skills/` for deeper task-specific context!
 
 *Note to developers: Update this file whenever the project makes architectural shifts to ensure AI agents stay aligned with your conventions.*
