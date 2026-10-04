@@ -15,7 +15,7 @@
  */
 package com.ichi2.anki.dialogs
 
-import android.view.KeyEvent
+import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -61,6 +61,11 @@ class SchedulerUpgradeDialog(
             onCancel?.invoke()
         }
 
+        // the dialog is not cancelable, so it ignores back by itself, and with
+        // enableOnBackInvokedCallback android 13+ never sends KEYCODE_BACK to a key listener.
+        // the dialog's own dispatcher receives back on every api level (31+ included)
+        dialog.onBackPressedDispatcher.addCallback(dialog) { dismissAndCancel() }
+
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
                 it.isEnabled = false // prevent multiple taps
@@ -74,15 +79,6 @@ class SchedulerUpgradeDialog(
 
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setOnClickListener {
                 activity.openUrl(R.string.link_scheduler_upgrade_faq)
-            }
-
-            dialog.setOnKeyListener { _, keyCode, event ->
-                if (keyCode != KeyEvent.KEYCODE_BACK || event.action != KeyEvent.ACTION_UP) {
-                    return@setOnKeyListener false
-                }
-
-                dismissAndCancel()
-                true
             }
         }
 
