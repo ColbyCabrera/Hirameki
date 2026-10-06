@@ -64,8 +64,10 @@ class PreferencesNavigationTest : InstrumentedTest() {
         assumeTrue(context.resources.isWindowCompact())
 
         val drawerButtonDescription = context.getString(R.string.navigation_drawer_open)
-        // The DeckPicker top bar is only shown once the deck list has loaded
-        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+        // The DeckPicker top bar is only shown once the deck list has loaded, which can take a
+        // while on a cold emulator (10s timed out on a slow runner while the same commit passed
+        // in 2.5s elsewhere). 30s matches DeckPickerTest's slow-operation waits.
+        composeTestRule.waitUntil(timeoutMillis = 30_000) {
             composeTestRule
                 .onAllNodesWithContentDescription(drawerButtonDescription)
                 .fetchSemanticsNodes()
