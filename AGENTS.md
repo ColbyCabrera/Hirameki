@@ -4,7 +4,7 @@ This repository contains an Android application project. When working on the pro
 
 ## 1. Project Specifications
 - **Minimum SDK:** 31 (or defined by project)
-- **Target SDK:** 36
+- **Target SDK:** 37
 - **Language:** Kotlin (2.3+)
 - **Build System:** Gradle (Kotlin DSL preferred)
 
