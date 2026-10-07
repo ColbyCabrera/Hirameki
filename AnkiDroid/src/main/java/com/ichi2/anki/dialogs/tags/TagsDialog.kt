@@ -239,24 +239,32 @@ class TagsDialog : AnalyticsDialogFragment {
 
             val tags = viewModel.tags.await()
 
-            tagsArrayAdapter = TagsArrayAdapter(tags) { view.showMaxTagSelectedNotice(tags) }
-            tagsListRecyclerView.adapter = tagsArrayAdapter
-            noTagsTextView = view.findViewById(R.id.tags_dialog_no_tags_textview)
-            if (tags.isEmpty) {
-                noTagsTextView?.visibility = View.VISIBLE
-            }
-            tagsArrayAdapter?.tagContextAndLongClickListener =
-                if (type == DialogType.EDIT_TAGS) {
-                    OnContextAndLongClickListener { v ->
-                        createAddTagDialog(v.tag as String)
-                        true
-                    }
-                } else {
-                    OnContextAndLongClickListener { false }
+            // `tags` completes on ioDispatcher. The awaiting coroutine may therefore resume on
+            // a background thread (under Robolectric, Dispatchers.Main is unconfined, so
+            // `withContext(Dispatchers.Main)` would not hop threads either). Post view updates
+            // to the main looper explicitly: touching views off the main thread throws
+            // CalledFromWrongThreadException, which flaked CI.
+            val activity = requireActivity()
+            activity.runOnUiThread {
+                tagsArrayAdapter = TagsArrayAdapter(tags) { view.showMaxTagSelectedNotice(tags) }
+                tagsListRecyclerView.adapter = tagsArrayAdapter
+                noTagsTextView = view.findViewById(R.id.tags_dialog_no_tags_textview)
+                if (tags.isEmpty) {
+                    noTagsTextView?.visibility = View.VISIBLE
                 }
+                tagsArrayAdapter?.tagContextAndLongClickListener =
+                    if (type == DialogType.EDIT_TAGS) {
+                        OnContextAndLongClickListener { v ->
+                            createAddTagDialog(v.tag as String)
+                            true
+                        }
+                    } else {
+                        OnContextAndLongClickListener { false }
+                    }
+                loadingContainer.isVisible = false
+                positiveButton?.isEnabled = true
+            }
             showProgressJob.cancel()
-            loadingContainer.isVisible = false
-            positiveButton?.isEnabled = true
         }
 
         dialog.window?.let {
