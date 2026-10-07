@@ -144,6 +144,7 @@ import com.ichi2.utils.ClipboardUtil.IMPORT_MIME_TYPES
 import com.ichi2.utils.ImportUtils
 import com.ichi2.utils.NetworkUtils
 import com.ichi2.utils.NetworkUtils.isActiveNetworkMetered
+import com.ichi2.utils.Permissions
 import com.ichi2.utils.VersionUtils
 import com.ichi2.utils.cancelable
 import com.ichi2.utils.checkBoxPrompt
@@ -400,6 +401,21 @@ open class DeckPicker :
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
             Timber.i("notification permission: %b", it)
+        }
+
+    private var pendingSyncConflict: ConflictResolution? = null
+
+    private val localNetworkPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            Timber.i("local network permission: %b", granted)
+            val conflict = pendingSyncConflict
+            pendingSyncConflict = null
+            viewModel.isSyncing.value = false
+            if (granted) {
+                sync(conflict)
+            } else {
+                showSnackbar(getString(R.string.custom_sync_local_network_denied, getEndpoint() ?: ""))
+            }
         }
 
     // ----------------------------------------------------------------------------
@@ -1623,6 +1639,21 @@ open class DeckPicker :
          * the sync server and starts syncing the data */
         fun doSync() {
             handleNewSync(conflict, shouldFetchMedia())
+        }
+        // Android 17+: custom sync servers on the LAN need ACCESS_LOCAL_NETWORK.
+        // Only custom-sync users ever see this; AnkiWeb sync is unaffected.
+        val endpoint = getEndpoint()
+        if (Prefs.isCustomSyncEnabled && Permissions.isLocalNetworkSyncBlocked(this, endpoint)) {
+            MaterialAlertDialogBuilder(this).show {
+                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint ?: ""))
+                positiveButton(R.string.dialog_continue) {
+                    pendingSyncConflict = conflict
+                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
+                }
+                negativeButton(R.string.dialog_cancel) { viewModel.isSyncing.value = false }
+                setOnCancelListener { viewModel.isSyncing.value = false }
+            }
+            return
         }
         // Warn the user in case the connection is metered
         if (!Prefs.allowSyncOnMeteredConnections && isActiveNetworkMetered()) {

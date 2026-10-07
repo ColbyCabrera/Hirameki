@@ -23,12 +23,19 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.dialogs.help.HelpDialog.Companion.newPrivacyPolicyInstance
+import com.ichi2.anki.settings.Prefs
+import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.MyAccountScreen
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.utils.AdaptionUtil.isUserATestClient
 import com.ichi2.utils.Permissions
+import com.ichi2.utils.message
+import com.ichi2.utils.negativeButton
+import com.ichi2.utils.positiveButton
+import com.ichi2.utils.show
 import timber.log.Timber
 
 /**
@@ -48,6 +55,20 @@ open class MyAccount : AnkiActivity() {
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {
             Timber.i("notification permission: %b", it)
+        }
+
+    private var pendingLoginPassword: String? = null
+
+    private val localNetworkPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            Timber.i("local network permission: %b", granted)
+            val password = pendingLoginPassword
+            pendingLoginPassword = null
+            if (granted && password != null) {
+                attemptLogin(password)
+            } else if (!granted) {
+                showSnackbar(getString(R.string.custom_sync_local_network_denied, getEndpoint() ?: ""))
+            }
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,14 +102,20 @@ open class MyAccount : AnkiActivity() {
                     viewModel = viewModel,
                     onBack = { finish() },
                     onLoginClick = { _, password ->
-                        viewModel.login(password = password, onSuccess = {
-                            setResult(RESULT_OK)
-                            checkNotificationPermission(
-                                this@MyAccount,
-                                notificationPermissionLauncher,
-                            )
-                            finish()
-                        })
+                        // Android 17+: LAN custom servers need ACCESS_LOCAL_NETWORK first.
+                        val endpoint = getEndpoint()
+                        if (Prefs.isCustomSyncEnabled && Permissions.isLocalNetworkSyncBlocked(this@MyAccount, endpoint)) {
+                            MaterialAlertDialogBuilder(this@MyAccount).show {
+                                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint ?: ""))
+                                positiveButton(R.string.dialog_continue) {
+                                    pendingLoginPassword = password
+                                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
+                                }
+                                negativeButton(R.string.dialog_cancel) { /* stay on screen */ }
+                            }
+                        } else {
+                            attemptLogin(password)
+                        }
                     },
                     onResetPasswordClick = { resetPassword() },
                     onSignUpClick = { openUrl(R.string.register_url) },
@@ -106,6 +133,17 @@ open class MyAccount : AnkiActivity() {
 
     private fun logout() {
         viewModel.logout()
+    }
+
+    private fun attemptLogin(password: String) {
+        viewModel.login(password = password, onSuccess = {
+            setResult(RESULT_OK)
+            checkNotificationPermission(
+                this@MyAccount,
+                notificationPermissionLauncher,
+            )
+            finish()
+        })
     }
 
     /**
