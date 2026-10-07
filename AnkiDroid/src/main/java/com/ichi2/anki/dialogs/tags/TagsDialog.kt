@@ -50,10 +50,12 @@ import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.title
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 
@@ -211,20 +213,12 @@ class TagsDialog : AnalyticsDialogFragment {
                 .create()
 
         lifecycleScope.launch {
-            // Capture before the first suspension: FragmentManager state must be read on main.
-            // Everything below awaits `viewModel.tags`, which completes on ioDispatcher, so
-            // the coroutine may resume on a background thread (under Robolectric,
-            // Dispatchers.Main is unconfined and `withContext(Dispatchers.Main)` would not hop
-            // threads either). All view updates are therefore posted to the main looper
-            // explicitly: touching views off the main thread throws
-            // CalledFromWrongThreadException, which flaked CI.
-            val activity = requireActivity()
             val loadingContainer = view.findViewById<View>(R.id.loading_container)
             val progressTextView = view.findViewById<TextView>(R.id.progress_text)
             val showProgressJob =
                 launch {
                     delay(600)
-                    activity.runOnUiThread {
+                    withContext(Dispatchers.Main) {
                         loadingContainer.visibility = View.VISIBLE
                         viewModel.initProgress
                             .flowWithLifecycle(lifecycle)
@@ -245,26 +239,24 @@ class TagsDialog : AnalyticsDialogFragment {
 
             val tags = viewModel.tags.await()
 
-            activity.runOnUiThread {
-                tagsArrayAdapter = TagsArrayAdapter(tags) { view.showMaxTagSelectedNotice(tags) }
-                tagsListRecyclerView.adapter = tagsArrayAdapter
-                noTagsTextView = view.findViewById(R.id.tags_dialog_no_tags_textview)
-                if (tags.isEmpty) {
-                    noTagsTextView?.visibility = View.VISIBLE
-                }
-                tagsArrayAdapter?.tagContextAndLongClickListener =
-                    if (type == DialogType.EDIT_TAGS) {
-                        OnContextAndLongClickListener { v ->
-                            createAddTagDialog(v.tag as String)
-                            true
-                        }
-                    } else {
-                        OnContextAndLongClickListener { false }
-                    }
-                loadingContainer.isVisible = false
-                positiveButton?.isEnabled = true
+            tagsArrayAdapter = TagsArrayAdapter(tags) { view.showMaxTagSelectedNotice(tags) }
+            tagsListRecyclerView.adapter = tagsArrayAdapter
+            noTagsTextView = view.findViewById(R.id.tags_dialog_no_tags_textview)
+            if (tags.isEmpty) {
+                noTagsTextView?.visibility = View.VISIBLE
             }
+            tagsArrayAdapter?.tagContextAndLongClickListener =
+                if (type == DialogType.EDIT_TAGS) {
+                    OnContextAndLongClickListener { v ->
+                        createAddTagDialog(v.tag as String)
+                        true
+                    }
+                } else {
+                    OnContextAndLongClickListener { false }
+                }
             showProgressJob.cancel()
+            loadingContainer.isVisible = false
+            positiveButton?.isEnabled = true
         }
 
         dialog.window?.let {
@@ -361,16 +353,11 @@ class TagsDialog : AnalyticsDialogFragment {
         val checkAllItem = toolbar.menu.findItem(R.id.tags_dialog_action_select_all)
         checkAllItem.setOnMenuItemClickListener {
             launchCatchingTask {
-                val activity = requireActivity()
                 val tags = viewModel.tags.await()
                 val didChange = tags.toggleAllCheckedStatuses()
                 if (didChange) {
-                    // Post to the main looper: `tags` may still be loading, in which case
-                    // this resumes off-main (see onCreateDialog).
-                    activity.runOnUiThread {
-                        tagsArrayAdapter?.notifyDataSetChanged()
-                        view?.showMaxTagSelectedNotice(tags)
-                    }
+                    tagsArrayAdapter?.notifyDataSetChanged()
+                    view?.showMaxTagSelectedNotice(tags)
                 }
             }
             true
@@ -419,35 +406,30 @@ class TagsDialog : AnalyticsDialogFragment {
     fun addTag(rawTag: String?) {
         if (rawTag.isNullOrEmpty()) return
         lifecycleScope.launch {
-            val activity = requireActivity()
             val tags = viewModel.tags.await()
-            // Post to the main looper: `tags` may still be loading, in which case this
-            // resumes off-main (see onCreateDialog).
-            activity.runOnUiThread {
-                val tag = TagsUtil.getUniformedTag(rawTag)
-                val feedbackText: String
-                if (tags.add(tag)) {
-                    if (noTagsTextView!!.isVisible) {
-                        noTagsTextView!!.visibility = View.GONE
-                    }
-                    tags.add(tag)
-                    val positiveText = (dialog as? AlertDialog)?.positiveButton?.text ?: getString(R.string.dialog_ok)
-                    feedbackText = getString(R.string.tag_editor_add_feedback, tag, positiveText)
-                } else {
-                    feedbackText = getString(R.string.tag_editor_add_feedback_existing, tag)
+            val tag = TagsUtil.getUniformedTag(rawTag)
+            val feedbackText: String
+            if (tags.add(tag)) {
+                if (noTagsTextView!!.isVisible) {
+                    noTagsTextView!!.visibility = View.GONE
                 }
-                tags.check(tag)
-                tagsArrayAdapter?.sortData()
-                tagsArrayAdapter?.notifyDataSetChanged()
-                // Expand to reveal the newly added tag.
-                tagsArrayAdapter?.filter?.apply {
-                    setExpandTarget(tag)
-                    refresh()
-                }
-
-                // Show a snackbar to let the user know the tag was added successfully
-                dialog?.findViewById<View>(R.id.tags_dialog_snackbar)?.showSnackbar(feedbackText)
+                tags.add(tag)
+                val positiveText = (dialog as? AlertDialog)?.positiveButton?.text ?: getString(R.string.dialog_ok)
+                feedbackText = getString(R.string.tag_editor_add_feedback, tag, positiveText)
+            } else {
+                feedbackText = getString(R.string.tag_editor_add_feedback_existing, tag)
             }
+            tags.check(tag)
+            tagsArrayAdapter?.sortData()
+            tagsArrayAdapter?.notifyDataSetChanged()
+            // Expand to reveal the newly added tag.
+            tagsArrayAdapter?.filter?.apply {
+                setExpandTarget(tag)
+                refresh()
+            }
+
+            // Show a snackbar to let the user know the tag was added successfully
+            dialog?.findViewById<View>(R.id.tags_dialog_snackbar)?.showSnackbar(feedbackText)
         }
     }
 

@@ -24,14 +24,19 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.testutils.ext.newNote
 import com.ichi2.testutils.ParametersUtils
 import com.ichi2.testutils.RecyclerViewUtils
 import com.ichi2.ui.CheckBoxTriStates
 import com.ichi2.utils.ListUtil
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.core.IsNull
+import org.junit.After
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
@@ -46,6 +51,26 @@ private const val AWAIT_ADAPTER_INTERVAL_MS = 10L
 
 @RunWith(AndroidJUnit4::class)
 class TagsDialogTest : RobolectricTest() {
+    private lateinit var originalIoDispatcher: CoroutineDispatcher
+
+    @Before
+    override fun setUp() {
+        super.setUp()
+        originalIoDispatcher = ioDispatcher
+        // TagsDialogViewModel loads its tags with asyncIO. Under Robolectric,
+        // Dispatchers.Main is unconfined, so awaiting that background work would resume
+        // the dialog's coroutine on an IO worker and touch views off the main thread
+        // (CalledFromWrongThreadException, flaked CI in test_AddNewTag_existingTag).
+        // Run it unconfined instead so the dialog stays on the test thread.
+        ioDispatcher = UnconfinedTestDispatcher()
+    }
+
+    @After
+    override fun tearDown() {
+        ioDispatcher = originalIoDispatcher
+        super.tearDown()
+    }
+
     // regression test #8762
     // test for #8763
     @Test
