@@ -59,7 +59,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.motionScheme
 import androidx.compose.material3.Scaffold
@@ -70,6 +69,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -81,7 +81,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -92,7 +91,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.Morph
 import anki.decks.deckTreeNode
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
@@ -106,7 +104,6 @@ import com.ichi2.anki.ui.compose.components.ExpandableFabContainer
 import com.ichi2.anki.ui.compose.components.Scrim
 import com.ichi2.anki.ui.compose.components.SyncIcon
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
-import com.ichi2.utils.MorphShape
 
 private val expandedDeckCardRadius = 24.dp
 private val collapsedDeckCardRadius = 70.dp
@@ -264,21 +261,6 @@ fun DeckPickerContent(
         }
     }
 
-    val morph =
-        remember {
-            Morph(
-                start = MaterialShapes.Pentagon,
-                end = MaterialShapes.Cookie12Sided,
-            )
-        }
-    val morphingShape =
-        remember(state.distanceFraction) {
-            MorphShape(
-                morph = morph,
-                percentage = state.distanceFraction,
-            )
-        }
-
     // Rebuild the parent -> children lookup only when the flattened deck list changes.
     val (deckToChildrenMap, rootDecks) =
         remember(decks) {
@@ -316,22 +298,14 @@ fun DeckPickerContent(
             state = state,
             modifier = Modifier.fillMaxSize(),
             indicator = {
-                Box(
+                PullToRefreshDefaults.LoadingIndicator(
+                    state = state,
+                    isRefreshing = false,
                     modifier =
                         Modifier
-                            .padding(top = contentPadding.calculateTopPadding() + 16.dp)
-                            .align(Alignment.TopCenter)
-                            .width(42.dp)
-                            .height(42.dp)
-                            .graphicsLayer {
-                                alpha = state.distanceFraction * 5
-                                rotationZ = state.distanceFraction * 180
-                                translationY = (state.distanceFraction * 140) - 60
-                            }.clip(morphingShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                ) {
-                    Box(modifier = Modifier.padding(16.dp))
-                }
+                            .padding(top = contentPadding.calculateTopPadding())
+                            .align(Alignment.TopCenter),
+                )
             },
         ) {
             val isLoading = isInInitialState == null || (!isInInitialState && decks.isEmpty())
