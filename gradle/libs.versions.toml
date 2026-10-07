@@ -8,7 +8,7 @@ lifecycleViewmodelNav3 = "2.11.0"
 # Changing minSdk means newer AnkiDroid versions will not support older devices.
 minSdk = "31"  # also in testlib/build.gradle.kts
 
-targetSdk = "36"  # also in  ../robolectricDownloader.gradle
+targetSdk = "37"  # also in  ../robolectricDownloader.gradle
 acra = '5.13.1'
 ktlint = '1.5.0'
 # AGP is included in Android Studio and changelogs are not well maintained/at a stable URL
