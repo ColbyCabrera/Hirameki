@@ -28,6 +28,7 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.R
 import com.ichi2.anki.tests.InstrumentedTest
@@ -39,6 +40,7 @@ import com.ichi2.anki.testutil.discardPreliminaryViews
 import com.ichi2.anki.testutil.grantPermissions
 import com.ichi2.anki.testutil.notificationPermission
 import com.ichi2.anki.utils.isWindowCompact
+import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.BeforeClass
@@ -62,6 +64,12 @@ class PreferencesNavigationTest : InstrumentedTest() {
         // Dismiss the Get Started screen and backup prompt if they appeared on launch,
         // otherwise the drawer button stays unreachable and the wait below times out.
         discardPreliminaryViews()
+        // InstrumentedTest.runBeforeEachTest calls setColForTests(null), which closes the
+        // collection AFTER the rule already launched DeckPicker and opened it (DeckPicker
+        // composes nothing, including the top bar, while it is closed). The app usually
+        // reopens it within ~200ms, but the test must not race that: reopen deterministically
+        // so the drawer button is guaranteed reachable below.
+        runBlocking { CollectionManager.ensureOpen() }
     }
 
     companion object {
