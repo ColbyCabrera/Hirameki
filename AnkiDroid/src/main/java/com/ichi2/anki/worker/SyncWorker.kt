@@ -83,6 +83,17 @@ class SyncWorker(
         Timber.v("SyncWorker::doWork")
         trySetForeground(getForegroundInfo())
 
+        // Background work cannot prompt: fail fast with a notification instead of a LAN timeout.
+        val requestedEndpoint = inputData.getString(ENDPOINT_KEY)
+        if (Prefs.isCustomSyncEnabled && Permissions.isLocalNetworkSyncBlocked(applicationContext, requestedEndpoint)) {
+            Timber.w("SyncWorker: LAN sync blocked without ACCESS_LOCAL_NETWORK")
+            notify {
+                setContentTitle(applicationContext.getString(R.string.sync_error))
+                setContentText(applicationContext.getString(R.string.custom_sync_local_network_denied, requestedEndpoint ?: ""))
+            }
+            return Result.failure()
+        }
+
         val hkey =
             inputData.getString(HKEY_KEY)
                 ?: return Result.failure()

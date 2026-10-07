@@ -30,10 +30,18 @@ import com.ichi2.compat.PackageInfoFlagsCompat
 import com.ichi2.utils.Permissions.MANAGE_EXTERNAL_STORAGE
 import com.ichi2.utils.Permissions.arePermissionsDefinedInManifest
 import com.ichi2.utils.Permissions.isExternalStorageManager
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import timber.log.Timber
 
 object Permissions {
     const val MANAGE_EXTERNAL_STORAGE = "android.permission.MANAGE_EXTERNAL_STORAGE"
+
+    /**
+     * Runtime permission gating LAN access on Android 17+.
+     * Declared in `AndroidManifest.xml`; enforced only for `targetSdk >= 37`.
+     * String literal (not `Manifest.permission`) so checks compile/run on older SDKs.
+     */
+    const val ACCESS_LOCAL_NETWORK = "android.permission.ACCESS_LOCAL_NETWORK"
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     val tiramisuPhotosAndVideosPermissions =
@@ -192,4 +200,77 @@ object Permissions {
     fun canPostNotifications(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+
+    /**
+     * Whether the OS enforces [ACCESS_LOCAL_NETWORK] (Android 17 / API 37+, i.e. `CINNAMON_BUN`).
+     * Below 37, `INTERNET` implicitly grants LAN access.
+     */
+    fun requiresLocalNetworkPermission(): Boolean = Build.VERSION.SDK_INT >= 37
+
+    fun hasLocalNetworkPermission(context: Context): Boolean =
+        !requiresLocalNetworkPermission() || hasPermission(context, ACCESS_LOCAL_NETWORK)
+
+    /**
+     * Whether [url] points at a LAN destination that Android 17 gates behind
+     * [ACCESS_LOCAL_NETWORK]. Public hosts and loopback return false.
+     */
+    fun isLocalNetworkUrl(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val host = url.toHttpUrlOrNull()?.host?.lowercase() ?: return false
+        if (host == "localhost" || host == "127.0.0.1" || host == "::1") return false
+        if (host.startsWith("127.")) return false
+        if (
+            host.endsWith(".local") ||
+            host.endsWith(".lan") ||
+            host.endsWith(".home") ||
+            host.endsWith(".internal")
+        ) {
+            return true
+        }
+        if (!host.contains(".") && !host.contains(":")) return true // single-label e.g. http://nas:8080
+        if (isPrivateIpv4(host)) return true
+        // IPv6 link-local / ULA / multicast; ::1 already exempted above
+        if (host.contains(":") &&
+            (
+                host.startsWith("fe80:") ||
+                    host.startsWith("fec0:") ||
+                    host.startsWith("fc") ||
+                    host.startsWith("fd") ||
+                    host.startsWith("ff")
+            )
+        ) {
+            return true
+        }
+        return false
+    }
+
+    private fun isPrivateIpv4(host: String): Boolean {
+        val parts = host.split(".")
+        if (parts.size != 4) return false
+        val octets = parts.map { it.toIntOrNull() ?: return false }
+        if (octets.any { it !in 0..255 }) return false
+        val (a, b) = octets
+        return when {
+            a == 10 -> true
+            a == 172 && b in 16..31 -> true
+            a == 192 && b == 168 -> true
+            a == 169 && b == 254 -> true // link-local
+            a == 100 && b in 64..127 -> true // CGNAT
+            a in 224..239 -> true // multicast
+            host == "255.255.255.255" -> true // broadcast
+            else -> false
+        }
+    }
+
+    /**
+     * Whether a sync to [endpoint] would be blocked for lack of LAN permission.
+     * Callers should additionally ensure custom sync is enabled so AnkiWeb never prompts.
+     */
+    fun isLocalNetworkSyncBlocked(
+        context: Context,
+        endpoint: String?,
+    ): Boolean =
+        requiresLocalNetworkPermission() &&
+            !hasLocalNetworkPermission(context) &&
+            isLocalNetworkUrl(endpoint)
 }
