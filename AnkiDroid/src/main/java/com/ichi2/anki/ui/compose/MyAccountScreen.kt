@@ -119,6 +119,7 @@ fun MyAccountScreen(
     viewModel: MyAccountViewModel,
     onBack: () -> Unit,
     onLoginClick: (String, String) -> Unit,
+    onLocalNetworkPermissionRequest: () -> Unit,
     onResetPasswordClick: () -> Unit,
     onSignUpClick: () -> Unit,
     onPrivacyPolicyClick: () -> Unit,
@@ -134,6 +135,27 @@ fun MyAccountScreen(
     // Update back button callback enabled state based on screen state
     LaunchedEffect(state.screenState) {
         onBackPressedCallback?.isEnabled = state.screenState == MyAccountScreenState.REMOVE_ACCOUNT
+    }
+
+    val localNetworkPermissionDialogState by viewModel.localNetworkPermissionDialogState.collectAsStateWithLifecycle()
+    localNetworkPermissionDialogState?.let { dialogState ->
+        when (dialogState) {
+            is LocalNetworkPermissionDialogState.Rationale ->
+                LocalNetworkPermissionRationaleDialog(
+                    endpoint = dialogState.endpoint,
+                    onContinue = {
+                        viewModel.dismissLocalNetworkPermissionDialog()
+                        onLocalNetworkPermissionRequest()
+                    },
+                    onDismiss = { viewModel.cancelLocalNetworkLogin() },
+                )
+
+            is LocalNetworkPermissionDialogState.PermanentlyDenied ->
+                LocalNetworkPermissionPermanentlyDeniedDialog(
+                    endpoint = dialogState.endpoint,
+                    onDismiss = { viewModel.dismissLocalNetworkPermissionDialog() },
+                )
+        }
     }
 
     when (state.screenState) {

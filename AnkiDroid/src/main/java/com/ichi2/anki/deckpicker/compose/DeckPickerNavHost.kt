@@ -72,6 +72,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CardTemplateEditor
+import com.ichi2.anki.ConflictResolution
 import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
@@ -106,6 +107,9 @@ import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.snackbar.showSnackbar
+import com.ichi2.anki.ui.compose.LocalNetworkPermissionDialogState
+import com.ichi2.anki.ui.compose.LocalNetworkPermissionPermanentlyDeniedDialog
+import com.ichi2.anki.ui.compose.LocalNetworkPermissionRationaleDialog
 import com.ichi2.anki.ui.compose.contribute.ContributeScreen
 import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
@@ -206,6 +210,7 @@ fun DeckPickerNavHost(
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onLoginToAnkiWeb: () -> Unit,
+    onLocalNetworkPermissionRequest: (ConflictResolution?) -> Unit,
     onImport: () -> Unit,
     onExport: () -> Unit,
     onFinish: () -> Unit = {},
@@ -268,6 +273,7 @@ fun DeckPickerNavHost(
                     onShowDialogFragment = onShowDialogFragment,
                     onInvalidateOptionsMenu = onInvalidateOptionsMenu,
                     onLoginToAnkiWeb = onLoginToAnkiWeb,
+                    onLocalNetworkPermissionRequest = onLocalNetworkPermissionRequest,
                     onImport = onImport,
                     onExport = onExport,
                     lifecycle = lifecycle,
@@ -424,6 +430,7 @@ private fun DeckPickerMainContent(
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
     onLoginToAnkiWeb: () -> Unit,
+    onLocalNetworkPermissionRequest: (ConflictResolution?) -> Unit,
     onImport: () -> Unit,
     onExport: () -> Unit,
     lifecycle: Lifecycle,
@@ -446,6 +453,7 @@ private fun DeckPickerMainContent(
     val showBackupNoSpaceLeftDialog by viewModel.showBackupNoSpaceLeftDialog.collectAsStateWithLifecycle()
     val showAnalyticsOptInDialog by viewModel.showAnalyticsOptInDialog.collectAsStateWithLifecycle()
     val showDeleteDeckConfirmation by viewModel.showDeleteDeckConfirmation.collectAsStateWithLifecycle()
+    val localNetworkPermissionDialogState by viewModel.localNetworkPermissionDialogState.collectAsStateWithLifecycle()
 
     val errorMessageState = viewModel.onError.collectAsStateWithLifecycle(initialValue = null)
     var errorMessage by remember(errorMessageState.value) { mutableStateOf(errorMessageState.value) }
@@ -454,6 +462,26 @@ private fun DeckPickerMainContent(
             errorMessage = message,
             onDismissRequest = { errorMessage = null },
         )
+    }
+
+    localNetworkPermissionDialogState?.let { dialogState ->
+        when (dialogState) {
+            is LocalNetworkPermissionDialogState.Rationale ->
+                LocalNetworkPermissionRationaleDialog(
+                    endpoint = dialogState.endpoint,
+                    onContinue = {
+                        viewModel.dismissLocalNetworkPermissionDialog()
+                        onLocalNetworkPermissionRequest(dialogState.conflict)
+                    },
+                    onDismiss = { viewModel.dismissLocalNetworkPermissionDialog() },
+                )
+
+            is LocalNetworkPermissionDialogState.PermanentlyDenied ->
+                LocalNetworkPermissionPermanentlyDeniedDialog(
+                    endpoint = dialogState.endpoint,
+                    onDismiss = { viewModel.dismissLocalNetworkPermissionDialog() },
+                )
+        }
     }
 
     if (showLoginToAnkiWebDialog) {
