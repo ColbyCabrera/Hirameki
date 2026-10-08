@@ -415,7 +415,7 @@ open class DeckPicker :
             viewModel.isSyncing.value = false
             when {
                 granted -> sync(conflict)
-                ActivityCompat.shouldShowRequestPermissionRationale(this@DeckPicker, Permissions.ACCESS_LOCAL_NETWORK) -> {
+                shouldShowRequestPermissionRationale(Permissions.ACCESS_LOCAL_NETWORK) -> {
                     showSnackbar(getString(R.string.custom_sync_local_network_denied, getEndpoint().displayHost())) {
                         setAction(getString(R.string.open_settings)) {
                             this@DeckPicker.openAppSettingsScreen()

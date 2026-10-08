@@ -22,7 +22,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.dialogs.help.HelpDialog.Companion.newPrivacyPolicyInstance
@@ -66,7 +65,7 @@ open class MyAccount : AnkiActivity() {
             viewModel.onLocalNetworkPermissionResult(granted, ::onLoginSuccessful)
             if (!granted) {
                 val endpoint = localNetworkEndpoint()
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this@MyAccount, Permissions.ACCESS_LOCAL_NETWORK)) {
+                if (shouldShowRequestPermissionRationale(Permissions.ACCESS_LOCAL_NETWORK)) {
                     // MyAccount is Compose-only (no root_layout), so a snackbar would crash DEBUG builds.
                     showThemedToast(
                         this@MyAccount,
