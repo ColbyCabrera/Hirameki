@@ -63,7 +63,7 @@ open class MyAccount : AnkiActivity() {
                     // MyAccount is Compose-only (no root_layout), so a snackbar would crash DEBUG builds.
                     showThemedToast(
                         this@MyAccount,
-                        getString(R.string.custom_sync_local_network_denied, endpoint.displayHost()),
+                        getString(R.string.custom_sync_local_network_login_denied, endpoint.displayHost()),
                         shortLength = false,
                     )
                 } else {
