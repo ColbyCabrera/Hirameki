@@ -14,7 +14,7 @@ package com.ichi2.anki.worker
 
 import androidx.work.CoroutineWorker
 import androidx.work.ListenableWorker
-import com.ichi2.utils.Permissions
+import com.ichi2.anki.isLocalNetworkSyncBlocked
 import timber.log.Timber
 
 /**
@@ -30,7 +30,7 @@ fun CoroutineWorker.failFastIfLocalNetworkBlocked(
     endpoint: String?,
     isCustomSyncEnabled: Boolean,
 ): ListenableWorker.Result? {
-    if (!isCustomSyncEnabled || !Permissions.isLocalNetworkSyncBlocked(applicationContext, endpoint, true)) {
+    if (!isCustomSyncEnabled || !isLocalNetworkSyncBlocked(applicationContext, endpoint, true)) {
         return null
     }
     Timber.w("%s: LAN sync blocked without ACCESS_LOCAL_NETWORK; skipping", workerTag)

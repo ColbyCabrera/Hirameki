@@ -16,10 +16,14 @@
 package com.ichi2.anki.utils.ext
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.TypedArray
+import android.net.Uri
+import android.provider.Settings
 import android.util.AttributeSet
 import androidx.annotation.AttrRes
 import androidx.annotation.StyleRes
+import timber.log.Timber
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -43,4 +47,19 @@ inline fun <T> Context.usingStyledAttributes(
 
     val typedArray = obtainStyledAttributes(set, attrs, defStyleAttr, defStyleRes)
     return typedArray.block().also { typedArray.recycle() }
+}
+
+/**
+ * Opens the app's system Settings page so a permanently-denied permission can be granted.
+ */
+fun Context.openAppSettingsScreen() {
+    Timber.i("launching ACTION_APPLICATION_DETAILS_SETTINGS")
+    val intent =
+        Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null),
+        )
+    if (intent.resolveActivity(packageManager) != null) {
+        startActivity(intent)
+    }
 }
