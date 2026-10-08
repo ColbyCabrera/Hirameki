@@ -22,12 +22,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.dialogs.help.HelpDialog.Companion.newPrivacyPolicyInstance
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ui.compose.MyAccountScreen
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.utils.ext.displayHost
+import com.ichi2.anki.utils.ext.openAppSettingsScreen
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.utils.AdaptionUtil.isUserATestClient
 import com.ichi2.utils.Permissions
@@ -62,12 +65,17 @@ open class MyAccount : AnkiActivity() {
             // The ViewModel owns the deferred login; the Activity only reports the outcome.
             viewModel.onLocalNetworkPermissionResult(granted, ::onLoginSuccessful)
             if (!granted) {
-                // MyAccount is Compose-only (no root_layout), so a snackbar would crash DEBUG builds.
-                showThemedToast(
-                    this@MyAccount,
-                    getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(localNetworkEndpoint())),
-                    shortLength = false,
-                )
+                val endpoint = localNetworkEndpoint()
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this@MyAccount, Permissions.ACCESS_LOCAL_NETWORK)) {
+                    // MyAccount is Compose-only (no root_layout), so a snackbar would crash DEBUG builds.
+                    showThemedToast(
+                        this@MyAccount,
+                        getString(R.string.custom_sync_local_network_denied, endpoint.displayHost()),
+                        shortLength = false,
+                    )
+                } else {
+                    showPermanentlyDeniedLocalNetworkDialog(endpoint)
+                }
             }
         }
 
@@ -104,17 +112,12 @@ open class MyAccount : AnkiActivity() {
                     onLoginClick = { _, password ->
                         // Android 17+: LAN custom servers need ACCESS_LOCAL_NETWORK first.
                         val endpoint = localNetworkEndpoint()
-                        if (Permissions.isLocalNetworkSyncBlocked(this@MyAccount, endpoint, Prefs.isCustomSyncEnabled)) {
+                        if (isLocalNetworkSyncBlocked(this@MyAccount, endpoint, Prefs.isCustomSyncEnabled)) {
                             MaterialAlertDialogBuilder(this@MyAccount).show {
-                                message(text = getString(R.string.custom_sync_local_network_rationale, Permissions.displayHost(endpoint)))
+                                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint.displayHost()))
                                 positiveButton(R.string.dialog_continue) {
-                                    if (Permissions.canRequestLocalNetworkPermission(this@MyAccount)) {
-                                        viewModel.deferLoginForLocalNetworkPermission(password)
-                                        Prefs.localNetworkPermissionRequested = true
-                                        localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
-                                    } else {
-                                        showPermanentlyDeniedLocalNetworkDialog(endpoint)
-                                    }
+                                    viewModel.deferLoginForLocalNetworkPermission(password)
+                                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
                                 }
                                 negativeButton(R.string.dialog_cancel) { /* stay on screen */ }
                             }
@@ -146,9 +149,9 @@ open class MyAccount : AnkiActivity() {
      */
     private fun showPermanentlyDeniedLocalNetworkDialog(endpoint: String?) {
         MaterialAlertDialogBuilder(this@MyAccount).show {
-            message(text = getString(R.string.custom_sync_local_network_permanently_denied, Permissions.displayHost(endpoint)))
+            message(text = getString(R.string.custom_sync_local_network_permanently_denied, endpoint.displayHost()))
             positiveButton(R.string.open_settings) {
-                Permissions.openAppSettingsScreen(this@MyAccount)
+                this@MyAccount.openAppSettingsScreen()
             }
             negativeButton(R.string.dialog_cancel) { /* stay on screen */ }
         }

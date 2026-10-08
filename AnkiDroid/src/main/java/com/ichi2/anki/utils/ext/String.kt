@@ -17,6 +17,7 @@
 
 package com.ichi2.anki.utils.ext
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.text.Normalizer
 import java.util.regex.Pattern
 
@@ -42,3 +43,9 @@ fun String.normalizeForSearch(): String {
     val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
     return DIACRITICAL_MARKS_PATTERN.matcher(normalized).replaceAll("")
 }
+
+/**
+ * Host portion of an endpoint for user-facing messages, or the raw endpoint when it does not
+ * parse. Never leaks userinfo credentials embedded in the URL.
+ */
+fun String?.displayHost(): String = this?.toHttpUrlOrNull()?.host ?: this.orEmpty()

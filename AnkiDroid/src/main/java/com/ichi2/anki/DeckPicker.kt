@@ -134,6 +134,8 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
+import com.ichi2.anki.utils.ext.displayHost
+import com.ichi2.anki.utils.ext.openAppSettingsScreen
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.worker.SyncMediaWorker
 import com.ichi2.anki.worker.SyncWorker
@@ -411,14 +413,16 @@ open class DeckPicker :
             val conflict = pendingSyncConflict
             pendingSyncConflict = null
             viewModel.isSyncing.value = false
-            if (granted) {
-                sync(conflict)
-            } else {
-                showSnackbar(getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(getEndpoint()))) {
-                    setAction(getString(R.string.open_settings)) {
-                        Permissions.openAppSettingsScreen(this@DeckPicker)
+            when {
+                granted -> sync(conflict)
+                ActivityCompat.shouldShowRequestPermissionRationale(this@DeckPicker, Permissions.ACCESS_LOCAL_NETWORK) -> {
+                    showSnackbar(getString(R.string.custom_sync_local_network_denied, getEndpoint().displayHost())) {
+                        setAction(getString(R.string.open_settings)) {
+                            this@DeckPicker.openAppSettingsScreen()
+                        }
                     }
                 }
+                else -> showPermanentlyDeniedLocalNetworkDialog(getEndpoint())
             }
         }
 
@@ -1108,7 +1112,7 @@ open class DeckPicker :
         // Auto-sync never prompts: skip LAN custom endpoints silently when the grant
         // is missing. The user learns about it at the next foreground sync.
         val isBlockedByMissingLocalNetworkPermission =
-            Permissions.isLocalNetworkSyncBlocked(this, getEndpoint(), Prefs.isCustomSyncEnabled)
+            isLocalNetworkSyncBlocked(this, getEndpoint(), Prefs.isCustomSyncEnabled)
 
         when {
             !Prefs.isAutoSyncEnabled -> Timber.d("autoSync: not enabled")
@@ -1654,20 +1658,15 @@ open class DeckPicker :
         }
         // Android 17+: custom sync servers on the LAN need ACCESS_LOCAL_NETWORK.
         val endpoint = getEndpoint()
-        if (Permissions.isLocalNetworkSyncBlocked(this, endpoint, Prefs.isCustomSyncEnabled)) {
+        if (isLocalNetworkSyncBlocked(this, endpoint, Prefs.isCustomSyncEnabled)) {
             // Release the flag while awaiting the user's decision: this dialog is not
             // retained across recreation, and a stuck flag would wedge all later syncs.
             viewModel.isSyncing.value = false
             MaterialAlertDialogBuilder(this).show {
-                message(text = getString(R.string.custom_sync_local_network_rationale, Permissions.displayHost(endpoint)))
+                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint.displayHost()))
                 positiveButton(R.string.dialog_continue) {
-                    if (Permissions.canRequestLocalNetworkPermission(this@DeckPicker)) {
-                        pendingSyncConflict = conflict
-                        Prefs.localNetworkPermissionRequested = true
-                        localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
-                    } else {
-                        showPermanentlyDeniedLocalNetworkDialog(endpoint)
-                    }
+                    pendingSyncConflict = conflict
+                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
                 }
                 negativeButton(R.string.dialog_cancel) { /* flag already released above */ }
             }
@@ -1701,9 +1700,9 @@ open class DeckPicker :
      */
     private fun showPermanentlyDeniedLocalNetworkDialog(endpoint: String?) {
         MaterialAlertDialogBuilder(this).show {
-            message(text = getString(R.string.custom_sync_local_network_permanently_denied, Permissions.displayHost(endpoint)))
+            message(text = getString(R.string.custom_sync_local_network_permanently_denied, endpoint.displayHost()))
             positiveButton(R.string.open_settings) {
-                Permissions.openAppSettingsScreen(this@DeckPicker)
+                this@DeckPicker.openAppSettingsScreen()
             }
             negativeButton(R.string.dialog_cancel) { /* nothing held; just dismiss */ }
         }

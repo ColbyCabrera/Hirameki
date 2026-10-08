@@ -222,9 +222,6 @@ object Prefs {
     val customSyncUri by stringPref(R.string.custom_sync_server_collection_url_key)
     val isCustomSyncEnabled by booleanPref(R.string.custom_sync_server_enabled_key, defaultValue = false)
 
-    /** Whether ACCESS_LOCAL_NETWORK has been requested before (to detect permanent denial). */
-    var localNetworkPermissionRequested by booleanPref(R.string.local_network_permission_requested_key, defaultValue = false)
-
     //endregion
 
     // ************************************** Review Reminders ********************************** //

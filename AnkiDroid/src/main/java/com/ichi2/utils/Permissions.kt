@@ -17,27 +17,19 @@
 package com.ichi2.utils
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.GET_PERMISSIONS
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.provider.Settings
 import androidx.annotation.RequiresApi
-import androidx.annotation.VisibleForTesting
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.ichi2.anki.common.utils.android.isRobolectric
-import com.ichi2.anki.settings.Prefs
 import com.ichi2.compat.CompatHelper.Companion.getPackageInfoCompat
 import com.ichi2.compat.PackageInfoFlagsCompat
 import com.ichi2.utils.Permissions.MANAGE_EXTERNAL_STORAGE
 import com.ichi2.utils.Permissions.arePermissionsDefinedInManifest
 import com.ichi2.utils.Permissions.isExternalStorageManager
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import timber.log.Timber
 
 object Permissions {
@@ -216,117 +208,4 @@ object Permissions {
 
     fun hasLocalNetworkPermission(context: Context): Boolean =
         !isLocalNetworkPermissionEnforced() || hasPermission(context, ACCESS_LOCAL_NETWORK)
-
-    /**
-     * Whether [url] points at a LAN destination that Android 17 gates behind
-     * [ACCESS_LOCAL_NETWORK]. Public hosts and loopback return false.
-     *
-     * Ranges follow the platform's local-network definition
-     * (developer.android.com/privacy-and-security/local-network-definition):
-     * RFC 1918, link-local, CGNAT, multicast/broadcast, IPv6 link-local/ULA.
-     */
-    fun isLocalNetworkUrl(url: String?): Boolean {
-        if (url.isNullOrBlank()) return false
-        val host =
-            url
-                .toHttpUrlOrNull()
-                ?.host
-                ?.lowercase()
-                ?.trimEnd('.') ?: return false
-        if (host == "localhost" || host == "::1") return false
-        if (isLoopbackIpv4(host)) return false
-        if (LOCAL_SUFFIXES.any { host.endsWith(it) }) return true
-        if (!host.contains(".") && !host.contains(":")) return true // single-label e.g. http://nas:8080
-        if (isPrivateIpv4(host)) return true
-        if (isPrivateIpv6(host)) return true
-        // IPv4-mapped IPv6 (e.g. ::ffff:192.168.1.1) reaches IPv4 space: check the tail.
-        if (host.contains(":") && host.contains(".")) {
-            return isPrivateIpv4(host.substringAfterLast(":"))
-        }
-        return false
-    }
-
-    private val LOCAL_SUFFIXES = listOf(".local", ".lan", ".home", ".home.arpa", ".internal")
-
-    /** 127.0.0.0/8 loopback; hostnames merely starting with "127." (e.g. 127.local) don't count. */
-    private fun isLoopbackIpv4(host: String): Boolean {
-        val parts = host.split(".")
-        if (parts.size != 4 || parts[0] != "127") return false
-        return parts.all { it.toUByteOrNull() != null }
-    }
-
-    /** IPv6 link-local fe80::/10, ULA fc00::/7, multicast ff00::/8; ::1 already exempted. */
-    private fun isPrivateIpv6(host: String): Boolean {
-        if (!host.contains(":")) return false
-        val firstHextet = host.split(":").firstOrNull()?.toIntOrNull(16) ?: return false
-        return firstHextet in 0xFE80..0xFEBF || firstHextet in 0xFC00..0xFDFF || host.startsWith("ff")
-    }
-
-    private fun isPrivateIpv4(host: String): Boolean {
-        val parts = host.split(".")
-        if (parts.size != 4) return false
-        val octets = parts.map { it.toUByteOrNull()?.toInt() ?: return false }
-        val (a, b) = octets
-        return when {
-            a == 10 -> true
-            a == 172 && b in 16..31 -> true
-            a == 192 && b == 168 -> true
-            a == 169 && b == 254 -> true // link-local
-            a == 100 && b in 64..127 -> true // CGNAT
-            a in 224..239 -> true // multicast
-            octets.all { it == 255 } -> true // broadcast
-            else -> false
-        }
-    }
-
-    /** Host portion of [endpoint] for user-facing messages (never leaks userinfo credentials). */
-    fun displayHost(endpoint: String?): String = endpoint?.toHttpUrlOrNull()?.host ?: endpoint.orEmpty()
-
-    /**
-     * Whether a custom-sync connection to [endpoint] would be blocked for lack of LAN permission.
-     *
-     * @param isCustomSyncEnabled AnkiWeb sync must never prompt, so callers pass it explicitly
-     * rather than relying on convention.
-     */
-    fun isLocalNetworkSyncBlocked(
-        context: Context,
-        endpoint: String?,
-        isCustomSyncEnabled: Boolean,
-    ): Boolean =
-        shouldBlockLocalNetworkSync(
-            sdkInt = Build.VERSION.SDK_INT,
-            hasGrant = hasPermission(context, ACCESS_LOCAL_NETWORK),
-            isCustomSyncEnabled = isCustomSyncEnabled,
-            endpoint = endpoint,
-        )
-
-    /** Pure decision core of [isLocalNetworkSyncBlocked]; JVM-testable without a Context. */
-    @VisibleForTesting
-    fun shouldBlockLocalNetworkSync(
-        sdkInt: Int,
-        hasGrant: Boolean,
-        isCustomSyncEnabled: Boolean,
-        endpoint: String?,
-    ): Boolean = isCustomSyncEnabled && sdkInt >= Build.VERSION_CODES.CINNAMON_BUN && !hasGrant && isLocalNetworkUrl(endpoint)
-
-    /**
-     * Whether the system permission dialog can still be shown: first request, or a
-     * denial the user can reverse. After "Don't ask again" the request must go to Settings.
-     */
-    fun canRequestLocalNetworkPermission(activity: Activity): Boolean =
-        !Prefs.localNetworkPermissionRequested ||
-            ActivityCompat.shouldShowRequestPermissionRationale(activity, ACCESS_LOCAL_NETWORK)
-
-    /** Opens the app's system Settings page so a permanently-denied permission can be granted. */
-    fun openAppSettingsScreen(activity: Activity) {
-        Timber.i("launching ACTION_APPLICATION_DETAILS_SETTINGS")
-        val intent =
-            Intent(
-                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.fromParts("package", activity.packageName, null),
-            )
-        if (intent.resolveActivity(activity.packageManager) != null) {
-            activity.startActivity(intent)
-        }
-    }
 }
