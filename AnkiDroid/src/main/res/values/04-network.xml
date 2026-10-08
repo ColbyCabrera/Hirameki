@@ -65,5 +65,6 @@
     <!-- Custom sync server on LAN (Android 17+ ACCESS_LOCAL_NETWORK) -->
     <string name="custom_sync_local_network_rationale">Your custom sync server (%1$s) is on your local network. Android 17 requires Local Network access to reach it.</string>
     <string name="custom_sync_local_network_denied">Sync skipped: Local Network access was denied for %1$s. Enable it in system Settings to sync to your server.</string>
+    <string name="custom_sync_local_network_login_denied">Login failed: Local Network access was denied for %1$s. Enable it in system Settings to log in to your server.</string>
     <string name="custom_sync_local_network_permanently_denied">Local Network access was turned off for %1$s, so sync cannot reach your server. Open system Settings to turn it back on.</string>
 </resources>
