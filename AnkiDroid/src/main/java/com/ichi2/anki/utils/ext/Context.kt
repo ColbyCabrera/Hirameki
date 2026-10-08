@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki.utils.ext
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.res.TypedArray
@@ -59,7 +60,9 @@ fun Context.openAppSettingsScreen() {
             Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
             Uri.fromParts("package", packageName, null),
         )
-    if (intent.resolveActivity(packageManager) != null) {
+    try {
         startActivity(intent)
+    } catch (e: ActivityNotFoundException) {
+        Timber.w(e, "Unable to open application Settings")
     }
 }
