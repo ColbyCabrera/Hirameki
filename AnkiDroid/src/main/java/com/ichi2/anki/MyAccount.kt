@@ -56,20 +56,23 @@ open class MyAccount : AnkiActivity() {
             Timber.i("notification permission: %b", it)
         }
 
-    private var pendingLoginPassword: String? = null
+    private var pendingLocalNetworkEndpoint: String? = null
 
     private val localNetworkPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Timber.i("local network permission: %b", granted)
-            val password = pendingLoginPassword
-            pendingLoginPassword = null
-            if (granted && password != null) {
-                attemptLogin(password)
-            } else if (!granted) {
+            // Password lives in the ViewModel so rotation can't drop a granted login.
+            val password = viewModel.pendingLocalNetworkPassword
+            viewModel.pendingLocalNetworkPassword = null
+            val endpoint = pendingLocalNetworkEndpoint
+            pendingLocalNetworkEndpoint = null
+            if (granted) {
+                password?.let(::attemptLogin)
+            } else {
                 // MyAccount is Compose-only (no root_layout), so a snackbar would crash DEBUG builds.
                 showThemedToast(
                     this@MyAccount,
-                    getString(R.string.custom_sync_local_network_denied, getEndpoint() ?: ""),
+                    getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(endpoint)),
                     shortLength = false,
                 )
             }
@@ -109,13 +112,19 @@ open class MyAccount : AnkiActivity() {
                         // Android 17+: LAN custom servers need ACCESS_LOCAL_NETWORK first.
                         // Login always connects to the custom URI (not getEndpoint(),
                         // which prefers a public currentSyncUri), so check that one.
-                        val endpoint = if (Prefs.isCustomSyncEnabled) Prefs.customSyncUri else null
-                        if (Prefs.isCustomSyncEnabled && Permissions.isLocalNetworkSyncBlocked(this@MyAccount, endpoint)) {
+                        val endpoint = Prefs.customSyncUri.takeIf { Prefs.isCustomSyncEnabled }
+                        if (Permissions.isLocalNetworkSyncBlocked(this@MyAccount, endpoint, Prefs.isCustomSyncEnabled)) {
                             MaterialAlertDialogBuilder(this@MyAccount).show {
-                                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint ?: ""))
+                                message(text = getString(R.string.custom_sync_local_network_rationale, Permissions.displayHost(endpoint)))
                                 positiveButton(R.string.dialog_continue) {
-                                    pendingLoginPassword = password
-                                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
+                                    viewModel.pendingLocalNetworkPassword = password
+                                    pendingLocalNetworkEndpoint = endpoint
+                                    if (Permissions.canRequestLocalNetworkPermission(this@MyAccount)) {
+                                        Prefs.localNetworkPermissionRequested = true
+                                        localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
+                                    } else {
+                                        showPermanentlyDeniedLocalNetworkDialog(endpoint)
+                                    }
                                 }
                                 negativeButton(R.string.dialog_cancel) { /* stay on screen */ }
                             }
@@ -141,9 +150,30 @@ open class MyAccount : AnkiActivity() {
         viewModel.logout()
     }
 
-    // Note: pendingLoginPassword is deliberately not saved across recreation:
-    // a plaintext password must never go into a Bundle. If the activity is
-    // recreated mid-request the grant is dropped and the user re-taps login.
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Host only: the pending password stays in the ViewModel and never touches a Bundle.
+        outState.putString("pendingLocalNetworkEndpoint", pendingLocalNetworkEndpoint)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        pendingLocalNetworkEndpoint = savedInstanceState.getString("pendingLocalNetworkEndpoint")
+    }
+
+    /**
+     * The system will no longer show the permission prompt ("Don't ask again"):
+     * deep-link to Settings instead of requesting into the void.
+     */
+    private fun showPermanentlyDeniedLocalNetworkDialog(endpoint: String?) {
+        MaterialAlertDialogBuilder(this@MyAccount).show {
+            message(text = getString(R.string.custom_sync_local_network_permanently_denied, Permissions.displayHost(endpoint)))
+            positiveButton(R.string.open_settings) {
+                Permissions.openAppSettingsScreen(this@MyAccount)
+            }
+            negativeButton(R.string.dialog_cancel) { /* stay on screen */ }
+        }
+    }
 
     private fun attemptLogin(password: String) {
         viewModel.login(password = password, onSuccess = {

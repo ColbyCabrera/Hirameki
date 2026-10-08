@@ -64,13 +64,8 @@ class SyncMediaWorker(
 
         // Background work cannot prompt: fail fast instead of a silent LAN timeout.
         val requestedEndpoint = inputData.getString(ENDPOINT_KEY)
-        if (Prefs.isCustomSyncEnabled && Permissions.isLocalNetworkSyncBlocked(applicationContext, requestedEndpoint)) {
-            Timber.w("SyncMediaWorker: LAN sync blocked without ACCESS_LOCAL_NETWORK")
-            notify {
-                setContentTitle(applicationContext.getString(R.string.sync_error))
-                setContentText(applicationContext.getString(R.string.custom_sync_local_network_not_granted, requestedEndpoint ?: ""))
-            }
-            return Result.failure()
+        failFastIfLocalNetworkBlocked("SyncMediaWorker", requestedEndpoint, Prefs.isCustomSyncEnabled, NotificationId.SYNC_MEDIA)?.let {
+            return it
         }
 
         try {

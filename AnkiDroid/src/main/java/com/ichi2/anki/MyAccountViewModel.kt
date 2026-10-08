@@ -69,6 +69,13 @@ class MyAccountViewModel : ViewModel() {
     private val _state = MutableStateFlow(MyAccountState())
     val state: StateFlow<MyAccountState> = _state.asStateFlow()
 
+    /**
+     * Password captured for a login deferred on a local-network permission grant.
+     * Held here (not the Activity) so rotation can't drop a granted login,
+     * and never written to a Bundle.
+     */
+    var pendingLocalNetworkPassword: String? = null
+
     private var loginJob: Job? = null
 
     init {

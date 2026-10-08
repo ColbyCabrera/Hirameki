@@ -404,17 +404,24 @@ open class DeckPicker :
         }
 
     private var pendingSyncConflict: ConflictResolution? = null
+    private var pendingLocalNetworkEndpoint: String? = null
 
     private val localNetworkPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Timber.i("local network permission: %b", granted)
             val conflict = pendingSyncConflict
+            val endpoint = pendingLocalNetworkEndpoint
             pendingSyncConflict = null
+            pendingLocalNetworkEndpoint = null
             viewModel.isSyncing.value = false
             if (granted) {
                 sync(conflict)
             } else {
-                showSnackbar(getString(R.string.custom_sync_local_network_denied, getEndpoint() ?: ""))
+                showSnackbar(getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(endpoint))) {
+                    setAction(getString(R.string.open_settings)) {
+                        Permissions.openAppSettingsScreen(this@DeckPicker)
+                    }
+                }
             }
         }
 
@@ -1036,7 +1043,8 @@ open class DeckPicker :
             }
         }
         outState.putSerializable("mediaUsnOnConflict", mediaUsnOnConflict)
-        outState.putSerializable("pendingLocalNetworkSyncConflict", pendingSyncConflict)
+        outState.putSerializable("pendingSyncConflict", pendingSyncConflict)
+        outState.putString("pendingLocalNetworkEndpoint", pendingLocalNetworkEndpoint)
     }
 
     public override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -1047,7 +1055,8 @@ open class DeckPicker :
             importColpkgListener = DatabaseRestorationListener(this, path)
         }
         mediaUsnOnConflict = savedInstanceState.getSerializableCompat("mediaUsnOnConflict")
-        pendingSyncConflict = savedInstanceState.getSerializableCompat("pendingLocalNetworkSyncConflict")
+        pendingSyncConflict = savedInstanceState.getSerializableCompat("pendingSyncConflict")
+        pendingLocalNetworkEndpoint = savedInstanceState.getString("pendingLocalNetworkEndpoint")
     }
 
     override fun onPause() {
@@ -1101,9 +1110,15 @@ open class DeckPicker :
         val isBlockedByMeteredConnection =
             !Prefs.allowSyncOnMeteredConnections && isActiveNetworkMetered()
 
+        // Auto-sync never prompts: skip LAN custom endpoints silently when the grant
+        // is missing. The user learns about it at the next foreground sync.
+        val isBlockedByMissingLocalNetworkPermission =
+            Permissions.isLocalNetworkSyncBlocked(this, getEndpoint(), Prefs.isCustomSyncEnabled)
+
         when {
             !Prefs.isAutoSyncEnabled -> Timber.d("autoSync: not enabled")
             isBlockedByMeteredConnection -> Timber.d("autoSync: blocked by metered connection")
+            isBlockedByMissingLocalNetworkPermission -> Timber.d("autoSync: blocked by missing local network permission")
             !NetworkUtils.isOnline -> Timber.d("autoSync: offline")
             !runInBackground && !syncIntervalPassed() -> Timber.d("autoSync: interval not passed")
             !isLoggedIn() -> Timber.d("autoSync: not logged in")
@@ -1643,17 +1658,24 @@ open class DeckPicker :
             handleNewSync(conflict, shouldFetchMedia())
         }
         // Android 17+: custom sync servers on the LAN need ACCESS_LOCAL_NETWORK.
-        // Only custom-sync users ever see this; AnkiWeb sync is unaffected.
         val endpoint = getEndpoint()
-        if (Prefs.isCustomSyncEnabled && Permissions.isLocalNetworkSyncBlocked(this, endpoint)) {
+        if (Permissions.isLocalNetworkSyncBlocked(this, endpoint, Prefs.isCustomSyncEnabled)) {
+            // Release the flag while awaiting the user's decision: this dialog is not
+            // retained across recreation, and a stuck flag would wedge all later syncs.
+            viewModel.isSyncing.value = false
             MaterialAlertDialogBuilder(this).show {
-                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint ?: ""))
+                message(text = getString(R.string.custom_sync_local_network_rationale, Permissions.displayHost(endpoint)))
                 positiveButton(R.string.dialog_continue) {
                     pendingSyncConflict = conflict
-                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
+                    pendingLocalNetworkEndpoint = endpoint
+                    if (Permissions.canRequestLocalNetworkPermission(this@DeckPicker)) {
+                        Prefs.localNetworkPermissionRequested = true
+                        localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
+                    } else {
+                        showPermanentlyDeniedLocalNetworkDialog(endpoint)
+                    }
                 }
-                negativeButton(R.string.dialog_cancel) { viewModel.isSyncing.value = false }
-                setOnCancelListener { viewModel.isSyncing.value = false }
+                negativeButton(R.string.dialog_cancel) { /* flag already released above */ }
             }
             return
         }
@@ -1677,6 +1699,20 @@ open class DeckPicker :
         val myAccount = Intent(this, MyAccount::class.java)
         myAccount.putExtra("notLoggedIn", true)
         loginForSyncLauncher.launch(myAccount)
+    }
+
+    /**
+     * The system will no longer show the permission prompt ("Don't ask again"):
+     * deep-link to Settings instead of requesting into the void.
+     */
+    private fun showPermanentlyDeniedLocalNetworkDialog(endpoint: String?) {
+        MaterialAlertDialogBuilder(this).show {
+            message(text = getString(R.string.custom_sync_local_network_permanently_denied, Permissions.displayHost(endpoint)))
+            positiveButton(R.string.open_settings) {
+                Permissions.openAppSettingsScreen(this@DeckPicker)
+            }
+            negativeButton(R.string.dialog_cancel) { /* nothing held; just dismiss */ }
+        }
     }
 
     // Callback to import a file -- adding it to existing collection
