@@ -26,7 +26,6 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.dialogs.help.HelpDialog.Companion.newPrivacyPolicyInstance
 import com.ichi2.anki.settings.Prefs
-import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.MyAccountScreen
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -67,7 +66,12 @@ open class MyAccount : AnkiActivity() {
             if (granted && password != null) {
                 attemptLogin(password)
             } else if (!granted) {
-                showSnackbar(getString(R.string.custom_sync_local_network_denied, getEndpoint() ?: ""))
+                // MyAccount is Compose-only (no root_layout), so a snackbar would crash DEBUG builds.
+                showThemedToast(
+                    this@MyAccount,
+                    getString(R.string.custom_sync_local_network_denied, getEndpoint() ?: ""),
+                    shortLength = false,
+                )
             }
         }
 
@@ -133,6 +137,16 @@ open class MyAccount : AnkiActivity() {
 
     private fun logout() {
         viewModel.logout()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("pendingLocalNetworkLoginPassword", pendingLoginPassword)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        pendingLoginPassword = savedInstanceState.getString("pendingLocalNetworkLoginPassword")
     }
 
     private fun attemptLogin(password: String) {

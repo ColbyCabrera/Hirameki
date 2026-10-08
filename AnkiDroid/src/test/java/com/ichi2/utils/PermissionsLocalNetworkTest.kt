@@ -48,6 +48,33 @@ class PermissionsLocalNetworkTest {
     fun mdnsAndSingleLabelAreLocalNetwork() {
         assertThat(Permissions.isLocalNetworkUrl("http://myserver.local:8080"), equalTo(true))
         assertThat(Permissions.isLocalNetworkUrl("http://nas.lan"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://router.home"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://router.internal"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://router.home.arpa"), equalTo(true))
         assertThat(Permissions.isLocalNetworkUrl("http://myserver:8080"), equalTo(true))
+    }
+
+    @Test
+    fun loopbackPrefixDoesNotExemptHostnames() {
+        // "127." prefix alone must not exempt non-IP hosts like 127.local
+        assertThat(Permissions.isLocalNetworkUrl("http://127.local:8080"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://127.0.0.1.evil.com"), equalTo(false))
+    }
+
+    @Test
+    fun subnetBoundaries() {
+        // CGNAT 100.64.0.0/10 (Tailscale)
+        assertThat(Permissions.isLocalNetworkUrl("http://100.64.0.1:8080"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://100.127.255.255"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://100.128.0.1:8080"), equalTo(false))
+        // IPv4 link-local 169.254.0.0/16
+        assertThat(Permissions.isLocalNetworkUrl("http://169.254.1.1:8080"), equalTo(true))
+    }
+
+    @Test
+    fun ipv6Handling() {
+        assertThat(Permissions.isLocalNetworkUrl("http://[fe80::1]:8080"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://[fd12:3456:789a::1]:8080"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://[2001:db8::1]:8080"), equalTo(false))
     }
 }
