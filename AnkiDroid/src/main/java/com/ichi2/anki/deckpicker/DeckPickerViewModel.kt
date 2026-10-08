@@ -27,6 +27,7 @@ import com.ichi2.anki.CardBrowser
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.ConflictResolution
 import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.InitialActivity
 import com.ichi2.anki.OnErrorListener
@@ -55,6 +56,7 @@ import com.ichi2.anki.pages.DeckOptionsDestination
 import com.ichi2.anki.performBackupInBackground
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.syncAuth
+import com.ichi2.anki.ui.compose.LocalNetworkPermissionDialogState
 import com.ichi2.anki.undoAndGetSnackbarMessage
 import com.ichi2.anki.utils.Destination
 import kotlinx.coroutines.CancellationException
@@ -128,6 +130,27 @@ class DeckPickerViewModel :
     private val _showDeleteDeckConfirmation = MutableStateFlow<DeleteDeckConfirmationState?>(null)
     val showDeleteDeckConfirmation: StateFlow<DeleteDeckConfirmationState?> =
         _showDeleteDeckConfirmation.asStateFlow()
+
+    private val _localNetworkPermissionDialogState = MutableStateFlow<LocalNetworkPermissionDialogState?>(null)
+    val localNetworkPermissionDialogState: StateFlow<LocalNetworkPermissionDialogState?> =
+        _localNetworkPermissionDialogState.asStateFlow()
+
+    fun showLocalNetworkPermissionRationale(
+        endpoint: String?,
+        conflict: ConflictResolution?,
+    ) {
+        _localNetworkPermissionDialogState.value =
+            LocalNetworkPermissionDialogState.Rationale(endpoint, conflict)
+    }
+
+    fun showLocalNetworkPermissionPermanentlyDenied(endpoint: String?) {
+        _localNetworkPermissionDialogState.value =
+            LocalNetworkPermissionDialogState.PermanentlyDenied(endpoint)
+    }
+
+    fun dismissLocalNetworkPermissionDialog() {
+        _localNetworkPermissionDialogState.value = null
+    }
 
     fun setShowLoginToAnkiWebDialog(show: Boolean) {
         _showLoginToAnkiWebDialog.value = show

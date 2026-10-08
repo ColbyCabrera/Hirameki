@@ -422,7 +422,7 @@ open class DeckPicker :
                         }
                     }
                 }
-                else -> showPermanentlyDeniedLocalNetworkDialog(getEndpoint())
+                else -> viewModel.showLocalNetworkPermissionPermanentlyDenied(getEndpoint())
             }
         }
 
@@ -499,6 +499,10 @@ open class DeckPicker :
                     onShowDialogFragment = { it.show(supportFragmentManager, null) },
                     onInvalidateOptionsMenu = { invalidateOptionsMenu() },
                     onLoginToAnkiWeb = { loginToSyncServer() },
+                    onLocalNetworkPermissionRequest = { conflict ->
+                        pendingSyncConflict = conflict
+                        localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
+                    },
                     onImport = { showImportDialog() },
                     onExport = { exportCollection() },
                     onFinish = { finish() },
@@ -1659,17 +1663,9 @@ open class DeckPicker :
         // Android 17+: custom sync servers on the LAN need ACCESS_LOCAL_NETWORK.
         val endpoint = getEndpoint()
         if (isLocalNetworkSyncBlocked(this, endpoint, Prefs.isCustomSyncEnabled)) {
-            // Release the flag while awaiting the user's decision: this dialog is not
-            // retained across recreation, and a stuck flag would wedge all later syncs.
+            // Rendered from ViewModel state so recreation can't drop the pending sync.
             viewModel.isSyncing.value = false
-            MaterialAlertDialogBuilder(this).show {
-                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint.displayHost()))
-                positiveButton(R.string.dialog_continue) {
-                    pendingSyncConflict = conflict
-                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
-                }
-                negativeButton(R.string.dialog_cancel) { /* flag already released above */ }
-            }
+            viewModel.showLocalNetworkPermissionRationale(endpoint, conflict)
             return
         }
         // Warn the user in case the connection is metered
@@ -1692,20 +1688,6 @@ open class DeckPicker :
         val myAccount = Intent(this, MyAccount::class.java)
         myAccount.putExtra("notLoggedIn", true)
         loginForSyncLauncher.launch(myAccount)
-    }
-
-    /**
-     * The system will no longer show the permission prompt ("Don't ask again"):
-     * deep-link to Settings instead of requesting into the void.
-     */
-    private fun showPermanentlyDeniedLocalNetworkDialog(endpoint: String?) {
-        MaterialAlertDialogBuilder(this).show {
-            message(text = getString(R.string.custom_sync_local_network_permanently_denied, endpoint.displayHost()))
-            positiveButton(R.string.open_settings) {
-                this@DeckPicker.openAppSettingsScreen()
-            }
-            negativeButton(R.string.dialog_cancel) { /* nothing held; just dismiss */ }
-        }
     }
 
     // Callback to import a file -- adding it to existing collection

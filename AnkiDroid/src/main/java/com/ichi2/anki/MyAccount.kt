@@ -23,20 +23,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.dialogs.help.HelpDialog.Companion.newPrivacyPolicyInstance
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ui.compose.MyAccountScreen
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.ext.displayHost
-import com.ichi2.anki.utils.ext.openAppSettingsScreen
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.utils.AdaptionUtil.isUserATestClient
 import com.ichi2.utils.Permissions
-import com.ichi2.utils.message
-import com.ichi2.utils.negativeButton
-import com.ichi2.utils.positiveButton
-import com.ichi2.utils.show
 import timber.log.Timber
 
 /**
@@ -73,7 +67,7 @@ open class MyAccount : AnkiActivity() {
                         shortLength = false,
                     )
                 } else {
-                    showPermanentlyDeniedLocalNetworkDialog(endpoint)
+                    viewModel.showLocalNetworkPermissionPermanentlyDenied(endpoint)
                 }
             }
         }
@@ -112,17 +106,13 @@ open class MyAccount : AnkiActivity() {
                         // Android 17+: LAN custom servers need ACCESS_LOCAL_NETWORK first.
                         val endpoint = localNetworkEndpoint()
                         if (isLocalNetworkSyncBlocked(this@MyAccount, endpoint, Prefs.isCustomSyncEnabled)) {
-                            MaterialAlertDialogBuilder(this@MyAccount).show {
-                                message(text = getString(R.string.custom_sync_local_network_rationale, endpoint.displayHost()))
-                                positiveButton(R.string.dialog_continue) {
-                                    viewModel.deferLoginForLocalNetworkPermission(password)
-                                    localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
-                                }
-                                negativeButton(R.string.dialog_cancel) { /* stay on screen */ }
-                            }
+                            viewModel.showLocalNetworkPermissionRationale(password, endpoint)
                         } else {
                             attemptLogin(password)
                         }
+                    },
+                    onLocalNetworkPermissionRequest = {
+                        localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
                     },
                     onResetPasswordClick = { resetPassword() },
                     onSignUpClick = { openUrl(R.string.register_url) },
@@ -140,20 +130,6 @@ open class MyAccount : AnkiActivity() {
 
     private fun logout() {
         viewModel.logout()
-    }
-
-    /**
-     * The system will no longer show the permission prompt ("Don't ask again"):
-     * deep-link to Settings instead of requesting into the void.
-     */
-    private fun showPermanentlyDeniedLocalNetworkDialog(endpoint: String?) {
-        MaterialAlertDialogBuilder(this@MyAccount).show {
-            message(text = getString(R.string.custom_sync_local_network_permanently_denied, endpoint.displayHost()))
-            positiveButton(R.string.open_settings) {
-                this@MyAccount.openAppSettingsScreen()
-            }
-            negativeButton(R.string.dialog_cancel) { /* stay on screen */ }
-        }
     }
 
     /**

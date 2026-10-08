@@ -20,6 +20,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.settings.Prefs
+import com.ichi2.anki.ui.compose.LocalNetworkPermissionDialogState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -71,6 +72,10 @@ class MyAccountViewModel : ViewModel() {
 
     /** Password for a login awaiting an ACCESS_LOCAL_NETWORK decision; never leaves the ViewModel. */
     private var pendingLocalNetworkPassword: String? = null
+
+    private val _localNetworkPermissionDialogState = MutableStateFlow<LocalNetworkPermissionDialogState?>(null)
+    val localNetworkPermissionDialogState: StateFlow<LocalNetworkPermissionDialogState?> =
+        _localNetworkPermissionDialogState.asStateFlow()
 
     private var loginJob: Job? = null
 
@@ -164,15 +169,37 @@ class MyAccountViewModel : ViewModel() {
     }
 
     /**
-     * Defers [password] until the local-network permission request is answered.
-     * The Activity dispatches this intent instead of mutating ViewModel state directly.
+     * Shows the LAN rationale and remembers the login it defers. The password never leaves the
+     * ViewModel; the dialog is rendered from [localNetworkPermissionDialogState].
      */
-    fun deferLoginForLocalNetworkPermission(password: String) {
+    fun showLocalNetworkPermissionRationale(
+        password: String,
+        endpoint: String?,
+    ) {
         pendingLocalNetworkPassword = password
+        _localNetworkPermissionDialogState.value =
+            LocalNetworkPermissionDialogState.Rationale(endpoint)
+    }
+
+    /** Hides the dialog while the system prompt takes over; a deferred login is kept. */
+    fun dismissLocalNetworkPermissionDialog() {
+        _localNetworkPermissionDialogState.value = null
+    }
+
+    /** The user cancelled the rationale: drop the deferred login too. */
+    fun cancelLocalNetworkLogin() {
+        pendingLocalNetworkPassword = null
+        _localNetworkPermissionDialogState.value = null
+    }
+
+    /** Replaces the rationale with the permanently-denied dialog (Settings deep-link). */
+    fun showLocalNetworkPermissionPermanentlyDenied(endpoint: String?) {
+        _localNetworkPermissionDialogState.value =
+            LocalNetworkPermissionDialogState.PermanentlyDenied(endpoint)
     }
 
     /**
-     * Resumes a login deferred by [deferLoginForLocalNetworkPermission] when [granted],
+     * Resumes a login deferred by [showLocalNetworkPermissionRationale] when [granted],
      * dropping it otherwise. The pending password never leaves the ViewModel.
      */
     fun onLocalNetworkPermissionResult(
