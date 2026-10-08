@@ -404,20 +404,17 @@ open class DeckPicker :
         }
 
     private var pendingSyncConflict: ConflictResolution? = null
-    private var pendingLocalNetworkEndpoint: String? = null
 
     private val localNetworkPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Timber.i("local network permission: %b", granted)
             val conflict = pendingSyncConflict
-            val endpoint = pendingLocalNetworkEndpoint
             pendingSyncConflict = null
-            pendingLocalNetworkEndpoint = null
             viewModel.isSyncing.value = false
             if (granted) {
                 sync(conflict)
             } else {
-                showSnackbar(getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(endpoint))) {
+                showSnackbar(getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(getEndpoint()))) {
                     setAction(getString(R.string.open_settings)) {
                         Permissions.openAppSettingsScreen(this@DeckPicker)
                     }
@@ -1044,7 +1041,6 @@ open class DeckPicker :
         }
         outState.putSerializable("mediaUsnOnConflict", mediaUsnOnConflict)
         outState.putSerializable("pendingSyncConflict", pendingSyncConflict)
-        outState.putString("pendingLocalNetworkEndpoint", pendingLocalNetworkEndpoint)
     }
 
     public override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -1056,7 +1052,6 @@ open class DeckPicker :
         }
         mediaUsnOnConflict = savedInstanceState.getSerializableCompat("mediaUsnOnConflict")
         pendingSyncConflict = savedInstanceState.getSerializableCompat("pendingSyncConflict")
-        pendingLocalNetworkEndpoint = savedInstanceState.getString("pendingLocalNetworkEndpoint")
     }
 
     override fun onPause() {
@@ -1666,9 +1661,8 @@ open class DeckPicker :
             MaterialAlertDialogBuilder(this).show {
                 message(text = getString(R.string.custom_sync_local_network_rationale, Permissions.displayHost(endpoint)))
                 positiveButton(R.string.dialog_continue) {
-                    pendingSyncConflict = conflict
-                    pendingLocalNetworkEndpoint = endpoint
                     if (Permissions.canRequestLocalNetworkPermission(this@DeckPicker)) {
+                        pendingSyncConflict = conflict
                         Prefs.localNetworkPermissionRequested = true
                         localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
                     } else {

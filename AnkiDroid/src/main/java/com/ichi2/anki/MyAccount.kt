@@ -56,23 +56,16 @@ open class MyAccount : AnkiActivity() {
             Timber.i("notification permission: %b", it)
         }
 
-    private var pendingLocalNetworkEndpoint: String? = null
-
     private val localNetworkPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Timber.i("local network permission: %b", granted)
-            // Password lives in the ViewModel so rotation can't drop a granted login.
-            val password = viewModel.pendingLocalNetworkPassword
-            viewModel.pendingLocalNetworkPassword = null
-            val endpoint = pendingLocalNetworkEndpoint
-            pendingLocalNetworkEndpoint = null
-            if (granted) {
-                password?.let(::attemptLogin)
-            } else {
+            // The ViewModel owns the deferred login; the Activity only reports the outcome.
+            viewModel.onLocalNetworkPermissionResult(granted, ::onLoginSuccessful)
+            if (!granted) {
                 // MyAccount is Compose-only (no root_layout), so a snackbar would crash DEBUG builds.
                 showThemedToast(
                     this@MyAccount,
-                    getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(endpoint)),
+                    getString(R.string.custom_sync_local_network_denied, Permissions.displayHost(localNetworkEndpoint())),
                     shortLength = false,
                 )
             }
@@ -110,16 +103,13 @@ open class MyAccount : AnkiActivity() {
                     onBack = { finish() },
                     onLoginClick = { _, password ->
                         // Android 17+: LAN custom servers need ACCESS_LOCAL_NETWORK first.
-                        // Login always connects to the custom URI (not getEndpoint(),
-                        // which prefers a public currentSyncUri), so check that one.
-                        val endpoint = Prefs.customSyncUri.takeIf { Prefs.isCustomSyncEnabled }
+                        val endpoint = localNetworkEndpoint()
                         if (Permissions.isLocalNetworkSyncBlocked(this@MyAccount, endpoint, Prefs.isCustomSyncEnabled)) {
                             MaterialAlertDialogBuilder(this@MyAccount).show {
                                 message(text = getString(R.string.custom_sync_local_network_rationale, Permissions.displayHost(endpoint)))
                                 positiveButton(R.string.dialog_continue) {
-                                    viewModel.pendingLocalNetworkPassword = password
-                                    pendingLocalNetworkEndpoint = endpoint
                                     if (Permissions.canRequestLocalNetworkPermission(this@MyAccount)) {
+                                        viewModel.deferLoginForLocalNetworkPermission(password)
                                         Prefs.localNetworkPermissionRequested = true
                                         localNetworkPermissionLauncher.launch(Permissions.ACCESS_LOCAL_NETWORK)
                                     } else {
@@ -150,17 +140,6 @@ open class MyAccount : AnkiActivity() {
         viewModel.logout()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        // Host only: the pending password stays in the ViewModel and never touches a Bundle.
-        outState.putString("pendingLocalNetworkEndpoint", pendingLocalNetworkEndpoint)
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        pendingLocalNetworkEndpoint = savedInstanceState.getString("pendingLocalNetworkEndpoint")
-    }
-
     /**
      * The system will no longer show the permission prompt ("Don't ask again"):
      * deep-link to Settings instead of requesting into the void.
@@ -175,15 +154,23 @@ open class MyAccount : AnkiActivity() {
         }
     }
 
+    /**
+     * The custom sync endpoint the LAN guard should check. Login always connects to the custom
+     * URI (not [getEndpoint], which prefers a public currentSyncUri), so check that one.
+     */
+    private fun localNetworkEndpoint(): String? = Prefs.customSyncUri.takeIf { Prefs.isCustomSyncEnabled }
+
     private fun attemptLogin(password: String) {
-        viewModel.login(password = password, onSuccess = {
-            setResult(RESULT_OK)
-            checkNotificationPermission(
-                this@MyAccount,
-                notificationPermissionLauncher,
-            )
-            finish()
-        })
+        viewModel.login(password = password, onSuccess = ::onLoginSuccessful)
+    }
+
+    private fun onLoginSuccessful() {
+        setResult(RESULT_OK)
+        checkNotificationPermission(
+            this@MyAccount,
+            notificationPermissionLauncher,
+        )
+        finish()
     }
 
     /**
