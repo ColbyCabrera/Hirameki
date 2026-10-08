@@ -97,6 +97,16 @@ class NetworkAddressClassifierTest {
     }
 
     @Test
+    fun ipv6Multicast() {
+        // ff00::/8, parsed as a hextet range like the other IPv6 checks
+        assertTrue(NetworkAddressClassifier.isLocalNetworkUrl("http://[ff02::1]:8080"))
+        assertTrue(NetworkAddressClassifier.isLocalNetworkUrl("http://[fff0::1]:8080"))
+        // First hextets below ff00 are not multicast: "ff" is 0x00ff and "ff0" is 0x0ff0
+        assertFalse(NetworkAddressClassifier.isLocalNetworkUrl("http://[ff::1]:8080"))
+        assertFalse(NetworkAddressClassifier.isLocalNetworkUrl("http://[ff0::1]:8080"))
+    }
+
+    @Test
     fun trailingDotFqdn() {
         assertTrue(NetworkAddressClassifier.isLocalNetworkUrl("http://nas.local.:8080"))
     }
