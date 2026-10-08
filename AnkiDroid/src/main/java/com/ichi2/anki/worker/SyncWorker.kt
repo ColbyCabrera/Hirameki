@@ -81,13 +81,14 @@ class SyncWorker(
 
     override suspend fun doWork(): Result {
         Timber.v("SyncWorker::doWork")
-        trySetForeground(getForegroundInfo())
 
-        // Background work cannot prompt: fail fast with a notification instead of a LAN timeout.
+        // Background work cannot prompt: skip LAN endpoints silently instead of hitting a timeout.
         val requestedEndpoint = inputData.getString(ENDPOINT_KEY)
-        failFastIfLocalNetworkBlocked("SyncWorker", requestedEndpoint, Prefs.isCustomSyncEnabled, NotificationId.SYNC)?.let {
+        failFastIfLocalNetworkBlocked("SyncWorker", requestedEndpoint, Prefs.isCustomSyncEnabled)?.let {
             return it
         }
+
+        trySetForeground(getForegroundInfo())
 
         val hkey =
             inputData.getString(HKEY_KEY)

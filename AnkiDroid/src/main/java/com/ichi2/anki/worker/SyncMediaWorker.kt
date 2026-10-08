@@ -62,9 +62,9 @@ class SyncMediaWorker(
     override suspend fun doWork(): Result {
         Timber.v("SyncMediaWorker::doWork")
 
-        // Background work cannot prompt: fail fast instead of a silent LAN timeout.
+        // Background work cannot prompt: skip LAN endpoints silently instead of hitting a timeout.
         val requestedEndpoint = inputData.getString(ENDPOINT_KEY)
-        failFastIfLocalNetworkBlocked("SyncMediaWorker", requestedEndpoint, Prefs.isCustomSyncEnabled, NotificationId.SYNC_MEDIA)?.let {
+        failFastIfLocalNetworkBlocked("SyncMediaWorker", requestedEndpoint, Prefs.isCustomSyncEnabled)?.let {
             return it
         }
 

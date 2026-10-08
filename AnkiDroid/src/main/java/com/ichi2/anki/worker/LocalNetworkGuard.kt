@@ -12,48 +12,27 @@
  */
 package com.ichi2.anki.worker
 
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ListenableWorker
-import com.ichi2.anki.Channel
-import com.ichi2.anki.R
 import com.ichi2.utils.Permissions
 import timber.log.Timber
 
 /**
  * Background work cannot prompt for ACCESS_LOCAL_NETWORK. Returns [ListenableWorker.Result.failure]
- * when a LAN custom-endpoint sync would block, so callers fail fast instead of hitting a
- * silent LAN timeout; null when the worker may proceed.
+ * when a LAN custom-endpoint sync would block, so callers skip it instead of hitting a silent LAN
+ * timeout; null when the worker may proceed.
+ *
+ * The block is silent by design: background sync never notifies here, and the foreground sync flow
+ * is what teaches the user to grant the permission.
  */
 fun CoroutineWorker.failFastIfLocalNetworkBlocked(
     workerTag: String,
     endpoint: String?,
     isCustomSyncEnabled: Boolean,
-    notificationId: Int,
 ): ListenableWorker.Result? {
     if (!isCustomSyncEnabled || !Permissions.isLocalNetworkSyncBlocked(applicationContext, endpoint, true)) {
         return null
     }
-    Timber.w("%s: LAN sync blocked without ACCESS_LOCAL_NETWORK", workerTag)
-    if (Permissions.canPostNotifications(applicationContext)) {
-        val text =
-            applicationContext.getString(
-                R.string.custom_sync_local_network_not_granted,
-                Permissions.displayHost(endpoint),
-            )
-        val notification =
-            NotificationCompat
-                .Builder(applicationContext, Channel.SYNC.id)
-                .apply {
-                    priority = NotificationCompat.PRIORITY_LOW
-                    setSmallIcon(R.drawable.ic_star_notify)
-                    setCategory(NotificationCompat.CATEGORY_PROGRESS)
-                    setSilent(true)
-                    setContentTitle(applicationContext.getString(R.string.sync_error))
-                    setContentText(text)
-                }.build()
-        NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
-    }
+    Timber.w("%s: LAN sync blocked without ACCESS_LOCAL_NETWORK; skipping", workerTag)
     return ListenableWorker.Result.failure()
 }
