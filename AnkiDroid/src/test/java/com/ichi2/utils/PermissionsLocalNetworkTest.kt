@@ -74,6 +74,9 @@ class PermissionsLocalNetworkTest {
     @Test
     fun ipv6Handling() {
         assertThat(Permissions.isLocalNetworkUrl("http://[fe80::1]:8080"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://[fe90::1]:8080"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://[febf:ffff::1]:8080"), equalTo(true))
+        assertThat(Permissions.isLocalNetworkUrl("http://[fec0::1]:8080"), equalTo(false))
         assertThat(Permissions.isLocalNetworkUrl("http://[fd12:3456:789a::1]:8080"), equalTo(true))
         assertThat(Permissions.isLocalNetworkUrl("http://[2001:db8::1]:8080"), equalTo(false))
     }

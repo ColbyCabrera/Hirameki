@@ -68,7 +68,7 @@ class SyncMediaWorker(
             Timber.w("SyncMediaWorker: LAN sync blocked without ACCESS_LOCAL_NETWORK")
             notify {
                 setContentTitle(applicationContext.getString(R.string.sync_error))
-                setContentText(applicationContext.getString(R.string.custom_sync_local_network_denied, requestedEndpoint ?: ""))
+                setContentText(applicationContext.getString(R.string.custom_sync_local_network_not_granted, requestedEndpoint ?: ""))
             }
             return Result.failure()
         }
