@@ -30,7 +30,7 @@ fun CoroutineWorker.failFastIfLocalNetworkBlocked(
     endpoint: String?,
     isCustomSyncEnabled: Boolean,
 ): ListenableWorker.Result? {
-    if (!isCustomSyncEnabled || !isLocalNetworkSyncBlocked(applicationContext, endpoint, true)) {
+    if (!isLocalNetworkSyncBlocked(applicationContext, endpoint, isCustomSyncEnabled)) {
         return null
     }
     Timber.w("%s: LAN sync blocked without ACCESS_LOCAL_NETWORK; skipping", workerTag)
