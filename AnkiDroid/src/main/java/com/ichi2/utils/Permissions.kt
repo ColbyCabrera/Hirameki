@@ -230,16 +230,8 @@ object Permissions {
         }
         if (!host.contains(".") && !host.contains(":")) return true // single-label e.g. http://nas:8080
         if (isPrivateIpv4(host)) return true
-        // IPv6 link-local / ULA / multicast; ::1 already exempted above
-        if (host.contains(":") &&
-            (
-                host.startsWith("fe80:") ||
-                    host.startsWith("fec0:") ||
-                    host.startsWith("fc") ||
-                    host.startsWith("fd") ||
-                    host.startsWith("ff")
-            )
-        ) {
+        // IPv6 link-local fe80::/10, ULA fc00::/7, multicast ff00::/8; ::1 already exempted
+        if (host.contains(":") && (isIpv6LinkLocal(host) || isIpv6Ula(host) || host.startsWith("ff"))) {
             return true
         }
         return false
@@ -253,6 +245,18 @@ object Permissions {
             val octet = it.toIntOrNull()
             octet != null && octet in 0..255
         }
+    }
+
+    /** fe80::/10 link-local (fe80..febf first hextet). */
+    private fun isIpv6LinkLocal(host: String): Boolean {
+        val firstHextet = host.split(":").firstOrNull()?.toIntOrNull(16) ?: return false
+        return firstHextet in 0xFE80..0xFEBF
+    }
+
+    /** fc00::/7 unique-local addresses. */
+    private fun isIpv6Ula(host: String): Boolean {
+        val firstHextet = host.split(":").firstOrNull()?.toIntOrNull(16) ?: return false
+        return firstHextet in 0xFC00..0xFDFF
     }
 
     private fun isPrivateIpv4(host: String): Boolean {

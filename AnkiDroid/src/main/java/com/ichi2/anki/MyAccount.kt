@@ -107,7 +107,9 @@ open class MyAccount : AnkiActivity() {
                     onBack = { finish() },
                     onLoginClick = { _, password ->
                         // Android 17+: LAN custom servers need ACCESS_LOCAL_NETWORK first.
-                        val endpoint = getEndpoint()
+                        // Login always connects to the custom URI (not getEndpoint(),
+                        // which prefers a public currentSyncUri), so check that one.
+                        val endpoint = if (Prefs.isCustomSyncEnabled) Prefs.customSyncUri else null
                         if (Prefs.isCustomSyncEnabled && Permissions.isLocalNetworkSyncBlocked(this@MyAccount, endpoint)) {
                             MaterialAlertDialogBuilder(this@MyAccount).show {
                                 message(text = getString(R.string.custom_sync_local_network_rationale, endpoint ?: ""))
@@ -139,15 +141,9 @@ open class MyAccount : AnkiActivity() {
         viewModel.logout()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString("pendingLocalNetworkLoginPassword", pendingLoginPassword)
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        pendingLoginPassword = savedInstanceState.getString("pendingLocalNetworkLoginPassword")
-    }
+    // Note: pendingLoginPassword is deliberately not saved across recreation:
+    // a plaintext password must never go into a Bundle. If the activity is
+    // recreated mid-request the grant is dropped and the user re-taps login.
 
     private fun attemptLogin(password: String) {
         viewModel.login(password = password, onSuccess = {
