@@ -217,12 +217,13 @@ object Permissions {
     fun isLocalNetworkUrl(url: String?): Boolean {
         if (url.isNullOrBlank()) return false
         val host = url.toHttpUrlOrNull()?.host?.lowercase() ?: return false
-        if (host == "localhost" || host == "127.0.0.1" || host == "::1") return false
-        if (host.startsWith("127.")) return false
+        if (host == "localhost" || host == "::1") return false
+        if (isLoopbackIpv4(host)) return false
         if (
             host.endsWith(".local") ||
             host.endsWith(".lan") ||
             host.endsWith(".home") ||
+            host.endsWith(".home.arpa") ||
             host.endsWith(".internal")
         ) {
             return true
@@ -242,6 +243,16 @@ object Permissions {
             return true
         }
         return false
+    }
+
+    /** 127.0.0.0/8 loopback; hostnames merely starting with "127." (e.g. 127.local) don't count. */
+    private fun isLoopbackIpv4(host: String): Boolean {
+        val parts = host.split(".")
+        if (parts.size != 4 || parts[0] != "127") return false
+        return parts.all {
+            val octet = it.toIntOrNull()
+            octet != null && octet in 0..255
+        }
     }
 
     private fun isPrivateIpv4(host: String): Boolean {

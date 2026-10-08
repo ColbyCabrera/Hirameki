@@ -1036,6 +1036,7 @@ open class DeckPicker :
             }
         }
         outState.putSerializable("mediaUsnOnConflict", mediaUsnOnConflict)
+        outState.putSerializable("pendingLocalNetworkSyncConflict", pendingSyncConflict)
     }
 
     public override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -1046,6 +1047,7 @@ open class DeckPicker :
             importColpkgListener = DatabaseRestorationListener(this, path)
         }
         mediaUsnOnConflict = savedInstanceState.getSerializableCompat("mediaUsnOnConflict")
+        pendingSyncConflict = savedInstanceState.getSerializableCompat("pendingLocalNetworkSyncConflict")
     }
 
     override fun onPause() {
