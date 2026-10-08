@@ -69,12 +69,8 @@ class MyAccountViewModel : ViewModel() {
     private val _state = MutableStateFlow(MyAccountState())
     val state: StateFlow<MyAccountState> = _state.asStateFlow()
 
-    /**
-     * Password captured for a login deferred on a local-network permission grant.
-     * Held here (not the Activity) so rotation can't drop a granted login,
-     * and never written to a Bundle.
-     */
-    var pendingLocalNetworkPassword: String? = null
+    /** Password for a login awaiting an ACCESS_LOCAL_NETWORK decision; never leaves the ViewModel. */
+    private var pendingLocalNetworkPassword: String? = null
 
     private var loginJob: Job? = null
 
@@ -165,6 +161,29 @@ class MyAccountViewModel : ViewModel() {
                     loginJob = null
                 }
             }
+    }
+
+    /**
+     * Defers [password] until the local-network permission request is answered.
+     * The Activity dispatches this intent instead of mutating ViewModel state directly.
+     */
+    fun deferLoginForLocalNetworkPermission(password: String) {
+        pendingLocalNetworkPassword = password
+    }
+
+    /**
+     * Resumes a login deferred by [deferLoginForLocalNetworkPermission] when [granted],
+     * dropping it otherwise. The pending password never leaves the ViewModel.
+     */
+    fun onLocalNetworkPermissionResult(
+        granted: Boolean,
+        onLoginSuccess: () -> Unit,
+    ) {
+        val password = pendingLocalNetworkPassword ?: return
+        pendingLocalNetworkPassword = null
+        if (granted) {
+            login(password, onLoginSuccess)
+        }
     }
 
     /**
