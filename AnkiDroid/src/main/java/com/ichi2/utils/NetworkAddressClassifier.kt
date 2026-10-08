@@ -60,7 +60,9 @@ object NetworkAddressClassifier {
     private fun isPrivateIpv6(host: String): Boolean {
         if (!host.contains(":")) return false
         val firstHextet = host.split(":").firstOrNull()?.toIntOrNull(16) ?: return false
-        return firstHextet in 0xFE80..0xFEBF || firstHextet in 0xFC00..0xFDFF || host.startsWith("ff")
+        return firstHextet in 0xFE80..0xFEBF ||
+            firstHextet in 0xFC00..0xFDFF ||
+            firstHextet in 0xFF00..0xFFFF
     }
 
     private fun isPrivateIpv4(host: String): Boolean {
