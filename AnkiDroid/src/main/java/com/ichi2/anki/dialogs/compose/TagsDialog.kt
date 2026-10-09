@@ -42,7 +42,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -113,7 +112,6 @@ private fun isDuplicateTag(
     return normalized in normalizedExisting || normalized in normalizedSelection
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TagsDialog(
     onDismissRequest: () -> Unit,
@@ -151,9 +149,9 @@ fun TagsDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TagsDialogContent(
+    modifier: Modifier = Modifier,
     onDismissRequest: () -> Unit,
     onConfirm: (checked: Set<String>, indeterminate: Set<String>) -> Unit,
     allTags: TagsState,
@@ -167,8 +165,7 @@ fun TagsDialogContent(
     showFilterByDeckToggle: Boolean = false,
     maxSelection: Int? = null,
     onMaxSelectionReached: (() -> Unit)? = null,
-    onAddTag: ((String) -> Unit)? = null,
-    modifier: Modifier = Modifier,
+    onAddTag: ((String) -> Unit)? = null
 ) {
     var checkedTags by remember(initialSelection) { mutableStateOf(initialSelection) }
     var indeterminateTags by remember(initialIndeterminate) { mutableStateOf(initialIndeterminate) }
@@ -452,7 +449,7 @@ private fun TagFilterChip(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchBarRow(
     searchQuery: String,
