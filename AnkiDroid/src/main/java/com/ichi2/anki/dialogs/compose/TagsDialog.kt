@@ -165,7 +165,7 @@ fun TagsDialogContent(
     showFilterByDeckToggle: Boolean = false,
     maxSelection: Int? = null,
     onMaxSelectionReached: (() -> Unit)? = null,
-    onAddTag: ((String) -> Unit)? = null
+    onAddTag: ((String) -> Unit)? = null,
 ) {
     var checkedTags by remember(initialSelection) { mutableStateOf(initialSelection) }
     var indeterminateTags by remember(initialIndeterminate) { mutableStateOf(initialIndeterminate) }
@@ -334,7 +334,6 @@ fun TagsDialogContent(
                                                     isSelected = tag in checkedTags,
                                                     isIndeterminate = tag in indeterminateTags,
                                                     onClick = {
-                                                        val isCurrentlyChecked = tag in checkedTags
                                                         when (tag) {
                                                             in indeterminateTags -> {
                                                                 if (maxSelection != null && checkedTags.size >= maxSelection) {
