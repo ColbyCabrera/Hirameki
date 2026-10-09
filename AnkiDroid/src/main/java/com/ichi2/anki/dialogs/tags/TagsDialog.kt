@@ -23,7 +23,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.BundleCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -50,12 +49,8 @@ import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.title
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 
@@ -218,20 +213,16 @@ class TagsDialog : AnalyticsDialogFragment {
             val showProgressJob =
                 launch {
                     delay(600)
-                    withContext(Dispatchers.Main) {
-                        loadingContainer.visibility = View.VISIBLE
-                        viewModel.initProgress
-                            .flowWithLifecycle(lifecycle)
-                            .onEach { progress ->
-                                progressTextView.text =
-                                    when (progress) {
-                                        TagsDialogViewModel.InitProgress.Processing ->
-                                            getString(R.string.dialog_processing)
-                                        is TagsDialogViewModel.InitProgress.FetchingNoteTags ->
-                                            "${progress.noteNumber}/${progress.noteCount}"
-                                        TagsDialogViewModel.InitProgress.Finished -> null
-                                    }
-                            }.launchIn(lifecycleScope)
+                    loadingContainer.isVisible = true
+                    viewModel.initProgress.collect { progress ->
+                        progressTextView.text =
+                            when (progress) {
+                                TagsDialogViewModel.InitProgress.Processing ->
+                                    getString(R.string.dialog_processing)
+                                is TagsDialogViewModel.InitProgress.FetchingNoteTags ->
+                                    "${progress.noteNumber}/${progress.noteCount}"
+                                TagsDialogViewModel.InitProgress.Finished -> null
+                            }
                     }
                 }
             val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
