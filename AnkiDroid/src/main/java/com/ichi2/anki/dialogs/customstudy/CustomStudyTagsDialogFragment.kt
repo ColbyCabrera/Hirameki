@@ -33,7 +33,7 @@ import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.compose.TagsDialogContent
 import com.ichi2.anki.libanki.DeckId
-import com.ichi2.anki.snackbar.showSnackbar
+import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import java.util.ArrayList
 
@@ -78,8 +78,10 @@ class CustomStudyTagsDialogFragment : DialogFragment() {
                         confirmButtonText = stringResource(R.string.dialog_ok),
                         maxSelection = MAX_TAGS_SELECTION,
                         onMaxSelectionReached = {
-                            showSnackbar(
+                            showThemedToast(
+                                requireContext(),
                                 TR.errors100TagsMax().replace(Regex("\\s+"), " "),
+                                true,
                             )
                         },
                         onAddTag = null,
