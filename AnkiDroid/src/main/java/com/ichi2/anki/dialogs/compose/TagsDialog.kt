@@ -225,7 +225,7 @@ fun TagsDialogContent(
                 }
 
                 is TagsState.Loaded -> {
-                    Column {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         SearchBarRow(
                             searchQuery = searchQuery,
                             onSearchQueryChange = { searchQuery = it },
@@ -239,6 +239,7 @@ fun TagsDialogContent(
                         )
                         HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                         Surface(
+                            modifier = Modifier.weight(1f, fill = false),
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             shape = MaterialTheme.shapes.large,
                         ) {
