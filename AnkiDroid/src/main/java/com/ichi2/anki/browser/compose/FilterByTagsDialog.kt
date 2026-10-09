@@ -48,6 +48,5 @@ fun FilterByTagsDialog(
         title = stringResource(id = R.string.card_browser_search_by_tag),
         confirmButtonText = stringResource(id = R.string.dialog_ok),
         showFilterByDeckToggle = true,
-        onAddTag = { /* Not used in this context */ },
     )
 }
