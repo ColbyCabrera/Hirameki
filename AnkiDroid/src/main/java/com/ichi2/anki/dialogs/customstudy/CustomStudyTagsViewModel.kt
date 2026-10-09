@@ -31,34 +31,36 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class CustomStudyTagsViewModel(
-    savedStateHandle: SavedStateHandle,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : ViewModel() {
-    val deckId: DeckId = checkNotNull(savedStateHandle[ARG_DECK_ID])
+class CustomStudyTagsViewModel
+    @JvmOverloads
+    constructor(
+        savedStateHandle: SavedStateHandle,
+        private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ) : ViewModel() {
+        val deckId: DeckId = checkNotNull(savedStateHandle[ARG_DECK_ID])
 
-    private val _tagsState = MutableStateFlow<TagsState>(TagsState.Loading)
-    val tagsState: StateFlow<TagsState> = _tagsState.asStateFlow()
+        private val _tagsState = MutableStateFlow<TagsState>(TagsState.Loading)
+        val tagsState: StateFlow<TagsState> = _tagsState.asStateFlow()
 
-    init {
-        loadDeckTags()
-    }
+        init {
+            loadDeckTags()
+        }
 
-    fun loadDeckTags() {
-        viewModelScope.launch(ioDispatcher) {
-            _tagsState.value = TagsState.Loading
-            val tags =
-                try {
-                    val defaults = withCol { sched.customStudyDefaults(deckId) }
-                    defaults.tagsList
-                        .map { it.name }
-                        .filter { it.isNotBlank() && it != "tags" }
-                        .sorted()
-                } catch (e: Exception) {
-                    Timber.e(e, "Failed to load custom study tags for deck %d", deckId)
-                    emptyList()
-                }
-            _tagsState.value = TagsState.Loaded(tags)
+        fun loadDeckTags() {
+            viewModelScope.launch(ioDispatcher) {
+                _tagsState.value = TagsState.Loading
+                val tags =
+                    try {
+                        val defaults = withCol { sched.customStudyDefaults(deckId) }
+                        defaults.tagsList
+                            .map { it.name }
+                            .filter { it.isNotBlank() && it != "tags" }
+                            .sorted()
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to load custom study tags for deck %d", deckId)
+                        emptyList()
+                    }
+                _tagsState.value = TagsState.Loaded(tags)
+            }
         }
     }
-}
