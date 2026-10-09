@@ -45,7 +45,6 @@ import anki.scheduler.CustomStudyDefaultsResponse
 import anki.scheduler.CustomStudyRequest.Cram.CramKind
 import anki.scheduler.copy
 import anki.scheduler.customStudyRequest
-import anki.search.SearchNode
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
@@ -59,9 +58,10 @@ import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.ContextMenuOption.ST
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.ContextMenuOption.STUDY_PREVIEW
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.ContextMenuOption.STUDY_TAGS
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog.CustomStudyDefaults.Companion.toDomainModel
-import com.ichi2.anki.dialogs.tags.TagsDialog
-import com.ichi2.anki.dialogs.tags.TagsDialogListener.Companion.ON_SELECTED_TAGS_KEY
-import com.ichi2.anki.dialogs.tags.TagsDialogListener.Companion.ON_SELECTED_TAGS__SELECTED_TAGS
+import com.ichi2.anki.dialogs.customstudy.CustomStudyTagsDialogFragment.Companion.EXTRA_CARDS_AMOUNT
+import com.ichi2.anki.dialogs.customstudy.CustomStudyTagsDialogFragment.Companion.EXTRA_CRAM_KIND
+import com.ichi2.anki.dialogs.customstudy.CustomStudyTagsDialogFragment.Companion.EXTRA_SELECTED_TAGS
+import com.ichi2.anki.dialogs.customstudy.CustomStudyTagsDialogFragment.Companion.REQUEST_KEY
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.Deck
 import com.ichi2.anki.libanki.DeckId
@@ -102,7 +102,7 @@ import timber.log.Timber
  *    * Example: changing the number of new cards
  *
  * Note: when studying by tags the input dialog will also display a state selector and on user
- * action will show one extra dialog(for actual tag selection, see [TagLimitFragment])
+ * action will show one extra dialog(for actual tag selection, see [CustomStudyTagsDialogFragment])
  *
  * ## Nomenclature
  * Filtered decks were previously known as 'dynamic' decks, and before that: 'cram' decks
@@ -116,7 +116,7 @@ import timber.log.Timber
  * * [https://github.com/ankitects/anki/blob/main/qt/aqt/customstudy.py](https://github.com/ankitects/anki/blob/main/qt/aqt/customstudy.py)
  * * [https://github.com/ankitects/anki/blob/main/qt/aqt/taglimit](https://github.com/ankitects/anki/blob/main/qt/aqt/taglimit.py)
  *
- * @see TagLimitFragment
+ * @see CustomStudyTagsDialogFragment
  */
 @NeedsTest("deferredDefaults")
 class CustomStudyDialog : AnalyticsDialogFragment() {
@@ -144,13 +144,14 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        parentFragmentManager.setFragmentResultListener(ON_SELECTED_TAGS_KEY, this) { _, bundle ->
-            val tagsToInclude = bundle.getStringArrayList(ON_SELECTED_TAGS__SELECTED_TAGS) ?: emptyList<String>()
-            val option = selectedSubDialog ?: return@setFragmentResultListener
-            if (selectedStatePosition == AdapterView.INVALID_POSITION) return@setFragmentResultListener
-            val kind = CustomStudyCardState.entries[selectedStatePosition].kind
-            val cardsAmount = userInputValue ?: 100 // the default value
-            launchCustomStudy(option, cardsAmount, kind, tagsToInclude, emptyList())
+        parentFragmentManager.setFragmentResultListener(REQUEST_KEY, this) { _, bundle ->
+            val tagsToInclude =
+                bundle.getStringArrayList(EXTRA_SELECTED_TAGS) ?: return@setFragmentResultListener
+            val cardsAmount = bundle.getInt(EXTRA_CARDS_AMOUNT, 100)
+            val cramKindName =
+                bundle.getString(EXTRA_CRAM_KIND) ?: CramKind.CRAM_KIND_NEW.name
+            val kind = CramKind.valueOf(cramKindName)
+            launchCustomStudy(ContextMenuOption.STUDY_TAGS, cardsAmount, kind, tagsToInclude, emptyList())
         }
     }
 
@@ -366,27 +367,14 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
                         return@setOnClickListener
                     }
                 if (contextMenuOption == STUDY_TAGS) {
-                    // mark allowSubmit as true because, if the user cancels TagLimitFragment, when
-                    // we come back we wouldn't be able to trigger again TagLimitFragment
                     allowSubmit = true
-                    launchCatchingTask {
-                        val nids =
-                            withCol {
-                                val currentDeckname = decks.name(dialogDeckId)
-                                val search = SearchNode.newBuilder().setDeck(currentDeckname).build()
-                                val query = buildSearchString(search)
-                                findNotes(query)
-                            }
-                        if (isAdded) {
-                            val tagsDialog =
-                                TagsDialog().withArguments(
-                                    requireContext(),
-                                    TagsDialog.DialogType.CUSTOM_STUDY,
-                                    nids,
-                                )
-                            tagsDialog.show(parentFragmentManager, "TagsDialog")
+                    val kind =
+                        if (selectedStatePosition != AdapterView.INVALID_POSITION) {
+                            CustomStudyCardState.entries[selectedStatePosition].kind
+                        } else {
+                            CramKind.CRAM_KIND_NEW
                         }
-                    }
+                    CustomStudyTagsDialogFragment.show(parentFragmentManager, dialogDeckId, n, kind)
                     return@setOnClickListener
                 }
                 launchCustomStudy(contextMenuOption, n)

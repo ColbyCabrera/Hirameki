@@ -101,8 +101,6 @@ import com.ichi2.anki.cardviewer.handledGamepadKeyUp
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.dialogs.TtsPlaybackErrorDialog
 import com.ichi2.anki.dialogs.TtsVoicesDialogFragment
-import com.ichi2.anki.dialogs.tags.TagsDialogFactory
-import com.ichi2.anki.dialogs.tags.TagsDialogListener
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Collection
@@ -111,7 +109,6 @@ import com.ichi2.anki.libanki.Decks
 import com.ichi2.anki.libanki.SoundOrVideoTag
 import com.ichi2.anki.libanki.TTSTag
 import com.ichi2.anki.libanki.TtsPlayer
-import com.ichi2.anki.model.CardStateFilter
 import com.ichi2.anki.multimedia.getAvTag
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.observability.ChangeManager
@@ -167,7 +164,6 @@ import kotlin.math.abs
 abstract class AbstractFlashcardViewer :
     NavigationDrawerActivity(),
     ViewerCommand.CommandProcessor,
-    TagsDialogListener,
     WhiteboardMultiTouchMethods,
     AutomaticallyAnswered,
     OnPageFinishedCallback,
@@ -179,8 +175,6 @@ abstract class AbstractFlashcardViewer :
 
     @VisibleForTesting
     val jsApi by lazy { AnkiDroidJsAPI(this) }
-
-    private var tagsDialogFactory: TagsDialogFactory? = null
 
     /**
      * Variables to hold preferences
@@ -422,7 +416,6 @@ abstract class AbstractFlashcardViewer :
     // ----------------------------------------------------------------------------
     override fun onCreate(savedInstanceState: Bundle?) {
         restorePreferences()
-        tagsDialogFactory = TagsDialogFactory(this).attachToActivity<TagsDialogFactory>(this)
         super.onCreate(savedInstanceState)
         lifecycle.addObserver(automaticAnswer)
 
@@ -2271,22 +2264,6 @@ abstract class AbstractFlashcardViewer :
     // Open function for subclasses to handle tag editing via their ViewModel
     open fun editTags() {
         // Default no-op - Reviewer overrides this to dispatch ViewModel event
-    }
-
-    override fun onSelectedTags(
-        selectedTags: List<String>,
-        indeterminateTags: List<String>,
-        stateFilter: CardStateFilter,
-    ) {
-        launchCatchingTask {
-            val note = withCol { currentCard!!.note(this@withCol) }
-            if (note.tags == selectedTags) return@launchCatchingTask
-
-            withCol { note.setTagsFromStr(this@withCol, selectedTags.joinToString(" ")) }
-            undoableOp { updateNote(note) }
-            // Reload current card to reflect tag changes
-            reloadWebViewContent()
-        }
     }
 
     override fun opExecuted(
