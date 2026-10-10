@@ -602,14 +602,6 @@ open class Reviewer :
         voicePlaybackViewModel.discardRecording()
     }
 
-    override fun closeReviewer(result: Int) {
-        // Stop any pending recording
-        voicePlaybackViewModel.stopAndSaveRecording()
-        // Discard the recording (which deletes the temp file)
-        voicePlaybackViewModel.discardRecording()
-        super.closeReviewer(result)
-    }
-
     override fun opExecuted(
         changes: OpChanges,
         handler: Any?,

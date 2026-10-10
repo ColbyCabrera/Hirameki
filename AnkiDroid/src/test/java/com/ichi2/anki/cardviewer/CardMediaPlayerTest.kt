@@ -39,9 +39,19 @@ import io.mockk.mockkObject
 import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.withContext
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.sameInstance
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.Executor
 
 @RunWith(AndroidJUnit4::class)
 class CardMediaPlayerTest : JvmTest() {
@@ -259,6 +269,106 @@ class CardMediaPlayerTest : JvmTest() {
             ensureOnMediaGroupCompletedCalled()
         }
 
+    @Test
+    fun `playOne hands back the job for that playback alone`() =
+        runSoundPlayerTest {
+            val firstPlaying = CompletableDeferred<Unit>()
+            val secondPlaying = CompletableDeferred<Unit>()
+            coEvery { tagPlayer.play(SoundOrVideoTag("a.mp3"), any()) } coAnswers { firstPlaying.await() }
+            coEvery { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) } coAnswers { secondPlaying.await() }
+
+            val first = requireNotNull(playOne(SoundOrVideoTag("a.mp3")))
+            val second = requireNotNull(playOne(SoundOrVideoTag("b.mp3")))
+
+            // the second replay cancelled the first, so the first tap's own wait is over. awaitIdle() waits
+            // on whatever is playing when it is called, which here is the playback that replaced this one
+            first.join()
+            assertThat("the replaced playback is over", first.isCompleted, equalTo(true))
+            // otherwise the player reports nothing playing while the replay plays on
+            assertThat("the replaced playback does not clear its successor", playAvTagsJob, sameInstance(second))
+            assertThat("the one that replaced it plays on", second.isCompleted, equalTo(false))
+
+            secondPlaying.complete(Unit)
+            second.join()
+        }
+
+    @Test
+    fun `a playback replaced before it ran still stops the one it replaced`() {
+        val threads = ManualDispatcher()
+        runSoundPlayerTest(playbackDispatcher = threads.dispatcher) {
+            coEvery { tagPlayer.play(SoundOrVideoTag("a.mp3"), any()) } coAnswers { awaitCancellation() }
+            coEvery { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) } just runs
+            coEvery { tagPlayer.play(SoundOrVideoTag("c.mp3"), any()) } just runs
+
+            val first = requireNotNull(playOne(SoundOrVideoTag("a.mp3")))
+            threads.runAll()
+            playOne(SoundOrVideoTag("b.mp3"))
+            val last = requireNotNull(playOne(SoundOrVideoTag("c.mp3")))
+            assertThat("both replays wait for a thread", threads.waiting, equalTo(2))
+            // the last replay runs before the second has run at all, as a thread pool may order them. the second then
+            // never stops the first, which keeps the playback lock, so the last has to stop every older playback
+            threads.runNewest()
+            threads.runAll()
+
+            assertThat("the first playback was stopped", first.isCancelled, equalTo(true))
+            coVerify(exactly = 0) { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) }
+            coVerify(exactly = 1) { tagPlayer.play(SoundOrVideoTag("c.mp3"), any()) }
+            assertThat("the last playback played to its end", last.isCompleted, equalTo(true))
+        }
+    }
+
+    @Test
+    fun `stop stops a playback whose replacement has not started`() {
+        val threads = ManualDispatcher()
+        runSoundPlayerTest(playbackDispatcher = threads.dispatcher) {
+            coEvery { tagPlayer.play(SoundOrVideoTag("a.mp3"), any()) } coAnswers { awaitCancellation() }
+            coEvery { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) } just runs
+
+            val first = requireNotNull(playOne(SoundOrVideoTag("a.mp3")))
+            threads.runAll()
+            playOne(SoundOrVideoTag("b.mp3"))
+            // the replay has no thread yet, so it has not stopped the first playback. stopping only the latest one
+            // left the first to play on through its remaining sounds after the reviewer stopped media
+            stop()
+
+            assertThat("the first playback is stopped", first.isCancelled, equalTo(true))
+            threads.runAll()
+            coVerify(exactly = 0) { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) }
+            assertThat("nothing plays", isPlaying, equalTo(false))
+        }
+    }
+
+    @Test
+    fun `a replay starts only once the playback it replaced has let go`() {
+        val threads = ManualDispatcher()
+        runSoundPlayerTest(playbackDispatcher = threads.dispatcher) {
+            val firstLetGo = CompletableDeferred<Unit>()
+            coEvery { tagPlayer.play(SoundOrVideoTag("a.mp3"), any()) } coAnswers {
+                try {
+                    awaitCancellation()
+                } finally {
+                    // still stopping after it was cancelled, as a sound is while the media thread releases it
+                    withContext(NonCancellable) { firstLetGo.await() }
+                }
+            }
+            coEvery { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) } just runs
+
+            val first = requireNotNull(playOne(SoundOrVideoTag("a.mp3")))
+            threads.runAll()
+            val second = requireNotNull(playOne(SoundOrVideoTag("b.mp3")))
+            threads.runAll()
+
+            assertThat("the first playback is stopping", first.isCancelled, equalTo(true))
+            // SoundTagPlayer drives one MediaPlayer, so two playbacks at once would fight over it
+            coVerify(exactly = 0) { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) }
+
+            firstLetGo.complete(Unit)
+            threads.runAll()
+            coVerify(exactly = 1) { tagPlayer.play(SoundOrVideoTag("b.mp3"), any()) }
+            assertThat("the replay played to its end", second.isCompleted, equalTo(true))
+        }
+    }
+
     private fun verifyNoSoundsPlayed() {
         coVerify(exactly = 0) { tagPlayer.play(any(), any()) }
         coVerify(exactly = 0) { ttsPlayer.play(any()) }
@@ -331,6 +441,7 @@ fun CardMediaPlayerTest.runSoundPlayerTest(
     answers: List<AvTag> = emptyList(),
     replayQuestion: Boolean? = null,
     autoplay: Boolean? = null,
+    playbackDispatcher: CoroutineDispatcher = Dispatchers.IO,
     testBody: suspend CardMediaPlayer.() -> Unit,
 ) = runTest {
     val cardMediaPlayer =
@@ -338,9 +449,32 @@ fun CardMediaPlayerTest.runSoundPlayerTest(
             soundTagPlayer = tagPlayer,
             ttsPlayer = CompletableDeferred(ttsPlayer),
             mediaErrorListener = mockk(),
+            playbackDispatcher = playbackDispatcher,
         )
     cardMediaPlayer.setOnMediaGroupCompletedListener(onMediaGroupCompleted)
     assertThat("can play sounds", cardMediaPlayer.isEnabled)
     cardMediaPlayer.setup(questions, answers, replayQuestion, autoplay)
     testBody(cardMediaPlayer)
+}
+
+/**
+ * runs the player's playbacks only when a test says so, one task at a time on the test thread. on Dispatchers.IO the
+ * threads decide which of two waiting playbacks runs first, and whether one has run at all, so a test there can only
+ * hope to reach the order it is about
+ */
+private class ManualDispatcher {
+    private val tasks = ConcurrentLinkedDeque<Runnable>()
+    val dispatcher = Executor { tasks.addLast(it) }.asCoroutineDispatcher()
+    val waiting get() = tasks.size
+
+    /** runs the task dispatched last, ahead of every older one */
+    fun runNewest() = tasks.removeLast().run()
+
+    /** runs tasks oldest first, and the tasks they dispatch, until none is left */
+    fun runAll() {
+        while (true) {
+            val task = tasks.pollFirst() ?: return
+            task.run()
+        }
+    }
 }

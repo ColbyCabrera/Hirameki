@@ -54,6 +54,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
+import com.ichi2.anki.ui.compose.components.MenuExitMotion
 import com.ichi2.anki.ui.compose.components.MorphingCardCount
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
@@ -228,31 +229,33 @@ fun FlagIcon(
                 )
             }
         }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            shape = MaterialTheme.shapes.large,
-        ) {
-            (0..7).forEach { flag ->
-                DropdownMenuItem(
-                    text = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.flag_24px),
-                                contentDescription = null,
-                                tint = flagColors[flag],
-                            )
-                            Text(flagColorNames[flag])
-                        }
-                    },
-                    onClick = {
-                        expanded = false
-                        onSetFlag(flag)
-                    },
-                )
+        MenuExitMotion(expanded = expanded) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                shape = MaterialTheme.shapes.large,
+            ) {
+                (0..7).forEach { flag ->
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.flag_24px),
+                                    contentDescription = null,
+                                    tint = flagColors[flag],
+                                )
+                                Text(flagColorNames[flag])
+                            }
+                        },
+                        onClick = {
+                            expanded = false
+                            onSetFlag(flag)
+                        },
+                    )
+                }
             }
         }
     }

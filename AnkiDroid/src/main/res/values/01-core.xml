@@ -75,6 +75,8 @@ using the + icon.</string>
     <!-- General -->
     <string name="ease_button_easy" comment="In the reviewer, in the answer side. Label of the button that used by the user to state that finding the answer to the question was easy." maxLength="41">Easy</string>
     <string name="show_answer_hint_long_press" comment="In the reviewer, hint is shown when touching the show answer button and the user has the long-press accessibility setting enabled">\'%s\' is enabled</string>
+    <string name="card_view_question_side" comment="In the reviewer with 'Review on a card' enabled: the screen reader label of the card while it shows the question">Card, question side</string>
+    <string name="card_view_answer_side" comment="In the reviewer with 'Review on a card' enabled: the screen reader label of the card once it shows the answer">Card, answer side</string>
 
 
     <!-- flashcard_portrait.xml -->

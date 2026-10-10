@@ -19,9 +19,12 @@ import android.app.Application
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Bundle
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -40,10 +43,10 @@ import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Sound
-import com.ichi2.anki.libanki.SoundOrVideoTag
 import com.ichi2.anki.libanki.Tags
 import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
 import com.ichi2.anki.libanki.TtsPlayer
+import com.ichi2.anki.libanki.Utils
 import com.ichi2.anki.libanki.sched.CurrentQueueState
 import com.ichi2.anki.multimedia.expandSounds
 import com.ichi2.anki.observability.undoableOp
@@ -65,6 +68,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
@@ -109,6 +113,18 @@ data class ReviewerState(
     val mediaError: MediaError? = null,
     val colorizeAnswerButtons: Boolean = false,
     val showAnswerButtonBadges: Boolean = true,
+    /**
+     * Counts finished replay-button taps, successful or not. The card page dims a replay button the
+     * moment it is tapped and restores it whenever this changes. A count rather than an is-playing flag:
+     * state flows drop a flag that turns on and off within one frame, and the button would stay dim.
+     */
+    val replayFinished: Int = 0,
+    /**
+     * The card the rest of this state describes; null before the first card and once the queue is empty.
+     * What android saves is built from this state alone, so a save taken while the next card is loading can
+     * never pair that card's id with the last card's revealed answer and typed text.
+     */
+    val cardId: CardId? = null,
 )
 
 data class AnswerFeedback(
@@ -230,12 +246,31 @@ sealed class ReviewerEffect {
     ) : ReviewerEffect()
 }
 
+/**
+ * whether the backend refused an answer because the reviewer's queue state is out of date, not because
+ * of a real fault. nothing is written then; showing the queue's current top card is the recovery.
+ * the backend has no typed error for this, so it matches the texts from rslib 25.09:
+ * scheduler/answering/mod.rs ("card was modified") and scheduler/queue/mod.rs ("not at top of queue").
+ * a reworded message silently disables the recovery. ReviewerViewModelTest checks both texts against the
+ * real backend; AbstractFlashcardViewerTest only mocks the exception. shared so the compose and legacy
+ * reviewers agree
+ */
+internal fun BackendException.isStaleQueueAnswer(): Boolean {
+    val text = message ?: return false
+    return text.contains("card was modified", ignoreCase = true) ||
+        text.contains("not at top of queue", ignoreCase = true)
+}
+
 class ReviewerViewModel(
     app: Application,
     private val dispatcher: CoroutineDispatcher = ioDispatcher,
+    // outlives process death, unlike the rest of this class (see onScreenState)
+    private val savedState: SavedStateHandle = SavedStateHandle(),
+    // a seam for the bind failure below, which nothing but a test can provoke on demand
+    serverFactory: (PostRequestHandler) -> AnkiServer = { AnkiServer(it) },
 ) : AndroidViewModel(app),
     PostRequestHandler {
-    private val server = AnkiServer(this)
+    private val server = serverFactory(this)
     var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
 
     private val _state =
@@ -354,7 +389,8 @@ class ReviewerViewModel(
 
     /**
      * Enqueues a card action behind the current in-flight action instead of dropping it.
-     * This is used for delete undo so it still runs if a delete-triggered reload is completing.
+     * This is used for delete undo so it still runs if a delete-triggered reload is completing,
+     * and for a rating, which must not be lost to the reveal still finishing (see [rateCard]).
      */
     private fun enqueueCardAction(block: suspend () -> Unit) {
         val currentJob = cardActionJob
@@ -371,9 +407,72 @@ class ReviewerViewModel(
         )
     }
 
+    /**
+     * what was on screen when android last saved this reviewer, until the first load has put it back;
+     * null on a fresh start. volatile: the load clears it on [dispatcher], android saves on the main thread
+     */
+    @Volatile
+    private var pendingRestore: Bundle? = savedState.get<Bundle>(STATE_ON_SCREEN)
+
     init {
-        server.start()
+        // #143: android kills a backgrounded app and rebuilds the reviewer from saved state, but this
+        // class started from scratch: the rebuilt screen showed the front of the queue's first card and
+        // lost a revealed answer and a typed answer. read only when android saves, on the main thread,
+        // so the state flows stay the one source of truth
+        savedState.setSavedStateProvider(STATE_ON_SCREEN) { onScreenState() }
+        ensureServerStarted()
         onEvent(ReviewerEvent.LoadInitialCard)
+    }
+
+    /**
+     * every card is drawn from a page this loopback server hands the webview, so no server means no card.
+     * binding its ephemeral port can still fail (no free port, or the socket is refused), and doing it in the
+     * constructor with nothing catching made that a crash before the reviewer ever appeared. a failure is
+     * reported by [serverBaseUrl] instead, and the next card load retries the bind.
+     */
+    private fun ensureServerStarted(): Boolean {
+        if (server.isAlive) return true
+        return try {
+            server.start()
+            true
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to start the reviewer's AnkiServer")
+            false
+        }
+    }
+
+    /**
+     * the url the card page loads from, or an empty string while the server is down: the flashcard keeps the
+     * last painted card for an empty url rather than loading a port that isn't listening, and the snackbar says
+     * the failure out loud, since the retry the user needs is another card load.
+     */
+    private fun serverBaseUrl(): String {
+        if (ensureServerStarted()) return server.baseUrl()
+        reportServerFailure()
+        return ""
+    }
+
+    /** one message for a card that could not be served, said again wherever the failure blocks an action */
+    private fun reportServerFailure() {
+        val message = getApplication<Application>().getString(R.string.something_wrong)
+        viewModelScope.launch { _effect.emit(ReviewerEffect.ShowSnackbar(message)) }
+    }
+
+    private fun onScreenState(): Bundle {
+        // until the first load has put a restored screen back, the live state is half loaded: no card yet,
+        // or the question side before the answer is revealed again. saving that would lose the restore
+        // if android killed the process a second time, so the restored bundle is saved as it came
+        pendingRestore?.let { return it }
+        // one source, not currentCard beside it: the two are written at different moments of a card load, and
+        // a save landing between them stored the new card's id with the last card's answer and typed text
+        val shown = _state.value
+        val cardId = shown.cardId ?: return Bundle()
+        // typed setters: bundleOf is deprecated in this core-ktx for lacking compile-time type safety
+        return Bundle().apply {
+            putLong(KEY_CARD_ID, cardId)
+            putBoolean(KEY_ANSWER_SHOWN, shown.isAnswerShown)
+            putString(KEY_TYPED_ANSWER, shown.typedAnswer)
+        }
     }
 
     override fun onCleared() {
@@ -434,7 +533,15 @@ class ReviewerViewModel(
             is ReviewerEvent.LoadInitialCard ->
                 launchCardAction {
                     withCol { startTimebox() }
-                    loadCardSuspend()
+                    val restore = pendingRestore
+                    // a restore that reveals the answer plays the back, which cuts off a question autoplay
+                    // just started by the load; the restore plays whichever side it leaves shown instead
+                    loadCardSuspend(autoplayQuestion = restore == null)
+                    if (restore != null) {
+                        // inside the load action: launchCardAction ignores a second action while one runs
+                        restoreOnScreenState(restore)
+                        pendingRestore = null
+                    }
                 }
 
             is ReviewerEvent.OnTypedAnswerChanged -> onTypedAnswerChanged(event.newText)
@@ -560,11 +667,13 @@ class ReviewerViewModel(
             val escapedDeckName = deckName.replace("\"", "\\\"")
             val noteIds = this.findNotes("deck:\"$escapedDeckName\"")
 
-            // Limit to 1000 notes to prevent extremely slow loads for massive decks
+            // one query for the whole deck: building a Note per id cost a backend round trip per note, which is
+            // what the cap was there to survive (it said 1000 and took 10000, so a bigger deck lost tags silently)
             val tagsInDeck = mutableSetOf<String>()
-            for (noteId in noteIds.take(10000)) {
-                val deckNote = this.getNote(noteId)
-                tagsInDeck.addAll(deckNote.tags)
+            this.db.query("SELECT DISTINCT tags FROM notes WHERE id IN ${Utils.ids2str(noteIds)}").use { cursor ->
+                while (cursor.moveToNext()) {
+                    tagsInDeck.addAll(this.tags.split(cursor.getString(0)))
+                }
             }
             _deckTags.value = tagsInDeck
         }
@@ -642,6 +751,8 @@ class ReviewerViewModel(
         cardMediaPlayer.loadCardAvTags(card)
         var queue: CurrentQueueState? = null
         var updatedState: ReviewerState? = null
+        // outside withCol: a card load is also the reviewer's retry of a server that failed to bind
+        val cardBaseUrl = serverBaseUrl()
         withCol {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
@@ -664,7 +775,7 @@ class ReviewerViewModel(
                     questionHtml = processedQuestionHtml,
                     answerHtml = processedAnswerHtml,
                     bodyClass = bodyClassForCardOrd(card.ord),
-                    baseUrl = server.baseUrl(),
+                    baseUrl = cardBaseUrl,
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -675,6 +786,16 @@ class ReviewerViewModel(
                     mediaDirectory = this.media.dir,
                     isFinished = false,
                 )
+        }
+        // the backend grades whichever card leads this queue state, and the reveal labels the answer buttons from it.
+        // a reload keeps the card on screen, which may no longer lead: a due date set from the reviewer moves it out
+        // of the queue, and a learning card can fall due while the note editor is open. paired with that queue, the
+        // card showed another card's intervals and its rating graded that other card unseen; with no queue left, it
+        // could be neither revealed nor rated. so the card that does lead is loaded, as every other load shows it
+        if (queue?.topCard?.id != card.id) {
+            Timber.i("card %d no longer leads the queue after a reload; loading the card that does", card.id)
+            loadCardSuspend()
+            return
         }
         queue?.timeboxReached?.let { _effect.emit(ReviewerEffect.ShowTimeboxReachedDialog(it)) }
         _state.value = requireNotNull(updatedState)
@@ -724,22 +845,40 @@ class ReviewerViewModel(
         side: String,
         index: Int,
     ) {
+        // taken before any suspension, so a sound that ends while this tap is still looking up its tag
+        // cannot count as this tap finishing
+        val generation = ++replayGeneration
         viewModelScope.launch {
-            val card = currentCard ?: return@launch
-            val avTag =
-                withCol {
-                    val renderOutput = card.renderOutput(this)
-                    when (side) {
-                        "q" -> renderOutput.questionAvTags.getOrNull(index)
-                        "a" -> renderOutput.answerAvTags.getOrNull(index)
-                        else -> null
+            try {
+                val card = currentCard ?: return@launch
+                val avTag =
+                    withCol {
+                        val renderOutput = card.renderOutput(this)
+                        when (side) {
+                            "q" -> renderOutput.questionAvTags.getOrNull(index)
+                            "a" -> renderOutput.answerAvTags.getOrNull(index)
+                            else -> null
+                        }
                     }
+                // any tag the player understands, text to speech included: playOne handles both, and
+                // filtering to sound files left tts replay buttons silent
+                if (avTag != null) {
+                    // this playback's own job, not awaitIdle(): that waits on whatever is playing when it is
+                    // called, which a newer tap or the next card's autoplay may already have replaced
+                    cardMediaPlayer.playOne(avTag)?.join()
                 }
-            if (avTag is SoundOrVideoTag) {
-                cardMediaPlayer.playOne(avTag)
+            } finally {
+                // every tap must end in a signal, found tag or not, or its button stays dimmed. a second
+                // tap cancels this playback and starts its own; only the latest may report finishing
+                if (generation == replayGeneration) {
+                    _state.update { it.copy(replayFinished = it.replayFinished + 1) }
+                }
             }
         }
     }
+
+    /** Counts replay-button taps, so an older playback cannot clear a newer one's indicator. */
+    private var replayGeneration = 0
 
     private fun reloadCard() = launchCardAction { reloadCardSuspend() }
 
@@ -755,13 +894,17 @@ class ReviewerViewModel(
             }
         }
 
-    internal suspend fun loadCardSuspend() {
+    /** @param autoplayQuestion false when the caller plays the side it ends up showing (see LoadInitialCard) */
+    internal suspend fun loadCardSuspend(autoplayQuestion: Boolean = true) {
         val cardAndQueueState = getNextCard()
         val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
         if (cardAndQueueState == null) {
             clearPendingJavascriptCommands()
             _state.update {
                 it.copy(
+                    // no card on screen: what android saves follows this state, so the card that was on screen
+                    // before the queue emptied must not be saved as if it still were
+                    cardId = null,
                     isFinished = true,
                     newCount = 0,
                     learnCount = 0,
@@ -781,6 +924,8 @@ class ReviewerViewModel(
         _queueStateFlow.value = queue
         queue.timeboxReached?.let { _effect.emit(ReviewerEffect.ShowTimeboxReachedDialog(it)) }
         cardMediaPlayer.loadCardAvTags(card)
+        // outside withCol: a card load is also the reviewer's retry of a server that failed to bind
+        val cardBaseUrl = serverBaseUrl()
         withCol {
             val note = card.note(this)
             typeAnswer.updateInfo(this, card, getApplication<Application>().resources)
@@ -794,6 +939,8 @@ class ReviewerViewModel(
             _state.update {
                 it.copy(
                     cardDisplayIndex = it.cardDisplayIndex + 1,
+                    // written with the answer and typed text it belongs to, in one update
+                    cardId = card.id,
                     mediaError = null,
                     newCount = queue.counts.new,
                     learnCount = queue.counts.lrn,
@@ -801,7 +948,7 @@ class ReviewerViewModel(
                     questionHtml = processedQuestionHtml,
                     answerHtml = processedAnswerHtml,
                     bodyClass = bodyClassForCardOrd(card.ord),
-                    baseUrl = server.baseUrl(),
+                    baseUrl = cardBaseUrl,
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     nextTimes = List(4) { "" },
@@ -815,46 +962,124 @@ class ReviewerViewModel(
                 )
             }
         }
-        cardMediaPlayer.autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
+        if (autoplayQuestion) cardMediaPlayer.autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
     }
 
     private fun showAnswer() {
+        if (currentCard == null || queueState == null) return
+        launchCardAction { showAnswerSuspend() }
+    }
+
+    private suspend fun showAnswerSuspend() {
         val card = currentCard ?: return
         val queue = queueState ?: return
+        val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
+        withCol {
+            val labels = this.sched.describeNextStates(queue.states)
+            typeAnswer.input = _state.value.typedAnswer
+            val renderOutput = card.renderOutput(this)
+            val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
+            val processedAnswerHtml =
+                processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
 
-        launchCardAction {
-            val showAudioPlayButtons = !CollectionPreferences.getHidePlayAudioButtons()
-            withCol {
-                val labels = this.sched.describeNextStates(queue.states)
-                typeAnswer.input = _state.value.typedAnswer
-                val renderOutput = card.renderOutput(this)
-                val answerHtml = typeAnswer.filterAnswer(renderOutput.answerText)
-                val processedAnswerHtml =
-                    processHtml(answerHtml, renderOutput, this, showAudioPlayButtons)
+            val paddedLabels = (labels + List(4) { "" }).take(4)
 
-                val paddedLabels = (labels + List(4) { "" }).take(4)
-
-                _state.update {
-                    it.copy(
-                        answerHtml = processedAnswerHtml,
-                        isAnswerShown = true,
-                        nextTimes = paddedLabels,
-                    )
-                }
+            _state.update {
+                it.copy(
+                    answerHtml = processedAnswerHtml,
+                    isAnswerShown = true,
+                    nextTimes = paddedLabels,
+                )
             }
-            cardMediaPlayer.autoplayAllForSide(SingleCardSide.BACK.toCardSide())
         }
+        cardMediaPlayer.autoplayAllForSide(SingleCardSide.BACK.toCardSide())
+    }
+
+    /**
+     * puts back the typed answer and revealed side saved for a card, if that card still leads the
+     * queue, then autoplays the side left shown (the load held its question autoplay back). the backend
+     * only accepts an answer for its top card ("not at top of queue"), so a restored reviewer always
+     * shows that card; it is the one that was on screen unless another card, such as a learning card
+     * that fell due, took the lead while the app was away
+     */
+    private suspend fun restoreOnScreenState(saved: Bundle) {
+        // an empty queue: no card shown, nothing to play
+        val card = currentCard ?: return
+        if (saved.containsKey(KEY_CARD_ID) && saved.getLong(KEY_CARD_ID) == card.id) {
+            onTypedAnswerChanged(saved.getString(KEY_TYPED_ANSWER).orEmpty())
+            if (saved.getBoolean(KEY_ANSWER_SHOWN)) {
+                showAnswerSuspend()
+                return
+            }
+        }
+        cardMediaPlayer.autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
     }
 
     private fun rateCard(rating: CardAnswer.Rating) {
-        val queue = queueState ?: return
+        if (queueState == null) return
+        val rated = _state.value
+        // a rating is only meaningful once the answer has been seen. the answer buttons already only
+        // offer ratings after reveal, but a gesture that began on the previous card can land after the
+        // next card loads; grading that card unseen would write a wrong review and a wrong interval
+        if (!rated.isAnswerShown) {
+            Timber.w("ignoring a rating for a card whose answer is not shown")
+            return
+        }
+        // the page every card is drawn on comes from the loopback server, so while that server is down the
+        // webview shows nothing at all, or still the card before it (Flashcard keeps the last paint for an
+        // empty base url). rating then would write a review for a card the user never saw, which is worse
+        // than refusing the tap; the load's snackbar is said again so the tap does not look accepted
+        if (rated.baseUrl.isEmpty()) {
+            Timber.w("ignoring a rating for a card whose page was never served")
+            reportServerFailure()
+            return
+        }
 
-        launchCardAction {
+        // queued, not dropped: the answer is up as soon as the reveal publishes it, while the reveal's card
+        // action is still finishing, and the card view arms grading from that state. launchCardAction threw
+        // away a rating made in that window without a word: the card flew into its corner, nothing was
+        // recorded, and the same card came back seconds later
+        enqueueCardAction {
+            val shown = _state.value
+            val queue = queueState
+            // re-checked once the action ahead is done, which may have changed the card: a second tap on a card
+            // already graded would otherwise grade the next one unseen
+            if (queue == null ||
+                shown.cardDisplayIndex != rated.cardDisplayIndex ||
+                shown.cardId != rated.cardId ||
+                !shown.isAnswerShown ||
+                shown.baseUrl.isEmpty()
+            ) {
+                Timber.w("ignoring a rating for card %d: the card on screen changed before it was recorded", rated.cardId)
+                return@enqueueCardAction
+            }
+            // the answer grades the queue's top card, not the card on screen, and the two can differ with every check
+            // above still passing: a load run outside card actions (Reviewer.updateCurrentCard, which the screen runs
+            // after a collection op it did not run itself) stores the next card's queue before it publishes that
+            // card. that rating would grade a card the user never saw; nothing is recorded, and the card that leads
+            // is shown, as for a stale queue below, so the card that would be graded is on screen before any rating
+            if (queue.topCard.id != rated.cardId) {
+                Timber.w("ignoring a rating for card %d: card %d leads the queue; showing it", rated.cardId, queue.topCard.id)
+                loadCardSuspend()
+                return@enqueueCardAction
+            }
             var wasLeech = false
-            withCol {
-                this.sched.answerCard(queue, rating).also {
-                    wasLeech = this.sched.stateIsLeech(queue.states.again)
+            try {
+                withCol {
+                    this.sched.answerCard(queue, rating).also {
+                        wasLeech = this.sched.stateIsLeech(queue.states.again)
+                    }
                 }
+            } catch (e: BackendException) {
+                if (!e.isStaleQueueAnswer()) throw e
+                // #143: the queue state was read before the app sat in the background. past the day
+                // cutoff the backend recomputes the card's state and refuses the answer ("card was
+                // modified"); a rebuilt queue can also lead with another card ("not at top of queue").
+                // uncaught, this crashed the app and android closed the reviewer. nothing was
+                // recorded, so show the card that now leads the queue
+                Timber.w(e, "answer refused for a stale queue; reloading")
+                loadCardSuspend()
+                return@enqueueCardAction
             }
 
             if (rating == CardAnswer.Rating.AGAIN && wasLeech) {
@@ -962,12 +1187,17 @@ class ReviewerViewModel(
     }
 
     companion object {
+        private const val STATE_ON_SCREEN = "reviewer_on_screen"
+        private const val KEY_CARD_ID = "card_id"
+        private const val KEY_ANSWER_SHOWN = "answer_shown"
+        private const val KEY_TYPED_ANSWER = "typed_answer"
+
         fun factory(dispatcher: CoroutineDispatcher = ioDispatcher): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     val application =
                         checkNotNull(this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
-                    ReviewerViewModel(application, dispatcher)
+                    ReviewerViewModel(application, dispatcher, createSavedStateHandle())
                 }
             }
     }

@@ -71,6 +71,25 @@
             android:title="@string/more_options_in_top_app_bar"
             android:summary="@string/more_options_in_top_app_bar_summ" />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/card_view_category">
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/card_view_reviewer_key"
+            android:title="@string/card_view_reviewer"
+            android:summary="@string/card_view_reviewer_summ" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="@string/card_view_reviewer_key"
+            android:key="@string/card_tap_to_flip_key"
+            android:title="@string/card_tap_to_flip"
+            android:summary="@string/card_tap_to_flip_summ" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:dependency="@string/card_view_reviewer_key"
+            android:key="@string/card_drag_to_grade_key"
+            android:title="@string/card_drag_to_grade"
+            android:summary="@string/card_drag_to_grade_summ" />
+    </PreferenceCategory>
     <PreferenceCategory android:title="@string/reviewer_css_styling" android:key="@string/reviewer_css_category">
         <ListPreference
             android:defaultValue="all"

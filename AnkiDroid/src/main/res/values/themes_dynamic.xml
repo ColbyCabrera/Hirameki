@@ -3,6 +3,7 @@
     <style name="Theme.Dynamic.Light" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Font -->
         <item name="android:fontFamily">@font/google_sans_family</item>
+        <item name="uiFontFamily">@string/font_fontFamily_regular</item>
         <!-- Android colors -->
         <item name="colorAccent">?attr/colorPrimary</item>
 
@@ -28,7 +29,6 @@
         <item name="actionModeBackground">?attr/colorPrimary</item>
         <!-- Tab layout -->
         <item name="tabLayoutBackgroundColor">?attr/colorPrimary</item>
-        <item name="tabActiveIconColor">?attr/colorOnPrimary</item>
         <!-- Deck list colors and divider -->
         <item name="currentDeckBackground">@drawable/item_background_selected</item>
         <item name="currentDeckBackgroundColor">?attr/colorSecondaryContainer</item>
@@ -138,6 +138,7 @@
     <style name="Theme.Dynamic.Dark" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Font -->
         <item name="android:fontFamily">@font/google_sans_family</item>
+        <item name="uiFontFamily">@string/font_fontFamily_regular</item>
         <!-- Android colors -->
         <item name="colorAccent">?attr/colorPrimary</item>
 
@@ -163,7 +164,6 @@
         <item name="actionModeBackground">?attr/colorSurface</item>
         <!-- Tab layout -->
         <item name="tabLayoutBackgroundColor">?attr/colorSurface</item>
-        <item name="tabActiveIconColor">?attr/colorOnSurface</item>
         <!-- Deck list colors and divider -->
         <item name="currentDeckBackground">@drawable/item_background_selected</item>
         <item name="currentDeckBackgroundColor">?attr/colorSecondaryContainer</item>
