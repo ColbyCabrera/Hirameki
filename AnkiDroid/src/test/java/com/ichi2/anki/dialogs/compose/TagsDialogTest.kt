@@ -19,10 +19,12 @@ package com.ichi2.anki.dialogs.compose
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.R
@@ -34,6 +36,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w1280dp-h1280dp")
@@ -172,6 +175,97 @@ class TagsDialogTest : RobolectricTest() {
             .assertDoesNotExist()
         // Cancel is still available, so the user is never trapped.
         composeTestRule.onNodeWithText(context.getString(R.string.dialog_cancel)).assertIsEnabled()
+    }
+
+    /**
+     * Regression test.
+     *
+     * Guarding only against `TagsState.Error` is not enough: `TagsState.Loading` also leaves
+     * `checkedTags` empty, and an empty include-tag list means "no tag restriction" to the
+     * scheduler. So while the tag query is still in flight the user must not be able to confirm
+     * either, or a quick tap starts an unrestricted study session.
+     */
+    @Test
+    fun confirmationIsBlockedWhileTagsAreStillLoading() {
+        var confirmed = false
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                TagsDialog(
+                    onDismissRequest = {},
+                    onConfirm = { _, _ -> confirmed = true },
+                    allTags = TagsState.Loading,
+                    initialSelection = emptySet(),
+                    title = "Test",
+                    confirmButtonText = "OK",
+                    onAddTag = null,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("OK").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("OK").performClick()
+        assertThat("onConfirm must not fire while tags are loading", confirmed, equalTo(false))
+    }
+
+    /**
+     * The counterpart to the two tests above: once tags have actually loaded, confirming is
+     * allowed again. Guards against "fixing" this by disabling OK permanently.
+     */
+    @Test
+    fun confirmationIsEnabledOnceTagsHaveLoaded() {
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                TagsDialog(
+                    onDismissRequest = {},
+                    onConfirm = { _, _ -> },
+                    allTags = TagsState.Loaded(listOf("tag1")),
+                    initialSelection = emptySet(),
+                    title = "Test",
+                    confirmButtonText = "OK",
+                    onAddTag = null,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("OK").assertIsEnabled()
+    }
+
+    /**
+     * Tag comparison must not vary with the device locale.
+     *
+     * In Turkish and Azerbaijani, the default locale lowercases "I" to a dotless "\u0131". With
+     * `Locale.getDefault()` that made "IPHONE" normalize to something other than "iphone", so the
+     * dialog offered to create a tag that already existed.
+     */
+    @Test
+    fun duplicateTagDetectionIsIndependentOfDeviceLocale() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val addTagDescription = context.getString(R.string.add_tag)
+
+        val originalLocale = Locale.getDefault()
+        Locale.setDefault(Locale.forLanguageTag("tr"))
+        try {
+            composeTestRule.setContent {
+                AnkiDroidTheme {
+                    TagsDialog(
+                        onDismissRequest = {},
+                        onConfirm = { _, _ -> },
+                        allTags = TagsState.Loaded(listOf("IPHONE")),
+                        initialSelection = emptySet(),
+                        title = "Test",
+                        confirmButtonText = "OK",
+                        onAddTag = {},
+                    )
+                }
+            }
+
+            composeTestRule.onNode(hasSetTextAction()).performTextInput("iphone")
+            // No "add tag" chip, because "iphone" is already covered by "IPHONE".
+            composeTestRule.onNodeWithContentDescription(addTagDescription).assertDoesNotExist()
+        } finally {
+            Locale.setDefault(originalLocale)
+        }
     }
 
     @Test
