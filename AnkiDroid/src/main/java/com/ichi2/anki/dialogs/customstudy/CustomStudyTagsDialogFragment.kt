@@ -34,6 +34,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.compose.TagsDialogContent
 import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.DeckId
+import com.ichi2.anki.libanki.withCollapsedWhitespace
 import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import java.util.ArrayList
@@ -46,13 +47,13 @@ import java.util.ArrayList
  * read it.
  */
 internal fun maxTagsMessage(): String {
-    val collapsedWhitespace = TR.errors100TagsMax().replace(Regex("\\s+"), " ")
-    val firstSentenceEnd = collapsedWhitespace.indexOf('.')
+    val collapsed = withCollapsedWhitespace(TR.errors100TagsMax()).trim()
+    val firstSentenceEnd = collapsed.indexOf('.')
     return if (firstSentenceEnd < 0) {
         // the backend text was changed, so show it as-is rather than showing nothing useful
-        collapsedWhitespace
+        collapsed
     } else {
-        collapsedWhitespace.substring(0..firstSentenceEnd)
+        collapsed.substring(0..firstSentenceEnd)
     }
 }
 
