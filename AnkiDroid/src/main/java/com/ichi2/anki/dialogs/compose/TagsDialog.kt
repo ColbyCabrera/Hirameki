@@ -20,6 +20,7 @@
  ****************************************************************************************/
 package com.ichi2.anki.dialogs.compose
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -76,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
+import com.ichi2.anki.libanki.withCollapsedWhitespace
 import java.util.Locale
 
 sealed interface TagsState {
@@ -98,20 +100,16 @@ sealed interface TagsState {
  * Normalizes a tag by trimming whitespace, collapsing internal whitespace,
  * and converting to lowercase for consistent comparison.
  */
+// Tag comparison, not user-facing text: a tag is an identifier, so it must normalize the same
+// way regardless of the device language. Locale.ROOT rather than Locale.getDefault() because
+// Turkish and Azerbaijani lowercase "I" to a dotless "\u0131", which would make "IPHONE" and
+// "iphone" compare unequal and break the duplicate check.
+@SuppressLint("LocaleRootUsage")
 private fun normalizeTag(tag: String): String {
-    // Trim leading/trailing whitespace, split on any whitespace runs, filter out
-    // any empty parts (defensive), then rejoin with single spaces and lowercase
-    // to mirror backend tag splitting and duplicate detection.
-    //
-    // Locale.ROOT, not the device locale: in Turkish and Azerbaijani the default
-    // locale lowercases "I" to a dotless "\u0131", so "IPHONE" and "iphone" would
-    // normalize differently depending on the user's language and the duplicate check
-    // would silently fail. Tag comparison must be locale-independent.
-    return tag
+    // Collapse runs of internal whitespace to a single space and trim, mirroring the
+    // backend's space-separated tag handling.
+    return withCollapsedWhitespace(tag)
         .trim()
-        .split(Regex("\\s+"))
-        .filter { it.isNotEmpty() }
-        .joinToString(" ")
         .lowercase(Locale.ROOT)
 }
 
