@@ -115,7 +115,7 @@ fun DrawingScreen(
     val strokeWidth by viewModel.strokeWidth.collectAsStateWithLifecycle()
 
     // Toolbar state
-    val canUndo by viewModel.canUndo.collectAsStateWithLifecycle(initialValue = false)
+    val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
     val canRedo by viewModel.canRedo.collectAsStateWithLifecycle()
     val brushes by viewModel.brushes.collectAsStateWithLifecycle()
     val activeBrushIndex by viewModel.activeBrushIndex.collectAsStateWithLifecycle()
