@@ -32,6 +32,7 @@ import anki.scheduler.CustomStudyRequest.Cram.CramKind
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.compose.TagsDialogContent
+import com.ichi2.anki.dialogs.compose.TagsState
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -80,15 +81,21 @@ class CustomStudyTagsDialogFragment : DialogFragment() {
                     TagsDialogContent(
                         onDismissRequest = { dismiss() },
                         onConfirm = { checkedTags, _ ->
-                            setFragmentResult(
-                                REQUEST_KEY,
-                                Bundle().apply {
-                                    putStringArrayList(EXTRA_SELECTED_TAGS, ArrayList(checkedTags))
-                                    putInt(EXTRA_CARDS_AMOUNT, cardsAmount)
-                                    putString(EXTRA_CRAM_KIND, cramKind)
-                                },
-                            )
-                            dismiss()
+                            // Last line of defence. A failed tag lookup leaves the selection empty,
+                            // and an empty include-tag list means "no tag restriction" to the
+                            // scheduler, so confirming would study every card in the deck rather
+                            // than the ones the user picked. Treat it as cancelling instead.
+                            if (viewModel.tagsState.value !is TagsState.Error) {
+                                setFragmentResult(
+                                    REQUEST_KEY,
+                                    Bundle().apply {
+                                        putStringArrayList(EXTRA_SELECTED_TAGS, ArrayList(checkedTags))
+                                        putInt(EXTRA_CARDS_AMOUNT, cardsAmount)
+                                        putString(EXTRA_CRAM_KIND, cramKind)
+                                    },
+                                )
+                                dismiss()
+                            }
                         },
                         allTags = tagsState,
                         initialSelection = emptySet(),
@@ -101,6 +108,7 @@ class CustomStudyTagsDialogFragment : DialogFragment() {
                             context?.let { showThemedToast(it, maxTagsMessage(), shortLength = false) }
                         },
                         onAddTag = null,
+                        onRetry = viewModel::retry,
                     )
                 }
             }
