@@ -1889,6 +1889,17 @@
 
     <issue
         id="UnusedResources"
+        message="The resource `R.drawable.ic_select_all_white` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_select_all_white.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
         message="The resource `R.menu.card_browser_multiselect` appears to be unused"
         errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
         errorLine2="^">
@@ -3444,6 +3455,33 @@
             line="79"
             column="5"
             message="Duplicates value in `help_item_ankiweb_terms_and_conditions`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
+    </issue>
+
+    <!-- Pre-existing on `main` (verified against 16cde9d89), unrelated to the tags work:
+         `playMedia` is inferred to require a worker thread because `readCardTts` reads the
+         collection, but it is called from `onOptionsItemSelected` on the main thread. Fixing it
+         properly means moving media playback off the main thread, which is a separate change. -->
+    <issue
+        id="ThreadConstraint"
+        message="Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread"
+        errorLine1="            ViewerCommand.PLAY_MEDIA -> {"
+        errorLine2="            ^">
+        <location
+            file="src/main/java/com/ichi2/anki/AbstractFlashcardViewer.kt"
+            line="1333"
+            column="13"/>
+    </issue>
+
+    <!-- See the AbstractFlashcardViewer entry above: same `playMedia` threading issue. -->
+    <issue
+        id="ThreadConstraint"
+        message="Call must be from @WorkerThread, but super method AnkiActivity.onOptionsItemSelected(…) is allowing @{Main,Ui}Thread"
+        errorLine1="                playMedia(doMediaReplay = true)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/Reviewer.kt"
+            line="432"
+            column="17"/>
     </issue>
 
 </issues>

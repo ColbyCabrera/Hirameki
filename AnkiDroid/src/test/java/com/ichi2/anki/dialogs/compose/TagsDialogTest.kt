@@ -143,7 +143,7 @@ class TagsDialogTest : RobolectricTest() {
         }
 
         composeTestRule
-            .onNodeWithText(context.getString(R.string.tags_dialog_retry))
+            .onNodeWithText(context.getString(R.string.retry))
             .assertIsDisplayed()
             .performClick()
         assertThat(retryCount, equalTo(1))
@@ -168,7 +168,7 @@ class TagsDialogTest : RobolectricTest() {
         }
 
         composeTestRule
-            .onNodeWithText(context.getString(R.string.tags_dialog_retry))
+            .onNodeWithText(context.getString(R.string.retry))
             .assertDoesNotExist()
         // Cancel is still available, so the user is never trapped.
         composeTestRule.onNodeWithText(context.getString(R.string.dialog_cancel)).assertIsEnabled()

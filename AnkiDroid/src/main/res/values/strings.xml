@@ -43,7 +43,6 @@
     <string name="note_editor_tags_list">Tags: %s</string>
     <string name="card_browser_no_tags_found">No tags found.</string>
     <string name="card_browser_load_tags_failed">Could not load tags. Please try again.</string>
-    <string name="tags_dialog_retry">Retry</string>
     <string name="card_browser_filter_tags_by_deck_on_description">Show only tags in deck</string>
     <string name="card_browser_filter_tags_by_deck_off_description">Show all tags</string>
     <string name="intro_title_before_continuing">Welcome to Hirameki!</string>
