@@ -254,7 +254,7 @@ fun TagsDialogContent(
                             )
                             if (onRetry != null) {
                                 TextButton(onClick = onRetry) {
-                                    Text(text = stringResource(R.string.tags_dialog_retry))
+                                    Text(text = stringResource(R.string.retry))
                                 }
                             }
                         }

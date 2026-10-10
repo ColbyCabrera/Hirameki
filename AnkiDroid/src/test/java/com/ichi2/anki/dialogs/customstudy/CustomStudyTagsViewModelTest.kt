@@ -40,7 +40,7 @@ class CustomStudyTagsViewModelTest : JvmTest() {
         runTest {
             val note = addBasicNote()
             note.setTagsFromStr(col, "zebra alpha tags beta")
-            col.updateNote(note)
+            assertThat("the tags were written to the collection", col.updateNote(note).note, equalTo(true))
 
             val dispatcher = UnconfinedTestDispatcher(testScheduler)
             val viewModel =
@@ -80,7 +80,7 @@ class CustomStudyTagsViewModelTest : JvmTest() {
         runTest {
             val note = addBasicNote()
             note.setTagsFromStr(col, "first-tag")
-            col.updateNote(note)
+            assertThat("the tags were written to the collection", col.updateNote(note).note, equalTo(true))
 
             val viewModel =
                 CustomStudyTagsViewModel(
@@ -96,7 +96,7 @@ class CustomStudyTagsViewModelTest : JvmTest() {
                 // answer. StateFlow drops an emission equal to the current value, so re-reading
                 // the same list would be invisible here and would prove nothing.
                 note.setTagsFromStr(col, "second-tag")
-                col.updateNote(note)
+                assertThat("the new tags were written", col.updateNote(note).note, equalTo(true))
 
                 viewModel.retry()
 

@@ -30,12 +30,7 @@
     <string name="CardEditorCards">Cards: %1$s</string>
     <string name="edit_occlusions">Edit Occlusions</string>
 
-    <string name="tag_name">Tag name</string>
-    <string name="add_new_filter_tags">Add/filter tags</string>
     <string name="add_tag" maxLength="28">Add tag</string>
-    <string name="check_all_tags" maxLength="28">Check/uncheck all tags</string>
-    <string name="filter_tags" maxLength="28">Filter tags</string>
-    <string name="no_tags">You haven’t added any tags yet</string>
     <string name="updated_version">Updated to version %s</string>
 
     <!-- Reviewer.kt (Study Screen) -->
@@ -100,7 +95,6 @@
     <string name="flag_purple">Purple</string>
 
     <!-- Custom study options -->
-    <string name="custom_study_loading_tags">Building list of tags&#8230;</string>
     <!-- Study options -->
     <plurals name="studyoptions_buried_count">
         <item quantity="other">+%d buried</item>
@@ -118,7 +112,6 @@
     <string name="saving_facts">Saving note</string>
     <string name="saving_model">Saving note type</string>
     <string name="save" maxLength="28">Save</string>
-    <string name="select">Select</string>
     <string name="field_remapping">%1$s (from “%2$s”)</string>
     <string name="confirm_map_cards_to_nothing">Any cards mapped to nothing will be deleted. If a note has no remaining cards, it will be lost. Are you sure you want to continue?</string>
     <string name="missing_note_type">No note type found</string>
@@ -199,8 +192,6 @@
     <string name="dyn_deck_desc">This is a special deck for studying outside of the normal schedule. Cards will be automatically returned to their original decks after you review them. Deleting this deck from the deck list will return all remaining cards to their original deck.</string>
     <string name="steps_error">Steps must be numbers greater than 0</string>
     <string name="steps_min_error">At least one step is required</string>
-    <string name="tag_editor_add_feedback">Touch “%2$s” to confirm adding “%1$s”</string>
-    <string name="tag_editor_add_feedback_existing">Existing tag “%1$s” selected</string>
     <!-- Time spans -->
 
     <!-- Currently only used if exporting APKG fails -->
@@ -357,7 +348,6 @@
     <string name="file_extract_exceeds_storage_space">File extract exceeds storage space</string>
 
     <!--  Hierarchical Tags  -->
-    <string name="expand_tag">Expand tag \'%s\'</string>
 
     <!-- Manage note types -->
     <string name="field_editor_model_not_available">Failed to access collection. Please try again!</string>
