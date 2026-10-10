@@ -46,7 +46,7 @@ class CustomStudyTagsViewModel
             loadDeckTags()
         }
 
-        fun loadDeckTags() {
+        private fun loadDeckTags() {
             viewModelScope.launch(ioDispatcher) {
                 _tagsState.value = TagsState.Loading
                 val tags =
@@ -54,13 +54,24 @@ class CustomStudyTagsViewModel
                         val defaults = withCol { sched.customStudyDefaults(deckId) }
                         defaults.tagsList
                             .map { it.name }
-                            .filter { it.isNotBlank() && it != "tags" }
+                            .filter { it.isNotBlank() && it != EXCLUDED_TAG_NAME }
                             .sorted()
                     } catch (e: Exception) {
                         Timber.e(e, "Failed to load custom study tags for deck %d", deckId)
-                        emptyList()
+                        // Surface this as an error rather than an empty list: an empty list tells
+                        // the user "this deck has no tags", which is a different and wrong problem.
+                        _tagsState.value = TagsState.Error
+                        return@launch
                     }
                 _tagsState.value = TagsState.Loaded(tags)
             }
+        }
+
+        companion object {
+            /**
+             * The tag "tags" is excluded as it was appearing on every card, likely due to a legacy
+             * data issue or a conflict with an internal representation.
+             */
+            private const val EXCLUDED_TAG_NAME = "tags"
         }
     }

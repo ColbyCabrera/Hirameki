@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -83,6 +84,14 @@ sealed interface TagsState {
     data class Loaded(
         val tags: List<String>,
     ) : TagsState
+
+    /**
+     * The tag list could not be fetched.
+     *
+     * This is deliberately distinct from [Loaded] with an empty list: an empty list means
+     * "this deck genuinely has no tags", while this means "we could not find out".
+     */
+    data object Error : TagsState
 }
 
 /**
@@ -111,6 +120,13 @@ private fun isDuplicateTag(
     val normalizedSelection = selectedTags.map { normalizeTag(it) }
     return normalized in normalizedExisting || normalized in normalizedSelection
 }
+
+/**
+ * How many tag chips go into a single `LazyColumn` item.
+ *
+ * See the usage site for why the list is chunked rather than emitted as one item.
+ */
+private const val TAG_CHUNK_SIZE = 200
 
 @Composable
 fun TagsDialog(
@@ -221,6 +237,20 @@ fun TagsDialogContent(
                     }
                 }
 
+                is TagsState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.card_browser_load_tags_failed),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+
                 is TagsState.Loaded -> {
                     Column(modifier = Modifier.weight(1f, fill = false)) {
                         SearchBarRow(
@@ -289,8 +319,8 @@ fun TagsDialogContent(
                                         .padding(horizontal = 16.dp),
                                 contentPadding = PaddingValues(vertical = 16.dp),
                             ) {
-                                item {
-                                    if (filteredTags.isEmpty() && potentialNewTag == null) {
+                                if (filteredTags.isEmpty() && potentialNewTag == null) {
+                                    item(key = "empty") {
                                         Box(
                                             modifier = Modifier.fillMaxWidth(),
                                             contentAlignment = Alignment.Center,
@@ -301,68 +331,83 @@ fun TagsDialogContent(
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
-                                    } else {
-                                        FlowRow(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        ) {
-                                            potentialNewTag?.let { newTag ->
-                                                FilterChip(
-                                                    modifier =
-                                                        Modifier.height(
-                                                            FilterChipDefaults.Height,
-                                                        ),
-                                                    selected = false,
-                                                    onClick = addNewTag,
-                                                    label = { Text(text = newTag) },
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.add_24px),
-                                                            contentDescription = stringResource(R.string.add_tag),
+                                    }
+                                }
+
+                                // A single `item` holding every chip would mean `LazyColumn`
+                                // cannot skip anything: it only avoids building off-screen
+                                // *items*, and there would only ever be one. Splitting into
+                                // chunks restores that for large tag counts. Below
+                                // [TAG_CHUNK_SIZE] this is still exactly one item, so normal
+                                // decks keep a single continuous `FlowRow`.
+                                filteredTags
+                                    .chunked(TAG_CHUNK_SIZE)
+                                    .forEachIndexed { chunkIndex, chunk ->
+                                        item(key = "tags-$chunkIndex") {
+                                            FlowRow(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                            ) {
+                                                // Keep the "add tag" chip on the first row, as before.
+                                                if (chunkIndex == 0) {
+                                                    potentialNewTag?.let { newTag ->
+                                                        FilterChip(
                                                             modifier =
-                                                                Modifier.size(
-                                                                    FilterChipDefaults.IconSize,
+                                                                Modifier.height(
+                                                                    FilterChipDefaults.Height,
                                                                 ),
+                                                            selected = false,
+                                                            onClick = addNewTag,
+                                                            label = { Text(text = newTag) },
+                                                            leadingIcon = {
+                                                                Icon(
+                                                                    painter = painterResource(R.drawable.add_24px),
+                                                                    contentDescription = stringResource(R.string.add_tag),
+                                                                    modifier =
+                                                                        Modifier.size(
+                                                                            FilterChipDefaults.IconSize,
+                                                                        ),
+                                                                )
+                                                            },
                                                         )
-                                                    },
-                                                )
-                                            }
-                                            filteredTags.forEach { tag ->
-                                                TagFilterChip(
-                                                    tag = tag,
-                                                    isSelected = tag in checkedTags,
-                                                    isIndeterminate = tag in indeterminateTags,
-                                                    onClick = {
-                                                        when (tag) {
-                                                            in indeterminateTags -> {
-                                                                if (maxSelection != null && checkedTags.size >= maxSelection) {
-                                                                    onMaxSelectionReached?.invoke()
-                                                                } else {
-                                                                    indeterminateTags = indeterminateTags - tag
-                                                                    checkedTags = checkedTags + tag
+                                                    }
+                                                }
+                                                chunk.forEach { tag ->
+                                                    TagFilterChip(
+                                                        tag = tag,
+                                                        isSelected = tag in checkedTags,
+                                                        isIndeterminate = tag in indeterminateTags,
+                                                        onClick = {
+                                                            when (tag) {
+                                                                in indeterminateTags -> {
+                                                                    if (maxSelection != null && checkedTags.size >= maxSelection) {
+                                                                        onMaxSelectionReached?.invoke()
+                                                                    } else {
+                                                                        indeterminateTags = indeterminateTags - tag
+                                                                        checkedTags = checkedTags + tag
+                                                                    }
+                                                                }
+
+                                                                in checkedTags -> {
+                                                                    // Unchecking is always allowed
+                                                                    checkedTags = checkedTags - tag
+                                                                }
+
+                                                                else -> {
+                                                                    if (maxSelection != null && checkedTags.size >= maxSelection) {
+                                                                        onMaxSelectionReached?.invoke()
+                                                                    } else {
+                                                                        checkedTags = checkedTags + tag
+                                                                    }
                                                                 }
                                                             }
-
-                                                            in checkedTags -> {
-                                                                // Unchecking is always allowed
-                                                                checkedTags = checkedTags - tag
-                                                            }
-
-                                                            else -> {
-                                                                if (maxSelection != null && checkedTags.size >= maxSelection) {
-                                                                    onMaxSelectionReached?.invoke()
-                                                                } else {
-                                                                    checkedTags = checkedTags + tag
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                )
+                                                        },
+                                                    )
+                                                }
                                             }
                                         }
                                     }
-                                }
                             }
                         }
                     }

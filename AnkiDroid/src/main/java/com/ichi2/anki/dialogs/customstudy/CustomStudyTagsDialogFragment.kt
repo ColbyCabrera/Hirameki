@@ -37,6 +37,24 @@ import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import java.util.ArrayList
 
+/**
+ * The message shown when the tag selection limit is reached.
+ *
+ * The backend text is a long explanation rather than a one-line error, so we keep only its first
+ * sentence. Shown with a long-duration toast, because a user who just hit a limit needs time to
+ * read it.
+ */
+internal fun maxTagsMessage(): String {
+    val collapsedWhitespace = TR.errors100TagsMax().replace(Regex("\\s+"), " ")
+    val firstSentenceEnd = collapsedWhitespace.indexOf('.')
+    return if (firstSentenceEnd < 0) {
+        // the backend text was changed, so show it as-is rather than showing nothing useful
+        collapsedWhitespace
+    } else {
+        collapsedWhitespace.substring(0..firstSentenceEnd)
+    }
+}
+
 class CustomStudyTagsDialogFragment : DialogFragment() {
     private val viewModel: CustomStudyTagsViewModel by viewModels()
 
@@ -78,11 +96,9 @@ class CustomStudyTagsDialogFragment : DialogFragment() {
                         confirmButtonText = stringResource(R.string.dialog_ok),
                         maxSelection = MAX_TAGS_SELECTION,
                         onMaxSelectionReached = {
-                            showThemedToast(
-                                requireContext(),
-                                TR.errors100TagsMax().replace(Regex("\\s+"), " "),
-                                true,
-                            )
+                            // `context` rather than `requireContext()`: this can fire as the
+                            // dialog is being dismissed, when the fragment is already detached.
+                            context?.let { showThemedToast(it, maxTagsMessage(), shortLength = false) }
                         },
                         onAddTag = null,
                     )

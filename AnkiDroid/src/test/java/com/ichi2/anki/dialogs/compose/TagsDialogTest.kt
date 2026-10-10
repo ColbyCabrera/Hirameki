@@ -64,6 +64,33 @@ class TagsDialogTest : RobolectricTest() {
     }
 
     @Test
+    fun loadFailureShowsAnErrorRatherThanClaimingThereAreNoTags() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                TagsDialog(
+                    onDismissRequest = {},
+                    onConfirm = { _, _ -> },
+                    allTags = TagsState.Error,
+                    initialSelection = emptySet(),
+                    title = "Test",
+                    confirmButtonText = "OK",
+                    onAddTag = null,
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.card_browser_load_tags_failed))
+            .assertIsDisplayed()
+        // The reassuring "no tags found" message would be actively misleading here.
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.card_browser_no_tags_found))
+            .assertDoesNotExist()
+    }
+
+    @Test
     fun maxSelectionRestrictsCheckingBeyondLimitWhilePermittingUnchecking() {
         var maxSelectionReachedCalled = false
         var confirmedTags = emptySet<String>()

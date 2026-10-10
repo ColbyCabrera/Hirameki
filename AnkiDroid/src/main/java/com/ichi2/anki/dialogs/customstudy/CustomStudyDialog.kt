@@ -150,7 +150,7 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             val cardsAmount = bundle.getInt(EXTRA_CARDS_AMOUNT, 100)
             val cramKindName =
                 bundle.getString(EXTRA_CRAM_KIND) ?: CramKind.CRAM_KIND_NEW.name
-            val kind = CramKind.valueOf(cramKindName)
+            val kind = runCatching { CramKind.valueOf(cramKindName) }.getOrDefault(CramKind.CRAM_KIND_NEW)
             launchCustomStudy(ContextMenuOption.STUDY_TAGS, cardsAmount, kind, tagsToInclude, emptyList())
         }
     }

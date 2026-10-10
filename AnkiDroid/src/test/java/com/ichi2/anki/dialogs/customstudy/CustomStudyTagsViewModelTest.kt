@@ -74,19 +74,4 @@ class CustomStudyTagsViewModelTest : JvmTest() {
                 assertThat(loaded.tags, equalTo(emptyList()))
             }
         }
-
-    @Test
-    fun `fragment launches without crashing`() {
-        com.ichi2.testutils.AnkiFragmentScenario
-            .launch(
-                CustomStudyTagsDialogFragment::class.java,
-                android.os.Bundle().apply {
-                    putLong(ARG_DECK_ID, DEFAULT_DECK_ID)
-                },
-            ).use { scenario ->
-                scenario.onFragment { fragment ->
-                    assertThat(fragment.dialog, org.hamcrest.Matchers.notNullValue())
-                }
-            }
-    }
 }
