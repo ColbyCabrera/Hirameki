@@ -482,4 +482,6 @@ this formatter is used if the bind only applies to the answer">A: %s</string>
     <string name="apply_hirameki_css_all">Apply all custom CSS</string>
     <string name="apply_hirameki_css_no_font_size">Disable font size changes</string>
     <string name="apply_hirameki_css_disabled">Disable all custom CSS</string>
+    <string name="arabic_script_font" maxLength="41">Vazirmatn for Arabic script</string>
+    <string name="arabic_script_font_summ">Show Arabic, Persian, Urdu and Kurdish text in Vazirmatn instead of the system font</string>
 </resources>
