@@ -144,6 +144,7 @@ fun TagsDialog(
     maxSelection: Int? = null,
     onMaxSelectionReached: (() -> Unit)? = null,
     onAddTag: ((String) -> Unit)? = null,
+    onRetry: (() -> Unit)? = null,
 ) {
     BasicAlertDialog(onDismissRequest = onDismissRequest) {
         TagsDialogContent(
@@ -161,6 +162,7 @@ fun TagsDialog(
             maxSelection = maxSelection,
             onMaxSelectionReached = onMaxSelectionReached,
             onAddTag = onAddTag,
+            onRetry = onRetry,
         )
     }
 }
@@ -182,6 +184,7 @@ fun TagsDialogContent(
     maxSelection: Int? = null,
     onMaxSelectionReached: (() -> Unit)? = null,
     onAddTag: ((String) -> Unit)? = null,
+    onRetry: (() -> Unit)? = null,
 ) {
     var checkedTags by remember(initialSelection) { mutableStateOf(initialSelection) }
     var indeterminateTags by remember(initialIndeterminate) { mutableStateOf(initialIndeterminate) }
@@ -242,12 +245,19 @@ fun TagsDialogContent(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = stringResource(R.string.card_browser_load_tags_failed),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = stringResource(R.string.card_browser_load_tags_failed),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                            )
+                            if (onRetry != null) {
+                                TextButton(onClick = onRetry) {
+                                    Text(text = stringResource(R.string.tags_dialog_retry))
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -426,7 +436,13 @@ fun TagsDialogContent(
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(
                     onClick = { onConfirm(checkedTags, indeterminateTags) },
-                    enabled = maxSelection == null || checkedTags.size <= maxSelection,
+                    // A failed lookup leaves `checkedTags` empty, and an empty include-tag list
+                    // means "no tag restriction" to the scheduler — so confirming here would
+                    // start a study session over every card in the deck. The user has to retry,
+                    // or cancel out.
+                    enabled =
+                        allTags !is TagsState.Error &&
+                            (maxSelection == null || checkedTags.size <= maxSelection),
                 ) {
                     Text(text = confirmButtonText)
                 }

@@ -17,6 +17,8 @@
 package com.ichi2.anki.dialogs.compose
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -88,6 +90,88 @@ class TagsDialogTest : RobolectricTest() {
         composeTestRule
             .onNodeWithText(context.getString(R.string.card_browser_no_tags_found))
             .assertDoesNotExist()
+    }
+
+    /**
+     * Regression test.
+     *
+     * If a failed tag lookup leaves confirmation enabled, OK sends an empty include-tag list to
+     * the scheduler. An empty list means "no tag restriction", so the user gets a study session
+     * covering every card in the deck rather than just the tags they picked.
+     */
+    @Test
+    fun confirmationIsBlockedWhileTheTagsFailedToLoad() {
+        var confirmed = false
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                TagsDialog(
+                    onDismissRequest = {},
+                    onConfirm = { _, _ -> confirmed = true },
+                    allTags = TagsState.Error,
+                    initialSelection = emptySet(),
+                    title = "Test",
+                    confirmButtonText = "OK",
+                    onAddTag = null,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("OK").assertIsNotEnabled()
+        composeTestRule.onNodeWithText("OK").performClick()
+        assertThat("onConfirm must not fire while in the error state", confirmed, equalTo(false))
+    }
+
+    @Test
+    fun retryIsOfferedAndInvokedOnlyWhenTheCallerSuppliesIt() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        var retryCount = 0
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                TagsDialog(
+                    onDismissRequest = {},
+                    onConfirm = { _, _ -> },
+                    allTags = TagsState.Error,
+                    initialSelection = emptySet(),
+                    title = "Test",
+                    confirmButtonText = "OK",
+                    onRetry = { retryCount++ },
+                    onAddTag = null,
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.tags_dialog_retry))
+            .assertIsDisplayed()
+            .performClick()
+        assertThat(retryCount, equalTo(1))
+    }
+
+    @Test
+    fun retryIsHiddenWhenTheCallerCannotRetry() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                TagsDialog(
+                    onDismissRequest = {},
+                    onConfirm = { _, _ -> },
+                    allTags = TagsState.Error,
+                    initialSelection = emptySet(),
+                    title = "Test",
+                    confirmButtonText = "OK",
+                    onAddTag = null,
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithText(context.getString(R.string.tags_dialog_retry))
+            .assertDoesNotExist()
+        // Cancel is still available, so the user is never trapped.
+        composeTestRule.onNodeWithText(context.getString(R.string.dialog_cancel)).assertIsEnabled()
     }
 
     @Test

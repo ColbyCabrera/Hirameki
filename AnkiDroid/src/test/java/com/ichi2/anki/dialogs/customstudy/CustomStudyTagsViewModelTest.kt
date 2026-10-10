@@ -74,4 +74,34 @@ class CustomStudyTagsViewModelTest : JvmTest() {
                 assertThat(loaded.tags, equalTo(emptyList()))
             }
         }
+
+    @Test
+    fun `retry re-runs the query`() =
+        runTest {
+            val note = addBasicNote()
+            note.setTagsFromStr(col, "first-tag")
+            col.updateNote(note)
+
+            val viewModel =
+                CustomStudyTagsViewModel(
+                    savedStateHandle = SavedStateHandle(mapOf(ARG_DECK_ID to DEFAULT_DECK_ID)),
+                    ioDispatcher = UnconfinedTestDispatcher(testScheduler),
+                )
+
+            viewModel.tagsState.test {
+                val initial = expectMostRecentItem() as TagsState.Loaded
+                assertThat(initial.tags, equalTo(listOf("first-tag")))
+
+                // Change the deck's tags so a genuine re-query has to produce a different
+                // answer. StateFlow drops an emission equal to the current value, so re-reading
+                // the same list would be invisible here and would prove nothing.
+                note.setTagsFromStr(col, "second-tag")
+                col.updateNote(note)
+
+                viewModel.retry()
+
+                val reloaded = expectMostRecentItem() as TagsState.Loaded
+                assertThat(reloaded.tags, equalTo(listOf("second-tag")))
+            }
+        }
 }

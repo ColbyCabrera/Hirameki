@@ -46,6 +46,16 @@ class CustomStudyTagsViewModel
             loadDeckTags()
         }
 
+        /**
+         * Re-runs the tag query.
+         *
+         * Wired to the dialog's "Retry" action, which is only offered while the state is
+         * [TagsState.Error].
+         */
+        fun retry() {
+            loadDeckTags()
+        }
+
         private fun loadDeckTags() {
             viewModelScope.launch(ioDispatcher) {
                 _tagsState.value = TagsState.Loading
