@@ -112,8 +112,22 @@ object VersionUtils {
      */
     val isReleaseVersion: Boolean
         get() {
-            val versionCode = pkgVersionCode.toString()
+            val versionCode = pkgVersionCode
             Timber.d("isReleaseVersion() versionCode: %s", versionCode)
-            return versionCode[versionCode.length - 3] == '3'
+            return isReleaseVersionCode(versionCode)
         }
+
+    /**
+     * ankidroid's version code ends in a build-type digit and a two-digit build number, so the third digit from the
+     * end marks the kind of build: 3 a release, 2 a beta (DeckPicker's 20301208 is 2.3.1beta8). the per-abi apks
+     * only put a digit in front, so every apk of one build agrees.
+     *
+     * hirameki keeps that digit below 3 in baseVersionCode (AnkiDroid/build.gradle.kts): a release code makes
+     * DeckPicker open ankidroid's own changelog after every update instead of the "updated" snackbar.
+     * VersionUtilsTest fails when the build's version code reads as a release
+     */
+    fun isReleaseVersionCode(versionCode: Long): Boolean {
+        val digits = versionCode.toString()
+        return digits[digits.length - 3] == '3'
+    }
 }
