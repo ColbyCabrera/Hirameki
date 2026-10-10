@@ -102,12 +102,17 @@ private fun normalizeTag(tag: String): String {
     // Trim leading/trailing whitespace, split on any whitespace runs, filter out
     // any empty parts (defensive), then rejoin with single spaces and lowercase
     // to mirror backend tag splitting and duplicate detection.
+    //
+    // Locale.ROOT, not the device locale: in Turkish and Azerbaijani the default
+    // locale lowercases "I" to a dotless "\u0131", so "IPHONE" and "iphone" would
+    // normalize differently depending on the user's language and the duplicate check
+    // would silently fail. Tag comparison must be locale-independent.
     return tag
         .trim()
         .split(Regex("\\s+"))
         .filter { it.isNotEmpty() }
         .joinToString(" ")
-        .lowercase(Locale.getDefault())
+        .lowercase(Locale.ROOT)
 }
 
 private fun isDuplicateTag(
@@ -436,12 +441,13 @@ fun TagsDialogContent(
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(
                     onClick = { onConfirm(checkedTags, indeterminateTags) },
-                    // A failed lookup leaves `checkedTags` empty, and an empty include-tag list
-                    // means "no tag restriction" to the scheduler — so confirming here would
-                    // start a study session over every card in the deck. The user has to retry,
-                    // or cancel out.
+                    // Require `Loaded`, not merely "not Error". Both `Loading` and `Error` leave
+                    // `checkedTags` empty, and an empty include-tag list means "no tag
+                    // restriction" to the scheduler — so confirming during either state would
+                    // start a study session over every card in the deck. The user has to wait for
+                    // the tags, then retry, or cancel out.
                     enabled =
-                        allTags !is TagsState.Error &&
+                        allTags is TagsState.Loaded &&
                             (maxSelection == null || checkedTags.size <= maxSelection),
                 ) {
                     Text(text = confirmButtonText)
