@@ -25,4 +25,12 @@ import com.ichi2.anki.libanki.utils.LibAnkiAlias
 fun withoutUnicodeIsolation(s: String): String = s.replace("\u2068", "").replace("\u2069", "")
 
 @LibAnkiAlias("with_collapsed_whitespace")
-fun withCollapsedWhitespace(s: String): String = s.replace("\\s+", " ")
+fun withCollapsedWhitespace(s: String): String = s.replace(WHITESPACE_RUN, " ")
+
+/**
+ * Matches a run of one or more whitespace characters.
+ *
+ * Compiled once: `withCollapsedWhitespace` is called on user-facing strings, and
+ * `String.replace(Regex, String)` recompiles its pattern on every call.
+ */
+private val WHITESPACE_RUN = Regex("\\s+")
