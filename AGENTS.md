@@ -43,8 +43,9 @@ We follow the official Android Architecture Guidelines:
 | `migration/`          | XML to Compose, RxJava to Coroutines.              |
 | `testing_and_automation/` | Unit/UI Testing setup, Emulator automation scripts. |
 | `concurrency_and_networking/` | Coroutines fixes, Retrofit networking.             |
+| `navigation/`         | Predictive Back navigation and NavigationEvent handling. |
 
-Official upstream source for synced skills: [`android/skills`](https://github.com/android/skills) (`migrate-xml-views-to-jetpack-compose` 2026-09-18, `testing-setup` 2026-09-23, `navigation-3` 2026-09-24, `android-profiler` 2026-08-06). Upstream has no standalone memory-leak SKILL.md — memory-leak workflows (heap dumps, allocations, Perfetto analysis) live in `profilers/android-profiler`.
+Official upstream source for synced skills: [`android/skills`](https://github.com/android/skills) (`migrate-xml-views-to-jetpack-compose` 2026-09-18, `testing-setup` 2026-09-23, `navigation-3` 2026-09-24, `android-profiler` 2026-08-06, `navigation-event` 2026-09-01). Upstream has no standalone memory-leak SKILL.md — memory-leak workflows (heap dumps, allocations, Perfetto analysis) live in `profilers/android-profiler`.
 
 ---
 
