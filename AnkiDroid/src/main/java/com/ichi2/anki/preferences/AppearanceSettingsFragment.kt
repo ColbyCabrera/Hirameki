@@ -15,6 +15,7 @@
  */
 package com.ichi2.anki.preferences
 
+import android.content.SharedPreferences
 import androidx.core.app.ActivityCompat
 import androidx.preference.ListPreference
 import androidx.preference.Preference
@@ -23,6 +24,7 @@ import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.utils.CollectionPreferences
+import com.ichi2.themes.ArabicScriptFont
 import com.ichi2.themes.Themes
 import com.ichi2.themes.Themes.updateCurrentTheme
 
@@ -31,6 +33,20 @@ class AppearanceSettingsFragment : SettingsFragment() {
         get() = R.xml.preferences_appearance
     override val analyticsScreenNameConstant: String
         get() = "prefs.appearance"
+
+    override fun onSharedPreferenceChanged(
+        sharedPreferences: SharedPreferences,
+        key: String?,
+    ) {
+        super.onSharedPreferenceChanged(sharedPreferences, key)
+        if (key == getString(R.string.arabic_script_font_key)) {
+            // The UI font is applied when an activity is created (theme overlay, Compose typography),
+            // so recreate the activity if the current UI language uses Arabic script to apply font changes immediately.
+            if (ArabicScriptFont.currentLocaleUsesArabicScript(requireContext())) {
+                ActivityCompat.recreate(requireActivity())
+            }
+        }
+    }
 
     override fun initSubscreen() {
         val appThemePref = requirePreference<ListPreference>(R.string.app_theme_key)

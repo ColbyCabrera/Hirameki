@@ -3,6 +3,7 @@
     <style name="Theme.Dynamic.Light" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Font -->
         <item name="android:fontFamily">@font/google_sans_family</item>
+        <item name="uiFontFamily">@string/font_fontFamily_regular</item>
         <!-- Android colors -->
         <item name="colorAccent">?attr/colorPrimary</item>
 
@@ -138,6 +139,7 @@
     <style name="Theme.Dynamic.Dark" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Font -->
         <item name="android:fontFamily">@font/google_sans_family</item>
+        <item name="uiFontFamily">@string/font_fontFamily_regular</item>
         <!-- Android colors -->
         <item name="colorAccent">?attr/colorPrimary</item>
 
