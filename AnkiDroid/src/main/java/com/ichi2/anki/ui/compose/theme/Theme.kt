@@ -35,9 +35,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
+import com.ichi2.themes.ArabicScriptFont
 import com.ichi2.themes.Themes
 
 @ColorInt
@@ -75,6 +78,17 @@ fun AnkiDroidTheme(
             dynamicLightColorScheme(context)
         }
 
+    // In preview mode there is no AnkiDroidApp instance for Prefs to read, so keep the default typography.
+    val isPreview = LocalInspectionMode.current
+    val configuration = LocalConfiguration.current
+
+    val typography =
+        if (!isPreview && ArabicScriptFont.appliesToUi(configuration)) {
+            ArabicScriptTypography
+        } else {
+            AppTypography
+        }
+
     val ratingColors =
         remember(colorScheme.primary, isNightMode, harmonizeRatings) {
             RatingColorFactory.createRatingColorScheme(
@@ -102,7 +116,7 @@ fun AnkiDroidTheme(
     CompositionLocalProvider(LocalAnkiColors provides ankiColors) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = AppTypography,
+            typography = typography,
             shapes = AppShapes,
             motionScheme = MotionScheme.expressive(),
             content = content,

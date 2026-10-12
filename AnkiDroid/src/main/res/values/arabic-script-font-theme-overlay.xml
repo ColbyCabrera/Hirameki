@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~  Copyright (c) 2026 Hirameki contributors
+  ~
+  ~  This program is free software; you can redistribute it and/or modify it under
+  ~  the terms of the GNU General Public License as published by the Free Software
+  ~  Foundation; either version 3 of the License, or (at your option) any later
+  ~  version.
+  ~
+  ~  This program is distributed in the hope that it will be useful, but WITHOUT ANY
+  ~  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+  ~  PARTICULAR PURPOSE. See the GNU General Public License for more details.
+  ~
+  ~  You should have received a copy of the GNU General Public License along with
+  ~  this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<resources>
+    <!-- Applied by Themes.setTheme over the base theme when the UI language uses Arabic script (com.ichi2.themes.ArabicScriptFont). -->
+    <style name="ThemeOverlay.Hirameki.ArabicScriptFont" parent="">
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+        <!-- The theme font above only reaches text a widget does not restyle itself. A toolbar title, a collapsing
+             settings title, a list row, and a button each apply a text appearance to their own TextView, and
+             Material's typescale styles specify sans-serif in them, which takes precedence. Thus the typescale
+             attributes those appearances come from are swapped here as well. -->
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Hirameki.ArabicScript.TitleLarge</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Hirameki.ArabicScript.HeadlineSmall</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Hirameki.ArabicScript.TitleMedium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Hirameki.ArabicScript.BodyLarge</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Hirameki.ArabicScript.LabelLarge</item>
+        <!-- The bodyMedium style is the message of every Material dialog (m3_comp_dialog_supporting_text_type) and the second
+             line of a list row (android:textAppearanceListItemSecondary); labelMedium is a bottom navigation label
+             (m3_comp_nav_bar_item_*_label_text_font). Without these two, an Arabic dialog would show a Vazirmatn title
+             over a Naskh message. -->
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Hirameki.ArabicScript.BodyMedium</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Hirameki.ArabicScript.LabelMedium</item>
+        <!-- Font family for appearances set in code out of reach of the attributes above, e.g. the deck options
+             toolbar title (TextAppearance.Anki.PageToolbar.Expressive, applied by pages/DeckOptions.kt). -->
+        <item name="uiFontFamily">@font/vazirmatn_family</item>
+        <!-- Snackbars specify their font in their own styles (SnackbarTextViewStyle, SnackbarButtonStyle in styles.xml),
+             which a theme-level font does not reach. -->
+        <item name="snackbarTextViewStyle">@style/SnackbarTextViewStyle.ArabicScript</item>
+        <item name="snackbarButtonStyle">@style/SnackbarButtonStyle.ArabicScript</item>
+    </style>
+    <!-- Each keeps its Material size, weight, and spacing while changing only the font. Both spellings of the
+         attribute are provided because AppCompat TextView reads the app-namespace attribute first and android's
+         only as a fallback. -->
+    <style name="TextAppearance.Hirameki.ArabicScript.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/vazirmatn_family</item>
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="TextAppearance.Hirameki.ArabicScript.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/vazirmatn_family</item>
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="TextAppearance.Hirameki.ArabicScript.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/vazirmatn_family</item>
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="TextAppearance.Hirameki.ArabicScript.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/vazirmatn_family</item>
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="TextAppearance.Hirameki.ArabicScript.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/vazirmatn_family</item>
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="TextAppearance.Hirameki.ArabicScript.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/vazirmatn_family</item>
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="TextAppearance.Hirameki.ArabicScript.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/vazirmatn_family</item>
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="SnackbarTextViewStyle.ArabicScript">
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+    <style name="SnackbarButtonStyle.ArabicScript">
+        <item name="android:fontFamily">@font/vazirmatn_family</item>
+    </style>
+</resources>

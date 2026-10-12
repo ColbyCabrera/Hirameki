@@ -236,6 +236,11 @@ object Prefs {
      */
     var reviewReminderNextFreeId by intPref(R.string.review_reminders_next_free_id, defaultValue = 0)
 
+    // *************************************** Appearance *************************************** //
+
+    /** Vazirmatn instead of the system font for Arabic-script text (see [com.ichi2.themes.ArabicScriptFont]). */
+    val useArabicScriptFont by booleanPref(R.string.arabic_script_font_key, defaultValue = true)
+
     // **************************************** Reviewer **************************************** //
 
     val ignoreDisplayCutout by booleanPref(R.string.ignore_display_cutout_key, false)

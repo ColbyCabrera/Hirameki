@@ -130,7 +130,10 @@
 
     <style name="TabLayoutStyle" parent="Widget.Material3.TabLayout">
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.TabLayout</item>
-        <item name="tabTextAppearance">@style/TextAppearance.Material3.LabelLarge</item>
+        <!-- The attribute, not the style it points at: every app theme resolves it to that same style, and naming
+             the attribute lets the Arabic-script font overlay swap it, so a template name in Arabic script is drawn
+             in the same font as the rest of the screen (arabic-script-font-theme-overlay.xml). -->
+        <item name="tabTextAppearance">?attr/textAppearanceLabelLarge</item>
         <item name="tabIndicator">@drawable/tab_layout_indicator_floating_pill</item>
         <item name="tabIndicatorHeight">14dp</item>
         <item name="tabTextColor">@color/white</item>
@@ -154,7 +157,12 @@
     </style>
 
     <style name="TextAppearance.Anki.PageToolbar.Expressive" parent="TextAppearance.Material3.HeadlineSmall">
-        <item name="android:fontFamily">@string/font_fontFamily_medium</item>
+        <!-- The family comes from the theme, so the Arabic-script overlay can swap it: pages/DeckOptions.kt hands
+             this appearance to the toolbar in code, where the overlay's typescale styles never reach it.
+             Both spellings are used because AppCompat TextView reads the app-namespace attribute first and android's
+             only as a fallback. -->
+        <item name="fontFamily">?attr/uiFontFamily</item>
+        <item name="android:fontFamily">?attr/uiFontFamily</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:textStyle">normal</item>
     </style>

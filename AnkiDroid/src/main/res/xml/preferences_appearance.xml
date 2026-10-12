@@ -36,6 +36,11 @@
             android:title="@string/app_theme"
             android:icon="@drawable/ic_color_lens_white_24dp"
             app:useSimpleSummaryProvider="true"/>
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/arabic_script_font_key"
+            android:title="@string/arabic_script_font"
+            android:summary="@string/arabic_script_font_summ" />
     </PreferenceCategory>
     <PreferenceCategory
         android:title="@string/pref_cat_reviewer"

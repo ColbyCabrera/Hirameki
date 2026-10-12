@@ -197,4 +197,8 @@
     <attr name="checkMediaListForeground" format="color" />
 
     <attr name="progressDialogButtonTextColor" format="color"/>
+
+    <!-- Font family for a text appearance that a widget applies to its own TextView, where a theme-level
+         android:fontFamily never arrives. The Arabic-script overlay swaps it (see com.ichi2.themes.ArabicScriptFont). -->
+    <attr name="uiFontFamily" format="reference|string"/>
 </resources>
