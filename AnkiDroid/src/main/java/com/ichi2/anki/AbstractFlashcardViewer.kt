@@ -579,9 +579,7 @@ abstract class AbstractFlashcardViewer :
     override fun onKeyUp(
         keyCode: Int,
         event: KeyEvent,
-    ): Boolean {
-        return webView.handledGamepadKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
-    }
+    ): Boolean = webView.handledGamepadKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
 
     public override val currentCardId: CardId? get() = currentCard?.id
 
@@ -1940,6 +1938,7 @@ abstract class AbstractFlashcardViewer :
         }
     }
 
+    @SuppressLint("MissingOnRenderProcessGone")
     inner class CardViewerWebClient internal constructor(
         private val resourceHandler: ViewerResourceHandler,
         private val onPageFinishedCallback: OnPageFinishedCallback? = null,

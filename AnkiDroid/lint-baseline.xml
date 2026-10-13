@@ -1,16 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.4.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.1)" variant="all" version="9.4.1">
 
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="    ) : WebViewClient(),"
-        errorLine2="        ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/AbstractFlashcardViewer.kt"
-            line="1956"
-            column="9"/>
-    </issue>
 
     <issue
         id="MissingOnRenderProcessGone"
