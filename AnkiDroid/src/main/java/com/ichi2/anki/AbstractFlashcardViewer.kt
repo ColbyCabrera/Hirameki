@@ -1537,42 +1537,6 @@ abstract class AbstractFlashcardViewer :
         invalidateOptionsMenu()
     }
 
-    /**
-     * Re-renders the content inside the WebView, retaining the side of the card to render
-     *
-     * To be used if card/note data has changed
-     *
-     * @see updateCardAndRedraw - also calls [updateCurrentCard] and resets the side
-     * @see refreshIfRequired - calls through to [updateCurrentCard]
-     */
-    private fun reloadWebViewContent() {
-        currentCard?.renderOutput(getColUnsafe, reload = true, browser = false)
-        if (!isDisplayingAnswer) {
-            Timber.d("displayCardQuestion()")
-            displayAnswer = false
-            backButtonPressedToReturn = false
-            setInterface()
-            typeAnswer?.input = ""
-            typeAnswer?.updateInfo(getColUnsafe, currentCard!!, resources)
-            if (cardRenderContext != null) {
-                val content =
-                    cardRenderContext!!.renderCard(
-                        getColUnsafe,
-                        currentCard!!,
-                        SingleCardSide.FRONT,
-                    )
-                automaticAnswer.onDisplayQuestion()
-                updateCard(content)
-                Timber.i(
-                    "AbstractFlashcardViewer:: Question successfully shown for card id %d",
-                    currentCard!!.id,
-                )
-            }
-        } else {
-            displayCardAnswer()
-        }
-    }
-
     /** Fixing bug 720: <input></input> focus, thanks to pablomouzo on android issue 7189  */
     internal inner class MyWebView(
         context: Context?,
