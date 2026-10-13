@@ -580,10 +580,7 @@ abstract class AbstractFlashcardViewer :
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        if (webView.handledGamepadKeyUp(keyCode, event)) {
-            return true
-        }
-        return super.onKeyUp(keyCode, event)
+        return webView.handledGamepadKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
     }
 
     public override val currentCardId: CardId? get() = currentCard?.id
@@ -1182,7 +1179,7 @@ abstract class AbstractFlashcardViewer :
             // Note: `mediaPlaybackRequiresUserGesture` uses cardMediaPlayer.config but this is initialized asynchronously now
             // To ensure safety, we'll try to set it but default to false if not initialized (though usually we don't autoplay videos by default)
             val autoPlay =
-                if (this::cardMediaPlayer.isInitialized && cardMediaPlayer.hasConfig) cardMediaPlayer.config.autoplay else false
+                this::cardMediaPlayer.isInitialized && cardMediaPlayer.hasConfig && cardMediaPlayer.config.autoplay
             card.settings.mediaPlaybackRequiresUserGesture = !autoPlay
             card.loadDataWithBaseURL(
                 server.baseUrl(),
