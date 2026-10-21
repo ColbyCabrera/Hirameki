@@ -134,7 +134,7 @@ open class PageFragment(
             insets
         }
 
-        view.findViewById<MaterialToolbar>(R.id.toolbar).apply {
+        view.findViewById<MaterialToolbar>(R.id.toolbar)?.apply {
             if (title != null) {
                 setTitle(title)
             }

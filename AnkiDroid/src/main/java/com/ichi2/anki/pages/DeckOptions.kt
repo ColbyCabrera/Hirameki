@@ -17,24 +17,20 @@ package com.ichi2.anki.pages
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.InsetDrawable
-import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.graphics.drawable.DrawableCompat
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.fragment.app.FragmentActivity
 import anki.collection.OpChanges
 import anki.collection.Progress
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CrashReportService
@@ -46,6 +42,8 @@ import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.updateDeckConfigsRaw
 import com.ichi2.anki.observability.undoableOp
+import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.openUrl
 import com.ichi2.anki.withProgress
 import kotlinx.coroutines.Dispatchers
@@ -54,7 +52,7 @@ import timber.log.Timber
 
 @NeedsTest("15130: pressing back: icon + button should return to options if the manual is open")
 @NeedsTest("17905: pressing back before the webpage is ready closes the screen")
-class DeckOptions : PageFragment() {
+class DeckOptions : PageFragment(R.layout.page_deck_options) {
     private var webViewIsReady = false
     private lateinit var pageWebViewClient: PageWebViewClient
 
@@ -171,9 +169,30 @@ class DeckOptions : PageFragment() {
     ) {
         pageLoadingIndicator.isVisible = true
         super.onViewCreated(view, savedInstanceState)
-        requireNotNull(view.findViewById<MaterialToolbar>(R.id.toolbar)) {
-            "DeckOptions requires a toolbar in its content view"
-        }.applyExpressiveStyle()
+
+        // PageFragment pads the root by the status bar height. The Compose top bar
+        // applies that inset itself, so remove the listener to avoid applying it twice.
+        ViewCompat.setOnApplyWindowInsetsListener(view, null)
+        view.updatePadding(top = 0)
+
+        val title =
+            requireArguments().getString(TITLE_ARG_KEY)
+                ?: getString(R.string.menu__deck_options)
+        val topBar =
+            requireNotNull(view.findViewById<ComposeView>(R.id.top_bar_compose_view)) {
+                "DeckOptions requires a ComposeView top bar in its content view"
+            }
+        topBar.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        topBar.setContent {
+            AnkiDroidTheme {
+                AnkiTopAppBar(
+                    titleText = title,
+                    onNavigateUp = {
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
+                    },
+                )
+            }
+        }
     }
 
     override fun onWebViewCreated(webView: WebView) {
@@ -270,64 +289,6 @@ class DeckOptions : PageFragment() {
         }
     }
 }
-
-private fun MaterialToolbar.applyExpressiveStyle() {
-    val navigationButtonSize = dp(40)
-    val navigationIconInset = dp(8)
-
-    val surfaceColor =
-        MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface)
-    val onSurfaceColor =
-        MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface)
-    val surfaceContainerHighestColor =
-        MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorSurfaceContainerHighest,
-        )
-    val onSurfaceVariantColor =
-        MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorOnSurfaceVariant,
-        )
-
-    setBackgroundColor(surfaceColor)
-    elevation = 0f
-    minimumHeight = dp(72)
-    contentInsetStartWithNavigation = 0
-    titleMarginStart = dp(8)
-    titleMarginEnd = 0
-    setTitleTextAppearance(context, R.style.TextAppearance_Anki_PageToolbar_Expressive)
-    setTitleTextColor(onSurfaceColor)
-
-    val arrowDrawable =
-        checkNotNull(AppCompatResources.getDrawable(context, R.drawable.arrow_back_24px))
-    val tintedArrow = DrawableCompat.wrap(arrowDrawable.mutate())
-    DrawableCompat.setTint(tintedArrow, onSurfaceVariantColor)
-
-    val backgroundDrawable =
-        GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = navigationButtonSize / 2f
-            setColor(surfaceContainerHighestColor)
-            setSize(navigationButtonSize, navigationButtonSize)
-        }
-
-    navigationIcon =
-        LayerDrawable(
-            arrayOf(
-                backgroundDrawable,
-                InsetDrawable(tintedArrow, navigationIconInset),
-            ),
-        )
-}
-
-private fun View.dp(value: Int): Int =
-    TypedValue
-        .applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            value.toFloat(),
-            resources.displayMetrics,
-        ).toInt()
 
 suspend fun FragmentActivity.updateDeckConfigsRaw(input: ByteArray): ByteArray {
     val output =
