@@ -33,9 +33,6 @@
              over a Naskh message. -->
         <item name="textAppearanceBodyMedium">@style/TextAppearance.Hirameki.ArabicScript.BodyMedium</item>
         <item name="textAppearanceLabelMedium">@style/TextAppearance.Hirameki.ArabicScript.LabelMedium</item>
-        <!-- Font family for appearances set in code out of reach of the attributes above, e.g. the deck options
-             toolbar title (TextAppearance.Anki.PageToolbar.Expressive, applied by pages/DeckOptions.kt). -->
-        <item name="uiFontFamily">@font/vazirmatn_family</item>
         <!-- Snackbars specify their font in their own styles (SnackbarTextViewStyle, SnackbarButtonStyle in styles.xml),
              which a theme-level font does not reach. -->
         <item name="snackbarTextViewStyle">@style/SnackbarTextViewStyle.ArabicScript</item>

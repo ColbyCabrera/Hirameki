@@ -156,17 +156,6 @@
         <item name="textAppearanceLabelLarge">@style/TextAppearance.Material3.LabelLarge</item>
     </style>
 
-    <style name="TextAppearance.Anki.PageToolbar.Expressive" parent="TextAppearance.Material3.HeadlineSmall">
-        <!-- The family comes from the theme, so the Arabic-script overlay can swap it: pages/DeckOptions.kt hands
-             this appearance to the toolbar in code, where the overlay's typescale styles never reach it.
-             Both spellings are used because AppCompat TextView reads the app-namespace attribute first and android's
-             only as a fallback. -->
-        <item name="fontFamily">?attr/uiFontFamily</item>
-        <item name="android:fontFamily">?attr/uiFontFamily</item>
-        <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:textStyle">normal</item>
-    </style>
-
     <!-- padding is hardcoded in Toolbar.java (32) to allow for fixing the scrollview -->
     <style name="note_editor_toolbar_button">
         <item name="android:layout_width">44dp</item>
