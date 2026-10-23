@@ -18,6 +18,7 @@ package com.ichi2.anki
 
 import android.app.Activity
 import android.content.Context
+import android.database.sqlite.SQLiteDatabaseCorruptException
 import android.net.Uri
 import android.text.format.Formatter
 import android.view.WindowManager
@@ -38,7 +39,10 @@ import com.ichi2.anki.CrashReportData.Companion.toCrashReportData
 import com.ichi2.anki.CrashReportData.HelpAction
 import com.ichi2.anki.CrashReportData.HelpAction.AnkiBackendLink
 import com.ichi2.anki.CrashReportData.HelpAction.OpenDeckOptions
+import com.ichi2.anki.backend.DatabaseCorruption
 import com.ichi2.anki.common.annotations.UseContextParameter
+import com.ichi2.anki.dialogs.DatabaseErrorDialog
+import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.compose.ProgressDialogFragment
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.libanki.Collection
@@ -73,6 +77,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import net.ankiweb.rsdroid.Backend
 import net.ankiweb.rsdroid.BackendException
+import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbCorruptException
 import net.ankiweb.rsdroid.exceptions.BackendInterruptedException
 import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
@@ -216,6 +221,18 @@ suspend fun <T> FragmentActivity.runCatching(
                     exc.localizedMessage ?: exc.toString(),
                     exc.toCrashReportData(this, reportException = false),
                 )
+            }
+
+            // must precede `is BackendException`: BackendDbCorruptException is a subclass
+            is SQLiteDatabaseCorruptException, is BackendDbCorruptException -> {
+                Timber.e(exc, errorMessage)
+                DatabaseCorruption.isDetected = true
+                if (callerTrace != null) Timber.e(callerTrace)
+                (this as? AnkiActivity)
+                    ?.showDatabaseErrorDialog(
+                        errorDialogType = DatabaseErrorDialogType.DIALOG_LOAD_FAILED,
+                        exceptionData = DatabaseErrorDialog.CustomExceptionData.fromException(exc),
+                    )
             }
 
             is BackendException -> {

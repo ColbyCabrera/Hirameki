@@ -24,6 +24,7 @@ import android.os.Environment
 import android.os.Parcelable
 import androidx.annotation.CheckResult
 import androidx.core.content.edit
+import com.ichi2.anki.backend.DatabaseCorruption
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.servicelayer.PreferenceUpgradeService
 import com.ichi2.anki.servicelayer.PreferenceUpgradeService.setPreferencesUpToDate
@@ -61,6 +62,13 @@ object InitialActivity {
             } catch (e: BackendException.BackendDbException.BackendDbFileTooNewException) {
                 Timber.w(e)
                 StartupFailure.FutureAnkidroidVersion
+            } catch (e: BackendException.BackendDbException.BackendDbFullException) {
+                Timber.w(e)
+                StartupFailure.DiskFull
+            } catch (e: BackendException.BackendDbException.BackendDbCorruptException) {
+                Timber.w(e)
+                DatabaseCorruption.isDetected = true
+                StartupFailure.DBError(e)
             } catch (e: SQLiteFullException) {
                 Timber.w(e)
                 StartupFailure.DiskFull
