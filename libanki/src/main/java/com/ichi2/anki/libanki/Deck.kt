@@ -128,5 +128,6 @@ fun Order.toDisplayString(translations: Translations) =
         Order.REVERSE_ADDED -> translations.decksLatestAddedFirst()
         Order.RETRIEVABILITY_ASCENDING -> translations.deckConfigSortOrderRetrievabilityAscending()
         Order.RETRIEVABILITY_DESCENDING -> translations.deckConfigSortOrderRetrievabilityDescending()
+        Order.RELATIVE_OVERDUENESS -> translations.decksRelativeOverdueness()
         Order.UNRECOGNIZED -> throw IllegalArgumentException("Can't display an unknown enum value.")
     }
