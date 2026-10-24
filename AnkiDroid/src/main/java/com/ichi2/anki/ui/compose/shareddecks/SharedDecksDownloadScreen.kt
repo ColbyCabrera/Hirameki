@@ -36,7 +36,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -83,8 +82,6 @@ import java.util.Locale
  * @param onIntent Callback for processing user actions (intents) on this screen.
  */
 @OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class,
     ExperimentalMaterial3WindowSizeClassApi::class,
 )
 @Composable
@@ -417,7 +414,6 @@ private fun DownloadProgressSection(
  * Displays the action buttons available to the user based on the current [DownloadStatus].
  * This includes "Import", "Try Again", "Open in Browser", and "Cancel".
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DownloadActions(
     state: DownloadUiState,

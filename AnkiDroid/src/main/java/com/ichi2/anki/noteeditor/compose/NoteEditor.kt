@@ -45,8 +45,6 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -121,7 +119,6 @@ data class NoteEditorState(
 /**
  * Main Note Editor Screen with Material 3 Components
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorScreen(
     modifier: Modifier = Modifier,
@@ -412,7 +409,6 @@ fun NoteEditorScreen(
 /**
  * Note Type Selector Dropdown
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NoteTypeSelector(
     selectedNoteType: String,
@@ -475,7 +471,6 @@ fun NoteTypeSelector(
 /**
  * Deck selector dropdown with hierarchy support (matches Note Type Selector style)
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckSelector(
     selectedDeck: String,
@@ -613,7 +608,6 @@ private fun DeckHierarchyMenuItems(
 /**
  * Individual Field Editor with multimedia and sticky support
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NoteFieldEditor(
     field: NoteFieldState,

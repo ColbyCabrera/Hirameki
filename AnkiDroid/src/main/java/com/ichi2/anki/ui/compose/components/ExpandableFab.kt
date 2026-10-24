@@ -19,8 +19,6 @@ package com.ichi2.anki.ui.compose.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
@@ -51,7 +49,6 @@ const val ADD_DECK_FAB_TAG = "expandable_fab_add_deck"
 const val ADD_NOTE_FAB_TAG = "expandable_fab_add_note"
 const val IMPORT_FAB_TAG = "expandable_fab_import"
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExpandableFab(
     expanded: Boolean,

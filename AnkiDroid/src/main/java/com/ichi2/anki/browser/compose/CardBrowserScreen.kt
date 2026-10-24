@@ -107,7 +107,6 @@ import kotlinx.coroutines.launch
 
 private val ToolbarBottomSpacing = 32.dp
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CardBrowserScreen(
     viewModel: CardBrowserViewModel,
@@ -476,7 +475,7 @@ fun CardBrowserScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowserToolbar(
     onAddNote: () -> Unit,
@@ -804,7 +803,7 @@ fun MoreOptionsBottomSheet(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectableSortOrderBottomSheet(
     viewModel: CardBrowserViewModel,

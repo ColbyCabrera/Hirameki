@@ -31,7 +31,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -65,7 +64,6 @@ import com.ichi2.anki.ui.windows.reviewer.whiteboard.compose.ColorBrushButton
 /**
  * Compose-based whiteboard toolbar with undo/redo, eraser, and brush selection.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun WhiteboardToolbar(
     viewModel: WhiteboardViewModel,
@@ -106,7 +104,6 @@ fun WhiteboardToolbar(
 /**
  * Stateless Compose-based whiteboard toolbar.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun WhiteboardToolbarContent(
     canUndo: Boolean,

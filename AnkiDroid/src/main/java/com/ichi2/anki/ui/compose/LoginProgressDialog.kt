@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,7 +35,6 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
  *
  * @param onCancel Called when the user cancels the login operation
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoginProgressDialog(onCancel: () -> Unit) {
     AlertDialog(

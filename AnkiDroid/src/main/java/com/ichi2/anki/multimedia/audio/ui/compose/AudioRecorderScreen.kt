@@ -33,7 +33,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonShapes
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,7 +80,6 @@ fun AudioRecorderScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AudioRecorderContent(
     title: String,
@@ -188,7 +186,6 @@ fun AudioRecorderContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AudioRecorderControls(
     state: AudioRecorderViewModel.RecordingState,
@@ -296,7 +293,6 @@ fun AudioRecorderControls(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RecordButton(
     onClick: () -> Unit,
@@ -350,7 +346,6 @@ fun StopButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PauseResumeButton(
     isPaused: Boolean,
@@ -390,7 +385,6 @@ fun PauseResumeButton(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PlayPauseButton(
     isPlaying: Boolean,
@@ -685,7 +679,6 @@ private fun AudioRecorderControlsPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview(name = "Buttons Overview", showBackground = true)
 @Composable
 private fun AudioRecorderButtonsPreview() {

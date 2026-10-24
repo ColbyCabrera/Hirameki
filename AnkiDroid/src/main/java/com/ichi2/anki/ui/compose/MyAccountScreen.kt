@@ -58,7 +58,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
@@ -113,7 +112,6 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MyAccountScreen(
     viewModel: MyAccountViewModel,
@@ -232,7 +230,6 @@ fun MyAccountScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RemoveAccountContent(onBack: () -> Unit) {
     val removeAccountUrl = stringResource(R.string.remove_account_url)
@@ -370,7 +367,6 @@ private fun RemoveAccountWebView(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoggedOutContent(
     modifier: Modifier = Modifier,
@@ -651,7 +647,6 @@ fun LoggedOutContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AccountLinkItem(
     title: String,
@@ -712,7 +707,6 @@ private fun AccountLinkItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoggedInContent(
     modifier: Modifier = Modifier,

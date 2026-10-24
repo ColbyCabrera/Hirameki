@@ -47,7 +47,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.VisibleForTesting
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
@@ -431,7 +430,6 @@ open class DeckPicker :
     // ----------------------------------------------------------------------------
 
     /** Called when the activity is first created.  */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Throws(SQLException::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
