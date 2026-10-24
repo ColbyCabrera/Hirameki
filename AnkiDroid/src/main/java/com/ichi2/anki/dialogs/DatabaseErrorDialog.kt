@@ -39,6 +39,7 @@ import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.LocalizedUnambiguousBackupTimeFormatter
 import com.ichi2.anki.R
 import com.ichi2.anki.ankiActivity
+import com.ichi2.anki.backend.DatabaseCorruption
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType.DIALOG_CONFIRM_DATABASE_CHECK
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType.DIALOG_CONFIRM_RESTORE_BACKUP
@@ -550,7 +551,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
         get() =
             when (requireDialogType()) {
                 DIALOG_LOAD_FAILED ->
-                    if (databaseCorruptFlag) {
+                    if (databaseCorruptFlag || DatabaseCorruption.isDetected) {
                         // The sqlite database has been corrupted (DatabaseErrorHandler.onCorrupt() was called)
                         // Show a specific message appropriate for the situation
                         res().getString(R.string.corrupt_db_message, res().getString(R.string.repair_deck))

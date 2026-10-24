@@ -83,5 +83,6 @@ private class SupportSQLiteOpenHelperCallback(
         Timber.i("closeCollection: %s", "Database corrupted")
         CollectionManager.closeCollectionBlocking()
         DatabaseErrorDialog.databaseCorruptFlag = true
+        DatabaseCorruption.isDetected = true
     }
 }
