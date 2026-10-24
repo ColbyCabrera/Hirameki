@@ -67,7 +67,7 @@ object InitialActivity {
                 StartupFailure.DiskFull
             } catch (e: BackendException.BackendDbException.BackendDbCorruptException) {
                 Timber.w(e)
-                DatabaseCorruption.isDetected = true
+                DatabaseCorruption.onCorruptionDetected()
                 StartupFailure.DBError(e)
             } catch (e: SQLiteFullException) {
                 Timber.w(e)

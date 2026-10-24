@@ -17,6 +17,7 @@
 package com.ichi2.anki
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ichi2.anki.backend.DatabaseCorruption
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -51,5 +52,20 @@ class CollectionManagerTest : RobolectricTest() {
 
             CollectionManager.setColForTests(null)
             assertFalse(CollectionManager.isCollectionOpenFlow.value)
+        }
+
+    @Test
+    fun openingCollectionClearsDetectedCorruption() =
+        runTest {
+            CollectionManager.ensureClosed()
+            DatabaseCorruption.onCorruptionDetected()
+            assertTrue(DatabaseCorruption.isDetected)
+
+            CollectionManager.ensureOpen()
+
+            assertFalse(
+                "a successful open should clear detected corruption",
+                DatabaseCorruption.isDetected,
+            )
         }
 }

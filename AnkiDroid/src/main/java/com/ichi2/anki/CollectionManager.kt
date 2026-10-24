@@ -30,6 +30,7 @@ import com.ichi2.anki.CollectionManager.getColUnsafe
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CollectionManager.withOpenColOrNull
 import com.ichi2.anki.CollectionManager.withQueue
+import com.ichi2.anki.backend.DatabaseCorruption
 import com.ichi2.anki.backend.createDatabaseUsingRustBackend
 import com.ichi2.anki.common.utils.android.isRobolectric
 import com.ichi2.anki.libanki.Collection
@@ -284,6 +285,9 @@ object CollectionManager {
                     databaseBuilder = { backend -> createDatabaseUsingRustBackend(backend) },
                     backend = backend,
                 )
+            // the collection opened, so it is not corrupt: clears a flag set by a previous
+            // failure, for example after the user repaired the collection
+            DatabaseCorruption.clear()
             _isCollectionOpenFlow.value = true
         }
     }

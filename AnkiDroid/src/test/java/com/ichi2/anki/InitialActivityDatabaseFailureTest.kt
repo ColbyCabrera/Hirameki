@@ -25,6 +25,7 @@ import com.ichi2.anki.InitialActivityWithConflictTest.Companion.setupForDefault
 import com.ichi2.anki.backend.DatabaseCorruption
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.instanceOf
+import org.hamcrest.CoreMatchers.nullValue
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Before
@@ -39,14 +40,14 @@ class InitialActivityDatabaseFailureTest : RobolectricTest() {
     @Before
     override fun setUp() {
         super.setUp()
-        DatabaseCorruption.isDetected = false
+        DatabaseCorruption.clear()
         setupForDatabaseConflict()
     }
 
     @After
     override fun tearDown() {
         CollectionManager.emulatedOpenFailure = null
-        DatabaseCorruption.isDetected = false
+        DatabaseCorruption.clear()
         super.tearDown()
         setupForDefault()
     }
@@ -68,5 +69,19 @@ class InitialActivityDatabaseFailureTest : RobolectricTest() {
 
         assertThat("a corrupt collection is a DB error", failure, instanceOf(StartupFailure.DBError::class.java))
         assertThat("corruption should be detected", DatabaseCorruption.isDetected, equalTo(true))
+    }
+
+    @Test
+    fun `a successful open after corruption clears the detected flag`() {
+        CollectionManager.emulatedOpenFailure = CollectionOpenFailure.DATABASE_CORRUPT
+        getStartupFailureType(targetContext)
+        assertThat("corruption should be detected", DatabaseCorruption.isDetected, equalTo(true))
+
+        // the user repaired the collection (or selected a new one)
+        CollectionManager.emulatedOpenFailure = null
+        val failure = getStartupFailureType(targetContext)
+
+        assertThat("the collection should now open", failure, nullValue())
+        assertThat("a successful open should clear corruption", DatabaseCorruption.isDetected, equalTo(false))
     }
 }

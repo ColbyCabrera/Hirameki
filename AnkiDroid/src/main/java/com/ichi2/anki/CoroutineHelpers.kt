@@ -226,7 +226,7 @@ suspend fun <T> FragmentActivity.runCatching(
             // must precede `is BackendException`: BackendDbCorruptException is a subclass
             is SQLiteDatabaseCorruptException, is BackendDbCorruptException -> {
                 Timber.e(exc, errorMessage)
-                DatabaseCorruption.isDetected = true
+                DatabaseCorruption.onCorruptionDetected()
                 if (callerTrace != null) Timber.e(callerTrace)
                 if (this is DeckPicker) {
                     showDatabaseErrorDialog(

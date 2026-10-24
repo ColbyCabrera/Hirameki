@@ -551,9 +551,9 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
         get() =
             when (requireDialogType()) {
                 DIALOG_LOAD_FAILED ->
-                    if (databaseCorruptFlag || DatabaseCorruption.isDetected) {
-                        // The sqlite database has been corrupted (DatabaseErrorHandler.onCorrupt() was called)
-                        // Show a specific message appropriate for the situation
+                    if (DatabaseCorruption.isDetected) {
+                        // The collection database has been corrupted: show a specific message
+                        // appropriate for the situation
                         res().getString(R.string.corrupt_db_message, res().getString(R.string.repair_deck))
                     } else {
                         // Generic message shown when a libanki task failed
@@ -646,9 +646,6 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
     }
 
     companion object {
-        // public flag which lets us distinguish between inaccessible and corrupt database
-        var databaseCorruptFlag = false
-
         /**
          * Key for passing a CustomExceptionData object in a Bundle,
          * contains error message and stack trace.
