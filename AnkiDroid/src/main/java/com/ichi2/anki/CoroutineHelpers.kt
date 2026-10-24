@@ -228,11 +228,14 @@ suspend fun <T> FragmentActivity.runCatching(
                 Timber.e(exc, errorMessage)
                 DatabaseCorruption.isDetected = true
                 if (callerTrace != null) Timber.e(callerTrace)
-                (this as? AnkiActivity)
-                    ?.showDatabaseErrorDialog(
+                if (this is DeckPicker) {
+                    showDatabaseErrorDialog(
                         errorDialogType = DatabaseErrorDialogType.DIALOG_LOAD_FAILED,
                         exceptionData = DatabaseErrorDialog.CustomExceptionData.fromException(exc),
                     )
+                } else {
+                    showError(exc.localizedMessage ?: exc.toString(), exc.toCrashReportData(this))
+                }
             }
 
             is BackendException -> {
