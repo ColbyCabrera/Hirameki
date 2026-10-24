@@ -97,6 +97,9 @@ val collectionMethods =
         "getIgnoredBeforeCount" to { bytes -> getIgnoredBeforeCountRaw(bytes) },
         "getRetentionWorkload" to { bytes -> getRetentionWorkloadRaw(bytes) },
         "simulateFsrsWorkload" to { bytes -> simulateFsrsWorkloadRaw(bytes) },
+        // https://github.com/ankitects/anki/pull/4326 -> saveCustomColours should be no-op in mobile clients
+        "saveCustomColours" to { bytes -> backendIdentity(bytes) },
+        "getCustomColours" to { bytes -> getCustomColoursRaw(bytes) },
     )
 
 suspend fun handleCollectionPostRequest(
@@ -132,6 +135,12 @@ val uiMethods =
         },
         "importCsv" to { bytes -> lifecycleScope.async { importCsvRaw(bytes) } },
         "importAnkiPackage" to { bytes -> lifecycleScope.async { importAnkiPackageUndoable(bytes) } },
+        "importDialogRequireClose" to { _ ->
+            lifecycleScope.async {
+                finish()
+                byteArrayOf()
+            }
+        },
         "addImageOcclusionNote" to { bytes ->
             lifecycleScope.async {
                 withCol { addImageOcclusionNoteRaw(bytes) }
