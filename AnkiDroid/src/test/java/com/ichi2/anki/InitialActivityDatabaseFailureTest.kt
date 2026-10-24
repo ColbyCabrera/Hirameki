@@ -74,7 +74,8 @@ class InitialActivityDatabaseFailureTest : RobolectricTest() {
     @Test
     fun `a successful open after corruption clears the detected flag`() {
         CollectionManager.emulatedOpenFailure = CollectionOpenFailure.DATABASE_CORRUPT
-        getStartupFailureType(targetContext)
+        val initialFailure = getStartupFailureType(targetContext)
+        assertThat("initial startup should report a DB error", initialFailure, instanceOf(StartupFailure.DBError::class.java))
         assertThat("corruption should be detected", DatabaseCorruption.isDetected, equalTo(true))
 
         // the user repaired the collection (or selected a new one)
