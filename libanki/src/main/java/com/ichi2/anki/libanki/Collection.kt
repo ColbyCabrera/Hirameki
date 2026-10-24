@@ -1391,6 +1391,9 @@ class Collection(
 
     @NotInLibAnki
     fun evaluateParamsLegacyRaw(input: ByteArray): ByteArray = backend.evaluateParamsLegacyRaw(input = input)
+
+    @NotInLibAnki
+    fun getCustomColoursRaw(input: ByteArray): ByteArray = backend.getCustomColoursRaw(input = input)
 }
 
 @NotInLibAnki

@@ -1,6 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.4.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.1)" variant="all" version="9.4.1">
 
+    <issue
+        id="ThreadConstraint"
+        message="Statement must run from `@WorkerThread`, incompatible with earlier code that must run from `@{Main,Ui}Thread`"
+        errorLine1="            ViewerCommand.PLAY_MEDIA -> {"
+        errorLine2="            ^">
+        <location
+            file="src/main/java/com/ichi2/anki/AbstractFlashcardViewer.kt"
+            line="1328"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="ThreadConstraint"
+        message="Call must be from `@WorkerThread`, but super method `AnkiActivity.onOptionsItemSelected(…)` is allowing `@{Main,Ui}Thread`"
+        errorLine1="                playMedia(doMediaReplay = true)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/Reviewer.kt"
+            line="432"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="WrongThread"
+        message="Method getCard must be called from the worker thread, currently inferred thread is UI thread"
+        errorLine1="                val card = col.getCard(cardId)"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/NoteEditorActivity.kt"
+            line="450"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="WrongThread"
+        message="Method modSchema must be called from the worker thread, currently inferred thread is UI thread"
+        errorLine1="            getColUnsafe.modSchema()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/NoteTypeFieldEditor.kt"
+            line="257"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="WrongThread"
+        message="Method modSchemaNoCheck must be called from the worker thread, currently inferred thread is UI thread"
+        errorLine1="            getColUnsafe.modSchemaNoCheck()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/NoteTypeFieldEditor.kt"
+            line="259"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="WrongThread"
+        message="Method modSchema must be called from the worker thread, currently inferred thread is UI thread"
+        errorLine1="                getColUnsafe.modSchema()"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/NoteTypeFieldEditor.kt"
+            line="289"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="WrongThread"
+        message="Method modSchema must be called from the worker thread, currently inferred thread is UI thread"
+        errorLine1="            getColUnsafe.modSchema()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/NoteTypeFieldEditor.kt"
+            line="480"
+            column="13"/>
+    </issue>
 
     <issue
         id="MissingOnRenderProcessGone"
@@ -53,7 +129,7 @@
         errorLine2="            ~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/pages/DeckOptions.kt"
-            line="193"
+            line="212"
             column="13"/>
     </issue>
 
@@ -207,7 +283,7 @@
         errorLine2="                    ~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="288"
+            line="310"
             column="21"/>
     </issue>
 
@@ -218,7 +294,7 @@
         errorLine2="                    ~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="288"
+            line="310"
             column="21"/>
     </issue>
 
@@ -229,7 +305,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="288"
+            line="310"
             column="30"/>
     </issue>
 
@@ -240,7 +316,7 @@
         errorLine2="                             ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="288"
+            line="310"
             column="30"/>
     </issue>
 
@@ -482,7 +558,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="83"
+            line="78"
             column="13"/>
     </issue>
 
@@ -493,7 +569,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="90"
+            line="85"
             column="13"/>
     </issue>
 
@@ -504,7 +580,7 @@
         errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="105"
+            line="99"
             column="14"/>
     </issue>
 
@@ -515,7 +591,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="108"
+            line="102"
             column="13"/>
     </issue>
 
@@ -526,7 +602,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="122"
+            line="115"
             column="13"/>
     </issue>
 
@@ -537,7 +613,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="123"
+            line="116"
             column="13"/>
     </issue>
 
@@ -548,7 +624,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="124"
+            line="117"
             column="13"/>
     </issue>
 
@@ -559,7 +635,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="164"
+            line="157"
             column="13"/>
     </issue>
 
@@ -570,7 +646,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="197"
+            line="190"
             column="13"/>
     </issue>
 
@@ -581,7 +657,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="199"
+            line="192"
             column="13"/>
     </issue>
 
@@ -592,7 +668,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="235"
+            line="226"
             column="13"/>
     </issue>
 
@@ -603,7 +679,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="236"
+            line="227"
             column="13"/>
     </issue>
 
@@ -614,7 +690,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="237"
+            line="228"
             column="13"/>
     </issue>
 
@@ -625,7 +701,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="238"
+            line="229"
             column="13"/>
     </issue>
 
@@ -636,7 +712,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="239"
+            line="230"
             column="13"/>
     </issue>
 
@@ -647,7 +723,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="240"
+            line="231"
             column="13"/>
     </issue>
 
@@ -658,7 +734,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="241"
+            line="232"
             column="13"/>
     </issue>
 
@@ -669,7 +745,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="284"
+            line="275"
             column="13"/>
     </issue>
 
@@ -680,7 +756,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="294"
+            line="285"
             column="13"/>
     </issue>
 
@@ -691,7 +767,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="295"
+            line="286"
             column="13"/>
     </issue>
 
@@ -702,7 +778,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="296"
+            line="287"
             column="13"/>
     </issue>
 
@@ -713,7 +789,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="306"
+            line="297"
             column="13"/>
     </issue>
 
@@ -724,7 +800,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="307"
+            line="298"
             column="13"/>
     </issue>
 
@@ -735,7 +811,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="345"
+            line="336"
             column="13"/>
     </issue>
 
@@ -746,7 +822,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="350"
+            line="341"
             column="13"/>
     </issue>
 
@@ -757,7 +833,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="353"
+            line="344"
             column="13"/>
     </issue>
 
@@ -768,7 +844,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="354"
+            line="345"
             column="13"/>
     </issue>
 
@@ -779,7 +855,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="355"
+            line="346"
             column="13"/>
     </issue>
 
@@ -790,7 +866,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="356"
+            line="347"
             column="13"/>
     </issue>
 
@@ -801,7 +877,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="357"
+            line="348"
             column="13"/>
     </issue>
 
@@ -812,7 +888,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="367"
+            line="357"
             column="13"/>
     </issue>
 
@@ -823,7 +899,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="368"
+            line="358"
             column="13"/>
     </issue>
 
@@ -834,7 +910,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="369"
+            line="359"
             column="13"/>
     </issue>
 
@@ -845,7 +921,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="383"
+            line="373"
             column="13"/>
     </issue>
 
@@ -856,7 +932,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="394"
+            line="384"
             column="13"/>
     </issue>
 
@@ -867,7 +943,7 @@
         errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="435"
+            line="425"
             column="14"/>
     </issue>
 
@@ -878,7 +954,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="467"
+            line="457"
             column="13"/>
     </issue>
 
@@ -889,7 +965,7 @@
         errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="484"
+            line="474"
             column="14"/>
     </issue>
 
@@ -900,7 +976,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="495"
+            line="485"
             column="13"/>
     </issue>
 
@@ -911,7 +987,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="496"
+            line="486"
             column="13"/>
     </issue>
 
@@ -933,7 +1009,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/03-dialogs.xml"
-            line="114"
+            line="112"
             column="13"/>
     </issue>
 
@@ -944,7 +1020,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/03-dialogs.xml"
-            line="115"
+            line="113"
             column="13"/>
     </issue>
 
@@ -1879,17 +1955,6 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.drawable.ic_select_all_white` appears to be unused"
-        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot;"
-        errorLine2="^">
-        <location
-            file="src/main/res/drawable/ic_select_all_white.xml"
-            line="1"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.menu.card_browser_multiselect` appears to be unused"
         errorLine1="&lt;menu xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
         errorLine2="^">
@@ -2550,6 +2615,17 @@
 
     <issue
         id="UnusedResources"
+        message="The resource `R.drawable.ic_select_all_white` appears to be unused"
+        errorLine1="&lt;vector android:height=&quot;24dp&quot; android:tint=&quot;?attr/colorControlNormal&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_select_all_white.xml"
+            line="1"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
         message="The resource `R.drawable.ic_shelf_auto_hide` appears to be unused"
         errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
         errorLine2="^">
@@ -2738,7 +2814,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/preferences.xml"
-            line="37"
+            line="38"
             column="13"/>
     </issue>
 
@@ -2749,7 +2825,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/preferences.xml"
-            line="38"
+            line="39"
             column="13"/>
     </issue>
 
@@ -2760,7 +2836,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/preferences.xml"
-            line="53"
+            line="54"
             column="13"/>
     </issue>
 
@@ -2771,7 +2847,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/preferences.xml"
-            line="207"
+            line="208"
             column="13"/>
     </issue>
 
@@ -2782,7 +2858,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/preferences.xml"
-            line="227"
+            line="228"
             column="13"/>
     </issue>
 
@@ -2793,7 +2869,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/preferences.xml"
-            line="245"
+            line="246"
             column="13"/>
     </issue>
 
@@ -2903,7 +2979,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="66"
+            line="67"
             column="13"/>
     </issue>
 
@@ -2914,7 +2990,7 @@
         errorLine2="            ~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="106"
+            line="107"
             column="13"/>
     </issue>
 
@@ -3224,7 +3300,7 @@
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="65"
+            line="66"
             column="5"
             message="Duplicates value in `help`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3257,11 +3333,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="94"
+            line="89"
             column="5"/>
         <location
             file="src/main/res/values/02-strings.xml"
-            line="237"
+            line="228"
             column="5"
             message="Duplicates value in `flag_red`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3273,11 +3349,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="96"
+            line="91"
             column="5"/>
         <location
             file="src/main/res/values/02-strings.xml"
-            line="238"
+            line="229"
             column="5"
             message="Duplicates value in `flag_green`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3289,11 +3365,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="97"
+            line="92"
             column="5"/>
         <location
             file="src/main/res/values/02-strings.xml"
-            line="239"
+            line="230"
             column="5"
             message="Duplicates value in `flag_blue`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3305,7 +3381,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="236"
+            line="227"
             column="5"/>
         <location
             file="src/main/res/values/11-arrays.xml"
@@ -3321,11 +3397,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="452"
+            line="442"
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="106"
+            line="107"
             column="5"
             message="Duplicates value in `resume_recording`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3337,11 +3413,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/02-strings.xml"
-            line="499"
+            line="489"
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="103"
+            line="104"
             column="5"
             message="Duplicates value in `heatmap_widget_label`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3357,7 +3433,7 @@
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="102"
+            line="103"
             column="5"
             message="Duplicates value in `dialog_continue`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3369,11 +3445,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/03-dialogs.xml"
-            line="160"
+            line="158"
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="70"
+            line="71"
             column="5"
             message="Duplicates value in `help_item_report_bug`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
     </issue>
@@ -3385,16 +3461,16 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/03-dialogs.xml"
-            line="163"
+            line="161"
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="50"
+            line="51"
             column="5"
             message="Duplicates value in `help_item_support_opencollective_donate`. Add a `comment` attribute on both strings to explain this duplication"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="72"
+            line="73"
             column="5"
             message="Duplicates value in `help_item_support_opencollective_donate`. Add a `comment` attribute on both strings to explain this duplication"/>
     </issue>
@@ -3406,11 +3482,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/03-dialogs.xml"
-            line="176"
+            line="174"
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="74"
+            line="75"
             column="5"
             message="Duplicates value in `help_item_ankidroid_privacy_policy`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
     </issue>
@@ -3422,11 +3498,11 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/03-dialogs.xml"
-            line="177"
+            line="175"
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="76"
+            line="77"
             column="5"
             message="Duplicates value in `help_item_ankiweb_privacy_policy`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
     </issue>
@@ -3438,14 +3514,13 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/03-dialogs.xml"
-            line="178"
+            line="176"
             column="5"/>
         <location
             file="src/main/res/values/strings.xml"
-            line="79"
+            line="80"
             column="5"
             message="Duplicates value in `help_item_ankiweb_terms_and_conditions`. Add a `comment` attribute on both strings to explain this duplication (case varies, but you can use `android:inputType` or `android:capitalize` in the presentation)"/>
     </issue>
-
 
 </issues>
