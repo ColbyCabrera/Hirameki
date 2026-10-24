@@ -18,7 +18,6 @@ package com.ichi2.anki.ui.compose.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,7 +60,6 @@ import kotlinx.coroutines.android.awaitFrame
  * @param searchAnim The animation progress (0f to 1f) for opening/closing transitions.
  * @param containerColor The background color of the search bar container.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnkiSearchBar(
     query: String,

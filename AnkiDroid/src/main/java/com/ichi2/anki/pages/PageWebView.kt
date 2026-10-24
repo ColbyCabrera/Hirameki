@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -68,7 +67,6 @@ import timber.log.Timber
  * @param modifier Optional modifier for the composable
  * @param viewModel The ViewModel managing the AnkiServer lifecycle
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun PageWebView(
@@ -135,7 +133,6 @@ private fun PageWebViewError() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PageWebViewInternal(
     path: String,

@@ -27,7 +27,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
@@ -57,7 +56,6 @@ import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.MorphingCardCount
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ReviewerTopBar(
     newCount: Int,
@@ -139,7 +137,6 @@ private fun AboveTooltip(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MarkIcon(
     isMarked: Boolean,
@@ -173,7 +170,6 @@ fun MarkIcon(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FlagIcon(
     currentFlag: Int,
@@ -258,7 +254,6 @@ fun FlagIcon(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TooltipCardCount(
     count: Int,
@@ -271,7 +266,6 @@ private fun TooltipCardCount(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Counts(
     newCount: Int,

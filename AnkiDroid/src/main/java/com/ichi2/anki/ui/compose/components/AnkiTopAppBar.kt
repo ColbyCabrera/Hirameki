@@ -18,8 +18,6 @@ package com.ichi2.anki.ui.compose.components
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnkiTopAppBar(
     onNavigateUp: () -> Unit,

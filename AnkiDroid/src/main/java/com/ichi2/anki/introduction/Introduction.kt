@@ -100,7 +100,7 @@ private object IntroConstants {
     val ActionBackgroundSize = 600.dp
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun IntroductionScreen(
     acknowledged: Boolean,
@@ -187,7 +187,6 @@ fun IntroductionScreenPreview() {
     IntroductionScreen(onGetStarted = { }, onSync = { })
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DisclaimerContent(
     rotation: Float,
@@ -341,7 +340,6 @@ private fun DisclaimerContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ActionContent(
     rotation: Float,

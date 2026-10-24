@@ -16,7 +16,6 @@
 package com.ichi2.anki.ui.compose.components
 
 import android.graphics.Matrix
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
@@ -28,7 +27,6 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
 import kotlin.math.max
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class RoundedPolygonShape(
     private val polygon: RoundedPolygon,
 ) : Shape {

@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,7 +41,6 @@ import com.ichi2.anki.R
 /**
  * Progress dialog used for longer running deck picker operations such as sync.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckPickerProgressDialog(
     title: String,

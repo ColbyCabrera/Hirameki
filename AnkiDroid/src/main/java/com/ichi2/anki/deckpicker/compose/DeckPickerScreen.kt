@@ -52,7 +52,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -115,7 +114,6 @@ private val subDeckPadding = 16.dp
  * Child rows keep the last expanded child list in memory so collapse animations can finish without
  * immediately dropping the subtree from composition.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RenderDeck(
     deck: DisplayDeckNode,
@@ -224,7 +222,7 @@ private fun RenderDeck(
  * @param isInInitialState `true` when the collection is still in the empty initial state,
  * `false` after a non-empty load, and `null` while the first load is unresolved.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckPickerContent(
     decks: List<DisplayDeckNode>,
@@ -363,7 +361,6 @@ fun DeckPickerContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DeckPickerTopBar(
     isSearchOpen: Boolean,
@@ -578,7 +575,6 @@ fun MoreOptionsMenu(
  * @param studyOptionsData The currently selected deck summary for the study options panel.
  * @param requestSearchFocus One-shot flag used by outer navigation state to reopen deck search.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DeckPickerScreen(
     fragmented: Boolean,
@@ -722,7 +718,6 @@ private fun DeckPickerFab(
     BackHandler(expanded) { onExpandedChange(false) }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 fun DeckPickerTopBarPreview() {
@@ -748,7 +743,6 @@ fun DeckPickerTopBarPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 fun DeckPickerTopBarSearchOpenPreview() {
@@ -774,7 +768,6 @@ fun DeckPickerTopBarSearchOpenPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview(showBackground = true)
 @Composable
 fun RenderDeckPreview() {

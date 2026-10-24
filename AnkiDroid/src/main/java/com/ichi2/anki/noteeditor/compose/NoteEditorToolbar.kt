@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.Icon
@@ -66,7 +65,6 @@ import com.ichi2.anki.noteeditor.ToolbarButtonModel
 /**
  * Formatting toolbar for the note editor
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun NoteEditorToolbar(
     modifier: Modifier = Modifier,
@@ -192,7 +190,7 @@ fun NoteEditorToolbar(
 /**
  * Icon button for toolbar using Material3 IconButton with tooltip
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ToolbarIconButton(
     modifier: Modifier = Modifier,
@@ -279,7 +277,6 @@ private fun ToolbarIconButton(
 @OptIn(
     ExperimentalFoundationApi::class,
     ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class,
 )
 @Composable
 private fun ToolbarTextButton(

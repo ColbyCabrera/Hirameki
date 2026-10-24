@@ -695,7 +695,6 @@ private data class GradeOption(
     val label: String,
 )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private class RatingVisuals(
     val shape: RoundedPolygon,
     val containerColor: @Composable () -> Color,

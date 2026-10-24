@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -67,7 +66,6 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AboutScreen(
     versionText: String,

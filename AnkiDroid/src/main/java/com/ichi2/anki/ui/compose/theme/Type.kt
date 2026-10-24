@@ -20,7 +20,6 @@
  ****************************************************************************************/
 package com.ichi2.anki.ui.compose.theme
 
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
@@ -125,7 +124,6 @@ val Vazirmatn =
         },
     )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 val AppTypography =
     Typography(
         displayLarge =
@@ -288,7 +286,6 @@ val AppTypography =
  */
 val ArabicScriptTypography = AppTypography.inFamily(Vazirmatn)
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun Typography.inFamily(family: FontFamily): Typography {
     fun TextStyle.withFamily() = copy(fontFamily = family)
     return copy(

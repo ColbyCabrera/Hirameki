@@ -86,7 +86,6 @@ val MORPHING_SHAPES =
 private val MORPH_ANIMATION_SPEC: FiniteAnimationSpec<Float> =
     spring(dampingRatio = 0.6f, stiffness = 200f)
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MorphingCardCount(
     cardCount: Int,

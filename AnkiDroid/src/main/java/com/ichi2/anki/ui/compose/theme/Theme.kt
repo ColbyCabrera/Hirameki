@@ -25,7 +25,6 @@ import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
@@ -62,7 +61,6 @@ val AppShapes =
         extraLarge = RoundedCornerShape(32.dp), // Expressive: For prominent elements like FABs or hero containers
     )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnkiDroidTheme(
     harmonizeRatings: Boolean = true,

@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,7 +59,7 @@ import com.ichi2.anki.notetype.ManageNoteTypeUiModel
 import com.ichi2.anki.ui.compose.components.MorphingCardCount
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteTypeActionBottomSheet(
     noteType: ManageNoteTypeUiModel,
@@ -87,7 +86,6 @@ fun NoteTypeActionBottomSheet(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NoteTypeActionBottomSheetContent(
     noteType: ManageNoteTypeUiModel,
@@ -224,7 +222,7 @@ fun NoteTypeActionBottomSheetContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ActionItem(
     icon: Painter,
@@ -294,7 +292,6 @@ private fun ActionItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 fun NoteTypeActionBottomSheetContentPreview() {
@@ -312,7 +309,7 @@ fun NoteTypeActionBottomSheetContentPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun NoteTypeActionBottomSheetPreview() {

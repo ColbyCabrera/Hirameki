@@ -31,8 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -121,7 +119,6 @@ import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 /**
  * Snapshot of the UI state consumed by [DeckPickerWithDrawer].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 private data class DeckPickerDrawerState(
     val fragmented: Boolean,
     val deckList: DeckPickerViewModel.FlattenedDeckList,
@@ -195,7 +192,6 @@ private data class DeckPickerDrawerActions(
  *
  * @param fragmented Whether the deck picker is currently shown in the split tablet layout.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DeckPickerNavHost(
     navigator: Navigator,
@@ -415,7 +411,6 @@ fun DeckPickerNavHost(
  * This is the composition boundary where activity callbacks, navigator actions, dialog state, and
  * collected flows are translated into the simple state/action objects consumed by the screen layer.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DeckPickerMainContent(
     navigator: Navigator,
@@ -719,7 +714,6 @@ private fun DeckPickerMainContent(
  * Wraps [DeckPickerScreen] in a modal navigation drawer and adapts drawer-level actions into the
  * row, FAB, and overflow action models used by the screen.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun DeckPickerWithDrawer(
     state: DeckPickerDrawerState,

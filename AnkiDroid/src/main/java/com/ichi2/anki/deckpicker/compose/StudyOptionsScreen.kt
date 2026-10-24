@@ -331,7 +331,6 @@ fun StudyOptionsView(
 /**
  * Empty-state study options content for a deck that contains no cards.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EmptyDeckView(
     studyOptionsData: StudyOptionsData,
@@ -362,7 +361,6 @@ fun EmptyDeckView(
 /**
  * Post-study state shown when the selected deck has no cards left for the day.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CongratsView(
     studyOptionsData: StudyOptionsData,

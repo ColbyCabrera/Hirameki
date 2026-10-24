@@ -112,7 +112,6 @@ data class DeckItemActions(
  * @param actions Callbacks already scoped to [deck].
  */
 @OptIn(
-    ExperimentalMaterial3ExpressiveApi::class,
     ExperimentalFoundationApi::class,
 )
 @Composable
@@ -363,7 +362,6 @@ fun DeckItem(
  * The semantic [contentDescription] is provided separately so screen readers can announce the badge
  * with its label instead of only the raw number.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CardCountsContainer(
     cardCount: Int,
@@ -394,7 +392,6 @@ fun CardCountsContainer(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Composable
 fun CardCountsContainerPreview() {
@@ -405,7 +402,6 @@ fun CardCountsContainerPreview() {
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview(name = "Deck Item", showBackground = true)
 @Composable
 private fun DeckItemPreview() {
@@ -444,7 +440,6 @@ private fun DeckItemPreview() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview(name = "Deck Item Subdeck", showBackground = true)
 @Composable
 private fun DeckItemSubdeckPreview() {
