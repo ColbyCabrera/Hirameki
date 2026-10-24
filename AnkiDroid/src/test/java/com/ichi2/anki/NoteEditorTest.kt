@@ -80,6 +80,7 @@ class NoteEditorTest : RobolectricTest() {
     @Before
     override fun setUp() {
         super.setUp()
+        ensureCollectionLoadIsSynchronous()
         originalIoDispatcher = ioDispatcher
         ioDispatcher = UnconfinedTestDispatcher()
         // Ensure main looper is idled before each test
