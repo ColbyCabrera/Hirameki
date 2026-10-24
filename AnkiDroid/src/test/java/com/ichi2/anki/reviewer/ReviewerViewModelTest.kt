@@ -440,7 +440,10 @@ class ReviewerViewModelTest : RobolectricTest() {
     fun `showAnswer updates state correctly`() =
         runTest {
             addBasicNote("Front", "Back")
-            val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val viewModel =
+                ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             // Initially answer should not be shown
@@ -448,6 +451,7 @@ class ReviewerViewModelTest : RobolectricTest() {
             assertThat("Answer should not be shown initially", state.isAnswerShown, equalTo(false))
 
             viewModel.onEvent(ReviewerEvent.ShowAnswer)
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             state = viewModel.state.first()
@@ -470,7 +474,10 @@ class ReviewerViewModelTest : RobolectricTest() {
             addBasicNote("Front1", "Back1")
             addBasicNote("Front2", "Back2")
 
-            val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val viewModel =
+                ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             var state = viewModel.state.first()
@@ -478,10 +485,12 @@ class ReviewerViewModelTest : RobolectricTest() {
 
             // Show answer first (required before rating)
             viewModel.onEvent(ReviewerEvent.ShowAnswer)
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             // Rate the card
             viewModel.onEvent(ReviewerEvent.RateCard(anki.scheduler.CardAnswer.Rating.GOOD))
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             state = viewModel.state.first()
@@ -496,7 +505,10 @@ class ReviewerViewModelTest : RobolectricTest() {
             addBasicNote("Front1", "Back1")
             addBasicNote("Front2", "Back2")
 
-            val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val viewModel =
+                ReviewerViewModel(ApplicationProvider.getApplicationContext(), testDispatcher)
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             val initialState = viewModel.state.first()
@@ -508,6 +520,7 @@ class ReviewerViewModelTest : RobolectricTest() {
             assertThat("Should have 2 new cards before deleting", initialState.newCount, equalTo(2))
 
             viewModel.confirmDeleteNote()
+            testScheduler.advanceUntilIdle()
             advanceRobolectricLooper()
 
             val state = viewModel.state.first()

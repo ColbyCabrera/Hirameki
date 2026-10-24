@@ -21,8 +21,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CrashReportService
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.Collection
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -38,7 +38,7 @@ object CollectionLoader {
     ) {
         lifecycleOwner.lifecycleScope.launch {
             val col =
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     // load collection
                     try {
                         Timber.d("CollectionLoader accessing collection")
