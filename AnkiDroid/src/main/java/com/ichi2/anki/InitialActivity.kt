@@ -25,6 +25,7 @@ import android.os.Parcelable
 import androidx.annotation.CheckResult
 import androidx.core.content.edit
 import com.ichi2.anki.backend.DatabaseCorruption
+import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.servicelayer.PreferenceUpgradeService
 import com.ichi2.anki.servicelayer.PreferenceUpgradeService.setPreferencesUpToDate
@@ -56,6 +57,9 @@ object InitialActivity {
             try {
                 CollectionManager.getColUnsafe()
                 return null
+            } catch (e: CollectionLockedException) {
+                Timber.w(e)
+                StartupFailure.DatabaseLocked
             } catch (e: BackendException.BackendDbException.BackendDbLockedException) {
                 Timber.w(e)
                 StartupFailure.DatabaseLocked
