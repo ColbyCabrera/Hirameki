@@ -18,9 +18,11 @@ package com.ichi2.anki
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import anki.backend.backendError
+import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.servicelayer.ThrowableFilterService
 import com.ichi2.anki.servicelayer.ThrowableFilterService.safeFromPII
+import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import net.ankiweb.rsdroid.exceptions.BackendDeckIsFilteredException
 import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
@@ -59,5 +61,7 @@ class ThrowableFilterServiceTest {
         assertTrue(ThrowableFilterService.shouldDiscardThrowable(exception2))
         val exception3 = StorageAccessException("test exception")
         assertTrue(ThrowableFilterService.shouldDiscardThrowable(exception3))
+        val exception4 = CollectionLockedException(BackendDbLockedException(backendError {}))
+        assertTrue(ThrowableFilterService.shouldDiscardThrowable(exception4))
     }
 }

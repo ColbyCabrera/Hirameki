@@ -12,13 +12,13 @@ import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
+import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.testutils.BackupManagerTestUtilities
 import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
 import kotlinx.coroutines.test.advanceUntilIdle
-import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Before
@@ -159,10 +159,10 @@ class DeckPickerTest : RobolectricTest() {
         }
     }
 
-    // TODO: enableNullCollection() causes BackendDbLockedException when DeckPicker startup
+    // TODO: enableNullCollection() causes CollectionLockedException when DeckPicker startup
     //  coroutines try to open the collection. The exception propagates before the options
     //  menu can be inspected. Fix: use a mechanism that delays the lock until after startup.
-    @Ignore("BackendDbLockedException thrown during startup when null collection is enabled")
+    @Ignore("CollectionLockedException thrown during startup when null collection is enabled")
     @Test
     fun doNotShowOptionsMenuWhenCollectionInaccessible() =
         runTest {
@@ -233,7 +233,7 @@ class DeckPickerTest : RobolectricTest() {
             ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
                 composeTestRule.waitForIdle()
                 scenario.onActivity { d ->
-                    assertFailsWith<BackendDbLockedException> { d.getColUnsafe }
+                    assertFailsWith<CollectionLockedException> { d.getColUnsafe }
                 }
             }
         } finally {

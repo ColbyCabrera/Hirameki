@@ -44,6 +44,7 @@ import com.ichi2.anki.common.annotations.UseContextParameter
 import com.ichi2.anki.dialogs.DatabaseErrorDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.compose.ProgressDialogFragment
+import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.pages.DeckOptionsDestination
@@ -214,7 +215,7 @@ suspend fun <T> FragmentActivity.runCatching(
                 }
             }
 
-            is BackendNetworkException, is BackendSyncException, is StorageAccessException -> {
+            is BackendNetworkException, is BackendSyncException, is StorageAccessException, is CollectionLockedException -> {
                 // these exceptions do not generate worthwhile crash reports
                 Timber.i("Showing error dialog but not sending a crash report.")
                 showError(
