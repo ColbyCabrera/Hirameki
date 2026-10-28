@@ -62,6 +62,15 @@ class InitialActivityDatabaseFailureTest : RobolectricTest() {
     }
 
     @Test
+    fun `a locked collection is reported as DatabaseLocked`() {
+        CollectionManager.emulatedOpenFailure = CollectionOpenFailure.LOCKED
+
+        val failure = getStartupFailureType(targetContext)
+
+        assertThat("a locked collection should be reported", failure, equalTo(StartupFailure.DatabaseLocked))
+    }
+
+    @Test
     fun `a corrupt collection is flagged as corruption`() {
         CollectionManager.emulatedOpenFailure = CollectionOpenFailure.DATABASE_CORRUPT
 

@@ -38,15 +38,19 @@ import com.ichi2.anki.CrashReportData.Companion.throwIfDialogUnusable
 import com.ichi2.anki.CrashReportData.Companion.toCrashReportData
 import com.ichi2.anki.CrashReportData.HelpAction
 import com.ichi2.anki.CrashReportData.HelpAction.AnkiBackendLink
+import com.ichi2.anki.CrashReportData.HelpAction.OpenAdvancedSettings
 import com.ichi2.anki.CrashReportData.HelpAction.OpenDeckOptions
 import com.ichi2.anki.backend.DatabaseCorruption
 import com.ichi2.anki.common.annotations.UseContextParameter
 import com.ichi2.anki.dialogs.DatabaseErrorDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.compose.ProgressDialogFragment
+import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.pages.DeckOptionsDestination
+import com.ichi2.anki.preferences.AdvancedSettingsFragment
+import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.snackbar.canProperlyShowSnackbars
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.utils.openUrl
@@ -214,7 +218,7 @@ suspend fun <T> FragmentActivity.runCatching(
                 }
             }
 
-            is BackendNetworkException, is BackendSyncException, is StorageAccessException -> {
+            is BackendNetworkException, is BackendSyncException, is StorageAccessException, is CollectionLockedException -> {
                 // these exceptions do not generate worthwhile crash reports
                 Timber.i("Showing error dialog but not sending a crash report.")
                 showError(
@@ -313,9 +317,7 @@ fun Context.showError(
                 title(R.string.vague_error)
                 message(text = message)
                 positiveButton(R.string.dialog_ok)
-                if (crashReportData?.helpAction != null) {
-                    neutralButton(R.string.help)
-                }
+                crashReportData?.helpAction?.let { neutralButton(it.buttonTextRes()) }
                 if (crashReportData?.reportableException == true) {
                     Timber.w("sending crash report on close")
                     setOnDismissListener { crashReportData.sendCrashReport() }
@@ -361,8 +363,27 @@ suspend fun HelpAction.execute(context: Context): Boolean {
             // dismiss the dialog - the user should have resolved the issue
             return true
         }
+
+        OpenAdvancedSettings -> {
+            Timber.i("Opening 'Advanced settings'")
+            context.startActivity(PreferencesActivity.getIntent(context, AdvancedSettingsFragment::class))
+            // dismiss the dialog - the user should have resolved the issue
+            return true
+        }
     }
 }
+
+/**
+ * Text for the neutral button which triggers [HelpAction.execute].
+ *
+ * @return [R.string.settings] for actions which open settings, [R.string.help] otherwise.
+ */
+@StringRes
+fun HelpAction.buttonTextRes(): Int =
+    when (this) {
+        is AnkiBackendLink, OpenDeckOptions -> R.string.help
+        OpenAdvancedSettings -> R.string.settings
+    }
 
 /** In most cases, you'll want [AnkiActivity.withProgress]
  * instead. This lower-level routine can be used to integrate your own
@@ -749,8 +770,16 @@ data class CrashReportData(
         /** Open the deck options for the current deck */
         data object OpenDeckOptions : HelpAction()
 
+        /**
+         * Opens settings at the Advanced screen, where changing the 'Hirameki directory'
+         * resolves a [CollectionLockedException].
+         */
+        data object OpenAdvancedSettings : HelpAction()
+
         companion object {
             fun from(e: Throwable): HelpAction? {
+                if (e is CollectionLockedException) return OpenAdvancedSettings
+
                 val link =
                     try {
                         (e as? BackendException)

@@ -329,12 +329,17 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
                 }
             }
             DIALOG_DB_LOCKED -> {
-                // If the database is locked, all we can do is ask the user to exit.
+                // If the database is locked, the user can change the 'Hirameki directory' to
+                // resolve the conflict, or exit.
                 alertDialog.show {
                     title(R.string.database_locked_title)
                     message(text = message)
                     positiveButton(R.string.close) {
                         closeCollectionAndFinish()
+                    }
+                    // the user can change the 'Hirameki directory' to resolve the conflict
+                    neutralButton(R.string.settings) {
+                        requireDeckPicker().launchAdvancedSettingsForCollectionPathUpdate()
                     }
                     cancelable(false)
                 }
@@ -567,7 +572,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
                 DIALOG_CONFIRM_DATABASE_CHECK -> res().getString(R.string.check_db_warning)
                 DIALOG_CONFIRM_RESTORE_BACKUP -> res().getString(R.string.restore_backup)
                 DIALOG_ONE_WAY_SYNC_FROM_SERVER -> res().getString(R.string.backup_full_sync_from_server_question)
-                DIALOG_DB_LOCKED -> res().getString(R.string.database_locked_summary)
+                DIALOG_DB_LOCKED -> res().getString(R.string.database_locked_summary_new, res().getString(R.string.col_path))
                 INCOMPATIBLE_DB_VERSION -> {
                     var databaseVersion = -1
                     try {

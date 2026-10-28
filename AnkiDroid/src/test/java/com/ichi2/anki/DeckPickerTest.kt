@@ -1,22 +1,33 @@
 // noinspection MissingCopyrightHeader #8659
 package com.ichi2.anki
 
+import android.content.DialogInterface
 import android.content.Intent
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.core.content.edit
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import anki.backend.backendError
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.dialogs.BackupPromptDialog
+import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.EmptyCardsDialogFragment
+import com.ichi2.anki.exception.CollectionLockedException
+import com.ichi2.anki.preferences.AdvancedSettingsFragment
+import com.ichi2.anki.preferences.INITIAL_FRAGMENT_EXTRA
+import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.testutils.BackupManagerTestUtilities
 import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
+import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import org.junit.Assert.assertEquals
@@ -28,7 +39,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows
+import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowLooper
+import kotlin.reflect.jvm.jvmName
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -159,10 +172,10 @@ class DeckPickerTest : RobolectricTest() {
         }
     }
 
-    // TODO: enableNullCollection() causes BackendDbLockedException when DeckPicker startup
+    // TODO: enableNullCollection() causes CollectionLockedException when DeckPicker startup
     //  coroutines try to open the collection. The exception propagates before the options
     //  menu can be inspected. Fix: use a mechanism that delays the lock until after startup.
-    @Ignore("BackendDbLockedException thrown during startup when null collection is enabled")
+    @Ignore("CollectionLockedException thrown during startup when null collection is enabled")
     @Test
     fun doNotShowOptionsMenuWhenCollectionInaccessible() =
         runTest {
@@ -233,7 +246,7 @@ class DeckPickerTest : RobolectricTest() {
             ActivityScenario.launch(DeckPicker::class.java).use { scenario ->
                 composeTestRule.waitForIdle()
                 scenario.onActivity { d ->
-                    assertFailsWith<BackendDbLockedException> { d.getColUnsafe }
+                    assertFailsWith<CollectionLockedException> { d.getColUnsafe }
                 }
             }
         } finally {
@@ -302,6 +315,114 @@ class DeckPickerTest : RobolectricTest() {
             assertNotNull(dialogFragment, "EmptyCardsDialogFragment should be displayed")
             dismissAllDialogFragments()
         }
+
+    /**
+     * The 'Database Locked' dialog offers Settings, opened at the Advanced screen, where
+     * changing the 'Hirameki directory' resolves the conflict. Without it, the dialog's only
+     * button quits the app, contradicting the guidance in its own message.
+     */
+    @Test
+    fun `database locked dialog links to Advanced settings`() {
+        val deckPicker = startRegularActivity<DeckPicker>()
+        deckPicker.showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_DB_LOCKED)
+        deckPicker.supportFragmentManager.executePendingTransactions()
+        advanceRobolectricLooper()
+
+        val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+        val settingsButton = dialog.getButton(DialogInterface.BUTTON_NEUTRAL)
+        assertEquals(targetContext.getString(R.string.settings), settingsButton.text.toString())
+        assertEquals(
+            targetContext.getString(R.string.database_locked_summary_new, targetContext.getString(R.string.col_path)),
+            getAlertDialogText(true),
+        )
+
+        Shadows.shadowOf(deckPicker).clearNextStartedActivities()
+        settingsButton.performClick()
+        advanceRobolectricLooper()
+
+        val settings = Shadows.shadowOf(deckPicker).nextStartedActivityForResult?.intent
+        assertNotNull(settings, "Advanced settings should be opened")
+        assertEquals(PreferencesActivity::class.qualifiedName, settings.component?.className)
+        assertEquals(
+            AdvancedSettingsFragment::class.jvmName,
+            settings.getBundleExtra(SingleFragmentActivity.FRAGMENT_ARGS_EXTRA)?.getString(INITIAL_FRAGMENT_EXTRA),
+        )
+    }
+
+    /**
+     * A [CollectionLockedException] shown via [showError] offers Settings, opened at the
+     * Advanced screen, where changing the 'Hirameki directory' resolves the conflict.
+     */
+    @Test
+    fun `locked collection error links to Advanced settings`() {
+        throwOnShowError = false
+        try {
+            val deckPicker = startRegularActivity<DeckPicker>()
+            val locked =
+                CollectionLockedException(
+                    BackendDbLockedException(backendError {}),
+                )
+
+            deckPicker.showError(
+                locked.localizedMessage!!,
+                CrashReportData(locked, "DeckPickerTest", reportableException = false),
+            )
+            advanceRobolectricLooper()
+
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val settingsButton = dialog.getButton(DialogInterface.BUTTON_NEUTRAL)
+            assertEquals(targetContext.getString(R.string.settings), settingsButton.text.toString())
+
+            Shadows.shadowOf(deckPicker).clearNextStartedActivities()
+            settingsButton.performClick()
+            advanceRobolectricLooper()
+
+            val settings = Shadows.shadowOf(deckPicker).nextStartedActivity
+            assertNotNull(settings, "Advanced settings should be opened")
+            assertEquals(PreferencesActivity::class.qualifiedName, settings.component?.className)
+            assertEquals(
+                AdvancedSettingsFragment::class.jvmName,
+                settings.getBundleExtra(SingleFragmentActivity.FRAGMENT_ARGS_EXTRA)?.getString(INITIAL_FRAGMENT_EXTRA),
+            )
+            assertTrue(
+                Shadows.shadowOf(dialog).hasBeenDismissed(),
+                "the error dialog should be dismissed after opening settings",
+            )
+        } finally {
+            throwOnShowError = true
+        }
+    }
+
+    /**
+     * The real [launchCatchingTask] path must show the lock guidance without producing a
+     * crash report. The direct [showError] test above does not prove the reporting flag.
+     */
+    @Test
+    fun `locked collection error from launchCatchingTask is not reported`() {
+        throwOnShowError = false
+        val deckPicker = startRegularActivity<DeckPicker>()
+        mockkObject(CrashReportService)
+        CollectionManager.emulatedOpenFailure = CollectionManager.CollectionOpenFailure.LOCKED
+        try {
+            deckPicker.launchCatchingTask { CollectionManager.withCol { } }
+            advanceRobolectricLooper()
+
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val settingsButton = dialog.getButton(DialogInterface.BUTTON_NEUTRAL)
+            assertEquals(targetContext.getString(R.string.settings), settingsButton.text.toString())
+
+            dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            advanceRobolectricLooper()
+
+            verify(exactly = 0) {
+                CrashReportService.sendExceptionReport(any<Throwable>(), any<String>())
+            }
+        } finally {
+            CollectionManager.emulatedOpenFailure = null
+            unmockkObject(CrashReportService)
+            throwOnShowError = true
+        }
+    }
 
     private fun deckPicker(function: suspend DeckPicker.() -> Unit) =
         runTest {

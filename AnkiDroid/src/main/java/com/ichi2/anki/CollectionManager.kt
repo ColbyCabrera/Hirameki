@@ -33,6 +33,7 @@ import com.ichi2.anki.CollectionManager.withQueue
 import com.ichi2.anki.backend.DatabaseCorruption
 import com.ichi2.anki.backend.createDatabaseUsingRustBackend
 import com.ichi2.anki.common.utils.android.isRobolectric
+import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.CollectionFiles
 import com.ichi2.anki.libanki.LibAnki
@@ -48,6 +49,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import net.ankiweb.rsdroid.Backend
 import net.ankiweb.rsdroid.BackendException
+import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import net.ankiweb.rsdroid.BackendFactory
 import net.ankiweb.rsdroid.Translations
 import okio.withLock
@@ -276,19 +278,24 @@ object CollectionManager {
     /** See [ensureOpen]. This must only be run inside the queue. */
     private fun ensureOpenInner() {
         ensureBackendInner()
-        emulatedOpenFailure?.triggerFailure()
-        if (collection == null || collection!!.dbClosed) {
-            val collectionPath = collectionPathInValidFolder()
-            collection =
-                collection(
-                    collectionFiles = collectionPath,
-                    databaseBuilder = { backend -> createDatabaseUsingRustBackend(backend) },
-                    backend = backend,
-                )
-            // the collection opened, so it is not corrupt: clears a flag set by a previous
-            // failure, for example after the user repaired the collection
-            DatabaseCorruption.clear()
-            _isCollectionOpenFlow.value = true
+        try {
+            emulatedOpenFailure?.triggerFailure()
+            if (collection == null || collection!!.dbClosed) {
+                val collectionPath = collectionPathInValidFolder()
+                collection =
+                    collection(
+                        collectionFiles = collectionPath,
+                        databaseBuilder = { backend -> createDatabaseUsingRustBackend(backend) },
+                        backend = backend,
+                    )
+                // the collection opened, so it is not corrupt: clears a flag set by a previous
+                // failure, for example after the user repaired the collection
+                DatabaseCorruption.clear()
+                _isCollectionOpenFlow.value = true
+            }
+        } catch (e: BackendDbLockedException) {
+            // All consumers should better explain the issue
+            throw CollectionLockedException(e)
         }
     }
 
@@ -417,12 +424,25 @@ object CollectionManager {
 
     /**
      * Replace the collection with the provided colpkg file if it is valid.
+     * On failure, try to reopen the original collection before rethrowing the import error.
+     * If reopening also fails, attach that failure as a suppressed exception to the import error.
      */
     suspend fun importColpkg(colpkgPath: String) {
         withQueue {
             ensureClosedInner()
             ensureBackendInner()
-            importCollectionPackage(backend!!, collectionPathInValidFolder(), colpkgPath)
+            try {
+                importCollectionPackage(backend!!, collectionPathInValidFolder(), colpkgPath)
+            } catch (e: BackendDbLockedException) {
+                throw CollectionLockedException(e)
+            } catch (importError: Exception) {
+                try {
+                    ensureOpenInner()
+                } catch (reopenError: Exception) {
+                    importError.addSuppressed(reopenError)
+                }
+                throw importError
+            }
         }
     }
 
@@ -456,7 +476,7 @@ object CollectionManager {
     }
 
     enum class CollectionOpenFailure {
-        /** Raises [BackendException.BackendDbException.BackendDbLockedException] */
+        /** Raises [BackendException.BackendDbException.BackendDbLockedException], surfaced as [CollectionLockedException] */
         LOCKED,
 
         /** Raises [BackendException.BackendFatalError] */
@@ -482,4 +502,8 @@ object CollectionManager {
 }
 
 fun Collection.reopen(afterFullSync: Boolean = false) =
-    this.reopen(afterFullSync = afterFullSync) { backend -> createDatabaseUsingRustBackend(backend) }
+    try {
+        this.reopen(afterFullSync = afterFullSync) { backend -> createDatabaseUsingRustBackend(backend) }
+    } catch (e: BackendDbLockedException) {
+        throw CollectionLockedException(e)
+    }

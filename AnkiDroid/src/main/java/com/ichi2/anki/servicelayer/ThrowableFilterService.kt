@@ -17,6 +17,7 @@
 package com.ichi2.anki.servicelayer
 
 import androidx.annotation.VisibleForTesting
+import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.exception.StorageAccessException
 import net.ankiweb.rsdroid.exceptions.BackendNetworkException
 import net.ankiweb.rsdroid.exceptions.BackendSyncException
@@ -85,6 +86,15 @@ object ThrowableFilterService {
         // so we check if it is safe from PII despite also filtering by type
         return exceptionIsUnwanted(t) || !t.safeFromPII()
     }
+
+    /**
+     * Whether a handled crash report should be discarded.
+     *
+     * Unlike [shouldDiscardThrowable], this does not affect uncaught exception handling: a
+     * [CollectionLockedException] that reaches the uncaught handler is still a crash and must
+     * be reported, even though handled occurrences are not actionable.
+     */
+    fun shouldDiscardReport(t: Throwable): Boolean = shouldDiscardThrowable(t) || t is CollectionLockedException
 
     // There are few exception types that are common, but are unwanted in
     // our analytics or crash report service because they are not actionable
