@@ -62,6 +62,10 @@ class ThrowableFilterServiceTest {
         val exception3 = StorageAccessException("test exception")
         assertTrue(ThrowableFilterService.shouldDiscardThrowable(exception3))
         val exception4 = CollectionLockedException(BackendDbLockedException(backendError {}))
-        assertTrue(ThrowableFilterService.shouldDiscardThrowable(exception4))
+        assertFalse(
+            ThrowableFilterService.shouldDiscardThrowable(exception4),
+            "uncaught lock exceptions must still reach the crash handler",
+        )
+        assertTrue(ThrowableFilterService.shouldDiscardReport(exception4))
     }
 }

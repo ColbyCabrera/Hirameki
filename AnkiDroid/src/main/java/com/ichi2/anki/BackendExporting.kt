@@ -17,12 +17,10 @@ import anki.import_export.ExportLimit
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.dialogs.ExportReadyDialog
-import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.exportAnkiPackage
 import com.ichi2.anki.libanki.exportCardsCsv
 import com.ichi2.anki.libanki.exportNotesCsv
-import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import net.ankiweb.rsdroid.exceptions.BackendInvalidInputException
 
 fun AnkiActivity.exportApkgPackage(
@@ -135,9 +133,5 @@ private fun Collection.exportCollectionPackage(
         includeMedia = includeMedia,
         legacy = legacy,
     )
-    try {
-        reopen()
-    } catch (e: BackendDbLockedException) {
-        throw CollectionLockedException(e)
-    }
+    reopen()
 }

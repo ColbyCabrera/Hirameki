@@ -25,6 +25,9 @@ import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.testutils.BackupManagerTestUtilities
 import com.ichi2.testutils.grantWritePermissions
 import com.ichi2.testutils.revokeWritePermissions
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
+import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import net.ankiweb.rsdroid.BackendException.BackendDbException.BackendDbLockedException
 import org.junit.Assert.assertEquals
@@ -337,7 +340,7 @@ class DeckPickerTest : RobolectricTest() {
         settingsButton.performClick()
         advanceRobolectricLooper()
 
-        val settings = Shadows.shadowOf(deckPicker).nextStartedActivity
+        val settings = Shadows.shadowOf(deckPicker).nextStartedActivityForResult?.intent
         assertNotNull(settings, "Advanced settings should be opened")
         assertEquals(PreferencesActivity::class.qualifiedName, settings.component?.className)
         assertEquals(
@@ -386,6 +389,37 @@ class DeckPickerTest : RobolectricTest() {
                 "the error dialog should be dismissed after opening settings",
             )
         } finally {
+            throwOnShowError = true
+        }
+    }
+
+    /**
+     * The real [launchCatchingTask] path must show the lock guidance without producing a
+     * crash report. The direct [showError] test above does not prove the reporting flag.
+     */
+    @Test
+    fun `locked collection error from launchCatchingTask is not reported`() {
+        throwOnShowError = false
+        val deckPicker = startRegularActivity<DeckPicker>()
+        mockkObject(CrashReportService)
+        CollectionManager.emulatedOpenFailure = CollectionManager.CollectionOpenFailure.LOCKED
+        try {
+            deckPicker.launchCatchingTask { CollectionManager.withCol { } }
+            advanceRobolectricLooper()
+
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val settingsButton = dialog.getButton(DialogInterface.BUTTON_NEUTRAL)
+            assertEquals(targetContext.getString(R.string.settings), settingsButton.text.toString())
+
+            dialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            advanceRobolectricLooper()
+
+            verify(exactly = 0) {
+                CrashReportService.sendExceptionReport(any<Throwable>(), any<String>())
+            }
+        } finally {
+            CollectionManager.emulatedOpenFailure = null
+            unmockkObject(CrashReportService)
             throwOnShowError = true
         }
     }

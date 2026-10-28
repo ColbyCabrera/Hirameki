@@ -302,7 +302,7 @@ object CrashReportService {
             }
         }
         if (FEEDBACK_REPORT_NEVER != reportMode) {
-            if (ThrowableFilterService.shouldDiscardThrowable(e)) return
+            if (ThrowableFilterService.shouldDiscardReport(e)) return
 
             ACRA.errorReporter.putCustomData("origin", origin ?: "")
             ACRA.errorReporter.putCustomData("additionalInfo", additionalInfo ?: "")

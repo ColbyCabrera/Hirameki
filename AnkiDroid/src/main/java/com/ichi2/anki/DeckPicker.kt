@@ -713,9 +713,7 @@ open class DeckPicker :
                 paddingEnd = 32.viewDp.toPx(this@DeckPicker),
             )
             positiveButton(R.string.open_settings) {
-                val settingsIntent =
-                    PreferencesActivity.getIntent(this@DeckPicker, AdvancedSettingsFragment::class)
-                requestPathUpdateLauncher.launch(settingsIntent)
+                launchAdvancedSettingsForCollectionPathUpdate()
             }
         }
     }
@@ -728,6 +726,16 @@ open class DeckPicker :
     private fun displayNoStorageError() {
         Timber.i("Displaying no storage error")
         showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_DISK_FULL)
+    }
+
+    /**
+     * Opens Advanced settings so the user can change the 'Hirameki directory'.
+     *
+     * The activity finishes when the user returns: startup is not retried, so leaving the
+     * DeckPicker in its empty, collection-not-open state would strand the user.
+     */
+    fun launchAdvancedSettingsForCollectionPathUpdate() {
+        requestPathUpdateLauncher.launch(PreferencesActivity.getIntent(this, AdvancedSettingsFragment::class))
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
