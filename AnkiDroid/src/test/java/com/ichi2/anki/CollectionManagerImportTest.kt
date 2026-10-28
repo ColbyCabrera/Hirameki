@@ -27,8 +27,10 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class CollectionManagerImportTest : RobolectricTest() {
@@ -58,6 +60,20 @@ class CollectionManagerImportTest : RobolectricTest() {
             } finally {
                 CollectionManager.emulatedOpenFailure = null
             }
+        }
+
+    /** A failed import must leave the original collection usable. */
+    @Test
+    fun `failed import reopens the original collection`() =
+        runTest {
+            val note = addBasicNote("original", "answer")
+            val backup = corruptDatabaseBackup()
+
+            assertFailsWith<BackendImportException> { CollectionManager.importColpkg(backup.path) }
+
+            val fields = CollectionManager.withOpenColOrNull { getNote(note.id).fields.toList() }
+            assertNotNull(fields, "The original collection should be open after the import fails")
+            assertEquals(listOf("original", "answer"), fields)
         }
 
     private fun corruptDatabaseBackup(): File =

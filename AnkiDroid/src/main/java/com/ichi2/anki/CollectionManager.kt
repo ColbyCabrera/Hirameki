@@ -433,6 +433,8 @@ object CollectionManager {
             ensureBackendInner()
             try {
                 importCollectionPackage(backend!!, collectionPathInValidFolder(), colpkgPath)
+            } catch (e: BackendDbLockedException) {
+                throw CollectionLockedException(e)
             } catch (importError: Exception) {
                 try {
                     ensureOpenInner()
@@ -500,4 +502,8 @@ object CollectionManager {
 }
 
 fun Collection.reopen(afterFullSync: Boolean = false) =
-    this.reopen(afterFullSync = afterFullSync) { backend -> createDatabaseUsingRustBackend(backend) }
+    try {
+        this.reopen(afterFullSync = afterFullSync) { backend -> createDatabaseUsingRustBackend(backend) }
+    } catch (e: BackendDbLockedException) {
+        throw CollectionLockedException(e)
+    }

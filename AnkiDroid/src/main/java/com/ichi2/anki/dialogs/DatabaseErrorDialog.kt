@@ -59,8 +59,6 @@ import com.ichi2.anki.dialogs.ImportFileSelectionFragment.ImportOptions
 import com.ichi2.anki.isLoggedIn
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.Consts
-import com.ichi2.anki.preferences.AdvancedSettingsFragment
-import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.requireAnkiActivity
 import com.ichi2.anki.servicelayer.DebugInfoService
 import com.ichi2.anki.showImportDialog
@@ -341,9 +339,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
                     }
                     // the user can change the 'Hirameki directory' to resolve the conflict
                     neutralButton(R.string.settings) {
-                        startActivity(
-                            PreferencesActivity.getIntent(requireContext(), AdvancedSettingsFragment::class),
-                        )
+                        requireDeckPicker().launchAdvancedSettingsForCollectionPathUpdate()
                     }
                     cancelable(false)
                 }
