@@ -42,6 +42,7 @@ import com.ichi2.anki.multimedia.expandSounds
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.PostRequestHandler
+import com.ichi2.anki.pages.PostRequestUri
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.bodyClassForCardOrd
 import com.ichi2.anki.reviewer.card.CardDisplay
@@ -435,11 +436,10 @@ class ReviewerViewModel(
     }
 
     override suspend fun handlePostRequest(
-        uri: String,
+        uri: PostRequestUri,
         bytes: ByteArray,
     ): ByteArray =
-        if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-            val path = uri.substring(AnkiServer.ANKI_PREFIX.length)
+        uri.backendMethodName?.let { path ->
             when {
                 path.startsWith("jsapi/") -> {
                     val api =
@@ -454,9 +454,15 @@ class ReviewerViewModel(
                 path == "i18nResources" -> withCol { i18nResourcesRaw(bytes) }
                 else -> throw IllegalArgumentException("Unhandled Anki request: $uri")
             }
-        } else {
-            throw IllegalArgumentException("Unhandled POST request: $uri")
-        }
+        } ?: uri.jsApiMethodName?.let { method ->
+            val api =
+                checkNotNull(jsApi) { "jsApi must be set before handling jsapi/ requests" }
+            api.handleJsApiRequest(
+                method,
+                bytes,
+                returnDefaultValues = false,
+            )
+        } ?: throw IllegalArgumentException("Unhandled POST request: $uri")
 
     fun onEvent(event: ReviewerEvent) {
         when (event) {

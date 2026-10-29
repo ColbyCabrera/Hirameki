@@ -27,7 +27,7 @@ open class AnkiServer(
                 val inputBytes = getSessionBytes(session)
 
                 try {
-                    val data = runBlocking { postHandler.handlePostRequest(uri, inputBytes) }
+                    val data = runBlocking { postHandler.handlePostRequest(PostRequestUri(uri), inputBytes) }
                     buildResponse(data)
                 } catch (exception: Exception) {
                     Timber.w(exception, "buildResponse failure")
@@ -57,10 +57,6 @@ open class AnkiServer(
 
     companion object {
         const val LOCALHOST = "127.0.0.1"
-
-        /** Common prefix used on Anki requests */
-        const val ANKI_PREFIX = "/_anki/"
-        const val ANKIDROID_JS_PREFIX = "/jsapi/"
 
         fun getSessionBytes(session: IHTTPSession): ByteArray {
             val contentLength = session.headers["content-length"]!!.toInt()

@@ -43,15 +43,11 @@ class PageWebViewViewModel(
     }
 
     override suspend fun handlePostRequest(
-        uri: String,
+        uri: PostRequestUri,
         bytes: ByteArray,
     ): ByteArray {
         val methodName =
-            if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-                uri.substring(AnkiServer.ANKI_PREFIX.length)
-            } else {
-                throw IllegalArgumentException("unhandled request: $uri")
-            }
+            uri.backendMethodName ?: throw IllegalArgumentException("unhandled request: $uri")
         // Try UI methods first, then collection methods
         // Note: UI methods require FragmentActivity context which we don't have here
         // So we only use collection methods for now
