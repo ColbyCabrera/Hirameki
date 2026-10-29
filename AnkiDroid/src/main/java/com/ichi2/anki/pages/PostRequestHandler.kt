@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2023 Brayan Oliveira <brayandso.dev@gmail.com>
-// SPDX-FileCopyrightText: Copyright (c) 2024 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2023, 2026 Brayan Oliveira <brayandso.dev@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2024-2025 David Allison <davidallisongithub@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2024 voczi <dev@voczi.com>
 
 package com.ichi2.anki.pages
@@ -42,9 +42,47 @@ import timber.log.Timber
 
 interface PostRequestHandler {
     suspend fun handlePostRequest(
-        uri: String,
+        uri: PostRequestUri,
         bytes: ByteArray,
     ): ByteArray
+}
+
+@JvmInline
+value class PostRequestUri(
+    val uri: String,
+) {
+    val ankidroidMethodName: String?
+        get() =
+            if (uri.startsWith(ANKIDROID_PREFIX)) {
+                uri.substring(ANKIDROID_PREFIX.length)
+            } else {
+                null
+            }
+
+    val backendMethodName: String?
+        get() =
+            if (uri.startsWith(ANKI_PREFIX)) {
+                uri.substring(ANKI_PREFIX.length)
+            } else {
+                null
+            }
+
+    val jsApiMethodName: String?
+        get() =
+            if (uri.startsWith(ANKIDROID_JS_PREFIX)) {
+                uri.substring(ANKIDROID_JS_PREFIX.length)
+            } else {
+                null
+            }
+
+    override fun toString() = uri
+
+    companion object {
+        /** Common prefix used on Anki requests */
+        const val ANKI_PREFIX = "/_anki/"
+        const val ANKIDROID_PREFIX = "/ankidroid/"
+        const val ANKIDROID_JS_PREFIX = "/jsapi/"
+    }
 }
 
 fun <ByteArray> backendIdentity(bytes: ByteArray): ByteArray = bytes

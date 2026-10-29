@@ -142,15 +142,11 @@ open class PageFragment(
     }
 
     override suspend fun handlePostRequest(
-        uri: String,
+        uri: PostRequestUri,
         bytes: ByteArray,
     ): ByteArray {
         val methodName =
-            if (uri.startsWith(AnkiServer.ANKI_PREFIX)) {
-                uri.substring(AnkiServer.ANKI_PREFIX.length)
-            } else {
-                throw IllegalArgumentException("unhandled request: $uri")
-            }
+            uri.backendMethodName ?: throw IllegalArgumentException("unhandled request: $uri")
         return activity.handleUiPostRequest(methodName, bytes) ?: handleCollectionPostRequest(
             methodName,
             bytes,
