@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2020 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.cardviewer
 
 import android.webkit.URLUtil
 import android.webkit.WebResourceRequest
 import com.ichi2.anki.libanki.TtsPlayer
-import com.ichi2.anki.pages.AnkiServer.Companion.LOCALHOST
+import com.ichi2.anki.pages.PostRequestBridge
 import timber.log.Timber
 import java.io.File
 
@@ -36,7 +37,7 @@ class MediaErrorHandler {
         // We could do better here (external images failing due to no HTTPS), but failures can occur due to no network.
         // As we don't yet check the error data, we don't know.
         // Therefore limit this feature to the common case of local files, which should always work.
-        if (url.host != LOCALHOST) return
+        if (url.host != PostRequestBridge.HOST) return
 
         try {
             val filename = URLUtil.guessFileName(url.toString(), null, null)

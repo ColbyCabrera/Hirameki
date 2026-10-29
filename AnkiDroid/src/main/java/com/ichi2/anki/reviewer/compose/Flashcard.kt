@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.reviewer.compose
 
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.R
+import com.ichi2.anki.pages.PostRequestBridge
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.themeColorVariables
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
@@ -65,6 +67,7 @@ import timber.log.Timber
  * @param modifier applied to the card's root layout
  * @param toolbarHeight the bottom padding of the card in dp, so the toolbar does not cover its end
  * @param isWebViewFocusableInTouchMode whether tapping the card WebView should grant it touch focus
+ * @param postRequestBridge optional bridge to handle same-origin `fetch()` POST requests
  */
 @Composable
 fun Flashcard(
@@ -77,18 +80,20 @@ fun Flashcard(
     modifier: Modifier = Modifier,
     toolbarHeight: Int = 0,
     isWebViewFocusableInTouchMode: Boolean = false,
+    postRequestBridge: PostRequestBridge? = null,
 ) {
     val context = LocalContext.current
     val currentOnLinkClick by rememberUpdatedState(onLinkClick)
     val currentOnGesture by rememberUpdatedState(onGesture)
     val currentOnCommandConsumed by rememberUpdatedState(onJavascriptCommandConsumed)
     val controller =
-        remember(context) {
+        remember(context, postRequestBridge) {
             CardWebViewController(
                 context,
                 onLinkClick = { currentOnLinkClick(it) },
                 onGesture = { currentOnGesture(it) },
                 onCommandRun = { currentOnCommandConsumed(it) },
+                postRequestBridge = postRequestBridge,
             )
         }
     DisposableEffect(controller) { onDispose { controller.destroy() } }

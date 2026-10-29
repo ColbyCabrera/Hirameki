@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2024 Brayan Oliveira <brayandso.dev@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2024, 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.previewer
 
 import android.media.MediaPlayer
 import android.net.Uri
-import androidx.annotation.CallSuper
 import androidx.core.net.toFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,7 +22,6 @@ import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.multimedia.getAvTag
 import com.ichi2.anki.multimedia.replaceAvRefsWithPlayButtons
-import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.pages.PostRequestUri
 import kotlinx.coroutines.Deferred
@@ -55,13 +53,6 @@ abstract class CardViewerViewModel :
         }
     abstract var currentCard: Deferred<Card>
 
-    abstract val server: AnkiServer
-
-    @CallSuper
-    override fun onCleared() {
-        server.stop()
-    }
-
     /* *********************************************************************************************
      ************************ Public methods: meant to be used by the View **************************
      ********************************************************************************************* */
@@ -72,8 +63,6 @@ abstract class CardViewerViewModel :
      * @param isAfterRecreation whether this is being called after an `Activity` recreation
      */
     abstract fun onPageFinished(isAfterRecreation: Boolean)
-
-    fun baseUrl(): String = server.baseUrl()
 
     fun setSoundPlayerEnabled(isEnabled: Boolean) {
         viewModelScope.launch {

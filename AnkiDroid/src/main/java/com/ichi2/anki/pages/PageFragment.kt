@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2022 Brayan Oliveira <brayandso.dev@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2022, 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.pages
@@ -11,7 +11,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
 import androidx.core.net.toUri
@@ -19,12 +18,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.anki.showThemedToast
 import com.ichi2.themes.Themes
+import com.ichi2.utils.showDialogIfWebViewOutdated
 import timber.log.Timber
 import kotlin.reflect.KClass
 
@@ -36,7 +37,6 @@ open class PageFragment(
 ) : Fragment(contentLayoutId),
     PostRequestHandler {
     lateinit var webView: WebView
-    private lateinit var server: AnkiServer
 
     /** Kept so teardown can release it without touching a WebView destroyed by [onRendererGone]. */
     private lateinit var pageWebViewClient: PageWebViewClient
@@ -97,11 +97,19 @@ open class PageFragment(
         view: View,
         savedInstanceState: Bundle?,
     ) {
+        // the pages can't send requests without PostRequestBridge, which requires a modern WebView
+        val isOutdated =
+            showDialogIfWebViewOutdated(requireContext()) {
+                requireActivity().finish()
+            }
+        if (isOutdated) {
+            Timber.w("${this::class.simpleName} requires modern WebView version, aborting load")
+            return
+        }
+
         val pageWebViewClient = onCreateWebViewClient(savedInstanceState)
         this.pageWebViewClient = pageWebViewClient
         pageWebViewClient.onRendererGone = { crashed -> onRendererGone(crashed) }
-        server = AnkiServer(this).also { it.start() }
-        pageWebViewClient.serverUrl = server.baseUrl().toUri()
         webView =
             view.findViewById<WebView>(R.id.webview).apply {
                 with(settings) {
@@ -115,13 +123,14 @@ open class PageFragment(
             }
         setupBridgeCommand(pageWebViewClient)
         onWebViewCreated(webView)
+        PostRequestBridge(this, viewLifecycleOwner.lifecycleScope).attachTo(webView)
 
         val arguments = requireArguments()
         val path = requireNotNull(arguments.getString(PATH_ARG_KEY)) { "'$PATH_ARG_KEY' missing" }
         val title = arguments.getString(TITLE_ARG_KEY)
 
         val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
-        val url = "${server.baseUrl()}$path$nightMode".toUri()
+        val url = "${PostRequestBridge.BASE_URL}$path$nightMode".toUri()
         Timber.i("Loading $url")
         webView.loadUrl(url.toString())
 
@@ -175,7 +184,6 @@ open class PageFragment(
         if (this::pageWebViewClient.isInitialized) {
             pageWebViewClient.release()
         }
-        server.stop()
         super.onDestroyView()
     }
 

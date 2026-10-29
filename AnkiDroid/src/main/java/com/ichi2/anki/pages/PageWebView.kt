@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.pages
 
@@ -28,36 +29,37 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.themes.Themes
+import com.ichi2.utils.showDialogIfWebViewOutdated
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 
 /**
  * A reusable Compose wrapper for displaying Anki HTML pages via WebView.
  *
- * This composable wraps a WebView using [AndroidView] and manages the local [AnkiServer]
- * lifecycle through [PageWebViewViewModel].
+ * This composable wraps a WebView using [AndroidView] and handles POST requests
+ * through [PageWebViewViewModel] via [PostRequestBridge].
  *
  * @param path The page path to load (e.g., "graphs", "deck-options/123")
  * @param title The title to display in the top app bar, or null for no title
  * @param onNavigateUp Callback for back navigation
  * @param modifier Optional modifier for the composable
- * @param viewModel The ViewModel managing the AnkiServer lifecycle
+ * @param viewModel The ViewModel handling page POST requests
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -70,7 +72,11 @@ fun PageWebView(
     jsCommands: Flow<String>? = null, // NEW
     topBarActions: @Composable (RowScope.() -> Unit)? = null, // NEW
 ) {
-    val serverState by viewModel.serverState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val isOutdated =
+        remember(context, onNavigateUp) {
+            showDialogIfWebViewOutdated(context, onOutdated = onNavigateUp)
+        }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -89,22 +95,14 @@ fun PageWebView(
                     .fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            when (val currentState = serverState) {
-                is ServerState.Running -> {
-                    PageWebViewInternal(
-                        path = path,
-                        serverBaseUrl = currentState.serverBaseUrl,
-                        jsCommands = jsCommands,
-                    )
-                }
-
-                is ServerState.Error -> {
-                    PageWebViewError()
-                }
-
-                ServerState.Stopped -> {
-                    CircularWavyProgressIndicator()
-                }
+            if (!isOutdated) {
+                PageWebViewInternal(
+                    path = path,
+                    postRequestHandler = viewModel,
+                    jsCommands = jsCommands,
+                )
+            } else {
+                Timber.w("PageWebView requires modern WebView version, aborting load")
             }
         }
     }
@@ -129,7 +127,7 @@ private fun PageWebViewError() {
 @Composable
 internal fun PageWebViewInternal(
     path: String,
-    serverBaseUrl: String,
+    postRequestHandler: PostRequestHandler? = null,
     jsCommands: Flow<String>? = null,
 ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -145,6 +143,11 @@ internal fun PageWebViewInternal(
     val backgroundColorArgb = remember(backgroundColor) { backgroundColor.toArgb() }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+    val bridgeScope = rememberCoroutineScope()
+    val bridge =
+        remember(postRequestHandler, bridgeScope) {
+            postRequestHandler?.let { PostRequestBridge(it, bridgeScope) }
+        }
     LaunchedEffect(jsCommands, webViewRef, lifecycleOwner) {
         jsCommands?.let { commands ->
             lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -168,9 +171,9 @@ internal fun PageWebViewInternal(
                                 setSupportZoom(true)
                             }
                             setBackgroundColor(backgroundColorArgb)
+                            bridge?.attachTo(this)
                             webViewClient =
                                 PageWebViewClient().apply {
-                                    serverUrl = serverBaseUrl.toUri()
                                     onPageFinishedCallbacks.add { webView ->
                                         isLoading = false
                                         webView.visibility = View.VISIBLE
@@ -198,7 +201,7 @@ internal fun PageWebViewInternal(
                     },
                     update = { webView ->
                         val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
-                        val url = "$serverBaseUrl$path$nightMode"
+                        val url = "${PostRequestBridge.BASE_URL}$path$nightMode"
                         if (webView.tag != url) {
                             webView.tag = url
                             isLoading = true

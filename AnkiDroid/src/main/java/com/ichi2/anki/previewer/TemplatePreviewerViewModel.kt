@@ -20,7 +20,6 @@ import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.NoteId
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.libanki.clozeNumbersInNote
-import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.reviewer.CardSide
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -49,7 +48,6 @@ class TemplatePreviewerViewModel(
     private val templateNames: Deferred<List<String>>
     private val clozeOrds: Deferred<List<Int>>?
     override var currentCard: Deferred<Card>
-    override val server = AnkiServer(this).also { it.start() }
 
     /**
      * Ordered list of cards with empty fronts

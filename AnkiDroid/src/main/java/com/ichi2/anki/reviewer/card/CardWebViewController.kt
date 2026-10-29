@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.reviewer.card
 
@@ -11,12 +12,14 @@ import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.annotation.MainThread
 import androidx.core.net.toUri
 import androidx.webkit.WebViewFeature
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.common.utils.android.isRobolectric
+import com.ichi2.anki.pages.PostRequestBridge
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.compose.CardTouchGesture
 import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
@@ -39,6 +42,7 @@ class CardWebViewController(
     private val onLinkClick: (String) -> Unit,
     private val onGesture: (CardTouchGesture) -> Unit,
     private val onCommandRun: (Int) -> Unit,
+    private val postRequestBridge: PostRequestBridge? = null,
 ) : OnWebViewRecreatedListener {
     val layout = SafeWebViewLayout(context).also { it.onWebViewRecreatedListener = this }
 
@@ -198,10 +202,13 @@ class CardWebViewController(
             settings.javaScriptEnabled = true
             settings.allowFileAccess = true
             settings.domStorageEnabled = true
+            // the cards are served over https, but their templates may use http:// resources, like scripts
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             settings.setSupportZoom(true)
             settings.builtInZoomControls = true
             settings.displayZoomControls = false
             applyMediaAutoplay()
+            postRequestBridge?.attachTo(this)
             setWebChromeClient(CardWebChromeClient())
             setWebViewClient(CardWebViewClient())
             setBackgroundColor(Color.TRANSPARENT)

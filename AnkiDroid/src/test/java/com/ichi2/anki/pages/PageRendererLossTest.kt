@@ -75,7 +75,7 @@ class PageRendererLossTest : RobolectricTest() {
 
         val replacement = singleWebView()
         assertThat(replacement, not(sameInstance(original)))
-        assertThat("it loads the page again", shadowOf(replacement).lastLoadedUrl, startsWith("http://127.0.0.1:1/graphs"))
+        assertThat("it loads the page again", shadowOf(replacement).lastLoadedUrl, startsWith("${PostRequestBridge.BASE_URL}graphs"))
     }
 
     @Test
@@ -146,7 +146,7 @@ class PageRendererLossTest : RobolectricTest() {
     private fun showPage() {
         composeTestRule.setContent {
             AnkiDroidTheme {
-                PageWebViewInternal(path = "graphs", serverBaseUrl = "http://127.0.0.1:1/")
+                PageWebViewInternal(path = "graphs")
             }
         }
     }

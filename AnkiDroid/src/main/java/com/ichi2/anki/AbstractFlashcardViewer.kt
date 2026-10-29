@@ -5,6 +5,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2015 Timothy Rae <perceptualchaos2@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2016 Mark Carter <mark@marcardar.com>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki
 
@@ -39,6 +40,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebView.HitTestResult
 import android.webkit.WebViewClient
@@ -55,6 +57,7 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle.State.RESUMED
+import androidx.lifecycle.lifecycleScope
 import anki.collection.OpChanges
 import anki.scheduler.CardAnswer.Rating
 import com.drakeet.drawer.FullDraggableContainer
@@ -102,8 +105,8 @@ import com.ichi2.anki.multimedia.getAvTag
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.observability.undoableOp
-import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.CongratsPage
+import com.ichi2.anki.pages.PostRequestBridge
 import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.pages.PostRequestUri
 import com.ichi2.anki.preferences.sharedPrefs
@@ -121,7 +124,6 @@ import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
 import com.ichi2.anki.snackbar.showSnackbar
-import com.ichi2.anki.ui.windows.reviewer.StudyScreenRepository
 import com.ichi2.anki.utils.OnlyOnce.Method.ANSWER_CARD
 import com.ichi2.anki.utils.OnlyOnce.preventSimultaneousExecutions
 import com.ichi2.anki.utils.ext.showDialogFragment
@@ -228,10 +230,6 @@ abstract class AbstractFlashcardViewer :
     /** The side of the card being shown, which decides the side-specific bindings that apply */
     protected open val shownCardSide: CardSide
         get() = CardSide.fromAnswer(displayAnswer)
-
-    // needs to be lateinit due to a reliance on Context
-
-    lateinit var server: AnkiServer
 
     @get:VisibleForTesting
     var cardContent: String? = null
@@ -418,8 +416,6 @@ abstract class AbstractFlashcardViewer :
 
         setContentView(getContentViewAttr(fullscreenMode))
 
-        val port = StudyScreenRepository.getServerPort()
-        server = AnkiServer(this, port).also { it.start() }
         // Make ACTION_PROCESS_TEXT for in-app searching possible on > Android 4.0
         delegate.isHandleNativeActionModesEnabled = true
 
@@ -520,9 +516,6 @@ abstract class AbstractFlashcardViewer :
 
     override fun onDestroy() {
         super.onDestroy()
-        if (this::server.isInitialized) {
-            server.stop()
-        }
         tts.releaseTts(this)
         // WebView.destroy() should be called after the end of use
         // http://developer.android.com/reference/android/webkit/WebView.html#destroy()
@@ -779,6 +772,8 @@ abstract class AbstractFlashcardViewer :
                     allowFileAccess = true
                     // enable dom storage so that sessionStorage & localStorage can be used in webview
                     domStorageEnabled = true
+                    // the cards are served over https, but their templates may use http:// resources, like scripts
+                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 }
                 webChromeClient = AnkiDroidWebChromeClient()
                 isFocusableInTouchMode = typeAnswer!!.useInputTag
@@ -789,6 +784,7 @@ abstract class AbstractFlashcardViewer :
                     webViewClient = this
                     this@AbstractFlashcardViewer.webViewClient = this
                 }
+                PostRequestBridge(this@AbstractFlashcardViewer, lifecycleScope).attachTo(this)
             }
         Timber.d(
             "Focusable = %s, Focusable in touch mode = %s",
@@ -1180,7 +1176,7 @@ abstract class AbstractFlashcardViewer :
                 this::cardMediaPlayer.isInitialized && cardMediaPlayer.hasConfig && cardMediaPlayer.config.autoplay
             card.settings.mediaPlaybackRequiresUserGesture = !autoPlay
             card.loadDataWithBaseURL(
-                server.baseUrl(),
+                PostRequestBridge.BASE_URL,
                 content,
                 "text/html",
                 null,
