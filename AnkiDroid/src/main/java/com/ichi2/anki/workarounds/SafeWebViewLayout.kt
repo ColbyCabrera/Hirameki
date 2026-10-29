@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 // Ported from AnkiDroid (https://github.com/ankidroid/Anki-Android), GPLv3.
 
@@ -186,6 +187,21 @@ open class SafeWebViewLayout :
     @MainThread
     fun removeJavascriptInterface(name: String) {
         activeWebView?.removeJavascriptInterface(name)
+    }
+
+    /**
+     * Requires [WebViewFeature.DOCUMENT_START_SCRIPT]
+     *
+     * @see WebViewCompat.addDocumentStartJavaScript
+     */
+    @SuppressLint("RequiresFeature") // checked by the caller
+    @MainThread
+    fun addDocumentStartJavaScript(
+        script: String,
+        allowedOriginRules: Set<String>,
+    ) {
+        val webView = activeWebView ?: return
+        WebViewCompat.addDocumentStartJavaScript(webView, script, allowedOriginRules)
     }
 
     @MainThread
