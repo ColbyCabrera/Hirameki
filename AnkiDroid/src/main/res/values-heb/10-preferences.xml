@@ -371,8 +371,6 @@
     <string name="note_editor_replace_newlines_summ">בעורך פתקים, המר את כל המופעים של &lt;br&gt; לשורות חדשות בעת עריכת כרטיס.</string>
     <string name="paste_as_png" maxLength="41">הדבק תמונות לוח כ-PNG</string>
     <string name="pref_cat_appearance" maxLength="41">מראה</string>
-    <string name="pref_fixed_port_summary">מפעיל אחסון מקומי של JavaScript באמצעות יציאת שרת קבועה במסך הלימוד</string>
-    <string name="pref_fixed_port_title" maxLength="41">מסך אחסון מקומי בלימוד</string>
     <string name="safe_display" maxLength="41">מצב תצוגה בטוח</string>
     <string name="safe_display_summ">השבת את כל האנימציות והשתמש בשיטה בטוחה יותר לציור כרטיסים. התקני דיו אלקטרוני עשויים לדרוש זאת.</string>
     <string name="sync_account" maxLength="41">חשבון AnkiWeb</string>

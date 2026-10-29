@@ -284,7 +284,6 @@
     <string name="deck_conf_cram_preview_delays" maxLength="41">𐌻𐌰𐍄𐌴𐌹𐌽𐌹𐌽𐍃 𐍆𐌰𐌿𐍂𐌰𐍃𐌰𐌹𐍈𐌰𐌽</string>
     <string name="deck_conf_cram_reschedule" maxLength="41" comment="Title of the box labelled by deck_conf_cram_reschedule_summ">𐌰𐍆𐍄𐍂𐌰 𐌲𐌰𐍂𐌴𐌷𐍃𐌽 𐌲𐌰𐍄𐌰𐌿𐌾𐌰𐌽</string>
     <string name="pref_cat_appearance" maxLength="41">𐍅𐌻𐌹𐍄𐍃</string>
-    <string name="pref_fixed_port_title" maxLength="41">localStorage 𐌹𐌽 𐍃𐌺𐌰𐌹𐍂𐌼𐌰 𐌻𐌰𐌹𐍃𐌴𐌹𐌽𐌰𐌹𐍃</string>
     <string name="safe_display" maxLength="41">𐌼𐍉𐌳𐌿𐍃 𐌱𐌰𐌽𐌳𐍅𐌴𐌹𐌽𐌰𐌹𐍃 𐌸𐍅𐌰𐍃𐍄𐌹𐌸𐍉𐍃</string>
     <string name="sync_account" maxLength="41">𐌰𐌽𐌺𐌴𐌹𐍅𐌰𐌱𐌹 𐍂𐌰𐌷𐌽𐌴𐌹𐌽𐍃</string>
 </resources>

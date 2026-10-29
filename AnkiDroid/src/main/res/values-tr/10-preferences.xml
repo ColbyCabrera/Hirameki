@@ -365,8 +365,6 @@
     <string name="deck_conf_cram_steps_summ" maxLength="41">Kendi adımlarınızı tanımlayın</string>
     <string name="paste_as_png" maxLength="41">Panodaki resimleri PNG olarak yapıştırın</string>
     <string name="pref_cat_appearance" maxLength="41">Görünüş</string>
-    <string name="pref_fixed_port_summary">Çalışma Ekranında sabit bir sunucu portu kullanarak JavaScript localStorage açar</string>
-    <string name="pref_fixed_port_title" maxLength="41">Çalışma Ekranında localStorage</string>
     <string name="safe_display" maxLength="41">Güvenli görüntü modu</string>
     <string name="safe_display_summ">Bütün animasyonları devredışı bırak ve kartları çizmek için daha güvenli yöntem kullan. Bu e-mürekkepli cihazlar için gerekebilir.</string>
     <string name="sync_account" maxLength="41">AnkiWeb hesabı</string>

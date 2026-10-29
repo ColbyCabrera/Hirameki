@@ -371,8 +371,6 @@
     <string name="note_editor_replace_newlines_summ">W Edytorze Notatek zmień wszelkie przykłady &lt;br&gt; na nowy wiersz kiedy karta jest edytowana.</string>
     <string name="paste_as_png" maxLength="41">Wklej zdjęcia ze schowka jako PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Wygląd</string>
-    <string name="pref_fixed_port_summary">Włącza pamięć lokalną JavaScript używając stałego portu serwera na ekranie nauki</string>
-    <string name="pref_fixed_port_title" maxLength="41">Lokalizacja na ekranie badania</string>
     <string name="safe_display" maxLength="41">Tryb bezpiecznego wyświetlania</string>
     <string name="safe_display_summ">Wyłącz wszystkie animacje i użyj bezpieczniejszej metody rysowania kart. Urządzenia E-ink mogą tego wymagać.</string>
     <string name="sync_account" maxLength="41">Konto AnkiWeb</string>

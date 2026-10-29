@@ -349,8 +349,6 @@
     <string name="note_editor_replace_newlines_summ">No editor de notas, converter instâncias de &lt;br&gt; em novas linhas.</string>
     <string name="paste_as_png" maxLength="41">Colar imagens da área de transferência como PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Aparência</string>
-    <string name="pref_fixed_port_summary">Activar o localstorage do JavaScript utilizando um servidor de porta fixa no Ecrã de Estudo</string>
-    <string name="pref_fixed_port_title" maxLength="41">localstorage no Ecrã de Estudo</string>
     <string name="safe_display" maxLength="41">Modo de visualização segura</string>
     <string name="safe_display_summ">Desactivar todas as animações e utilizar um método seguro para representar fichas. Dispositivos de tinta electrónica (\"e-ink\") podem precisar disto.</string>
     <string name="sync_account" maxLength="41">Conta AnkiWeb</string>

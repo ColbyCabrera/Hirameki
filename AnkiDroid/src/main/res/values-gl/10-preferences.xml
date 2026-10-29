@@ -362,8 +362,6 @@
     <string name="deck_conf_cram_steps_summ" maxLength="41">Definir pasos personalizados</string>
     <string name="paste_as_png" maxLength="41">Pegar imaxes do portapapeis como PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Aparencia</string>
-    <string name="pref_fixed_port_summary">Permite o uso de JavaScript localStorage empregando un porto de servidor fixo na pantalla de estudo</string>
-    <string name="pref_fixed_port_title" maxLength="41">localStorage na pantalla de estudo</string>
     <string name="safe_display" maxLength="41">Modo de visualización segura</string>
     <string name="safe_display_summ">Desactivar tódalas animacións e usa métodos máis seguros para debuxar as tarxetas. Os dispositivos de tinta electrónica (\"e-ink\") poden precisar esta opción</string>
     <string name="sync_account" maxLength="41">Conta AnkiWeb</string>

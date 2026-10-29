@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2021 David Allison <davidallisongithub@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.servicelayer
 
@@ -123,6 +124,7 @@ object PreferenceUpgradeService {
                     yield(RemoveHostNum())
                     yield(UpgradeHideAnswerButtons())
                     yield(ResetGesturesEnabled())
+                    yield(RemoveFixedReviewerPort())
                 }
 
             /** Returns a list of preference upgrade classes which have not been applied */
@@ -738,6 +740,16 @@ object PreferenceUpgradeService {
          */
         internal class ResetGesturesEnabled : PreferenceUpgrade(25) {
             override fun upgrade(preferences: SharedPreferences) = preferences.edit { remove(GestureProcessor.PREF_KEY) }
+        }
+
+        /** Removes the 'localStorage in Study Screen' setting: the study screen no longer uses a server port */
+        internal class RemoveFixedReviewerPort : PreferenceUpgrade(26) {
+            override fun upgrade(preferences: SharedPreferences) {
+                preferences.edit {
+                    remove("useFixedPort")
+                    remove("reviewerPort")
+                }
+            }
         }
     }
 }
