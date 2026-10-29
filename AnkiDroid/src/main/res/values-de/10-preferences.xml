@@ -362,8 +362,6 @@
     <string name="deck_conf_cram_steps_summ" maxLength="41">Personalisierte Schritte definieren</string>
     <string name="paste_as_png" maxLength="41">Zwischenablage-Bilder als PNG einfügen</string>
     <string name="pref_cat_appearance" maxLength="41">Erscheinungsbild</string>
-    <string name="pref_fixed_port_summary">Aktiviert JavaScript localStorage durch Verwendung eines festen Server-Ports im Lernbildschirm</string>
-    <string name="pref_fixed_port_title" maxLength="41">localStorage im Lernbildschirm</string>
     <string name="safe_display" maxLength="41">Sicherer Anzeigemodus</string>
     <string name="safe_display_summ">Alle Animationen deaktivieren und Karten mit sichererer Methode darstellen. Eventuell erforderlich für E-Ink-Geräte.</string>
     <string name="sync_account" maxLength="41">AnkiWeb-Konto</string>

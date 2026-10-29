@@ -364,8 +364,6 @@
     <string name="note_editor_replace_newlines_summ">Qayd muharririda &lt;br&gt; belgilari kartani tahrirlayotganda yangi qatorlarga oʻgiriladi.</string>
     <string name="paste_as_png" maxLength="41">Buferdagi rasmni PNG sifatida qoʻyish</string>
     <string name="pref_cat_appearance" maxLength="41">Koʻrinishi</string>
-    <string name="pref_fixed_port_summary">Oʻrganish ekranida belgilangan server portidan foydalangan JavaScript localStorage funksiyasini yoqadi</string>
-    <string name="pref_fixed_port_title" maxLength="41">Oʻrganish ekranida localStorage</string>
     <string name="safe_display" maxLength="41">Xavfsiz displey rejimi</string>
     <string name="safe_display_summ">Barcha animatsiyalarni oʻchiriladi va kartalarni chizish uchun xavfsizroq usuldan foydalaniladi. E-ink qurilmalari buni talab qilishi mumkin.</string>
     <string name="sync_account" maxLength="41">AnkiWeb hisobi</string>

@@ -374,8 +374,6 @@
     <string name="disable_extended_text_ui_summ">Включає контекстне меню «Завдання з пропусками» в альбомному (горизонтальному) режимі</string>
     <string name="paste_as_png" maxLength="41">Вставити зображення у форматі PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Зовнішній вигляд</string>
-    <string name="pref_fixed_port_summary">Вмикає JavaScript localStorage використовуючи фіксований порт сервера в екрані навчання</string>
-    <string name="pref_fixed_port_title" maxLength="41">localStorage в екрані навчання</string>
     <string name="safe_display" maxLength="41">Статичний режим екрану</string>
     <string name="safe_display_summ">Вимкнути всю анімацію та використовувати безпечні методи для відображення карток. Це може бути потрібно для E-ink пристроїв</string>
     <string name="sync_account" maxLength="41">Профіль AnkiWeb</string>

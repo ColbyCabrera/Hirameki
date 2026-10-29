@@ -358,8 +358,6 @@ Vi povas restarigi el sekurkopio aŭ elporti vian kolekton per la menuo de listo
     <string name="note_editor_replace_newlines_summ">En la kart‑redaktilo, konverti ĉiujn &lt;br&gt; al novaj linioj dum redakti karton.</string>
     <string name="paste_as_png" maxLength="41">Alglui bildojn kiel PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Aspekto</string>
-    <string name="pref_fixed_port_summary">Aktivigi JavaScript localStorage per uzi difinitan pordon de servilo sur la lernada ekrano</string>
-    <string name="pref_fixed_port_title" maxLength="41">Aktivigi localStorage sur la lernada ekrano</string>
     <string name="safe_display" maxLength="41">Sekura vidiga reĝimo</string>
     <string name="safe_display_summ">Malaktivigi ĉiujn movbildojn kaj uzi pli sekuran manieron por bildigi kartojn. Elektronik-paperaj aparatoj povas bezoni tion ĉi.</string>
     <string name="sync_account" maxLength="41">AnkiWeb-konto</string>

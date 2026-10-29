@@ -355,8 +355,6 @@
     <string name="note_editor_replace_newlines_summ">Piezīmju redaktorā pārveidot jebkuru &lt;br&gt; par pāreju uz jaunu rindu, kad tiek labota kartīte.</string>
     <string name="paste_as_png" maxLength="41">Ielīmēt starplitkuves attēlus kā PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Izskats</string>
-    <string name="pref_fixed_port_summary">Iespējo JavaScript localStorage, izmantojot noteiktu servera portu apgūšanas ekrānā</string>
-    <string name="pref_fixed_port_title" maxLength="41">localStorage apgūšanas ekrānā</string>
     <string name="safe_display" maxLength="41">Drošs attēlošanas veids</string>
     <string name="safe_display_summ">Atspējot visas animācijas un izmantot drošāku kartīšu attēlošanas veidu. Tas var būt nepieciešams e-tintes ierīcēs.</string>
     <string name="sync_account" maxLength="41">AnkiWeb konts</string>

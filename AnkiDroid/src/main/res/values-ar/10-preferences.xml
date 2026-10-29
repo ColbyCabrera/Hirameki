@@ -360,8 +360,6 @@
     <string name="note_editor_replace_newlines_summ">في محرر الملحوظات، حوّل أي ظهور لـ &lt;br&gt; إلى سطور جديدة عند تحرير بطاقة.</string>
     <string name="paste_as_png" maxLength="41">لصق صور الحافظة كـ PNG</string>
     <string name="pref_cat_appearance" maxLength="41">المظهر</string>
-    <string name="pref_fixed_port_summary">يفعل JavaScript localStorage باستخدام  مرفأ خادم ثابت في شاشة الدراسة</string>
-    <string name="pref_fixed_port_title" maxLength="41">الذاكرة المحلية في شاشة الدراسة</string>
     <string name="safe_display" maxLength="41">وضع العرض الآمن</string>
     <string name="safe_display_summ">تعطيل كل التأثيرات المتحركة واستخدام طريقة أأمن لرسم البطاقات. قد تتطلب أجهزة الحبر الإلكتروني هذا.</string>
     <string name="sync_account" maxLength="41">حساب آنكي ويب</string>

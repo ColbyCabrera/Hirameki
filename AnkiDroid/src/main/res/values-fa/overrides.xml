@@ -115,8 +115,6 @@
     <string name="permissions_screen_optional_headline">Hirameki با این مجوزها بهترین عملکرد را دارد</string>
     <string name="plus_sign">+</string>
     <string name="pref__backups_help__summary">Hirameki به‌طور دوره‌ای از مجموعهٔ شما نسخهٔ پشتیبان تهیه می‌کند. پس از اینکه بیش از دو روز از عمر نسخه‌های پشتیبان بگذرد، Hirameki برای آزادسازی فضای ذخیره‌سازی، شروع به حذف برخی از آن‌ها می‌کند.</string>
-    <string name="pref_fixed_port_summary">با استفاده از یک پورت ثابت سرور در صفحهٔ مطالعه، JavaScript localStorage را فعال می‌کند</string>
-    <string name="pref_fixed_port_title">localStorage در صفحهٔ مطالعه</string>
     <string name="readtext_deprecation_warn">Hirameki سازوکار تبدیل متن به گفتار (TTS) بهتری ارائه کرده است که با سایر برنامه‌های Anki سازگار است و شامل صداهای بیشتر و بهبودهایی در پخش زبان‌ها است!\n\nلطفاً در اولین فرصت ارتقا دهید، زیرا این تنظیم به‌زودی حذف خواهد شد</string>
     <string name="recording_permission_denied_message">مجوز میکروفون برای قابلیت «ضبط صدا» ضروری است. لطفاً آن را در تنظیمات برنامه فعال کنید.</string>
     <string name="reposition_current_queue_bounds">محدوده فعلی صف</string>

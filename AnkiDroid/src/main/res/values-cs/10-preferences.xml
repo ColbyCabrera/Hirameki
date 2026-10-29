@@ -370,8 +370,6 @@
     <string name="note_editor_replace_newlines_summ">V editoru poznámek převede při úpravě karty každý výskyt &lt;br&gt; na nový řádek</string>
     <string name="paste_as_png" maxLength="41">Vkládat obrázky ze schránky jako PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Vzhled</string>
-    <string name="pref_fixed_port_summary">Povolí JavaScript localStorage pomocí fixního portu serveru na obrazovce učení</string>
-    <string name="pref_fixed_port_title" maxLength="41">localStorage na obrazovce učení</string>
     <string name="safe_display" maxLength="41">Režim bezpečného zobrazení</string>
     <string name="safe_display_summ">Zakázat všechny animace a použít bezpečnější metodu pro vykreslení karty. E-ink zařízení toto mohou vyžadovat</string>
     <string name="sync_account" maxLength="41">AnkiWeb účet</string>

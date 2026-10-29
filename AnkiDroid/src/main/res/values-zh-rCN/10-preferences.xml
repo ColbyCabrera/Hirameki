@@ -366,8 +366,6 @@
     <string name="deck_conf_cram_steps_summ" maxLength="41">自定义学习间隔</string>
     <string name="paste_as_png" maxLength="41">将剪贴板图像粘贴为 PNG</string>
     <string name="pref_cat_appearance" maxLength="41">外观</string>
-    <string name="pref_fixed_port_summary">在学习屏上使用固定服务器端口启用JavaScript本地存储</string>
-    <string name="pref_fixed_port_title" maxLength="41">学习屏中的本地存储</string>
     <string name="safe_display" maxLength="41">安全显示模式</string>
     <string name="safe_display_summ">禁用所有动画并使用更安全的方法绘制卡牌。使用墨水屏（E-ink）的设备可能需要此功能。</string>
     <string name="sync_account" maxLength="41">AnkiWeb 帐户</string>

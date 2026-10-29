@@ -369,8 +369,6 @@
     <string name="deck_conf_cram_steps_summ" maxLength="41">ئىختىيارى ئۆگىنىش ئارىلىقى</string>
     <string name="paste_as_png" maxLength="41">سۈرەتنى png سۈپىتىدە چاپلاش تاختىسىغا چاپلايدۇ</string>
     <string name="pref_cat_appearance" maxLength="41">كۆرۈنۈش</string>
-    <string name="pref_fixed_port_summary">ئۆگىنىش ئېكرانىدا مۇقىم مۇلازىمېتىر ئېغىزىنى ئىشلىتىپ JavaScript يەرلىك ساقلىغۇچنى قوزغىتىدۇ</string>
-    <string name="pref_fixed_port_title" maxLength="41">ئۆگىنىش ئېكرانىدىكى يەرلىك ساقلىغۇچ</string>
     <string name="safe_display" maxLength="41">بىخەتەر كۆرسىتىش ھالىتى</string>
     <string name="safe_display_summ">بارلىق جانلاندۇرۇمنى چەكلەپ كارتا سىزىشتا بىخەتەر ئۇسۇلنى ئىشلىتىدۇ. E-ink ئۈسكۈنىسى بۇنىڭغا ئېھتىياجلىق بولۇشى مۇمكىن.</string>
     <string name="sync_account" maxLength="41">AnkiWeb ھېساباتى</string>

@@ -364,8 +364,6 @@
     <string name="deck_conf_cram_steps_summ" maxLength="41">独自の習得ステップを設定</string>
     <string name="paste_as_png" maxLength="41">クリップボード画像をPNG形式で貼り付け</string>
     <string name="pref_cat_appearance" maxLength="41">外観</string>
-    <string name="pref_fixed_port_summary">サーバーの固定ポートを使用することによって、学習画面でJavaScriptのlocalStorage機能を使用できるようにします</string>
-    <string name="pref_fixed_port_title" maxLength="41">JavaScriptのlocalStorageを有効にする</string>
     <string name="safe_display" maxLength="41">安全表示モード</string>
     <string name="safe_display_summ">アニメーションを無効にし、より不具合が起こりにくい方法でカードを表示します。電子ペーパー端末ではこの設定が必要となる場合があります</string>
     <string name="sync_account" maxLength="41">AnkiWebアカウント</string>

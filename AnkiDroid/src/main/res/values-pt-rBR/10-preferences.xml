@@ -364,8 +364,6 @@
     <string name="note_editor_replace_newlines_summ">No Editor de Notas, converta as ocorrências de &lt;br&gt; para uma quebra de linha ao editar um cartão.</string>
     <string name="paste_as_png" maxLength="41">Colar imagens como PNG</string>
     <string name="pref_cat_appearance" maxLength="41">Aparência</string>
-    <string name="pref_fixed_port_summary">Ativa o localStorage do JavaScript utilizando uma porta de servidor fixa na Tela de Estudo.</string>
-    <string name="pref_fixed_port_title" maxLength="41">localStorage na tela de estudo</string>
     <string name="safe_display" maxLength="41">Modo de exibição segura</string>
     <string name="safe_display_summ">Desativar todas animações e utilizar método seguro para desenhar cards. Dispositivos E-ink podem exigir isso.</string>
     <string name="sync_account" maxLength="41">Conta AnkiWeb</string>
