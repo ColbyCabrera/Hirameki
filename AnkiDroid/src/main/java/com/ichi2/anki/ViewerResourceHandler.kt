@@ -99,7 +99,6 @@ class ViewerResourceHandler(
                 "Accept-Ranges" to "bytes",
             )
         // WARN: WebResourceResponse appears to handle truncating the stream internally
-        // This is NOT the same as NanoHTTPD
 
         // sending a truncated stream caused:
         // -> `net::ERR_FAILED`
