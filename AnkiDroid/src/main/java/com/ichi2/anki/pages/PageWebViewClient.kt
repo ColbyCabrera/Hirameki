@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2022 Brayan Oliveira <brayandso.dev@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2022, 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.pages
@@ -14,6 +14,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.OnPageFinishedCallback
@@ -29,17 +30,6 @@ import java.io.IOException
  * Base WebViewClient to be used on [PageFragment]
  */
 open class PageWebViewClient : WebViewClient() {
-    /**
-     * The origin of the trusted local [AnkiServer] which serves this page.
-     *
-     * Pages loaded from it can call the backend, so only this origin may receive bundled assets or
-     * navigate within the WebView. A port alone is not enough: another app may also serve on
-     * localhost, e.g. `http://127.0.0.1:12345/graphs` vs `http://127.0.0.1:22345/graphs`.
-     *
-     * SECURITY: set by the page host from its own server; never infer it from page navigation.
-     */
-    internal var serverUrl: Uri? = null
-
     val onPageFinishedCallbacks: MutableList<OnPageFinishedCallback> = mutableListOf()
     val onErrorCallbacks: MutableList<OnErrorCallback> = mutableListOf()
     private val pendingStyledCallbacks = mutableListOf<PendingStyledCallback>()
@@ -72,8 +62,8 @@ open class PageWebViewClient : WebViewClient() {
             ""
         }
 
-    internal fun isInternalUrl(url: Uri): Boolean =
-        serverUrl?.let { url.scheme == it.scheme && url.encodedAuthority == it.encodedAuthority } == true
+    /** Whether [url] is one of our pages, served from [PostRequestBridge.BASE_URL] */
+    internal fun isInternalUrl(url: Uri): Boolean = url.scheme == BASE_URI.scheme && url.encodedAuthority == BASE_URI.encodedAuthority
 
     /** How a navigation request from a page is handled: see [shouldOverrideUrlLoading]. */
     internal enum class Navigation {
@@ -88,7 +78,7 @@ open class PageWebViewClient : WebViewClient() {
     }
 
     /**
-     * Bundled pages on [serverUrl] load here; other main-frame HTTP(S) links open in a browser,
+     * Bundled pages on [PostRequestBridge.BASE_URL] load here; other main-frame HTTP(S) links open in a browser,
      * everything else (other schemes, external subframes, unknown local routes) is blocked.
      */
     internal fun navigationFor(
@@ -587,6 +577,8 @@ open class PageWebViewClient : WebViewClient() {
     }
 }
 
+private val BASE_URI = PostRequestBridge.BASE_URL.toUri()
+
 fun isSvelteKitPage(path: String): Boolean {
     val pageName = path.substringBefore("/")
     return when (pageName) {
@@ -600,7 +592,6 @@ fun isSvelteKitPage(path: String): Boolean {
         "import-page",
         "image-occlusion",
         -> true
-
         else -> false
     }
 }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.reviewer.compose
 
@@ -88,6 +89,7 @@ import com.ichi2.anki.dialogs.compose.DeleteConfirmationDialog
 import com.ichi2.anki.dialogs.compose.TagsDialog
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
+import com.ichi2.anki.pages.PostRequestBridge
 import com.ichi2.anki.reviewer.AnswerFeedback
 import com.ichi2.anki.reviewer.ReviewerEffect
 import com.ichi2.anki.reviewer.ReviewerEvent
@@ -373,6 +375,12 @@ fun ReviewerContent(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                     ) {}
 
+                    val postRequestScope = rememberCoroutineScope()
+                    val postRequestBridge =
+                        remember(viewModel, postRequestScope) {
+                            PostRequestBridge(viewModel, postRequestScope)
+                        }
+
                     Flashcard(
                         display = state.cardDisplay,
                         isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
@@ -384,6 +392,7 @@ fun ReviewerContent(
                         },
                         toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt(),
                         isWebViewFocusableInTouchMode = viewModel.typeAnswer.useInputTag,
+                        postRequestBridge = postRequestBridge,
                     )
 
                     // Whiteboard canvas and toolbar

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2020 David Allison <davidallisongithub@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2021 Kael Madar <itsybitsyspider@madarhome.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.cardviewer
 
@@ -8,6 +9,7 @@ import android.net.Uri
 import android.webkit.WebResourceRequest
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ichi2.anki.pages.PostRequestBridge
 import com.ichi2.testutils.EmptyApplication
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
@@ -122,8 +124,7 @@ class MediaErrorHandlerTest {
     }
 
     private fun getValidRequest(fileName: String): WebResourceRequest {
-        // actual URL on Android 9
-        val url = "http://127.0.0.1:40001/$fileName"
+        val url = "${PostRequestBridge.BASE_URL}$fileName"
         return getWebResourceRequest(url)
     }
 

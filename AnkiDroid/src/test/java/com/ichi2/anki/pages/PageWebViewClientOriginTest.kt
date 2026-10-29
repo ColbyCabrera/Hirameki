@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.pages
 
@@ -22,22 +23,22 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Pages served by [AnkiServer] can call the backend, so [PageWebViewClient] must keep untrusted
- * content out of them (ported from ankidroid/Anki-Android#22156).
+ * Pages served from [PostRequestBridge.BASE_URL] can call the backend, so [PageWebViewClient] must
+ * keep untrusted content out of them (ported from ankidroid/Anki-Android#22156).
  */
 @RunWith(AndroidJUnit4::class)
 class PageWebViewClientOriginTest : RobolectricTest() {
-    private val server = "http://127.0.0.1:40123/".toUri()
-    private val client = PageWebViewClient().apply { serverUrl = server }
+    private val server = PostRequestBridge.BASE_URL.toUri()
+    private val client = PageWebViewClient()
 
     private fun page(path: String): Uri = server.buildUpon().encodedPath(path).build()
 
     /** The same page as [url], on origins which merely look like ours */
     private fun otherOrigins(url: Uri): List<Uri> =
         listOf(
-            url.buildUpon().scheme("https").build(),
-            url.buildUpon().encodedAuthority("127.0.0.1:${url.port + 1}").build(),
-            url.buildUpon().encodedAuthority("example.org:${url.port}").build(),
+            url.buildUpon().scheme("http").build(),
+            url.buildUpon().encodedAuthority("${PostRequestBridge.HOST}:8080").build(),
+            url.buildUpon().encodedAuthority("example.org").build(),
             url.buildUpon().encodedAuthority("user@${url.encodedAuthority}").build(),
         )
 
@@ -109,10 +110,10 @@ class PageWebViewClientOriginTest : RobolectricTest() {
     }
 
     @Test
-    fun `without a server, nothing is trusted`() {
-        val untrusted = PageWebViewClient()
-        assertEquals(Navigation.OPEN_EXTERNALLY, untrusted.navigationFor(page("/graphs"), isForMainFrame = true))
-        assertNull(untrusted.shouldInterceptRequest(webView(), request(page("/graphs"))))
+    fun `localhost URLs are not trusted`() {
+        val untrustedUrl = "http://127.0.0.1:40123/graphs".toUri()
+        assertEquals(Navigation.OPEN_EXTERNALLY, client.navigationFor(untrustedUrl, isForMainFrame = true))
+        assertNull(client.shouldInterceptRequest(webView(), request(untrustedUrl)))
     }
 
     @Test

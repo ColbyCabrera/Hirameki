@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2011 Kostas Spyropoulos <inigo.aldana@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2014 Bruno Romero de Azevedo <brunodea@inf.ufsm.br>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.reviewer
 
@@ -40,7 +41,7 @@ import com.ichi2.anki.libanki.sched.CurrentQueueState
 import com.ichi2.anki.libanki.undoAvailable
 import com.ichi2.anki.multimedia.expandSounds
 import com.ichi2.anki.observability.undoableOp
-import com.ichi2.anki.pages.AnkiServer
+import com.ichi2.anki.pages.PostRequestBridge
 import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.pages.PostRequestUri
 import com.ichi2.anki.preferences.sharedPrefs
@@ -267,7 +268,6 @@ class ReviewerViewModel(
     private val dispatcher: CoroutineDispatcher = ioDispatcher,
 ) : AndroidViewModel(app),
     PostRequestHandler {
-    private val server = AnkiServer(this)
     var jsApi: com.ichi2.anki.AnkiDroidJsAPI? = null
 
     private val _state =
@@ -404,12 +404,10 @@ class ReviewerViewModel(
     }
 
     init {
-        server.start()
         onEvent(ReviewerEvent.LoadInitialCard)
     }
 
     override fun onCleared() {
-        server.stop()
         cardMediaPlayer.close()
     }
 
@@ -708,7 +706,7 @@ class ReviewerViewModel(
                     questionHtml = processedQuestionHtml,
                     answerHtml = processedAnswerHtml,
                     bodyClass = bodyClassForCardOrd(card.ord, nightMode = false),
-                    baseUrl = server.baseUrl(),
+                    baseUrl = PostRequestBridge.BASE_URL,
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     typedAnswerIsNumber = isUnsignedNumber(typeAnswer.correct),
@@ -862,7 +860,7 @@ class ReviewerViewModel(
                     questionHtml = processedQuestionHtml,
                     answerHtml = processedAnswerHtml,
                     bodyClass = bodyClassForCardOrd(card.ord, nightMode = false),
-                    baseUrl = server.baseUrl(),
+                    baseUrl = PostRequestBridge.BASE_URL,
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
                     typedAnswerIsNumber = isUnsignedNumber(typeAnswer.correct),
