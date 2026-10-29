@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2024 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.utils
 
@@ -11,32 +12,63 @@ import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.pm.PackageInfoCompat
+import androidx.webkit.WebViewCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
+import com.ichi2.anki.pages.PostRequestBridge
+import com.ichi2.anki.utils.openUrl
 import timber.log.Timber
 
-internal const val OLDEST_WORKING_WEBVIEW_VERSION_CODE = 386507305L
-internal const val OLDEST_WORKING_WEBVIEW_VERSION = 77
+/** The Android package version code which corresponds to the WebView version. */
+internal const val OLDEST_WORKING_WEBVIEW_VERSION_CODE = 584500000L
+
+/**
+ * The minimum supported WebView version (Human readable).
+ *
+ * 116 is the first stable version with all the APIs used by [PostRequestBridge].
+ * Launched in [August 15, 2023](https://chromiumdash.appspot.com/fetch_milestone_schedule?mstone=116).
+ */
+internal const val OLDEST_WORKING_WEBVIEW_VERSION = 116
 
 /**
  * Shows a dialog if the current WebView version is older than the last supported version.
  */
 fun checkWebviewVersion(activity: AnkiActivity) {
-    val userVisibleCode = getChromeLikeWebViewVersionIfOutdated(activity) ?: return
+    showDialogIfWebViewOutdated(activity)
+}
+
+/**
+ * Shows a dialog if the current WebView version is older than the last supported version,
+ * or if it lacks the APIs used by [PostRequestBridge], as non-Google WebViews may.
+ */
+fun showDialogIfWebViewOutdated(
+    context: Context,
+    onOutdated: () -> Unit = {},
+): Boolean {
+    if (WebViewCompat.getCurrentWebViewPackage(context) == null) return false
+    val outdatedVersion = getChromeLikeWebViewVersionIfOutdated(context)
+    val message =
+        when {
+            outdatedVersion != null ->
+                context.getString(R.string.webview_update_message, outdatedVersion, OLDEST_WORKING_WEBVIEW_VERSION)
+            !PostRequestBridge.isSupported() -> context.getString(R.string.webview_unsupported_message)
+            else -> return false
+        }
 
     // Provide guidance to the user if the WebView is outdated
-    val webviewPackageInfo = getAndroidSystemWebViewPackageInfo(activity.packageManager)
-    val legacyWebViewPackageInfo = getLegacyWebViewPackageInfo(activity.packageManager)
+    val webviewPackageInfo = getAndroidSystemWebViewPackageInfo(context.packageManager)
+    val legacyWebViewPackageInfo = getLegacyWebViewPackageInfo(context.packageManager)
     // TODO modify the alert dialog text to handle the usage of developer builds for system WebView
     if (legacyWebViewPackageInfo != null) {
         Timber.w("WebView is outdated. %s: %s", legacyWebViewPackageInfo.packageName, legacyWebViewPackageInfo.versionName)
-        showOutdatedWebViewDialog(activity, userVisibleCode, R.string.link_legacy_webview_update)
+        showOutdatedWebViewDialog(context, message, R.string.link_legacy_webview_update, onOutdated)
     } else {
         Timber.w("WebView is outdated. %s: %s", webviewPackageInfo?.packageName, webviewPackageInfo?.versionName)
-        showOutdatedWebViewDialog(activity, userVisibleCode, R.string.link_webview_update)
+        showOutdatedWebViewDialog(context, message, R.string.link_webview_update, onOutdated)
     }
+    return true
 }
 
 @MainThread
@@ -53,16 +85,16 @@ fun getWebviewUserAgent(context: Context): String? {
  * Returns a Chrome-like WebView version if it is outdated, otherwise null if
  * cannot be determined at all or if okay
  */
-private fun getChromeLikeWebViewVersionIfOutdated(activity: AnkiActivity): Int? {
+private fun getChromeLikeWebViewVersionIfOutdated(context: Context): Int? {
     // If we cannot get the package information at all, return null
-    val webviewPackageInfo = getAndroidSystemWebViewPackageInfo(activity.packageManager) ?: return null
+    val webviewPackageInfo = getAndroidSystemWebViewPackageInfo(context.packageManager) ?: return null
     val webviewVersion =
         webviewPackageInfo.versionName ?: run {
             Timber.w("Failed to obtain WebView version")
             return null
         }
     val versionCode = PackageInfoCompat.getLongVersionCode(webviewPackageInfo)
-    return checkWebViewVersionComponents(webviewPackageInfo.packageName, webviewVersion, versionCode, getWebviewUserAgent(activity))
+    return checkWebViewVersionComponents(webviewPackageInfo.packageName, webviewVersion, versionCode, getWebviewUserAgent(context))
 }
 
 @VisibleForTesting
@@ -102,15 +134,17 @@ fun checkWebViewVersionComponents(
 }
 
 private fun showOutdatedWebViewDialog(
-    activity: AnkiActivity,
-    installedVersion: Int,
+    context: Context,
+    message: String,
     @StringRes learnMoreUrl: Int,
+    onDismiss: () -> Unit = {},
 ) {
-    MaterialAlertDialogBuilder(activity).show {
-        setMessage(activity.getString(R.string.webview_update_message, installedVersion, OLDEST_WORKING_WEBVIEW_VERSION))
+    MaterialAlertDialogBuilder(context).show {
+        setMessage(message)
         setPositiveButton(R.string.scoped_storage_learn_more) { _, _ ->
-            activity.openUrl(learnMoreUrl)
+            context.openUrl(learnMoreUrl)
         }
+        setOnDismissListener { onDismiss() }
     }
 }
 
