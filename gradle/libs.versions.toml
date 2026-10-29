@@ -103,7 +103,6 @@ mockitoCore = "5.24.0"
 mockitoInline = "5.2.0"
 mockitoKotlin = "6.4.0" # maybe can remove mockitoCore and its usage with release > 5.4.0
 mockk = "1.14.11"
-nanohttpd = "2.3.1"
 okhttp = "5.5.1"
 # https://github.com/protocolbuffers/protobuf/releases
 protobufKotlinLite = "4.36.2"
@@ -183,7 +182,6 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanaryAndroid" }
 google-material = { module = "com.google.android.material:material", version.ref = "material" }
 tapTargetPrompt = { module = "uk.co.samuelwall:material-tap-target-prompt", version.ref = "materialTapTargetPrompt" }
-nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 android-lint-api = { module = "com.android.tools.lint:lint-api", version.ref = "lint" }
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "lint" }
