@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2022 Brayan Oliveira <brayandso.dev@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2022, 2026 Brayan Oliveira <brayandso.dev@gmail.com>
 
 package com.ichi2.anki.pages
 
@@ -7,8 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.webkit.WebView
-import androidx.activity.OnBackPressedCallback
-import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.anki.hideShowButtonCss
@@ -17,31 +15,25 @@ import com.ichi2.anki.hideShowButtonCss
  * Anki page used to import text/csv files
  */
 class CsvImporter : PageFragment() {
+    /** Replaced on each page load: a recreated WebView reloads the page, which may start another import */
+    private var backCallback: ImportBackCallback? = null
+
     override fun onCreateWebViewClient(savedInstanceState: Bundle?): PageWebViewClient {
-        // the back callback is only enabled when import is running and showing progress
-        val backCallback =
-            object : OnBackPressedCallback(false) {
-                override fun handleOnBackPressed() {
-                    CollectionManager.getBackend().setWantsAbort()
-                    // once triggered the callback is not needed as the import process can't be resumed
-                    remove()
-                }
-            }
+        backCallback?.remove()
+        backCallback = ImportBackCallback().also { requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, it) }
         super.onCreate(savedInstanceState)
-        requireActivity().onBackPressedDispatcher.addCallback(this, backCallback)
-        return CsvImporterWebViewClient(backCallback)
+        return CsvImporterWebViewClient()
     }
 
-    inner class CsvImporterWebViewClient(
-        private val backCallback: OnBackPressedCallback,
-    ) : PageWebViewClient() {
-        /**
-         * Ideally, to handle the state of the back callback, we would just need to check for
-         * `/latestProgress` calls followed by one `/importDone` call. However there are some extra
-         * calls to `/latestProgress` AFTER `/importDone` and this property keeps track of this.
-         */
-        private var isDone = false
+    override suspend fun handlePostRequest(
+        uri: PostRequestUri,
+        bytes: ByteArray,
+    ): ByteArray {
+        backCallback?.onPostRequest(uri)
+        return super.handlePostRequest(uri, bytes)
+    }
 
+    inner class CsvImporterWebViewClient : PageWebViewClient() {
         override fun onPageFinished(
             view: WebView?,
             url: String?,
@@ -49,23 +41,6 @@ class CsvImporter : PageFragment() {
             view!!.evaluateJavascript(hideShowButtonCss) {
                 super.onPageFinished(view, url)
             }
-        }
-
-        override fun onLoadResource(
-            view: WebView?,
-            url: String?,
-        ) {
-            super.onLoadResource(view, url)
-            backCallback.isEnabled =
-                when {
-                    url == null -> false
-                    url.endsWith("latestProgress") && !isDone -> true
-                    url.endsWith("importDone") -> {
-                        isDone = true // import was done so disable any back callback changes after this call
-                        false
-                    }
-                    else -> false
-                }
         }
     }
 
