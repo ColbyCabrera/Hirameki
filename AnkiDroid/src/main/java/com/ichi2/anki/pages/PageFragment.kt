@@ -49,6 +49,9 @@ open class PageFragment(
     lateinit var webView: WebView
     private lateinit var server: AnkiServer
 
+    /** Kept so teardown can release it without touching a WebView destroyed by [onRendererGone]. */
+    private lateinit var pageWebViewClient: PageWebViewClient
+
     /**
      * A loading indicator for the page. May be shown before the WebView is loaded to
      * stop flickering
@@ -106,6 +109,7 @@ open class PageFragment(
         savedInstanceState: Bundle?,
     ) {
         val pageWebViewClient = onCreateWebViewClient(savedInstanceState)
+        this.pageWebViewClient = pageWebViewClient
         pageWebViewClient.onRendererGone = { crashed -> onRendererGone(crashed) }
         server = AnkiServer(this).also { it.start() }
         webView =
@@ -181,8 +185,9 @@ open class PageFragment(
     }
 
     override fun onDestroyView() {
-        if (this::webView.isInitialized) {
-            (webView.webViewClient as? PageWebViewClient)?.release()
+        // not webView.webViewClient: no WebView method may be called after WebView.destroy()
+        if (this::pageWebViewClient.isInitialized) {
+            pageWebViewClient.release()
         }
         server.stop()
         super.onDestroyView()
