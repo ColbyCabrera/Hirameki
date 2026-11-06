@@ -26,7 +26,6 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateFloatAsState
@@ -56,6 +55,9 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.components.AnkiSearchBar
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
+import com.ichi2.anki.workarounds.SafeWebViewClient
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 import com.ichi2.utils.FileNameAndExtension
 import com.ichi2.utils.ImportUtils
 import timber.log.Timber
@@ -67,8 +69,10 @@ import kotlin.random.Random
  *
  * @see SharedDecksDownloadFragment
  */
-class SharedDecksActivity : AnkiActivity() {
-    private lateinit var webView: WebView
+class SharedDecksActivity :
+    AnkiActivity(),
+    OnWebViewRecreatedListener {
+    private lateinit var webView: SafeWebViewLayout
     lateinit var downloadManager: DownloadManager
 
     private var shouldHistoryBeCleared = false
@@ -94,7 +98,7 @@ class SharedDecksActivity : AnkiActivity() {
      * an extra entry in the history since the previous page would not get cleared.
      */
     private val webViewClient =
-        object : WebViewClient() {
+        object : SafeWebViewClient() {
             private var redirectTimes = 0
 
             override fun doUpdateVisitedHistory(
@@ -373,9 +377,13 @@ class SharedDecksActivity : AnkiActivity() {
 
         downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
 
+        setupWebView()
+        onBackPressedDispatcher.addCallback(onBackPressedCallback)
+    }
+
+    private fun setupWebView() {
         webView.settings.javaScriptEnabled = true
-        webView.loadUrl(resources.getString(R.string.shared_decks_url))
-        webView.webViewClient = WebViewClient()
+        webView.setWebViewClient(webViewClient)
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
             val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
             if (!ImportUtils.isFileAValidDeck(fileName) && url?.contains("download-deck/") != true) {
@@ -404,8 +412,14 @@ class SharedDecksActivity : AnkiActivity() {
             }
         }
 
-        webView.webViewClient = webViewClient
-        onBackPressedDispatcher.addCallback(onBackPressedCallback)
+        webView.loadUrl(resources.getString(R.string.shared_decks_url))
+    }
+
+    /** The replacement has no history: start again from the shared decks page */
+    override fun onWebViewRecreated() {
+        shouldHistoryBeCleared = false
+        onBackPressedCallback.isEnabled = false
+        setupWebView()
     }
 }
 

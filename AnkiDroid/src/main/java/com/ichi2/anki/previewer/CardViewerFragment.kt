@@ -19,13 +19,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.annotation.CallSuper
 import androidx.annotation.LayoutRes
@@ -44,6 +42,9 @@ import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.utils.ext.collectIn
 import com.ichi2.anki.utils.ext.packageManager
 import com.ichi2.anki.utils.openUrl
+import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
+import com.ichi2.anki.workarounds.SafeWebViewClient
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 import com.ichi2.compat.CompatHelper.Companion.resolveActivityCompat
 import com.ichi2.themes.Themes
 import com.ichi2.utils.show
@@ -53,17 +54,30 @@ import timber.log.Timber
 
 abstract class CardViewerFragment(
     @LayoutRes layout: Int,
-) : Fragment(layout) {
+) : Fragment(layout),
+    OnWebViewRecreatedListener {
     abstract val viewModel: CardViewerViewModel
-    protected abstract val webView: WebView
+    protected abstract val webView: SafeWebViewLayout
+
+    /**
+     * Whether the [viewModel] already loaded a page: in an earlier view (configuration change), or
+     * once a page finished. It then only shows the card again in a new page.
+     *
+     * @see CardViewerViewModel.onPageFinished
+     */
+    private var viewModelHasLoadedPage = false
 
     @CallSuper
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?,
     ) {
-        setupWebView(savedInstanceState)
+        viewModelHasLoadedPage = savedInstanceState != null
+        setupWebView()
         setupErrorListeners()
+        viewModel.eval.collectIn(lifecycleScope) { eval ->
+            webView.evaluateJavascript(eval)
+        }
     }
 
     override fun onStart() {
@@ -84,12 +98,12 @@ abstract class CardViewerFragment(
             nightMode = Themes.currentTheme.isNightMode,
         )
 
-    private fun setupWebView(savedInstanceState: Bundle?) {
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+    private fun setupWebView() {
         with(webView) {
-            webViewClient = onCreateWebViewClient(savedInstanceState)
-            webChromeClient = onCreateWebChromeClient()
-            scrollBarStyle = View.SCROLLBARS_OUTSIDE_OVERLAY
+            setAcceptThirdPartyCookies(true)
+            setWebViewClient(onCreateWebViewClient(isAfterRecreation = viewModelHasLoadedPage))
+            setWebChromeClient(onCreateWebChromeClient())
+            scrollBars = View.SCROLLBARS_OUTSIDE_OVERLAY
             with(settings) {
                 javaScriptEnabled = true
                 loadWithOverviewMode = true
@@ -109,9 +123,11 @@ abstract class CardViewerFragment(
                 null,
             )
         }
-        viewModel.eval.collectIn(lifecycleScope) { eval ->
-            webView.evaluateJavascript(eval, null)
-        }
+    }
+
+    /** Only the WebView was replaced: apply its clients and settings, and show the card again */
+    override fun onWebViewRecreated() {
+        setupWebView()
     }
 
     private fun setupErrorListeners() {
@@ -134,11 +150,13 @@ abstract class CardViewerFragment(
             .launchIn(lifecycleScope)
     }
 
-    protected open fun onCreateWebViewClient(savedInstanceState: Bundle?): WebViewClient = CardViewerWebViewClient(savedInstanceState)
+    /** @param isAfterRecreation passed to [CardViewerViewModel.onPageFinished] */
+    protected open fun onCreateWebViewClient(isAfterRecreation: Boolean): CardViewerWebViewClient =
+        CardViewerWebViewClient(isAfterRecreation)
 
     open inner class CardViewerWebViewClient(
-        val savedInstanceState: Bundle?,
-    ) : WebViewClient() {
+        val isAfterRecreation: Boolean,
+    ) : SafeWebViewClient() {
         private val resourceHandler = ViewerResourceHandler(requireContext())
 
         override fun shouldInterceptRequest(
@@ -150,7 +168,8 @@ abstract class CardViewerFragment(
             view: WebView?,
             url: String?,
         ) {
-            viewModel.onPageFinished(isAfterRecreation = savedInstanceState != null)
+            viewModel.onPageFinished(isAfterRecreation = isAfterRecreation)
+            viewModelHasLoadedPage = true
         }
 
         override fun shouldOverrideUrlLoading(

@@ -17,7 +17,6 @@ package com.ichi2.anki.previewer
 
 import android.os.Bundle
 import android.view.View
-import android.webkit.WebView
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -27,6 +26,7 @@ import com.ichi2.anki.R
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
 import com.ichi2.anki.utils.ext.sharedPrefs
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 import com.ichi2.utils.BundleUtils.getNullableInt
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -38,7 +38,7 @@ class TemplatePreviewerFragment :
         val arguments = BundleCompat.getParcelable(requireArguments(), ARGS_KEY, TemplatePreviewerArguments::class.java)!!
         TemplatePreviewerViewModel.factory(arguments)
     }
-    override val webView: WebView
+    override val webView: SafeWebViewLayout
         get() = requireView().findViewById(R.id.webview)
 
     override val baseSnackbarBuilder: SnackbarBuilder

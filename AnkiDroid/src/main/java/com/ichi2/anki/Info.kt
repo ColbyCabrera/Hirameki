@@ -24,12 +24,14 @@ import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import com.google.android.material.button.MaterialButton
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.snackbar.BaseSnackbarBuilderProvider
 import com.ichi2.anki.snackbar.SnackbarBuilder
+import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
+import com.ichi2.anki.workarounds.SafeWebViewClient
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 import com.ichi2.themes.Themes
 import com.ichi2.utils.IntentUtil.canOpenIntent
 import com.ichi2.utils.IntentUtil.tryOpenIntent
@@ -46,14 +48,21 @@ private const val CHANGE_LOG_URL = "https://docs.ankidroid.org/changelog.html"
  */
 class Info :
     AnkiActivity(),
-    BaseSnackbarBuilderProvider {
-    private lateinit var webView: WebView
+    BaseSnackbarBuilderProvider,
+    OnWebViewRecreatedListener {
+    private lateinit var webView: SafeWebViewLayout
+
+    private val onBackPressedCallback =
+        object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) webView.goBack()
+            }
+        }
 
     override val baseSnackbarBuilder: SnackbarBuilder = {
         anchorView = findViewById(R.id.info_buttons)
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         if (showedActivityFailedScreen(savedInstanceState)) {
             return
@@ -74,18 +83,6 @@ class Info :
         ).setOnClickListener { openUrl(R.string.link_opencollective_donate) }
         title = "$appName v$pkgVersionName"
         webView = findViewById(R.id.info)
-        webView.webChromeClient =
-            object : WebChromeClient() {
-                override fun onProgressChanged(
-                    view: WebView,
-                    progress: Int,
-                ) {
-                    // Hide the progress indicator when the page has finished loaded
-                    if (progress == 100) {
-                        mainView.findViewById<View>(R.id.progress_bar).visibility = View.GONE
-                    }
-                }
-            }
         findViewById<MaterialButton>(R.id.left_button).run {
             if (canOpenMarketUri()) {
                 setText(R.string.info_rate)
@@ -99,85 +96,107 @@ class Info :
                 visibility = View.GONE
             }
         }
-        val onBackPressedCallback =
-            object : OnBackPressedCallback(false) {
-                override fun handleOnBackPressed() {
-                    if (webView.canGoBack()) webView.goBack()
-                }
-            }
-        // Apply Theme colors
-        val typedArray = theme.obtainStyledAttributes(intArrayOf(android.R.attr.colorBackground, android.R.attr.textColor))
-        val backgroundColor = typedArray.getColor(0, -1)
-        val textColor = typedArray.getColor(1, -1).toRGBHex()
-
-        val anchorTextThemeColor = Themes.getColorFromAttr(this, android.R.attr.colorAccent)
-        val anchorTextColor = anchorTextThemeColor.toRGBHex()
-
-        webView.setBackgroundColor(backgroundColor)
-        webView.settings.allowFileAccess = true
-        webView.settings.allowContentAccess = true
-        setRenderWorkaround(this)
         when (type) {
             TYPE_NEW_VERSION -> {
                 findViewById<MaterialButton>(R.id.right_button).run {
                     text = res.getString(R.string.dialog_continue)
                     setOnClickListener { close() }
                 }
-                val background = backgroundColor.toRGBHex()
-                webView.loadUrl("/android_asset/changelog.html")
-                webView.settings.javaScriptEnabled = true
-                webView.webViewClient =
-                    object : WebViewClient() {
-                        override fun onPageFinished(
-                            view: WebView,
-                            url: String,
-                        ) {
-                        /* The order of below javascript code must not change (this order works both in debug and release mode)
-                         *  or else it will break in any one mode.
-                         */
-                            @Suppress("ktlint:standard:max-line-length")
-                            webView.loadUrl(
-                                """javascript:document.body.style.setProperty("color", "$textColor");
-                                    x=document.getElementsByTagName("a");
-                                    for(i=0; i<x.length; i++){
-                                      x[i].style.color="$anchorTextColor";
-                                    }
-                                    document.getElementsByTagName("h1")[0].style.color="$textColor";
-                                    x=document.getElementsByTagName("h2");
-                                    for(i=0; i<x.length; i++){
-                                      x[i].style.color="#E37068";
-                                    }
-                                    document.body.style.setProperty("background", "$background");""",
-                            )
-                        }
-
-                        override fun shouldOverrideUrlLoading(
-                            view: WebView?,
-                            request: WebResourceRequest?,
-                        ): Boolean {
-                            // Excludes the url that are opened inside the changelog.html
-                            // and redirect the user to the browser
-                            val url = request?.url?.toString() ?: return false
-                            if (url == CHANGE_LOG_URL) {
-                                return false
-                            }
-                            this@Info.openUrl(url)
-                            return true
-                        }
-
-                        override fun doUpdateVisitedHistory(
-                            view: WebView?,
-                            url: String?,
-                            isReload: Boolean,
-                        ) {
-                            super.doUpdateVisitedHistory(view, url, isReload)
-                            onBackPressedCallback.isEnabled = view != null && view.canGoBack()
-                        }
-                    }
+                setupWebView()
             }
             else -> finish()
         }
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+    }
+
+    /** The replacement has no history: show the changelog again */
+    override fun onWebViewRecreated() {
+        onBackPressedCallback.isEnabled = false
+        setupWebView()
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupWebView() {
+        val progressBar = findViewById<View>(R.id.progress_bar)
+        progressBar.visibility = View.VISIBLE
+        webView.setWebChromeClient(
+            object : WebChromeClient() {
+                override fun onProgressChanged(
+                    view: WebView,
+                    progress: Int,
+                ) {
+                    // Hide the progress indicator when the page has finished loaded
+                    if (progress == 100) {
+                        progressBar.visibility = View.GONE
+                    }
+                }
+            },
+        )
+        // Apply Theme colors
+        val typedArray = theme.obtainStyledAttributes(intArrayOf(android.R.attr.colorBackground, android.R.attr.textColor))
+        val backgroundColor = typedArray.getColor(0, -1)
+        val textColor = typedArray.getColor(1, -1).toRGBHex()
+        typedArray.recycle()
+
+        val anchorTextThemeColor = Themes.getColorFromAttr(this, android.R.attr.colorAccent)
+        val anchorTextColor = anchorTextThemeColor.toRGBHex()
+        val background = backgroundColor.toRGBHex()
+
+        webView.setBackgroundColor(backgroundColor)
+        webView.settings.allowFileAccess = true
+        webView.settings.allowContentAccess = true
+        setRenderWorkaround(this)
+        webView.settings.javaScriptEnabled = true
+        webView.setWebViewClient(
+            object : SafeWebViewClient() {
+                override fun onPageFinished(
+                    view: WebView,
+                    url: String,
+                ) {
+                    /* The order of below javascript code must not change (this order works both in debug and release mode)
+                     *  or else it will break in any one mode.
+                     */
+                    @Suppress("ktlint:standard:max-line-length")
+                    view.loadUrl(
+                        """javascript:document.body.style.setProperty("color", "$textColor");
+                            x=document.getElementsByTagName("a");
+                            for(i=0; i<x.length; i++){
+                              x[i].style.color="$anchorTextColor";
+                            }
+                            document.getElementsByTagName("h1")[0].style.color="$textColor";
+                            x=document.getElementsByTagName("h2");
+                            for(i=0; i<x.length; i++){
+                              x[i].style.color="#E37068";
+                            }
+                            document.body.style.setProperty("background", "$background");""",
+                    )
+                }
+
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                ): Boolean {
+                    // Excludes the url that are opened inside the changelog.html
+                    // and redirect the user to the browser
+                    val url = request?.url?.toString() ?: return false
+                    if (url == CHANGE_LOG_URL) {
+                        return false
+                    }
+                    this@Info.openUrl(url)
+                    return true
+                }
+
+                override fun doUpdateVisitedHistory(
+                    view: WebView?,
+                    url: String?,
+                    isReload: Boolean,
+                ) {
+                    super.doUpdateVisitedHistory(view, url, isReload)
+                    onBackPressedCallback.isEnabled = view != null && view.canGoBack()
+                }
+            },
+        )
+        webView.loadUrl("/android_asset/changelog.html")
     }
 
     private fun close() {

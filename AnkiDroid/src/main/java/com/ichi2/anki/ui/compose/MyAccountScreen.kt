@@ -20,8 +20,8 @@ import android.webkit.SslErrorHandler
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.annotation.DrawableRes
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -108,6 +108,9 @@ import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.LoginErrorCard
 import com.ichi2.anki.ui.compose.components.RoundedPolygonShape
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
+import com.ichi2.anki.workarounds.SafeWebViewClient
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val SoftBurstShape = RoundedPolygonShape(MaterialShapes.SoftBurst)
@@ -279,92 +282,104 @@ fun RemoveAccountContent(onBack: () -> Unit) {
     }
 }
 
+@VisibleForTesting
 @Composable
-private fun RemoveAccountWebView(
+internal fun RemoveAccountWebView(
     removeAccountUrl: String,
     urlsToRedirect: List<String>,
     modifier: Modifier = Modifier,
 ) {
     AndroidView(
         factory = { ctx ->
-            WebView(ctx).apply {
-                settings.javaScriptEnabled = true
-                settings.displayZoomControls = false
-                settings.builtInZoomControls = true
-                settings.setSupportZoom(true)
-
-                // Security hardening as requested
-                settings.allowFileAccess = false
-                settings.allowContentAccess = false
-
-                removeJavascriptInterface("searchBoxJavaBridge_")
-                removeJavascriptInterface("accessibility")
-                removeJavascriptInterface("accessibilityTraversal")
-
-                var redirectCount = 0
-
-                webViewClient =
-                    object : WebViewClient() {
-                        private fun isUrlAllowed(url: String?): Boolean {
-                            if (url == null) return false
-                            val uri = url.toUri()
-                            val host = uri.host ?: return false
-                            return host == "ankiweb.net" || host.endsWith(".ankiweb.net")
-                        }
-
-                        private fun maybeRedirect(url: String?): Boolean {
-                            if (url == null) return false
-                            if (urlsToRedirect.any { url.startsWith(it) }) {
-                                redirectCount++
-                                if (redirectCount <= 3) {
-                                    loadUrl(removeAccountUrl)
-                                    return true
-                                }
-                            }
-                            return false
-                        }
-
-                        override fun shouldInterceptRequest(
-                            view: WebView?,
-                            request: WebResourceRequest?,
-                        ): WebResourceResponse? {
-                            if (!isUrlAllowed(request?.url?.toString())) {
-                                return WebResourceResponse("text/plain", "utf-8", null)
-                            }
-                            return super.shouldInterceptRequest(view, request)
-                        }
-
-                        override fun onReceivedSslError(
-                            view: WebView?,
-                            handler: SslErrorHandler?,
-                            error: SslError?,
-                        ) {
-                            handler?.cancel()
-                        }
-
-                        override fun shouldOverrideUrlLoading(
-                            view: WebView?,
-                            request: WebResourceRequest?,
-                        ): Boolean {
-                            val url = request?.url?.toString()
-                            if (maybeRedirect(url)) return true
-
-                            return !isUrlAllowed(url)
-                        }
-
-                        override fun onPageFinished(
-                            view: WebView?,
-                            url: String?,
-                        ) {
-                            super.onPageFinished(view, url)
-                            maybeRedirect(url)
-                        }
-                    }
-                loadUrl(removeAccountUrl)
+            SafeWebViewLayout(ctx).apply {
+                // only the WebView is replaced: set it up again
+                onWebViewRecreatedListener =
+                    OnWebViewRecreatedListener { setUpRemoveAccountWebView(removeAccountUrl, urlsToRedirect) }
+                setUpRemoveAccountWebView(removeAccountUrl, urlsToRedirect)
             }
         },
         modifier = modifier,
     )
+}
+
+private fun SafeWebViewLayout.setUpRemoveAccountWebView(
+    removeAccountUrl: String,
+    urlsToRedirect: List<String>,
+) {
+    settings.javaScriptEnabled = true
+    settings.displayZoomControls = false
+    settings.builtInZoomControls = true
+    settings.setSupportZoom(true)
+
+    // Security hardening as requested
+    settings.allowFileAccess = false
+    settings.allowContentAccess = false
+
+    removeJavascriptInterface("searchBoxJavaBridge_")
+    removeJavascriptInterface("accessibility")
+    removeJavascriptInterface("accessibilityTraversal")
+
+    var redirectCount = 0
+
+    setWebViewClient(
+        object : SafeWebViewClient() {
+            private fun isUrlAllowed(url: String?): Boolean {
+                if (url == null) return false
+                val uri = url.toUri()
+                val host = uri.host ?: return false
+                return host == "ankiweb.net" || host.endsWith(".ankiweb.net")
+            }
+
+            private fun maybeRedirect(url: String?): Boolean {
+                if (url == null) return false
+                if (urlsToRedirect.any { url.startsWith(it) }) {
+                    redirectCount++
+                    if (redirectCount <= 3) {
+                        loadUrl(removeAccountUrl)
+                        return true
+                    }
+                }
+                return false
+            }
+
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest?,
+            ): WebResourceResponse? {
+                if (!isUrlAllowed(request?.url?.toString())) {
+                    return WebResourceResponse("text/plain", "utf-8", null)
+                }
+                return super.shouldInterceptRequest(view, request)
+            }
+
+            override fun onReceivedSslError(
+                view: WebView?,
+                handler: SslErrorHandler?,
+                error: SslError?,
+            ) {
+                handler?.cancel()
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?,
+            ): Boolean {
+                val url = request?.url?.toString()
+                if (maybeRedirect(url)) return true
+
+                return !isUrlAllowed(url)
+            }
+
+            override fun onPageFinished(
+                view: WebView?,
+                url: String?,
+            ) {
+                super.onPageFinished(view, url)
+                maybeRedirect(url)
+            }
+        },
+    )
+    loadUrl(removeAccountUrl)
 }
 
 @Composable
