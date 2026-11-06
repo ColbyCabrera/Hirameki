@@ -19,6 +19,7 @@ package com.ichi2.anki
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import androidx.core.graphics.createBitmap
@@ -46,6 +47,7 @@ import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
 import org.hamcrest.Matchers.sameInstance
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -142,10 +144,12 @@ class WebViewRendererLossHostsTest : RobolectricTest() {
 
     @Test
     fun `image preview is shown again`() {
+        // The image fragment's file handling relies on Android paths: it builds the cached image's
+        // URI with Uri.fromFile, which keeps Windows backslashes, so the image's name is its whole path
+        assumeFalse("Android file handling", System.getProperty("os.name").orEmpty().startsWith("Windows"))
         val image = File(targetContext.cacheDir, "renderer-loss.png")
         image.outputStream().use { createBitmap(4, 4).compress(Bitmap.CompressFormat.PNG, 100, it) }
-        // not Uri.fromFile: on Windows its path has backslashes, which Android paths never have
-        val extra = MultimediaActivityExtra(0, ImageField(), MultimediaEditableNote(), image.toURI().toString())
+        val extra = MultimediaActivityExtra(0, ImageField(), MultimediaEditableNote(), Uri.fromFile(image).toString())
         val intent = MultimediaImageFragment.getIntent(targetContext, extra, MultimediaImageFragment.ImageOptions.GALLERY)
 
         ActivityScenario.launch<Activity>(intent).use { scenario ->
