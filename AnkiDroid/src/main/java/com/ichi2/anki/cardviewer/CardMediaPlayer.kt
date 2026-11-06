@@ -30,6 +30,7 @@ import com.ichi2.anki.cardviewer.MediaErrorBehavior.CONTINUE_MEDIA
 import com.ichi2.anki.cardviewer.MediaErrorBehavior.RETRY_MEDIA
 import com.ichi2.anki.cardviewer.MediaErrorBehavior.STOP_MEDIA
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.libanki.AvTag
 import com.ichi2.anki.libanki.Card
 import com.ichi2.anki.libanki.SoundOrVideoTag
@@ -39,7 +40,6 @@ import com.ichi2.anki.reviewer.CardSide
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -104,7 +104,7 @@ class CardMediaPlayer : Closeable {
         this.ttsPlayer = scope.async { AndroidTtsPlayer.createInstance(scope) }
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
     /** Serializes playbacks to avoid overloading the thread pool and a potential deadlock */
     private val playbackMutex = Mutex()
@@ -285,7 +285,7 @@ class CardMediaPlayer : Closeable {
         tag: AvTag,
         isAutomaticPlayback: Boolean,
     ): Boolean =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             suspend fun play() {
                 ensureActive()
                 when (tag) {
