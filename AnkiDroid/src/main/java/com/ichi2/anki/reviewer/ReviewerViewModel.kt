@@ -65,6 +65,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.ankiweb.rsdroid.BackendException
 import timber.log.Timber
 import java.io.File
 import java.util.UUID
@@ -228,6 +229,21 @@ sealed class ReviewerEffect {
     data class ShowTimeboxReachedDialog(
         val timebox: Collection.TimeboxReached,
     ) : ReviewerEffect()
+}
+
+/**
+ * Whether the backend refused an answer because the reviewer's queue state is out of date, rather
+ * than because of a real fault. Nothing was recorded, so the recovery is to show the queue's current
+ * top card.
+ *
+ * The backend has no typed error for these, so this matches the messages of rslib's
+ * `scheduler/answering` ("card was modified") and `scheduler/queue` ("not at top of queue").
+ * ReviewerViewModelTest checks both against the real backend, so a reworded message fails a test.
+ */
+internal fun BackendException.isStaleQueueAnswer(): Boolean {
+    val text = message ?: return false
+    return text.contains("card was modified", ignoreCase = true) ||
+        text.contains("not at top of queue", ignoreCase = true)
 }
 
 class ReviewerViewModel(
@@ -851,10 +867,20 @@ class ReviewerViewModel(
 
         launchCardAction {
             var wasLeech = false
-            withCol {
-                this.sched.answerCard(queue, rating).also {
-                    wasLeech = this.sched.stateIsLeech(queue.states.again)
+            try {
+                withCol {
+                    this.sched.answerCard(queue, rating).also {
+                        wasLeech = this.sched.stateIsLeech(queue.states.again)
+                    }
                 }
+            } catch (e: BackendException) {
+                if (!e.isStaleQueueAnswer()) throw e
+                // #143: the queue state was read before the app sat in the background. Past the day
+                // cutoff, or once another card falls due, the backend refuses the answer. Uncaught,
+                // this crashed the app, which then reopened on the deck list.
+                Timber.w(e, "Answer refused for a stale queue; reloading")
+                loadCardSuspend()
+                return@launchCardAction
             }
 
             if (rating == CardAnswer.Rating.AGAIN && wasLeech) {

@@ -18,6 +18,7 @@ package com.ichi2.anki.pages
 import android.annotation.SuppressLint
 import android.view.View
 import android.webkit.WebView
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -133,8 +136,9 @@ private fun PageWebViewError() {
     }
 }
 
+@VisibleForTesting
 @Composable
-private fun PageWebViewInternal(
+internal fun PageWebViewInternal(
     path: String,
     serverBaseUrl: String,
     jsCommands: Flow<String>? = null,
@@ -142,6 +146,9 @@ private fun PageWebViewInternal(
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+
+    // #143: bumped when the system reclaims the page's renderer; a new WebView replaces the dead one
+    var rendererGeneration by remember { mutableIntStateOf(0) }
     val backgroundColor = MaterialTheme.colorScheme.background
     val backgroundColorArgb = remember(backgroundColor) { backgroundColor.toArgb() }
 
@@ -157,54 +164,66 @@ private fun PageWebViewInternal(
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        AndroidView(
-            factory = { ctx ->
-                WebView(ctx).apply {
-                    with(settings) {
-                        javaScriptEnabled = true
-                        displayZoomControls = false
-                        builtInZoomControls = true
-                        setSupportZoom(true)
-                    }
-                    setBackgroundColor(backgroundColorArgb)
-                    webViewClient =
-                        PageWebViewClient().apply {
-                            onPageFinishedCallbacks.add { webView ->
-                                isLoading = false
-                                webView.visibility = View.VISIBLE
-                            }
-                            onErrorCallbacks.add { error ->
-                                Timber.e("PageWebView error: %s", error.description)
-                                hasError = true
-                                isLoading = false
-                            }
+        key(rendererGeneration) {
+            AndroidView(
+                factory = { ctx ->
+                    WebView(ctx).apply {
+                        with(settings) {
+                            javaScriptEnabled = true
+                            displayZoomControls = false
+                            builtInZoomControls = true
+                            setSupportZoom(true)
                         }
-                    webChromeClient = PageChromeClient()
-                    visibility = View.INVISIBLE
-                    webViewRef = this
-                }
-            },
-            update = { webView ->
-                val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
-                val url = "$serverBaseUrl$path$nightMode"
-                if (webView.tag != url) {
-                    webView.tag = url
-                    isLoading = true
-                    hasError = false
-                    webView.visibility = View.INVISIBLE
-                    Timber.i("PageWebView: Loading %s", url)
-                    webView.loadUrl(url)
-                }
-            },
-            onRelease = { webView ->
-                webView.stopLoading()
-                (webView.webViewClient as? PageWebViewClient)?.release()
-                webView.webViewClient = android.webkit.WebViewClient()
-                webView.destroy()
-                webViewRef = null
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
+                        setBackgroundColor(backgroundColorArgb)
+                        webViewClient =
+                            PageWebViewClient().apply {
+                                onPageFinishedCallbacks.add { webView ->
+                                    isLoading = false
+                                    webView.visibility = View.VISIBLE
+                                }
+                                onErrorCallbacks.add { error ->
+                                    Timber.e("PageWebView error: %s", error.description)
+                                    hasError = true
+                                    isLoading = false
+                                }
+                                onRendererGone = { crashed ->
+                                    if (crashed) {
+                                        // a rebuilt page would likely crash again: show the error instead
+                                        hasError = true
+                                        isLoading = false
+                                    } else {
+                                        rendererGeneration++
+                                    }
+                                }
+                            }
+                        webChromeClient = PageChromeClient()
+                        visibility = View.INVISIBLE
+                        webViewRef = this
+                    }
+                },
+                update = { webView ->
+                    val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
+                    val url = "$serverBaseUrl$path$nightMode"
+                    if (webView.tag != url) {
+                        webView.tag = url
+                        isLoading = true
+                        hasError = false
+                        webView.visibility = View.INVISIBLE
+                        Timber.i("PageWebView: Loading %s", url)
+                        webView.loadUrl(url)
+                    }
+                },
+                onRelease = { webView ->
+                    webView.stopLoading()
+                    (webView.webViewClient as? PageWebViewClient)?.release()
+                    webView.webViewClient = android.webkit.WebViewClient()
+                    webView.destroy()
+                    // a rebuild may have set a new WebView already
+                    if (webViewRef === webView) webViewRef = null
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
 
         if (isLoading) {
             CircularWavyProgressIndicator()
