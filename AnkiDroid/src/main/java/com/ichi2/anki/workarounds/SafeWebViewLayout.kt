@@ -22,13 +22,16 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.MainThread
 import androidx.annotation.VisibleForTesting
@@ -48,7 +51,8 @@ import kotlin.time.Duration.Companion.seconds
  * The [WebView] is reached only through this layout, so no caller holds a destroyed instance.
  *
  * A renderer that crashes twice within [CRASH_LOOP_WINDOW] is not given a third [WebView], since
- * the content is likely what crashes it: an error message is shown instead.
+ * the content is likely what crashes it: an error is shown instead, with a button to retry, for
+ * example after the user picked other content.
  */
 open class SafeWebViewLayout :
     FrameLayout,
@@ -63,7 +67,7 @@ open class SafeWebViewLayout :
         /** The renderer was lost while recreation was impossible: recreated on [onAttachedToWindow] */
         DESTROYED_RECOVERABLE,
 
-        /** The renderer kept crashing: an error is shown and the [WebView] is never recreated */
+        /** The renderer kept crashing: an error is shown, and the [WebView] is recreated only on retry */
         CRASH_LOOP,
 
         /** [destroy] was called */
@@ -75,8 +79,11 @@ open class SafeWebViewLayout :
 
     private var webViewState = WebViewState.ACTIVE
 
-    /** [SystemClock.elapsedRealtime] of the last renderer crash, used to detect a crash loop */
+    /** [SystemClock.elapsedRealtime] of the last renderer crash or retry, used to detect a crash loop */
     private var lastCrashAt: Long? = null
+
+    /** Shown in [WebViewState.CRASH_LOOP] */
+    private var crashLoopMessage: View? = null
 
     /**
      * Receives [OnWebViewRecreatedListener.onWebViewRecreated] instead of the host Fragment or
@@ -207,10 +214,15 @@ open class SafeWebViewLayout :
         if (didCrash && isCrashLoop()) {
             Timber.w("WebView renderer crashed twice within %s; not recreating the WebView", CRASH_LOOP_WINDOW)
             webViewState = WebViewState.CRASH_LOOP
-            addView(createCrashLoopMessage(), webViewLayoutParams)
+            showCrashLoopMessage()
             return
         }
 
+        recreateIfPossible()
+    }
+
+    /** Recreates the [WebView], or leaves it destroyed until [onAttachedToWindow] if impossible now */
+    private fun recreateIfPossible() {
         if (!isAttachedToWindow) {
             Timber.w("skipping WebView recreation; layout is not attached to a window")
             webViewState = WebViewState.DESTROYED_RECOVERABLE
@@ -235,13 +247,40 @@ open class SafeWebViewLayout :
         return previous != null && now - previous < CRASH_LOOP_WINDOW.inWholeMilliseconds
     }
 
-    private fun createCrashLoopMessage() =
-        TextView(context).apply {
-            setText(R.string.webview_crash_loop_dialog_title)
-            gravity = Gravity.CENTER
-            val padding = resources.getDimensionPixelSize(R.dimen.side_margin)
-            setPadding(padding, padding, padding, padding)
-        }
+    private fun showCrashLoopMessage() {
+        val message =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                val padding = resources.getDimensionPixelSize(R.dimen.side_margin)
+                setPadding(padding, padding, padding, padding)
+                addView(
+                    TextView(context).apply {
+                        setText(R.string.webview_crash_loop_dialog_title)
+                        gravity = Gravity.CENTER
+                    },
+                )
+                addView(
+                    Button(context).apply {
+                        setText(R.string.retry)
+                        setOnClickListener { retryAfterCrashLoop() }
+                    },
+                )
+            }
+        crashLoopMessage = message
+        addView(message, webViewLayoutParams)
+    }
+
+    /** Gives the content another [WebView]: a crash soon after is a crash loop again */
+    private fun retryAfterCrashLoop() {
+        if (webViewState != WebViewState.CRASH_LOOP) return
+        Timber.i("retrying the WebView after its renderer kept crashing")
+        crashLoopMessage?.let { removeView(it) }
+        crashLoopMessage = null
+        lastCrashAt = SystemClock.elapsedRealtime()
+        webViewState = WebViewState.DESTROYED_RECOVERABLE
+        recreateIfPossible()
+    }
 
     /**
      * Finds the [OnWebViewRecreatedListener]: [onWebViewRecreatedListener], else the host

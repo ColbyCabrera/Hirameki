@@ -18,11 +18,13 @@
 
 package com.ichi2.anki.workarounds
 
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.R
@@ -85,8 +87,10 @@ class SafeWebViewLayoutTest : RobolectricTest() {
             assertThat(layout.webView, nullValue())
             assertThat(shadowOf(second).wasDestroyCalled(), equalTo(true))
             assertThat(layout.childCount, equalTo(1))
-            val message = layout.getChildAt(0) as TextView
-            assertThat(message.text.toString(), equalTo(targetContext.getString(R.string.webview_crash_loop_dialog_title)))
+            assertThat(
+                layout.findText(R.string.webview_crash_loop_dialog_title),
+                notNullValue(),
+            )
 
             layout.loadUrl("https://example.com/")
             assertThat("calls are ignored", shadowOf(second).lastLoadedUrl, nullValue())
@@ -96,6 +100,27 @@ class SafeWebViewLayoutTest : RobolectricTest() {
             parent.removeView(layout)
             parent.addView(layout)
             assertThat(layout.webView, nullValue())
+        }
+    }
+
+    @Test
+    fun `retrying after a crash loop gives the content a new WebView`() {
+        withHost { layout, host ->
+            repeat(2) { loseRenderer(layout.requireWebView(), crashed = true) }
+            // the user reads the error, picks other content and retries
+            ShadowSystemClock.advanceBy(SafeWebViewLayout.CRASH_LOOP_WINDOW.toJavaDuration() + Duration.ofSeconds(1))
+
+            checkNotNull(layout.findText(R.string.retry)).performClick()
+
+            assertThat(host.recreatedCount, equalTo(2))
+            assertThat(layout.webView, notNullValue())
+            assertThat("the error is removed", layout.childCount, equalTo(1))
+
+            // a crash soon after retrying is a crash loop again
+            loseRenderer(layout.requireWebView(), crashed = true)
+            assertThat(host.recreatedCount, equalTo(2))
+            assertThat(layout.webView, nullValue())
+            assertThat(layout.findText(R.string.retry), notNullValue())
         }
     }
 
@@ -324,4 +349,16 @@ class SafeWebViewLayoutTest : RobolectricTest() {
     private fun detail(crashed: Boolean) = mockk<RenderProcessGoneDetail> { every { didCrash() } returns crashed }
 
     private fun SafeWebViewLayout.requireWebView(): WebView = checkNotNull(webView) { "the WebView is destroyed" }
+
+    /** The view showing the string [resId], if any */
+    private fun View.findText(
+        @StringRes resId: Int,
+    ): TextView? {
+        val text = context.getString(resId)
+        return when (this) {
+            is TextView -> takeIf { it.text.toString() == text }
+            is ViewGroup -> (0 until childCount).firstNotNullOfOrNull { getChildAt(it).findText(resId) }
+            else -> null
+        }
+    }
 }
