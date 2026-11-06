@@ -23,6 +23,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.cardviewer.Gesture
 import junit.framework.TestCase.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
@@ -69,6 +70,17 @@ class ReviewerTest : RobolectricTest() {
             expectedAnimation,
             actualAnimation,
         )
+    }
+
+    @Test
+    fun `the compose reviewer builds no legacy card WebView`() {
+        addBasicNote("Front", "Back")
+
+        val reviewer = startReviewer(this)
+
+        // #143: it has no card frame to attach one to, and a detached WebView's renderer-loss
+        // handler crashed the app
+        assertNull("no detached legacy WebView", reviewer.webView)
     }
 
     companion object {

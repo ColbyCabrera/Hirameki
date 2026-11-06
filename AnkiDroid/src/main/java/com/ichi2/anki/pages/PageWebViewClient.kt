@@ -18,6 +18,7 @@ package com.ichi2.anki.pages
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -51,6 +52,12 @@ open class PageWebViewClient : WebViewClient() {
     private var cachedMaterial3Colors: Material3Colors? = null
     private var cachedMaterial3ThemeCss: String? = null
     private var cachedMaterial3ThemeAssetCss: String? = null
+
+    /**
+     * Called when the page's renderer process is gone, with whether it crashed (rather than being
+     * reclaimed by the system). The WebView never draws again, so the host should replace it.
+     */
+    var onRendererGone: ((crashed: Boolean) -> Unit)? = null
 
     private fun loadMaterial3ThemeCss(webView: WebView): String =
         try {
@@ -297,6 +304,27 @@ open class PageWebViewClient : WebViewClient() {
         pendingStyledCallbacks.clear()
         onPageFinishedCallbacks.clear()
         onErrorCallbacks.clear()
+        onRendererGone = null
+    }
+
+    /**
+     * #143: pages share the renderer process with the reviewer's card, and Android reclaims it from a
+     * backgrounded app. The default (`false`) makes Android kill the whole app, which then reopened on
+     * the deck list. Every WebView on the renderer gets this callback, so it must always return `true`.
+     */
+    override fun onRenderProcessGone(
+        view: WebView,
+        detail: RenderProcessGoneDetail,
+    ): Boolean {
+        val crashed = detail.didCrash()
+        Timber.w("Page renderer gone (crashed: %b): %s", crashed, view.url)
+        if (!isReleased) {
+            val callback = onRendererGone
+            // the dead page delivers no further useful callbacks
+            release()
+            callback?.invoke(crashed)
+        }
+        return true
     }
 
     /**

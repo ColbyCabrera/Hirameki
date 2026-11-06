@@ -33,6 +33,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
+import com.ichi2.anki.showThemedToast
 import com.ichi2.themes.Themes
 import timber.log.Timber
 import kotlin.reflect.KClass
@@ -104,6 +105,7 @@ open class PageFragment(
         savedInstanceState: Bundle?,
     ) {
         val pageWebViewClient = onCreateWebViewClient(savedInstanceState)
+        pageWebViewClient.onRendererGone = { crashed -> onRendererGone(crashed) }
         server = AnkiServer(this).also { it.start() }
         webView =
             view.findViewById<WebView>(R.id.webview).apply {
@@ -158,6 +160,20 @@ open class PageFragment(
             methodName,
             bytes,
         ) ?: throw IllegalArgumentException("unhandled method: $methodName")
+    }
+
+    /** See [PageWebViewClient.onRenderProcessGone]: this page's WebView is dead. */
+    private fun onRendererGone(crashed: Boolean) {
+        val activity = activity ?: return
+        if (crashed) {
+            // a rebuilt page would likely crash its renderer again: close the page instead
+            val message = getString(R.string.webview_crash_nonfatal, getString(R.string.webview_crash_unknown))
+            showThemedToast(activity, message, shortLength = false)
+            activity.finish()
+        } else {
+            // reclaimed by the system: recreating the activity rebuilds this page in a new WebView
+            activity.recreate()
+        }
     }
 
     override fun onDestroyView() {

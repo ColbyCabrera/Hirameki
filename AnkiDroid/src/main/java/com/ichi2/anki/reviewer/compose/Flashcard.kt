@@ -23,6 +23,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -31,20 +32,29 @@ import android.webkit.WebViewClient
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.R
 import com.ichi2.anki.ViewerResourceHandler
@@ -123,6 +133,22 @@ fun Flashcard(
         remember(questionHtml, answerHtml) {
             FlashcardContentKey(questionHtml.hashCode(), answerHtml.hashCode())
         }
+
+    // #143: Android reclaims the renderer process of a backgrounded app's WebViews. A WebView whose
+    // renderer is gone never draws again, and an unhandled loss kills the whole app, which then
+    // reopened on the deck list instead of the reviewer. Bumping the generation replaces the dead
+    // WebView with a new one that loads the same card.
+    var rendererGeneration by remember { mutableIntStateOf(0) }
+
+    // A renderer that crashed (rather than being reclaimed) on a card is likely to crash again on it:
+    // after a second crash in a row, the card shows an error instead of an endless rebuild loop.
+    var crashedContent by remember { mutableStateOf<FlashcardContentKey?>(null) }
+    var stalledContent by remember { mutableStateOf<FlashcardContentKey?>(null) }
+    LaunchedEffect(contentKey) {
+        // a crash only counts towards a loop while its card is on screen
+        if (crashedContent != contentKey) crashedContent = null
+        if (stalledContent != contentKey) stalledContent = null
+    }
 
     Crossfade(
         targetState = Pair(isAnswerShown, if (isAnswerShown) answerHtml else questionHtml),
@@ -290,202 +316,251 @@ fun Flashcard(
                 )
             }
 
-        AndroidView(
-            factory = { context ->
-                WebView(context).apply {
-                    layoutParams =
-                        ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                        )
-                    settings.javaScriptEnabled = true
-                    settings.allowFileAccess = true
-                    settings.domStorageEnabled = true
-                    settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
-                    settings.setSupportZoom(true)
-                    settings.builtInZoomControls = true
-                    settings.displayZoomControls = false
+        if (stalledContent == contentKey) {
+            RendererFailedMessage(modifier)
+            return@Crossfade
+        }
 
-                    webChromeClient =
-                        object : WebChromeClient() {
-                            override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                                Timber
-                                    .tag("FlashcardJS")
-                                    .d(
-                                        "${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}",
-                                    )
-                                return true
+        key(rendererGeneration) {
+            val generation = rendererGeneration
+            AndroidView(
+                factory = { context ->
+                    WebView(context).apply {
+                        layoutParams =
+                            ViewGroup.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                            )
+                        settings.javaScriptEnabled = true
+                        settings.allowFileAccess = true
+                        settings.domStorageEnabled = true
+                        settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
+                        settings.setSupportZoom(true)
+                        settings.builtInZoomControls = true
+                        settings.displayZoomControls = false
+
+                        webChromeClient =
+                            object : WebChromeClient() {
+                                override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                                    Timber
+                                        .tag("FlashcardJS")
+                                        .d(
+                                            "${consoleMessage.message()} -- From line ${consoleMessage.lineNumber()} of ${consoleMessage.sourceId()}",
+                                        )
+                                    return true
+                                }
                             }
-                        }
 
-                    webViewClient =
-                        object : WebViewClient() {
-                            val resourceHandler = ViewerResourceHandler(context)
+                        webViewClient =
+                            object : WebViewClient() {
+                                val resourceHandler = ViewerResourceHandler(context)
 
-                            override fun shouldInterceptRequest(
-                                view: WebView,
-                                request: WebResourceRequest,
-                            ): WebResourceResponse? = resourceHandler.shouldInterceptRequest(request)
+                                override fun shouldInterceptRequest(
+                                    view: WebView,
+                                    request: WebResourceRequest,
+                                ): WebResourceResponse? = resourceHandler.shouldInterceptRequest(request)
 
-                            override fun shouldOverrideUrlLoading(
-                                view: WebView,
-                                request: WebResourceRequest,
-                            ): Boolean {
-                                val uri = request.url
-                                val scheme = uri.scheme
-                                val ignoredSchemes = setOf("file", "data", "javascript", "blob")
-                                if (scheme in ignoredSchemes) {
-                                    return false
+                                override fun shouldOverrideUrlLoading(
+                                    view: WebView,
+                                    request: WebResourceRequest,
+                                ): Boolean {
+                                    val uri = request.url
+                                    val scheme = uri.scheme
+                                    val ignoredSchemes = setOf("file", "data", "javascript", "blob")
+                                    if (scheme in ignoredSchemes) {
+                                        return false
+                                    }
+
+                                    val urlString = uri.toString()
+                                    val payload = view.tag as? FlashcardPayload
+                                    val effectiveBaseUrl = payload?.baseUrl ?: currentBaseUrl
+                                    if (urlString.startsWith(effectiveBaseUrl)) {
+                                        val path = urlString.removePrefix(effectiveBaseUrl)
+                                        if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
+                                            return false
+                                        }
+                                    }
+
+                                    currentOnLinkClick(urlString)
+                                    return true
                                 }
 
-                                val urlString = uri.toString()
-                                val payload = view.tag as? FlashcardPayload
-                                val effectiveBaseUrl = payload?.baseUrl ?: currentBaseUrl
-                                if (urlString.startsWith(effectiveBaseUrl)) {
-                                    val path = urlString.removePrefix(effectiveBaseUrl)
-                                    if (path.isEmpty() || path.startsWith("#") || path.startsWith("/#")) {
-                                        return false
+                                override fun onPageFinished(
+                                    view: WebView,
+                                    url: String,
+                                ) {
+                                    val payload = view.tag as? FlashcardPayload ?: return
+                                    payload.shellLoaded = true
+
+                                    val pendingScript = payload.pendingShellScript
+
+                                    if (pendingScript != null) {
+                                        view.evaluateJavascript(pendingScript, null)
+                                        payload.pendingShellScript = null
+                                        payload.scriptExecuted = true
+                                    } else if (!payload.scriptExecuted) {
+                                        payload.scriptExecuted = true
+                                        view.evaluateJavascript(payload.evalScript, null)
+                                    }
+
+                                    payload.pendingJavascriptCommand?.let { command ->
+                                        view.evaluateJavascript(command.script, null)
+                                        payload.lastJavascriptCommandId = command.id
+                                        payload.pendingJavascriptCommand = null
+                                        currentOnJavascriptCommandConsumed(command.id)
                                     }
                                 }
 
-                                currentOnLinkClick(urlString)
-                                return true
-                            }
-
-                            override fun onPageFinished(
-                                view: WebView,
-                                url: String,
-                            ) {
-                                val payload = view.tag as? FlashcardPayload ?: return
-                                payload.shellLoaded = true
-
-                                val pendingScript = payload.pendingShellScript
-
-                                if (pendingScript != null) {
-                                    view.evaluateJavascript(pendingScript, null)
-                                    payload.pendingShellScript = null
-                                    payload.scriptExecuted = true
-                                } else if (!payload.scriptExecuted) {
-                                    payload.scriptExecuted = true
-                                    view.evaluateJavascript(payload.evalScript, null)
-                                }
-
-                                payload.pendingJavascriptCommand?.let { command ->
-                                    view.evaluateJavascript(command.script, null)
-                                    payload.lastJavascriptCommandId = command.id
-                                    payload.pendingJavascriptCommand = null
-                                    currentOnJavascriptCommandConsumed(command.id)
-                                }
-                            }
-                        }
-
-                    val gestureDetector =
-                        GestureDetector(
-                            context,
-                            object : GestureDetector.SimpleOnGestureListener() {
-                                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                                    currentOnTap()
+                                override fun onRenderProcessGone(
+                                    view: WebView,
+                                    detail: RenderProcessGoneDetail,
+                                ): Boolean {
+                                    // Every WebView on the renderer gets this callback for the same loss
+                                    // (two during the question/answer crossfade): the first one handles it
+                                    if (generation != rendererGeneration) return true
+                                    val crashed = detail.didCrash()
+                                    val content = (view.tag as? FlashcardPayload)?.contentKey
+                                    Timber.w("Flashcard: WebView renderer gone (crashed: %b)", crashed)
+                                    if (crashed && content != null && content == crashedContent) {
+                                        Timber.e("Flashcard: renderer crashed twice in a row on one card")
+                                        stalledContent = content
+                                    } else if (crashed) {
+                                        crashedContent = content
+                                    }
+                                    rendererGeneration++
+                                    // handled: returning false makes Android kill the app
                                     return true
                                 }
-                            },
-                        )
-
-                    @SuppressLint("ClickableViewAccessibility")
-                    setOnTouchListener { _, event ->
-                        gestureDetector.onTouchEvent(event)
-                        false
-                    }
-
-                    setBackgroundColor(Color.TRANSPARENT)
-                }
-            },
-            update = { webView ->
-                webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
-                val currentPayload = webView.tag as? FlashcardPayload
-                val shellChanged =
-                    currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle
-                val shouldReload = currentPayload == null || currentPayload.contentKey != contentKey
-
-                when {
-                    shouldReload -> {
-                        webView.tag =
-                            FlashcardPayload(
-                                contentKey,
-                                baseUrl,
-                                isNightMode,
-                                composeStyle,
-                                evalScript,
-                                pendingJavascriptCommand = javascriptCommand,
-                            )
-                        webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
-                    }
-
-                    shellChanged -> {
-                        currentPayload.baseUrl = baseUrl
-                        currentPayload.isNightMode = isNightMode
-                        currentPayload.composeStyle = composeStyle
-                        currentPayload.evalScript = evalScript
-                        val shellScript =
-                            buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
-                        if (javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id) {
-                            currentPayload.pendingJavascriptCommand = javascriptCommand
-                        }
-
-                        if (currentPayload.shellLoaded) {
-                            webView.evaluateJavascript(shellScript, null)
-                            currentPayload.pendingJavascriptCommand?.let { command ->
-                                webView.evaluateJavascript(command.script, null)
-                                currentPayload.lastJavascriptCommandId = command.id
-                                currentPayload.pendingJavascriptCommand = null
-                                currentOnJavascriptCommandConsumed(command.id)
                             }
-                        } else {
-                            // When FlashcardPayload.shellLoaded is false, onPageFinished runs
-                            // FlashcardPayload.pendingShellScript before
-                            // FlashcardPayload.pendingJavascriptCommand. That preserves shell-first
-                            // ordering, while currentOnJavascriptCommandConsumed only runs after the
-                            // command executes and FlashcardPayload.lastJavascriptCommandId becomes the
-                            // idempotency key for replay avoidance.
-                            currentPayload.pendingShellScript = shellScript
-                        }
-                    }
 
-                    javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id -> {
-                        if (currentPayload.shellLoaded) {
-                            webView.evaluateJavascript(javascriptCommand.script, null)
-                            currentPayload.lastJavascriptCommandId = javascriptCommand.id
-                            currentPayload.pendingJavascriptCommand = null
-                            currentOnJavascriptCommandConsumed(javascriptCommand.id)
-                        } else {
-                            currentPayload.pendingJavascriptCommand = javascriptCommand
-                        }
-                    }
+                        val gestureDetector =
+                            GestureDetector(
+                                context,
+                                object : GestureDetector.SimpleOnGestureListener() {
+                                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                                        currentOnTap()
+                                        return true
+                                    }
+                                },
+                            )
 
-                    currentPayload.shellLoaded -> {
-                        currentPayload.baseUrl = baseUrl
-                        if (currentPayload.evalScript != evalScript) {
+                        @SuppressLint("ClickableViewAccessibility")
+                        setOnTouchListener { _, event ->
+                            gestureDetector.onTouchEvent(event)
+                            false
+                        }
+
+                        setBackgroundColor(Color.TRANSPARENT)
+                    }
+                },
+                update = { webView ->
+                    webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
+                    val currentPayload = webView.tag as? FlashcardPayload
+                    val shellChanged =
+                        currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle
+                    val shouldReload = currentPayload == null || currentPayload.contentKey != contentKey
+
+                    when {
+                        shouldReload -> {
+                            webView.tag =
+                                FlashcardPayload(
+                                    contentKey,
+                                    baseUrl,
+                                    isNightMode,
+                                    composeStyle,
+                                    evalScript,
+                                    pendingJavascriptCommand = javascriptCommand,
+                                )
+                            webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
+                        }
+
+                        shellChanged -> {
+                            currentPayload.baseUrl = baseUrl
+                            currentPayload.isNightMode = isNightMode
+                            currentPayload.composeStyle = composeStyle
                             currentPayload.evalScript = evalScript
-                            webView.evaluateJavascript(evalScript, null)
+                            val shellScript =
+                                buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
+                            if (javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id) {
+                                currentPayload.pendingJavascriptCommand = javascriptCommand
+                            }
+
+                            if (currentPayload.shellLoaded) {
+                                webView.evaluateJavascript(shellScript, null)
+                                currentPayload.pendingJavascriptCommand?.let { command ->
+                                    webView.evaluateJavascript(command.script, null)
+                                    currentPayload.lastJavascriptCommandId = command.id
+                                    currentPayload.pendingJavascriptCommand = null
+                                    currentOnJavascriptCommandConsumed(command.id)
+                                }
+                            } else {
+                                // When FlashcardPayload.shellLoaded is false, onPageFinished runs
+                                // FlashcardPayload.pendingShellScript before
+                                // FlashcardPayload.pendingJavascriptCommand. That preserves shell-first
+                                // ordering, while currentOnJavascriptCommandConsumed only runs after the
+                                // command executes and FlashcardPayload.lastJavascriptCommandId becomes the
+                                // idempotency key for replay avoidance.
+                                currentPayload.pendingShellScript = shellScript
+                            }
+                        }
+
+                        javascriptCommand != null && currentPayload.lastJavascriptCommandId != javascriptCommand.id -> {
+                            if (currentPayload.shellLoaded) {
+                                webView.evaluateJavascript(javascriptCommand.script, null)
+                                currentPayload.lastJavascriptCommandId = javascriptCommand.id
+                                currentPayload.pendingJavascriptCommand = null
+                                currentOnJavascriptCommandConsumed(javascriptCommand.id)
+                            } else {
+                                currentPayload.pendingJavascriptCommand = javascriptCommand
+                            }
+                        }
+
+                        currentPayload.shellLoaded -> {
+                            currentPayload.baseUrl = baseUrl
+                            if (currentPayload.evalScript != evalScript) {
+                                currentPayload.evalScript = evalScript
+                                webView.evaluateJavascript(evalScript, null)
+                            }
+                        }
+
+                        else -> {
+                            currentPayload.baseUrl = baseUrl
+                            currentPayload.evalScript = evalScript
                         }
                     }
+                },
+                onRelease = { webView ->
+                    webView.stopLoading()
+                    webView.webViewClient = WebViewClient()
+                    webView.webChromeClient = null
+                    webView.setOnTouchListener(null)
+                    webView.destroy()
+                },
+                modifier =
+                    modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface),
+            )
+        }
+    }
+}
 
-                    else -> {
-                        currentPayload.baseUrl = baseUrl
-                        currentPayload.evalScript = evalScript
-                    }
-                }
-            },
-            onRelease = { webView ->
-                webView.stopLoading()
-                webView.webViewClient = WebViewClient()
-                webView.webChromeClient = null
-                webView.setOnTouchListener(null)
-                webView.destroy()
-            },
-            modifier =
-                modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
+/** Shown in place of a card whose WebView renderer crashed twice in a row. */
+@Composable
+private fun RendererFailedMessage(modifier: Modifier) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.webview_crash_loop_dialog_title),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
         )
     }
 }

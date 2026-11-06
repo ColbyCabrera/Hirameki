@@ -898,10 +898,14 @@ abstract class AbstractFlashcardViewer :
     }
 
     protected open fun recreateWebView() {
+        // #143: Reviewer draws cards in Compose and never runs initLayout(), so it has no card frame.
+        // A WebView built here could never be attached, yet its renderer-loss handler would run
+        // destroyWebViewFrame(), which requires the frame, and crash the app.
+        val frame = cardFrame ?: return
         if (webView == null) {
             webView = createWebView()
             initializeDebugging(this.sharedPrefs())
-            cardFrame?.addView(webView)
+            frame.addView(webView)
             gestureDetectorImpl.onWebViewCreated(webView!!)
         }
         if (webView!!.visibility != View.VISIBLE) {

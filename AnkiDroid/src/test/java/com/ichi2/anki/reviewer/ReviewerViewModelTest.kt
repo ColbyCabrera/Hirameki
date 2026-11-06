@@ -21,6 +21,8 @@ import app.cash.turbine.test
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.servicelayer.NoteService
 import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import kotlinx.coroutines.cancel
@@ -28,12 +30,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import net.ankiweb.rsdroid.BackendException
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.assertFailsWith
 
 /**
  * Tests for [ReviewerViewModel].
@@ -618,4 +622,82 @@ class ReviewerViewModelTest : RobolectricTest() {
             assertThat("State should remain finished", stateAfter.isFinished, equalTo(true))
             assertThat("Answer should not be shown", stateAfter.isAnswerShown, equalTo(false))
         }
+
+    @Test
+    fun `a rating refused because the card changed reloads instead of crashing`() =
+        runTest {
+            val cardId = addBasicNote("Front 1", "Back 1").firstCard().id
+            val viewModel = loadedViewModel()
+            viewModel.onEvent(ReviewerEvent.ShowAnswer)
+            settle()
+            val stale = viewModel.queueStateFlow.value!!
+
+            // #143: the card changes while the app is in the background, as after a day cutoff
+            col.sched.answerCard(col.sched.currentQueueState()!!, anki.scheduler.CardAnswer.Rating.GOOD)
+            val refusal =
+                assertFailsWith<BackendException> {
+                    col.sched.answerCard(stale, anki.scheduler.CardAnswer.Rating.GOOD)
+                }
+            assertThat("the text isStaleQueueAnswer matches", refusal.isStaleQueueAnswer(), equalTo(true))
+            assertThat(refusal.message, containsString("card was modified"))
+
+            viewModel.onEvent(ReviewerEvent.RateCard(anki.scheduler.CardAnswer.Rating.GOOD))
+            settle()
+
+            assertThat("the refused rating is not recorded", col.getCard(cardId).reps, equalTo(1))
+            assertThat("the queue was reloaded", viewModel.state.value.cardDisplayIndex, equalTo(2L))
+            assertThat("the reloaded card shows its question", viewModel.state.value.isAnswerShown, equalTo(false))
+        }
+
+    @Test
+    fun `a rating refused because another card leads the queue reloads instead of crashing`() =
+        runTest {
+            addBasicNote("Front 1", "Back 1")
+            addBasicNote("Front 2", "Back 2")
+            val viewModel = loadedViewModel()
+            viewModel.onEvent(ReviewerEvent.ShowAnswer)
+            settle()
+            val stale = viewModel.queueStateFlow.value!!
+            val shownCardId = stale.topCard.id
+
+            // another card now leads the backend's queue, as when a learning card falls due while
+            // the app is in the background; suspending the shown card gets there without changing
+            // its scheduling state
+            col.sched.suspendCards(listOf(shownCardId))
+            col.sched.currentQueueState()
+            val refusal =
+                assertFailsWith<BackendException> {
+                    col.sched.answerCard(stale, anki.scheduler.CardAnswer.Rating.GOOD)
+                }
+            assertThat("the text isStaleQueueAnswer matches", refusal.isStaleQueueAnswer(), equalTo(true))
+            assertThat(refusal.message, containsString("not at top of queue"))
+            // the refusal dropped the backend's cached queue; rebuild it so the other card leads again
+            col.sched.currentQueueState()
+
+            viewModel.onEvent(ReviewerEvent.RateCard(anki.scheduler.CardAnswer.Rating.GOOD))
+            settle()
+
+            assertThat("the refused rating is not recorded", col.getCard(shownCardId).reps, equalTo(0))
+            assertThat("the card now leading is shown", viewModel.currentCard?.id, not(equalTo(shownCardId)))
+            assertThat("it shows its question", viewModel.state.value.isAnswerShown, equalTo(false))
+        }
+
+    @Test
+    fun `other backend errors from a rating are not treated as a stale queue`() {
+        fun backendError(text: String?) = mockk<BackendException> { every { message } returns text }
+        assertThat(backendError("CardNotFound").isStaleQueueAnswer(), equalTo(false))
+        assertThat(backendError(null).isStaleQueueAnswer(), equalTo(false))
+    }
+
+    private fun kotlinx.coroutines.test.TestScope.loadedViewModel(): ReviewerViewModel {
+        val viewModel =
+            ReviewerViewModel(ApplicationProvider.getApplicationContext(), StandardTestDispatcher(testScheduler))
+        settle()
+        return viewModel
+    }
+
+    private fun kotlinx.coroutines.test.TestScope.settle() {
+        testScheduler.advanceUntilIdle()
+        advanceRobolectricLooper()
+    }
 }
