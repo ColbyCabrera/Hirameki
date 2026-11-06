@@ -19,7 +19,6 @@ package com.ichi2.anki
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import androidx.core.graphics.createBitmap
@@ -145,7 +144,8 @@ class WebViewRendererLossHostsTest : RobolectricTest() {
     fun `image preview is shown again`() {
         val image = File(targetContext.cacheDir, "renderer-loss.png")
         image.outputStream().use { createBitmap(4, 4).compress(Bitmap.CompressFormat.PNG, 100, it) }
-        val extra = MultimediaActivityExtra(0, ImageField(), MultimediaEditableNote(), Uri.fromFile(image).toString())
+        // not Uri.fromFile: on Windows its path has backslashes, which Android paths never have
+        val extra = MultimediaActivityExtra(0, ImageField(), MultimediaEditableNote(), image.toURI().toString())
         val intent = MultimediaImageFragment.getIntent(targetContext, extra, MultimediaImageFragment.ImageOptions.GALLERY)
 
         ActivityScenario.launch<Activity>(intent).use { scenario ->
