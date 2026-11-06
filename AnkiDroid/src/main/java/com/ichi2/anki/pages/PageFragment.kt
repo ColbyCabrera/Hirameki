@@ -19,6 +19,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -164,6 +165,9 @@ open class PageFragment(
 
     /** See [PageWebViewClient.onRenderProcessGone]: this page's WebView is dead. */
     private fun onRendererGone(crashed: Boolean) {
+        // a WebView whose renderer is gone must be removed and destroyed before anything calls it
+        (webView.parent as? ViewGroup)?.removeView(webView)
+        webView.destroy()
         val activity = activity ?: return
         if (crashed) {
             // a rebuilt page would likely crash its renderer again: close the page instead

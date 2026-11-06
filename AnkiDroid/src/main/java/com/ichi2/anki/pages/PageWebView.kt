@@ -149,6 +149,9 @@ internal fun PageWebViewInternal(
 
     // #143: bumped when the system reclaims the page's renderer; a new WebView replaces the dead one
     var rendererGeneration by remember { mutableIntStateOf(0) }
+
+    // after a renderer crash, the dead WebView is removed (onRelease destroys it) and the error stays
+    var rendererCrashed by remember { mutableStateOf(false) }
     val backgroundColor = MaterialTheme.colorScheme.background
     val backgroundColorArgb = remember(backgroundColor) { backgroundColor.toArgb() }
 
@@ -164,65 +167,68 @@ internal fun PageWebViewInternal(
     }
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        key(rendererGeneration) {
-            AndroidView(
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        with(settings) {
-                            javaScriptEnabled = true
-                            displayZoomControls = false
-                            builtInZoomControls = true
-                            setSupportZoom(true)
-                        }
-                        setBackgroundColor(backgroundColorArgb)
-                        webViewClient =
-                            PageWebViewClient().apply {
-                                onPageFinishedCallbacks.add { webView ->
-                                    isLoading = false
-                                    webView.visibility = View.VISIBLE
-                                }
-                                onErrorCallbacks.add { error ->
-                                    Timber.e("PageWebView error: %s", error.description)
-                                    hasError = true
-                                    isLoading = false
-                                }
-                                onRendererGone = { crashed ->
-                                    if (crashed) {
-                                        // a rebuilt page would likely crash again: show the error instead
+        if (!rendererCrashed) {
+            key(rendererGeneration) {
+                AndroidView(
+                    factory = { ctx ->
+                        WebView(ctx).apply {
+                            with(settings) {
+                                javaScriptEnabled = true
+                                displayZoomControls = false
+                                builtInZoomControls = true
+                                setSupportZoom(true)
+                            }
+                            setBackgroundColor(backgroundColorArgb)
+                            webViewClient =
+                                PageWebViewClient().apply {
+                                    onPageFinishedCallbacks.add { webView ->
+                                        isLoading = false
+                                        webView.visibility = View.VISIBLE
+                                    }
+                                    onErrorCallbacks.add { error ->
+                                        Timber.e("PageWebView error: %s", error.description)
                                         hasError = true
                                         isLoading = false
-                                    } else {
-                                        rendererGeneration++
+                                    }
+                                    onRendererGone = { crashed ->
+                                        if (crashed) {
+                                            // a rebuilt page would likely crash again: show the error instead
+                                            rendererCrashed = true
+                                            hasError = true
+                                            isLoading = false
+                                        } else {
+                                            rendererGeneration++
+                                        }
                                     }
                                 }
-                            }
-                        webChromeClient = PageChromeClient()
-                        visibility = View.INVISIBLE
-                        webViewRef = this
-                    }
-                },
-                update = { webView ->
-                    val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
-                    val url = "$serverBaseUrl$path$nightMode"
-                    if (webView.tag != url) {
-                        webView.tag = url
-                        isLoading = true
-                        hasError = false
-                        webView.visibility = View.INVISIBLE
-                        Timber.i("PageWebView: Loading %s", url)
-                        webView.loadUrl(url)
-                    }
-                },
-                onRelease = { webView ->
-                    webView.stopLoading()
-                    (webView.webViewClient as? PageWebViewClient)?.release()
-                    webView.webViewClient = android.webkit.WebViewClient()
-                    webView.destroy()
-                    // a rebuild may have set a new WebView already
-                    if (webViewRef === webView) webViewRef = null
-                },
-                modifier = Modifier.fillMaxSize(),
-            )
+                            webChromeClient = PageChromeClient()
+                            visibility = View.INVISIBLE
+                            webViewRef = this
+                        }
+                    },
+                    update = { webView ->
+                        val nightMode = if (Themes.currentTheme.isNightMode) "#night" else ""
+                        val url = "$serverBaseUrl$path$nightMode"
+                        if (webView.tag != url) {
+                            webView.tag = url
+                            isLoading = true
+                            hasError = false
+                            webView.visibility = View.INVISIBLE
+                            Timber.i("PageWebView: Loading %s", url)
+                            webView.loadUrl(url)
+                        }
+                    },
+                    onRelease = { webView ->
+                        webView.stopLoading()
+                        (webView.webViewClient as? PageWebViewClient)?.release()
+                        webView.webViewClient = android.webkit.WebViewClient()
+                        webView.destroy()
+                        // a rebuild may have set a new WebView already
+                        if (webViewRef === webView) webViewRef = null
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
 
         if (isLoading) {

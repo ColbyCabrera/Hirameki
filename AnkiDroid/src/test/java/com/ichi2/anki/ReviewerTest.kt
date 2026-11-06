@@ -17,16 +17,18 @@ package com.ichi2.anki
 
 import android.app.Application
 import android.content.Intent
+import android.view.KeyEvent
 import androidx.core.os.BundleCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.cardviewer.Gesture
+import com.ichi2.anki.cardviewer.ViewerCommand
 import junit.framework.TestCase.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
+import kotlin.test.assertNull
 
 /**
  * Tests for [Reviewer] activity.
@@ -80,7 +82,28 @@ class ReviewerTest : RobolectricTest() {
 
         // #143: it has no card frame to attach one to, and a detached WebView's renderer-loss
         // handler crashed the app
-        assertNull("no detached legacy WebView", reviewer.webView)
+        assertNull(reviewer.webView, "no detached legacy WebView")
+    }
+
+    @Test
+    fun `card commands are safe without a legacy card WebView`() {
+        addBasicNote("Front", "Back")
+        val reviewer = startReviewer(this)
+
+        // each of these dereferenced the legacy card WebView, which the compose reviewer no longer builds
+        listOf(
+            ViewerCommand.PAGE_UP,
+            ViewerCommand.PAGE_DOWN,
+            ViewerCommand.SHOW_HINT,
+            ViewerCommand.SHOW_ALL_HINTS,
+            ViewerCommand.USER_ACTION_1,
+        ).forEach { reviewer.executeCommand(it) }
+        for (keyCode in listOf(KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_PAGE_DOWN)) {
+            reviewer.onKeyDown(keyCode, KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+        }
+        reviewer.scrollCurrentCardBy(100)
+        reviewer.tapOnCurrentCard(10, 10)
+        advanceRobolectricLooper()
     }
 
     companion object {
