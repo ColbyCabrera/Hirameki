@@ -19,7 +19,11 @@ package com.ichi2.anki.ui.compose
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebView
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
@@ -62,6 +66,24 @@ class RemoveAccountWebViewTest : RobolectricTest() {
         assertThat(shadowOf(replacement).lastLoadedUrl, equalTo(REMOVE_ACCOUNT_URL))
         assertThat(shadowOf(replacement).webViewClient, instanceOf(SafeWebViewClient::class.java))
         assertThat(replacement.settings.allowFileAccess, equalTo(false))
+    }
+
+    @Test
+    fun `the WebView is destroyed when the page leaves the screen`() {
+        var isShown by mutableStateOf(true)
+        composeTestRule.setContent {
+            if (isShown) RemoveAccountWebView(REMOVE_ACCOUNT_URL, urlsToRedirect = emptyList())
+        }
+        composeTestRule.waitForIdle()
+        lateinit var webView: WebView
+        composeTestRule.runOnUiThread {
+            webView = checkNotNull(checkNotNull(findLayout(composeTestRule.activity.window.decorView)).webView)
+        }
+
+        isShown = false
+        composeTestRule.waitForIdle()
+
+        assertThat(shadowOf(webView).wasDestroyCalled(), equalTo(true))
     }
 
     private fun findLayout(view: View): SafeWebViewLayout? =

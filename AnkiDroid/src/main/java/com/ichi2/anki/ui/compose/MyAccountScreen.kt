@@ -299,6 +299,7 @@ internal fun RemoveAccountWebView(
             }
         },
         modifier = modifier,
+        onRelease = { it.destroy() },
     )
 }
 

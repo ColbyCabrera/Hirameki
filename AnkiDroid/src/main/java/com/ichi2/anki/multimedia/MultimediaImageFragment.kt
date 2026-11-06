@@ -93,8 +93,8 @@ class MultimediaImageFragment :
     /** Keeps track of the process in case `Don't keep activities` in turned on*/
     private var hasStartedImageSelection = false
 
-    /** The image shown in the preview, shown again if the preview's WebView is replaced */
-    private var previewedImage: Uri? = null
+    /** The HTML shown in the preview, shown again if the preview's WebView is replaced */
+    private var previewHtml: PreviewHtml? = null
 
     private val previewWebView: SafeWebViewLayout?
         get() = view?.findViewById(R.id.multimedia_webview)
@@ -301,8 +301,10 @@ class MultimediaImageFragment :
     /** Only the WebView was replaced: apply its client and the preview again */
     override fun onWebViewRecreated() {
         Timber.i("restoring the image preview after losing the WebView renderer")
-        previewWebView?.setWebViewClient(SafeWebViewClient())
-        previewedImage?.let { previewImage(it) }
+        val webView = previewWebView ?: return
+        webView.setWebViewClient(SafeWebViewClient())
+        // not previewImage(): it copies the image again, and may fail where the first preview did not
+        previewHtml?.let { webView.showPreview(it) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -578,7 +580,6 @@ class MultimediaImageFragment :
      */
     private fun previewImage(imageUri: Uri) {
         val mimeType = context?.contentResolver?.getType(imageUri)
-        previewedImage = imageUri
 
         // Get the WebView and set it visible
         previewWebView?.apply {
@@ -604,7 +605,7 @@ class MultimediaImageFragment :
         if (svgData != null) {
             Timber.i("Selected image is an SVG.")
 
-            loadDataWithBaseURL(null, svgData, SVG_IMAGE, "UTF-8", null)
+            showPreview(PreviewHtml(svgData, SVG_IMAGE))
         } else {
             Timber.w("Failed to load SVG from URI")
             showErrorInWebView()
@@ -646,7 +647,7 @@ class MultimediaImageFragment :
                 </html>
                 """.trimIndent()
 
-            loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null)
+            showPreview(PreviewHtml(htmlData, "text/html"))
         } catch (e: Exception) {
             Timber.e(e, "Error loading image in WebView")
             showSomethingWentWrong()
@@ -672,8 +673,18 @@ class MultimediaImageFragment :
             </html>
             """.trimIndent()
 
-        previewWebView?.loadDataWithBaseURL(null, errorHtml, "text/html", "UTF-8", null)
+        previewWebView?.showPreview(PreviewHtml(errorHtml, "text/html"))
     }
+
+    private fun SafeWebViewLayout.showPreview(html: PreviewHtml) {
+        previewHtml = html
+        loadDataWithBaseURL(null, html.data, html.mimeType, "UTF-8", null)
+    }
+
+    private data class PreviewHtml(
+        val data: String,
+        val mimeType: String,
+    )
 
     private fun requestCrop() {
         val imageUri = viewModel.currentMultimediaUri.value ?: return

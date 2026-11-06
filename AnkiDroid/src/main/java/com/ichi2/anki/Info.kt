@@ -55,7 +55,13 @@ class Info :
     private val onBackPressedCallback =
         object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) webView.goBack()
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                    return
+                }
+                // no history to go back to, such as after the WebView was lost: leave the screen
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
             }
         }
 

@@ -45,6 +45,7 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.instanceOf
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.notNullValue
+import org.hamcrest.Matchers.nullValue
 import org.hamcrest.Matchers.sameInstance
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -86,11 +87,49 @@ class WebViewRendererLossHostsTest : RobolectricTest() {
     }
 
     @Test
+    fun `shared decks back leaves the screen once the WebView keeps crashing`() {
+        val activity = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent()).setup().get()
+        val layout = activity.findViewById<SafeWebViewLayout>(R.id.media_check_webview)
+
+        assertBackLeavesAfterCrashLoop(activity, layout)
+    }
+
+    @Test
+    fun `changelog back leaves the screen once the WebView keeps crashing`() {
+        val intent = Intent(targetContext, Info::class.java).putExtra(Info.TYPE_EXTRA, Info.TYPE_NEW_VERSION)
+        val activity = Robolectric.buildActivity(Info::class.java, intent).setup().get()
+        val layout = activity.findViewById<SafeWebViewLayout>(R.id.info)
+
+        assertBackLeavesAfterCrashLoop(activity, layout)
+    }
+
+    /** Back handled by the page's history must not be swallowed once that history is gone */
+    private fun assertBackLeavesAfterCrashLoop(
+        activity: AnkiActivity,
+        layout: SafeWebViewLayout,
+    ) {
+        layout.loseRenderer(crashed = true)
+        // the user navigates in the replacement: Back goes back in the page
+        val webView = layout.requireWebView()
+        shadowOf(webView).pushEntryToHistory(FIRST_PAGE)
+        shadowOf(webView).pushEntryToHistory(NEXT_PAGE)
+        shadowOf(webView).webViewClient.doUpdateVisitedHistory(webView, NEXT_PAGE, false)
+
+        // then the renderer crashes again
+        layout.loseRenderer(crashed = true)
+        assertThat("the WebView keeps crashing", layout.webView, nullValue())
+        activity.onBackPressedDispatcher.onBackPressed()
+
+        assertThat("Back leaves the screen", activity.isFinishing, equalTo(true))
+    }
+
+    @Test
     fun `media check shows its report again`() {
         ActivityScenario.launch<SingleFragmentActivity>(MediaCheckFragment.getIntent(targetContext)).use { scenario ->
             scenario.moveToState(Lifecycle.State.RESUMED)
             lateinit var layout: SafeWebViewLayout
             scenario.onActivity { layout = it.findViewById(R.id.media_check_webview) }
+            // the media check itself fails here: test collections have no media folder
             val report = shadowOf(layout.requireWebView()).lastLoadDataWithBaseURL?.data
             assertThat("the report is shown", report, notNullValue())
 
@@ -169,15 +208,20 @@ class WebViewRendererLossHostsTest : RobolectricTest() {
 
     private fun SafeWebViewLayout.requireWebView(): WebView = checkNotNull(webView) { "the WebView is destroyed" }
 
+    private fun SafeWebViewLayout.loseRenderer(crashed: Boolean): Boolean {
+        val webView = requireWebView()
+        val detail = mockk<RenderProcessGoneDetail> { every { didCrash() } returns crashed }
+        return shadowOf(webView).webViewClient.onRenderProcessGone(webView, detail)
+    }
+
     /**
      * Loses the renderer of the WebView, as Android reports it, and returns its replacement after
      * checking that it can survive another loss.
      */
     private fun SafeWebViewLayout.replaceWebView(): WebView {
         val original = requireWebView()
-        val detail = mockk<RenderProcessGoneDetail> { every { didCrash() } returns false }
 
-        val handled = shadowOf(original).webViewClient.onRenderProcessGone(original, detail)
+        val handled = loseRenderer(crashed = false)
         ShadowLooper.idleMainLooper()
 
         assertThat("handled: false kills the app", handled, equalTo(true))
@@ -186,5 +230,10 @@ class WebViewRendererLossHostsTest : RobolectricTest() {
         assertThat("the replacement is shown", replacement.parent, sameInstance<Any>(this))
         assertThat("the replacement survives the next loss", shadowOf(replacement).webViewClient, instanceOf(SafeWebViewClient::class.java))
         return replacement
+    }
+
+    private companion object {
+        const val FIRST_PAGE = "https://ankiweb.net/shared/decks"
+        const val NEXT_PAGE = "https://ankiweb.net/shared/info/1"
     }
 }
