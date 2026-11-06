@@ -587,15 +587,17 @@ abstract class AbstractFlashcardViewer :
         keyCode: Int,
         card: WebView?,
     ): Boolean {
+        // #143: the Compose Reviewer has no legacy card WebView; let the key propagate
+        if (card == null) return false
         if (keyCode == KeyEvent.KEYCODE_PAGE_UP) {
-            card!!.pageUp(false)
+            card.pageUp(false)
             if (doubleScrolling) {
                 card.pageUp(false)
             }
             return true
         }
         if (keyCode == KeyEvent.KEYCODE_PAGE_DOWN) {
-            card!!.pageDown(false)
+            card.pageDown(false)
             if (doubleScrolling) {
                 card.pageDown(false)
             }
@@ -817,7 +819,7 @@ abstract class AbstractFlashcardViewer :
 
     /** Used to set the "javascript:" URIs for IPC  */
     fun loadUrlInViewer(url: String) {
-        processCardAction { cardWebView: WebView? -> cardWebView!!.loadUrl(url) }
+        processCardAction { cardWebView: WebView? -> cardWebView?.loadUrl(url) }
     }
 
     private fun <T : View?> inflateNewView(
@@ -900,7 +902,8 @@ abstract class AbstractFlashcardViewer :
     protected open fun recreateWebView() {
         // #143: Reviewer draws cards in Compose and never runs initLayout(), so it has no card frame.
         // A WebView built here could never be attached, yet its renderer-loss handler would run
-        // destroyWebViewFrame(), which requires the frame, and crash the app.
+        // destroyWebViewFrame(), which requires the frame, and crash the app. Every other use of
+        // the card WebView must therefore tolerate it being null.
         val frame = cardFrame ?: return
         if (webView == null) {
             webView = createWebView()
@@ -1006,7 +1009,7 @@ abstract class AbstractFlashcardViewer :
 
     override fun scrollCurrentCardBy(dy: Int) {
         processCardAction { cardWebView: WebView? ->
-            if (dy != 0 && cardWebView!!.canScrollVertically(dy)) {
+            if (cardWebView != null && dy != 0 && cardWebView.canScrollVertically(dy)) {
                 cardWebView.scrollBy(0, dy)
             }
         }
@@ -1032,7 +1035,7 @@ abstract class AbstractFlashcardViewer :
                 0,
                 0,
             )
-        processCardAction { cardWebView: WebView? -> cardWebView!!.dispatchTouchEvent(eDown) }
+        processCardAction { cardWebView: WebView? -> cardWebView?.dispatchTouchEvent(eDown) }
         val eUp =
             MotionEvent.obtain(
                 eDown.downTime,
@@ -1048,7 +1051,7 @@ abstract class AbstractFlashcardViewer :
                 0,
                 0,
             )
-        processCardAction { cardWebView: WebView? -> cardWebView!!.dispatchTouchEvent(eUp) }
+        processCardAction { cardWebView: WebView? -> cardWebView?.dispatchTouchEvent(eUp) }
     }
 
     internal val isInNightMode: Boolean
@@ -1454,15 +1457,15 @@ abstract class AbstractFlashcardViewer :
     private fun onPageUp() {
         // pageUp performs a half scroll, we want a full page
         processCardAction { cardWebView: WebView? ->
-            cardWebView!!.pageUp(false)
-            cardWebView.pageUp(false)
+            cardWebView?.pageUp(false)
+            cardWebView?.pageUp(false)
         }
     }
 
     private fun onPageDown() {
         processCardAction { cardWebView: WebView? ->
-            cardWebView!!.pageDown(false)
-            cardWebView.pageDown(false)
+            cardWebView?.pageDown(false)
+            cardWebView?.pageDown(false)
         }
     }
 

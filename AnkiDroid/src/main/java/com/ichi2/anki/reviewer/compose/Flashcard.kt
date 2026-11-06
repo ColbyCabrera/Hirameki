@@ -82,6 +82,8 @@ fun Flashcard(
     modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
     toolbarHeight: Int = 0,
+    /** Changes each time a card is shown, even when the next card's HTML is identical. */
+    cardDisplayIndex: Long = 0L,
 ) {
     val currentBaseUrl by rememberUpdatedState(baseUrl)
     val currentOnJavascriptCommandConsumed by rememberUpdatedState(onJavascriptCommandConsumed)
@@ -140,14 +142,17 @@ fun Flashcard(
     // WebView with a new one that loads the same card.
     var rendererGeneration by remember { mutableIntStateOf(0) }
 
-    // A renderer that crashed (rather than being reclaimed) on a card is likely to crash again on it:
-    // after a second crash in a row, the card shows an error instead of an endless rebuild loop.
-    var crashedContent by remember { mutableStateOf<FlashcardContentKey?>(null) }
-    var stalledContent by remember { mutableStateOf<FlashcardContentKey?>(null) }
-    LaunchedEffect(contentKey) {
-        // a crash only counts towards a loop while its card is on screen
-        if (crashedContent != contentKey) crashedContent = null
-        if (stalledContent != contentKey) stalledContent = null
+    // A renderer that crashed (rather than being reclaimed) while a card is shown is likely to crash
+    // again on it: after a second crash in a row, the card shows an error instead of an endless
+    // rebuild loop. Scoped to one showing of one card, so the next card (even with identical HTML,
+    // or the same card again after a rating) gets a fresh attempt.
+    val showKey = remember(cardDisplayIndex, contentKey) { FlashcardShowKey(cardDisplayIndex, contentKey) }
+    val currentShowKey by rememberUpdatedState(showKey)
+    var crashedShow by remember { mutableStateOf<FlashcardShowKey?>(null) }
+    var stalledShow by remember { mutableStateOf<FlashcardShowKey?>(null) }
+    LaunchedEffect(showKey) {
+        if (crashedShow != showKey) crashedShow = null
+        if (stalledShow != showKey) stalledShow = null
     }
 
     Crossfade(
@@ -316,7 +321,7 @@ fun Flashcard(
                 )
             }
 
-        if (stalledContent == contentKey) {
+        if (stalledShow == showKey) {
             RendererFailedMessage(modifier)
             return@Crossfade
         }
@@ -419,13 +424,13 @@ fun Flashcard(
                                     // (two during the question/answer crossfade): the first one handles it
                                     if (generation != rendererGeneration) return true
                                     val crashed = detail.didCrash()
-                                    val content = (view.tag as? FlashcardPayload)?.contentKey
+                                    val show = currentShowKey
                                     Timber.w("Flashcard: WebView renderer gone (crashed: %b)", crashed)
-                                    if (crashed && content != null && content == crashedContent) {
+                                    if (crashed && show == crashedShow) {
                                         Timber.e("Flashcard: renderer crashed twice in a row on one card")
-                                        stalledContent = content
+                                        stalledShow = show
                                     } else if (crashed) {
-                                        crashedContent = content
+                                        crashedShow = show
                                     }
                                     rendererGeneration++
                                     // handled: returning false makes Android kill the app
@@ -571,6 +576,12 @@ private fun RendererFailedMessage(modifier: Modifier) {
 private data class FlashcardContentKey(
     val questionHash: Int,
     val answerHash: Int,
+)
+
+/** One showing of one card: see the crash-loop handling in [Flashcard]. */
+private data class FlashcardShowKey(
+    val cardDisplayIndex: Long,
+    val content: FlashcardContentKey,
 )
 
 private class FlashcardPayload(

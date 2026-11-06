@@ -384,6 +384,7 @@ fun ReviewerContent(
                         },
                         isAnswerShown = state.isAnswerShown,
                         toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt(),
+                        cardDisplayIndex = state.cardDisplayIndex,
                     )
 
                     // Whiteboard canvas and toolbar

@@ -33,14 +33,18 @@ import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import io.mockk.every
 import io.mockk.mockk
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.nullValue
 import org.hamcrest.Matchers.sameInstance
+import org.hamcrest.Matchers.startsWith
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 
 /** #143: pages survive losing their WebView renderer process instead of taking the app down. */
 @RunWith(AndroidJUnit4::class)
@@ -82,31 +86,45 @@ class PageRendererLossTest : RobolectricTest() {
 
         loseRenderer(original, crashed = false)
 
-        assertThat(singleWebView(), not(sameInstance(original)))
+        val replacement = singleWebView()
+        assertThat(replacement, not(sameInstance(original)))
+        assertThat("it loads the page again", shadowOf(replacement).lastLoadedUrl, startsWith("http://127.0.0.1:1/graphs"))
     }
 
     @Test
     fun `a page whose renderer crashed shows the page error`() {
         showPage()
 
-        loseRenderer(singleWebView(), crashed = true)
+        val dead = singleWebView()
+
+        loseRenderer(dead, crashed = true)
 
         composeTestRule.onNodeWithText(composeTestRule.activity.getString(R.string.page_web_view_error)).assertIsDisplayed()
+        assertThat("no later JavaScript can reach the dead WebView", webViews(), empty())
+        assertThat(shadowOf(dead).wasDestroyCalled(), equalTo(true))
     }
 
     @Test
     fun `a page fragment whose renderer is reclaimed is rebuilt`() {
         launchPageFragment().use { scenario ->
             lateinit var original: SingleFragmentActivity
+            lateinit var dead: WebView
             scenario.onActivity { activity ->
                 original = activity
-                activity.pageWebView().let { it.webViewClient.onRenderProcessGone(it, detail(crashed = false)) }
+                dead = activity.pageWebView()
+                dead.webViewClient.onRenderProcessGone(dead, detail(crashed = false))
             }
             advanceRobolectricLooper()
 
+            assertThat("the dead WebView is destroyed", shadowOf(dead).wasDestroyCalled(), equalTo(true))
             scenario.onActivity { activity ->
                 assertThat("the activity was recreated", activity, not(sameInstance(original)))
                 assertThat("it is still open", activity.isFinishing, equalTo(false))
+                assertThat(
+                    "the recreated page loads again",
+                    shadowOf(activity.pageWebView()).lastLoadedUrl,
+                    containsString("graphs"),
+                )
             }
         }
     }
@@ -115,12 +133,15 @@ class PageRendererLossTest : RobolectricTest() {
     fun `a page fragment whose renderer crashed closes the page`() {
         launchPageFragment().use { scenario ->
             var finishing = false
+            lateinit var dead: WebView
             scenario.onActivity { activity ->
-                activity.pageWebView().let { it.webViewClient.onRenderProcessGone(it, detail(crashed = true)) }
+                dead = activity.pageWebView()
+                dead.webViewClient.onRenderProcessGone(dead, detail(crashed = true))
                 finishing = activity.isFinishing
             }
 
             assertThat("a rebuilt page would likely crash again", finishing, equalTo(true))
+            assertThat("the dead WebView is destroyed", shadowOf(dead).wasDestroyCalled(), equalTo(true))
         }
     }
 
@@ -156,11 +177,16 @@ class PageRendererLossTest : RobolectricTest() {
     }
 
     private fun singleWebView(): WebView {
+        val found = webViews()
+        assertThat("exactly one page WebView", found, hasSize(1))
+        return found.single()
+    }
+
+    private fun webViews(): List<WebView> {
         composeTestRule.waitForIdle()
         val found = mutableListOf<WebView>()
         composeTestRule.runOnUiThread { collectWebViews(composeTestRule.activity.window.decorView, found) }
-        assertThat("exactly one page WebView", found, hasSize(1))
-        return found.single()
+        return found
     }
 
     private fun collectWebViews(

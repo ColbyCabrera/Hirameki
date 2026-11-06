@@ -24,6 +24,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -42,6 +43,7 @@ import org.hamcrest.Matchers.sameInstance
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Shadows.shadowOf
 
 /** #143: the reviewer's card survives losing its WebView renderer process. */
 @RunWith(AndroidJUnit4::class)
@@ -50,6 +52,8 @@ class FlashcardRendererLossTest : RobolectricTest() {
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     private var questionHtml by mutableStateOf("<p>Question 1</p>")
+    private var isAnswerShown by mutableStateOf(false)
+    private var cardDisplayIndex by mutableStateOf(1L)
 
     private val rendererFailedText: String
         get() = composeTestRule.activity.getString(R.string.webview_crash_loop_dialog_title)
@@ -61,7 +65,9 @@ class FlashcardRendererLossTest : RobolectricTest() {
 
         assertThat("handled: false kills the app", loseRenderer(original, crashed = false), equalTo(true))
 
-        assertThat("a new WebView replaces the dead one", singleWebView(), not(sameInstance(original)))
+        val replacement = singleWebView()
+        assertThat("a new WebView replaces the dead one", replacement, not(sameInstance(original)))
+        assertThat("it loads the card page", shadowOf(replacement).lastLoadDataWithBaseURL?.baseUrl, equalTo(BASE_URL))
     }
 
     @Test
@@ -75,17 +81,23 @@ class FlashcardRendererLossTest : RobolectricTest() {
     }
 
     @Test
-    fun `one crash delivered to several WebViews counts once`() {
+    fun `one crash delivered to both crossfade WebViews counts once`() {
         showFlashcard()
-        val webView = singleWebView()
+        composeTestRule.mainClock.autoAdvance = false
+        isAnswerShown = true
+        // schedule the recomposition now: the paused clock only runs frames
+        Snapshot.sendApplyNotifications()
+        // a few frames into the 300ms crossfade, both sides are composed
+        repeat(3) { composeTestRule.mainClock.advanceTimeByFrame() }
+        val crossfading = webViewsNow()
+        assertThat("the question and answer WebViews", crossfading, hasSize(2))
         val crash = detail(crashed = true)
 
-        // every WebView on the renderer gets the callback for the same loss before the next frame,
-        // two during the question/answer crossfade
+        // every WebView on the renderer gets the callback for the same loss before the next frame
         composeTestRule.runOnUiThread {
-            repeat(2) { webView.webViewClient.onRenderProcessGone(webView, crash) }
+            crossfading.forEach { it.webViewClient.onRenderProcessGone(it, crash) }
         }
-        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.autoAdvance = true
 
         singleWebView()
         composeTestRule.onNodeWithText(rendererFailedText).assertDoesNotExist()
@@ -119,6 +131,19 @@ class FlashcardRendererLossTest : RobolectricTest() {
     }
 
     @Test
+    fun `the same HTML shown again gets a new WebView after a crash loop`() {
+        showFlashcard()
+        loseRenderer(singleWebView(), crashed = true)
+        loseRenderer(singleWebView(), crashed = true)
+
+        // another card with identical HTML, or this card again after a rating
+        cardDisplayIndex++
+
+        singleWebView()
+        composeTestRule.onNodeWithText(rendererFailedText).assertDoesNotExist()
+    }
+
+    @Test
     fun `crashes on different cards are not a crash loop`() {
         showFlashcard()
         loseRenderer(singleWebView(), crashed = true)
@@ -135,7 +160,7 @@ class FlashcardRendererLossTest : RobolectricTest() {
         composeTestRule.setContent {
             AnkiDroidTheme {
                 Flashcard(
-                    baseUrl = "http://127.0.0.1:1/",
+                    baseUrl = BASE_URL,
                     questionHtml = questionHtml,
                     answerHtml = "<p>Answer</p>",
                     bodyClass = "card",
@@ -144,7 +169,8 @@ class FlashcardRendererLossTest : RobolectricTest() {
                     onJavascriptCommandConsumed = {},
                     onTap = {},
                     onLinkClick = {},
-                    isAnswerShown = false,
+                    isAnswerShown = isAnswerShown,
+                    cardDisplayIndex = cardDisplayIndex,
                 )
             }
         }
@@ -173,6 +199,11 @@ class FlashcardRendererLossTest : RobolectricTest() {
 
     private fun webViews(): List<WebView> {
         composeTestRule.waitForIdle()
+        return webViewsNow()
+    }
+
+    /** Without waiting for idle, which would let a running crossfade finish. */
+    private fun webViewsNow(): List<WebView> {
         val found = mutableListOf<WebView>()
         composeTestRule.runOnUiThread { collectWebViews(composeTestRule.activity.window.decorView, found) }
         return found
@@ -186,5 +217,9 @@ class FlashcardRendererLossTest : RobolectricTest() {
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) collectWebViews(view.getChildAt(i), into)
         }
+    }
+
+    private companion object {
+        const val BASE_URL = "http://127.0.0.1:1/"
     }
 }
