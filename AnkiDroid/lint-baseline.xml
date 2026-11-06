@@ -8,7 +8,7 @@
         errorLine2="            ^">
         <location
             file="src/main/java/com/ichi2/anki/AbstractFlashcardViewer.kt"
-            line="1332"
+            line="1335"
             column="13"/>
     </issue>
 
@@ -81,33 +81,11 @@
     <issue
         id="MissingOnRenderProcessGone"
         message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="    open inner class CardViewerWebViewClient("
-        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/previewer/CardViewerFragment.kt"
-            line="139"
-            column="22"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="    ) : WebViewClient() {"
-        errorLine2="        ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/previewer/CardViewerFragment.kt"
-            line="141"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
         errorLine1="                            object : WebViewClient() {"
         errorLine2="                                     ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
-            line="355"
+            line="360"
             column="38"/>
     </issue>
 
@@ -118,7 +96,7 @@
         errorLine2="                                     ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
-            line="355"
+            line="360"
             column="38"/>
     </issue>
 
@@ -129,7 +107,7 @@
         errorLine2="                                            ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
-            line="534"
+            line="539"
             column="45"/>
     </issue>
 
@@ -140,140 +118,30 @@
         errorLine2="                                            ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/reviewer/compose/Flashcard.kt"
-            line="534"
+            line="539"
             column="45"/>
     </issue>
 
     <issue
         id="MissingOnRenderProcessGone"
         message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                    ~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/Info.kt"
-            line="130"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                    ~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/Info.kt"
-            line="130"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                             ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/Info.kt"
-            line="130"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                             ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/Info.kt"
-            line="130"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="        webView.webViewClient = WebViewClient()"
-        errorLine2="                                ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/mediacheck/MediaCheckFragment.kt"
-            line="204"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="        webView.webViewClient = WebViewClient()"
-        errorLine2="                                ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/mediacheck/MediaCheckFragment.kt"
-            line="204"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                    ~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="307"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                    ~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="307"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                             ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="307"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    object : WebViewClient() {"
-        errorLine2="                             ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/ui/compose/MyAccountScreen.kt"
-            line="307"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    webView.webViewClient = android.webkit.WebViewClient()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                        webView.webViewClient = android.webkit.WebViewClient()"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/pages/PageWebView.kt"
-            line="219"
-            column="45"/>
+            line="224"
+            column="49"/>
     </issue>
 
     <issue
         id="MissingOnRenderProcessGone"
         message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                    webView.webViewClient = android.webkit.WebViewClient()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="                        webView.webViewClient = android.webkit.WebViewClient()"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/ichi2/anki/pages/PageWebView.kt"
-            line="219"
-            column="45"/>
+            line="224"
+            column="49"/>
     </issue>
 
     <issue
@@ -284,6 +152,17 @@
         <location
             file="src/main/java/com/ichi2/anki/pages/PageWebViewClient.kt"
             line="40"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="MissingOnRenderProcessGone"
+        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
+        errorLine1="open class SafeWebViewClient : WebViewClient() {"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/ichi2/anki/workarounds/SafeWebViewClient.kt"
+            line="44"
             column="32"/>
     </issue>
 
@@ -329,50 +208,6 @@
             file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
             line="64"
             column="42"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="        object : WebViewClient() {"
-        errorLine2="        ~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
-            line="97"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="        object : WebViewClient() {"
-        errorLine2="                 ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
-            line="97"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="        webView.webViewClient = WebViewClient()"
-        errorLine2="                                ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
-            line="378"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="        webView.webViewClient = WebViewClient()"
-        errorLine2="                                ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/ichi2/anki/SharedDecksActivity.kt"
-            line="378"
-            column="33"/>
     </issue>
 
     <issue

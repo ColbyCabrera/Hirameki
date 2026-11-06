@@ -17,7 +17,6 @@
 package com.ichi2.anki
 
 import android.content.Intent
-import android.webkit.WebView
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -25,6 +24,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -48,7 +48,7 @@ class SharedDecksActivityTest : RobolectricTest() {
         controller.setup()
         val activity = controller.get()
 
-        val webView = activity.findViewById<WebView>(R.id.media_check_webview)
+        val webView = requireNotNull(activity.findViewById<SafeWebViewLayout>(R.id.media_check_webview).webView)
         val downloadListener = shadowOf(webView).downloadListener
 
         // 1. Test a deck info URL - should trigger fragment
@@ -101,7 +101,7 @@ class SharedDecksActivityTest : RobolectricTest() {
         controller.setup()
         val activity = controller.get()
 
-        val webView = activity.findViewById<WebView>(R.id.media_check_webview)
+        val webView = requireNotNull(activity.findViewById<SafeWebViewLayout>(R.id.media_check_webview).webView)
         val shadowWebView = shadowOf(webView)
 
         // Capture initial state

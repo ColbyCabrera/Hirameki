@@ -19,7 +19,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <WebView
+    <com.ichi2.anki.workarounds.SafeWebViewLayout
         android:id="@+id/media_check_webview"
         android:layout_width="match_parent"
         android:layout_height="0dp"

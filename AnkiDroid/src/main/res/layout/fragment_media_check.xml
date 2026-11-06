@@ -30,7 +30,7 @@
         app:navigationContentDescription="@string/abc_action_bar_up_description"
         app:navigationIcon="?attr/homeAsUpIndicator" />
 
-    <WebView
+    <com.ichi2.anki.workarounds.SafeWebViewLayout
         android:id="@+id/media_check_webview"
         android:layout_height="0dp"
         android:layout_weight="1"

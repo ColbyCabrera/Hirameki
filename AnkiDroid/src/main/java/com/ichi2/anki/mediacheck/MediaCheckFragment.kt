@@ -24,8 +24,6 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuHost
@@ -42,6 +40,9 @@ import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.anki.ui.internationalization.toSentenceCase
 import com.ichi2.anki.withProgress
+import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
+import com.ichi2.anki.workarounds.SafeWebViewClient
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 import com.ichi2.utils.cancelable
 import com.ichi2.utils.message
 import com.ichi2.utils.negativeButton
@@ -56,12 +57,14 @@ import kotlinx.coroutines.launch
  * MediaCheckFragment for displaying a list of media files that are either unused or missing.
  * It allows users to tag missing media files or delete unused ones.
  **/
-class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
+class MediaCheckFragment :
+    Fragment(R.layout.fragment_media_check),
+    OnWebViewRecreatedListener {
     private val viewModel: MediaCheckViewModel by viewModels()
 
     private lateinit var deleteMediaButton: MaterialButton
     private lateinit var tagMissingButton: MaterialButton
-    private lateinit var webView: WebView
+    private lateinit var webView: SafeWebViewLayout
 
     private var previousMenuProvider: MenuProvider? = null
 
@@ -81,6 +84,7 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
         deleteMediaButton = view.findViewById(R.id.delete_used_media_button)
         tagMissingButton = view.findViewById(R.id.tag_missing_media_button)
         webView = view.findViewById(R.id.media_check_webview)
+        webView.setWebViewClient(SafeWebViewClient())
 
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
         (requireActivity() as AppCompatActivity).setSupportActionBar(toolbar)
@@ -201,8 +205,16 @@ class MediaCheckFragment : Fragment(R.layout.fragment_media_check) {
             </html>
             """.trimIndent()
 
-        webView.webViewClient = WebViewClient()
         webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+    }
+
+    override fun onWebViewRecreated() {
+        webView.setWebViewClient(SafeWebViewClient())
+        updateWebView(
+            viewModel.mediaCheckResult.value
+                ?.report
+                .orEmpty(),
+        )
     }
 
     private fun setupButtonListeners() {

@@ -42,7 +42,7 @@
             style="@style/CardView.ViewerStyle"
             >
 
-            <WebView
+            <com.ichi2.anki.workarounds.SafeWebViewLayout
                 android:id="@+id/webview"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

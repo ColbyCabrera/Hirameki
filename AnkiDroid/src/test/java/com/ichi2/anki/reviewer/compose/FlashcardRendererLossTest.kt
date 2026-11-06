@@ -22,6 +22,7 @@ import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
@@ -53,7 +54,7 @@ class FlashcardRendererLossTest : RobolectricTest() {
 
     private var questionHtml by mutableStateOf("<p>Question 1</p>")
     private var isAnswerShown by mutableStateOf(false)
-    private var cardDisplayIndex by mutableStateOf(1L)
+    private var cardDisplayIndex by mutableLongStateOf(1L)
 
     private val rendererFailedText: String
         get() = composeTestRule.activity.getString(R.string.webview_crash_loop_dialog_title)

@@ -28,7 +28,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
-import android.webkit.WebView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
@@ -56,6 +55,9 @@ import com.ichi2.anki.multimedia.MultimediaUtils.createNewCacheImageFile
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.utils.ext.convertToString
 import com.ichi2.anki.utils.ext.toBase64Png
+import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
+import com.ichi2.anki.workarounds.SafeWebViewClient
+import com.ichi2.anki.workarounds.SafeWebViewLayout
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
 import com.ichi2.imagecropper.ImageCropper
 import com.ichi2.imagecropper.ImageCropper.Companion.CROP_IMAGE_RESULT
@@ -78,7 +80,9 @@ import java.text.NumberFormat
 private const val SVG_IMAGE = "image/svg+xml"
 
 @NeedsTest("Ensure correct option is executed i.e. gallery or camera")
-class MultimediaImageFragment : MultimediaFragment(R.layout.fragment_multimedia_image) {
+class MultimediaImageFragment :
+    MultimediaFragment(R.layout.fragment_multimedia_image),
+    OnWebViewRecreatedListener {
     override val title: String
         get() = resources.getString(R.string.multimedia_editor_popup_image)
 
@@ -88,6 +92,12 @@ class MultimediaImageFragment : MultimediaFragment(R.layout.fragment_multimedia_
 
     /** Keeps track of the process in case `Don't keep activities` in turned on*/
     private var hasStartedImageSelection = false
+
+    /** The image shown in the preview, shown again if the preview's WebView is replaced */
+    private var previewedImage: Uri? = null
+
+    private val previewWebView: SafeWebViewLayout?
+        get() = view?.findViewById(R.id.multimedia_webview)
 
     /**
      * Launches an activity to pick an image from the device's gallery.
@@ -282,9 +292,17 @@ class MultimediaImageFragment : MultimediaFragment(R.layout.fragment_multimedia_
         super.onViewCreated(view, savedInstanceState)
         setupMenu(multimediaMenu)
         imageFileSize = view.findViewById(R.id.image_size_textview)
+        previewWebView?.setWebViewClient(SafeWebViewClient())
 
         handleImageUri()
         setupDoneButton()
+    }
+
+    /** Only the WebView was replaced: apply its client and the preview again */
+    override fun onWebViewRecreated() {
+        Timber.i("restoring the image preview after losing the WebView renderer")
+        previewWebView?.setWebViewClient(SafeWebViewClient())
+        previewedImage?.let { previewImage(it) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -560,9 +578,10 @@ class MultimediaImageFragment : MultimediaFragment(R.layout.fragment_multimedia_
      */
     private fun previewImage(imageUri: Uri) {
         val mimeType = context?.contentResolver?.getType(imageUri)
+        previewedImage = imageUri
 
         // Get the WebView and set it visible
-        view?.findViewById<WebView>(R.id.multimedia_webview)?.apply {
+        previewWebView?.apply {
             visibility = View.VISIBLE
 
             // Load image based on its MIME type
@@ -580,7 +599,7 @@ class MultimediaImageFragment : MultimediaFragment(R.layout.fragment_multimedia_
      *
      * @param imageUri The URI of the SVG image.
      */
-    private fun WebView.loadSvgImage(imageUri: Uri) {
+    private fun SafeWebViewLayout.loadSvgImage(imageUri: Uri) {
         val svgData = loadSvgFromUri(imageUri)
         if (svgData != null) {
             Timber.i("Selected image is an SVG.")
@@ -597,7 +616,7 @@ class MultimediaImageFragment : MultimediaFragment(R.layout.fragment_multimedia_
      *
      * @param imageUri The URI of the non-SVG image.
      */
-    private fun WebView.loadImage(imageUri: Uri) {
+    private fun SafeWebViewLayout.loadImage(imageUri: Uri) {
         Timber.i("Loading non-SVG image using WebView")
 
         try {
@@ -653,7 +672,7 @@ class MultimediaImageFragment : MultimediaFragment(R.layout.fragment_multimedia_
             </html>
             """.trimIndent()
 
-        view?.findViewById<WebView>(R.id.multimedia_webview)?.loadDataWithBaseURL(null, errorHtml, "text/html", "UTF-8", null)
+        previewWebView?.loadDataWithBaseURL(null, errorHtml, "text/html", "UTF-8", null)
     }
 
     private fun requestCrop() {
