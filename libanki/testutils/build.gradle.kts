@@ -57,13 +57,24 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":libanki"))
 
+    // Backend libraries
+    implementation(libs.protobuf.kotlin.lite) // This is required when loading from a file
+
     val localProperties = Properties()
     if (project.rootProject.file("local.properties").exists()) {
         localProperties.load(project.rootProject.file("local.properties").inputStream())
     }
     if (localProperties["local_backend"] == "true") {
-        implementation(files("../../Anki-Android-Backend/rsdroid/build/outputs/aar/rsdroid-release.aar"))
-        implementation(files("../../Anki-Android-Backend/rsdroid-testing/build/libs/rsdroid-testing.jar"))
+        // ../Anki-Android-Backend, beside the repository.
+        // 0.1.76+: local artifacts have no Maven metadata, so both the core JAR and the Android AAR are needed
+        val backendCheckout = rootProject.file("../Anki-Android-Backend")
+        implementation(
+            files(
+                backendCheckout.resolve("rsdroid/build/libs/rsdroid.jar"),
+                backendCheckout.resolve("rsdroid-android/build/outputs/aar/rsdroid-android-release.aar"),
+            ),
+        )
+        implementation(files(backendCheckout.resolve("rsdroid-testing/build/libs/rsdroid-testing.jar")))
     } else {
         implementation(libs.ankiBackend.backend)
         implementation(libs.ankiBackend.testing)
