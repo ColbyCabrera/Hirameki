@@ -24,6 +24,10 @@ class GestureProcessor(
     private val processor: ViewerCommand.CommandProcessor?,
 ) {
     companion object {
+        /**
+         * The legacy 'Enable gestures' switch. Hidden in settings and no longer read:
+         * gestures are always enabled, and only gestures the user binds do anything (#185).
+         */
         const val PREF_KEY = "gestures"
     }
 
@@ -44,16 +48,12 @@ class GestureProcessor(
     private var gestureShake: ViewerCommand? = null
     private val gestureMapper = GestureMapper()
 
-    /**
-     * Whether the class has been enabled.
-     * This requires the "gestures" preference is enabled,
-     * and [GestureProcessor.init] has been called
-     */
+    /** Whether [GestureProcessor.init] has been called. */
     var isEnabled = false
         private set
 
     fun init(preferences: SharedPreferences) {
-        isEnabled = preferences.getBoolean(PREF_KEY, false)
+        isEnabled = true
 
         val associatedCommands = HashMap<Gesture, ViewerCommand>()
         for (command in ViewerCommand.entries) {
