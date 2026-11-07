@@ -51,8 +51,18 @@ dependencies {
         localProperties.load(project.rootProject.file("local.properties").inputStream())
     }
     if (localProperties["local_backend"] == "true") {
-        implementation(files("../../Anki-Android-Backend/rsdroid/build/outputs/aar/rsdroid-release.aar"))
-        testImplementation(files("../../Anki-Android-Backend/rsdroid-testing/build/libs/rsdroid-testing.jar"))
+        // ../Anki-Android-Backend, beside the repository.
+        // 0.1.76+: local artifacts have no Maven metadata, so both the core JAR and the Android AAR are needed
+        val backendCheckout = rootProject.file("../Anki-Android-Backend")
+        implementation(
+            files(
+                backendCheckout.resolve("rsdroid/build/libs/rsdroid.jar"),
+                backendCheckout.resolve("rsdroid-android/build/outputs/aar/rsdroid-android-release.aar"),
+            ),
+        )
+        testImplementation(files(backendCheckout.resolve("rsdroid-testing/build/libs/rsdroid-testing.jar")))
+        // the backend logs through SLF4J: its POM brings this in, local files do not
+        testRuntimeOnly(libs.slf4j.api)
     } else {
         implementation(libs.ankiBackend.backend)
         testImplementation(libs.ankiBackend.testing)
