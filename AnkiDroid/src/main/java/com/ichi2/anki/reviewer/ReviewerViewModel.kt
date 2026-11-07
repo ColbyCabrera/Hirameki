@@ -729,7 +729,15 @@ class ReviewerViewModel(
 
         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        getApplication<Application>().startActivity(intent)
+        try {
+            getApplication<Application>().startActivity(intent)
+        } catch (e: Exception) {
+            // A card's link is arbitrary: no app may handle it (ActivityNotFoundException), or the
+            // app which does may refuse us (SecurityException). Neither should close the reviewer.
+            Timber.w(e, "Could not open card link %s", url)
+            val message = getApplication<Application>().getString(R.string.activity_start_failed)
+            viewModelScope.launch { _effect.emit(ReviewerEffect.ShowSnackbar(message)) }
+        }
     }
 
     fun onVideoFinished() = cardMediaPlayer.onVideoFinished()
