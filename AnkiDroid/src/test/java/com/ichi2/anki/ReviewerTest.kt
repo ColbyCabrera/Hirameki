@@ -117,7 +117,8 @@ class ReviewerTest : RobolectricTest() {
     @Test
     fun `a bound gesture reaches the compose reviewer`() =
         runTest {
-            // #185: gestures were never connected to the compose reviewer, so none of them did anything
+            // #185: gestures were never connected to the compose reviewer, so none of them did anything.
+            // 'Enable gestures' is left unset: gestures are on by default
             val note = addBasicNote("Front", "Back")
             ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(getPreferences(), ReviewerBinding.fromGesture(Gesture.DOUBLE_TAP))
             val reviewer = startReviewer(this@ReviewerTest)
@@ -135,9 +136,8 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
-    fun `gestures work although the hidden 'Enable gestures' switch is off`() =
+    fun `gestures can be turned off`() =
         runTest {
-            // #185: settings hide the switch but still let users bind gestures, which never fired
             addBasicNote("Front", "Back")
             getPreferences().edit { putBoolean(GestureProcessor.PREF_KEY, false) }
             ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), ReviewerBinding.fromGesture(Gesture.DOUBLE_TAP))
@@ -147,7 +147,7 @@ class ReviewerTest : RobolectricTest() {
             reviewer.onCardTouchGesture(CardTouchGesture.DoubleTap)
             advanceRobolectricLooper()
 
-            assertTrue(reviewer.viewModel.state.value.isAnswerShown)
+            assertFalse(reviewer.viewModel.state.value.isAnswerShown)
         }
 
     @Test

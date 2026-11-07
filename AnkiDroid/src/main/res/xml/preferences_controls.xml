@@ -22,17 +22,19 @@
     tools:context=".preferences.ControlsSettingsFragment">
 
     <SwitchPreferenceCompat
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:disableDependentsState="false"
         android:key="@string/gestures_preference"
         android:summary="@string/gestures_summ"
         android:title="@string/gestures" />
     <SwitchPreferenceCompat
         android:defaultValue="false"
+        android:dependency="@string/gestures_preference"
         android:key="@string/gestures_corner_touch_preference"
         android:summary="@string/gestures_corner_touch_summary"
         android:title="@string/gestures_corner_touch" />
     <com.ichi2.preferences.SliderPreference
+        android:dependency="@string/gestures_preference"
         android:key="@string/pref_swipe_sensitivity_key"
         android:title="@string/swipe_sensitivity"
         android:defaultValue="100"

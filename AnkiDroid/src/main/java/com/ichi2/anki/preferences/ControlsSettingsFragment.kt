@@ -158,7 +158,6 @@ class ControlsSettingsFragment :
                 R.string.toggle_eraser_command_key,
                 R.string.clear_whiteboard_command_key,
                 R.string.change_whiteboard_pen_color_command_key,
-                R.string.gestures_preference,
             )
     }
 }

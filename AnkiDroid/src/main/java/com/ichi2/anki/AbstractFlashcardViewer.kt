@@ -863,9 +863,10 @@ abstract class AbstractFlashcardViewer :
         prefShowTopbar = preferences.getBoolean("showTopbar", true)
         largeAnswerButtons = preferences.getBoolean("showLargeAnswerButtons", false)
         doubleTapTimeInterval = Prefs.doubleTapInterval
-        // #185: settings let users bind gestures with no 'Enable gestures' switch, so they are always on
-        gesturesEnabled = true
-        gestureProcessor.init(preferences)
+        gesturesEnabled = GestureProcessor.isEnabled(preferences)
+        if (gesturesEnabled) {
+            gestureProcessor.init(preferences)
+        }
         if (preferences.getBoolean("timeoutAnswer", false) ||
             preferences.getBoolean(
                 "keepScreenOn",
