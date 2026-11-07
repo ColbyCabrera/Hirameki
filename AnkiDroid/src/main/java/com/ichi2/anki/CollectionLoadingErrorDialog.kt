@@ -18,6 +18,7 @@ package com.ichi2.anki
 
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.DialogHandlerMessage
+import com.ichi2.anki.dialogs.showDatabaseErrorDialogInDeckPicker
 
 /**
  * Dialog shown when the Anki collection fails to load.
@@ -30,7 +31,8 @@ class CollectionLoadingErrorDialog :
     ) {
     override fun handleAsyncMessage(activity: AnkiActivity) {
         // Collection could not be opened
-        activity.showDatabaseErrorDialog(DatabaseErrorDialogType.DIALOG_LOAD_FAILED)
+        // a stored message is replayed by whichever screen resumes first
+        activity.showDatabaseErrorDialogInDeckPicker(DatabaseErrorDialogType.DIALOG_LOAD_FAILED)
     }
 
     override fun toMessage() = emptyMessage(this.what)
