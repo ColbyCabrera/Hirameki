@@ -119,7 +119,6 @@ class ReviewerTest : RobolectricTest() {
         runTest {
             // #185: gestures were never connected to the compose reviewer, so none of them did anything
             val note = addBasicNote("Front", "Back")
-            getPreferences().edit { putBoolean(GestureProcessor.PREF_KEY, true) }
             ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(getPreferences(), ReviewerBinding.fromGesture(Gesture.DOUBLE_TAP))
             val reviewer = startReviewer(this@ReviewerTest)
             waitForCard(reviewer)
@@ -136,8 +135,9 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
-    fun `gestures do nothing when disabled`() =
+    fun `gestures work although the hidden 'Enable gestures' switch is off`() =
         runTest {
+            // #185: settings hide the switch but still let users bind gestures, which never fired
             addBasicNote("Front", "Back")
             getPreferences().edit { putBoolean(GestureProcessor.PREF_KEY, false) }
             ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), ReviewerBinding.fromGesture(Gesture.DOUBLE_TAP))
@@ -145,6 +145,20 @@ class ReviewerTest : RobolectricTest() {
             waitForCard(reviewer)
 
             reviewer.onCardTouchGesture(CardTouchGesture.DoubleTap)
+            advanceRobolectricLooper()
+
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown)
+        }
+
+    @Test
+    fun `an unbound gesture does nothing`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+
+            reviewer.onCardTouchGesture(CardTouchGesture.DoubleTap)
+            reviewer.onCardTouchGesture(CardTouchGesture.Tap(x = 50f, y = 50f, width = 100, height = 100))
             advanceRobolectricLooper()
 
             assertFalse(reviewer.viewModel.state.value.isAnswerShown)
