@@ -117,6 +117,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:background="@color/transparent"
-        app:srcCompat="@drawable/ic_touch" />
+        app:srcCompat="@drawable/ic_gesture_swipe" />
 
 </merge>
