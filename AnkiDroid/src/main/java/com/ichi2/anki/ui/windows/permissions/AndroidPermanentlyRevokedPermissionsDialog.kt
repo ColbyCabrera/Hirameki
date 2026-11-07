@@ -19,7 +19,7 @@ package com.ichi2.anki.ui.windows.permissions
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CollectionHelper
 import com.ichi2.anki.R
@@ -53,7 +53,7 @@ object AndroidPermanentlyRevokedPermissionsDialog {
                 "WRITE_EXTERNAL_STORAGE",
                 getCurrentAnkiDroidDirectoryPath(context),
             )
-        AlertDialog.Builder(context).show {
+        MaterialAlertDialogBuilder(context).show {
             listItemsAndMessage(
                 message = message,
                 listItemData.map { context.getString(it.stringRes) },

@@ -34,6 +34,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.R
 import com.ichi2.anki.ViewerResourceHandler
 import com.ichi2.anki.dialogs.TtsVoicesDialogFragment
@@ -188,7 +189,7 @@ abstract class CardViewerFragment(
                 "missing-user-action" -> {
                     val actionNumber = url.toString().substringAfter(":")
                     val message = getString(R.string.missing_user_action_dialog_message, actionNumber)
-                    AlertDialog.Builder(requireContext()).show {
+                    MaterialAlertDialogBuilder(requireContext()).show {
                         setMessage(message)
                         setPositiveButton(R.string.dialog_ok) { _, _ -> }
                         setNeutralButton(R.string.help) { _, _ ->

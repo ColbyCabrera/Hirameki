@@ -25,7 +25,6 @@ import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.DrawableRes
 import androidx.annotation.LayoutRes
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
@@ -34,6 +33,7 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -174,7 +174,7 @@ abstract class MultimediaFragment(
      * when clicked, finishes the current activity.
      */
     fun showErrorDialog(errorMessage: String? = null) {
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             setMessage(errorMessage ?: resources.getString(R.string.something_wrong))
             setPositiveButton(getString(R.string.dialog_ok)) { _, _ ->
                 requireActivity().finish()

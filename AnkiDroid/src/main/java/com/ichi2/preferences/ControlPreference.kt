@@ -23,11 +23,11 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.preference.DialogPreference
 import androidx.preference.PreferenceFragmentCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.GestureSelectionDialogUtils
 import com.ichi2.anki.dialogs.GestureSelectionDialogUtils.onGestureChanged
@@ -110,7 +110,7 @@ open class ControlPreference :
     override fun makeDialogFragment(): DialogFragment = ControlPreferenceDialogFragment()
 
     fun showGesturePickerDialog() {
-        AlertDialog.Builder(context).show {
+        MaterialAlertDialogBuilder(context).show {
             setTitle(title)
             setIcon(icon)
             val gesturePicker = GestureSelectionDialogUtils.getGesturePicker(context)
@@ -129,7 +129,7 @@ open class ControlPreference :
     }
 
     fun showKeyPickerDialog() {
-        AlertDialog.Builder(context).show {
+        MaterialAlertDialogBuilder(context).show {
             val keyPicker: KeyPicker = KeyPicker.inflate(context)
             customView(view = keyPicker.rootLayout)
             setTitle(title)
@@ -152,7 +152,7 @@ open class ControlPreference :
     fun showAddAxisDialog() {
         val axisPicker = AxisPicker.inflate(context)
         val dialog =
-            AlertDialog.Builder(context).create {
+            MaterialAlertDialogBuilder(context).create {
                 customView(view = axisPicker.rootLayout)
                 setTitle(title)
                 setIcon(icon)
@@ -162,7 +162,7 @@ open class ControlPreference :
             dialog.dismiss()
             val bindingPref = getPreferenceAssignedTo(binding)
             if (bindingPref != null && bindingPref != this) {
-                AlertDialog.Builder(context).show {
+                MaterialAlertDialogBuilder(context).show {
                     val warning = context.getString(R.string.bindings_already_bound, bindingPref.title)
                     setTitle(binding.toDisplayString(context))
                     setMessage(warning)
@@ -237,7 +237,7 @@ class ControlPreferenceDialogFragment : DialogFragment() {
         setupAddBindingDialogs(view)
         setupRemoveControlEntries(view)
 
-        return AlertDialog.Builder(requireContext()).create {
+        return MaterialAlertDialogBuilder(requireContext()).create {
             setTitle(preference.title)
             setIcon(preference.icon)
             customView(view, paddingTop = 16.dp.toPx(context))

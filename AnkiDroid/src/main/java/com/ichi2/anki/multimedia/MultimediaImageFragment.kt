@@ -31,7 +31,6 @@ import android.view.View
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -40,6 +39,7 @@ import androidx.core.os.BundleCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.DrawingActivity
 import com.ichi2.anki.R
@@ -483,7 +483,7 @@ class MultimediaImageFragment :
     }
 
     private fun showCompressImageDialog(message: String) {
-        AlertDialog.Builder(requireActivity()).show {
+        MaterialAlertDialogBuilder(requireActivity()).show {
             message(text = message)
             positiveButton(R.string.compress) {
                 viewModel.currentMultimediaPath.value.let {
@@ -507,7 +507,7 @@ class MultimediaImageFragment :
             return
         }
 
-        AlertDialog.Builder(requireActivity()).show {
+        MaterialAlertDialogBuilder(requireActivity()).show {
             message(text = message)
             positiveButton(R.string.dialog_yes) {
                 requestCrop()

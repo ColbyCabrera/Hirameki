@@ -16,9 +16,9 @@
 package com.ichi2.anki.preferences
 
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
 import androidx.preference.Preference
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.R
 import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
@@ -36,7 +36,7 @@ class CustomButtonsSettingsFragment : SettingsFragment() {
         val resetCustomButtons = requirePreference<Preference>("reset_custom_buttons")
         resetCustomButtons.onPreferenceClickListener =
             Preference.OnPreferenceClickListener {
-                AlertDialog.Builder(requireContext()).show {
+                MaterialAlertDialogBuilder(requireContext()).show {
                     title(R.string.reset_settings_to_default)
                     positiveButton(R.string.reset) {
                         // Reset the settings to default

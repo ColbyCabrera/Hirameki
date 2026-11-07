@@ -18,6 +18,7 @@ import android.content.Context
 import android.content.DialogInterface.BUTTON_POSITIVE
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -89,7 +90,7 @@ open class AsyncDialogBuilder(
  *
  * TODO When context receivers are finalized, remove this class and instead say:
  *   suspend fun Context.awaitDialog(block: context(AsyncDialogBuilder, AlertDialog.Builder) () -> Unit): DialogResult {
- *       val alertDialogBuilder = AlertDialog.Builder(this@Context)
+ *       val alertDialogBuilder = MaterialAlertDialogBuilder(this@Context)
  *       val asyncDialogBuilder = AsyncDialogBuilder(alertDialogBuilder)
  *       block(asyncDialogBuilder, alertDialogBuilder)
  *       ...
@@ -148,7 +149,7 @@ sealed interface DialogResult {
  * use an [AsyncDialogBuilder] method of the same name without one.
  */
 suspend fun Context.awaitDialog(block: CompoundDialogBuilder.() -> Unit): DialogResult {
-    val alertDialogBuilder = AlertDialog.Builder(this)
+    val alertDialogBuilder = MaterialAlertDialogBuilder(this)
     val compoundDialogBuilder = CompoundDialogBuilder(alertDialogBuilder)
 
     compoundDialogBuilder.block()

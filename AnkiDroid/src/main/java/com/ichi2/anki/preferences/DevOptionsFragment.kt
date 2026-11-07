@@ -15,11 +15,11 @@
  */
 package com.ichi2.anki.preferences
 
-import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.CollectionHelper
@@ -101,7 +101,7 @@ class DevOptionsFragment : SettingsFragment() {
 
         // Make it possible to test crash reporting
         requirePreference<Preference>(R.string.pref_set_database_path_debug_key).setOnPreferenceClickListener {
-            AlertDialog.Builder(requireContext()).show {
+            MaterialAlertDialogBuilder(requireContext()).show {
                 setTitle("Warning!")
                 setMessage(
                     "This will most likely make it so that you cannot access your collection. " +
@@ -129,7 +129,7 @@ class DevOptionsFragment : SettingsFragment() {
          */
         requirePreference<Preference>(R.string.pref_fill_default_deck_key).setOnPreferenceClickListener {
             val numberOfNotes = numberOfNotesPreference.getValue()
-            AlertDialog.Builder(requireContext()).show {
+            MaterialAlertDialogBuilder(requireContext()).show {
                 setTitle("Warning!")
                 setMessage(
                     "You'll add $numberOfNotes notes with no meaningful content in $numberOfNotes new decks. " +
@@ -154,7 +154,7 @@ class DevOptionsFragment : SettingsFragment() {
         requirePreference<Preference>(R.string.pref_fill_collection_key).setOnPreferenceClickListener {
             val sizeOfFiles = sizePreference.getValue()
             val numberOfFiles = numberOfFilePreference.getValue()
-            AlertDialog.Builder(requireContext()).show {
+            MaterialAlertDialogBuilder(requireContext()).show {
                 setTitle("Warning!")
                 setMessage(
                     "You'll add $numberOfFiles files with no meaningful content, " +
@@ -241,7 +241,7 @@ class DevOptionsFragment : SettingsFragment() {
      * Shows dialog to confirm if developer options should be disabled
      */
     private fun showDisableDevOptionsDialog() {
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             setTitle(R.string.disable_dev_options)
             setPositiveButton(R.string.dialog_ok) { _, _ ->
                 Prefs.isDevOptionsEnabled = false

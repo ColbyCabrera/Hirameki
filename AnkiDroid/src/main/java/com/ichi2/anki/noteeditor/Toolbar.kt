@@ -39,13 +39,13 @@ import android.widget.LinearLayout
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.children
 import androidx.core.view.isVisible
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.NoteEditorActivity
@@ -281,7 +281,7 @@ class Toolbar : FrameLayout {
         val results = resources.getStringArray(R.array.html_size_codes)
 
         // Might be better to add this as a fragment - let's see.
-        AlertDialog.Builder(context).show {
+        MaterialAlertDialogBuilder(context).show {
             setItems(R.array.html_size_code_labels) { _, index ->
                 val formatter =
                     TextWrapper(
@@ -300,7 +300,7 @@ class Toolbar : FrameLayout {
     @SuppressLint("CheckResult")
     private fun displayInsertHeadingDialog() {
         val headingList = arrayOf("h1", "h2", "h3", "h4", "h5")
-        AlertDialog.Builder(context).show {
+        MaterialAlertDialogBuilder(context).show {
             setItems(headingList) { _, index ->
                 val charSequence = headingList[index]
                 val formatter = TextWrapper(prefix = "<$charSequence>", suffix = "</$charSequence>")
@@ -327,7 +327,7 @@ class Toolbar : FrameLayout {
                 MathJaxOption(TR.editingMathjaxBlock(), prefix = "\\[\\", suffix = "\\]"),
                 MathJaxOption(TR.editingMathjaxChemistry(), prefix = "\\( \\ce{", suffix = "} \\)"),
             )
-        AlertDialog.Builder(context).show {
+        MaterialAlertDialogBuilder(context).show {
             setItems(mathjaxOptions.map(MathJaxOption::label).toTypedArray()) { _, index ->
                 onFormat(mathjaxOptions[index].toTextWrapper())
             }
