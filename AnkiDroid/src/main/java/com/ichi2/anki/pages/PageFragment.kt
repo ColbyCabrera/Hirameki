@@ -112,6 +112,7 @@ open class PageFragment(
         this.pageWebViewClient = pageWebViewClient
         pageWebViewClient.onRendererGone = { crashed -> onRendererGone(crashed) }
         server = AnkiServer(this).also { it.start() }
+        pageWebViewClient.serverUrl = server.baseUrl().toUri()
         webView =
             view.findViewById<WebView>(R.id.webview).apply {
                 with(settings) {

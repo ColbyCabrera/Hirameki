@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -181,6 +182,7 @@ internal fun PageWebViewInternal(
                             setBackgroundColor(backgroundColorArgb)
                             webViewClient =
                                 PageWebViewClient().apply {
+                                    serverUrl = serverBaseUrl.toUri()
                                     onPageFinishedCallbacks.add { webView ->
                                         isLoading = false
                                         webView.visibility = View.VISIBLE

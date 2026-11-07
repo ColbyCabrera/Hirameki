@@ -44,7 +44,6 @@ import com.ichi2.anki.libanki.updateDeckConfigsRaw
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
-import com.ichi2.anki.utils.openUrl
 import com.ichi2.anki.withProgress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -210,8 +209,6 @@ class DeckOptions : PageFragment(R.layout.page_deck_options) {
 
         pageWebViewClient =
             object : PageWebViewClient() {
-                private val ankiManualHostRegex = Regex("^docs\\.ankiweb\\.net$")
-
                 /** @see onWebViewReady */
                 override fun onShowWebView(webView: WebView) {
                     // no-op: handled in onVebViewReady
@@ -221,13 +218,13 @@ class DeckOptions : PageFragment(R.layout.page_deck_options) {
                     view: WebView?,
                     request: WebResourceRequest?,
                 ): Boolean {
-                    // #16715: ensure that the fragment can't be used for general web browsing
-                    val host = request?.url?.host ?: return shouldOverrideUrlLoading(view, request)
-                    return if (ankiManualHostRegex.matches(host)) {
-                        super.shouldOverrideUrlLoading(view, request)
+                    // #16715: ensure that the fragment can't be used for general web browsing.
+                    // The manual is trusted: it's linked from the options and its back stack is handled
+                    val url = request?.url ?: return true
+                    return if (request.isForMainFrame && url.scheme == "https" && url.encodedAuthority == "docs.ankiweb.net") {
+                        false
                     } else {
-                        openUrl(request.url)
-                        true
+                        super.shouldOverrideUrlLoading(view, request)
                     }
                 }
             }.apply {
