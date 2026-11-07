@@ -24,11 +24,16 @@ class GestureProcessor(
     private val processor: ViewerCommand.CommandProcessor?,
 ) {
     companion object {
-        /**
-         * The legacy 'Enable gestures' switch. Hidden in settings and no longer read:
-         * gestures are always enabled, and only gestures the user binds do anything (#185).
-         */
+        /** The 'Enable gestures' switch in the controls settings. */
         const val PREF_KEY = "gestures"
+
+        /**
+         * #185: on by default. No gesture is bound by default, so only gestures the user binds do
+         * anything, and binding one no longer needs a second step to take effect.
+         */
+        const val DEFAULT_ENABLED = true
+
+        fun isEnabled(preferences: SharedPreferences): Boolean = preferences.getBoolean(PREF_KEY, DEFAULT_ENABLED)
     }
 
     private var gestureDoubleTap: ViewerCommand? = null
@@ -48,12 +53,15 @@ class GestureProcessor(
     private var gestureShake: ViewerCommand? = null
     private val gestureMapper = GestureMapper()
 
-    /** Whether [GestureProcessor.init] has been called. */
+    /**
+     * Whether the class has been enabled.
+     * This requires the [PREF_KEY] preference is enabled, and [GestureProcessor.init] has been called
+     */
     var isEnabled = false
         private set
 
     fun init(preferences: SharedPreferences) {
-        isEnabled = true
+        isEnabled = isEnabled(preferences)
 
         val associatedCommands = HashMap<Gesture, ViewerCommand>()
         for (command in ViewerCommand.entries) {

@@ -17,6 +17,7 @@ package com.ichi2.preferences
 
 import android.content.Context
 import android.util.AttributeSet
+import com.ichi2.anki.cardviewer.GestureProcessor
 import com.ichi2.anki.dialogs.CardSideSelectionDialog
 import com.ichi2.anki.preferences.reviewer.ViewerAction
 import com.ichi2.anki.reviewer.Binding
@@ -46,7 +47,7 @@ class ReviewerControlPreference : ControlPreference {
     private val viewerAction get() = ViewerAction.fromPreferenceKey(key)
 
     override val areGesturesEnabled: Boolean
-        get() = true // New study screen is always enabled, so gestures are always available
+        get() = sharedPreferences?.let { GestureProcessor.isEnabled(it) } ?: GestureProcessor.DEFAULT_ENABLED
 
     override fun getMappableBindings(): List<ReviewerBinding> = ReviewerBinding.fromPreferenceString(value).toList()
 
