@@ -19,7 +19,7 @@ import android.view.WindowManager
 import android.webkit.JsResult
 import android.webkit.WebChromeClient
 import android.webkit.WebView
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
 import com.ichi2.utils.cancelable
@@ -38,7 +38,7 @@ open class PageChromeClient : WebChromeClient() {
     ): Boolean {
         Timber.d("Displaying alert() dialog")
         try {
-            AlertDialog.Builder(view.context).show {
+            MaterialAlertDialogBuilder(view.context).show {
                 message?.let { message(text = message) }
                 positiveButton(R.string.dialog_ok) { result?.confirm() }
                 setOnCancelListener { result?.cancel() }
@@ -65,7 +65,7 @@ open class PageChromeClient : WebChromeClient() {
     ): Boolean {
         Timber.d("Displaying confirm() dialog")
         try {
-            AlertDialog.Builder(view.context).show {
+            MaterialAlertDialogBuilder(view.context).show {
                 message?.let { message(text = message) }
                 positiveButton(R.string.dialog_ok) { result?.confirm() }
                 negativeButton(R.string.dialog_cancel) { result?.cancel() }

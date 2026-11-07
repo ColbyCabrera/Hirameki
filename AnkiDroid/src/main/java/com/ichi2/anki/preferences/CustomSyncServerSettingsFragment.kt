@@ -17,8 +17,8 @@ package com.ichi2.anki.preferences
 
 import android.content.SharedPreferences
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncPreferences
@@ -48,7 +48,7 @@ class CustomSyncServerSettingsFragment : SettingsFragment() {
 
             // Empty string input causes the certificate to be unset in the backend, i.e., no error
             if (!CollectionManager.updateCustomCertificate(newCert)) {
-                AlertDialog.Builder(requireContext()).show {
+                MaterialAlertDialogBuilder(requireContext()).show {
                     setTitle(R.string.dialog_invalid_custom_certificate_title)
                     setMessage(R.string.dialog_invalid_custom_certificate)
                     setPositiveButton(R.string.dialog_ok) { _, _ -> }

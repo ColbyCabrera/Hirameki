@@ -23,8 +23,8 @@ import android.webkit.WebView
 import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.pm.PackageInfoCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
@@ -119,7 +119,7 @@ private fun showOutdatedWebViewDialog(
     installedVersion: Int,
     @StringRes learnMoreUrl: Int,
 ) {
-    AlertDialog.Builder(activity).show {
+    MaterialAlertDialogBuilder(activity).show {
         setMessage(activity.getString(R.string.webview_update_message, installedVersion, OLDEST_WORKING_WEBVIEW_VERSION))
         setPositiveButton(R.string.scoped_storage_learn_more) { _, _ ->
             activity.openUrl(learnMoreUrl)

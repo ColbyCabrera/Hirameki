@@ -30,6 +30,7 @@ import androidx.lifecycle.lifecycleScope
 import anki.collection.OpChanges
 import anki.scheduler.UnburyDeckRequest
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.DeckPicker
@@ -109,7 +110,7 @@ class CongratsPage :
                                 TR.studyingBuriedSiblings(),
                                 TR.studyingAllBuriedCards(),
                             )
-                        AlertDialog.Builder(requireContext()).show {
+                        MaterialAlertDialogBuilder(requireContext()).show {
                             negativeButton(R.string.dialog_cancel)
                             listItemsAndMessage(
                                 TR.studyingWhatWouldYouLikeToUnbury(),

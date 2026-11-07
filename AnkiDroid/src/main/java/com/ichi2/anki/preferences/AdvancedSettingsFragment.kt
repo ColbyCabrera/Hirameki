@@ -18,10 +18,10 @@ package com.ichi2.anki.preferences
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AlertDialog
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreferenceCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionHelper
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.DeckPicker
@@ -62,7 +62,7 @@ class AdvancedSettingsFragment : SettingsFragment() {
                 } catch (e: StorageAccessException) {
                     // TODO: Request MANAGE_EXTERNAL_STORAGE
                     Timber.e(e, "Could not initialize directory: %s", newPath)
-                    AlertDialog.Builder(requireContext()).show {
+                    MaterialAlertDialogBuilder(requireContext()).show {
                         setTitle(R.string.dialog_collection_path_not_dir)
                         setPositiveButton(R.string.dialog_ok) { _, _ -> }
                         setNegativeButton(R.string.reset_custom_buttons) { _, _ ->
@@ -77,7 +77,7 @@ class AdvancedSettingsFragment : SettingsFragment() {
         val ttsPref = requirePreference<SwitchPreferenceCompat>(R.string.tts_key)
         ttsPref.setOnPreferenceChangeListener { _, isChecked ->
             if (!(isChecked as Boolean)) return@setOnPreferenceChangeListener true
-            AlertDialog.Builder(requireContext()).show {
+            MaterialAlertDialogBuilder(requireContext()).show {
                 setIcon(R.drawable.ic_warning)
                 setMessage(R.string.readtext_deprecation_warn)
                 setNegativeButton(R.string.dialog_cancel) { _, _ -> ttsPref.isChecked = false }
@@ -93,7 +93,7 @@ class AdvancedSettingsFragment : SettingsFragment() {
 
         // Configure "Reset languages" preference
         requirePreference<Preference>(R.string.pref_reset_languages_key).setOnPreferenceClickListener {
-            AlertDialog.Builder(requireContext()).show {
+            MaterialAlertDialogBuilder(requireContext()).show {
                 setTitle(R.string.reset_languages)
                 setIcon(R.drawable.ic_warning)
                 setMessage(R.string.reset_languages_question)

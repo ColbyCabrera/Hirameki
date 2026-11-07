@@ -15,8 +15,8 @@
  */
 package com.ichi2.anki.preferences
 
-import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
@@ -47,7 +47,7 @@ class SyncSettingsFragment : SettingsFragment() {
         requirePreference<Preference>(R.string.one_way_sync_key).apply {
             setSummary(TR.preferencesOnNextSyncForceChangesIn())
             setOnPreferenceClickListener {
-                AlertDialog.Builder(requireContext()).show {
+                MaterialAlertDialogBuilder(requireContext()).show {
                     setTitle(R.string.one_way_sync_title)
                     setMessage(TR.preferencesOnNextSyncForceChangesIn())
                     setPositiveButton(R.string.dialog_ok) { _, _ ->

@@ -24,7 +24,6 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -35,6 +34,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
@@ -110,14 +110,14 @@ class MediaCheckFragment :
                             is MediaCheckViewModel.UiEvent.ShowTrashDeletedDialog -> showTrashDeletedDialog()
                             is MediaCheckViewModel.UiEvent.ShowDeletionResult -> showDeletionResult()
                             is MediaCheckViewModel.UiEvent.ShowError -> {
-                                AlertDialog.Builder(requireContext()).show {
+                                MaterialAlertDialogBuilder(requireContext()).show {
                                     title(R.string.vague_error)
                                     message(text = event.message)
                                     positiveButton(R.string.dialog_ok)
                                 }
                             }
                             is MediaCheckViewModel.UiEvent.ShowErrorRes -> {
-                                AlertDialog.Builder(requireContext()).show {
+                                MaterialAlertDialogBuilder(requireContext()).show {
                                     title(R.string.vague_error)
                                     message(text = getString(event.messageRes))
                                     positiveButton(R.string.dialog_ok)
@@ -248,7 +248,7 @@ class MediaCheckFragment :
     }
 
     private fun deleteConfirmationDialog() {
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             message(text = TR.mediaCheckDeleteUnusedConfirm())
             positiveButton(R.string.dialog_ok) { handleDeleteConfirmation() }
             negativeButton(R.string.dialog_cancel)
@@ -278,7 +278,7 @@ class MediaCheckFragment :
     }
 
     private fun showTrashRestoredDialog() {
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             message(text = TR.mediaCheckTrashRestored())
             positiveButton(R.string.dialog_ok) {
                 requireActivity().finish()
@@ -288,7 +288,7 @@ class MediaCheckFragment :
     }
 
     private fun showTrashDeletedDialog() {
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             message(text = TR.mediaCheckTrashEmptied())
             positiveButton(R.string.dialog_ok) {
                 requireActivity().finish()
@@ -301,7 +301,7 @@ class MediaCheckFragment :
         titleRes: Int,
         message: String,
     ) {
-        AlertDialog.Builder(requireContext()).show {
+        MaterialAlertDialogBuilder(requireContext()).show {
             title(titleRes)
             message(text = message)
             positiveButton(R.string.dialog_ok) {

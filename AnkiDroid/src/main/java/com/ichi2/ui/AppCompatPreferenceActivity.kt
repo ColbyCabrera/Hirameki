@@ -37,10 +37,10 @@ import android.view.ViewGroup
 import android.window.OnBackInvokedDispatcher.PRIORITY_OVERLAY
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.ActionBar
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.R
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
@@ -384,7 +384,7 @@ abstract class AppCompatPreferenceActivity<PreferenceHack : AppCompatPreferenceA
             closeWithResult()
         } catch (e: BackendException) {
             Timber.e(e, "Backend exception while trying to finish an AppCompatPreferenceActivity")
-            AlertDialog.Builder(this).show {
+            MaterialAlertDialogBuilder(this).show {
                 title(text = resources.getString(R.string.pref__widget_text__error))
                 message(text = e.message)
                 positiveButton(R.string.dialog_ok) { dialogInterface ->
