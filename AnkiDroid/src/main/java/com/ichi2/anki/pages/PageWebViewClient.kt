@@ -16,6 +16,7 @@
 package com.ichi2.anki.pages
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.webkit.RenderProcessGoneDetail
@@ -27,6 +28,7 @@ import android.webkit.WebViewClient
 import androidx.core.view.isVisible
 import com.google.android.material.color.MaterialColors
 import com.ichi2.anki.OnPageFinishedCallback
+import com.ichi2.anki.utils.openUrl
 import com.ichi2.utils.AssetHelper.guessMimeType
 import com.ichi2.utils.toRGBHex
 import org.json.JSONObject
@@ -38,6 +40,17 @@ import java.io.IOException
  * Base WebViewClient to be used on [PageFragment]
  */
 open class PageWebViewClient : WebViewClient() {
+    /**
+     * The origin of the trusted local [AnkiServer] which serves this page.
+     *
+     * Pages loaded from it can call the backend, so only this origin may receive bundled assets or
+     * navigate within the WebView. A port alone is not enough: another app may also serve on
+     * localhost, e.g. `http://127.0.0.1:12345/graphs` vs `http://127.0.0.1:22345/graphs`.
+     *
+     * SECURITY: set by the page host from its own server; never infer it from page navigation.
+     */
+    internal var serverUrl: Uri? = null
+
     val onPageFinishedCallbacks: MutableList<OnPageFinishedCallback> = mutableListOf()
     val onErrorCallbacks: MutableList<OnErrorCallback> = mutableListOf()
     private val pendingStyledCallbacks = mutableListOf<PendingStyledCallback>()
@@ -70,12 +83,67 @@ open class PageWebViewClient : WebViewClient() {
             ""
         }
 
+    internal fun isInternalUrl(url: Uri): Boolean =
+        serverUrl?.let { url.scheme == it.scheme && url.encodedAuthority == it.encodedAuthority } == true
+
+    /** How a navigation request from a page is handled: see [shouldOverrideUrlLoading]. */
+    internal enum class Navigation {
+        /** Load the URL in this WebView */
+        LOAD,
+
+        /** Open the URL outside the app, so it doesn't inherit this WebView's backend access */
+        OPEN_EXTERNALLY,
+
+        /** Ignore the request */
+        BLOCK,
+    }
+
+    /**
+     * Bundled pages on [serverUrl] load here; other main-frame HTTP(S) links open in a browser,
+     * everything else (other schemes, external subframes, unknown local routes) is blocked.
+     */
+    internal fun navigationFor(
+        url: Uri,
+        isForMainFrame: Boolean,
+    ): Navigation =
+        when {
+            isInternalUrl(url) ->
+                if (isSvelteKitPage(url.path.orEmpty().removePrefix("/"))) Navigation.LOAD else Navigation.BLOCK
+            isForMainFrame && url.scheme in listOf("http", "https") -> Navigation.OPEN_EXTERNALLY
+            else -> Navigation.BLOCK
+        }
+
+    /**
+     * Keeps bundled pages in this WebView, and links to the web out of it: these WebViews can call
+     * the backend, which an untrusted page must not inherit.
+     *
+     * WebView skips this callback for POST navigations and app-initiated [WebView.loadUrl] calls.
+     */
+    override fun shouldOverrideUrlLoading(
+        view: WebView?,
+        request: WebResourceRequest?,
+    ): Boolean {
+        val url = request?.url ?: return true
+        return when (navigationFor(url, request.isForMainFrame)) {
+            Navigation.LOAD -> false
+            Navigation.OPEN_EXTERNALLY -> {
+                view?.context?.openUrl(url)
+                true
+            }
+            Navigation.BLOCK -> {
+                Timber.w("Blocked page navigation to %s", url)
+                true
+            }
+        }
+    }
+
     override fun shouldInterceptRequest(
         view: WebView,
         request: WebResourceRequest,
     ): WebResourceResponse? {
         val path = request.url.path
-        if (request.method != "GET" || path == null) return null
+        // only our server may receive bundled pages: they have access to the backend
+        if (request.method != "GET" || path == null || !isInternalUrl(request.url)) return null
         if (path == "/favicon.png") {
             return WebResourceResponse("image/x-icon", null, ByteArrayInputStream(byteArrayOf()))
         }
@@ -83,7 +151,7 @@ open class PageWebViewClient : WebViewClient() {
         val assetPath =
             if (path.startsWith("/_app/")) {
                 "backend/sveltekit/app/${path.substring(6)}"
-            } else if (isSvelteKitPage(path.substring(1))) {
+            } else if (isSvelteKitPage(path.removePrefix("/"))) {
                 "backend/sveltekit/index.html"
             } else {
                 return null
