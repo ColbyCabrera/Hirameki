@@ -185,6 +185,7 @@ fun ReviewerContent(
     viewModel: ReviewerViewModel,
     whiteboardViewModel: WhiteboardViewModel?,
     voicePlaybackViewModel: VoicePlaybackViewModel?,
+    onCardGesture: (CardTouchGesture) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
@@ -378,7 +379,7 @@ fun ReviewerContent(
                         isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
                         javascriptCommand = javascriptCommands.firstOrNull(),
                         onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
-                        onTap = { },
+                        onGesture = onCardGesture,
                         onLinkClick = {
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))
                         },

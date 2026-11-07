@@ -75,6 +75,7 @@ import com.ichi2.anki.pages.DeckOptions
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.ActionButtons
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
+import com.ichi2.anki.reviewer.CommandRoute
 import com.ichi2.anki.reviewer.FullScreenMode.Companion.isFullScreenReview
 import com.ichi2.anki.reviewer.ReviewerConstants
 import com.ichi2.anki.reviewer.ReviewerEffect
@@ -83,6 +84,10 @@ import com.ichi2.anki.reviewer.ReviewerUi
 import com.ichi2.anki.reviewer.ReviewerViewModel
 import com.ichi2.anki.reviewer.VoicePlaybackViewModel
 import com.ichi2.anki.reviewer.WhiteboardController
+import com.ichi2.anki.reviewer.compose.CardTouchGesture
+import com.ichi2.anki.reviewer.compose.onCardTouchGesture
+import com.ichi2.anki.reviewer.route
+import com.ichi2.anki.reviewer.userActionScript
 import com.ichi2.anki.scheduling.ForgetCardsDialog
 import com.ichi2.anki.servicelayer.NoteService.isMarked
 import com.ichi2.anki.servicelayer.NoteService.toggleMark
@@ -205,6 +210,7 @@ open class Reviewer :
                     viewModel = viewModel,
                     whiteboardViewModel = whiteboardViewModel,
                     voicePlaybackViewModel = voicePlaybackViewModel,
+                    onCardGesture = ::onCardTouchGesture,
                 )
             }
         }
@@ -277,6 +283,11 @@ open class Reviewer :
         // Initialize whiteboard controller directly (collection is already loaded from DeckPicker)
         whiteboardController = WhiteboardController(this, whiteboardViewModel, viewModel)
         whiteboardController.initialize()
+    }
+
+    /** #185: a tap, double tap or swipe on the Compose card, mapped through the gesture settings. */
+    internal fun onCardTouchGesture(gesture: CardTouchGesture) {
+        gestureProcessor.onCardTouchGesture(gesture)
     }
 
     override fun onResume() {
@@ -1043,34 +1054,19 @@ open class Reviewer :
         which: ViewerCommand,
         fromGesture: Gesture?,
     ): Boolean {
-        // Handle flag toggle commands via lookup
-        VIEWER_COMMAND_TO_FLAG[which]?.let { flag ->
-            toggleFlag(flag)
-            return true
-        }
-
-        // Handle user action commands via lookup
-        VIEWER_COMMAND_TO_USER_ACTION[which]?.let { actionNumber ->
-            userAction(actionNumber)
-            return true
+        // #185: the legacy handlers draw into a card WebView the Compose reviewer doesn't have,
+        // so commands affecting the card go through the ViewModel.
+        when (val route = which.route(viewModel.state.value)) {
+            is CommandRoute.Send -> {
+                Timber.i("Reviewer:: executing %s (gesture: %s)", which, fromGesture)
+                viewModel.onEvent(route.event)
+                return true
+            }
+            CommandRoute.NotApplicable -> return false
+            CommandRoute.Unrouted -> {}
         }
 
         when (which) {
-            ViewerCommand.UNSET_FLAG -> {
-                onFlag(currentCard, Flag.NONE)
-                return true
-            }
-
-            ViewerCommand.DELETE -> {
-                viewModel.onEvent(ReviewerEvent.DeleteNote)
-                return true
-            }
-
-            ViewerCommand.MARK -> {
-                onMark(currentCard)
-                return true
-            }
-
             ViewerCommand.REDO -> {
                 redo()
                 return true
@@ -1083,11 +1079,6 @@ open class Reviewer :
 
             ViewerCommand.CARD_INFO -> {
                 openCardInfo(fromGesture)
-                return true
-            }
-
-            ViewerCommand.RESCHEDULE_NOTE -> {
-                viewModel.onEvent(ReviewerEvent.RescheduleCard)
                 return true
             }
 
@@ -1108,18 +1099,7 @@ open class Reviewer :
         @UserAction number: Int,
     ) {
         Timber.v("userAction%d", number)
-        loadUrlInViewer("javascript: userAction($number);")
-    }
-
-    private fun toggleFlag(flag: Flag) {
-        val card = currentCard ?: return
-        if (card.flag == flag) {
-            Timber.i("Toggle flag: unsetting flag")
-            onFlag(card, Flag.NONE)
-        } else {
-            Timber.i("Toggle flag: Setting flag to %d", flag.code)
-            onFlag(card, flag)
-        }
+        viewModel.onEvent(ReviewerEvent.RunCardScript(userActionScript(number)))
     }
 
     override fun restoreCollectionPreferences(col: Collection) {
@@ -1272,32 +1252,6 @@ open class Reviewer :
          * Bundle key for the deck id to review.
          */
         const val EXTRA_DECK_ID = "deckId"
-
-        /** Maps ViewerCommand to corresponding Flag for toggle operations */
-        private val VIEWER_COMMAND_TO_FLAG =
-            mapOf(
-                ViewerCommand.TOGGLE_FLAG_RED to Flag.RED,
-                ViewerCommand.TOGGLE_FLAG_ORANGE to Flag.ORANGE,
-                ViewerCommand.TOGGLE_FLAG_GREEN to Flag.GREEN,
-                ViewerCommand.TOGGLE_FLAG_BLUE to Flag.BLUE,
-                ViewerCommand.TOGGLE_FLAG_PINK to Flag.PINK,
-                ViewerCommand.TOGGLE_FLAG_TURQUOISE to Flag.TURQUOISE,
-                ViewerCommand.TOGGLE_FLAG_PURPLE to Flag.PURPLE,
-            )
-
-        /** Maps ViewerCommand to corresponding user action number */
-        private val VIEWER_COMMAND_TO_USER_ACTION =
-            mapOf(
-                ViewerCommand.USER_ACTION_1 to 1,
-                ViewerCommand.USER_ACTION_2 to 2,
-                ViewerCommand.USER_ACTION_3 to 3,
-                ViewerCommand.USER_ACTION_4 to 4,
-                ViewerCommand.USER_ACTION_5 to 5,
-                ViewerCommand.USER_ACTION_6 to 6,
-                ViewerCommand.USER_ACTION_7 to 7,
-                ViewerCommand.USER_ACTION_8 to 8,
-                ViewerCommand.USER_ACTION_9 to 9,
-            )
 
         /** Menu item IDs for user actions, ordered 1-9 */
         private val USER_ACTION_MENU_IDS =

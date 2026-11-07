@@ -168,7 +168,7 @@ class FlashcardRendererLossTest : RobolectricTest() {
                     isMediaAutoplayEnabled = false,
                     javascriptCommand = null,
                     onJavascriptCommandConsumed = {},
-                    onTap = {},
+                    onGesture = {},
                     onLinkClick = {},
                     isAnswerShown = isAnswerShown,
                     cardDisplayIndex = cardDisplayIndex,

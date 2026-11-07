@@ -19,6 +19,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.os.SystemClock
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ViewGroup
@@ -66,6 +67,7 @@ import com.ichi2.themes.Themes
 import com.ichi2.utils.toRGBHex
 import kotlinx.serialization.json.Json
 import timber.log.Timber
+import kotlin.math.abs
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -77,7 +79,8 @@ fun Flashcard(
     isMediaAutoplayEnabled: Boolean,
     javascriptCommand: ReviewerJavascriptCommand?,
     onJavascriptCommandConsumed: (Int) -> Unit,
-    onTap: () -> Unit,
+    /** A tap, double tap or swipe on the card, for the user's gesture settings. */
+    onGesture: (CardTouchGesture) -> Unit,
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     isAnswerShown: Boolean,
@@ -88,7 +91,7 @@ fun Flashcard(
     val currentBaseUrl by rememberUpdatedState(baseUrl)
     val currentOnJavascriptCommandConsumed by rememberUpdatedState(onJavascriptCommandConsumed)
     val currentOnLinkClick by rememberUpdatedState(onLinkClick)
-    val currentOnTap by rememberUpdatedState(onTap)
+    val currentOnGesture by rememberUpdatedState(onGesture)
 
     val context = LocalContext.current
     val sharedPrefs = remember(context) { context.sharedPrefs() }
@@ -438,20 +441,16 @@ fun Flashcard(
                                 }
                             }
 
-                        val gestureDetector =
-                            GestureDetector(
-                                context,
-                                object : GestureDetector.SimpleOnGestureListener() {
-                                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                                        currentOnTap()
-                                        return true
-                                    }
-                                },
-                            )
+                        val gestureListener = CardGestureListener(this) { currentOnGesture(it) }
+                        setOnScrollChangeListener { _, scrollX, scrollY, oldScrollX, oldScrollY ->
+                            gestureListener.onScrollChanged(scrollX - oldScrollX, scrollY - oldScrollY)
+                        }
 
+                        // Returns false so the WebView still receives the touch: links, scrolling
+                        // and text selection keep working.
                         @SuppressLint("ClickableViewAccessibility")
                         setOnTouchListener { _, event ->
-                            gestureDetector.onTouchEvent(event)
+                            gestureListener.onTouchEvent(event)
                             false
                         }
 
@@ -539,6 +538,7 @@ fun Flashcard(
                     webView.webViewClient = WebViewClient()
                     webView.webChromeClient = null
                     webView.setOnTouchListener(null)
+                    webView.setOnScrollChangeListener(null)
                     webView.destroy()
                 },
                 modifier =
@@ -547,6 +547,96 @@ fun Flashcard(
                         .background(MaterialTheme.colorScheme.surface),
             )
         }
+    }
+}
+
+/**
+ * Detects taps, double taps and swipes on the card [webView] for the user's gesture settings (#185).
+ */
+private class CardGestureListener(
+    private val webView: WebView,
+    private val onGesture: (CardTouchGesture) -> Unit,
+) : GestureDetector.SimpleOnGestureListener() {
+    private val detector = GestureDetector(webView.context, this)
+    private val edgeMarginPx = NO_GESTURE_BORDER_DP * webView.resources.displayMetrics.density
+    private var lastXScrollTime = 0L
+    private var lastYScrollTime = 0L
+
+    /** A second finger touched during the current gesture, e.g. pinch-to-zoom. */
+    private var wasMultiTouch = false
+
+    fun onTouchEvent(event: MotionEvent) {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) wasMultiTouch = false
+        if (event.pointerCount > 1) wasMultiTouch = true
+        detector.onTouchEvent(event)
+    }
+
+    fun onScrollChanged(
+        dx: Int,
+        dy: Int,
+    ) {
+        val now = SystemClock.uptimeMillis()
+        if (abs(dx) > abs(dy)) lastXScrollTime = now else lastYScrollTime = now
+    }
+
+    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+        if (!wasMultiTouch && !isOnInteractiveElement()) {
+            onGesture(CardTouchGesture.Tap(e.x, e.y, webView.width, webView.height))
+        }
+        return true
+    }
+
+    override fun onDoubleTap(e: MotionEvent): Boolean {
+        if (!wasMultiTouch && !isOnInteractiveElement()) {
+            onGesture(CardTouchGesture.DoubleTap)
+        }
+        return true
+    }
+
+    override fun onFling(
+        e1: MotionEvent?,
+        e2: MotionEvent,
+        velocityX: Float,
+        velocityY: Float,
+    ): Boolean {
+        // #5741: a swipe from the screen edge is a system gesture
+        if (e1 == null || wasMultiTouch || isTouchingEdge(e1)) return false
+        val now = SystemClock.uptimeMillis()
+        onGesture(
+            CardTouchGesture.Fling(
+                dx = e2.x - e1.x,
+                dy = e2.y - e1.y,
+                velocityX = velocityX,
+                velocityY = velocityY,
+                isXScrolling = now - lastXScrollTime < SCROLL_TIMEOUT_MS,
+                isYScrolling = now - lastYScrollTime < SCROLL_TIMEOUT_MS,
+            ),
+        )
+        return false
+    }
+
+    private fun isTouchingEdge(e: MotionEvent): Boolean =
+        e.x < edgeMarginPx ||
+            e.y < edgeMarginPx ||
+            webView.width - e.x < edgeMarginPx ||
+            webView.height - e.y < edgeMarginPx
+
+    /** #6141: a tap on a link, a replay button or an input belongs to the card, not to a gesture. */
+    private fun isOnInteractiveElement(): Boolean =
+        when (webView.hitTestResult.type) {
+            WebView.HitTestResult.SRC_ANCHOR_TYPE,
+            WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,
+            WebView.HitTestResult.EDIT_TEXT_TYPE,
+            -> true
+            else -> false
+        }
+
+    companion object {
+        /** Matches the legacy reviewer's NO_GESTURE_BORDER_DIP. */
+        private const val NO_GESTURE_BORDER_DP = 24
+
+        /** A scroll within this window means a fling scrolled the card instead of swiping. */
+        private const val SCROLL_TIMEOUT_MS = 300L
     }
 }
 
