@@ -18,6 +18,7 @@ package com.ichi2.anki.dialogs
 
 import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.Intent
 import android.os.Bundle
 import android.os.Message
 import android.os.Parcelable
@@ -418,7 +419,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
 
     /** @see DeckPicker.showDatabaseErrorDialog */
     private fun showDatabaseErrorDialog(errorDialogType: DatabaseErrorDialogType) {
-        requireDeckPicker().showDatabaseErrorDialog(errorDialogType, exceptionData)
+        requireAnkiActivity().showDatabaseErrorDialogInDeckPicker(errorDialogType, exceptionData)
     }
 
     /**
@@ -617,7 +618,7 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
     override val notificationTitle: String get() = res().getString(R.string.answering_error_title)
 
     override val dialogHandlerMessage
-        get() = ShowDatabaseErrorDialog(requireDialogType())
+        get() = ShowDatabaseErrorDialog(requireDialogType(), exceptionData)
 
     private fun requireDialogType() = BundleCompat.getParcelable(requireArguments(), DIALOG_KEY, DatabaseErrorDialogType::class.java)!!
 
@@ -684,12 +685,14 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
     /** Database error dialog */
     class ShowDatabaseErrorDialog(
         val dialogType: DatabaseErrorDialogType,
+        val exceptionData: CustomExceptionData? = null,
     ) : DialogHandlerMessage(
             which = WhichDialogHandler.MSG_SHOW_DATABASE_ERROR_DIALOG,
             analyticName = "DatabaseErrorDialog",
         ) {
         override fun handleAsyncMessage(activity: AnkiActivity) {
-            activity.showDatabaseErrorDialog(dialogType)
+            // a stored message is replayed by whichever screen resumes first
+            activity.showDatabaseErrorDialogInDeckPicker(dialogType, exceptionData)
         }
 
         override fun toMessage(): Message =
@@ -698,13 +701,15 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
                 data =
                     Bundle().apply {
                         putParcelable(DIALOG_KEY, dialogType)
+                        exceptionData?.let { putParcelable(EXCEPTION_KEY, it) }
                     }
             }
 
         companion object {
             fun fromMessage(message: Message): ShowDatabaseErrorDialog {
                 val dialogType = BundleCompat.getParcelable(message.data, DIALOG_KEY, DatabaseErrorDialogType::class.java)!!
-                return ShowDatabaseErrorDialog(dialogType)
+                val exceptionData = BundleCompat.getParcelable(message.data, EXCEPTION_KEY, CustomExceptionData::class.java)
+                return ShowDatabaseErrorDialog(dialogType, exceptionData)
             }
         }
     }
@@ -746,4 +751,26 @@ private enum class ErrorHandlingEntries {
 private enum class IncompatibleDbVersionEntries {
     RESTORE,
     ONE_WAY,
+}
+
+/**
+ * Shows a [DatabaseErrorDialog] in the [DeckPicker].
+ *
+ * The recovery steps (Check Database, restoring a backup, a one-way sync, ...) are run by the
+ * [DeckPicker], so from any other screen this opens the [DeckPicker], which shows the dialog
+ * when it resumes. The error's stack trace is kept.
+ */
+fun AnkiActivity.showDatabaseErrorDialogInDeckPicker(
+    errorDialogType: DatabaseErrorDialog.DatabaseErrorDialogType,
+    exceptionData: DatabaseErrorDialog.CustomExceptionData? = null,
+) {
+    if (this is DeckPicker) {
+        showDatabaseErrorDialog(errorDialogType, exceptionData)
+        return
+    }
+    Timber.i("Opening the Deck Picker to show %s", errorDialogType)
+    DialogHandler.storeMessage(DatabaseErrorDialog.ShowDatabaseErrorDialog(errorDialogType, exceptionData).toMessage())
+    startActivity(
+        Intent(this, DeckPicker::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+    )
 }

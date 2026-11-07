@@ -45,6 +45,7 @@ import com.ichi2.anki.common.annotations.UseContextParameter
 import com.ichi2.anki.dialogs.DatabaseErrorDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.DatabaseErrorDialogType
 import com.ichi2.anki.dialogs.compose.ProgressDialogFragment
+import com.ichi2.anki.dialogs.showDatabaseErrorDialogInDeckPicker
 import com.ichi2.anki.exception.CollectionLockedException
 import com.ichi2.anki.exception.StorageAccessException
 import com.ichi2.anki.libanki.Collection
@@ -232,8 +233,9 @@ suspend fun <T> FragmentActivity.runCatching(
                 Timber.e(exc, errorMessage)
                 DatabaseCorruption.onCorruptionDetected()
                 if (callerTrace != null) Timber.e(callerTrace)
-                if (this is DeckPicker) {
-                    showDatabaseErrorDialog(
+                if (this is AnkiActivity) {
+                    // the recovery steps run in the Deck Picker: opened from other screens
+                    showDatabaseErrorDialogInDeckPicker(
                         errorDialogType = DatabaseErrorDialogType.DIALOG_LOAD_FAILED,
                         exceptionData = DatabaseErrorDialog.CustomExceptionData.fromException(exc),
                     )
