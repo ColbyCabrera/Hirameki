@@ -18,17 +18,25 @@ package com.ichi2.anki
 import android.app.Application
 import android.content.Intent
 import android.view.KeyEvent
+import androidx.core.content.edit
 import androidx.core.os.BundleCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.cardviewer.Gesture
+import com.ichi2.anki.cardviewer.GestureProcessor
 import com.ichi2.anki.cardviewer.ViewerCommand
+import com.ichi2.anki.reviewer.ReviewerBinding
+import com.ichi2.anki.reviewer.compose.CardTouchGesture
+import com.ichi2.anki.utils.ext.addBinding
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Tests for [Reviewer] activity.
@@ -104,6 +112,66 @@ class ReviewerTest : RobolectricTest() {
         reviewer.scrollCurrentCardBy(100)
         reviewer.tapOnCurrentCard(10, 10)
         advanceRobolectricLooper()
+    }
+
+    @Test
+    fun `a bound gesture reaches the compose reviewer`() =
+        runTest {
+            // #185: gestures were never connected to the compose reviewer, so none of them did anything
+            val note = addBasicNote("Front", "Back")
+            getPreferences().edit { putBoolean(GestureProcessor.PREF_KEY, true) }
+            ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(getPreferences(), ReviewerBinding.fromGesture(Gesture.DOUBLE_TAP))
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            val firstCardIndex = reviewer.viewModel.state.value.cardDisplayIndex
+
+            reviewer.onCardTouchGesture(CardTouchGesture.DoubleTap)
+            advanceRobolectricLooper()
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown, "first double tap shows the answer")
+
+            reviewer.onCardTouchGesture(CardTouchGesture.DoubleTap)
+            advanceRobolectricLooper()
+            assertEquals("second double tap answers the card", 1, note.firstCard(col).reps)
+            assertNotEquals(firstCardIndex, reviewer.viewModel.state.value.cardDisplayIndex)
+        }
+
+    @Test
+    fun `gestures do nothing when disabled`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            getPreferences().edit { putBoolean(GestureProcessor.PREF_KEY, false) }
+            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), ReviewerBinding.fromGesture(Gesture.DOUBLE_TAP))
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+
+            reviewer.onCardTouchGesture(CardTouchGesture.DoubleTap)
+            advanceRobolectricLooper()
+
+            assertFalse(reviewer.viewModel.state.value.isAnswerShown)
+        }
+
+    @Test
+    fun `show answer command updates the compose reviewer`() =
+        runTest {
+            // #185: shakes and the space key ran the legacy reviewer's 'show answer', which the compose UI never saw
+            addBasicNote("Front", "Back")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+
+            assertTrue(reviewer.executeCommand(ViewerCommand.SHOW_ANSWER))
+            advanceRobolectricLooper()
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown)
+
+            assertFalse(reviewer.executeCommand(ViewerCommand.SHOW_ANSWER), "answer already shown")
+        }
+
+    private fun waitForCard(reviewer: Reviewer) {
+        advanceRobolectricLooper()
+        assertTrue(
+            reviewer.viewModel.state.value.questionHtml
+                .isNotEmpty(),
+            "card loaded",
+        )
     }
 
     companion object {

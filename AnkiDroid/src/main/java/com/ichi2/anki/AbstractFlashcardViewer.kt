@@ -559,13 +559,12 @@ abstract class AbstractFlashcardViewer :
         // Subclasses other than 'Reviewer' have not been set up with Gestures/KeyPresses
         // so hardcode this functionality for now.
         // This is in onKeyDown to match the gesture processor in the Reviewer
-        if (!displayAnswer) {
-            val focus = currentFocus
-            val isTextInputFocused = focus?.onCheckIsTextEditor() == true
-            if (!isTextInputFocused &&
-                (keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)
-            ) {
-                displayCardAnswer()
+        val isShowAnswerKey =
+            keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
+        if (isShowAnswerKey && currentFocus?.onCheckIsTextEditor() != true) {
+            // Routed as a command so the Compose Reviewer can show the answer through its ViewModel.
+            // Returns false if the answer is already shown.
+            if (executeCommand(ViewerCommand.SHOW_ANSWER)) {
                 return true
             }
         }

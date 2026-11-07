@@ -197,6 +197,11 @@ sealed class ReviewerEvent {
     object AnswerFeedbackShown : ReviewerEvent()
 
     object Undo : ReviewerEvent()
+
+    /** Runs [script] in the card's WebView, e.g. to reveal a hint or run a user action. */
+    data class RunCardScript(
+        val script: String,
+    ) : ReviewerEvent()
 }
 
 sealed class ReviewerEffect {
@@ -478,6 +483,7 @@ class ReviewerViewModel(
             is ReviewerEvent.MediaErrorHandled -> onMediaErrorHandled()
             is ReviewerEvent.AnswerFeedbackShown -> onAnswerFeedbackShown()
             is ReviewerEvent.Undo -> undoAction()
+            is ReviewerEvent.RunCardScript -> enqueueJavascriptCommand(event.script)
         }
     }
 
