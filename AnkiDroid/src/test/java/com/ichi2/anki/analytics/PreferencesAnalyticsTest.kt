@@ -91,6 +91,7 @@ class PreferencesAnalyticsTest : RobolectricTest() {
             // Hirameki's own settings: not personal data, but this fork reports no usage analytics
             // (UsageAnalytics.isAvailable is false), so they stay off the upstream report list
             R.string.apply_hirameki_css_preference, // applyHiramekiCss
+            R.string.card_crossfade_key, // cardCrossfade
             R.string.arabic_script_font_key, // arabicScriptFont
         ).toStringResourceSet()
 

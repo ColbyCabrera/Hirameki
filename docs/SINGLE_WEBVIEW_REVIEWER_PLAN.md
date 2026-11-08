@@ -1,6 +1,6 @@
 # Single-WebView Reviewer Plan
 
-**Status**: Phase 0 complete; phase 1 next
+**Status**: Phases 0–2 complete; phase 3 next
 **Branch**: `feat/single-webview-reviewer` (integration branch; nothing ships until phase 2 lands)
 **Related**: #135 (flash between cards), #205 (scripts running twice), #143 (renderer loss)
 
@@ -35,7 +35,7 @@ Every PR must keep these:
 3. **Overlay before swap.** Visible content never changes until a snapshot of the previous frame
    is on screen above the WebView (or there is no previous frame).
 4. **Fade only when ready.** The overlay fades only after the page reports the latest display's
-   token as ready **and** `postVisualStateCallback` confirms that the WebView has drawn it.
+   token as ready **and** `postVisualStateCallback` confirms that the WebView has drawn it, or a timeout passes.
 5. **The latest display wins.** Every show request carries a token; a ready message with a
    stale token is ignored.
 6. **Scripts run in the page queue.** Commands (user actions, hints, media) go through
@@ -51,11 +51,10 @@ New package `com.ichi2.anki.reviewer.card`:
 | Component | Responsibility |
 |---|---|
 | `CardDisplay` | One value derived from `ReviewerState` describing what to show: `cardDisplayIndex`, side, question and answer HTML, body class, base URL. |
-| `CardPage.kt`, `CardPageStyle.kt` | The page contract, as pure functions: the shell, and the scripts that show a card, run a command or update the style. `_updateQA` already waits for fonts, images (capped at 200–800 ms) and MathJax. Per-side styles are CSS rules keyed on a side class passed with the body class, which `reviewer.js` applies in the same step as the content. Phase 2 adds `hirameki-card-page.js`, for the ready message. |
-| `CardWebViewController` | Owns the WebView (through `SafeWebViewLayout`). `update` records the latest display, style and command; the page is brought into step with them once it has loaded. Phase 2 adds waiting for ready (androidx.webkit's `addWebMessageListener`); phase 3 adds zoom reset (upstream's `resetZoom`/`waitForZoomReset`). |
-| `CardSnapshotter` | Captures the current frame with a Compose `GraphicsLayer` (chosen in phase 0). |
-| `CardTransitionCoordinator` | A pure Kotlin state machine: idle → capturing → swapping → fading. Handles a new card mid-transition, timeouts and the first card (no snapshot). Exposes the overlay bitmap and opacity as `StateFlow`s. Tested with fakes and Turbine. |
-| `CardSurface` | Composable: `AndroidView` with the persistent WebView, plus an `Image` overlay whose opacity is set in `graphicsLayer` (draw phase only, no recomposition per frame). |
+| `CardPage.kt`, `CardPageStyle.kt` | The page contract, as pure functions: the shell, and the scripts that show a card, run a command or update the style. `_updateQA` already waits for fonts, images (capped at 200–800 ms) and MathJax. Per-side styles are CSS rules keyed on a side class passed with the body class, which `reviewer.js` applies in the same step as the content. `hirameki-card-page.js` reports when a shown card, including any image occlusion masks, is painted. |
+| `CardWebViewController` | Owns the WebView (through `SafeWebViewLayout`). `update` records the latest display, style and command; the page is brought into step with them once it has loaded. `show` puts a card on the page and `awaitShown` waits for its report (androidx.webkit's `addWebMessageListener`). Phase 3 adds zoom reset (upstream's `resetZoom`/`waitForZoomReset`). |
+| `CardTransitionCoordinator` | Plain Kotlin behind a `CardTransitionStage` interface: capture, cover, swap, fade. A new target cancels the transition in progress. Handles timeouts and the first card (no snapshot). Exposes the overlay and its opacity as Compose state, read in the draw phase. Tested with a fake stage. |
+| `Flashcard` | Composable: the persistent WebView plus an `Image` overlay in a `Box` recorded into a `GraphicsLayer`. Implements the stage: capture, frame waits and the fade. |
 
 The controller and coordinator hold a `Context` and bitmaps, so they are scoped to the composition
 (`remember` + `DisposableEffect`), not to the ViewModel.
@@ -66,8 +65,9 @@ Rating quickly while a fade is running is the common case.
 
 - **While swapping** (the overlay is fully opaque): replace the target and re-send `show`; the
   old token's ready message is ignored.
-- **While fading** (the overlay is at opacity `a`): composite `a × overlay + (1 − a) × capture`
-  into the reused bitmap. That is exactly what is on screen. Then start a new transition from it.
+- **While fading** (the overlay is at opacity `a`): capture again. The `GraphicsLayer` records the
+  WebView and the overlay together, so the capture is already `a × overlay + (1 − a) × card`,
+  exactly what is on screen. Then start a new transition from it.
 
 ### Why the fade is exact
 
@@ -116,9 +116,13 @@ Delete the `Crossfade`, the IO workarounds, `FlashcardPayload` and `FlashcardCom
 
 ### Phase 2: transition
 
-`CardSnapshotter`, `CardTransitionCoordinator` and `CardSurface`, for sides and cards; a new
-card mid-transition; timeouts; a "Card transition: crossfade / none" setting (also the fallback
-when capture fails).
+`CardTransitionCoordinator` and the overlay, for sides and cards; a new card mid-transition;
+timeouts; a "Crossfade between cards" setting. A failed capture, or a WebView that cannot report,
+swaps instantly.
+
+`FlashcardOnDeviceTest` samples real screen pixels through a fade and requires every sample to be a
+blend of the two cards' backgrounds. Its fade tests turn animations back on, because the build runs
+connected tests with `animationsDisabled`. Still to do: measure capture time on a release build.
 
 ### Phase 3: hardening
 

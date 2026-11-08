@@ -70,6 +70,11 @@
             android:key="@string/more_options_in_top_app_bar_key"
             android:title="@string/more_options_in_top_app_bar"
             android:summary="@string/more_options_in_top_app_bar_summ" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/card_crossfade_key"
+            android:title="@string/card_crossfade"
+            android:summary="@string/card_crossfade_summ" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/reviewer_css_styling" android:key="@string/reviewer_css_category">
         <ListPreference

@@ -51,16 +51,16 @@ class CardPageTest {
     @Test
     fun `the question passes the answer for preloading, and the question side class`() {
         assertThat(
-            CardPage.showScript(question),
-            equalTo("""_showQuestion("<p>Q</p>", "<p>A</p>", "card card1 hirameki-question");"""),
+            CardPage.showScript(question, token = 7),
+            equalTo("""_showQuestion("<p>Q</p>", "<p>A</p>", "card card1 hirameki-question"); hirameki.reportWhenShown(7);"""),
         )
     }
 
     @Test
     fun `the answer passes the answer side class`() {
         assertThat(
-            CardPage.showScript(question.copy(isAnswerShown = true)),
-            equalTo("""_showAnswer("<p>A</p>", "card card1 hirameki-answer");"""),
+            CardPage.showScript(question.copy(isAnswerShown = true), token = 8),
+            equalTo("""_showAnswer("<p>A</p>", "card card1 hirameki-answer"); hirameki.reportWhenShown(8);"""),
         )
     }
 
@@ -69,7 +69,7 @@ class CardPageTest {
         val html = """<script>let a = "b";</script>"""
 
         assertThat(
-            CardPage.showScript(question.copy(questionHtml = html)),
+            CardPage.showScript(question.copy(questionHtml = html), token = 1),
             containsString(""""<script>let a = \"b\";</script>""""),
         )
     }

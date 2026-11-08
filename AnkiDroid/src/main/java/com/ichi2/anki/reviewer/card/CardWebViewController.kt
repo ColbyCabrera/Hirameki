@@ -26,12 +26,17 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.annotation.MainThread
+import androidx.core.net.toUri
+import androidx.webkit.WebViewFeature
 import com.ichi2.anki.ViewerResourceHandler
+import com.ichi2.anki.common.utils.android.isRobolectric
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.compose.CardTouchGesture
 import com.ichi2.anki.workarounds.OnWebViewRecreatedListener
 import com.ichi2.anki.workarounds.SafeWebViewClient
 import com.ichi2.anki.workarounds.SafeWebViewLayout
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import timber.log.Timber
 
 /**
@@ -49,6 +54,10 @@ class CardWebViewController(
 ) : OnWebViewRecreatedListener {
     val layout = SafeWebViewLayout(context).also { it.onWebViewRecreatedListener = this }
 
+    /** The latest state of the reviewer. */
+    private var target: CardDisplay? = null
+
+    /** The card to put on the page, which trails [target] while a transition covers the page. */
     private var display: CardDisplay? = null
     private var style: CardPageStyle? = null
     private var isMediaAutoplayEnabled = false
@@ -59,22 +68,30 @@ class CardWebViewController(
     private var pageBaseUrl: String? = null
     private var pageDisplay: CardDisplay? = null
     private var pageStyle: CardPageStyle? = null
+    private var pageToken = 0
+
+    /** The WebView's listener for the page's reports, reset with the WebView. */
+    private var reportOrigin: String? = null
+    private val shownDisplay = MutableStateFlow<CardDisplay?>(null)
+
+    /** Stays false where the page cannot report, which leaves cards to swap without a crossfade. */
+    val hasShownCard: Boolean get() = shownDisplay.value != null
 
     private val gestureListener =
-        CardGestureListener(layout, currentDisplay = { display }, onGesture = { onGesture(it) })
+        CardGestureListener(layout, currentDisplay = { target }, onGesture = { onGesture(it) })
 
     init {
         configureWebView()
     }
 
     fun update(
-        display: CardDisplay,
+        target: CardDisplay,
         style: CardPageStyle,
         isMediaAutoplayEnabled: Boolean,
         command: ReviewerJavascriptCommand?,
     ) {
-        val isNewCard = !display.isSameCardAs(this.display)
-        this.display = display
+        val isNewCard = !target.isSameCardAs(this.target)
+        this.target = target
         this.style = style
         this.command = command
         if (this.isMediaAutoplayEnabled != isMediaAutoplayEnabled) {
@@ -83,13 +100,23 @@ class CardWebViewController(
         }
         if (isNewCard) layout.onContentChanged()
 
-        if (display.baseUrl.isEmpty()) return
-        if (display.baseUrl != pageBaseUrl) loadPage(display.baseUrl, style) else syncPage()
+        if (target.baseUrl.isEmpty()) return
+        if (target.baseUrl != pageBaseUrl) loadPage(target.baseUrl, style) else syncPage()
+    }
+
+    fun show(display: CardDisplay) {
+        this.display = display
+        syncPage()
+    }
+
+    suspend fun awaitShown(display: CardDisplay) {
+        shownDisplay.first { it == display }
     }
 
     override fun onWebViewRecreated() {
+        reportOrigin = null
         configureWebView()
-        val baseUrl = display?.baseUrl?.takeIf { it.isNotEmpty() }
+        val baseUrl = target?.baseUrl?.takeIf { it.isNotEmpty() }
         val style = style
         if (baseUrl != null && style != null) loadPage(baseUrl, style)
     }
@@ -104,6 +131,8 @@ class CardWebViewController(
         pageBaseUrl = baseUrl
         pageDisplay = null
         pageStyle = style
+        shownDisplay.value = null
+        listenForPageReports(baseUrl)
         layout.loadDataWithBaseURL(baseUrl, CardPage.shellHtml(context, style), "text/html", "UTF-8", null)
     }
 
@@ -115,12 +144,32 @@ class CardWebViewController(
         }
         display?.takeIf { it != pageDisplay }?.let {
             pageDisplay = it
-            layout.evaluateJavascript(CardPage.showScript(it))
+            pageToken++
+            layout.evaluateJavascript(CardPage.showScript(it, pageToken))
         }
-        command?.takeIf { it.id != lastRunCommandId }?.let {
+        command?.takeIf { it.id != lastRunCommandId && display == target }?.let {
             lastRunCommandId = it.id
             layout.evaluateJavascript(CardPage.commandScript(it.script))
             onCommandRun(it.id)
+        }
+    }
+
+    private fun listenForPageReports(baseUrl: String) {
+        if (isRobolectric || !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return
+        val origin = baseUrl.toUri().let { "${it.scheme}://${it.authority}" }
+        if (origin == reportOrigin) return
+        if (reportOrigin != null) layout.removeWebMessageListener(CardPage.BRIDGE_NAME)
+        reportOrigin = origin
+        layout.addWebMessageListener(CardPage.BRIDGE_NAME, setOf(origin)) { _, message, _, isMainFrame, _ ->
+            if (isMainFrame) message.data?.toIntOrNull()?.let(::onPageReportedShown)
+        }
+    }
+
+    private fun onPageReportedShown(token: Int) {
+        if (token != pageToken) return
+        val reported = pageDisplay
+        layout.postVisualStateCallback(token.toLong()) {
+            if (token == pageToken) shownDisplay.value = reported
         }
     }
 
@@ -186,6 +235,7 @@ class CardWebViewController(
         ) {
             isPageLoaded = false
             pageDisplay = null
+            shownDisplay.value = null
         }
 
         override fun onPageFinished(

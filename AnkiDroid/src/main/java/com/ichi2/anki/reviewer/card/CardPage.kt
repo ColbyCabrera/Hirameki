@@ -25,7 +25,10 @@ internal object CardPage {
     const val QUESTION_BODY_CLASS = "hirameki-question"
     const val ANSWER_BODY_CLASS = "hirameki-answer"
 
-    private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js")
+    /** The object the page reports through, see `hirameki-card-page.js`. */
+    const val BRIDGE_NAME = "hiramekiCardBridge"
+
+    private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js", "scripts/hirameki-card-page.js")
     private const val STYLE_ELEMENT_ID = "compose-styles"
     private const val EXTRAS_CSS_LINK =
         """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
@@ -39,14 +42,20 @@ internal object CardPage {
             .replace("</head>", "$EXTRAS_CSS_LINK\n$styleElement\n</head>")
     }
 
-    fun showScript(display: CardDisplay): String =
-        with(display) {
-            if (isAnswerShown) {
-                "_showAnswer(${jsString(answerHtml)}, ${jsString("$bodyClass $ANSWER_BODY_CLASS")});"
-            } else {
-                "_showQuestion(${jsString(questionHtml)}, ${jsString(answerHtml)}, ${jsString("$bodyClass $QUESTION_BODY_CLASS")});"
+    fun showScript(
+        display: CardDisplay,
+        token: Int,
+    ): String {
+        val show =
+            with(display) {
+                if (isAnswerShown) {
+                    "_showAnswer(${jsString(answerHtml)}, ${jsString("$bodyClass $ANSWER_BODY_CLASS")});"
+                } else {
+                    "_showQuestion(${jsString(questionHtml)}, ${jsString(answerHtml)}, ${jsString("$bodyClass $QUESTION_BODY_CLASS")});"
+                }
             }
-        }
+        return "$show hirameki.reportWhenShown($token);"
+    }
 
     /** Runs after any queued card has been shown. A throw must not reject the queue, which would stop every later card. */
     fun commandScript(script: String): String =

@@ -39,6 +39,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.view.ancestors
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.findFragment
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.R
 import timber.log.Timber
@@ -145,6 +147,48 @@ open class SafeWebViewLayout :
     @MainThread
     fun evaluateJavascript(script: String) {
         activeWebView?.evaluateJavascript(script, null)
+    }
+
+    /**
+     * Requires [WebViewFeature.WEB_MESSAGE_LISTENER]
+     *
+     * @see WebViewCompat.addWebMessageListener
+     */
+    @SuppressLint("RequiresFeature") // checked by the caller
+    @MainThread
+    fun addWebMessageListener(
+        jsObjectName: String,
+        allowedOriginRules: Set<String>,
+        listener: WebViewCompat.WebMessageListener,
+    ) {
+        val webView = activeWebView ?: return
+        WebViewCompat.addWebMessageListener(webView, jsObjectName, allowedOriginRules, listener)
+    }
+
+    /**
+     * Requires [WebViewFeature.WEB_MESSAGE_LISTENER]
+     *
+     * @see WebViewCompat.removeWebMessageListener
+     */
+    @SuppressLint("RequiresFeature") // checked by the caller
+    @MainThread
+    fun removeWebMessageListener(jsObjectName: String) {
+        val webView = activeWebView ?: return
+        WebViewCompat.removeWebMessageListener(webView, jsObjectName)
+    }
+
+    /** Calls [onComplete] once everything the page has done so far is ready to be drawn. */
+    @MainThread
+    fun postVisualStateCallback(
+        requestId: Long,
+        onComplete: () -> Unit,
+    ) {
+        activeWebView?.postVisualStateCallback(
+            requestId,
+            object : WebView.VisualStateCallback() {
+                override fun onComplete(requestId: Long) = onComplete()
+            },
+        )
     }
 
     @MainThread

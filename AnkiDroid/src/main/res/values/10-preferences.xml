@@ -479,6 +479,8 @@ this formatter is used if the bind only applies to the answer">A: %s</string>
 
     <string name="reviewer_css_styling" maxLength="41">Reviewer CSS styling</string>
     <string name="apply_hirameki_css" maxLength="41">Apply Hirameki CSS in the reviewer</string>
+    <string name="card_crossfade" maxLength="41">Crossfade between cards</string>
+    <string name="card_crossfade_summ">Fade between card sides and cards. When off, they switch instantly</string>
     <string name="apply_hirameki_css_all">Apply all custom CSS</string>
     <string name="apply_hirameki_css_no_font_size">Disable font size changes</string>
     <string name="apply_hirameki_css_disabled">Disable all custom CSS</string>

@@ -16,20 +16,33 @@
 package com.ichi2.anki.reviewer.compose
 
 import android.content.SharedPreferences
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -41,10 +54,14 @@ import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.card.CardDisplay
 import com.ichi2.anki.reviewer.card.CardPageStyle
 import com.ichi2.anki.reviewer.card.CardSideStyle
+import com.ichi2.anki.reviewer.card.CardTransitionCoordinator
+import com.ichi2.anki.reviewer.card.CardTransitionStage
 import com.ichi2.anki.reviewer.card.CardWebViewController
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.themes.Themes
 import com.ichi2.utils.toRGBHex
+import kotlinx.coroutines.CancellationException
+import timber.log.Timber
 
 @Composable
 fun Flashcard(
@@ -73,13 +90,73 @@ fun Flashcard(
         }
     DisposableEffect(controller) { onDispose { controller.destroy() } }
 
-    val style = rememberCardPageStyle(toolbarHeight)
-    SideEffect { controller.update(display, style, isMediaAutoplayEnabled, javascriptCommand) }
+    val surfaceLayer = rememberGraphicsLayer()
+    val coordinator =
+        remember(controller, surfaceLayer) {
+            CardTransitionCoordinator(
+                ComposeCardTransitionStage(controller, surfaceLayer),
+                isCrossfadeEnabled = { Prefs.isCardCrossfadeEnabled },
+            )
+        }
+    LaunchedEffect(coordinator) { coordinator.run() }
 
-    AndroidView(
-        factory = { controller.layout },
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
-    )
+    val style = rememberCardPageStyle(toolbarHeight)
+    SideEffect {
+        controller.update(display, style, isMediaAutoplayEnabled, javascriptCommand)
+        coordinator.setTarget(display)
+    }
+
+    Box(
+        modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .drawWithContent {
+                surfaceLayer.record { this@drawWithContent.drawContent() }
+                drawLayer(surfaceLayer)
+            },
+    ) {
+        AndroidView(factory = { controller.layout }, modifier = Modifier.fillMaxSize())
+        coordinator.overlay?.let { overlay ->
+            Image(
+                bitmap = overlay,
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = coordinator.overlayOpacity },
+            )
+        }
+    }
+}
+
+private class ComposeCardTransitionStage(
+    private val controller: CardWebViewController,
+    private val surfaceLayer: GraphicsLayer,
+) : CardTransitionStage {
+    override val hasShownCard get() = controller.hasShownCard
+
+    override suspend fun captureFrame(): ImageBitmap? =
+        try {
+            surfaceLayer.toImageBitmap()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Could not capture the card")
+            null
+        }
+
+    override suspend fun awaitOverlayDrawn() = repeat(FRAMES_FOR_OVERLAY_TO_REACH_SCREEN) { withFrameNanos { } }
+
+    override fun show(display: CardDisplay) = controller.show(display)
+
+    override suspend fun awaitShown(display: CardDisplay) = controller.awaitShown(display)
+
+    override suspend fun fade(onOpacity: (Float) -> Unit) =
+        animate(1f, 0f, animationSpec = tween(CROSSFADE_DURATION_MS)) { opacity, _ -> onOpacity(opacity) }
+
+    private companion object {
+        /** The overlay is composed in the first frame at the latest, and presented by the second. */
+        const val FRAMES_FOR_OVERLAY_TO_REACH_SCREEN = 2
+        const val CROSSFADE_DURATION_MS = 300
+    }
 }
 
 @Composable

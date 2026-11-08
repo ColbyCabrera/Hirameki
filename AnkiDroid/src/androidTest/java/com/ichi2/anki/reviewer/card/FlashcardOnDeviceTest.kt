@@ -17,16 +17,27 @@
 package com.ichi2.anki.reviewer.card
 
 import android.graphics.Bitmap
+import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
+import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.compose.Flashcard
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -38,6 +49,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThan
 import org.hamcrest.Matchers.not
@@ -47,36 +59,43 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.ByteArrayOutputStream
 import kotlin.coroutines.resume
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.seconds
 
-/** Runs the real page scripts, which Robolectric's WebView does not. */
+/** Runs the real page scripts and draws real frames, which Robolectric and the Compose test clock do not. */
 @RunWith(AndroidJUnit4::class)
 class FlashcardOnDeviceTest {
     @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    private var display by mutableStateOf(card("<p id=\"shown\">Question</p>"))
+    private lateinit var activity: ComponentActivity
+    private var display by mutableStateOf(card(shownText("Question")))
     private var command by mutableStateOf<ReviewerJavascriptCommand?>(null)
     private val consumed = mutableListOf<Int>()
+    private var themeSurfaceColor = 0
 
     @Before
     fun showFlashcard() {
-        composeRule.setContent {
-            AnkiDroidTheme {
-                Flashcard(
-                    display = display,
-                    isMediaAutoplayEnabled = false,
-                    javascriptCommand = command,
-                    onJavascriptCommandConsumed = { id ->
-                        consumed += id
-                        if (command?.id == id) command = null
-                    },
-                    onGesture = {},
-                    onLinkClick = {},
-                )
+        activityRule.scenario.onActivity {
+            activity = it
+            it.setContent {
+                AnkiDroidTheme {
+                    val surface = MaterialTheme.colorScheme.surface.toArgb()
+                    SideEffect { themeSurfaceColor = surface }
+                    Flashcard(
+                        display = display,
+                        isMediaAutoplayEnabled = false,
+                        javascriptCommand = command,
+                        onJavascriptCommandConsumed = { id ->
+                            consumed += id
+                            if (command?.id == id) command = null
+                        },
+                        onGesture = {},
+                        onLinkClick = {},
+                    )
+                }
             }
         }
-        composeRule.waitForIdle()
     }
 
     @Test
@@ -85,9 +104,9 @@ class FlashcardOnDeviceTest {
             awaitShownText("Question")
             evaluate("window.samePageMarker = 'kept'")
 
-            show(card("<p id=\"shown\">Question</p>", answer = "<p id=\"shown\">Answer</p>", isAnswerShown = true))
+            show(card(shownText("Question"), answer = shownText("Answer"), isAnswerShown = true))
             awaitShownText("Answer")
-            show(card("<p id=\"shown\">Next</p>", index = 2))
+            show(card(shownText("Next"), index = 2))
             awaitShownText("Next")
 
             assertThat(evaluate("window.samePageMarker"), equalTo("\"kept\""))
@@ -99,7 +118,7 @@ class FlashcardOnDeviceTest {
             awaitShownText("Question")
             val questionSize = bodyFontSize()
 
-            show(card("<p id=\"shown\">Question</p>", answer = "<p id=\"shown\">Answer</p>", isAnswerShown = true))
+            show(card(shownText("Question"), answer = shownText("Answer"), isAnswerShown = true))
             awaitShownText("Answer")
 
             assertThat(bodyFontSize(), not(equalTo(questionSize)))
@@ -118,8 +137,9 @@ class FlashcardOnDeviceTest {
     fun aCommandRunsOnceAfterItsCard() =
         runBlocking {
             awaitShownText("Question")
+            awaitCrossfadeReady()
 
-            show(card("<p id=\"shown\">Next</p>", index = 2))
+            show(card(shownText("Next"), index = 2))
             sendCommand(
                 ReviewerJavascriptCommand(
                     id = 1,
@@ -141,7 +161,7 @@ class FlashcardOnDeviceTest {
             awaitShownText("Question")
 
             sendCommand(ReviewerJavascriptCommand(id = 1, script = "throw new Error('from a card')"))
-            show(card("<p id=\"shown\">Next</p>", index = 2))
+            show(card(shownText("Next"), index = 2))
 
             awaitShownText("Next")
         }
@@ -157,15 +177,77 @@ class FlashcardOnDeviceTest {
             }
         }
 
-    private fun show(next: CardDisplay) {
-        display = next
-        composeRule.waitForIdle()
+    @Test
+    fun crossfadingBetweenCardsBlendsOnlyTheirBackgrounds() =
+        runBlocking {
+            enableAnimations()
+            show(card(backgroundCard(BLUE, "Blue"), index = 2))
+            awaitShownText("Blue")
+            awaitCrossfadeReady()
+
+            val samples = sampleScreenWhile { show(card(backgroundCard(GREEN, "Green"), index = 3)) }
+
+            assertBlendsOnly(samples, from = BLUE, to = GREEN)
+        }
+
+    @Test
+    fun crossfadingBetweenSidesBlendsOnlyTheirBackgrounds() =
+        runBlocking {
+            enableAnimations()
+            val question = backgroundCard(BLUE, "Blue")
+            val answer = backgroundCard(GREEN, "Green")
+            show(card(question, answer = answer, index = 2))
+            awaitShownText("Blue")
+            awaitCrossfadeReady()
+
+            val samples = sampleScreenWhile { show(card(question, answer = answer, index = 2, isAnswerShown = true)) }
+
+            assertBlendsOnly(samples, from = BLUE, to = GREEN)
+        }
+
+    @Test
+    fun aNewCardDuringTheFadeNeverShowsTheThemeColour() =
+        runBlocking {
+            enableAnimations()
+            show(card(backgroundCard(BLUE, "Blue"), index = 2))
+            awaitShownText("Blue")
+            awaitCrossfadeReady()
+
+            val samples =
+                sampleScreenWhile {
+                    show(card(backgroundCard(GREEN, "Green"), index = 3))
+                    delay(MID_FADE_DELAY_MS)
+                    show(card(backgroundCard(RED, "Red"), index = 4))
+                }
+
+            assertThat("ends on the last card", samples.last().isCloseTo(RED), equalTo(true))
+            assertThat(samples.filter { it.isCloseTo(themeSurfaceColor) }, empty())
+        }
+
+    /** The build disables animations for connected tests, and the runner restores the setting afterwards. */
+    private suspend fun enableAnimations() {
+        InstrumentationRegistry
+            .getInstrumentation()
+            .uiAutomation
+            .executeShellCommand("settings put global animator_duration_scale 1")
+            .close()
+        delay(ANIMATION_SETTING_DELAY_MS)
     }
 
-    private fun sendCommand(next: ReviewerJavascriptCommand) {
-        command = next
-        composeRule.waitForIdle()
+    private fun assertBlendsOnly(
+        samples: List<Int>,
+        from: Int,
+        to: Int,
+    ) {
+        assertThat("ends on the new card", samples.last().isCloseTo(to), equalTo(true))
+        assertThat("only blends of the two cards", samples.filterNot { it.isBlendOf(from, to) }.map(::hex), empty())
+        val blends = samples.filter { !it.isCloseTo(from) && !it.isCloseTo(to) }
+        assertThat("a fade, not a cut (${samples.map(::hex)})", blends.size, greaterThan(0))
     }
+
+    private suspend fun show(next: CardDisplay) = onMain { display = next }
+
+    private suspend fun sendCommand(next: ReviewerJavascriptCommand) = onMain { command = next }
 
     private suspend fun bodyFontSize() = evaluate("getComputedStyle(document.body).fontSize")
 
@@ -178,9 +260,12 @@ class FlashcardOnDeviceTest {
         while (evaluate(script) != expected) delay(16)
     }
 
+    /** The page reports a shown card a few frames after its text appears. */
+    private suspend fun awaitCrossfadeReady() = delay(CROSSFADE_READY_DELAY_MS)
+
     private suspend fun evaluate(script: String): String =
-        withContext(Dispatchers.Main) {
-            val webView = findWebView(composeRule.activity.window.decorView)!!
+        onMain {
+            val webView = findWebView(activity.window.decorView)!!
             suspendCancellableCoroutine { continuation ->
                 webView.evaluateJavascript(script) { continuation.resume(it ?: "null") }
             }
@@ -191,6 +276,61 @@ class FlashcardOnDeviceTest {
             ?: (view as? ViewGroup)?.let { group ->
                 (0 until group.childCount).firstNotNullOfOrNull { findWebView(group.getChildAt(it)) }
             }
+
+    private suspend fun <T> onMain(block: suspend () -> T): T = withContext(Dispatchers.Main) { block() }
+
+    private suspend fun sampleScreenWhile(change: suspend () -> Unit): List<Int> {
+        val samples = mutableListOf(screenSample())
+        change()
+        val start = System.nanoTime()
+        while ((System.nanoTime() - start) / 1_000_000 < SAMPLING_MS) samples += screenSample()
+        return samples
+    }
+
+    /** A patch of card background: to the right of the centred text, clear of any other element. */
+    private suspend fun screenSample(): Int =
+        onMain {
+            val decor = activity.window.decorView
+            val x = (decor.width * 0.9f).toInt()
+            val y = (decor.height * 0.6f).toInt()
+            val bitmap = createBitmap(SAMPLE_SIZE, SAMPLE_SIZE)
+            suspendCancellableCoroutine { continuation ->
+                PixelCopy.request(
+                    activity.window,
+                    Rect(x, y, x + SAMPLE_SIZE, y + SAMPLE_SIZE),
+                    bitmap,
+                    { continuation.resume(Unit) },
+                    Handler(Looper.getMainLooper()),
+                )
+            }
+            bitmap[SAMPLE_SIZE / 2, SAMPLE_SIZE / 2]
+        }
+
+    private fun Int.channels() = listOf(this shr 16 and 0xFF, this shr 8 and 0xFF, this and 0xFF)
+
+    private fun Int.isCloseTo(other: Int) = channels().zip(other.channels()).all { (a, b) -> abs(a - b) <= COLOR_TOLERANCE }
+
+    private fun Int.isBlendOf(
+        from: Int,
+        to: Int,
+    ): Boolean {
+        val sample = channels()
+        val start = from.channels()
+        val end = to.channels()
+        return (0..BLEND_STEPS).any { step ->
+            val amount = step.toFloat() / BLEND_STEPS
+            sample.indices.all { abs(sample[it] - (start[it] + (end[it] - start[it]) * amount)) <= COLOR_TOLERANCE }
+        }
+    }
+
+    private fun hex(color: Int) = "#%06X".format(color and 0xFFFFFF)
+
+    private fun shownText(text: String) = "<p id=\"shown\">$text</p>"
+
+    private fun backgroundCard(
+        color: Int,
+        text: String,
+    ) = "<style>html, body.card { background: ${hex(color)} !important; }</style>${shownText(text)}"
 
     private fun imageOcclusionHtml(): String =
         """
@@ -207,20 +347,30 @@ class FlashcardOnDeviceTest {
         """.trimIndent()
 
     private fun whitePngBase64(): String {
-        val bitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888).apply { eraseColor(android.graphics.Color.WHITE) }
+        val bitmap = createBitmap(800, 600).apply { eraseColor(android.graphics.Color.WHITE) }
         val bytes = ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
         return Base64.encodeToString(bytes, Base64.NO_WRAP)
     }
 
     private fun card(
         question: String,
-        answer: String = "<p id=\"shown\">Answer</p>",
+        answer: String = shownText("Answer"),
         index: Long = 1,
         isAnswerShown: Boolean = false,
     ) = CardDisplay(index, isAnswerShown, question, answer, "card card1", BASE_URL)
 
     private companion object {
         const val BASE_URL = "http://127.0.0.1:1/"
+        const val BLUE = 0xFF1E5AA0.toInt()
+        const val GREEN = 0xFF2E7D32.toInt()
+        const val RED = 0xFFA01E1E.toInt()
+        const val SAMPLE_SIZE = 8
+        const val COLOR_TOLERANCE = 10
+        const val BLEND_STEPS = 50
+        const val SAMPLING_MS = 1500L
+        const val MID_FADE_DELAY_MS = 200L
+        const val CROSSFADE_READY_DELAY_MS = 500L
+        const val ANIMATION_SETTING_DELAY_MS = 500L
 
         val PAINTED_MASK_PIXELS_ARE_PRESENT =
             """
