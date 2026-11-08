@@ -24,10 +24,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 
-/**
- * Flag commands are routed to the ViewModel by [com.ichi2.anki.reviewer.route];
- * see [com.ichi2.anki.reviewer.ReviewerCommandRoutingTest].
- */
+/** Tests [AbstractFlashcardViewer.refreshIfRequired]. Command routing is tested in `ReviewerCommandRoutingTest`. */
 @RunWith(AndroidJUnit4::class)
 class AbstractFlashcardViewerCommandTest : RobolectricTest() {
     companion object {

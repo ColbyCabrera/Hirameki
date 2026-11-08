@@ -47,7 +47,7 @@ class ReviewerControlPreference : ControlPreference {
     private val viewerAction get() = ViewerAction.fromPreferenceKey(key)
 
     override val areGesturesEnabled: Boolean
-        get() = sharedPreferences?.let { GestureProcessor.isEnabled(it) } ?: GestureProcessor.DEFAULT_ENABLED
+        get() = sharedPreferences?.let { GestureProcessor.isEnabledIn(it) } ?: GestureProcessor.DEFAULT_ENABLED
 
     override fun getMappableBindings(): List<ReviewerBinding> = ReviewerBinding.fromPreferenceString(value).toList()
 

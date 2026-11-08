@@ -17,11 +17,17 @@ package com.ichi2.anki.cardviewer
 
 import android.content.SharedPreferences
 import com.ichi2.anki.reviewer.Binding
+import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.GestureMapper
-import com.ichi2.anki.reviewer.ReviewerBinding
 
+/**
+ * Maps a gesture to the command bound to it for the card side being shown.
+ *
+ * @param currentSide the side of the card being shown: [CardSide.QUESTION] or [CardSide.ANSWER]
+ */
 class GestureProcessor(
     private val processor: ViewerCommand.CommandProcessor?,
+    private val currentSide: () -> CardSide,
 ) {
     companion object {
         /** The 'Enable gestures' switch in the controls settings. */
@@ -33,24 +39,18 @@ class GestureProcessor(
          */
         const val DEFAULT_ENABLED = true
 
-        fun isEnabled(preferences: SharedPreferences): Boolean = preferences.getBoolean(PREF_KEY, DEFAULT_ENABLED)
+        fun isEnabledIn(preferences: SharedPreferences): Boolean = preferences.getBoolean(PREF_KEY, DEFAULT_ENABLED)
+
+        /** Taps which are only recognised when 9-point touch is enabled */
+        private val NINE_POINT_TAPS =
+            setOf(Gesture.TAP_TOP_LEFT, Gesture.TAP_TOP_RIGHT, Gesture.TAP_CENTER, Gesture.TAP_BOTTOM_LEFT, Gesture.TAP_BOTTOM_RIGHT)
+
+        /** Restricted to upstream's new study screen */
+        private val MULTI_FINGER_TAPS = setOf(Gesture.TWO_FINGER_TAP, Gesture.THREE_FINGER_TAP, Gesture.FOUR_FINGER_TAP)
     }
 
-    private var gestureDoubleTap: ViewerCommand? = null
-    private var gestureSwipeUp: ViewerCommand? = null
-    private var gestureSwipeDown: ViewerCommand? = null
-    private var gestureSwipeLeft: ViewerCommand? = null
-    private var gestureSwipeRight: ViewerCommand? = null
-    private var gestureTapLeft: ViewerCommand? = null
-    private var gestureTapRight: ViewerCommand? = null
-    private var gestureTapTop: ViewerCommand? = null
-    private var gestureTapBottom: ViewerCommand? = null
-    private var gestureTapTopLeft: ViewerCommand? = null
-    private var gestureTapTopRight: ViewerCommand? = null
-    private var gestureTapCenter: ViewerCommand? = null
-    private var gestureTapBottomLeft: ViewerCommand? = null
-    private var gestureTapBottomRight: ViewerCommand? = null
-    private var gestureShake: ViewerCommand? = null
+    /** The commands bound to each gesture, with the side they apply to, in [ViewerCommand] order */
+    private var bindings: Map<Gesture, List<Pair<ViewerCommand, CardSide>>> = emptyMap()
     private val gestureMapper = GestureMapper()
 
     /**
@@ -61,36 +61,19 @@ class GestureProcessor(
         private set
 
     fun init(preferences: SharedPreferences) {
-        isEnabled = isEnabled(preferences)
-
-        val associatedCommands = HashMap<Gesture, ViewerCommand>()
-        for (command in ViewerCommand.entries) {
-            for (mappableBinding in ReviewerBinding.fromPreference(preferences, command)) {
-                if (mappableBinding.binding is Binding.GestureInput) {
-                    associatedCommands[mappableBinding.binding.gesture] = command
-                }
-            }
-        }
-        gestureDoubleTap = associatedCommands[Gesture.DOUBLE_TAP]
-        gestureSwipeUp = associatedCommands[Gesture.SWIPE_UP]
-        gestureSwipeDown = associatedCommands[Gesture.SWIPE_DOWN]
-        gestureSwipeLeft = associatedCommands[Gesture.SWIPE_LEFT]
-        gestureSwipeRight = associatedCommands[Gesture.SWIPE_RIGHT]
+        isEnabled = isEnabledIn(preferences)
         gestureMapper.init(preferences)
-        gestureTapLeft = associatedCommands[Gesture.TAP_LEFT]
-        gestureTapRight = associatedCommands[Gesture.TAP_RIGHT]
-        gestureTapTop = associatedCommands[Gesture.TAP_TOP]
-        gestureTapBottom = associatedCommands[Gesture.TAP_BOTTOM]
-        gestureShake = associatedCommands[Gesture.SHAKE]
 
         val useCornerTouch = preferences.getBoolean("gestureCornerTouch", false)
-        if (useCornerTouch) {
-            gestureTapTopLeft = associatedCommands[Gesture.TAP_TOP_LEFT]
-            gestureTapTopRight = associatedCommands[Gesture.TAP_TOP_RIGHT]
-            gestureTapCenter = associatedCommands[Gesture.TAP_CENTER]
-            gestureTapBottomLeft = associatedCommands[Gesture.TAP_BOTTOM_LEFT]
-            gestureTapBottomRight = associatedCommands[Gesture.TAP_BOTTOM_RIGHT]
-        }
+        val unsupported = if (useCornerTouch) MULTI_FINGER_TAPS else MULTI_FINGER_TAPS + NINE_POINT_TAPS
+        bindings =
+            ViewerCommand.entries
+                .flatMap { command ->
+                    command.getBindings(preferences).mapNotNull { binding ->
+                        val gesture = (binding.binding as? Binding.GestureInput)?.gesture
+                        if (gesture == null || gesture in unsupported) null else Triple(gesture, command, binding.side)
+                    }
+                }.groupBy(keySelector = { it.first }, valueTransform = { it.second to it.third })
     }
 
     fun onTap(
@@ -98,12 +81,12 @@ class GestureProcessor(
         width: Int,
         posX: Float,
         posY: Float,
-    ): Boolean? {
+    ): Boolean {
         val gesture = gestureMapper.gesture(height, width, posX, posY) ?: return false
         return execute(gesture)
     }
 
-    fun onDoubleTap(): Boolean? = execute(Gesture.DOUBLE_TAP)
+    fun onDoubleTap(): Boolean = execute(Gesture.DOUBLE_TAP)
 
     fun onFling(
         dx: Float,
@@ -113,49 +96,35 @@ class GestureProcessor(
         isSelecting: Boolean,
         isXScrolling: Boolean,
         isYScrolling: Boolean,
-    ): Boolean? {
+    ): Boolean {
         val gesture = gestureMapper.gesture(dx, dy, velocityX, velocityY, isSelecting, isXScrolling, isYScrolling)
         return execute(gesture)
     }
 
-    fun onShake(): Boolean? = execute(Gesture.SHAKE)
-
-    private fun execute(gesture: Gesture?): Boolean? {
-        val command = gesture?.let { mapGestureToCommand(it) } ?: return false
-        return processor?.executeCommand(command, gesture)
-    }
-
-    private fun mapGestureToCommand(gesture: Gesture): ViewerCommand? =
-        when (gesture) {
-            Gesture.SWIPE_UP -> gestureSwipeUp
-            Gesture.SWIPE_DOWN -> gestureSwipeDown
-            Gesture.SWIPE_LEFT -> gestureSwipeLeft
-            Gesture.SWIPE_RIGHT -> gestureSwipeRight
-            Gesture.TAP_TOP -> gestureTapTop
-            Gesture.TAP_TOP_LEFT -> gestureTapTopLeft
-            Gesture.TAP_TOP_RIGHT -> gestureTapTopRight
-            Gesture.TAP_LEFT -> gestureTapLeft
-            Gesture.TAP_CENTER -> gestureTapCenter
-            Gesture.TAP_RIGHT -> gestureTapRight
-            Gesture.TAP_BOTTOM -> gestureTapBottom
-            Gesture.TAP_BOTTOM_LEFT -> gestureTapBottomLeft
-            Gesture.TAP_BOTTOM_RIGHT -> gestureTapBottomRight
-            Gesture.DOUBLE_TAP -> gestureDoubleTap
-            Gesture.SHAKE -> gestureShake
-            // Restricted to the new study screen
-            Gesture.TWO_FINGER_TAP -> null
-            Gesture.THREE_FINGER_TAP -> null
-            Gesture.FOUR_FINGER_TAP -> null
-        }
+    fun onShake(): Boolean = execute(Gesture.SHAKE)
 
     /**
-     * Whether one of the provided gestures is bound
+     * Runs the first command bound to [gesture] for the side being shown, trying the next one if
+     * a command doesn't apply. Matches [com.ichi2.anki.reviewer.BindingMap.onGesture].
+     */
+    private fun execute(gesture: Gesture?): Boolean {
+        val candidates = gesture?.let { bindings[it] } ?: return false
+        val side = currentSide()
+        for ((command, bindingSide) in candidates) {
+            if (bindingSide != CardSide.BOTH && bindingSide != side) continue
+            if (processor?.executeCommand(command, gesture) == true) return true
+        }
+        return false
+    }
+
+    /**
+     * Whether one of the provided gestures is bound, on either side of the card
      * @param gestures the gestures to check
      * @return `false` if none of the gestures are bound. `true` otherwise
      */
     fun isBound(vararg gestures: Gesture): Boolean {
         if (!isEnabled) return false
 
-        return gestures.any { mapGestureToCommand(it) != null }
+        return gestures.any { it in bindings }
     }
 }
