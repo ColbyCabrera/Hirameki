@@ -89,6 +89,19 @@ Instrumented tests in `androidTest/.../reviewer/spike/`, run on a Pixel 9 and a 
 | What happens to templates with top-level `const`/`let` across cards? | Record the behaviour (expected: a redeclaration error, as on desktop). |
 | Does `addWebMessageListener` work with the reviewer's origin? | Ready messages arrive on both devices. |
 
+To run it, connect the devices (all connected devices run in one go) and run:
+
+```sh
+git switch spike/card-rendering
+adb logcat -c   # on each device, or once with one device
+./gradlew :AnkiDroid:connectedPlayDebugAndroidTest \
+    -Pandroid.testInstrumentationRunnerArguments.package=com.ichi2.anki.reviewer.spike
+adb logcat -d -s CardSpike > card-spike-$(adb get-serialno).txt
+```
+
+The tests report rather than assert; they fail only if the page can't load. Gradle uninstalls the
+app afterwards, so logcat is the only output.
+
 **Fallback.** If no capture method passes, swap instantly with no fade, but still with no flash.
 Two persistent WebViews swapped back and forth is a possible alternative for a crossfade
 between cards. It loses invariant 1, and the front and back of a card would be in different pages.
