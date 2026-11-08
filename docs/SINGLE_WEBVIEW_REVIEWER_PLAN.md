@@ -1,6 +1,6 @@
 # Single-WebView Reviewer Plan
 
-**Status**: Phase 0 (spike)
+**Status**: Phase 0 complete; phase 1 next
 **Branch**: `feat/single-webview-reviewer` (integration branch; nothing ships until phase 2 lands)
 **Related**: #135 (flash between cards), #205 (scripts running twice), #143 (renderer loss)
 
@@ -52,7 +52,7 @@ New package `com.ichi2.anki.reviewer.card`:
 | `CardDisplay` | One value in `ReviewerState` describing what to show: token (`cardDisplayIndex` + side), side, HTML, answer HTML, body class, the side's Hirameki style values. |
 | `hirameki-card-page.js` + `CardPage.kt` | The page contract. `show(request)` queues: apply style, then `_showQuestion`/`_showAnswer`, then `ready(token)`. `_updateQA` already waits for fonts, images (capped at 200–800 ms) and MathJax. Per-side styles become CSS custom properties, so a side change doesn't replace a `<style>` that re-imports Google Fonts. `CardPage.kt` builds the scripts and parses messages as pure functions. |
 | `CardWebViewController` | Owns the WebView (through `SafeWebViewLayout`). `suspend fun show(display)` returns on ready or timeout; `run(command)`; zoom reset (upstream's `resetZoom`/`waitForZoomReset`). The ready message uses androidx.webkit's `addWebMessageListener`. |
-| `CardSnapshotter` | Captures the current frame into one reused bitmap. The method is decided in phase 0. |
+| `CardSnapshotter` | Captures the current frame with a Compose `GraphicsLayer` (chosen in phase 0). |
 | `CardTransitionCoordinator` | A pure Kotlin state machine: idle → capturing → swapping → fading. Handles a new card mid-transition, timeouts and the first card (no snapshot). Exposes the overlay bitmap and opacity as `StateFlow`s. Tested with fakes and Turbine. |
 | `CardSurface` | Composable: `AndroidView` with the persistent WebView, plus an `Image` overlay whose opacity is set in `graphicsLayer` (draw phase only, no recomposition per frame). |
 
@@ -89,18 +89,18 @@ Instrumented tests in `androidTest/.../reviewer/spike/`, run on a Pixel 9 and a 
 | What happens to templates with top-level `const`/`let` across cards? | Record the behaviour (expected: a redeclaration error, as on desktop). |
 | Does `addWebMessageListener` work with the reviewer's origin? | Ready messages arrive on both devices. |
 
-To run it, connect the devices (all connected devices run in one go) and run:
+To run it, connect the devices (all connected devices run in one go), leave them unlocked and
+untouched so the test window stays in front, and run:
 
 ```sh
 git switch spike/card-rendering
-adb logcat -c   # on each device, or once with one device
 ./gradlew :AnkiDroid:connectedPlayDebugAndroidTest \
     -Pandroid.testInstrumentationRunnerArguments.package=com.ichi2.anki.reviewer.spike
-adb logcat -d -s CardSpike > card-spike-$(adb get-serialno).txt
 ```
 
-The tests report rather than assert; they fail only if the page can't load. Gradle uninstalls the
-app afterwards, so logcat is the only output.
+The tests report rather than assert; they fail only if the page can't load. Each test's log, with
+its `CardSpike` lines, is saved in
+`AnkiDroid/build/outputs/androidTest-results/connected/debug/flavors/play/<device>/`.
 
 **Fallback.** If no capture method passes, swap instantly with no fade, but still with no flash.
 Two persistent WebViews swapped back and forth is a possible alternative for a crossfade
@@ -139,9 +139,11 @@ The study screen isn't ported; it is built on Fragments and Views, and its core 
 
 - **`sessionStorage`**: works today through `session_storage_polyfill.js` (#131), which survives
   page reloads. With one page it also works natively; keep the polyfill.
-- **JS globals**: shared across sides and cards, as on desktop and upstream's new screen. A template
-  that declares top-level `const`/`let` gets a redeclaration error on the next card. Accepted to
-  match desktop.
+- **JS globals**: shared across sides and cards, as on desktop and upstream's new screen. Upstream
+  passes card HTML to `_showQuestion`/`_showAnswer` unchanged (`CardViewerViewModel`), and
+  `reviewer.js` re-inserts each `<script>` in the global scope. A template that declares top-level
+  `const`/`let` therefore gets a redeclaration error when that script runs again in the page. We
+  match upstream and do not wrap or rewrite template scripts.
 
 ## Verification
 
@@ -154,4 +156,34 @@ The study screen isn't ported; it is built on Fragments and Views, and its core 
 
 ## Phase 0 results
 
-_To be filled in from the spike runs._
+Measured 2026-11-08 on debug builds, WebView 156.0.8078.47: Pixel 9 Pro XL (SDK 37) and Samsung
+SM-P610 (SDK 33, low-end). Debug builds slow the Kotlin and Compose side but not WebView's renderer,
+so capture times are upper bounds; re-measure on a release build in phase 2.
+
+| Capture method | Background | 2D canvas | Excludes floating UI | Pixel p50 / p95 | SM-P610 p50 / p95 | Verdict |
+|---|---|---|---|---|---|---|
+| Software `WebView.draw` | yes | **no** | yes | 9–17 / 27–59 ms | 23 / 35–54 ms | Rejected |
+| `PixelCopy` of the card area | yes | yes | **no** | 6–8 / 9–25 ms | 24–25 / 28–38 ms | Rejected |
+| Compose `GraphicsLayer` | yes | yes | yes | 12–13 / 18–28 ms | 28–31 / 44–79 ms | **Chosen** |
+
+**Capture decision: `GraphicsLayer`.** It is the only method with correct pixels. Its p95 misses the
+16/33 ms targets on these debug runs (n = 15 per card). A capture happens once per tap, before the
+fade starts, so a miss delays the fade rather than dropping frames in it. Text was not sampled
+separately. `<video>` frames are untested and belong to the device matrix.
+
+| Question | Pixel 9 Pro XL | SM-P610 | Result |
+|---|---|---|---|
+| Show to ready, p95 | 21 ms | 55 ms | Pass |
+| Show to visual-state callback, p95 | 34 ms | 84 ms | Pass (≤ 100 ms) |
+| IO masks on 20 sides, no workarounds | 20/20 | 20/20 | Pass; `IO_SETUP_INTERCEPT` and `IO_POST_LOAD_SCRIPT` can go |
+| Top-level `const` on the next card | SyntaxError | SyntaxError | As expected; see "Template compatibility" |
+| `addWebMessageListener` ready messages | arrive | arrive | Pass |
+
+Requirements these runs add:
+
+- **The WebView needs `MATCH_PARENT` layout params.** With the default `WRAP_CONTENT`, `vh` computes
+  to 0. That collapsed the IO container (`max-height: calc(95vh - 40px)`) and made the first spike
+  runs fail. `SafeWebViewLayout` already sets them.
+- **IO masks paint after the visual-state callback** (p95 25 ms Pixel, 45 ms SM-P610; max 64 ms),
+  because `setup()` draws from `requestAnimationFrame`. Ready must wait for them, or the first frames
+  of the fade would reveal the answer under the masks.
