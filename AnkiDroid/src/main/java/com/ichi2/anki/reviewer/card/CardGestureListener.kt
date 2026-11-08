@@ -20,6 +20,8 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.webkit.WebView
 import com.ichi2.anki.reviewer.compose.CardTouchGesture
+import com.ichi2.anki.reviewer.compose.HAS_TEXT_SELECTION_SCRIPT
+import com.ichi2.anki.reviewer.compose.interactiveElementScript
 import com.ichi2.anki.workarounds.SafeWebViewLayout
 import kotlin.math.abs
 
@@ -46,10 +48,18 @@ internal class CardGestureListener(
      */
     private var displayAtTouchDown: CardDisplay? = null
 
+    /**
+     * The card had a text selection when the current touch started. Checked on touch down
+     * because the tap itself clears the selection before the tap is confirmed.
+     */
+    private var hadTextSelection = false
+
     fun onTouchEvent(event: MotionEvent) {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             wasMultiTouch = false
             displayAtTouchDown = currentDisplay()
+            hadTextSelection = false
+            cardLayout.evaluateJavascript(HAS_TEXT_SELECTION_SCRIPT) { hadTextSelection = it == "true" }
         }
         if (event.pointerCount > 1) wasMultiTouch = true
         detector.onTouchEvent(event)
@@ -64,15 +74,15 @@ internal class CardGestureListener(
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-        if (!wasMultiTouch && !isOnInteractiveElement()) {
-            send(CardTouchGesture.Tap(e.x, e.y, cardLayout.width, cardLayout.height))
+        if (!wasMultiTouch) {
+            sendUnlessInteractive(e, CardTouchGesture.Tap(e.x, e.y, cardLayout.width, cardLayout.height))
         }
         return true
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        if (!wasMultiTouch && !isOnInteractiveElement()) {
-            send(CardTouchGesture.DoubleTap)
+        if (!wasMultiTouch) {
+            sendUnlessInteractive(e, CardTouchGesture.DoubleTap)
         }
         return true
     }
@@ -86,7 +96,8 @@ internal class CardGestureListener(
         // #5741: a swipe from the screen edge is a system gesture
         if (e1 == null || wasMultiTouch || isTouchingEdge(e1)) return false
         val now = SystemClock.uptimeMillis()
-        send(
+        sendUnlessInteractive(
+            e1,
             CardTouchGesture.Fling(
                 dx = e2.x - e1.x,
                 dy = e2.y - e1.y,
@@ -111,8 +122,24 @@ internal class CardGestureListener(
             cardLayout.width - e.x < edgeMarginPx ||
             cardLayout.height - e.y < edgeMarginPx
 
-    /** #6141: a tap on a link, a replay button or an input belongs to the card, not to a gesture. */
-    private fun isOnInteractiveElement(): Boolean =
+    /**
+     * Sends [gesture] unless the touch which started at [start] belongs to the card: text was
+     * selected, or it is on a link, a button, an input or another element which handles touches
+     * itself (#6141). The element check runs in the card, so the gesture is sent asynchronously.
+     */
+    private fun sendUnlessInteractive(
+        start: MotionEvent,
+        gesture: CardTouchGesture,
+    ) {
+        if (hadTextSelection || isOnLinkOrInput() || cardLayout.width == 0 || cardLayout.height == 0) return
+        val script = interactiveElementScript(start.x / cardLayout.width, start.y / cardLayout.height)
+        cardLayout.evaluateJavascript(script) { isInteractive ->
+            if (isInteractive != "true" && !hadTextSelection) send(gesture)
+        }
+    }
+
+    /** Checked natively as well, in case the card's JavaScript doesn't run. */
+    private fun isOnLinkOrInput(): Boolean =
         when (cardLayout.hitTestResult?.type) {
             WebView.HitTestResult.SRC_ANCHOR_TYPE,
             WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,

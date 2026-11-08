@@ -59,3 +59,36 @@ fun GestureProcessor.onCardTouchGesture(gesture: CardTouchGesture) {
             )
     }
 }
+
+/** Evaluates to `true` if the card has a text selection. A touch then ends the selection, not a gesture. */
+internal const val HAS_TEXT_SELECTION_SCRIPT = """(() => { const s = document.getSelection(); return !!s && !s.isCollapsed; })();"""
+
+/**
+ * Evaluates to `true` if the touch at ([fractionX], [fractionY]) of the card's width and height
+ * lands on an element which handles touches itself, such as a link, a button or an input.
+ *
+ * Matches `isInteractable` in upstream's `assets/scripts/ankidroid-reviewer.js` (new study screen),
+ * plus `<select>` and `<textarea>`.
+ */
+internal fun interactiveElementScript(
+    fractionX: Float,
+    fractionY: Float,
+): String {
+    val fx = fractionX.coerceIn(0f, 1f)
+    val fy = fractionY.coerceIn(0f, 1f)
+    return """
+        (() => {
+            const vv = window.visualViewport;
+            const x = vv ? vv.offsetLeft + $fx * vv.width : $fx * window.innerWidth;
+            const y = vv ? vv.offsetTop + $fy * vv.height : $fy * window.innerHeight;
+            const interactive = ["A", "BUTTON", "VIDEO", "SUMMARY", "INPUT", "SELECT", "TEXTAREA"];
+            for (let node = document.elementFromPoint(x, y); node && node !== document; node = node.parentNode) {
+                if (interactive.includes(node.nodeName) || node.onclick || node.isContentEditable ||
+                    node.classList?.contains("tappable")) {
+                    return true;
+                }
+            }
+            return false;
+        })();
+        """.trimIndent()
+}
