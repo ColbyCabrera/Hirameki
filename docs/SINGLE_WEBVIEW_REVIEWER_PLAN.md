@@ -1,6 +1,6 @@
 # Single-WebView Reviewer Plan
 
-**Status**: Phases 0–3 implemented; the remaining device checks are listed under phase 3
+**Status**: Phases 0–3 complete
 **Branch**: `feat/single-webview-reviewer` (integration branch; nothing ships until phase 2 lands)
 **Related**: #135 (flash between cards), #205 (scripts running twice), #143 (renderer loss)
 
@@ -141,8 +141,8 @@ take two live WebViews, which is what caused #135.
 - **Autoplay** stays on the state change, as upstream's does. Audio can start a few frames before the
   fade ends. Videos are started by page commands, which already wait for their card.
 
-`FlashcardOnDeviceTest` covers zoom reset, MathJax, IO, very fast rating and renderer loss. Still to
-check by hand: the Modern Anki Template, video autoplay and a `<video>` in the snapshot, type-in
+`FlashcardOnDeviceTest` covers zoom reset, MathJax, IO, very fast rating and renderer loss, and passes
+on both devices. Checked by hand in the app: the #135 deck, the Modern Anki Template, video, type-in
 answer, the whiteboard and a theme switch mid-review. Capture time on a release build is unmeasured.
 
 ## Borrowed from upstream
