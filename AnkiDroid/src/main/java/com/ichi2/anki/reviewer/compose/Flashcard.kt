@@ -159,10 +159,6 @@ fun Flashcard(
         if (stalledShow != showKey) stalledShow = null
     }
 
-    // #205: during the question/answer crossfade both sides are composed, each with its own WebView,
-    // and both see the same command. Only the side fading in runs it, and each command runs once
-    // across every WebView of this card, so a script that isn't idempotent (a user action, "show
-    // hint") neither runs twice nor runs in the page that is going away.
     val commandRunner = remember { FlashcardCommandRunner() }
     val crossfadeTarget = Pair(isAnswerShown, if (isAnswerShown) answerHtml else questionHtml)
 
@@ -171,9 +167,9 @@ fun Flashcard(
         animationSpec = tween(300),
         label = "FlashcardCrossfade",
     ) { (shown, currentHtml) ->
-        val isCrossfadeTarget = shown == crossfadeTarget.first && currentHtml == crossfadeTarget.second
+        val isCrossfadeTarget = (shown to currentHtml) == crossfadeTarget
         val currentIsCrossfadeTarget by rememberUpdatedState(isCrossfadeTarget)
-        val command = javascriptCommand?.takeIf { isCrossfadeTarget && !commandRunner.hasRun(it) }
+        val commandForThisSide = javascriptCommand?.takeIf { isCrossfadeTarget && !commandRunner.hasRun(it) }
         val currentStyle =
             if (shown) bodyLargeStyle else displayLargeStyle.copy(fontWeight = FontWeight.W500)
         val currentPadding = if (shown) 40 else 36
@@ -422,12 +418,9 @@ fun Flashcard(
                                         view.evaluateJavascript(payload.evalScript, null)
                                     }
 
-                                    payload.pendingJavascriptCommand?.let { pending ->
-                                        payload.pendingJavascriptCommand = null
-                                        // a page that finished loading after it started fading out
-                                        // leaves the command to the page fading in
+                                    payload.takePendingCommand()?.let { pending ->
                                         if (currentIsCrossfadeTarget) {
-                                            commandRunner.run(view, pending, currentOnJavascriptCommandConsumed)
+                                            commandRunner.runOnce(view, pending, currentOnJavascriptCommandConsumed)
                                         }
                                     }
                                 }
@@ -478,8 +471,7 @@ fun Flashcard(
                 update = { webView ->
                     webView.settings.mediaPlaybackRequiresUserGesture = !isMediaAutoplayEnabled
                     val currentPayload = webView.tag as? FlashcardPayload
-                    // a page fading out drops a command it was holding until it loads
-                    if (!isCrossfadeTarget) currentPayload?.pendingJavascriptCommand = null
+                    if (!isCrossfadeTarget) currentPayload?.takePendingCommand()
                     val shellChanged =
                         currentPayload?.isNightMode != isNightMode || currentPayload.composeStyle != composeStyle
                     val shouldReload = currentPayload == null || currentPayload.contentKey != contentKey
@@ -493,7 +485,7 @@ fun Flashcard(
                                     isNightMode,
                                     composeStyle,
                                     evalScript,
-                                    pendingJavascriptCommand = command,
+                                    pendingJavascriptCommand = commandForThisSide,
                                 )
                             webView.loadDataWithBaseURL(baseUrl, styledHtml, "text/html", "UTF-8", null)
                         }
@@ -505,31 +497,29 @@ fun Flashcard(
                             currentPayload.evalScript = evalScript
                             val shellScript =
                                 buildShellUpdateScript(isNightMode, bodyClass, composeStyle, evalScript)
-                            if (command != null) currentPayload.pendingJavascriptCommand = command
+                            if (commandForThisSide != null) currentPayload.pendingJavascriptCommand = commandForThisSide
 
                             if (currentPayload.shellLoaded) {
                                 webView.evaluateJavascript(shellScript, null)
-                                currentPayload.pendingJavascriptCommand?.let { pending ->
-                                    currentPayload.pendingJavascriptCommand = null
-                                    commandRunner.run(webView, pending, currentOnJavascriptCommandConsumed)
+                                currentPayload.takePendingCommand()?.let { pending ->
+                                    commandRunner.runOnce(webView, pending, currentOnJavascriptCommandConsumed)
                                 }
                             } else {
                                 // When FlashcardPayload.shellLoaded is false, onPageFinished runs
                                 // FlashcardPayload.pendingShellScript before
                                 // FlashcardPayload.pendingJavascriptCommand. That preserves shell-first
                                 // ordering, while currentOnJavascriptCommandConsumed only runs after the
-                                // command executes and FlashcardCommandRunner records it, which avoids
-                                // replaying it.
+                                // command executes and FlashcardCommandRunner records it so it isn't replayed.
                                 currentPayload.pendingShellScript = shellScript
                             }
                         }
 
-                        command != null -> {
+                        commandForThisSide != null -> {
                             if (currentPayload.shellLoaded) {
-                                currentPayload.pendingJavascriptCommand = null
-                                commandRunner.run(webView, command, currentOnJavascriptCommandConsumed)
+                                currentPayload.takePendingCommand()
+                                commandRunner.runOnce(webView, commandForThisSide, currentOnJavascriptCommandConsumed)
                             } else {
-                                currentPayload.pendingJavascriptCommand = command
+                                currentPayload.pendingJavascriptCommand = commandForThisSide
                             }
                         }
 
@@ -705,18 +695,13 @@ private data class FlashcardShowKey(
     val content: FlashcardContentKey,
 )
 
-/**
- * Runs each [ReviewerJavascriptCommand] once, in whichever of a [Flashcard]'s WebViews claims it
- * first: the side fading in during the crossfade, or the WebView that replaces one whose renderer
- * was lost.
- */
+/** Commands are offered one at a time, so remembering the last one run is enough to run each once. */
 private class FlashcardCommandRunner {
-    /** Commands arrive one at a time and in order: each is consumed before the next is offered. */
     private var lastRunId: Int? = null
 
     fun hasRun(command: ReviewerJavascriptCommand) = command.id == lastRunId
 
-    fun run(
+    fun runOnce(
         webView: WebView,
         command: ReviewerJavascriptCommand,
         onConsumed: (Int) -> Unit,
@@ -738,7 +723,9 @@ private class FlashcardPayload(
     var scriptExecuted: Boolean = false,
     var shellLoaded: Boolean = false,
     var pendingShellScript: String? = null,
-)
+) {
+    fun takePendingCommand() = pendingJavascriptCommand.also { pendingJavascriptCommand = null }
+}
 
 private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js")
 private const val REVIEWER_EXTRAS_CSS_LINK =
