@@ -16,8 +16,8 @@
 package com.ichi2.anki.reviewer.compose
 
 import android.content.SharedPreferences
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -102,10 +102,11 @@ fun Flashcard(
     DisposableEffect(controller) { onDispose { controller.destroy() } }
 
     val surfaceLayer = rememberGraphicsLayer()
+    val motionScheme = MaterialTheme.motionScheme
     val coordinator =
-        remember(controller, surfaceLayer) {
+        remember(controller, surfaceLayer, motionScheme) {
             CardTransitionCoordinator(
-                ComposeCardTransitionStage(controller, surfaceLayer),
+                ComposeCardTransitionStage(controller, surfaceLayer, motionScheme.defaultEffectsSpec()),
                 isCrossfadeEnabled = { Prefs.isCardCrossfadeEnabled },
             )
         }
@@ -141,6 +142,7 @@ fun Flashcard(
 private class ComposeCardTransitionStage(
     private val controller: CardWebViewController,
     private val surfaceLayer: GraphicsLayer,
+    private val fadeSpec: AnimationSpec<Float>,
 ) : CardTransitionStage {
     override val hasShownCard get() = controller.hasShownCard
 
@@ -160,13 +162,11 @@ private class ComposeCardTransitionStage(
 
     override suspend fun awaitShown(display: CardDisplay) = controller.awaitShown(display)
 
-    override suspend fun fade(onOpacity: (Float) -> Unit) =
-        animate(1f, 0f, animationSpec = tween(CROSSFADE_DURATION_MS)) { opacity, _ -> onOpacity(opacity) }
+    override suspend fun fade(onOpacity: (Float) -> Unit) = animate(1f, 0f, animationSpec = fadeSpec) { opacity, _ -> onOpacity(opacity) }
 
     private companion object {
         /** The overlay is composed in the first frame at the latest, and presented by the second. */
         const val FRAMES_FOR_OVERLAY_TO_REACH_SCREEN = 2
-        const val CROSSFADE_DURATION_MS = 300
     }
 }
 

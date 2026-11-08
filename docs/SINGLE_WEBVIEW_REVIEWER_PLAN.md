@@ -124,6 +124,10 @@ swaps instantly.
 blend of the two cards' backgrounds. Its fade tests turn animations back on, because the build runs
 connected tests with `animationsDisabled`. Still to do: measure capture time on a release build.
 
+Known limitation: the outgoing card is a still image, so anything moving on it (particles, GIFs,
+video) freezes while it fades. The freeze lasts as long as the swap plus the fade. Avoiding it would
+take two live WebViews, which is what caused #135.
+
 ### Phase 3: hardening
 
 - After a renderer loss, the last snapshot covers the reload.
