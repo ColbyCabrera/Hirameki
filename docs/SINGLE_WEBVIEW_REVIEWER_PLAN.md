@@ -39,8 +39,9 @@ Every PR must keep these:
 5. **The latest display wins.** Every show request carries a token; a ready message with a
    stale token is ignored.
 6. **Scripts run in the page queue.** Commands (user actions, hints, media) go through
-   `_queueAction` and carry the display token, so they run after the content they target and
-   never on a later card.
+   `_queueAction`, so they run after the card shown before them. The ViewModel clears pending
+   commands on a new card, so none reaches a later one. A command that throws must not reject the
+   queue.
 7. **Composables hold no logic.** They place the WebView and the overlay and read state.
 
 ## Components
@@ -49,9 +50,9 @@ New package `com.ichi2.anki.reviewer.card`:
 
 | Component | Responsibility |
 |---|---|
-| `CardDisplay` | One value in `ReviewerState` describing what to show: token (`cardDisplayIndex` + side), side, HTML, answer HTML, body class, the side's Hirameki style values. |
-| `hirameki-card-page.js` + `CardPage.kt` | The page contract. `show(request)` queues: apply style, then `_showQuestion`/`_showAnswer`, then `ready(token)`. `_updateQA` already waits for fonts, images (capped at 200–800 ms) and MathJax. Per-side styles become CSS custom properties, so a side change doesn't replace a `<style>` that re-imports Google Fonts. `CardPage.kt` builds the scripts and parses messages as pure functions. |
-| `CardWebViewController` | Owns the WebView (through `SafeWebViewLayout`). `suspend fun show(display)` returns on ready or timeout; `run(command)`; zoom reset (upstream's `resetZoom`/`waitForZoomReset`). The ready message uses androidx.webkit's `addWebMessageListener`. |
+| `CardDisplay` | One value derived from `ReviewerState` describing what to show: `cardDisplayIndex`, side, question and answer HTML, body class, base URL. |
+| `CardPage.kt`, `CardPageStyle.kt` | The page contract, as pure functions: the shell, and the scripts that show a card, run a command or update the style. `_updateQA` already waits for fonts, images (capped at 200–800 ms) and MathJax. Per-side styles are CSS rules keyed on a side class passed with the body class, which `reviewer.js` applies in the same step as the content. Phase 2 adds `hirameki-card-page.js`, for the ready message. |
+| `CardWebViewController` | Owns the WebView (through `SafeWebViewLayout`). `update` records the latest display, style and command; the page is brought into step with them once it has loaded. Phase 2 adds waiting for ready (androidx.webkit's `addWebMessageListener`); phase 3 adds zoom reset (upstream's `resetZoom`/`waitForZoomReset`). |
 | `CardSnapshotter` | Captures the current frame with a Compose `GraphicsLayer` (chosen in phase 0). |
 | `CardTransitionCoordinator` | A pure Kotlin state machine: idle → capturing → swapping → fading. Handles a new card mid-transition, timeouts and the first card (no snapshot). Exposes the overlay bitmap and opacity as `StateFlow`s. Tested with fakes and Turbine. |
 | `CardSurface` | Composable: `AndroidView` with the persistent WebView, plus an `Image` overlay whose opacity is set in `graphicsLayer` (draw phase only, no recomposition per frame). |
@@ -110,7 +111,8 @@ between cards. It loses invariant 1, and the front and back of a card would be i
 
 `CardDisplay`, the page contract and `CardWebViewController`, with an instant swap and no fade.
 Delete the `Crossfade`, the IO workarounds, `FlashcardPayload` and `FlashcardCommandRunner`
-(#208), and the double crash-callback handling. This fixes #135.
+(#208), and the double crash-callback handling. This fixes #135. Renderer loss moves to
+`SafeWebViewLayout`, whose crash-loop state a new card now leaves.
 
 ### Phase 2: transition
 

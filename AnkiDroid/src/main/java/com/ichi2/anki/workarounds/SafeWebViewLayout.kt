@@ -18,6 +18,7 @@
 
 package com.ichi2.anki.workarounds
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.SystemClock
 import android.util.AttributeSet
@@ -117,6 +118,9 @@ open class SafeWebViewLayout :
 
     protected open fun createWebView() = WebView(context)
 
+    @get:MainThread
+    val hitTestResult: WebView.HitTestResult? get() = activeWebView?.hitTestResult
+
     init {
         addView(uncheckedWebView, webViewLayoutParams)
     }
@@ -186,6 +190,22 @@ open class SafeWebViewLayout :
     @MainThread
     fun setDownloadListener(listener: DownloadListener?) {
         activeWebView?.setDownloadListener(listener)
+    }
+
+    override fun setOnScrollChangeListener(l: OnScrollChangeListener?) {
+        activeWebView?.setOnScrollChangeListener(l)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun setOnTouchListener(l: OnTouchListener?) {
+        activeWebView?.setOnTouchListener(l)
+    }
+
+    /** New content is not what crashed the renderer: forgets earlier crashes and leaves a crash loop. */
+    @MainThread
+    fun onContentChanged() {
+        lastCrashAt = null
+        if (webViewState == WebViewState.CRASH_LOOP) leaveCrashLoop()
     }
 
     /**
@@ -275,9 +295,13 @@ open class SafeWebViewLayout :
     private fun retryAfterCrashLoop() {
         if (webViewState != WebViewState.CRASH_LOOP) return
         Timber.i("retrying the WebView after its renderer kept crashing")
+        lastCrashAt = SystemClock.elapsedRealtime()
+        leaveCrashLoop()
+    }
+
+    private fun leaveCrashLoop() {
         crashLoopMessage?.let { removeView(it) }
         crashLoopMessage = null
-        lastCrashAt = SystemClock.elapsedRealtime()
         webViewState = WebViewState.DESTROYED_RECOVERABLE
         recreateIfPossible()
     }

@@ -372,10 +372,7 @@ fun ReviewerContent(
                     ) {}
 
                     Flashcard(
-                        baseUrl = state.baseUrl,
-                        questionHtml = state.questionHtml,
-                        answerHtml = state.answerHtml,
-                        bodyClass = state.bodyClass,
+                        display = state.cardDisplay,
                         isMediaAutoplayEnabled = state.isMediaAutoplayEnabled,
                         javascriptCommand = javascriptCommands.firstOrNull(),
                         onJavascriptCommandConsumed = viewModel::onJavascriptCommandConsumed,
@@ -383,9 +380,7 @@ fun ReviewerContent(
                         onLinkClick = {
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))
                         },
-                        isAnswerShown = state.isAnswerShown,
                         toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt(),
-                        cardDisplayIndex = state.cardDisplayIndex,
                     )
 
                     // Whiteboard canvas and toolbar

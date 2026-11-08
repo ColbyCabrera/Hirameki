@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.ichi2.anki.reviewer.card
+
+import android.content.Context
+import com.ichi2.anki.previewer.stdHtml
+import kotlinx.serialization.json.Json
+
+/** The contract with the card page: its HTML, and the scripts which change what it shows. */
+internal object CardPage {
+    const val QUESTION_BODY_CLASS = "hirameki-question"
+    const val ANSWER_BODY_CLASS = "hirameki-answer"
+
+    private val EXTRA_JS_ASSETS = listOf("backend/js/reviewer_extras_bundle.js")
+    private const val STYLE_ELEMENT_ID = "compose-styles"
+    private const val EXTRAS_CSS_LINK =
+        """<link rel="stylesheet" type="text/css" href="file:///android_asset/backend/css/reviewer_extras.css">"""
+
+    fun shellHtml(
+        context: Context,
+        style: CardPageStyle,
+    ): String {
+        val styleElement = """<style id="$STYLE_ELEMENT_ID">${style.css()}</style>"""
+        return stdHtml(context, EXTRA_JS_ASSETS, style.isNightMode)
+            .replace("</head>", "$EXTRAS_CSS_LINK\n$styleElement\n</head>")
+    }
+
+    fun showScript(display: CardDisplay): String =
+        with(display) {
+            if (isAnswerShown) {
+                "_showAnswer(${jsString(answerHtml)}, ${jsString("$bodyClass $ANSWER_BODY_CLASS")});"
+            } else {
+                "_showQuestion(${jsString(questionHtml)}, ${jsString(answerHtml)}, ${jsString("$bodyClass $QUESTION_BODY_CLASS")});"
+            }
+        }
+
+    /** Runs after any queued card has been shown. A throw must not reject the queue, which would stop every later card. */
+    fun commandScript(script: String): String =
+        "_queueAction(() => { try { (0, eval)(${jsString(script)}); } catch (error) { console.error(error); } });"
+
+    fun styleUpdateScript(style: CardPageStyle): String {
+        val documentClass = if (style.isNightMode) "night-mode" else ""
+        val theme = if (style.isNightMode) "dark" else "light"
+        return """
+            document.documentElement.className = ${jsString(documentClass)};
+            document.documentElement.setAttribute("data-bs-theme", ${jsString(theme)});
+            document.getElementById(${jsString(STYLE_ELEMENT_ID)}).textContent = ${jsString(style.css())};
+            """.trimIndent()
+    }
+
+    private fun jsString(value: String) = Json.encodeToString(value)
+}
