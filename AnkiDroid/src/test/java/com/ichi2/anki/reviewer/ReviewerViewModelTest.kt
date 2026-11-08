@@ -18,7 +18,9 @@ package com.ichi2.anki.reviewer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.RobolectricTest
+import com.ichi2.anki.libanki.undoAvailable
 import com.ichi2.anki.servicelayer.NoteService
 import io.mockk.coEvery
 import io.mockk.every
@@ -38,6 +40,7 @@ import org.hamcrest.Matchers.not
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 
 /**
  * Tests for [ReviewerViewModel].
@@ -194,6 +197,25 @@ class ReviewerViewModelTest : RobolectricTest() {
                     script,
                     containsString("test.mp4"),
                 )
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `undo with nothing to undo shows a message instead of crashing`() =
+        runTest {
+            assertFalse(col.undoAvailable(), "a new collection has nothing to undo")
+            val viewModel =
+                ReviewerViewModel(ApplicationProvider.getApplicationContext(), StandardTestDispatcher(testScheduler))
+
+            viewModel.effect.test {
+                viewModel.onEvent(ReviewerEvent.Undo)
+                advanceUntilIdle()
+                advanceRobolectricLooper()
+
+                while (awaitItem() != ReviewerEffect.ShowSnackbar(TR.actionsNothingToUndo())) {
+                    // ignore effects from loading the (empty) queue
+                }
                 cancelAndIgnoreRemainingEvents()
             }
         }

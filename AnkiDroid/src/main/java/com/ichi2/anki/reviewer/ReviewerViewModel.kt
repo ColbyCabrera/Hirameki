@@ -25,6 +25,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import anki.collection.OpChangesAfterUndo
 import anki.scheduler.CardAnswer
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
@@ -45,6 +46,7 @@ import com.ichi2.anki.libanki.Tags
 import com.ichi2.anki.libanki.TemplateManager.TemplateRenderContext.TemplateRenderOutput
 import com.ichi2.anki.libanki.TtsPlayer
 import com.ichi2.anki.libanki.sched.CurrentQueueState
+import com.ichi2.anki.libanki.undoAvailable
 import com.ichi2.anki.multimedia.expandSounds
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.AnkiServer
@@ -551,8 +553,14 @@ class ReviewerViewModel(
 
     private fun undoAction() {
         enqueueCardAction {
-            undoableOp(this@ReviewerViewModel) {
-                undo()
+            // undo() throws if there is nothing to undo, e.g. from a gesture bound to Undo
+            val changes =
+                undoableOp(this@ReviewerViewModel) {
+                    if (undoAvailable()) undo() else OpChangesAfterUndo.getDefaultInstance()
+                }
+            if (changes.operation.isEmpty()) {
+                _effect.emit(ReviewerEffect.ShowSnackbar(TR.actionsNothingToUndo()))
+                return@enqueueCardAction
             }
             loadCardSuspend()
         }
