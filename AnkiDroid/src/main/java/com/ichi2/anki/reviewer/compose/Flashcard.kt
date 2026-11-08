@@ -151,6 +151,7 @@ fun Flashcard(
     // or the same card again after a rating) gets a fresh attempt.
     val showKey = remember(cardDisplayIndex, contentKey) { FlashcardShowKey(cardDisplayIndex, contentKey) }
     val currentShowKey by rememberUpdatedState(showKey)
+    val currentIsAnswerShown by rememberUpdatedState(isAnswerShown)
     var crashedShow by remember { mutableStateOf<FlashcardShowKey?>(null) }
     var stalledShow by remember { mutableStateOf<FlashcardShowKey?>(null) }
     LaunchedEffect(showKey) {
@@ -441,7 +442,12 @@ fun Flashcard(
                                 }
                             }
 
-                        val gestureListener = CardGestureListener(this) { currentOnGesture(it) }
+                        val gestureListener =
+                            CardGestureListener(
+                                webView = this,
+                                currentDisplay = { currentShowKey to currentIsAnswerShown },
+                                onGesture = { currentOnGesture(it) },
+                            )
                         setOnScrollChangeListener { _, scrollX, scrollY, oldScrollX, oldScrollY ->
                             gestureListener.onScrollChanged(scrollX - oldScrollX, scrollY - oldScrollY)
                         }
@@ -555,6 +561,8 @@ fun Flashcard(
  */
 private class CardGestureListener(
     private val webView: WebView,
+    /** Identifies the card and side being shown, see [displayAtTouchDown]. */
+    private val currentDisplay: () -> Any,
     private val onGesture: (CardTouchGesture) -> Unit,
 ) : GestureDetector.SimpleOnGestureListener() {
     private val detector = GestureDetector(webView.context, this)
@@ -565,8 +573,17 @@ private class CardGestureListener(
     /** A second finger touched during the current gesture, e.g. pinch-to-zoom. */
     private var wasMultiTouch = false
 
+    /**
+     * The card and side shown when the touch started. A single tap is only confirmed after the
+     * double tap timeout, by which time an answer button may have moved on to the next card.
+     */
+    private var displayAtTouchDown: Any? = null
+
     fun onTouchEvent(event: MotionEvent) {
-        if (event.actionMasked == MotionEvent.ACTION_DOWN) wasMultiTouch = false
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            wasMultiTouch = false
+            displayAtTouchDown = currentDisplay()
+        }
         if (event.pointerCount > 1) wasMultiTouch = true
         detector.onTouchEvent(event)
     }
@@ -581,14 +598,14 @@ private class CardGestureListener(
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
         if (!wasMultiTouch && !isOnInteractiveElement()) {
-            onGesture(CardTouchGesture.Tap(e.x, e.y, webView.width, webView.height))
+            send(CardTouchGesture.Tap(e.x, e.y, webView.width, webView.height))
         }
         return true
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
         if (!wasMultiTouch && !isOnInteractiveElement()) {
-            onGesture(CardTouchGesture.DoubleTap)
+            send(CardTouchGesture.DoubleTap)
         }
         return true
     }
@@ -602,7 +619,7 @@ private class CardGestureListener(
         // #5741: a swipe from the screen edge is a system gesture
         if (e1 == null || wasMultiTouch || isTouchingEdge(e1)) return false
         val now = SystemClock.uptimeMillis()
-        onGesture(
+        send(
             CardTouchGesture.Fling(
                 dx = e2.x - e1.x,
                 dy = e2.y - e1.y,
@@ -613,6 +630,12 @@ private class CardGestureListener(
             ),
         )
         return false
+    }
+
+    /** Sends [gesture] unless the card or side changed since the touch started. */
+    private fun send(gesture: CardTouchGesture) {
+        if (currentDisplay() != displayAtTouchDown) return
+        onGesture(gesture)
     }
 
     private fun isTouchingEdge(e: MotionEvent): Boolean =
