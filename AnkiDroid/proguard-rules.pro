@@ -37,6 +37,11 @@
 # -keep class androidx.concurrent.futures.** { *; }
 -dontwarn androidx.concurrent.futures.**
 
+# #23084: A Parcelable's class name is written into the Parcel. The system persists Parcels across app updates
+# (ex. the extras of a PendingIntent held by AlarmManager), and R8 renames classes differently in each build,
+# so a stored name could refer to a different, non-Parcelable class after an update
+-keepnames class com.ichi2.** implements android.os.Parcelable
+
 # Ignore unused packages
 -dontwarn javax.naming.**
 -dontwarn org.ietf.jgss.**
