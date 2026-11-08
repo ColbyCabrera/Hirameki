@@ -234,7 +234,11 @@ abstract class AbstractFlashcardViewer :
     /**
      * Gesture Allocation
      */
-    protected val gestureProcessor = GestureProcessor(this)
+    protected val gestureProcessor = GestureProcessor(this) { shownCardSide }
+
+    /** The side of the card being shown, which decides the side-specific bindings that apply */
+    protected open val shownCardSide: CardSide
+        get() = CardSide.fromAnswer(displayAnswer)
 
     // needs to be lateinit due to a reliance on Context
 
@@ -556,14 +560,12 @@ abstract class AbstractFlashcardViewer :
             return true
         }
 
-        // Subclasses other than 'Reviewer' have not been set up with Gestures/KeyPresses
-        // so hardcode this functionality for now.
-        // This is in onKeyDown to match the gesture processor in the Reviewer
+        // Space and Enter show the answer even without a key binding. This goes through
+        // executeCommand so the Compose Reviewer handles it in its ViewModel; it returns false
+        // if the answer is already shown, so the key falls through.
         val isShowAnswerKey =
             keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
         if (isShowAnswerKey && currentFocus?.onCheckIsTextEditor() != true) {
-            // Routed as a command so the Compose Reviewer can show the answer through its ViewModel.
-            // Returns false if the answer is already shown.
             if (executeCommand(ViewerCommand.SHOW_ANSWER)) {
                 return true
             }
@@ -863,7 +865,7 @@ abstract class AbstractFlashcardViewer :
         prefShowTopbar = preferences.getBoolean("showTopbar", true)
         largeAnswerButtons = preferences.getBoolean("showLargeAnswerButtons", false)
         doubleTapTimeInterval = Prefs.doubleTapInterval
-        gesturesEnabled = GestureProcessor.isEnabled(preferences)
+        gesturesEnabled = GestureProcessor.isEnabledIn(preferences)
         if (gesturesEnabled) {
             gestureProcessor.init(preferences)
         }
@@ -1269,6 +1271,13 @@ abstract class AbstractFlashcardViewer :
         ReadText.stopTts()
     }
 
+    /**
+     * The legacy WebView implementation of each command.
+     *
+     * The Compose [Reviewer] sends most commands to its ViewModel first (see
+     * [com.ichi2.anki.reviewer.route]), so in production only the commands it leaves unrouted get
+     * here. The other branches are still used by the test viewers in the unit tests.
+     */
     override fun executeCommand(
         which: ViewerCommand,
         fromGesture: Gesture?,

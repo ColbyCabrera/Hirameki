@@ -75,6 +75,7 @@ import com.ichi2.anki.pages.DeckOptions
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.ActionButtons
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
+import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.CommandRoute
 import com.ichi2.anki.reviewer.FullScreenMode.Companion.isFullScreenReview
 import com.ichi2.anki.reviewer.ReviewerConstants
@@ -289,6 +290,10 @@ open class Reviewer :
     internal fun onCardTouchGesture(gesture: CardTouchGesture) {
         gestureProcessor.onCardTouchGesture(gesture)
     }
+
+    /** The Compose reviewer tracks the shown side in its ViewModel, not in `displayAnswer`. */
+    override val shownCardSide: CardSide
+        get() = CardSide.fromAnswer(viewModel.state.value.isAnswerShown)
 
     override fun onResume() {
         super.onResume()
