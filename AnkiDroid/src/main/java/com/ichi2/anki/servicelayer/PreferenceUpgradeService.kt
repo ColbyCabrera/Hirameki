@@ -40,6 +40,7 @@ import com.ichi2.anki.browser.CardBrowserColumn.REVIEWS
 import com.ichi2.anki.browser.CardBrowserColumn.SFLD
 import com.ichi2.anki.browser.CardBrowserColumn.TAGS
 import com.ichi2.anki.cardviewer.Gesture
+import com.ichi2.anki.cardviewer.GestureProcessor
 import com.ichi2.anki.cardviewer.ViewerCommand
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.libanki.Consts
@@ -132,6 +133,7 @@ object PreferenceUpgradeService {
                     yield(UpgradeDoubleTapTimeout())
                     yield(RemoveHostNum())
                     yield(UpgradeHideAnswerButtons())
+                    yield(ResetGesturesEnabled())
                 }
 
             /** Returns a list of preference upgrade classes which have not been applied */
@@ -737,6 +739,16 @@ object PreferenceUpgradeService {
                     putBoolean("showAnswerButtons", !value)
                 }
             }
+        }
+
+        /**
+         * #185: the "Enable gestures" switch was hidden but still attached to the controls screen,
+         * which saved its old default (`false`) for everyone who opened it. That is also the only
+         * screen where gestures can be assigned, so the saved value is never a user choice.
+         * Clear it so the new default ([GestureProcessor.DEFAULT_ENABLED]) applies.
+         */
+        internal class ResetGesturesEnabled : PreferenceUpgrade(25) {
+            override fun upgrade(preferences: SharedPreferences) = preferences.edit { remove(GestureProcessor.PREF_KEY) }
         }
     }
 }

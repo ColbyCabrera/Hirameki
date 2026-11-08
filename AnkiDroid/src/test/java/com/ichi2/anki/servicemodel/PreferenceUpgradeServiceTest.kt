@@ -20,6 +20,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
+import com.ichi2.anki.cardviewer.GestureProcessor
 import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.noteeditor.CustomToolbarButton
 import com.ichi2.anki.preferences.sharedPrefs
@@ -36,7 +37,9 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Locale
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class PreferenceUpgradeServiceTest : RobolectricTest() {
@@ -172,6 +175,16 @@ class PreferenceUpgradeServiceTest : RobolectricTest() {
         prefs.edit { putBoolean(RemovedPreferences.SYNC_FETCHES_MEDIA, false) }
         PreferenceUpgrade.UpgradeFetchMedia().performUpgrade(prefs)
         assertThat(prefs.getString("syncFetchMedia", null), equalTo("never"))
+    }
+
+    @Test
+    fun `saved 'Enable gestures' value is cleared so the new default applies`() {
+        prefs.edit { putBoolean(GestureProcessor.PREF_KEY, false) }
+
+        PreferenceUpgrade.ResetGesturesEnabled().performUpgrade(prefs)
+
+        assertFalse(prefs.contains(GestureProcessor.PREF_KEY))
+        assertTrue(GestureProcessor.isEnabledIn(prefs))
     }
 
     @Test
