@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2022 Ankitects Pty Ltd <http://apps.ankiweb.net>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki
 
 import android.content.Intent
 import android.net.Uri
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.withStarted
 import anki.collection.OpChangesOnly
 import anki.import_export.ImportAnkiPackageRequest
 import anki.search.SearchNode
@@ -64,6 +66,9 @@ suspend fun FragmentActivity.searchInBrowser(input: ByteArray): ByteArray {
             putExtra("search_query", searchString)
             putExtra("all_decks", true)
         }
-    startActivity(starterIntent)
+    // Collection access can suspend past onStop, so wait until the activity is visible again.
+    withStarted {
+        startActivity(starterIntent)
+    }
     return input
 }
