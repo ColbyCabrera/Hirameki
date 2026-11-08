@@ -53,7 +53,7 @@ class FlashcardJavascriptCommandTest : RobolectricTest() {
     fun `a command runs once`() {
         showFlashcard()
         val webView = singleWebView()
-        finishLoading(webView)
+        simulatePageLoaded(webView)
 
         command = USER_ACTION
         composeTestRule.waitForIdle()
@@ -65,14 +65,12 @@ class FlashcardJavascriptCommandTest : RobolectricTest() {
     @Test
     fun `a command sent during the crossfade runs only in the page fading in`() {
         showFlashcard()
-        finishLoading(singleWebView())
-        val (question, answer) = startShowingAnswer()
-        finishLoading(answer)
+        simulatePageLoaded(singleWebView())
+        val (question, answer) = showAnswerAndPauseMidCrossfade()
+        simulatePageLoaded(answer)
 
         command = USER_ACTION
-        // recompose both sides without finishing the crossfade
-        Snapshot.sendApplyNotifications()
-        composeTestRule.mainClock.advanceTimeByFrame()
+        recomposeMidCrossfade()
 
         assertThat(shadowOf(answer).lastEvaluatedJavascript, equalTo(USER_ACTION.script))
         assertThat(shadowOf(question).lastEvaluatedJavascript, not(equalTo(USER_ACTION.script)))
@@ -83,16 +81,14 @@ class FlashcardJavascriptCommandTest : RobolectricTest() {
     fun `a command waiting for the question page to load runs only in the answer page`() {
         showFlashcard()
         val question = singleWebView()
-        // sent before the question page finished loading: it waits for the page
         command = USER_ACTION
         composeTestRule.waitForIdle()
-        assertThat(consumed, hasSize(0))
+        assertThat("waits for the page to load", consumed, hasSize(0))
 
-        val (fadingOut, answer) = startShowingAnswer()
+        val (fadingOut, answer) = showAnswerAndPauseMidCrossfade()
         assertThat(fadingOut, equalTo(question))
-        // the question page finishes loading while it fades out
-        finishLoading(question)
-        finishLoading(answer)
+        simulatePageLoaded(question)
+        simulatePageLoaded(answer)
 
         assertThat(shadowOf(question).lastEvaluatedJavascript, not(equalTo(USER_ACTION.script)))
         assertThat(shadowOf(answer).lastEvaluatedJavascript, equalTo(USER_ACTION.script))
@@ -121,33 +117,38 @@ class FlashcardJavascriptCommandTest : RobolectricTest() {
         }
     }
 
-    /** Shows the answer and pauses a few frames into the 300ms crossfade: (question, answer) WebViews. */
-    private fun startShowingAnswer(): Pair<WebView, WebView> {
+    private data class CrossfadingWebViews(
+        val question: WebView,
+        val answer: WebView,
+    )
+
+    private fun showAnswerAndPauseMidCrossfade(): CrossfadingWebViews {
         val question = singleWebView()
         composeTestRule.mainClock.autoAdvance = false
         isAnswerShown = true
-        // schedule the recomposition now: the paused clock only runs frames
-        Snapshot.sendApplyNotifications()
-        repeat(3) { composeTestRule.mainClock.advanceTimeByFrame() }
-        val crossfading = webViewsNow()
+        repeat(3) { recomposeMidCrossfade() }
+        val crossfading = webViewsWithoutWaitingForIdle()
         assertThat("the question and answer WebViews", crossfading, hasSize(2))
-        return question to crossfading.single { it !== question }
+        return CrossfadingWebViews(question, answer = crossfading.single { it !== question })
     }
 
-    /** Robolectric doesn't load pages: deliver the callback a real WebView sends once loaded. */
-    private fun finishLoading(webView: WebView) {
+    private fun recomposeMidCrossfade() {
+        Snapshot.sendApplyNotifications()
+        composeTestRule.mainClock.advanceTimeByFrame()
+    }
+
+    private fun simulatePageLoaded(webView: WebView) {
         composeTestRule.runOnUiThread { webView.webViewClient.onPageFinished(webView, BASE_URL) }
     }
 
     private fun singleWebView(): WebView {
         composeTestRule.waitForIdle()
-        val webViews = webViewsNow()
+        val webViews = webViewsWithoutWaitingForIdle()
         assertThat("exactly one card WebView", webViews, hasSize(1))
         return webViews.single()
     }
 
-    /** Without waiting for idle, which would let a running crossfade finish. */
-    private fun webViewsNow(): List<WebView> {
+    private fun webViewsWithoutWaitingForIdle(): List<WebView> {
         val found = mutableListOf<WebView>()
         composeTestRule.runOnUiThread { collectWebViews(composeTestRule.activity.window.decorView, found) }
         return found
