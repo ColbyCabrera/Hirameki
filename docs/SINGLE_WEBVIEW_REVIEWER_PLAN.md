@@ -1,6 +1,6 @@
 # Single-WebView Reviewer Plan
 
-**Status**: Phases 0–2 complete; phase 3 next
+**Status**: Phases 0–3 implemented; the remaining device checks are listed under phase 3
 **Branch**: `feat/single-webview-reviewer` (integration branch; nothing ships until phase 2 lands)
 **Related**: #135 (flash between cards), #205 (scripts running twice), #143 (renderer loss)
 
@@ -130,10 +130,20 @@ take two live WebViews, which is what caused #135.
 
 ### Phase 3: hardening
 
-- After a renderer loss, the last snapshot covers the reload.
-- Zoom reset per card; autoplay when the side is actually shown, not on the state change.
-- Theme changes applied in place.
-- The device matrix below.
+- **Zoom** resets on every new card or side, as upstream does. The page's queue waits for the reset,
+  with a time limit so that a reset the renderer can't finish cannot stop later cards.
+- **Night mode classes** come from the page's current theme. The ViewModel outlives an Activity
+  recreation, so a class stored with the card went stale when the system theme changed mid-review.
+- **Renderer loss** during a transition stays covered, because the overlay remains until the card is
+  back. With no transition running there is no snapshot to show: one cannot be taken once the
+  renderer is gone, and keeping one of every card would cost a capture and a screen-sized bitmap per
+  card for a rare event. The theme colour shows for the reload.
+- **Autoplay** stays on the state change, as upstream's does. Audio can start a few frames before the
+  fade ends. Videos are started by page commands, which already wait for their card.
+
+`FlashcardOnDeviceTest` covers zoom reset, MathJax, IO, very fast rating and renderer loss. Still to
+check by hand: the Modern Anki Template, video autoplay and a `<video>` in the snapshot, type-in
+answer, the whiteboard and a theme switch mid-review. Capture time on a release build is unmeasured.
 
 ## Borrowed from upstream
 

@@ -23,6 +23,7 @@ data class CardDisplay(
     val isAnswerShown: Boolean,
     val questionHtml: String,
     val answerHtml: String,
+    /** Without the night mode classes, which follow the theme of the page rather than the card. */
     val bodyClass: String,
     val baseUrl: String,
 ) {

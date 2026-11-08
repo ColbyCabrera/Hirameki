@@ -19,6 +19,9 @@
     const MASK_DRAW_LIMIT_MS = 500;
     // requestAnimationFrame stops while the page is hidden, which must not stop the card queue
     const FRAME_WAIT_LIMIT_MS = 200;
+    // A reset the renderer cannot finish must not stop the card queue
+    const ZOOM_RESET_LIMIT_MS = 300;
+    const ZOOM_TOLERANCE = 0.001;
 
     let masksDrawn = Promise.resolve();
 
@@ -39,12 +42,31 @@
         };
     }
 
+    function visualViewportReaches(scale) {
+        const viewport = window.visualViewport;
+        return new Promise(resolve => {
+            function onResize() {
+                if (Math.abs(viewport.scale - scale) >= ZOOM_TOLERANCE) return;
+                viewport.removeEventListener("resize", onResize);
+                resolve();
+            }
+            viewport.addEventListener("resize", onResize);
+            // The reset may have finished before this queued action runs
+            onResize();
+        });
+    }
+
     if (globalThis.anki?.imageOcclusion) {
         anki.imageOcclusion.setup = reportingMaskDrawing(anki.imageOcclusion.setup);
         anki.setupImageCloze = anki.imageOcclusion.setup;
     }
 
     globalThis.hirameki = {
+        /** Holds later cards until a native zoom reset to the page scale has reached the renderer. */
+        awaitZoomReset(scale) {
+            _queueAction(() => Promise.race([visualViewportReaches(scale), delay(ZOOM_RESET_LIMIT_MS)]));
+        },
+
         /** Tells the app once the card shown before this call has been laid out and painted. */
         reportWhenShown(token) {
             _queueAction(async () => {

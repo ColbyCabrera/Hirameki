@@ -51,7 +51,7 @@ class CardPageTest {
     @Test
     fun `the question passes the answer for preloading, and the question side class`() {
         assertThat(
-            CardPage.showScript(question, token = 7),
+            CardPage.showScript(question, isNightMode = false, token = 7),
             equalTo("""_showQuestion("<p>Q</p>", "<p>A</p>", "card card1 hirameki-question"); hirameki.reportWhenShown(7);"""),
         )
     }
@@ -59,7 +59,7 @@ class CardPageTest {
     @Test
     fun `the answer passes the answer side class`() {
         assertThat(
-            CardPage.showScript(question.copy(isAnswerShown = true), token = 8),
+            CardPage.showScript(question.copy(isAnswerShown = true), isNightMode = false, token = 8),
             equalTo("""_showAnswer("<p>A</p>", "card card1 hirameki-answer"); hirameki.reportWhenShown(8);"""),
         )
     }
@@ -69,9 +69,25 @@ class CardPageTest {
         val html = """<script>let a = "b";</script>"""
 
         assertThat(
-            CardPage.showScript(question.copy(questionHtml = html), token = 1),
+            CardPage.showScript(question.copy(questionHtml = html), isNightMode = false, token = 1),
             containsString(""""<script>let a = \"b\";</script>""""),
         )
+    }
+
+    @Test
+    fun `night mode comes from the page's theme, not the card`() {
+        assertThat(
+            CardPage.showScript(question, isNightMode = true, token = 1),
+            containsString(""""card card1 hirameki-question nightMode night_mode""""),
+        )
+    }
+
+    @Test
+    fun `a theme change updates the card already on the page`() {
+        val script = CardPage.styleUpdateScript(style.copy(isNightMode = true))
+
+        assertThat(script, containsString("""classList.toggle("nightMode", true)"""))
+        assertThat(script, containsString("""classList.toggle("night_mode", true)"""))
     }
 
     @Test

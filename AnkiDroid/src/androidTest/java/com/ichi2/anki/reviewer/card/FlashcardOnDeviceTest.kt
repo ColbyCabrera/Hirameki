@@ -224,6 +224,76 @@ class FlashcardOnDeviceTest {
             assertThat(samples.filter { it.isCloseTo(themeSurfaceColor) }, empty())
         }
 
+    @Test
+    fun aNewCardResetsPinchZoom() =
+        runBlocking {
+            awaitShownText("Question")
+            awaitPageScaleSettled()
+            onMain { requireWebView().zoomBy(2f) }
+            awaitScriptResult("visualViewport.scale > 1.5", "true")
+
+            show(card(shownText("Next"), index = 2))
+
+            awaitShownText("Next")
+            awaitScriptResult("Math.abs(visualViewport.scale - 1) < 0.01", "true")
+        }
+
+    @Test
+    fun aZoomResetThatNeverFinishesDoesNotStopLaterCards() =
+        runBlocking {
+            awaitShownText("Question")
+
+            evaluate("hirameki.awaitZoomReset(5)")
+            show(card(shownText("Next"), index = 2))
+
+            awaitShownText("Next")
+        }
+
+    @Test
+    fun mathIsTypesetOnEveryCard() =
+        runBlocking {
+            awaitShownText("Question")
+
+            for (index in 2L..3L) {
+                show(card("<p id=\"shown\">Math $index</p>\\(x^$index\\)", index = index))
+                awaitShownText("Math $index")
+                awaitScriptResult("document.querySelector('#qa mjx-container') !== null", "true")
+            }
+        }
+
+    @Test
+    fun theCardComesBackAfterARendererLoss() =
+        runBlocking {
+            awaitShownText("Question")
+            awaitCrossfadeReady()
+
+            crashRendererAndAwaitReplacement { }
+
+            awaitShownText("Question")
+            show(card(shownText("Next"), index = 2))
+            awaitShownText("Next")
+        }
+
+    @Test
+    fun aRendererLossDuringTheSwapEndsOnTheNewCard() =
+        runBlocking {
+            awaitShownText("Question")
+            awaitCrossfadeReady()
+
+            crashRendererAndAwaitReplacement { show(card(shownText("Next"), index = 2)) }
+
+            awaitShownText("Next")
+        }
+
+    private suspend fun crashRendererAndAwaitReplacement(whileCrashing: suspend () -> Unit) {
+        val crashed = onMain { requireWebView() }
+        whileCrashing()
+        onMain { crashed.loadUrl("chrome://crash") }
+        withTimeout(10.seconds) {
+            while (onMain { findWebView(activity.window.decorView) }.let { it == null || it === crashed }) delay(16)
+        }
+    }
+
     /** The build disables animations for connected tests, and the runner restores the setting afterwards. */
     private suspend fun enableAnimations() {
         InstrumentationRegistry
@@ -265,11 +335,16 @@ class FlashcardOnDeviceTest {
 
     private suspend fun evaluate(script: String): String =
         onMain {
-            val webView = findWebView(activity.window.decorView)!!
+            val webView = requireWebView()
             suspendCancellableCoroutine { continuation ->
                 webView.evaluateJavascript(script) { continuation.resume(it ?: "null") }
             }
         }
+
+    private fun requireWebView() = findWebView(activity.window.decorView)!!
+
+    /** The first layout can still change the scale, which would read as the user's zoom. */
+    private suspend fun awaitPageScaleSettled() = awaitScriptResult("Math.abs(visualViewport.scale - 1) < 0.01", "true")
 
     private fun findWebView(view: View): WebView? =
         view as? WebView

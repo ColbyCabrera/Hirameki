@@ -24,6 +24,7 @@ import kotlinx.serialization.json.Json
 internal object CardPage {
     const val QUESTION_BODY_CLASS = "hirameki-question"
     const val ANSWER_BODY_CLASS = "hirameki-answer"
+    private val NIGHT_MODE_BODY_CLASSES = listOf("nightMode", "night_mode")
 
     /** The object the page reports through, see `hirameki-card-page.js`. */
     const val BRIDGE_NAME = "hiramekiCardBridge"
@@ -44,18 +45,24 @@ internal object CardPage {
 
     fun showScript(
         display: CardDisplay,
+        isNightMode: Boolean,
         token: Int,
     ): String {
+        val themeClasses = if (isNightMode) NIGHT_MODE_BODY_CLASSES.joinToString(" ", prefix = " ") else ""
         val show =
             with(display) {
                 if (isAnswerShown) {
-                    "_showAnswer(${jsString(answerHtml)}, ${jsString("$bodyClass $ANSWER_BODY_CLASS")});"
+                    "_showAnswer(${jsString(answerHtml)}, ${jsString("$bodyClass $ANSWER_BODY_CLASS$themeClasses")});"
                 } else {
-                    "_showQuestion(${jsString(questionHtml)}, ${jsString(answerHtml)}, ${jsString("$bodyClass $QUESTION_BODY_CLASS")});"
+                    val classes = jsString("$bodyClass $QUESTION_BODY_CLASS$themeClasses")
+                    "_showQuestion(${jsString(questionHtml)}, ${jsString(answerHtml)}, $classes);"
                 }
             }
         return "$show hirameki.reportWhenShown($token);"
     }
+
+    /** Holds later cards in the page's queue until the visual viewport is at [pageScale]. */
+    fun awaitZoomResetScript(pageScale: Float): String = "hirameki.awaitZoomReset($pageScale);"
 
     /** Runs after any queued card has been shown. A throw must not reject the queue, which would stop every later card. */
     fun commandScript(script: String): String =
@@ -64,10 +71,15 @@ internal object CardPage {
     fun styleUpdateScript(style: CardPageStyle): String {
         val documentClass = if (style.isNightMode) "night-mode" else ""
         val theme = if (style.isNightMode) "dark" else "light"
+        val bodyClassToggles =
+            NIGHT_MODE_BODY_CLASSES.joinToString(" ") {
+                "document.body.classList.toggle(${jsString(it)}, ${style.isNightMode});"
+            }
         return """
             document.documentElement.className = ${jsString(documentClass)};
             document.documentElement.setAttribute("data-bs-theme", ${jsString(theme)});
             document.getElementById(${jsString(STYLE_ELEMENT_ID)}).textContent = ${jsString(style.css())};
+            $bodyClassToggles
             """.trimIndent()
     }
 

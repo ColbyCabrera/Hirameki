@@ -38,6 +38,7 @@ import com.ichi2.anki.workarounds.SafeWebViewLayout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
+import kotlin.math.abs
 
 /**
  * Owns the one WebView of the card page, and keeps its page in step with the latest [update].
@@ -69,6 +70,9 @@ class CardWebViewController(
     private var pageDisplay: CardDisplay? = null
     private var pageStyle: CardPageStyle? = null
     private var pageToken = 0
+
+    private var initialScale = 1f
+    private var scale = 1f
 
     /** The WebView's listener for the page's reports, reset with the WebView. */
     private var reportOrigin: String? = null
@@ -142,16 +146,27 @@ class CardWebViewController(
             pageStyle = it
             layout.evaluateJavascript(CardPage.styleUpdateScript(it))
         }
-        display?.takeIf { it != pageDisplay }?.let {
-            pageDisplay = it
-            pageToken++
-            layout.evaluateJavascript(CardPage.showScript(it, pageToken))
-        }
+        display?.takeIf { it != pageDisplay }?.let(::showOnPage)
         command?.takeIf { it.id != lastRunCommandId && display == target }?.let {
             lastRunCommandId = it.id
             layout.evaluateJavascript(CardPage.commandScript(it.script))
             onCommandRun(it.id)
         }
+    }
+
+    private fun showOnPage(display: CardDisplay) {
+        pageDisplay = display
+        pageToken++
+        resetZoom()
+        layout.evaluateJavascript(CardPage.showScript(display, isNightMode = pageStyle?.isNightMode == true, pageToken))
+    }
+
+    /** The page waits for the reset, because `zoomBy` finishing later would undo the scroll to the answer. */
+    private fun resetZoom() {
+        val factor = initialScale / scale
+        if (abs(factor - 1f) < ZOOM_TOLERANCE) return
+        layout.evaluateJavascript(CardPage.awaitZoomResetScript(initialScale / context.resources.displayMetrics.density))
+        layout.zoomBy(factor.coerceIn(MIN_ZOOM_FACTOR, MAX_ZOOM_FACTOR))
     }
 
     private fun listenForPageReports(baseUrl: String) {
@@ -175,6 +190,8 @@ class CardWebViewController(
 
     @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     private fun configureWebView() {
+        initialScale = if (isRobolectric) 1f else layout.scale
+        scale = initialScale
         with(layout) {
             settings.javaScriptEnabled = true
             settings.allowFileAccess = true
@@ -228,6 +245,14 @@ class CardWebViewController(
             return true
         }
 
+        override fun onScaleChanged(
+            view: WebView,
+            oldScale: Float,
+            newScale: Float,
+        ) {
+            scale = newScale
+        }
+
         override fun onPageStarted(
             view: WebView,
             url: String?,
@@ -258,5 +283,10 @@ class CardWebViewController(
 
     private companion object {
         val SCHEMES_LOADED_BY_WEBVIEW = setOf("file", "data", "javascript", "blob")
+        const val ZOOM_TOLERANCE = 0.001f
+
+        /** The range `WebView.zoomBy` accepts. */
+        const val MIN_ZOOM_FACTOR = 0.01f
+        const val MAX_ZOOM_FACTOR = 100f
     }
 }
