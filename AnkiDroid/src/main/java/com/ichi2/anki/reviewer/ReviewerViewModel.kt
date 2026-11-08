@@ -951,6 +951,8 @@ class ReviewerViewModel(
     private fun setFlag(flag: Int) {
         viewModelScope.launch {
             val card = currentCard ?: return@launch
+            // Update the in-memory card too: the JS API reads `cardFlag` from it
+            card.setUserFlag(flag)
             withCol {
                 this.setUserFlagForCards(listOf(card.id), flag)
             }
