@@ -54,6 +54,7 @@ import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThan
 import org.hamcrest.Matchers.not
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -77,7 +78,6 @@ class FlashcardOnDeviceTest {
 
     @Before
     fun showFlashcard() {
-        enableAnimations()
         activityRule.scenario.onActivity {
             activity = it
             it.setContent {
@@ -120,6 +120,11 @@ class FlashcardOnDeviceTest {
 
             assertThat(evaluate("document.getElementById('shown').clientHeight").toInt(), greaterThan(0))
         }
+
+    @After
+    fun disableAnimationsAgain() {
+        setAnimatorDurationScale(0)
+    }
 
     @Test
     fun aCommandRunsOnceAfterItsCard() =
@@ -168,6 +173,7 @@ class FlashcardOnDeviceTest {
     @Test
     fun crossfadingBetweenCardsBlendsOnlyTheirBackgrounds() =
         runBlocking {
+            startSlowMotion()
             show(card(backgroundCard(BLUE, "Blue"), index = 2))
             awaitShownText("Blue")
             awaitCrossfadeReady()
@@ -180,6 +186,7 @@ class FlashcardOnDeviceTest {
     @Test
     fun crossfadingBetweenSidesBlendsOnlyTheirBackgrounds() =
         runBlocking {
+            startSlowMotion()
             val question = backgroundCard(BLUE, "Blue")
             val answer = backgroundCard(GREEN, "Green")
             show(card(question, answer = answer, index = 2))
@@ -194,6 +201,7 @@ class FlashcardOnDeviceTest {
     @Test
     fun aNewCardDuringTheFadeNeverShowsTheThemeColour() =
         runBlocking {
+            startSlowMotion()
             show(card(backgroundCard(BLUE, "Blue"), index = 2))
             awaitShownText("Blue")
             awaitCrossfadeReady()
@@ -254,17 +262,25 @@ class FlashcardOnDeviceTest {
         }
     }
 
-    /**
-     * The build disables animations for connected tests, and the runner restores the setting afterwards.
-     * Reading to the end waits for the command to finish.
-     */
-    private fun enableAnimations() =
+    /** Compose starts watching this setting at a composition's first animation, so one fade has to run first. */
+    private suspend fun startSlowMotion() {
+        awaitShownText("Question")
+        awaitCrossfadeReady()
+        show(card(shownText("Warm-up"), index = WARM_UP_INDEX))
+        awaitShownText("Warm-up")
+        awaitCrossfadeReady()
+        setAnimatorDurationScale(SLOW_MOTION)
+        delay(ANIMATION_SETTING_DELAY_MS)
+    }
+
+    /** Reading to the end waits for the command to finish. */
+    private fun setAnimatorDurationScale(scale: Int) =
         ParcelFileDescriptor
             .AutoCloseInputStream(
                 InstrumentationRegistry
                     .getInstrumentation()
                     .uiAutomation
-                    .executeShellCommand("settings put global animator_duration_scale 1"),
+                    .executeShellCommand("settings put global animator_duration_scale $scale"),
             ).use { it.readBytes() }
 
     private fun assertBlendsOnly(
@@ -404,11 +420,16 @@ class FlashcardOnDeviceTest {
         const val SAMPLE_SIZE = 8
         const val COLOR_TOLERANCE = 10
         const val BLEND_STEPS = 50
-        const val SAMPLING_MS = 1500L
 
-        /** Sampling flat out on the main thread would starve the fade of frames. */
+        /** Gives a fade many frames even on a software-rendered emulator. */
+        const val SLOW_MOTION = 10
+        const val WARM_UP_INDEX = 100L
+        const val ANIMATION_SETTING_DELAY_MS = 500L
+        const val SAMPLING_MS = 4000L
+
+        /** Leaves the main thread free to draw the fade. */
         const val SAMPLE_INTERVAL_MS = 8L
-        const val MID_FADE_DELAY_MS = 200L
+        const val MID_FADE_DELAY_MS = 800L
         const val CROSSFADE_READY_DELAY_MS = 1500L
 
         val PAINTED_MASK_PIXELS_ARE_PRESENT =
