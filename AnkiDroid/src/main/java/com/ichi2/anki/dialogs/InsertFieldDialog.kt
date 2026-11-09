@@ -38,6 +38,7 @@ import com.ichi2.utils.title
  */
 class InsertFieldDialog : DialogFragment() {
     private lateinit var fieldList: List<String>
+    private val requestKey get() = requireArguments().getString(KEY_REQUEST_KEY)!!
 
     /**
      * A dialog for inserting field in card template editor
@@ -75,7 +76,7 @@ class InsertFieldDialog : DialogFragment() {
 
     private fun selectFieldAndClose(textView: TextView) {
         parentFragmentManager.setFragmentResult(
-            REQUEST_FIELD_INSERT,
+            requestKey,
             Bundle().apply { putString(KEY_INSERTED_FIELD, textView.text.toString()) },
         )
         dismiss()
@@ -83,20 +84,22 @@ class InsertFieldDialog : DialogFragment() {
 
     companion object {
         /**
-         * Other fragments sharing the activity can use this with
-         * [androidx.fragment.app.FragmentManager.setFragmentResultListener] to get a result back.
-         */
-        const val REQUEST_FIELD_INSERT = "request_field_insert"
-
-        /**
          * This fragment requires that a list of fields names to be passed in.
          */
         const val KEY_INSERTED_FIELD = "key_inserted_field"
         private const val KEY_FIELD_ITEMS = "key_field_items"
+        private const val KEY_REQUEST_KEY = "key_request_key"
 
-        fun newInstance(fieldItems: List<String>): InsertFieldDialog =
+        fun newInstance(
+            fieldItems: List<String>,
+            requestKey: String,
+        ): InsertFieldDialog =
             InsertFieldDialog().apply {
-                arguments = Bundle().apply { putStringArrayList(KEY_FIELD_ITEMS, ArrayList(fieldItems)) }
+                arguments =
+                    Bundle().apply {
+                        putStringArrayList(KEY_FIELD_ITEMS, ArrayList(fieldItems))
+                        putString(KEY_REQUEST_KEY, requestKey)
+                    }
             }
     }
 }
