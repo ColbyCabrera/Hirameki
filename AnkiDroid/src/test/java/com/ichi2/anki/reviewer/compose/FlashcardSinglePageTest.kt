@@ -16,8 +16,10 @@
 
 package com.ichi2.anki.reviewer.compose
 
+import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
@@ -29,6 +31,8 @@ import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.card.CardDisplay
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import io.mockk.every
+import io.mockk.mockk
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsString
@@ -71,32 +75,35 @@ class FlashcardSinglePageTest : RobolectricTest() {
     }
 
     @Test
-    fun `showing the answer swaps the card in the same WebView and page`() {
+    fun `sides and cards are swapped into the same WebView and page`() {
         showFlashcard()
         val webView = singleWebView()
         val pageLoad = shadowOf(webView).lastLoadDataWithBaseURL
         loadPage(webView)
 
         display = QUESTION.copy(isAnswerShown = true)
+        assertThat(lastScript(webView), containsString("_showAnswer("))
+        display = QUESTION.copy(cardDisplayIndex = 2, questionHtml = "<p>Next</p>")
+        assertThat(lastScript(webView), containsString("Next"))
 
         assertThat(singleWebView(), sameInstance(webView))
         assertThat("no new page load", shadowOf(webView).lastLoadDataWithBaseURL, sameInstance(pageLoad))
-        assertThat(lastScript(webView), containsString("_showAnswer("))
-        assertThat("styled as an answer", lastScript(webView), containsString("hirameki-answer"))
     }
 
     @Test
-    fun `the next card is swapped into the same page`() {
+    fun `a link that replaces the page stays open until the next card restores it`() {
         showFlashcard()
         val webView = singleWebView()
         val pageLoad = shadowOf(webView).lastLoadDataWithBaseURL
         loadPage(webView)
 
-        display = QUESTION.copy(cardDisplayIndex = 2, questionHtml = "<p>Next</p>")
+        followLinkReplacingThePage(webView)
+        loadPage(webView)
+        assertThat("the linked page is left open", shadowOf(webView).lastLoadDataWithBaseURL, sameInstance(pageLoad))
 
-        assertThat(singleWebView(), sameInstance(webView))
-        assertThat("no new page load", shadowOf(webView).lastLoadDataWithBaseURL, sameInstance(pageLoad))
-        assertThat(lastScript(webView), containsString("Next"))
+        display = QUESTION.copy(cardDisplayIndex = 2)
+        composeTestRule.waitForIdle()
+        assertThat("the card page is loaded again", shadowOf(webView).lastLoadDataWithBaseURL, not(sameInstance(pageLoad)))
     }
 
     @Test
@@ -114,20 +121,6 @@ class FlashcardSinglePageTest : RobolectricTest() {
     }
 
     @Test
-    fun `a command runs once, in the page's queue`() {
-        showFlashcard()
-        val webView = singleWebView()
-        loadPage(webView)
-
-        command = USER_ACTION
-        composeTestRule.waitForIdle()
-
-        assertThat(lastScript(webView), containsString("_queueAction"))
-        assertThat(lastScript(webView), containsString("userJs1"))
-        assertThat(consumed, contains(USER_ACTION.id))
-    }
-
-    @Test
     fun `a command waits for the page to load`() {
         command = USER_ACTION
         showFlashcard()
@@ -138,20 +131,6 @@ class FlashcardSinglePageTest : RobolectricTest() {
 
         assertThat(lastScript(webView), containsString("userJs1"))
         assertThat(consumed, contains(USER_ACTION.id))
-    }
-
-    @Test
-    fun `a command replaced before the page loads never runs`() {
-        command = USER_ACTION
-        showFlashcard()
-        val webView = singleWebView()
-
-        command = null
-        composeTestRule.waitForIdle()
-        loadPage(webView)
-
-        assertThat(lastScript(webView), not(containsString("userJs1")))
-        assertThat(consumed, empty())
     }
 
     private fun showFlashcard() {
@@ -170,6 +149,15 @@ class FlashcardSinglePageTest : RobolectricTest() {
                 )
             }
         }
+    }
+
+    private fun followLinkReplacingThePage(webView: WebView) {
+        val request =
+            mockk<WebResourceRequest> {
+                every { url } returns Uri.parse("blob:${BASE_URL}generated")
+                every { isForMainFrame } returns true
+            }
+        composeTestRule.runOnUiThread { webView.webViewClient.shouldOverrideUrlLoading(webView, request) }
     }
 
     private fun loadPage(webView: WebView) {

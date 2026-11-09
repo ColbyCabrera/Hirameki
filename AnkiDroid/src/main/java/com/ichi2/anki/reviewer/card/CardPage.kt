@@ -69,14 +69,13 @@ internal object CardPage {
         "_queueAction(() => { try { (0, eval)(${jsString(script)}); } catch (error) { console.error(error); } });"
 
     fun styleUpdateScript(style: CardPageStyle): String {
-        val documentClass = if (style.isNightMode) "night-mode" else ""
         val theme = if (style.isNightMode) "dark" else "light"
         val bodyClassToggles =
             NIGHT_MODE_BODY_CLASSES.joinToString(" ") {
                 "document.body.classList.toggle(${jsString(it)}, ${style.isNightMode});"
             }
         return """
-            document.documentElement.className = ${jsString(documentClass)};
+            document.documentElement.classList.toggle("night-mode", ${style.isNightMode});
             document.documentElement.setAttribute("data-bs-theme", ${jsString(theme)});
             document.getElementById(${jsString(STYLE_ELEMENT_ID)}).textContent = ${jsString(style.css())};
             $bodyClassToggles

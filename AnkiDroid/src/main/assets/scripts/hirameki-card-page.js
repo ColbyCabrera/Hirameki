@@ -42,14 +42,18 @@
         };
     }
 
-    function visualViewportReaches(scale) {
+    function zoomResetFinished(scale) {
         const viewport = window.visualViewport;
         return new Promise(resolve => {
-            function onResize() {
-                if (Math.abs(viewport.scale - scale) >= ZOOM_TOLERANCE) return;
+            const finish = () => {
+                clearTimeout(limit);
                 viewport.removeEventListener("resize", onResize);
                 resolve();
-            }
+            };
+            const onResize = () => {
+                if (Math.abs(viewport.scale - scale) < ZOOM_TOLERANCE) finish();
+            };
+            const limit = setTimeout(finish, ZOOM_RESET_LIMIT_MS);
             viewport.addEventListener("resize", onResize);
             // The reset may have finished before this queued action runs
             onResize();
@@ -64,7 +68,7 @@
     globalThis.hirameki = {
         /** Holds later cards until a native zoom reset to the page scale has reached the renderer. */
         awaitZoomReset(scale) {
-            _queueAction(() => Promise.race([visualViewportReaches(scale), delay(ZOOM_RESET_LIMIT_MS)]));
+            _queueAction(() => zoomResetFinished(scale));
         },
 
         /** Tells the app once the card shown before this call has been laid out and painted. */

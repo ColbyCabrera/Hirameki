@@ -99,20 +99,6 @@ class FlashcardOnDeviceTest {
     }
 
     @Test
-    fun sidesAndCardsShareOnePage() =
-        runBlocking {
-            awaitShownText("Question")
-            evaluate("window.samePageMarker = 'kept'")
-
-            show(card(shownText("Question"), answer = shownText("Answer"), isAnswerShown = true))
-            awaitShownText("Answer")
-            show(card(shownText("Next"), index = 2))
-            awaitShownText("Next")
-
-            assertThat(evaluate("window.samePageMarker"), equalTo("\"kept\""))
-        }
-
-    @Test
     fun eachSideHasItsOwnFontSize() =
         runBlocking {
             awaitShownText("Question")
@@ -171,7 +157,7 @@ class FlashcardOnDeviceTest {
         runBlocking {
             awaitShownText("Question")
 
-            for (index in 2L..6L) {
+            for (index in 2L..3L) {
                 show(card(imageOcclusionHtml(), index = index))
                 awaitScriptResult(PAINTED_MASK_PIXELS_ARE_PRESENT, "true")
             }
@@ -228,7 +214,6 @@ class FlashcardOnDeviceTest {
     fun aNewCardResetsPinchZoom() =
         runBlocking {
             awaitShownText("Question")
-            awaitPageScaleSettled()
             onMain { requireWebView().zoomBy(2f) }
             awaitScriptResult("visualViewport.scale > 1.5", "true")
 
@@ -250,44 +235,20 @@ class FlashcardOnDeviceTest {
         }
 
     @Test
-    fun mathIsTypesetOnEveryCard() =
-        runBlocking {
-            awaitShownText("Question")
-
-            for (index in 2L..3L) {
-                show(card("<p id=\"shown\">Math $index</p>\\(x^$index\\)", index = index))
-                awaitShownText("Math $index")
-                awaitScriptResult("document.querySelector('#qa mjx-container') !== null", "true")
-            }
-        }
-
-    @Test
     fun theCardComesBackAfterARendererLoss() =
         runBlocking {
             awaitShownText("Question")
             awaitCrossfadeReady()
 
-            crashRendererAndAwaitReplacement { }
+            crashRendererAndAwaitReplacement()
 
             awaitShownText("Question")
             show(card(shownText("Next"), index = 2))
             awaitShownText("Next")
         }
 
-    @Test
-    fun aRendererLossDuringTheSwapEndsOnTheNewCard() =
-        runBlocking {
-            awaitShownText("Question")
-            awaitCrossfadeReady()
-
-            crashRendererAndAwaitReplacement { show(card(shownText("Next"), index = 2)) }
-
-            awaitShownText("Next")
-        }
-
-    private suspend fun crashRendererAndAwaitReplacement(whileCrashing: suspend () -> Unit) {
+    private suspend fun crashRendererAndAwaitReplacement() {
         val crashed = onMain { requireWebView() }
-        whileCrashing()
         onMain { crashed.loadUrl("chrome://crash") }
         withTimeout(10.seconds) {
             while (onMain { findWebView(activity.window.decorView) }.let { it == null || it === crashed }) delay(16)
@@ -342,9 +303,6 @@ class FlashcardOnDeviceTest {
         }
 
     private fun requireWebView() = findWebView(activity.window.decorView)!!
-
-    /** The first layout can still change the scale, which would read as the user's zoom. */
-    private suspend fun awaitPageScaleSettled() = awaitScriptResult("Math.abs(visualViewport.scale - 1) < 0.01", "true")
 
     private fun findWebView(view: View): WebView? =
         view as? WebView

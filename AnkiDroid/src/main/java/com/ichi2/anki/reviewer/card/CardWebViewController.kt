@@ -71,6 +71,9 @@ class CardWebViewController(
     private var pageStyle: CardPageStyle? = null
     private var pageToken = 0
 
+    /** The card a link navigated away from. The linked page stays until the next card or side. */
+    private var cardLeftByNavigation: CardDisplay? = null
+
     private var initialScale = 1f
     private var scale = 1f
 
@@ -132,6 +135,7 @@ class CardWebViewController(
         style: CardPageStyle,
     ) {
         isPageLoaded = false
+        cardLeftByNavigation = null
         pageBaseUrl = baseUrl
         pageDisplay = null
         pageStyle = style
@@ -142,6 +146,10 @@ class CardWebViewController(
 
     private fun syncPage() {
         if (!isPageLoaded) return
+        if (cardLeftByNavigation != null) {
+            restoreShellForNextCard()
+            return
+        }
         style?.takeIf { it != pageStyle }?.let {
             pageStyle = it
             layout.evaluateJavascript(CardPage.styleUpdateScript(it))
@@ -152,6 +160,13 @@ class CardWebViewController(
             layout.evaluateJavascript(CardPage.commandScript(it.script))
             onCommandRun(it.id)
         }
+    }
+
+    private fun restoreShellForNextCard() {
+        if (display == cardLeftByNavigation) return
+        val baseUrl = pageBaseUrl ?: return
+        val style = style ?: return
+        loadPage(baseUrl, style)
     }
 
     private fun showOnPage(display: CardDisplay) {
@@ -238,7 +253,10 @@ class CardWebViewController(
             view: WebView,
             request: WebResourceRequest,
         ): Boolean {
-            if (request.url.scheme in SCHEMES_LOADED_BY_WEBVIEW) return false
+            if (request.url.scheme in SCHEMES_LOADED_BY_WEBVIEW) {
+                if (request.isForMainFrame) cardLeftByNavigation = pageDisplay
+                return false
+            }
             val url = request.url.toString()
             if (isLinkWithinPage(url)) return false
             onLinkClick(url)

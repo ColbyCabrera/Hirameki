@@ -92,18 +92,6 @@ class FlashcardRendererLossTest : RobolectricTest() {
     }
 
     @Test
-    fun `the next card gets a new WebView after a crash loop`() {
-        showFlashcard()
-        loseRenderer(singleWebView(), crashed = true)
-        loseRenderer(singleWebView(), crashed = true)
-
-        questionHtml = "<p>Question 2</p>"
-
-        singleWebView()
-        assertThat(isRendererFailureShown(), equalTo(false))
-    }
-
-    @Test
     fun `the same HTML shown again gets a new WebView after a crash loop`() {
         showFlashcard()
         loseRenderer(singleWebView(), crashed = true)

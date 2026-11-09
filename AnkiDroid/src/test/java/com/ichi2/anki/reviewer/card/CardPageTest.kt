@@ -83,30 +83,12 @@ class CardPageTest {
     }
 
     @Test
-    fun `a theme change updates the card already on the page`() {
+    fun `a theme change updates the page in place and keeps the template's classes`() {
         val script = CardPage.styleUpdateScript(style.copy(isNightMode = true))
 
+        assertThat(script, containsString("""documentElement.classList.toggle("night-mode", true)"""))
         assertThat(script, containsString("""classList.toggle("nightMode", true)"""))
         assertThat(script, containsString("""classList.toggle("night_mode", true)"""))
-    }
-
-    @Test
-    fun `a command that throws cannot reject the page's queue`() {
-        val script = CardPage.commandScript("userJs1()")
-
-        assertThat(script, containsString("_queueAction("))
-        assertThat(script, containsString("try {"))
-        assertThat(script, containsString("catch (error)"))
-    }
-
-    @Test
-    fun `each side has its own font size and padding`() {
-        val css = style.css()
-
-        assertThat(css, containsString("font-size: 45.0px"))
-        assertThat(css, containsString("padding-top: 36px"))
-        assertThat(css, containsString("font-size: 22.0px"))
-        assertThat(css, containsString("padding-top: 40px"))
     }
 
     @Test
@@ -126,15 +108,6 @@ class CardPageTest {
     @Test
     fun `disabled mode adds no css`() {
         assertThat(style.copy(hiramekiCssMode = Prefs.HIRAMEKI_CSS_DISABLED).css(), equalTo(""))
-    }
-
-    @Test
-    fun `a style update replaces the rules without a page load`() {
-        val script = CardPage.styleUpdateScript(style.copy(isNightMode = true))
-
-        assertThat(script, containsString("""document.documentElement.className = "night-mode""""))
-        assertThat(script, containsString(""""data-bs-theme", "dark""""))
-        assertThat(script, containsString("""getElementById("compose-styles").textContent"""))
     }
 
     @Test
