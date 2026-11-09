@@ -77,7 +77,6 @@ import com.ichi2.anki.dialogs.DeckSelectionDialog
 import com.ichi2.anki.dialogs.DeckSelectionDialog.DeckSelectionListener
 import com.ichi2.anki.dialogs.DiscardChangesDialog
 import com.ichi2.anki.dialogs.InsertFieldDialog
-import com.ichi2.anki.dialogs.InsertFieldDialog.Companion.REQUEST_FIELD_INSERT
 import com.ichi2.anki.libanki.CardTemplates
 import com.ichi2.anki.libanki.Collection
 import com.ichi2.anki.libanki.Note
@@ -820,7 +819,7 @@ open class CardTemplateEditor :
         )
         fun showInsertFieldDialog() {
             templateEditor.fieldNames?.let { fieldNames ->
-                templateEditor.showDialogFragment(InsertFieldDialog.newInstance(fieldNames))
+                templateEditor.showDialogFragment(InsertFieldDialog.newInstance(fieldNames, insertFieldRequestKey))
             }
         }
 
@@ -914,14 +913,8 @@ open class CardTemplateEditor :
                     }
                 },
             )
-            parentFragmentManager.setFragmentResultListener(
-                REQUEST_FIELD_INSERT,
-                viewLifecycleOwner,
-            ) { key, bundle ->
-                if (key == REQUEST_FIELD_INSERT) {
-                    // this is guaranteed to be non null, as we put a non null value on the other side
-                    insertField(bundle.getString(InsertFieldDialog.KEY_INSERTED_FIELD)!!)
-                }
+            parentFragmentManager.setFragmentResultListener(insertFieldRequestKey, viewLifecycleOwner) { _, bundle ->
+                insertField(bundle.getString(InsertFieldDialog.KEY_INSERTED_FIELD)!!)
             }
             setupMenu()
         }
@@ -1345,6 +1338,10 @@ open class CardTemplateEditor :
             // COULD_BE_BETTER: Lots of duplicate code could call this. Hold off on the refactor until #5151 goes in.
             return requireArguments().getInt(CARD_INDEX)
         }
+
+        @get:VisibleForTesting
+        val insertFieldRequestKey
+            get() = "request_field_insert_${getCurrentCardTemplateIndex()}"
 
         private suspend fun deletionWouldOrphanNote(
             tempModel: CardTemplateNotetype?,

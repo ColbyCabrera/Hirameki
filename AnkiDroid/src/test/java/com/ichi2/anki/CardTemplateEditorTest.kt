@@ -24,6 +24,7 @@ import android.widget.EditText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.CardTemplateEditor.CardTemplateFragment.CardTemplate
 import com.ichi2.anki.CollectionManager.withCol
+import com.ichi2.anki.dialogs.InsertFieldDialog
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.libanki.testutils.ext.addNote
 import com.ichi2.anki.model.SelectableDeck
@@ -47,6 +48,46 @@ import kotlin.test.junit5.JUnit5Asserter.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class CardTemplateEditorTest : RobolectricTest() {
+    @Test
+    fun `an inserted field goes to the card type which asked for it`() {
+        val reversedNoteType = getCurrentDatabaseNoteTypeCopy("Basic (and reversed card)")
+        val intent = Intent(Intent.ACTION_VIEW).putExtra("noteTypeId", reversedNoteType.id)
+        val editorController =
+            Robolectric
+                .buildActivity(CardTemplateEditor::class.java, intent)
+                .create()
+                .start()
+                .resume()
+                .visible()
+        saveControllerForCleanup(editorController)
+        val editor = editorController.get()
+
+        fun showCard(index: Int) {
+            editor.viewPager.currentItem = index
+            advanceRobolectricLooper()
+        }
+
+        fun currentTemplateText() = editor.findViewById<EditText>(R.id.editor_editText).text.toString()
+
+        advanceRobolectricLooper()
+        showCard(1)
+        val secondCardBefore = currentTemplateText()
+        showCard(0)
+
+        val firstCard = editor.currentFragment!!
+        firstCard.showInsertFieldDialog()
+        advanceRobolectricLooper()
+        editor.supportFragmentManager.setFragmentResult(
+            firstCard.insertFieldRequestKey,
+            Bundle().apply { putString(InsertFieldDialog.KEY_INSERTED_FIELD, "Back") },
+        )
+        advanceRobolectricLooper()
+
+        assertTrue("first card has the field", currentTemplateText().contains("{{Back}}"))
+        showCard(1)
+        assertEquals("second card is unchanged", secondCardBefore, currentTemplateText())
+    }
+
     @Test
     @Throws(Exception::class)
     fun testEditTemplateContents() {
