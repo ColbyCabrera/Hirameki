@@ -32,6 +32,7 @@ import com.ichi2.anki.libanki.Consts
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.libanki.emptyCids
+import com.ichi2.anki.libanki.undoLabel
 import com.ichi2.testutils.ensureOpsExecuted
 import io.mockk.every
 import io.mockk.mockk
@@ -1060,5 +1061,20 @@ class DeckPickerViewModelTest : RobolectricTest() {
 
             val updatedCollapsed = col.decks.getLegacy(parentId)!!.collapsed
             assertThat("backend state toggled", updatedCollapsed, equalTo(!initialCollapsed))
+        }
+
+    @Test
+    fun `toggleDeckExpand - leaves the undo queue alone`() =
+        runTest {
+            col.decks.id("Parent::Child")
+            addBasicNote()
+            viewModel.updateDeckList()
+            advanceUntilIdle()
+            val undoLabelBefore = col.undoLabel()
+
+            viewModel.toggleDeckExpand(col.decks.id("Parent"))
+            advanceUntilIdle()
+
+            assertThat(col.undoLabel(), equalTo(undoLabelBefore))
         }
 }
