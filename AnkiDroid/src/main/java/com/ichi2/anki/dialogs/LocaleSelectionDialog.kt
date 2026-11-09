@@ -18,6 +18,8 @@ package com.ichi2.anki.dialogs
 import android.app.Dialog
 import android.os.Bundle
 import android.view.ViewGroup
+import android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM
+import android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
 import android.view.inputmethod.EditorInfo
 import android.widget.Filter
 import android.widget.Filterable
@@ -69,6 +71,8 @@ class LocaleSelectionDialog : AnalyticsDialogFragment() {
     ) {
         super.setupDialog(dialog, style)
         dialog.window?.let { resizeWhenSoftInputShown(it) }
+        // without this, the search field never brings up the keyboard: https://stackoverflow.com/a/10133603/
+        dialog.window?.clearFlags(FLAG_NOT_FOCUSABLE or FLAG_ALT_FOCUSABLE_IM)
     }
 
     private fun Toolbar.setupMenuWith(adapter: LocaleListAdapter) {
