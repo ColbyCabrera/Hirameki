@@ -20,6 +20,7 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.util.Base64
 import android.view.PixelCopy
 import android.view.View
@@ -76,6 +77,7 @@ class FlashcardOnDeviceTest {
 
     @Before
     fun showFlashcard() {
+        enableAnimations()
         activityRule.scenario.onActivity {
             activity = it
             it.setContent {
@@ -166,7 +168,6 @@ class FlashcardOnDeviceTest {
     @Test
     fun crossfadingBetweenCardsBlendsOnlyTheirBackgrounds() =
         runBlocking {
-            enableAnimations()
             show(card(backgroundCard(BLUE, "Blue"), index = 2))
             awaitShownText("Blue")
             awaitCrossfadeReady()
@@ -179,7 +180,6 @@ class FlashcardOnDeviceTest {
     @Test
     fun crossfadingBetweenSidesBlendsOnlyTheirBackgrounds() =
         runBlocking {
-            enableAnimations()
             val question = backgroundCard(BLUE, "Blue")
             val answer = backgroundCard(GREEN, "Green")
             show(card(question, answer = answer, index = 2))
@@ -194,7 +194,6 @@ class FlashcardOnDeviceTest {
     @Test
     fun aNewCardDuringTheFadeNeverShowsTheThemeColour() =
         runBlocking {
-            enableAnimations()
             show(card(backgroundCard(BLUE, "Blue"), index = 2))
             awaitShownText("Blue")
             awaitCrossfadeReady()
@@ -255,15 +254,18 @@ class FlashcardOnDeviceTest {
         }
     }
 
-    /** The build disables animations for connected tests, and the runner restores the setting afterwards. */
-    private suspend fun enableAnimations() {
-        InstrumentationRegistry
-            .getInstrumentation()
-            .uiAutomation
-            .executeShellCommand("settings put global animator_duration_scale 1")
-            .close()
-        delay(ANIMATION_SETTING_DELAY_MS)
-    }
+    /**
+     * The build disables animations for connected tests, and the runner restores the setting afterwards.
+     * Reading to the end waits for the command to finish.
+     */
+    private fun enableAnimations() =
+        ParcelFileDescriptor
+            .AutoCloseInputStream(
+                InstrumentationRegistry
+                    .getInstrumentation()
+                    .uiAutomation
+                    .executeShellCommand("settings put global animator_duration_scale 1"),
+            ).use { it.readBytes() }
 
     private fun assertBlendsOnly(
         samples: List<Int>,
@@ -402,8 +404,7 @@ class FlashcardOnDeviceTest {
         const val BLEND_STEPS = 50
         const val SAMPLING_MS = 1500L
         const val MID_FADE_DELAY_MS = 200L
-        const val CROSSFADE_READY_DELAY_MS = 500L
-        const val ANIMATION_SETTING_DELAY_MS = 500L
+        const val CROSSFADE_READY_DELAY_MS = 1500L
 
         val PAINTED_MASK_PIXELS_ARE_PRESENT =
             """
