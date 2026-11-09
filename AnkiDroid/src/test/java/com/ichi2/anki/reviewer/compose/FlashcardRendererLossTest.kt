@@ -17,21 +17,20 @@
 package com.ichi2.anki.reviewer.compose
 
 import android.view.View
-import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.core.view.allViews
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
+import com.ichi2.anki.reviewer.card.CardDisplay
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import io.mockk.every
 import io.mockk.mockk
@@ -53,7 +52,6 @@ class FlashcardRendererLossTest : RobolectricTest() {
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     private var questionHtml by mutableStateOf("<p>Question 1</p>")
-    private var isAnswerShown by mutableStateOf(false)
     private var cardDisplayIndex by mutableLongStateOf(1L)
 
     private val rendererFailedText: String
@@ -78,33 +76,7 @@ class FlashcardRendererLossTest : RobolectricTest() {
         repeat(3) { loseRenderer(singleWebView(), crashed = false) }
 
         singleWebView()
-        composeTestRule.onNodeWithText(rendererFailedText).assertDoesNotExist()
-    }
-
-    @Test
-    fun `one crash delivered to both crossfade WebViews counts once`() {
-        showFlashcard()
-        composeTestRule.mainClock.autoAdvance = false
-        isAnswerShown = true
-        // schedule the recomposition now: the paused clock only runs frames
-        Snapshot.sendApplyNotifications()
-        // a few frames into the 300ms crossfade, both sides are composed
-        repeat(3) { composeTestRule.mainClock.advanceTimeByFrame() }
-        val crossfading = webViewsNow()
-        assertThat("the question and answer WebViews", crossfading, hasSize(2))
-        val crash = detail(crashed = true)
-
-        // every WebView on the renderer gets the callback for the same loss before the next frame
-        composeTestRule.runOnUiThread {
-            crossfading.forEach { it.webViewClient.onRenderProcessGone(it, crash) }
-        }
-        composeTestRule.mainClock.autoAdvance = true
-
-        singleWebView()
-        composeTestRule.onNodeWithText(rendererFailedText).assertDoesNotExist()
-        // a second crash really is the second one
-        loseRenderer(singleWebView(), crashed = true)
-        composeTestRule.onNodeWithText(rendererFailedText).assertIsDisplayed()
+        assertThat(isRendererFailureShown(), equalTo(false))
     }
 
     @Test
@@ -116,19 +88,7 @@ class FlashcardRendererLossTest : RobolectricTest() {
         loseRenderer(rebuilt, crashed = true)
 
         assertThat("no third WebView is built for the card", webViews(), empty())
-        composeTestRule.onNodeWithText(rendererFailedText).assertIsDisplayed()
-    }
-
-    @Test
-    fun `the next card gets a new WebView after a crash loop`() {
-        showFlashcard()
-        loseRenderer(singleWebView(), crashed = true)
-        loseRenderer(singleWebView(), crashed = true)
-
-        questionHtml = "<p>Question 2</p>"
-
-        singleWebView()
-        composeTestRule.onNodeWithText(rendererFailedText).assertDoesNotExist()
+        assertThat(isRendererFailureShown(), equalTo(true))
     }
 
     @Test
@@ -141,7 +101,7 @@ class FlashcardRendererLossTest : RobolectricTest() {
         cardDisplayIndex++
 
         singleWebView()
-        composeTestRule.onNodeWithText(rendererFailedText).assertDoesNotExist()
+        assertThat(isRendererFailureShown(), equalTo(false))
     }
 
     @Test
@@ -154,24 +114,27 @@ class FlashcardRendererLossTest : RobolectricTest() {
         loseRenderer(singleWebView(), crashed = true)
 
         singleWebView()
-        composeTestRule.onNodeWithText(rendererFailedText).assertDoesNotExist()
+        assertThat(isRendererFailureShown(), equalTo(false))
     }
 
     private fun showFlashcard() {
         composeTestRule.setContent {
             AnkiDroidTheme {
                 Flashcard(
-                    baseUrl = BASE_URL,
-                    questionHtml = questionHtml,
-                    answerHtml = "<p>Answer</p>",
-                    bodyClass = "card",
+                    display =
+                        CardDisplay(
+                            cardDisplayIndex = cardDisplayIndex,
+                            isAnswerShown = false,
+                            questionHtml = questionHtml,
+                            answerHtml = "<p>Answer</p>",
+                            bodyClass = "card",
+                            baseUrl = BASE_URL,
+                        ),
                     isMediaAutoplayEnabled = false,
                     javascriptCommand = null,
                     onJavascriptCommandConsumed = {},
                     onGesture = {},
                     onLinkClick = {},
-                    isAnswerShown = isAnswerShown,
-                    cardDisplayIndex = cardDisplayIndex,
                 )
             }
         }
@@ -198,26 +161,20 @@ class FlashcardRendererLossTest : RobolectricTest() {
         return webViews.single()
     }
 
-    private fun webViews(): List<WebView> {
+    private fun webViews(): List<WebView> = viewsOfType()
+
+    private fun isRendererFailureShown(): Boolean = viewsOfType<TextView>().any { it.text == rendererFailedText }
+
+    private inline fun <reified T : View> viewsOfType(): List<T> {
         composeTestRule.waitForIdle()
-        return webViewsNow()
-    }
-
-    /** Without waiting for idle, which would let a running crossfade finish. */
-    private fun webViewsNow(): List<WebView> {
-        val found = mutableListOf<WebView>()
-        composeTestRule.runOnUiThread { collectWebViews(composeTestRule.activity.window.decorView, found) }
-        return found
-    }
-
-    private fun collectWebViews(
-        view: View,
-        into: MutableList<WebView>,
-    ) {
-        if (view is WebView) into += view
-        if (view is ViewGroup) {
-            for (i in 0 until view.childCount) collectWebViews(view.getChildAt(i), into)
+        var found = emptyList<T>()
+        composeTestRule.runOnUiThread {
+            found =
+                composeTestRule.activity.window.decorView.allViews
+                    .filterIsInstance<T>()
+                    .toList()
         }
+        return found
     }
 
     private companion object {

@@ -251,6 +251,7 @@ object Prefs {
     val moreOptionsInTopAppBar by booleanPref(R.string.more_options_in_top_app_bar_key, defaultValue = false)
     val showAnswerButtons by booleanPref(R.string.show_answer_buttons_key, true)
     val applyHiramekiCss by stringPref(R.string.apply_hirameki_css_preference, defaultValue = HIRAMEKI_CSS_ALL)
+    val isCardCrossfadeEnabled by booleanPref(R.string.card_crossfade_key, defaultValue = true)
 
     val doubleTapInterval by intPref(R.string.double_tap_timeout_pref_key, defaultValue = 200)
 

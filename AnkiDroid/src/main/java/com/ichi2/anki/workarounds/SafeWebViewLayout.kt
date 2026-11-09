@@ -18,6 +18,7 @@
 
 package com.ichi2.anki.workarounds
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.SystemClock
 import android.util.AttributeSet
@@ -38,6 +39,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.view.ancestors
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.findFragment
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.R
 import timber.log.Timber
@@ -117,6 +120,18 @@ open class SafeWebViewLayout :
 
     protected open fun createWebView() = WebView(context)
 
+    @get:MainThread
+    val hitTestResult: WebView.HitTestResult? get() = activeWebView?.hitTestResult
+
+    @get:MainThread
+    @Suppress("DEPRECATION")
+    val scale: Float get() = uncheckedWebView.scale
+
+    @MainThread
+    fun zoomBy(zoomFactor: Float) {
+        activeWebView?.zoomBy(zoomFactor)
+    }
+
     init {
         addView(uncheckedWebView, webViewLayoutParams)
     }
@@ -141,6 +156,33 @@ open class SafeWebViewLayout :
     @MainThread
     fun evaluateJavascript(script: String) {
         activeWebView?.evaluateJavascript(script, null)
+    }
+
+    /**
+     * Requires [WebViewFeature.WEB_MESSAGE_LISTENER]
+     *
+     * @see WebViewCompat.addWebMessageListener
+     */
+    @SuppressLint("RequiresFeature") // checked by the caller
+    @MainThread
+    fun addWebMessageListener(
+        jsObjectName: String,
+        allowedOriginRules: Set<String>,
+        listener: WebViewCompat.WebMessageListener,
+    ) {
+        val webView = activeWebView ?: return
+        WebViewCompat.addWebMessageListener(webView, jsObjectName, allowedOriginRules, listener)
+    }
+
+    /** Calls [onComplete] once everything the page has done so far is ready to be drawn. */
+    @MainThread
+    fun postVisualStateCallback(onComplete: () -> Unit) {
+        activeWebView?.postVisualStateCallback(
+            0,
+            object : WebView.VisualStateCallback() {
+                override fun onComplete(requestId: Long) = onComplete()
+            },
+        )
     }
 
     @MainThread
@@ -186,6 +228,22 @@ open class SafeWebViewLayout :
     @MainThread
     fun setDownloadListener(listener: DownloadListener?) {
         activeWebView?.setDownloadListener(listener)
+    }
+
+    override fun setOnScrollChangeListener(l: OnScrollChangeListener?) {
+        activeWebView?.setOnScrollChangeListener(l)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun setOnTouchListener(l: OnTouchListener?) {
+        activeWebView?.setOnTouchListener(l)
+    }
+
+    /** New content is not what crashed the renderer: forgets earlier crashes and leaves a crash loop. */
+    @MainThread
+    fun onContentChanged() {
+        lastCrashAt = null
+        if (webViewState == WebViewState.CRASH_LOOP) leaveCrashLoop()
     }
 
     /**
@@ -275,9 +333,13 @@ open class SafeWebViewLayout :
     private fun retryAfterCrashLoop() {
         if (webViewState != WebViewState.CRASH_LOOP) return
         Timber.i("retrying the WebView after its renderer kept crashing")
+        lastCrashAt = SystemClock.elapsedRealtime()
+        leaveCrashLoop()
+    }
+
+    private fun leaveCrashLoop() {
         crashLoopMessage?.let { removeView(it) }
         crashLoopMessage = null
-        lastCrashAt = SystemClock.elapsedRealtime()
         webViewState = WebViewState.DESTROYED_RECOVERABLE
         recreateIfPossible()
     }

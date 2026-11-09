@@ -40,6 +40,8 @@ idea {
 val homePath: String? = System.getProperty("user.home")
 val baseVersionCode = 22300123
 val baseVersionName = "1.1.9"
+val testReleaseBuild =
+    rootProject.extra.has("testReleaseBuild") && (rootProject.extra.get("testReleaseBuild") as? Boolean) == true
 
 fun gitCommitHash(): String =
     try {
@@ -84,8 +86,6 @@ extensions.configure<ApplicationExtension> {
         resValues = true
     }
 
-    val testReleaseBuild =
-        rootProject.extra.has("testReleaseBuild") && (rootProject.extra.get("testReleaseBuild") as? Boolean) == true
     testBuildType = if (testReleaseBuild) "release" else "debug"
 
     androidResources {
@@ -631,6 +631,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    if (testReleaseBuild) releaseImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.kotlin.test)

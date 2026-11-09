@@ -53,6 +53,7 @@ import com.ichi2.anki.pages.AnkiServer
 import com.ichi2.anki.pages.PostRequestHandler
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.previewer.bodyClassForCardOrd
+import com.ichi2.anki.reviewer.card.CardDisplay
 import com.ichi2.anki.servicelayer.NoteService
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.utils.CollectionPreferences
@@ -112,7 +113,10 @@ data class ReviewerState(
     val mediaError: MediaError? = null,
     val colorizeAnswerButtons: Boolean = false,
     val showAnswerButtonBadges: Boolean = true,
-)
+) {
+    val cardDisplay: CardDisplay
+        get() = CardDisplay(cardDisplayIndex, isAnswerShown, questionHtml, answerHtml, bodyClass, baseUrl)
+}
 
 data class AnswerFeedback(
     val rating: CardAnswer.Rating,
@@ -693,7 +697,7 @@ class ReviewerViewModel(
                     reviewCount = queue?.counts?.rev ?: 0,
                     questionHtml = processedQuestionHtml,
                     answerHtml = processedAnswerHtml,
-                    bodyClass = bodyClassForCardOrd(card.ord),
+                    bodyClass = bodyClassForCardOrd(card.ord, nightMode = false),
                     baseUrl = server.baseUrl(),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
@@ -838,7 +842,7 @@ class ReviewerViewModel(
                     reviewCount = queue.counts.rev,
                     questionHtml = processedQuestionHtml,
                     answerHtml = processedAnswerHtml,
-                    bodyClass = bodyClassForCardOrd(card.ord),
+                    bodyClass = bodyClassForCardOrd(card.ord, nightMode = false),
                     baseUrl = server.baseUrl(),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
