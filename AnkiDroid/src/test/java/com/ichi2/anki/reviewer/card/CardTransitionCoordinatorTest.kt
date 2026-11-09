@@ -56,15 +56,6 @@ class CardTransitionCoordinatorTest {
         }
 
     @Test
-    fun `nothing happens until the server's address is known`() =
-        runTransitions {
-            coordinator.setTarget(first.copy(baseUrl = ""))
-            runCurrent()
-
-            assertThat(stage.events, equalTo(emptyList()))
-        }
-
-    @Test
     fun `the frame is captured and on screen before the card is swapped`() =
         runTransitions {
             startFromShownCard()
@@ -73,8 +64,8 @@ class CardTransitionCoordinatorTest {
             runCurrent()
 
             assertThat(stage.events, contains("capture", "overlay drawn", "show 2"))
-            assertThat(coordinator.overlay, sameInstance(stage.frame))
-            assertThat(coordinator.overlayOpacity, equalTo(1f))
+            assertThat(coordinator.overlay?.frame, sameInstance(stage.frame))
+            assertThat(coordinator.overlay?.opacity, equalTo(1f))
         }
 
     @Test
@@ -101,12 +92,11 @@ class CardTransitionCoordinatorTest {
 
             stage.sendFadeProgress(0.4f)
             runCurrent()
-            assertThat(coordinator.overlayOpacity, equalTo(0.4f))
+            assertThat(coordinator.overlay?.opacity, equalTo(0.4f))
             stage.finishFade()
             runCurrent()
 
             assertThat(coordinator.overlay, nullValue())
-            assertThat(coordinator.overlayOpacity, equalTo(0f))
         }
 
     @Test
@@ -174,8 +164,8 @@ class CardTransitionCoordinatorTest {
             coordinator.setTarget(third)
             runCurrent()
 
-            assertThat(coordinator.overlay, sameInstance(midFadeFrame))
-            assertThat(coordinator.overlayOpacity, equalTo(1f))
+            assertThat(coordinator.overlay?.frame, sameInstance(midFadeFrame))
+            assertThat(coordinator.overlay?.opacity, equalTo(1f))
             assertThat(stage.events.takeLast(3), contains("capture", "overlay drawn", "show 3"))
         }
 

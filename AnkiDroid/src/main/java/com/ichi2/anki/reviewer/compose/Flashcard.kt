@@ -114,8 +114,10 @@ fun Flashcard(
 
     val style = rememberCardPageStyle(toolbarHeight)
     SideEffect {
-        controller.update(display, style, isMediaAutoplayEnabled, javascriptCommand)
-        coordinator.setTarget(display)
+        if (display.baseUrl.isNotEmpty()) {
+            controller.update(display, style, isMediaAutoplayEnabled, javascriptCommand)
+            coordinator.setTarget(display)
+        }
     }
 
     Box(
@@ -130,10 +132,10 @@ fun Flashcard(
         AndroidView(factory = { controller.layout }, modifier = Modifier.fillMaxSize())
         coordinator.overlay?.let { overlay ->
             Image(
-                bitmap = overlay,
+                bitmap = overlay.frame,
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = coordinator.overlayOpacity },
+                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = overlay.opacity },
             )
         }
     }

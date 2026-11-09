@@ -130,6 +130,23 @@ class FlashcardSinglePageTest : RobolectricTest() {
         assertThat(consumed, contains(USER_ACTION.id))
     }
 
+    @Test
+    fun `a command sent while a link has replaced the card is dropped`() {
+        showFlashcard()
+        val webView = singleWebView()
+        loadPage(webView)
+        navigate(webView)
+
+        command = USER_ACTION
+        composeTestRule.waitForIdle()
+        assertThat(consumed, contains(USER_ACTION.id))
+
+        display = QUESTION.copy(isAnswerShown = true)
+        composeTestRule.waitForIdle()
+        navigate(webView)
+        assertThat(lastScript(webView), not(containsString("userJs1")))
+    }
+
     private fun showFlashcard() {
         composeTestRule.setContent {
             AnkiDroidTheme {

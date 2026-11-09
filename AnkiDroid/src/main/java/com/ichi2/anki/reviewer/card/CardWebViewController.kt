@@ -60,25 +60,19 @@ class CardWebViewController(
 
     /** The card to put on the page, which trails [target] while a transition covers the page. */
     private var display: CardDisplay? = null
-    private var style: CardPageStyle? = null
+    private lateinit var style: CardPageStyle
     private var isMediaAutoplayEnabled = false
     private var command: ReviewerJavascriptCommand? = null
     private var lastRunCommandId: Int? = null
 
-    private var isPageLoaded = false
-    private var pageBaseUrl: String? = null
-    private var pageDisplay: CardDisplay? = null
-    private var pageStyle: CardPageStyle? = null
+    private var page: Page? = null
     private var pageToken = 0
-
-    /** The card whose page a link or form replaced. The new page stays until the next card or side. */
-    private var cardLeftByNavigation: CardDisplay? = null
 
     private var initialScale = 1f
     private var scale = 1f
 
-    /** The WebView's listener for the page's reports, reset with the WebView. */
-    private var reportOrigin: String? = null
+    /** Reset with the WebView, which owns the listener. */
+    private var isListeningForReports = false
     private val shownDisplay = MutableStateFlow<CardDisplay?>(null)
 
     /** Stays false where the page cannot report, which leaves cards to swap without a crossfade. */
@@ -107,8 +101,7 @@ class CardWebViewController(
         }
         if (isNewCard) layout.onContentChanged()
 
-        if (target.baseUrl.isEmpty()) return
-        if (target.baseUrl != pageBaseUrl) loadPage(target.baseUrl, style) else syncPage()
+        if (target.baseUrl != page?.baseUrl) loadPage(target.baseUrl) else syncPage()
     }
 
     fun show(display: CardDisplay) {
@@ -121,59 +114,54 @@ class CardWebViewController(
     }
 
     override fun onWebViewRecreated() {
-        reportOrigin = null
+        isListeningForReports = false
         configureWebView()
-        val baseUrl = target?.baseUrl?.takeIf { it.isNotEmpty() }
-        val style = style
-        if (baseUrl != null && style != null) loadPage(baseUrl, style)
+        target?.let { loadPage(it.baseUrl) }
     }
 
     fun destroy() = layout.destroy()
 
-    private fun loadPage(
-        baseUrl: String,
-        style: CardPageStyle,
-    ) {
-        isPageLoaded = false
-        cardLeftByNavigation = null
-        pageBaseUrl = baseUrl
-        pageDisplay = null
-        pageStyle = style
+    private fun loadPage(baseUrl: String) {
+        page = Page.Loading(baseUrl, style)
         shownDisplay.value = null
         listenForPageReports(baseUrl)
         layout.loadDataWithBaseURL(baseUrl, CardPage.shellHtml(context, style), "text/html", "UTF-8", null)
     }
 
     private fun syncPage() {
-        if (!isPageLoaded) return
-        if (cardLeftByNavigation != null) {
-            restoreShellForNextCard()
-            return
+        when (val page = page) {
+            null, is Page.Loading -> Unit
+            is Page.Ready -> syncReadyPage(page)
+            is Page.Replaced -> syncReplacedPage(page)
         }
-        style?.takeIf { it != pageStyle }?.let {
-            pageStyle = it
-            layout.evaluateJavascript(CardPage.styleUpdateScript(it))
+    }
+
+    private fun syncReadyPage(ready: Page.Ready) {
+        if (style != ready.style) layout.evaluateJavascript(CardPage.styleUpdateScript(style))
+        page = ready.copy(style = style, card = display)
+        if (display != ready.card) display?.let(::showOnPage)
+        takePendingCommand()?.let { layout.evaluateJavascript(CardPage.commandScript(it.script)) }
+    }
+
+    private fun syncReplacedPage(replaced: Page.Replaced) {
+        if (display == replaced.leftCard) {
+            takePendingCommand()
+        } else if (replaced.isLoaded) {
+            loadPage(replaced.baseUrl)
         }
-        display?.takeIf { it != pageDisplay }?.let(::showOnPage)
-        command?.takeIf { it.id != lastRunCommandId && display == target }?.let {
+    }
+
+    private fun takePendingCommand(): ReviewerJavascriptCommand? =
+        command?.takeIf { it.id != lastRunCommandId && display == target }?.also {
             lastRunCommandId = it.id
-            layout.evaluateJavascript(CardPage.commandScript(it.script))
             onCommandRun(it.id)
         }
-    }
-
-    private fun restoreShellForNextCard() {
-        if (display == cardLeftByNavigation) return
-        val baseUrl = pageBaseUrl ?: return
-        val style = style ?: return
-        loadPage(baseUrl, style)
-    }
 
     private fun showOnPage(display: CardDisplay) {
-        pageDisplay = display
+        shownDisplay.value = null
         pageToken++
         resetZoom()
-        layout.evaluateJavascript(CardPage.showScript(display, isNightMode = pageStyle?.isNightMode == true, pageToken))
+        layout.evaluateJavascript(CardPage.showScript(display, style.isNightMode, pageToken))
     }
 
     /** The page waits for the reset, because `zoomBy` finishing later would undo the scroll to the answer. */
@@ -185,11 +173,10 @@ class CardWebViewController(
     }
 
     private fun listenForPageReports(baseUrl: String) {
-        if (isRobolectric || !WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return
+        if (isListeningForReports || isRobolectric) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return
+        isListeningForReports = true
         val origin = baseUrl.toUri().let { "${it.scheme}://${it.authority}" }
-        if (origin == reportOrigin) return
-        if (reportOrigin != null) layout.removeWebMessageListener(CardPage.BRIDGE_NAME)
-        reportOrigin = origin
         layout.addWebMessageListener(CardPage.BRIDGE_NAME, setOf(origin)) { _, message, _, isMainFrame, _ ->
             if (isMainFrame) message.data?.toIntOrNull()?.let(::onPageReportedShown)
         }
@@ -197,8 +184,8 @@ class CardWebViewController(
 
     private fun onPageReportedShown(token: Int) {
         if (token != pageToken) return
-        val reported = pageDisplay
-        layout.postVisualStateCallback(token.toLong()) {
+        val reported = (page as? Page.Ready)?.card ?: return
+        layout.postVisualStateCallback {
             if (token == pageToken) shownDisplay.value = reported
         }
     }
@@ -235,7 +222,7 @@ class CardWebViewController(
     }
 
     private fun isLinkWithinPage(url: String): Boolean {
-        val baseUrl = pageBaseUrl ?: return false
+        val baseUrl = page?.baseUrl ?: return false
         if (!url.startsWith(baseUrl)) return false
         val path = url.removePrefix(baseUrl)
         return path.isEmpty() || path.startsWith("#") || path.startsWith("/#")
@@ -273,9 +260,12 @@ class CardWebViewController(
             url: String?,
             favicon: Bitmap?,
         ) {
-            isPageLoaded = false
-            cardLeftByNavigation = cardLeftByNavigation ?: pageDisplay
-            pageDisplay = null
+            page =
+                when (val current = page) {
+                    is Page.Ready -> Page.Replaced(current.baseUrl, current.card, isLoaded = false)
+                    is Page.Replaced -> current.copy(isLoaded = false)
+                    is Page.Loading, null -> current
+                }
             shownDisplay.value = null
         }
 
@@ -283,9 +273,39 @@ class CardWebViewController(
             view: WebView,
             url: String?,
         ) {
-            isPageLoaded = true
+            page =
+                when (val current = page) {
+                    is Page.Loading -> Page.Ready(current.baseUrl, current.style, card = null)
+                    is Page.Replaced -> current.copy(isLoaded = true)
+                    is Page.Ready, null -> current
+                }
             syncPage()
         }
+    }
+
+    private sealed interface Page {
+        val baseUrl: String
+
+        data class Loading(
+            override val baseUrl: String,
+            val style: CardPageStyle,
+        ) : Page
+
+        data class Ready(
+            override val baseUrl: String,
+            val style: CardPageStyle,
+            val card: CardDisplay?,
+        ) : Page
+
+        /**
+         * A link or form replaced the shell, which returns with the next card or side.
+         * It waits for [isLoaded] because a callback from an interrupted load would look like the shell's.
+         */
+        data class Replaced(
+            override val baseUrl: String,
+            val leftCard: CardDisplay?,
+            val isLoaded: Boolean,
+        ) : Page
     }
 
     private class CardWebChromeClient : WebChromeClient() {

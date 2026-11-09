@@ -174,26 +174,11 @@ open class SafeWebViewLayout :
         WebViewCompat.addWebMessageListener(webView, jsObjectName, allowedOriginRules, listener)
     }
 
-    /**
-     * Requires [WebViewFeature.WEB_MESSAGE_LISTENER]
-     *
-     * @see WebViewCompat.removeWebMessageListener
-     */
-    @SuppressLint("RequiresFeature") // checked by the caller
-    @MainThread
-    fun removeWebMessageListener(jsObjectName: String) {
-        val webView = activeWebView ?: return
-        WebViewCompat.removeWebMessageListener(webView, jsObjectName)
-    }
-
     /** Calls [onComplete] once everything the page has done so far is ready to be drawn. */
     @MainThread
-    fun postVisualStateCallback(
-        requestId: Long,
-        onComplete: () -> Unit,
-    ) {
+    fun postVisualStateCallback(onComplete: () -> Unit) {
         activeWebView?.postVisualStateCallback(
-            requestId,
+            0,
             object : WebView.VisualStateCallback() {
                 override fun onComplete(requestId: Long) = onComplete()
             },

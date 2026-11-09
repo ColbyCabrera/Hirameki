@@ -48,6 +48,13 @@ interface CardTransitionStage {
     suspend fun fade(onOpacity: (Float) -> Unit)
 }
 
+/** A snapshot of the card surface, covering the WebView. */
+class CardOverlay(
+    val frame: ImageBitmap,
+) {
+    var opacity by mutableFloatStateOf(1f)
+}
+
 /**
  * Crossfades between cards in one WebView: a snapshot of the current frame covers the WebView while
  * the card is swapped underneath, then fades out to reveal it.
@@ -59,46 +66,38 @@ class CardTransitionCoordinator(
     private val stage: CardTransitionStage,
     private val isCrossfadeEnabled: () -> Boolean,
 ) {
-    var overlay by mutableStateOf<ImageBitmap?>(null)
-        private set
-
-    var overlayOpacity by mutableFloatStateOf(0f)
+    var overlay by mutableStateOf<CardOverlay?>(null)
         private set
 
     private val target = MutableStateFlow<CardDisplay?>(null)
 
     fun setTarget(display: CardDisplay) {
-        if (display.baseUrl.isNotEmpty()) target.value = display
+        target.value = display
     }
 
     suspend fun run() = target.filterNotNull().collectLatest(::transitionTo)
 
     private suspend fun transitionTo(display: CardDisplay) {
-        if (!coverCurrentFrame()) {
-            removeOverlay()
+        val cover = coverForCurrentFrame()
+        overlay = cover
+        if (cover == null) {
             stage.show(display)
             return
         }
         stage.awaitOverlayDrawn()
         stage.show(display)
         withTimeoutOrNull(SHOW_TIMEOUT) { stage.awaitShown(display) }
-        stage.fade { overlayOpacity = it }
-        removeOverlay()
-    }
-
-    /** @return whether an opaque overlay now shows the current frame */
-    private suspend fun coverCurrentFrame(): Boolean {
-        if (overlay != null && overlayOpacity == 1f) return true
-        val hasFrameToCover = overlay != null || stage.hasShownCard
-        if (!hasFrameToCover || !isCrossfadeEnabled()) return false
-        overlay = stage.captureFrame() ?: return false
-        overlayOpacity = 1f
-        return true
-    }
-
-    private fun removeOverlay() {
+        stage.fade { cover.opacity = it }
         overlay = null
-        overlayOpacity = 0f
+    }
+
+    /** @return an opaque overlay showing the current frame, or `null` if there can be none */
+    private suspend fun coverForCurrentFrame(): CardOverlay? {
+        val current = overlay
+        if (current?.opacity == 1f) return current
+        val hasFrameToCover = current != null || stage.hasShownCard
+        if (!hasFrameToCover || !isCrossfadeEnabled()) return null
+        return stage.captureFrame()?.let(::CardOverlay)
     }
 
     private companion object {
