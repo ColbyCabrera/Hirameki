@@ -31,6 +31,7 @@ import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.showThemedToast
 import com.ichi2.anki.withProgress
 import com.ichi2.preferences.IncrementerNumberRangePreferenceCompat
+import com.ichi2.utils.setWebContentsDebuggingEnabled
 import com.ichi2.utils.show
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -177,6 +178,15 @@ class DevOptionsFragment : SettingsFragment() {
         requirePreference<Preference>(R.string.pref_new_review_reminders).setOnPreferenceChangeListener { _, _ ->
             ActivityCompat.recreate(requireActivity())
             true
+        }
+
+        setupWebDebugPreference()
+    }
+
+    private fun setupWebDebugPreference() {
+        requirePreference<SwitchPreferenceCompat>(R.string.html_javascript_debugging_key).apply {
+            isVisible = !BuildConfig.DEBUG
+            setOnPreferenceChangeListener { isEnabled -> setWebContentsDebuggingEnabled(isEnabled) }
         }
     }
 
