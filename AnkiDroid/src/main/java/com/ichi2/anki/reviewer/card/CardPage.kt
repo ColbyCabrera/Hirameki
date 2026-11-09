@@ -17,6 +17,7 @@
 package com.ichi2.anki.reviewer.card
 
 import android.content.Context
+import com.ichi2.anki.previewer.NIGHT_MODE_BODY_CLASSES
 import com.ichi2.anki.previewer.stdHtml
 import kotlinx.serialization.json.Json
 
@@ -24,7 +25,6 @@ import kotlinx.serialization.json.Json
 internal object CardPage {
     const val QUESTION_BODY_CLASS = "hirameki-question"
     const val ANSWER_BODY_CLASS = "hirameki-answer"
-    private val NIGHT_MODE_BODY_CLASSES = listOf("nightMode", "night_mode")
 
     /** The object the page reports through, see `hirameki-card-page.js`. */
     const val BRIDGE_NAME = "hiramekiCardBridge"
@@ -48,15 +48,15 @@ internal object CardPage {
         isNightMode: Boolean,
         token: Int,
     ): String {
+        val sideClass = if (display.isAnswerShown) ANSWER_BODY_CLASS else QUESTION_BODY_CLASS
         val themeClasses = if (isNightMode) NIGHT_MODE_BODY_CLASSES.joinToString(" ", prefix = " ") else ""
+        val classes = jsString("${display.bodyClass} $sideClass$themeClasses")
+        val answer = jsString(display.answerHtml)
         val show =
-            with(display) {
-                if (isAnswerShown) {
-                    "_showAnswer(${jsString(answerHtml)}, ${jsString("$bodyClass $ANSWER_BODY_CLASS$themeClasses")});"
-                } else {
-                    val classes = jsString("$bodyClass $QUESTION_BODY_CLASS$themeClasses")
-                    "_showQuestion(${jsString(questionHtml)}, ${jsString(answerHtml)}, $classes);"
-                }
+            if (display.isAnswerShown) {
+                "_showAnswer($answer, $classes);"
+            } else {
+                "_showQuestion(${jsString(display.questionHtml)}, $answer, $classes);"
             }
         return "$show hirameki.reportWhenShown($token);"
     }

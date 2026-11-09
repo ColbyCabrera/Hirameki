@@ -89,4 +89,7 @@ fun bodyClassForCardOrd(
     nightMode: Boolean = Themes.currentTheme.isNightMode,
 ): String = "card card${cardOrd + 1} ${bodyClass(nightMode)}"
 
-private fun bodyClass(nightMode: Boolean = Themes.currentTheme.isNightMode): String = if (nightMode) "nightMode night_mode" else ""
+internal val NIGHT_MODE_BODY_CLASSES = listOf("nightMode", "night_mode")
+
+private fun bodyClass(nightMode: Boolean = Themes.currentTheme.isNightMode): String =
+    if (nightMode) NIGHT_MODE_BODY_CLASSES.joinToString(" ") else ""

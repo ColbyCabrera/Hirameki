@@ -43,8 +43,8 @@ import kotlin.math.abs
 /**
  * Owns the one WebView of the card page, and keeps its page in step with the latest [update].
  *
- * The shell page loads once. Cards are swapped inside it, and it is reloaded only for a new
- * [WebView] after a renderer loss.
+ * The shell page loads once per [WebView] and cards are swapped inside it. It loads again only
+ * when a link or form has replaced it.
  */
 @MainThread
 class CardWebViewController(
@@ -79,7 +79,7 @@ class CardWebViewController(
     val hasShownCard: Boolean get() = shownDisplay.value != null
 
     private val gestureListener =
-        CardGestureListener(layout, currentDisplay = { target }, onGesture = { onGesture(it) })
+        CardGestureListener(layout, currentDisplay = { target }, onGesture = onGesture)
 
     init {
         configureWebView()
@@ -95,10 +95,8 @@ class CardWebViewController(
         this.target = target
         this.style = style
         this.command = command
-        if (this.isMediaAutoplayEnabled != isMediaAutoplayEnabled) {
-            this.isMediaAutoplayEnabled = isMediaAutoplayEnabled
-            applyMediaAutoplay()
-        }
+        this.isMediaAutoplayEnabled = isMediaAutoplayEnabled
+        applyMediaAutoplay()
         if (isNewCard) layout.onContentChanged()
 
         if (target.baseUrl != page?.baseUrl) loadPage(target.baseUrl) else syncPage()

@@ -24,8 +24,6 @@ import android.os.ParcelFileDescriptor
 import android.provider.Settings
 import android.util.Base64
 import android.view.PixelCopy
-import android.view.View
-import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,8 +33,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.blue
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
+import androidx.core.graphics.green
+import androidx.core.graphics.red
+import androidx.core.view.allViews
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -107,6 +109,11 @@ class FlashcardOnDeviceTest {
         }
     }
 
+    @After
+    fun restoreAnimatorScale() {
+        setAnimatorDurationScale(originalAnimatorScale)
+    }
+
     @Test
     fun eachSideHasItsOwnFontSize() =
         runBlocking {
@@ -127,11 +134,6 @@ class FlashcardOnDeviceTest {
 
             assertThat(evaluate("document.getElementById('shown').clientHeight").toInt(), greaterThan(0))
         }
-
-    @After
-    fun restoreAnimatorScale() {
-        setAnimatorDurationScale(originalAnimatorScale)
-    }
 
     @Test
     fun aCommandRunsOnceAfterItsCard() =
@@ -267,7 +269,7 @@ class FlashcardOnDeviceTest {
         val crashed = onMain { requireWebView() }
         onMain { crashed.loadUrl("chrome://crash") }
         withTimeout(10.seconds) {
-            while (onMain { findWebView(activity.window.decorView) }.let { it == null || it === crashed }) delay(16)
+            while (onMain { findWebView() }.let { it == null || it === crashed }) delay(16)
         }
     }
 
@@ -330,13 +332,12 @@ class FlashcardOnDeviceTest {
             }
         }
 
-    private fun requireWebView() = findWebView(activity.window.decorView)!!
+    private fun requireWebView() = findWebView()!!
 
-    private fun findWebView(view: View): WebView? =
-        view as? WebView
-            ?: (view as? ViewGroup)?.let { group ->
-                (0 until group.childCount).firstNotNullOfOrNull { findWebView(group.getChildAt(it)) }
-            }
+    private fun findWebView(): WebView? =
+        activity.window.decorView.allViews
+            .filterIsInstance<WebView>()
+            .firstOrNull()
 
     private suspend fun <T> onMain(block: suspend () -> T): T = withContext(Dispatchers.Main) { block() }
 
@@ -370,7 +371,7 @@ class FlashcardOnDeviceTest {
             bitmap[SAMPLE_SIZE / 2, SAMPLE_SIZE / 2]
         }
 
-    private fun Int.channels() = listOf(this shr 16 and 0xFF, this shr 8 and 0xFF, this and 0xFF)
+    private fun Int.channels() = listOf(red, green, blue)
 
     private fun Int.isCloseTo(other: Int) = channels().zip(other.channels()).all { (a, b) -> abs(a - b) <= COLOR_TOLERANCE }
 

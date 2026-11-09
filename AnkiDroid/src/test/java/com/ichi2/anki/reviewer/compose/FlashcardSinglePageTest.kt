@@ -16,14 +16,13 @@
 
 package com.ichi2.anki.reviewer.compose
 
-import android.view.View
-import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.core.view.allViews
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
@@ -185,20 +184,15 @@ class FlashcardSinglePageTest : RobolectricTest() {
 
     private fun singleWebView(): WebView {
         composeTestRule.waitForIdle()
-        val found = mutableListOf<WebView>()
-        composeTestRule.runOnUiThread { collectWebViews(composeTestRule.activity.window.decorView, found) }
+        var found = emptyList<WebView>()
+        composeTestRule.runOnUiThread {
+            found =
+                composeTestRule.activity.window.decorView.allViews
+                    .filterIsInstance<WebView>()
+                    .toList()
+        }
         assertThat("exactly one card WebView", found, hasSize(1))
         return found.single()
-    }
-
-    private fun collectWebViews(
-        view: View,
-        into: MutableList<WebView>,
-    ) {
-        if (view is WebView) into += view
-        if (view is ViewGroup) {
-            for (i in 0 until view.childCount) collectWebViews(view.getChildAt(i), into)
-        }
     }
 
     private companion object {

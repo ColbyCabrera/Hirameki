@@ -17,7 +17,6 @@
 package com.ichi2.anki.reviewer.compose
 
 import android.view.View
-import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
 import android.widget.TextView
@@ -27,6 +26,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.core.view.allViews
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
@@ -167,19 +167,14 @@ class FlashcardRendererLossTest : RobolectricTest() {
 
     private inline fun <reified T : View> viewsOfType(): List<T> {
         composeTestRule.waitForIdle()
-        val found = mutableListOf<T>()
-        composeTestRule.runOnUiThread { collectViews(composeTestRule.activity.window.decorView) { (it as? T)?.let(found::add) } }
-        return found
-    }
-
-    private fun collectViews(
-        view: View,
-        visit: (View) -> Unit,
-    ) {
-        visit(view)
-        if (view is ViewGroup) {
-            for (i in 0 until view.childCount) collectViews(view.getChildAt(i), visit)
+        var found = emptyList<T>()
+        composeTestRule.runOnUiThread {
+            found =
+                composeTestRule.activity.window.decorView.allViews
+                    .filterIsInstance<T>()
+                    .toList()
         }
+        return found
     }
 
     private companion object {
