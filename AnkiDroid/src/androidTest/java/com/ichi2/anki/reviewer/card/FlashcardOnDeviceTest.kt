@@ -48,6 +48,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.empty
@@ -221,8 +222,10 @@ class FlashcardOnDeviceTest {
     fun aNewCardResetsPinchZoom() =
         runBlocking {
             awaitShownText("Question")
+            awaitCrossfadeReady()
             onMain { requireWebView().zoomBy(2f) }
             awaitScriptResult("visualViewport.scale > 1.5", "true")
+            awaitCrossfadeReady()
 
             show(card(shownText("Next"), index = 2))
 
@@ -304,8 +307,10 @@ class FlashcardOnDeviceTest {
     private suspend fun awaitScriptResult(
         script: String,
         expected: String,
-    ) = withTimeout(10.seconds) {
-        while (evaluate(script) != expected) delay(16)
+    ) {
+        var last: String? = null
+        withTimeoutOrNull(10.seconds) { while (evaluate(script).also { last = it } != expected) delay(16) }
+            ?: throw AssertionError("`$script` was $last, expected $expected")
     }
 
     /** The page reports a shown card a few frames after its text appears. */
