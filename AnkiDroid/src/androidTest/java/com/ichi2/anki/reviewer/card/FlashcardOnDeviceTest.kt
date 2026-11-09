@@ -21,6 +21,7 @@ import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.provider.Settings
 import android.util.Base64
 import android.view.PixelCopy
 import android.view.View
@@ -76,6 +77,11 @@ class FlashcardOnDeviceTest {
     private var command by mutableStateOf<ReviewerJavascriptCommand?>(null)
     private val consumed = mutableListOf<Int>()
     private var themeSurfaceColor = 0
+    private val originalAnimatorScale =
+        Settings.Global.getString(
+            InstrumentationRegistry.getInstrumentation().targetContext.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+        ) ?: "1"
 
     @Before
     fun showFlashcard() {
@@ -123,8 +129,8 @@ class FlashcardOnDeviceTest {
         }
 
     @After
-    fun disableAnimationsAgain() {
-        setAnimatorDurationScale(0)
+    fun restoreAnimatorScale() {
+        setAnimatorDurationScale(originalAnimatorScale)
     }
 
     @Test
@@ -277,7 +283,7 @@ class FlashcardOnDeviceTest {
     }
 
     /** Reading to the end waits for the command to finish. */
-    private fun setAnimatorDurationScale(scale: Int) =
+    private fun setAnimatorDurationScale(scale: String) =
         ParcelFileDescriptor
             .AutoCloseInputStream(
                 InstrumentationRegistry
@@ -427,7 +433,7 @@ class FlashcardOnDeviceTest {
         const val BLEND_STEPS = 50
 
         /** Gives a fade many frames even on a software-rendered emulator. */
-        const val SLOW_MOTION = 10
+        const val SLOW_MOTION = "10"
         const val WARM_UP_INDEX = 100L
         const val ANIMATION_SETTING_DELAY_MS = 500L
         const val SAMPLING_MS = 4000L
