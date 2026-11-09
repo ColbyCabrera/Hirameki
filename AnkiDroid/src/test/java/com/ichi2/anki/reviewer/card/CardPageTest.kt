@@ -87,6 +87,7 @@ class CardPageTest {
         val script = CardPage.styleUpdateScript(style.copy(isNightMode = true))
 
         assertThat(script, containsString("""documentElement.classList.toggle("night-mode", true)"""))
+        assertThat(script, not(containsString("className")))
         assertThat(script, containsString("""classList.toggle("nightMode", true)"""))
         assertThat(script, containsString("""classList.toggle("night_mode", true)"""))
     }

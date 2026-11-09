@@ -71,7 +71,7 @@ class CardWebViewController(
     private var pageStyle: CardPageStyle? = null
     private var pageToken = 0
 
-    /** The card a link navigated away from. The linked page stays until the next card or side. */
+    /** The card whose page a link or form replaced. The new page stays until the next card or side. */
     private var cardLeftByNavigation: CardDisplay? = null
 
     private var initialScale = 1f
@@ -253,10 +253,7 @@ class CardWebViewController(
             view: WebView,
             request: WebResourceRequest,
         ): Boolean {
-            if (request.url.scheme in SCHEMES_LOADED_BY_WEBVIEW) {
-                if (request.isForMainFrame) cardLeftByNavigation = pageDisplay
-                return false
-            }
+            if (request.url.scheme in SCHEMES_LOADED_BY_WEBVIEW) return false
             val url = request.url.toString()
             if (isLinkWithinPage(url)) return false
             onLinkClick(url)
@@ -277,6 +274,7 @@ class CardWebViewController(
             favicon: Bitmap?,
         ) {
             isPageLoaded = false
+            cardLeftByNavigation = cardLeftByNavigation ?: pageDisplay
             pageDisplay = null
             shownDisplay.value = null
         }

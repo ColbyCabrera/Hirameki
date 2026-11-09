@@ -274,8 +274,7 @@ class FlashcardOnDeviceTest {
     ) {
         assertThat("ends on the new card", samples.last().isCloseTo(to), equalTo(true))
         assertThat("only blends of the two cards", samples.filterNot { it.isBlendOf(from, to) }.map(::hex), empty())
-        val blends = samples.filter { !it.isCloseTo(from) && !it.isCloseTo(to) }
-        assertThat("a fade, not a cut (${samples.map(::hex)})", blends.size, greaterThan(0))
+        assertThat("a fade, not a cut (${samples.map(::hex)})", (samples.toSet() - setOf(from, to)).size, greaterThan(0))
     }
 
     private suspend fun show(next: CardDisplay) = onMain { display = next }
@@ -318,7 +317,10 @@ class FlashcardOnDeviceTest {
         val samples = mutableListOf(screenSample())
         change()
         val start = System.nanoTime()
-        while ((System.nanoTime() - start) / 1_000_000 < SAMPLING_MS) samples += screenSample()
+        while ((System.nanoTime() - start) / 1_000_000 < SAMPLING_MS) {
+            samples += screenSample()
+            delay(SAMPLE_INTERVAL_MS)
+        }
         return samples
     }
 
@@ -403,6 +405,9 @@ class FlashcardOnDeviceTest {
         const val COLOR_TOLERANCE = 10
         const val BLEND_STEPS = 50
         const val SAMPLING_MS = 1500L
+
+        /** Sampling flat out on the main thread would starve the fade of frames. */
+        const val SAMPLE_INTERVAL_MS = 8L
         const val MID_FADE_DELAY_MS = 200L
         const val CROSSFADE_READY_DELAY_MS = 1500L
 
