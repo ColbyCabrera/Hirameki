@@ -16,7 +16,6 @@
 
 package com.ichi2.anki.reviewer.compose
 
-import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
@@ -26,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
@@ -154,7 +154,7 @@ class FlashcardSinglePageTest : RobolectricTest() {
     private fun followLinkReplacingThePage(webView: WebView) {
         val request =
             mockk<WebResourceRequest> {
-                every { url } returns Uri.parse("blob:${BASE_URL}generated")
+                every { url } returns "blob:${BASE_URL}generated".toUri()
                 every { isForMainFrame } returns true
             }
         composeTestRule.runOnUiThread { webView.webViewClient.shouldOverrideUrlLoading(webView, request) }
