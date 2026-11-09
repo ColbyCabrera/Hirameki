@@ -273,7 +273,7 @@ fun NoteEditorScreen(
                 onCustomButtonLongClick = onCustomButtonLongClick,
                 onAddCustomButtonClick = onAddCustomButtonClick,
                 customButtons = customToolbarButtons,
-                isVisible = isToolbarVisible,
+                isVisible = isToolbarVisible && !state.isImageOcclusion,
             )
         },
     ) { paddingValues ->
@@ -311,29 +311,31 @@ fun NoteEditorScreen(
                 }
             }
 
-            // Fields Editor
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+            if (!state.isImageOcclusion) {
+                // Fields Editor
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
                 ) {
-                    state.fields.forEach { field ->
-                        NoteFieldEditor(
-                            field = field,
-                            onValueChange = { newValue ->
-                                onFieldValueChange(field.index, newValue)
-                            },
-                            onMultimediaClick = { onMultimediaClick(field.index) },
-                            onToggleStickyClick = { onToggleStickyClick(field.index) },
-                            showStickyButton = state.isAddingNote,
-                            onFocus = { onFieldFocus(field.index) },
-                            isFocused = state.focusedFieldIndex == field.index,
-                            capitalizeSentences = capitalizeSentences,
-                        )
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        state.fields.forEach { field ->
+                            NoteFieldEditor(
+                                field = field,
+                                onValueChange = { newValue ->
+                                    onFieldValueChange(field.index, newValue)
+                                },
+                                onMultimediaClick = { onMultimediaClick(field.index) },
+                                onToggleStickyClick = { onToggleStickyClick(field.index) },
+                                showStickyButton = state.isAddingNote,
+                                onFocus = { onFieldFocus(field.index) },
+                                isFocused = state.focusedFieldIndex == field.index,
+                                capitalizeSentences = capitalizeSentences,
+                            )
+                        }
                     }
                 }
             }
@@ -357,32 +359,34 @@ fun NoteEditorScreen(
             }
 
             Row(modifier = Modifier.fillMaxWidth()) {
-                // Tags Button
-                Button(
-                    onClick = { onShowTagsDialogChange(true) },
-                    modifier =
-                        Modifier
-                            .height(52.dp)
-                            .weight(1f),
-                    enabled = state.isTagsButtonEnabled,
-                    colors = ButtonDefaults.filledTonalButtonColors(),
-                ) {
-                    Text(
-                        text =
-                            if (state.tags.isEmpty()) {
-                                stringResource(R.string.add_tag)
-                            } else {
-                                stringResource(
-                                    R.string.note_editor_tags_list,
-                                    state.tags.joinToString(", "),
-                                )
-                            },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                if (!state.isImageOcclusion) {
+                    // Tags Button
+                    Button(
+                        onClick = { onShowTagsDialogChange(true) },
+                        modifier =
+                            Modifier
+                                .height(52.dp)
+                                .weight(1f),
+                        enabled = state.isTagsButtonEnabled,
+                        colors = ButtonDefaults.filledTonalButtonColors(),
+                    ) {
+                        Text(
+                            text =
+                                if (state.tags.isEmpty()) {
+                                    stringResource(R.string.add_tag)
+                                } else {
+                                    stringResource(
+                                        R.string.note_editor_tags_list,
+                                        state.tags.joinToString(", "),
+                                    )
+                                },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
 
                 // Cards Button
                 Button(
@@ -390,7 +394,7 @@ fun NoteEditorScreen(
                     modifier =
                         Modifier
                             .height(52.dp)
-                            .widthIn(max = 164.dp),
+                            .then(if (state.isImageOcclusion) Modifier.weight(1f) else Modifier.widthIn(max = 164.dp)),
                     enabled = state.isCardsButtonEnabled,
                     colors = ButtonDefaults.filledTonalButtonColors(),
                 ) {

@@ -709,6 +709,7 @@ class NoteEditorActivity :
                             !(noteEditorState.isAddingNote && noteEditorState.isImageOcclusion)
                         val copyEnabled = noteEditorState.fields.any { it.value.text.isNotBlank() }
 
+                        val showsTextEditingOptions = !noteEditorState.isImageOcclusion
                         val overflowItems =
                             listOf(
                                 NoteEditorSimpleOverflowItem(
@@ -729,12 +730,14 @@ class NoteEditorActivity :
                                 NoteEditorSimpleOverflowItem(
                                     id = "font_size",
                                     title = stringResource(R.string.menu_font_size),
+                                    visible = showsTextEditingOptions,
                                 ) {
                                     noteEditorViewModel.showFontSizeDialog(true)
                                 },
                                 NoteEditorToggleOverflowItem(
                                     id = "show_toolbar",
                                     title = stringResource(R.string.menu_show_toolbar),
+                                    visible = showsTextEditingOptions,
                                     checked = showToolbar,
                                     onCheckedChange = { isChecked ->
                                         sharedPrefs().edit {
@@ -746,6 +749,7 @@ class NoteEditorActivity :
                                 NoteEditorToggleOverflowItem(
                                     id = "capitalize",
                                     title = stringResource(R.string.note_editor_capitalize),
+                                    visible = showsTextEditingOptions,
                                     checked = capitalizeChecked,
                                     onCheckedChange = { isChecked ->
                                         capitalizeChecked = isChecked
@@ -755,6 +759,7 @@ class NoteEditorActivity :
                                 NoteEditorToggleOverflowItem(
                                     id = "scroll_toolbar",
                                     title = stringResource(R.string.menu_scroll_toolbar),
+                                    visible = showsTextEditingOptions,
                                     checked = scrollToolbarChecked,
                                     onCheckedChange = { isChecked ->
                                         scrollToolbarChecked = isChecked
