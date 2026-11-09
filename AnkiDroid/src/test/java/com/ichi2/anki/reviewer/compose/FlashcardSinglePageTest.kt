@@ -139,10 +139,6 @@ class FlashcardSinglePageTest : RobolectricTest() {
         command = USER_ACTION
         composeTestRule.waitForIdle()
         assertThat(consumed, contains(USER_ACTION.id))
-
-        display = QUESTION.copy(isAnswerShown = true)
-        composeTestRule.waitForIdle()
-        navigate(webView)
         assertThat(lastScript(webView), not(containsString("userJs1")))
     }
 

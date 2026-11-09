@@ -66,8 +66,15 @@ import timber.log.Timber
 /**
  * Shows [display] in one persistent WebView, crossfading from the previous card or side.
  *
+ * @param display the card and side to show
+ * @param isMediaAutoplayEnabled whether audio and video on the card can play without a tap
+ * @param javascriptCommand a script to run once in the page after [display] is shown, or `null` if there is none
  * @param onJavascriptCommandConsumed called with the id of [javascriptCommand] once it has been
  * queued in the page, or dropped because a link has replaced the page
+ * @param onGesture called on a tap, double tap or swipe on the card, for the user's gesture settings
+ * @param onLinkClick called with the URL of a tapped link that the page does not handle itself
+ * @param modifier applied to the card's root layout
+ * @param toolbarHeight the bottom padding of the card in dp, so the toolbar does not cover its end
  */
 @Composable
 fun Flashcard(
