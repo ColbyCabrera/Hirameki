@@ -21,6 +21,7 @@ import androidx.annotation.CheckResult
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import anki.card_rendering.EmptyCardsReport
+import anki.decks.SetDeckCollapsedRequest
 import anki.i18n.GeneratedTranslations
 import anki.sync.SyncStatusResponse
 import com.ichi2.anki.CardBrowser
@@ -925,11 +926,9 @@ class DeckPickerViewModel :
 
     fun toggleDeckExpand(deckId: DeckId) =
         viewModelScope.launch {
-            // update DB
-            withCol { decks.collapse(deckId) }
-            // update stored state
             dueTree?.find(deckId)?.run {
                 collapsed = !collapsed
+                withCol { decks.setCollapsed(did, collapsed, SetDeckCollapsedRequest.Scope.REVIEWER) }
             }
             flowOfRefreshDeckList.emit(Unit)
         }
