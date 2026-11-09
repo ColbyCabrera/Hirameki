@@ -23,6 +23,7 @@ import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.R
 import com.ichi2.anki.cardviewer.TapGestureMode
+import com.ichi2.anki.common.utils.isRunningAsUnitTest
 import com.ichi2.anki.settings.enums.FrameStyle
 import com.ichi2.anki.settings.enums.HideSystemBars
 import com.ichi2.anki.settings.enums.PrefEnum
@@ -296,6 +297,9 @@ object Prefs {
      * True in case [BuildConfig.DEBUG] is true
      * or if the user has enabled it with the secret on [com.ichi2.anki.preferences.AboutFragment]
      */
+    val isWebDebugEnabled: Boolean
+        get() = (getBoolean(R.string.html_javascript_debugging_key, false) || BuildConfig.DEBUG) && !isRunningAsUnitTest
+
     var isDevOptionsEnabled: Boolean
         get() = getBoolean(R.string.dev_options_enabled_by_user_key, false) || BuildConfig.DEBUG
         set(value) = putBoolean(R.string.dev_options_enabled_by_user_key, value)
