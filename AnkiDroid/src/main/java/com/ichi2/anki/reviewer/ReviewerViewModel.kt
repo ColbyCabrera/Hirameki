@@ -30,6 +30,7 @@ import anki.scheduler.CardAnswer
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
+import com.ichi2.anki.backend.stripHTML
 import com.ichi2.anki.cardviewer.CardMediaPlayer
 import com.ichi2.anki.cardviewer.MediaErrorBehavior
 import com.ichi2.anki.cardviewer.MediaErrorListener
@@ -102,6 +103,7 @@ data class ReviewerState(
     val baseUrl: String = "",
     val nextTimes: List<String> = List(4) { "" },
     val showTypeInAnswer: Boolean = false,
+    val typedAnswerIsNumber: Boolean = false,
     val typedAnswer: String = "",
     val isMarked: Boolean = false,
     val flag: Int = 0,
@@ -241,6 +243,11 @@ sealed class ReviewerEffect {
         val timebox: Collection.TimeboxReached,
     ) : ReviewerEffect()
 }
+
+private val UNSIGNED_NUMBER = Regex("""\d+([.,]\d*)?""")
+
+// Compose has no signed number keyboard, so a negative answer keeps the text keyboard, which has a minus key
+internal fun isUnsignedNumber(answer: String?): Boolean = answer != null && UNSIGNED_NUMBER.matches(stripHTML(answer).trim())
 
 /**
  * Whether the backend refused an answer because the reviewer's queue state is out of date, rather
@@ -701,6 +708,7 @@ class ReviewerViewModel(
                     baseUrl = server.baseUrl(),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
+                    typedAnswerIsNumber = isUnsignedNumber(typeAnswer.correct),
                     nextTimes = List(4) { "" },
                     chosenAnswer = "",
                     typedAnswer = "",
@@ -846,6 +854,7 @@ class ReviewerViewModel(
                     baseUrl = server.baseUrl(),
                     isAnswerShown = false,
                     showTypeInAnswer = typeAnswer.correct != null,
+                    typedAnswerIsNumber = isUnsignedNumber(typeAnswer.correct),
                     nextTimes = List(4) { "" },
                     chosenAnswer = "",
                     typedAnswer = "",

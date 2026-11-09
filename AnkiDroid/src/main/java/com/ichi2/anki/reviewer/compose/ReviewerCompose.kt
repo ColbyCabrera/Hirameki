@@ -488,6 +488,7 @@ fun ReviewerContent(
                         colorizeAnswerButtons = state.colorizeAnswerButtons,
                         showTypeInAnswer = state.showTypeInAnswer,
                         typedAnswer = state.typedAnswer,
+                        typedAnswerIsNumber = state.typedAnswerIsNumber,
                         onTypedAnswerChanged = {
                             viewModel.onEvent(
                                 ReviewerEvent.OnTypedAnswerChanged(it),

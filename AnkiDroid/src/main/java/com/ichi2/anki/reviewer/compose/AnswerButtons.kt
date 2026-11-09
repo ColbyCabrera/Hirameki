@@ -62,6 +62,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -107,6 +108,7 @@ fun AnswerButtons(
     nextTimes: List<String>,
     moreOptionsInTopAppBar: Boolean = false,
     onMoreOptionsClick: () -> Unit,
+    typedAnswerIsNumber: Boolean = false,
 ) {
     val adjustButtonStylesForBadges = showButtonBadges && moreOptionsInTopAppBar
 
@@ -118,6 +120,7 @@ fun AnswerButtons(
         if (showTypeInAnswer) {
             AnswerTypeInTextField(
                 typedAnswer = typedAnswer,
+                isNumber = typedAnswerIsNumber,
                 onTypedAnswerChanged = onTypedAnswerChanged,
                 isAnswerShown = isAnswerShown,
                 onShowAnswer = onShowAnswer,
@@ -166,6 +169,7 @@ fun AnswerButtons(
 @Composable
 private fun AnswerTypeInTextField(
     typedAnswer: String,
+    isNumber: Boolean,
     onTypedAnswerChanged: (String) -> Unit,
     isAnswerShown: Boolean,
     onShowAnswer: () -> Unit,
@@ -194,7 +198,11 @@ private fun AnswerTypeInTextField(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
             ),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = if (isNumber) KeyboardType.Decimal else KeyboardType.Unspecified,
+                imeAction = ImeAction.Done,
+            ),
         keyboardActions =
             KeyboardActions(onDone = {
                 if (!isAnswerShown) {
