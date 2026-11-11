@@ -34,6 +34,7 @@
         <item quantity="other">%d resetovaných kartičiek</item>
     </plurals>
     <string name="answering_error_title">Chyba databázy</string>
+    <string name="answering_error_message">Zápis kolekcie zlyhal. Databáza môže byť poškodená alebo na úložisku nie je dostatok miesta.\n\nAk sa to stáva častejšie, skontrolujte databázu, opravte kolekciu alebo ju obnovte zo zálohy. Ak to chcete urobiť, stlačte „Možnosti”.\n\Môže ísť aj o chybu aplikácie; prosím oznámte túto chybu aby sme to mohli skontrolovať.</string>
     <string name="answering_error_report">Nahlásiť chybu</string>
     <string name="storage_full_message">Nie je dostatok voľného miesta v úložisku na otvorenie Hirameki. Uvoľnite miesto v pamäti na pokračovanie.</string>
     <string name="repair_deck_dialog">Naozaj chcete skúsiť opraviť databázu?\n\nPred začatím pokusu o opravenie bude vytvorená kópia v podpriečinku \"%s\".</string>
@@ -69,7 +70,6 @@
     <string name="dialog_updated_custom_certificate">Certifikát aktualizovaný</string>
     <!-- Media checking -->
     <string name="check_media_message">Kontrola multimédií&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">Médiá sa vymazávajú&#8230;</string>
     <string name="delete_media_result_title">Výsledok vymazania</string>
     <plurals name="delete_media_result_message">

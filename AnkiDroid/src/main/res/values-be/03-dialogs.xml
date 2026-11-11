@@ -102,6 +102,7 @@
     <string name="database_locked_title">База даных заблакаваная</string>
     <string name="database_locked_summary_new" comment="%s is the name of the \'AnkiDroid directory\' setting">Іншая праграма Hirameki выкарыстоўвае гэту калекцыю. Канфлікт можа назірацца, нават калі яго праца не бачная.\n\nЗмяніце каталог ‘%s’ у пашыраных наладах адной з праграм, каб працягнуць выкарыстанне абодвума праграмамі.\n\nПрымусова спыніце канфліктуючую праграму, каб скарыстацца гэтай праграмай.</string>
     <string name="incompatible_database_version_title">Несумяшчальная версія базы даных</string>
+    <string name="incompatible_database_version_summary">База даных была створана ў больш новай версіі праграмы і ў дадзены час з ёй немагчыма працаваць. Паспрабуйце абнавіць Hirameki або панізіць версію базы даных, каб адкрыць яе\n\nВерсія, якая падтрымліваецца: %1$d\nВерсія базы даных:%2$d\n\nНаступныя  параметры аднаўлення перазапішуць вашу бягучую калекцыю, магчыма з сумяшчальнай версіяй базы даных.</string>
     <!-- Deck Picker Background-->
     <!-- Global Intent handler -->
     <!-- Also used by Card Browser, not renaming to save translators effort -->

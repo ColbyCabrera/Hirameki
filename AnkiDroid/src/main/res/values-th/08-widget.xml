@@ -17,6 +17,9 @@
   -->
 <resources>
     <!-- Widget -->
+    <plurals name="widget_minimum_cards_due_notification_ticker_text">
+        <item quantity="other">%d Hirameki cards due</item>
+    </plurals>
     <plurals name="widget_cards_due">
         <item quantity="other">%d cards due</item>
     </plurals>

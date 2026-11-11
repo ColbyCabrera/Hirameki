@@ -38,7 +38,6 @@
     <string name="card_browser_select_all" maxLength="28">ជ្រើសរើសទាំងអស់</string>
     <string name="card_browser_select_none" maxLength="28">មិនជ្រើសរើស</string>
     <string name="card_browser_search_all_decks">ស្វែងរកជាន់ទាំងអស់</string>
-    <string name="set_due_date_hintText" comment="plural set_due_date_label_suffix is used for parameters, parameter 1 is the plural for 0, parameter 2 is the plural for 1">Today is ‘0 %1$s’, tomorrow is ‘1 %2$s’, etc&#8230;</string>
     <plurals name="card_browser_export_cards">
         <item quantity="other">នាំចេញកាត</item>
     </plurals>

@@ -228,6 +228,7 @@
     <string name="open_changelog">変更履歴を開く</string>
     <string name="pref_cat_about_title" maxLength="41">AnkiDroidについて</string>
     <string name="contributors_title">コントリビューター</string>
+    <string name="about_contributors_description"><![CDATA[Hiramekiの開発を支えているのは、一人一人の<a href=\"%1$s\">コントリビューター</a>です。誰もが、プログラミング、翻訳、寄付、<a href=\"%2$s\">その他の方法</a>によってHiramekiの開発に貢献するコントリビューターになることができます。]]></string>
     <string name="license">ライセンス</string>
     <string name="license_description"><![CDATA[Hiramekiは<a href=\"%1$s\">GPL-3.0</a>および<a href=\"%2$s\">AGPL-3.0</a>のライセンスの下でリリースされています。<a href=\"%3$s\">ソースコード</a>はGitHubで公開されています。]]></string>
     <string name="other_licenses"><![CDATA[Hiramekiはさまざまなオープンソース<a href=\"%1$s\">ライセンス</a>に基づき、サードパーティのライブラリやアイコンを使用しています。]]></string>
@@ -272,6 +273,16 @@
     <!-- #######################################################################################
          #################################### Backup options ###################################
          ####################################################################################### -->
+    <string name="pref__backups_help__summary"><![CDATA[
+        Hiramekiは一定時間（分）ごとにコレクションのバックアップを作成しています。
+        各期間（日／週／月）の代表として保管するバックアップ以外のバックアップは、
+        ストレージ容量を圧迫しないよう、作成から2日以上経過した後に削除していきます。
+        <br><br>
+        注意：メディアファイル（画像／音声／動画のファイル）はこの自動バックアップの対象外です。
+        デバイスの故障・紛失など、アプリ内のコレクションを失う万一の事態に備えて、AnkiWebとの同期や、AnkiWeb以外のアプリ外部の保存場所（Googleドライブなど）へのエクスポートを、メディアファイルを含めた状態で定期的に行うことを強くおすすめします。
+        <br><br>
+        コレクションのエクスポートや、バックアップからのコレクションの復元は、デッキリスト画面右上のメニューから行えます。
+    ]]></string>
     <string name="pref__minutes_between_automatic_backups__title" maxLength="41">自動バックアップの間隔（分）</string>
     <string name="pref__daily_backups_to_keep__title" maxLength="41">各日代表のバックアップ保管数（何日分）</string>
     <string name="pref__weekly_backups_to_keep__title" maxLength="41">各週代表のバックアップ保管数（何週分）</string>
@@ -313,7 +324,6 @@
     <!-- #######################################################################################
          ##### Generic preference summaries & snackbars that are shown on preference click #####
          ####################################################################################### -->
-    <string name="pref__etc__summary__fetching" comment="Generic preference summary to be shown when the value is being fetched">&#8230;</string>
     <string name="pref__etc__summary__no_collection" comment="Generic preference summary to be shown when a preference is not usable         because the collection does not exist">コレクションがありません</string>
     <string name="pref__etc__summary__error" comment="Generic preference summary to be shown when there was an error fetching the value.         For example, this is shown when the permission to access collection is lacking">エラー</string>
     <string name="pref__etc__snackbar__fetching" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which is being fetched">取得中&#8230;</string>

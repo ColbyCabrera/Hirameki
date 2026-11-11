@@ -64,7 +64,6 @@
     <string name="dialog_updated_custom_certificate">Chứng chỉ đã được cập nhật</string>
     <!-- Media checking -->
     <string name="check_media_message">Đang kiểm tra tệp đa phương tiện&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">Đang xóa phương tiện&#8230;</string>
     <string name="delete_media_result_title">Kết quả xóa</string>
     <plurals name="delete_media_result_message">
@@ -109,6 +108,7 @@
     <string name="help_title_get_help">Trợ giúp</string>
     <string name="help_item_mailing_list">Danh sách gửi thư</string>
     <string name="help_item_report_bug">Báo cáo lỗi</string>
+    <string name="help_title_support_ankidroid" maxLength="28">Hỗ trợ</string>
     <string name="help_item_support_develop_ankidroid">Phát triển</string>
     <string name="help_item_support_rate_ankidroid">Đánh giá</string>
     <string name="help_item_support_other_ankidroid">Khác</string>

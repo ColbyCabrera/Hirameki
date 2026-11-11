@@ -94,7 +94,6 @@
     <string name="import_title">กำลังนำเข้า</string>
     <string name="import_preparing_file">กำลังเตรียมไฟล์เพื่อนำเข้า&#8230;</string>
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">เพิ่ม</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <!-- Time spans -->
     <!-- Currently only used if exporting APKG fails -->
     <!-- Import and export v2 feedback -->

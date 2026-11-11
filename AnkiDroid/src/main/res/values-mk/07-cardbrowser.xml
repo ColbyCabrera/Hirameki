@@ -35,7 +35,6 @@
     <string name="card_browser_change_display_order" maxLength="28">Промена на редоследот на прикажувања</string>
     <string name="card_browser_change_display_order_title">Изберете редослед на прикажување</string>
     <string name="card_details_tags">Ознаки</string>
-    <string name="set_due_date_hintText" comment="plural set_due_date_label_suffix is used for parameters, parameter 1 is the plural for 0, parameter 2 is the plural for 1">Today is ‘0 %1$s’, tomorrow is ‘1 %2$s’, etc&#8230;</string>
     <!--Keyboard shortcuts dialog-->
     <!-- Manage columns dialog -->
     <!-- Search history -->

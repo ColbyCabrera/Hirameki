@@ -64,7 +64,6 @@
     <string name="dialog_updated_custom_certificate">ᱥᱟᱨᱴᱤᱯᱷᱤᱠᱮᱴ ᱟᱯᱰᱮᱴ ᱟᱠᱟᱱᱟ</string>
     <!-- Media checking -->
     <string name="check_media_message">ᱢᱮᱰᱤᱭᱟ ᱧᱮᱞ ᱵᱤᱰᱟᱣᱜ ᱠᱟᱱᱟ&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">ᱢᱤᱰᱤᱭᱟ ᱜᱮᱫ ᱜᱤᱰᱤᱜ ᱠᱟᱱᱟ&#8230;</string>
     <string name="delete_media_result_title">ᱜᱮᱫ ᱜᱤᱰᱤ‌ ᱛᱮᱞᱟ</string>
     <plurals name="delete_media_result_message">
@@ -91,6 +90,7 @@
     <!-- Database Errors-->
     <string name="database_locked_title">ᱥᱟᱫᱽᱠᱷᱤᱭᱟᱹ ᱵᱟᱹᱭᱥᱟᱣ ᱞᱚᱠ ᱮᱱᱟ</string>
     <string name="incompatible_database_version_title">ᱵᱟᱝ ᱴᱷᱤᱠ ᱵᱟᱴᱟᱵᱮᱥ ᱵᱷᱟᱹᱨᱥᱟᱹᱱ</string>
+    <string name="incompatible_database_version_summary">ᱰᱟᱴᱟᱵᱮᱥ ᱫᱚ ᱱᱚᱶᱟ Hirameki ᱵᱷᱟᱹᱥᱚᱱ ᱠᱷᱚᱱ ᱡᱟᱹᱛᱤ ᱮᱰᱵᱷᱟᱱᱥ ᱜᱮᱭᱟ ᱾ ᱠᱷᱚᱞᱟ ᱞᱟᱹᱜᱤᱫᱽ ᱰᱟᱴᱟᱵᱮᱥ ᱟᱹᱯᱜᱮᱰ ᱟᱨ ᱵᱟᱝ ᱰᱟᱩᱱᱜᱨᱮᱰ ᱢᱮ\n\n ᱥᱟᱹᱯᱚᱴ ᱵᱷᱟᱹᱨᱥᱚᱱᱺ %1$d\n ᱰᱟᱴᱟᱵᱮᱥ ᱵᱷᱟᱹᱥᱚᱱᱺ %2$d\n\n ᱱᱚᱶᱟ ᱠᱚ ᱨᱤᱥᱴᱚᱨ ᱚᱯᱥᱚᱱ ᱠᱚ ᱟᱢᱟᱜᱽ ᱱᱤᱛᱚᱜᱼᱟᱜ ᱛᱩᱢᱟᱹ ᱥᱟᱞᱟᱜᱽ ᱫᱩᱦᱲᱟᱹ ᱚᱞᱚᱜᱚᱜ ᱠᱚᱢᱯᱟᱴᱤᱵᱟᱹᱞ ᱰᱟᱴᱟᱵᱮᱥ ᱵᱷᱟᱹᱥᱚᱱ ᱥᱟᱞᱟᱜᱽ ᱛᱮᱺ</string>
     <!-- Deck Picker Background-->
     <!-- Global Intent handler -->
     <!-- Also used by Card Browser, not renaming to save translators effort -->

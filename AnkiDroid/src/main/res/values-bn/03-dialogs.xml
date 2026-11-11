@@ -61,7 +61,6 @@
     <string name="dialog_updated_custom_certificate">সার্টিফিকেট আপডেট করা হয়েছে</string>
     <!-- Media checking -->
     <string name="check_media_message">মিডিয়া পরীক্ষা করা হচ্ছে&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">মিডিয়া মুছে ফেলা হচ্ছে&#8230;</string>
     <string name="delete_media_result_title">মুছে ফেলার ফলাফল</string>
     <plurals name="delete_media_result_message">

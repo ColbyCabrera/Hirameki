@@ -36,7 +36,6 @@
     <string name="fact_adder_intent_title" comment="Label of the \'Add Note\' window. This title can\'t be seen in AnkiDroid directly.">Hirameki kaart</string>
     <string name="card_editor_preview_card" comment="Button offering to preview some card(s)" maxLength="28">Foarbyld</string>
     <string name="info_rate">Beoardiel Hirameki</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <!-- Time spans -->
     <!-- Currently only used if exporting APKG fails -->
     <!-- Import and export v2 feedback -->

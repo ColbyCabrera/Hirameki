@@ -257,6 +257,7 @@
     <string name="intro_get_started" comment="Action to start AnkiDroid for the first time without syncing from AnkiWeb">Пачаць</string>
     <string name="intro_sync_from_ankiweb">Сінхранізаваць з AnkiWeb</string>
     <!-- IntentHandler -->
+    <string name="app_not_initialized_new">Hirameki пакуль не ініцыялізаваны. Адкрыйце праграму і паспрабуйце яшчэ раз</string>
     <!-- Deck Creation -->
     <string name="deck_created">Створаная калода</string>
     <string name="deck_renamed">Перайменаваная калода</string>

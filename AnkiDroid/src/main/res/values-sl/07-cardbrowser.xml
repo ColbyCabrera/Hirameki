@@ -49,7 +49,6 @@
     <string name="card_browser_change_display_order" maxLength="28">Spremeni vrstni red prikaza</string>
     <string name="card_browser_change_display_order_title">Izberite vrstni red prikaza</string>
     <string name="card_details_tags">Oznake</string>
-    <string name="set_due_date_hintText" comment="plural set_due_date_label_suffix is used for parameters, parameter 1 is the plural for 0, parameter 2 is the plural for 1">Today is ‘0 %1$s’, tomorrow is ‘1 %2$s’, etc&#8230;</string>
     <plurals name="card_browser_export_cards">
         <item quantity="one">Export card</item>
         <item quantity="two">Export cards</item>

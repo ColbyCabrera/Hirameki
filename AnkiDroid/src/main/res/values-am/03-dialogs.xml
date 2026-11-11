@@ -17,15 +17,10 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="dialog_yes">አዎ</string>
-    <string name="dialog_processing">Processing&#8230;</string>
     <!-- Currently unsued, should be useful in the future -->
     <!-- Media checking -->
-    <string name="check_media_message">Checking media&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
-    <string name="delete_media_message">Deleting media&#8230;</string>
     <!-- Tags Dialog Options -->
     <!-- Empty cards -->
-    <string name="emtpy_cards_finding">Finding empty cards&#8230;</string>
     <!-- Multimedia - Edit Field Activity -->
     <!-- Multimedia - Audio View -->
     <!-- Database Integrity Check -->

@@ -33,7 +33,6 @@
     <string name="dialog_keep">Калдыру</string>
     <string name="dialog_remove">Бетерү</string>
     <string name="dialog_continue">Дәвам итү</string>
-    <string name="dialog_processing">Processing&#8230;</string>
     <string name="dialog_positive_create" comment="Create a new collection, probably erasing the previous one, may be necessary in case of error.">Ясарга</string>
     <string name="dialog_positive_delete" maxLength="28">Бетерү</string>
     <!-- Currently unsued, should be useful in the future -->
@@ -42,16 +41,12 @@
     <string name="dialog_positive_repair">Төзәтү</string>
     <string name="dialog_positive_replace">Алмаштыру</string>
     <!-- Media checking -->
-    <string name="check_media_message">Checking media&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
-    <string name="delete_media_message">Deleting media&#8230;</string>
     <plurals name="delete_media_result_message">
         <item quantity="other">%d файл бетерелгән</item>
     </plurals>
     <!-- Tags Dialog Options -->
     <string name="tags_dialog_option_new_cards" comment="Name of cards that have not ever been reviewed yet">Яңа</string>
     <!-- Empty cards -->
-    <string name="emtpy_cards_finding">Finding empty cards&#8230;</string>
     <!-- Multimedia - Edit Field Activity -->
     <!-- Multimedia - Audio View -->
     <!-- Database Integrity Check -->

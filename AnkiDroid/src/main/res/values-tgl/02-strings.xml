@@ -62,7 +62,6 @@
     <string name="import_title">Ini-Import</string>
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">Magdagdag</string>
     <string name="import_message_replace_confirm">Tatanggalin nito ang iyong koleksyon at palitan ito ng datos ng file %s</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="export_email_subject">Na-export na Hirameki flashcards:%s</string>
     <string name="select_tts" maxLength="28">Itakda ang wika ng TTS</string>
     <string name="dyn_deck_desc">Ito ay isang espesyal na deck para sa pag-aaral sa labas ng normal na iskedyul. Ang mga baraha ay awtomatikong ibabalik sa kanilang orihinal na mga deck matapos mong balik-aralan ang mga ito. Ang pagtanggal sa deck mula sa listahan ng deck ay babalik ang lahat ng natitirang mga baraha sa kanilang orihinal na deck.</string>

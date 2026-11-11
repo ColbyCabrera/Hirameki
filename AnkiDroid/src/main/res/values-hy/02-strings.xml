@@ -85,7 +85,6 @@
     <string name="checks_action" maxLength="28">Ստուգել</string>
     <string name="info_rate">Գնահատեք Hirameki-ը</string>
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">Ավելացնել</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="export_choice_share">Կիսել</string>
     <string name="export_choice_save_to">Պահպանել ինչ-որ մի տեղ</string>
     <!-- Time spans -->

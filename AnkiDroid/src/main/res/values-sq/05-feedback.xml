@@ -20,5 +20,4 @@
     <string name="feedback_for_manual_toast_text">Një raprot i gabimeve po përgatitet për zhvilluesit e app-it&#8230;</string>
     <string name="feedback_report">Raprto</string>
     <string name="feedback_no_suitable_app_found">Nuk u gjend asnjë app i përshtatshëm</string>
-    <string name="feedback_auto_toast_text">Hirameki has encountered a problem; a report is being sent to the developers&#8230;</string>
 </resources>

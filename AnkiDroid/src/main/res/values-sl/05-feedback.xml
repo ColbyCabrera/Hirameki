@@ -21,7 +21,6 @@
     <string name="feedback_disclaimer">Omejitev odgovornosti: ne zbiramo osebnih informacij, kot so e-poštni naslov, telefonska številka ali IMEI telefona. Zbiramo nekaj podatkov o vaši napravi, kot so izdelovalec, model in različica Androida, kot tudi naravo samih prijavljenih napak in korake, ki so prevedli do njih.</string>
     <string name="feedback_default_text">Vnesite povratne informacije ali informacije o naravi napak, ki jih prijavljate.</string>
     <string name="feedback_auto_toast_text">Hirameki je naletel na težavo; poročilo se pošilja razvijalcem &#8230;</string>
-    <string name="feedback_for_manual_toast_text">An error report is being prepared for the developers&#8230;</string>
     <string name="feedback_report">Prijavi</string>
     <string name="feedback_report_automatically">Samodejno pošlji poročila o napakah</string>
     <string name="feedback_copy_debug">Kopiraj pod. o razhroščevanju</string>

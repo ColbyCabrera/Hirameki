@@ -19,8 +19,6 @@
     <!-- Feedback.java -->
     <string name="error_reporting_choice" maxLength="41">Erroreen berri-ematea</string>
     <string name="feedback_title">Hirameki Iruzkinak</string>
-    <string name="feedback_auto_toast_text">Hirameki has encountered a problem; a report is being sent to the developers&#8230;</string>
-    <string name="feedback_for_manual_toast_text">An error report is being prepared for the developers&#8230;</string>
     <string name="feedback_report">Txostena</string>
     <string name="feedback_report_automatically">Errore txostenak automatikoki bidali</string>
     <string name="feedback_copy_debug">Arazteko informazioa kopiatu</string>

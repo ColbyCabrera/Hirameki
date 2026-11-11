@@ -123,6 +123,8 @@
     <string name="import_error_handle_exception">Fehler beim Importieren der Datei\n\n%s</string>
     <string name="import_error_not_apkg_extension">Dateiname »%s« muss auf .apkg oder .colpkg enden</string>
     <string name="import_error_load_imported_database">Anki-Datenbank-Platzhalter (.anki2) werden noch nicht unterstützt. Bitte lesen Sie das Handbuch für entsprechende Anweisungen.</string>
+    <string name="import_error_content_provider">Die ausgewählte Datei konnte nicht automatisch importiert werden. Lesen Sie im Handbuch, wie Sie Anki-Dateien manuell importieren können: \n %s</string>
+    <string name="import_interrupted">Import unterbrochen</string>
     <string name="export_ready_title">Export bereit</string>
     <string name="export_send_no_handlers">Keine Anwendungen zum Öffnen von APKG-Dateien verfügbar. Wird gespeichert &#8230;</string>
     <string name="export_save_apkg_successful">Anki-Paket erfolgreich gespeichert</string>
@@ -252,6 +254,7 @@
     <string name="intro_get_started" comment="Action to start AnkiDroid for the first time without syncing from AnkiWeb">Los geht’s</string>
     <string name="intro_sync_from_ankiweb">Mit AnkiWeb synchronisieren</string>
     <!-- IntentHandler -->
+    <string name="app_not_initialized_new">Hirameki ist noch nicht initialisiert. Bitte öffne die App nochmal und versuche erneut</string>
     <!-- Deck Creation -->
     <string name="deck_created">Stapel wurde erstellt</string>
     <string name="deck_renamed">Stapel wurde umbenannt</string>

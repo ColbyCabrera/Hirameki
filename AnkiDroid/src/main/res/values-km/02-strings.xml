@@ -55,7 +55,6 @@
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">ថែម</string>
     <string name="import_title_error" comment="Title of error dialog">កំហុស</string>
     <string name="export_ready_title">ការនាំចេញគឺរួចរាល់</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="export_choice_share">ចែករំលែក</string>
     <string name="export_choice_save_to">រក្សាទុកនៅ</string>
     <string name="study_options" comment="Name for a preference category in Filtered deck (aka Cram deck, aka Custom study) options" maxLength="28">ជម្រើស</string>

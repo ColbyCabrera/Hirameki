@@ -71,7 +71,6 @@
     <string name="dialog_updated_custom_certificate">Tzertificadu atualizadu</string>
     <!-- Media checking -->
     <string name="check_media_message">Vetifichende sos mèdios&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">Iscantzellende mèdios&#8230;</string>
     <string name="delete_media_result_title">Resurtadu de s\'iscantzelladura</string>
     <plurals name="delete_media_result_message">
@@ -122,6 +121,7 @@
     <string name="help_title_using_ankidroid">Impreu de Hirameki</string>
     <string name="help_item_ankidroid_manual">Manuale de AnkiDroid</string>
     <string name="help_item_anki_manual">Manuale de Anki</string>
+    <string name="help_item_ankidroid_faq">PF de Anki</string>
     <string name="help_title_get_help">Pedi agiudu</string>
     <string name="help_item_mailing_list">Lista de posta eletrònica</string>
     <string name="help_item_report_bug">Sinnala una faddina in su còdighe</string>

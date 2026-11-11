@@ -266,6 +266,11 @@
     <!-- #######################################################################################
          #################################### Backup options ###################################
          ####################################################################################### -->
+    <string name="pref__backups_help__summary"><![CDATA[Hirameki periode sekurkopias vian kolekton. Sekurkopioj pli malnovaj ol du tagoj estas forigataj por konservi spacon.
+<br><br>
+Rimarko: aŭdvidaĵoj ne estas sekurkopiataj. Por esti sekura, regule samtempigu vian kolekton aŭ sekurkopiu elportaĵojn de la kolekto.
+<br><br>
+Vi povas restarigi el sekurkopio aŭ elporti vian kolekton per la menuo de listo de kartaroj.]]></string>
     <string name="pref__minutes_between_automatic_backups__title" maxLength="41">Minutoj inter aŭtomataj sekurkopioj</string>
     <string name="pref__daily_backups_to_keep__title" maxLength="41">Limigo de ĉiutagaj sekurkopioj</string>
     <string name="pref__weekly_backups_to_keep__title" maxLength="41">Limigo de ĉiusemajnaj sekurkopioj</string>
@@ -308,7 +313,6 @@
     <!-- #######################################################################################
          ##### Generic preference summaries & snackbars that are shown on preference click #####
          ####################################################################################### -->
-    <string name="pref__etc__summary__fetching" comment="Generic preference summary to be shown when the value is being fetched">&#8230;</string>
     <string name="pref__etc__summary__no_collection" comment="Generic preference summary to be shown when a preference is not usable         because the collection does not exist">Neniu kolekto</string>
     <string name="pref__etc__summary__error" comment="Generic preference summary to be shown when there was an error fetching the value.         For example, this is shown when the permission to access collection is lacking">Eraro</string>
     <string name="pref__etc__snackbar__fetching" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which is being fetched">Enlegado&#8230;</string>

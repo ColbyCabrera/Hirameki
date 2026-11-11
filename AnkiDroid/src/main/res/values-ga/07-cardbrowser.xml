@@ -38,7 +38,6 @@
         <item quantity="many">Delete notes</item>
         <item quantity="other">Delete notes</item>
     </plurals>
-    <string name="set_due_date_hintText" comment="plural set_due_date_label_suffix is used for parameters, parameter 1 is the plural for 0, parameter 2 is the plural for 1">Today is ‘0 %1$s’, tomorrow is ‘1 %2$s’, etc&#8230;</string>
     <plurals name="card_browser_export_cards">
         <item quantity="one">Export card</item>
         <item quantity="two">Export cards</item>

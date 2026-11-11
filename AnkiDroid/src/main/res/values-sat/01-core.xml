@@ -119,6 +119,7 @@
     <!-- Context Menu -->
     <!-- Sync conflict -->
     <string name="sync_conflict_message_new">ᱦᱟᱞᱟᱝᱟᱜ ᱠᱚ ᱢᱮᱥᱟ ᱵᱟᱝ ᱜᱟᱱᱚᱜ-ᱟ ।\nᱟᱢ ᱚᱠᱟ ᱦᱟᱞᱟᱝ ᱫᱚᱦᱚ ᱥᱟᱱᱟ ᱮᱫ ᱢᱤᱭᱟ?</string>
+    <string name="sync_conflict_remote_confirm_new">Hirameki ᱨᱮ ᱟᱢᱟᱜ ᱦᱟᱞᱟᱝ ᱠᱚ ᱟᱢᱟᱜ Hirameki ᱨᱮᱭᱟᱜ ᱦᱟᱞᱟᱝ ᱥᱟᱞᱟᱜ ᱵᱚᱫᱚᱞ ᱫᱟᱲᱮ ᱟᱫ ᱟᱢ?</string>
     <string name="sync_conflict_local_confirm_new">AnkiWeb ᱨᱮ ᱟᱢᱟᱜ ᱟᱨᱡᱟᱣ ᱠᱚ ᱟᱢᱟᱜ Hirameki ᱨᱮᱭᱟᱜ ᱟᱨᱡᱟᱣ ᱥᱟᱞᱟᱜ ᱵᱚᱫᱚᱞ ᱫᱟᱲᱮ ᱟᱫ ᱟᱢ?</string>
     <string name="sync_conflict_title_new">ᱫᱚᱦᱚ ᱥᱟᱱᱟ ᱮᱫ ᱟᱨᱡᱟᱣ ᱠᱚ ᱪᱚᱭᱚᱱ ᱢᱮ</string>
     <string name="sync_conflict_replace_title">ᱟᱨᱡᱟᱣ ᱠᱚ ᱵᱚᱫᱚᱞ ᱢᱮ</string>

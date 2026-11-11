@@ -232,6 +232,7 @@
     <string name="open_changelog">Otvoriť prehľad zmien</string>
     <string name="pref_cat_about_title" maxLength="41">O nás</string>
     <string name="contributors_title">Prispievatelia</string>
+    <string name="about_contributors_description"><![CDATA[Títo sú naši fantastický <a href=\"%1$s\">dobrovoľníci a prispievatelia</a>. Môžete tiež pomôcť programovaním, prekladaním, príspevkami a <a href=\"%2$s\">ďalším</a>!]]></string>
     <string name="license">Licencia</string>
     <string name="license_description"><![CDATA[Hirameki je vydaný pod licenciami <a href=\"%1$s\">GPL-3.0</a> a <a href=\"%2$s\">AGPL-3.0</a>, so zdrojovým kódom dostupným <a href=\"%3$s\">na GitHube</a>]]></string>
     <string name="other_licenses"><![CDATA[Hirameki tiež používa knižnice a ikony tretích strán, ktoré sú licencované pod rôznymi open source <a href=\"%1$s\">licenciami</a>]]></string>
@@ -292,7 +293,6 @@
          ####################################################################################### -->
     <!-- TextWidgetPreference widget text -->
     <string name="pref__widget_text__error" comment="Text in a small box on the end of a preference, indicating a generic error.         Must be VERY short. Can be one or two lines.">Chyba</string>
-    <string name="pref__widget_text__calculating" comment="Text in a small box on the end of a preference,         indicating that the value, such as folder size on disk, is being calculated.         Must be VERY short. Can be one or two lines.">Calcu-\nlating&#8230;</string>
     <plurals name="pref__widget_text__n_files_n_bytes" comment="Text in a small box on the end of a preference,         showing some statistics about a folder on disk if a form of “12 files\n26 MB”.         Must be VERY short. Can be one or two lines.">
         <item quantity="one">%1$d file\n%2$s</item>
         <item quantity="few">%1$d files\n%2$s</item>
@@ -301,15 +301,12 @@
     </plurals>
     <!-- Delete unused media -->
     <!-- Delete backups -->
-    <string name="progress__deleting_backups">Deleting backups&#8230;</string>
     <!-- Delete collection -->
-    <string name="progress__deleting_collection">Deleting collection&#8230;</string>
     <!-- Delete everything -->
     <!-- Delete app data -->
     <!-- #######################################################################################
          ##### Generic preference summaries & snackbars that are shown on preference click #####
          ####################################################################################### -->
-    <string name="pref__etc__summary__fetching" comment="Generic preference summary to be shown when the value is being fetched">&#8230;</string>
     <string name="pref__etc__summary__error" comment="Generic preference summary to be shown when there was an error fetching the value.         For example, this is shown when the permission to access collection is lacking">Chyba</string>
     <string name="pref__etc__snackbar__fetching" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which is being fetched">Získavanie&#8230;</string>
     <string name="pref__etc__snackbar__calculating" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which, such as folder size on disk, is being calculated">Prepočítavanie&#8230;</string>

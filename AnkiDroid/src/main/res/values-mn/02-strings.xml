@@ -61,7 +61,6 @@
     <string name="import_error_handle_exception">Файлыг зөөхөд асуудал гарлаа\n\n%s</string>
     <string name="import_error_not_apkg_extension">“%s” файлд .apkg эсвэл .colpkg гэх файлын төрөл алга байна</string>
     <string name="import_interrupted">Шилжүүлэх үйл явц зогслоо: Hirameki хаагдсан байна</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="study_options" comment="Name for a preference category in Filtered deck (aka Cram deck, aka Custom study) options" maxLength="28">Тохиргоо</string>
     <!-- Time spans -->
     <!-- Currently only used if exporting APKG fails -->

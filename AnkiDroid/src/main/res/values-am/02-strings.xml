@@ -30,7 +30,6 @@
     <!-- Image cropper -->
     <!-- Timebox -->
     <!-- minutes used in \'[studied in] x minutes\' context, causing inflexion in some languages -->
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <!-- Time spans -->
     <!-- Currently only used if exporting APKG fails -->
     <!-- Import and export v2 feedback -->

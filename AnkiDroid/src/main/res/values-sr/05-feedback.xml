@@ -21,7 +21,6 @@
     <string name="feedback_disclaimer">Пажња:Ми не скупљамо никакву личну информацију, као што су адреса е-поште, број телефона, IP адреса или IMEI телефона. Ми скупљамо неке информације општег карактера, као што су: произвођач вашег уређаја. модел и верзија Android, као и сам карактер грешке.</string>
     <string name="feedback_default_text">Унесите ваш одзив или информацију о карактеру грешке, коју желите да саопштите.</string>
     <string name="feedback_auto_toast_text">Hirameki је наишао на проблем; извештај се шаље програмерима&#8230;</string>
-    <string name="feedback_for_manual_toast_text">An error report is being prepared for the developers&#8230;</string>
     <string name="feedback_report">Извештај</string>
     <string name="feedback_report_automatically">Аутоматски шаљи извештај о грешкама</string>
     <string name="feedback_copy_debug">Копирај податке дебага</string>

@@ -65,7 +65,6 @@
     <string name="import_title">Увоз</string>
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">Додај</string>
     <string name="import_message_replace_confirm">Ова ќе избрише вашата постоечка колекција и ќе ја замени со податоците од датотеката %s</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="export_email_subject">Hirameki извезувани флеширани картички:%s</string>
     <string name="select_tts" maxLength="28">Поставете го јазикот на TTS</string>
     <string name="dyn_deck_desc">Ова е специјална палуба за студирање надвор од секојдневен распоред. Картичките автоматски ќе бидат вратени на нивните палуби откако ќе ги прегледате. Бришењето на овој пабула од листата на палуби ќе ги врати сите останати картички во нивната оригинална палуба.</string>

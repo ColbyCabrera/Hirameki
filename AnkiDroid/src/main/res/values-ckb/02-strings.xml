@@ -61,7 +61,6 @@
     <string name="card_editor_preview_card" comment="Button offering to preview some card(s)" maxLength="28">پێشبینین</string>
     <string name="rename" comment="Confirm that the renaming action should be processed." maxLength="28">ناونانەوە</string>
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">زیادکردن</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="study_options" comment="Name for a preference category in Filtered deck (aka Cram deck, aka Custom study) options" maxLength="28">هەڵبژاردەکان</string>
     <!-- Time spans -->
     <!-- Currently only used if exporting APKG fails -->

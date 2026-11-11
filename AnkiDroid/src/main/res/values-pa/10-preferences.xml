@@ -299,11 +299,9 @@
     <!-- #######################################################################################
          ##### Generic preference summaries & snackbars that are shown on preference click #####
          ####################################################################################### -->
-    <string name="pref__etc__summary__fetching" comment="Generic preference summary to be shown when the value is being fetched">&#8230;</string>
     <string name="pref__etc__summary__no_collection" comment="Generic preference summary to be shown when a preference is not usable         because the collection does not exist">ਕੋਈ ਸੰਗ੍ਰਹਿ ਨਹੀਂ</string>
     <string name="pref__etc__summary__error" comment="Generic preference summary to be shown when there was an error fetching the value.         For example, this is shown when the permission to access collection is lacking">ਗਲਤੀ</string>
     <string name="pref__etc__snackbar__fetching" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which is being fetched">ਪ੍ਰਾਪਤ ਕਰ ਰਿਹਾ ਹੈ&#8230;</string>
-    <string name="pref__etc__snackbar__calculating" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which, such as folder size on disk, is being calculated">Calculating&#8230;</string>
     <string name="pref__etc__snackbar__no_collection" comment="Generic snackbar message to be shown when user taps on a preference         that is not usable because the collection does not exist">ਸੰਗ੍ਰਹਿ ਮੌਜੂਦ ਨਹੀਂ ਹੈ</string>
     <string name="hide_system_bars" maxLength="41" comment="Title of a setting that allows to hide the system bars">ਸਿਸਟਮ ਪੱਟੀ ਨੂੰ ਲੁਕਾਓ</string>
     <string name="hide_system_bars_none" comment="Setting option to not hide any of the system bars">ਕੋਈ ਨਹੀਂ</string>

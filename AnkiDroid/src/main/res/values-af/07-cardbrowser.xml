@@ -25,7 +25,6 @@
     <string name="card_browser_list_my_searches_new_search_error_dup">Naam bestaan</string>
     <string name="card_browser_list_my_searches_remove_content">Verwyder “%1$s”?</string>
     <string name="card_details_tags">Etikette</string>
-    <string name="set_due_date_hintText" comment="plural set_due_date_label_suffix is used for parameters, parameter 1 is the plural for 0, parameter 2 is the plural for 1">Today is ‘0 %1$s’, tomorrow is ‘1 %2$s’, etc&#8230;</string>
     <!--Keyboard shortcuts dialog-->
     <!-- Manage columns dialog -->
     <!-- Search history -->

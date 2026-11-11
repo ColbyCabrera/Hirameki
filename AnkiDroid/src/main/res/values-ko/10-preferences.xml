@@ -270,6 +270,15 @@
     <!-- #######################################################################################
          #################################### Backup options ###################################
          ####################################################################################### -->
+    <string name="pref__backups_help__summary"><![CDATA[Hirameki는 주기적으로 컬렉션을 백업합니다.
+2일 이상 지난 백업은
+디스크 공간 확보를 위해 삭제되기 시작합니다.
+<br><br>
+주의: 미디어 파일은 백업되지 않습니다.
+안전하게 데이터를 보관하려면, 정기적으로 동기화 하거나 컬렉션을 내보내서 따로 백업해 주세요.
+<br><br>
+백업에서 복원하거나 컬렉션을 내보내고 싶다면, 덱 목록 화면의 메뉴를 이용하세요.
+]]></string>
     <string name="pref__minutes_between_automatic_backups__title" maxLength="41">자동 백업 간격(분)</string>
     <string name="pref__daily_backups_to_keep__title" maxLength="41">일간 백업 유지 기간</string>
     <string name="pref__weekly_backups_to_keep__title" maxLength="41">주간 백업 유지 기간</string>
@@ -311,7 +320,6 @@
     <!-- #######################################################################################
          ##### Generic preference summaries & snackbars that are shown on preference click #####
          ####################################################################################### -->
-    <string name="pref__etc__summary__fetching" comment="Generic preference summary to be shown when the value is being fetched">&#8230;</string>
     <string name="pref__etc__summary__no_collection" comment="Generic preference summary to be shown when a preference is not usable         because the collection does not exist">컬렉션 없음</string>
     <string name="pref__etc__summary__error" comment="Generic preference summary to be shown when there was an error fetching the value.         For example, this is shown when the permission to access collection is lacking">오류</string>
     <string name="pref__etc__snackbar__fetching" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which is being fetched">불러오는 중&#8230;</string>

@@ -18,6 +18,4 @@
 <resources>
     <!-- Feedback.java -->
     <string name="error_reporting_choice" maxLength="41">Çewtiya moda gilîkirinê</string>
-    <string name="feedback_auto_toast_text">Hirameki has encountered a problem; a report is being sent to the developers&#8230;</string>
-    <string name="feedback_for_manual_toast_text">An error report is being prepared for the developers&#8230;</string>
 </resources>

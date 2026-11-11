@@ -91,7 +91,6 @@
     <string name="import_error_handle_exception">Klarte ikkje å importere fil\n\n%s</string>
     <string name="import_error_content_provider">Den valgte filen kunne ikke importeres automatisk av Hirameki. Vennligst referer til brukermanualen for å finne ut hvordan man importerer Anki-filer manuelt: \n%s</string>
     <string name="export_ready_title">Eksport klar</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="export_email_subject">Hirameki eksporterte flashcards: %s</string>
     <string name="export_choice_share">Del</string>
     <string name="study_options" comment="Name for a preference category in Filtered deck (aka Cram deck, aka Custom study) options" maxLength="28">Innstillingar</string>

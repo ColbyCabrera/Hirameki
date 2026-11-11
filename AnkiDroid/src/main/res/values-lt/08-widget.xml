@@ -17,6 +17,12 @@
   -->
 <resources>
     <!-- Widget -->
+    <plurals name="widget_minimum_cards_due_notification_ticker_text">
+        <item quantity="one">Laukia %d „Hirameki“ kortelė</item>
+        <item quantity="few">Laukia %d „Hirameki“ kortelės</item>
+        <item quantity="many">Laukia %d „Hirameki“ kortelių</item>
+        <item quantity="other">Laukia %d „Hirameki“ kort.</item>
+    </plurals>
     <string name="widget_small" comment="Label of the small ankidroid widget. This text can\'t be found directly in AnkiDroid">Mažas „Hirameki“</string>
     <plurals name="widget_cards_due">
         <item quantity="one">Laukia %d kortelė</item>

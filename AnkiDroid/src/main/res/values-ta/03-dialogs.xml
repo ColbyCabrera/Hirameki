@@ -66,7 +66,6 @@
     <string name="dialog_updated_custom_certificate">சான்றிதழ் புதுப்பிக்கப்பட்டது</string>
     <!-- Media checking -->
     <string name="check_media_message">மீடியாவைச் சரிபார்க்கிறது&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">மீடியாவை நீக்குகிறது&#8230;</string>
     <string name="delete_media_result_title">நீக்குதல் முடிவு</string>
     <plurals name="delete_media_result_message">

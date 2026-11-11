@@ -81,7 +81,6 @@
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">Adauga</string>
     <string name="import_message_replace_confirm">Aceasta va şterge colecţia existenta şi o va înlocui cu datele din fișierul %s. Eşti sigur?</string>
     <string name="import_error_not_apkg_extension">Numele fișierului „%s” nu are extensia .apkg sau .colpkg</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="study_options" comment="Name for a preference category in Filtered deck (aka Cram deck, aka Custom study) options" maxLength="28">Opţiuni</string>
     <string name="menu__study_options" comment="Menu item that opens options for a Filtered deck (aka Cram deck, aka Custom study)">Opțiuni de studiu</string>
     <string name="select_tts" maxLength="28">Setare limbă TTS</string>

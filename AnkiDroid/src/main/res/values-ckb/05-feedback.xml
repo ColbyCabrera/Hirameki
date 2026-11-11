@@ -20,6 +20,4 @@
     <string name="error_reporting_choice" maxLength="41">جۆری هەڵە</string>
     <string name="feedback_disclaimer">ڕەتکردنەوەی بەرپرسیاریەتی: ئێمە هیچ زانیارییەکی کەسی وەک ناونیشانی ئیمەیڵ، ژمارەی تەلەفۆن، یان مۆبایلەکەت کۆناکەینەوە. ئێمە هەندێک زانیاری دەربارەی ئامێرەکەت کۆدەکەینەوە وەک بەرهەمهێنەر و مۆدێل و وەشانی ئەندرۆید، هەروەها سروشتی هەڵە ڕاپۆرتکراوەکان خۆیان و ئەو هەنگاوانەی کە بوونەتە هۆی ڕوودانی.</string>
     <string name="feedback_default_text">فیدباک یان زانیارییەکانی خۆت سەبارەت بە سروشتی هەر هەڵەیەک کە ڕاپۆرت دەکەیت بنووسە.</string>
-    <string name="feedback_auto_toast_text">Hirameki has encountered a problem; a report is being sent to the developers&#8230;</string>
-    <string name="feedback_for_manual_toast_text">An error report is being prepared for the developers&#8230;</string>
 </resources>

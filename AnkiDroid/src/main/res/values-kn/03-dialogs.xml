@@ -65,7 +65,6 @@
     <string name="dialog_invalid_custom_certificate_title">ಪ್ರಮಾಣಪತ್ರವನ್ನು ಪಾರ್ಸಿಂಗ್ ಮಾಡುವಲ್ಲಿ ದೋಷ</string>
     <!-- Media checking -->
     <string name="check_media_message">ಮಾಧ್ಯಮವನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">ಮಾಧ್ಯಮವನ್ನು ಅಳಿಸಲಾಗುತ್ತಿದೆ&#8230;</string>
     <string name="delete_media_result_title">ಅಳಿಸುವಿಕೆ ಫಲಿತಾಂಶ</string>
     <plurals name="delete_media_result_message">

@@ -121,12 +121,21 @@
     <string name="import_error_not_apkg_extension">Dosiernomo \"%s\" ne finiĝas per .apkg aŭ .colpkg</string>
     <string name="import_error_load_imported_database">Anstataŭigoj de Anki-datumbazo (.anki2) ankoraŭ ne estas subtenataj. Legu la manlibron por instrukciojn pri anstataŭigo.</string>
     <string name="import_error_content_provider">Ne povas aŭtomate enporti elektitan dosieron al Hirameki. Bonvolu legi la manlibron de uzanto por sciiĝi pri kiel permane enporti Anki-dosierojn:\n%s</string>
+    <string name="import_interrupted">Enportado interrompita</string>
     <string name="export_ready_title">Elporto estas preta</string>
     <string name="export_send_no_handlers">Neniu aplikaĵo por pritrakti apkg. Konservado&#8230;</string>
     <string name="export_save_apkg_successful">Sukcese konservis Anki-pakaĵon</string>
     <string name="export_save_apkg_unsuccessful">Malsukcesis konservi Anki-pakaĵon</string>
     <string name="export_share_title">Sendi Anki-pakaĵon per</string>
     <string name="export_email_subject">Hirameki elportis lernkartojn: %s</string>
+    <string name="export_email_text"><![CDATA[
+        Saluton!
+        <br/><br/>
+        Tio ĉi estas Anki-kartaro sendita per la aplikaĵo Anki[1].
+        Malfermu ĝin per iu el la disponeblaj Anki-programoj[2] por ĝui facilan kaj efikan lernadon!<br/><br/>
+        [1] %1$s<br/>
+        [2] %2$s
+        ]]></string>
     <string name="export_choice_share">Konigi</string>
     <string name="export_choice_save_to">Konservi en</string>
     <string name="export_saving_exported_collection">Konservado de elportita dosiero&#8230;</string>

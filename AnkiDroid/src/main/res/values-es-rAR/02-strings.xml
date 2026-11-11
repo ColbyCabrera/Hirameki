@@ -119,6 +119,7 @@
     <string name="import_error_not_apkg_extension">El nombre de archivo “%s” no tiene extensión .apkg o .colpkg</string>
     <string name="import_error_load_imported_database">Los reemplazos de la base de datos de Anki (.anki2) aún no están soportados. Consulta el manual para obtener instrucciones de reemplazo.</string>
     <string name="import_error_content_provider">El archivo seleccionado no puede ser importado automáticamente por Hirameki. Por favor, revise el manual de usuario para cómo importar manualmente archivos de Anki: \n %s</string>
+    <string name="import_interrupted">Importación interrumpida</string>
     <string name="export_ready_title">Exportación preparada</string>
     <string name="export_send_no_handlers">No hay aplicaciones disponibles para manejar apkg. Guardando&#8230;</string>
     <string name="export_save_apkg_successful">Paquete Anki guardado correctamente</string>

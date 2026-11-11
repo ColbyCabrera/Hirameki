@@ -31,7 +31,6 @@
     <string name="dialog_cancel">Kansel</string>
     <string name="dialog_yes">Oo</string>
     <string name="dialog_continue">Magpatuloy</string>
-    <string name="dialog_processing">Processing&#8230;</string>
     <string name="dialog_positive_create" comment="Create a new collection, probably erasing the previous one, may be necessary in case of error.">Gumawa</string>
     <string name="dialog_positive_delete" maxLength="28">Burahin</string>
     <!-- Currently unsued, should be useful in the future -->
@@ -42,8 +41,6 @@
     <string name="dialog_collection_path_not_dir">Ang path na tinukoy ay hindi isang wastong direktoryo</string>
     <!-- Media checking -->
     <string name="check_media_message">Sinusuri ang media&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
-    <string name="delete_media_message">Deleting media&#8230;</string>
     <!-- Tags Dialog Options -->
     <string name="tags_dialog_option_new_cards" comment="Name of cards that have not ever been reviewed yet">Bago</string>
     <!-- Empty cards -->
