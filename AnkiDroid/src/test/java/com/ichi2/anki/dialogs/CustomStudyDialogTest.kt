@@ -17,6 +17,7 @@ package com.ichi2.anki.dialogs
 
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.edit
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -216,6 +217,20 @@ class CustomStudyDialogTest : RobolectricTest() {
 
             onSubscreenEditText().perform(replaceText("5"))
             assertThat("other values are allowed", okButton.isEnabled, equalTo(true))
+        }
+    }
+
+    @Test
+    fun `an initial value of zero cannot be submitted`() {
+        addBasicNote()
+        getPreferences().edit { putInt("previewDays", 0) }
+
+        withCustomStudyFragment(
+            args = argumentsDisplayingSubscreen(ContextMenuOption.STUDY_PREVIEW),
+        ) { dialogFragment: CustomStudyDialog ->
+            val okButton = assertNotNull(dialogFragment.dialog as? AlertDialog?, "dialog").positiveButton
+
+            assertThat("0 is refused before any typing", okButton.isEnabled, equalTo(false))
         }
     }
 

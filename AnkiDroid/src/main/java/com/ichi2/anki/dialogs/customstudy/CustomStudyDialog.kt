@@ -348,11 +348,17 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
                     requireActivity().dismissAllDialogFragments()
                 }.create()
 
+        fun updateSubmitEnabled() {
+            dialog.positiveButton.isEnabled = editText.textAsIntOrNull().let { it != null && it != 0 }
+        }
+
         var allowSubmit = true
         // we set the listener here so 'ok' doesn't immediately close the dialog.
         // if it did, we would not have had time to execute the method, and would not be
         // able to output a fragment result
         dialog.setOnShowListener {
+            // the initial value was set before the text listener, so check it here
+            updateSubmitEnabled()
             dialog.positiveButton.setOnClickListener {
                 // prevent race conditions
                 if (!allowSubmit) return@setOnClickListener
@@ -381,9 +387,7 @@ class CustomStudyDialog : AnalyticsDialogFragment() {
             }
         }
 
-        editText.doAfterTextChanged {
-            dialog.positiveButton.isEnabled = editText.textAsIntOrNull().let { it != null && it != 0 }
-        }
+        editText.doAfterTextChanged { updateSubmitEnabled() }
 
         // Show soft keyboard
         dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
