@@ -55,10 +55,6 @@ AnkiDroid/.attach_pid*
 # IDEA/Android Studio project icon
 !/.idea/icon.svg
 
-# Crowdin files
-ankidroid.zip
-tools/crowdin_key.txt
-
 # Testing / quality remnants
 AnkiDroid/ACRA-INSTALLATION
 .codacy.json

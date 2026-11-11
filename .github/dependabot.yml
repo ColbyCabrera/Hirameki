@@ -27,18 +27,3 @@ updates:
   ignore:
   # Ignore all Rust backend updates, these are always done as manual pulls
   - dependency-name: ankiBackend
-- package-ecosystem: npm
-  directory: "/tools/localization"
-  schedule:
-    interval: weekly
-    time: "10:00"
-  # 0 keeps version update pull requests off, as they were while they targeted the missing branch; raise it to get
-  # them against the default branch. security update pull requests do not count toward this limit
-  open-pull-requests-limit: 0
-  groups:
-    non-breaking:
-      update-types:
-        - "minor"
-        - "patch"
-  labels:
-  - "dependencies"

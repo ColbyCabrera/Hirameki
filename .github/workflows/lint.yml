@@ -73,12 +73,3 @@ jobs:
         with:
           prettier_options: --check AnkiDroid/**/*.js
           dry: True
-
-      - name: Install Localization
-        run: cd tools/localization && yarn
-
-      - name: Lint Localization
-        run: cd tools/localization && yarn lint
-
-      - name: Format Localization
-        run: cd tools/localization && yarn checkformat
