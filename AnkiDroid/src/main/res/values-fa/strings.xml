@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Persian (fa) translations of Hirameki-only strings.
+  ~ These are machine translations, not yet reviewed by a native speaker.
+  ~ Remove this note once they have been. See tools/localization/README.md.
+  -->
 <resources>
     <string name="about_fork_of">%s یک انشعاب از AnkiDroid است</string>
     <string name="about_version">نسخه</string>
