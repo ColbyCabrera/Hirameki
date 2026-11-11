@@ -119,6 +119,7 @@ import com.ichi2.utils.ImportUtils
 import com.ichi2.widget.WidgetStatus
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -259,6 +260,7 @@ class NoteEditorActivity :
             val photoPath = imageOcclusionPhotoPath
             if (!isPictureTaken || photoPath == null) {
                 Timber.d("Camera aborted or some interruption")
+                deleteImageOcclusionPhoto()
                 return@registerForActivityResult
             }
             val photoUri = FileProvider.getUriForFile(this, "$packageName.apkgfileprovider", File(photoPath))
@@ -267,6 +269,8 @@ class NoteEditorActivity :
 
     private val imageOcclusionCropLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            // The cropper writes its output to a separate cache file, so the camera original is no longer needed.
+            deleteImageOcclusionPhoto()
             if (result.resultCode != RESULT_OK) {
                 Timber.v("Unable to crop the image")
                 return@registerForActivityResult
@@ -275,8 +279,20 @@ class NoteEditorActivity :
                 result.data
                     ?.let { IntentCompat.getParcelableExtra(it, ImageCropper.CROP_IMAGE_RESULT, ImageCropper.CropResultData::class.java) }
                     ?.uriPath ?: return@registerForActivityResult
-            setupImageOcclusionEditor(croppedImagePath)
+            // After process death the result can arrive before the collection has loaded the note,
+            // and opening the editor then would lose the selected note type.
+            lifecycleScope.launch {
+                noteEditorViewModel.currentNote.filterNotNull().first()
+                setupImageOcclusionEditor(croppedImagePath)
+            }
         }
+
+    private fun deleteImageOcclusionPhoto() {
+        imageOcclusionPhotoPath?.let { path ->
+            if (!File(path).delete()) Timber.w("Could not delete image occlusion photo")
+        }
+        imageOcclusionPhotoPath = null
+    }
 
     private val requestIOEditorCloser =
         registerForActivityResult(
@@ -1695,6 +1711,7 @@ class NoteEditorActivity :
             imageOcclusionCameraLauncher.launch(photoUri)
         } catch (_: ActivityNotFoundException) {
             Timber.w("No app found to handle image capture")
+            deleteImageOcclusionPhoto()
             noteEditorViewModel.showSnackbar(getString(R.string.activity_start_failed))
         }
     }
