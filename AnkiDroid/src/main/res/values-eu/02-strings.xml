@@ -52,7 +52,6 @@
     <string name="rename" comment="Confirm that the renaming action should be processed." maxLength="28">Aldatu izena</string>
     <string name="import_title">Inportatzea</string>
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">Gehitu</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="export_email_subject">Hirameki-ek esportatutako kartak: %s</string>
     <string name="study_options" comment="Name for a preference category in Filtered deck (aka Cram deck, aka Custom study) options" maxLength="28">Aukerak</string>
     <string name="select_tts" maxLength="28">TTS hizkuntza ezarri</string>

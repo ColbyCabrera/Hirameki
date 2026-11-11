@@ -66,7 +66,6 @@
     <string name="dialog_updated_custom_certificate">سرٹیفکیٹ اپ ڈیٹ ہو گیا</string>
     <!-- Media checking -->
     <string name="check_media_message">میڈیا کو چیک کیا جا رہا ہے&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">میڈیا کو حذف کیا جا رہا ہے&#8230;</string>
     <string name="delete_media_result_title">حذف کرنے کا نتیجہ</string>
     <plurals name="delete_media_result_message">

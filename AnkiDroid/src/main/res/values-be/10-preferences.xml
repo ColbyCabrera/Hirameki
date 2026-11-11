@@ -281,6 +281,17 @@
     <!-- #######################################################################################
          #################################### Backup options ###################################
          ####################################################################################### -->
+    <string name="pref__backups_help__summary"><![CDATA[
+        Hirameki перыядычна робіць рэзервовыя копіі вашай калекцыі.
+        Праграма таксама выдаляе рэзервовыя копіі, якія старэйшыя за два дні, 
+        каб вызваліць месца на дыску.
+        <br><br>
+        Заўважце, што мультымедыйныя файлы не рэзервуюцца.
+        Перыядычна сінхранізуйце сваю калекцыю або экспартуйце рэзервовыя копіі,                 
+        каб пазбегнуць страты даных.
+        <br><br>
+        Вы можаце аднавіць з рэзервовай копіі і экспартаваць сваю калекцыю ў меню спіса калод.
+    ]]></string>
     <string name="pref__minutes_between_automatic_backups__title" maxLength="41">Хвілін паміж аўтаматычнымі рэзервовымі копіямі</string>
     <string name="pref__daily_backups_to_keep__title" maxLength="41">Колькасць рэзервовых копій у дзень</string>
     <string name="pref__weekly_backups_to_keep__title" maxLength="41">Колькасць рэзервовых копій у тыдзень</string>
@@ -325,7 +336,6 @@
     <!-- #######################################################################################
          ##### Generic preference summaries & snackbars that are shown on preference click #####
          ####################################################################################### -->
-    <string name="pref__etc__summary__fetching" comment="Generic preference summary to be shown when the value is being fetched">&#8230;</string>
     <string name="pref__etc__summary__no_collection" comment="Generic preference summary to be shown when a preference is not usable         because the collection does not exist">Няма калекцыі</string>
     <string name="pref__etc__summary__error" comment="Generic preference summary to be shown when there was an error fetching the value.         For example, this is shown when the permission to access collection is lacking">Памылка</string>
     <string name="pref__etc__snackbar__fetching" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which is being fetched">Атрыманне&#8230;</string>
@@ -365,16 +375,6 @@
     <string name="deck_conf_cram_reschedule_summ">Перапланаваць карткі на падставе маіх адказаў у гэтай калодзе</string>
     <string name="deck_conf_cram_steps_summ" maxLength="41">Вызначыць карыстальніцкія крокі</string>
     <string name="paste_as_png" maxLength="41">Устаўляць з буфера абмену відарысы як PNG</string>
-    <string name="pref__backups_help__summary"><![CDATA[        Hirameki перыядычна робіць рэзервовую копію вашай калекцыі.
-        Hirameki выдаляе рэзервовыя копіі, якія старэйшыя за два дні, 
-        каб вызваліць месца на дыску.
-        <br><br>
-        Заўважце, што мультымедыйныя файлы не рэзервуюцца.
-        Перыядычна сінхранізуйце сваю калекцыю або экспартуйце рэзервовыя копіі,                 
-        каб пазбегнуць страты даных.
-        <br><br>
-        Вы можаце аднавіць з рэзервовай копіі і экспартаваць сваю калекцыю ў меню спісу калод.
-    ]]></string>
     <string name="pref_cat_appearance" maxLength="41">Знешні выгляд</string>
     <string name="safe_display" maxLength="41">Статычны рэжым экрана</string>
     <string name="safe_display_summ">Адключыць усю анімацыю і выкарыстоўваць бяспечны метад для адлюстравання картак. Гэта можа быць актуальна для прылад з экранамі на электронных чарнілах.</string>

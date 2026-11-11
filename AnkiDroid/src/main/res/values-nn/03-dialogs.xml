@@ -33,15 +33,12 @@
     <string name="dialog_no">Nei</string>
     <string name="dialog_yes">Ja</string>
     <string name="dialog_continue">Fortsett</string>
-    <string name="dialog_processing">Processing&#8230;</string>
     <string name="dialog_positive_create" comment="Create a new collection, probably erasing the previous one, may be necessary in case of error.">Opprett</string>
     <string name="dialog_positive_delete" maxLength="28">Slett</string>
     <!-- Currently unsued, should be useful in the future -->
     <string name="dialog_positive_disable" tools:ignore="UnusedResources">Slå av</string>
     <string name="dialog_positive_repair">Reparer</string>
     <!-- Media checking -->
-    <string name="check_media_message">Checking media&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">Sletter media&#8230;</string>
     <!-- Tags Dialog Options -->
     <string name="tags_dialog_option_new_cards" comment="Name of cards that have not ever been reviewed yet">Nye</string>

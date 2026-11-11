@@ -47,7 +47,6 @@
         <item quantity="many">%1$d minutes</item>
         <item quantity="other">%1$d minutes</item>
     </plurals>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <!-- Time spans -->
     <!-- Currently only used if exporting APKG fails -->
     <!-- Import and export v2 feedback -->

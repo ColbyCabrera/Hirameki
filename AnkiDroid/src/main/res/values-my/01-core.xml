@@ -83,7 +83,6 @@
     <string name="empty_deck">ဒီ Deck က ဗလာကြီး</string>
     <string name="invalid_deck_name">မကိုက်ညီသော deck နာမည်</string>
     <string name="studyoptions_congrats_finished">ဂုဏ်ယူပါတယ်! မင်းသင်တာ ဒီတနေ့စာ ပြီးဆုံးသွားပါပြီ။</string>
-    <string name="sync_cancel_message" tools:ignore="UnusedResources">Cancelling&#8230;\nThis may take some time.</string>
     <!-- Card template editor -->
     <plurals name="card_template_editor_confirm_add">
         <item quantity="other">This will create %1$d cards. Proceed?</item>

@@ -118,6 +118,7 @@
     <string name="import_error_not_apkg_extension">Il file \"%s\" non ha estensione .apkg o .colpkg</string>
     <string name="import_error_load_imported_database">Le sostituzioni di Anki Database (.anki2) non sono ancora supportate. Consultare il manuale per le istruzioni di sostituzione.</string>
     <string name="import_error_content_provider">Il file selezionato non ha potuto essere importato automaticamente da Hirameki. Consulta il manuale utente per importare manualmente i file Anki: \n %s</string>
+    <string name="import_interrupted">Importazione interrotta</string>
     <string name="export_ready_title">Esportazione pronta</string>
     <string name="export_send_no_handlers">Nessuna applicazione disponibile per gestire apkg. Salvataggio&#8230;</string>
     <string name="export_save_apkg_successful">Pacchetto di Anki salvato con successo</string>
@@ -238,6 +239,7 @@
     <string name="intro_short_ankidroid_explanation">L\'algoritmo delle carte di Anki ti fa risparmiare tempo focalizzandosi su ciò che ricordi meno e preservando ciò che già ricordi</string>
     <string name="intro_sync_from_ankiweb">Sincronizza da AnkiWeb</string>
     <!-- IntentHandler -->
+    <string name="app_not_initialized_new">Hirameki non è ancora inizializzato. Aprirlo e riprovare</string>
     <!-- Deck Creation -->
     <string name="deck_created">Mazzo creato</string>
     <string name="deck_renamed">Mazzo rinominato</string>

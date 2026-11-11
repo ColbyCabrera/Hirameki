@@ -21,7 +21,6 @@
     <string name="feedback_disclaimer">Одрекување: Ние не собираме никакви лични информации, како што се вашата имејл адреса, телефонски број или IMEI на телефонот. Ние собираме некои информации за вашиот уред, како што се производителот, моделот и верзијата на Андроид, како и природата на пријавените грешки и чекорите што доведоа до нив.</string>
     <string name="feedback_default_text">Внесете ги вашите повратни информации или информациите за природата на сите грешки кои ги пријавувате.</string>
     <string name="feedback_auto_toast_text">Hirameki наиде на проблем; извештајот се испраќа до програмерите&#8230;</string>
-    <string name="feedback_for_manual_toast_text">An error report is being prepared for the developers&#8230;</string>
     <string name="feedback_report">Извештај</string>
     <string name="feedback_report_automatically">Испрати ги грешните извештаи автоматски</string>
     <string name="feedback_copy_debug">Копирајте ги отстранетите неисправности на информациите</string>

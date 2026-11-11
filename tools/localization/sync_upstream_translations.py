@@ -8,8 +8,10 @@ This script copies them in, but only where the translation still describes Hiram
 For each locale, a translation is taken from the first source (see --source) where:
   * Hirameki still has a translatable string with that name and type,
   * the source's English text matches Hirameki's (ignoring case, whitespace and quote style;
-    pass --strict to require an exact match), or differs only by "AnkiDroid" -> "Hirameki"
-    and the translation spells AnkiDroid in Latin script, in which case it is renamed too,
+    pass --strict to require an exact match), or differs only by "AnkiDroid" -> "Hirameki".
+    The translation is then renamed too. A translation that does not mention AnkiDroid is
+    kept as it is, unless it is written in a non-Latin script, where it may spell the name
+    in that script (Persian writes انکی‌دروید),
   * the translation is not just a copy of the English (Crowdin's export of an untranslated
     string), and
   * it uses the same format arguments as Hirameki's English, since a mismatch crashes at
@@ -75,6 +77,10 @@ ATTRIBUTE = re.compile(r"""([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")
 COMMENT = re.compile(r"<!--.*?-->", re.S)
 # Flags exclude the space flag, so that "100% done" is not read as "% d".
 FORMAT_ARGUMENT = re.compile(r"%(?:(\d+)\$)?[-#+0,(<]*\d*(?:\.\d+)?([a-zA-Z%])")
+# A letter outside the Latin script (ASCII, Latin-1, Latin Extended-A/B and Additional).
+NON_LATIN_LETTER = re.compile(r"[^\W\d_A-Za-zÀ-ɏḀ-ỿ]")
+# Another spelling of AnkiDroid ("Ankidroid", "AnikiDroid", "ankidroid.org"), but not "Android".
+ANKIDROID_VARIANT = re.compile(r"(?<!an)droid", re.I)
 
 
 @dataclass
@@ -122,6 +128,7 @@ def normalize(body: str, strict: bool) -> str:
     if strict:
         return text
     text = re.sub(r"(?:\\n|\s)+", " ", text).strip()
+    text = re.sub(r"&#(x?)([0-9a-fA-F]+);", lambda m: chr(int(m[2], 16 if m[1] else 10)), text)
     for before, after in (("\\'", "'"), ("‘", "'"), ("’", "'"), ('\\"', '"'),
                           ("“", '"'), ("”", '"'), ("…", "...")):
         text = text.replace(before, after)
@@ -151,13 +158,16 @@ def plural_items(body: str) -> list[str]:
 def format_problem(english: Resource, translation_body: str) -> str | None:
     if english.attrs.get("formatted") == "false" or english.tag == "string-array":
         return None
-    expected = format_arguments(english.body)
     if english.tag == "plurals":
+        # Every quantity is formatted with the same arguments, so number each item on its own:
+        # "%d card" and "%d cards" both take one argument, not two.
+        expected = set().union(*(format_arguments(item) for item in plural_items(english.body)))
         # A quantity may leave out the number ("one" is often written as a word), but must not add arguments.
         for item in plural_items(translation_body):
             if not format_arguments(item) <= expected:
                 return f"uses {sorted(format_arguments(item))}, English has {sorted(expected)}"
         return None
+    expected = format_arguments(english.body)
     actual = format_arguments(translation_body)
     if actual != expected:
         return f"uses {sorted(actual)}, English has {sorted(expected)}"
@@ -298,13 +308,14 @@ def choose(
             "AnkiDroid" in english.body
             and normalize(english.body.replace("AnkiDroid", "Hirameki"), strict) == normalize(fork.body, strict)
         ):
-            if translated.body.count("AnkiDroid") == english.body.count("AnkiDroid"):
+            if "AnkiDroid" in translated.body:
                 body = translated.body.replace("AnkiDroid", "Hirameki")
-                body_start = translated.raw.rindex(translated.body) if translated.body else len(translated.raw)
+                body_start = translated.raw.rindex(translated.body)
                 raw = translated.raw[:body_start] + body + translated.raw[body_start + len(translated.body):]
                 note = "renamed"
-            else:
-                reason, detail = "needs-rename", "the translation writes AnkiDroid in its own script"
+            elif ANKIDROID_VARIANT.search(translated.body) or NON_LATIN_LETTER.search(translated.body):
+                reason, detail = "needs-rename", "the translation may write AnkiDroid differently"
+            # Otherwise the translation leaves the app's name out, and is kept as it is.
         else:
             reason, detail = "english-changed", f"upstream: {one_line(english.body)}"
         if not reason:
@@ -485,7 +496,7 @@ def report(result: LocaleResult, sources: list[Source], fork_english: dict[str, 
           f"({', '.join(f'{n} from {label}' for label, n in by_source.items())}; "
           f"{notes['fuzzy']} matched ignoring case/whitespace, {notes['renamed']} renamed to Hirameki)")
     print(f"  not used: {skipped.get('english-changed', 0)} English changed in Hirameki, "
-          f"{skipped.get('needs-rename', 0)} only renamed to Hirameki (AnkiDroid is not in Latin script), "
+          f"{skipped.get('needs-rename', 0)} only renamed to Hirameki (AnkiDroid may be spelled differently), "
           f"{skipped.get('untranslated', 0)} untranslated upstream, "
           f"{skipped.get('format-arguments', 0)} format argument mismatches, "
           f"{skipped.get('local', 0)} overridden locally, "

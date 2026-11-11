@@ -34,8 +34,10 @@ translations for strings upstream has since deleted. An upstream translation is 
 - it is a real translation, not Crowdin's English copy of an untranslated string, and
 - it uses the same format arguments (`%s`, `%1$d`) as Hirameki's English.
 
-If the only difference in the English is "AnkiDroid" → "Hirameki", the translation is renamed too when it spells
-AnkiDroid in Latin script. Otherwise the report lists it as "only renamed", and the fix belongs in `overrides.xml`.
+If the only difference in the English is "AnkiDroid" → "Hirameki", every "AnkiDroid" in the translation is renamed
+too. A translation that doesn't mention AnkiDroid is kept as it is, unless it uses a non-Latin script, where it may
+spell the name in that script (Persian writes انکی‌دروید). The report lists those as "only renamed", and the fix
+belongs in `overrides.xml`.
 
 Useful flags:
 

@@ -57,7 +57,6 @@
     <string name="dialog_collection_path_not_dir">Laluan yang dinyatakan bukan direktori yang sah</string>
     <!-- Media checking -->
     <string name="check_media_message">Memeriksa media&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">Memadam media&#8230;</string>
     <string name="delete_media_result_title">Keputusan pemadaman</string>
     <plurals name="delete_media_result_message">
@@ -83,6 +82,7 @@
     <!-- Database Errors-->
     <string name="database_locked_title">Pangkalan Data Dikunci</string>
     <string name="incompatible_database_version_title">Versi Pangkalan Data Tidak Serasi</string>
+    <string name="incompatible_database_version_summary">Pangkalan data memiliki versi lebih lanjut daripada versi AnkiDoird yang boleh digunakannya. Naik taraf Hirameki atau turun taraf pangkalan data untuk membukanya.\n\nVersi disokong: %1$d\nVersi pangkalan data: %2$d\n\nPilihan pemulihan berikut akan tulis ganti koleksi anda, mungkin dengan versi pangkalan data yang serasi:</string>
     <!-- Deck Picker Background-->
     <!-- Global Intent handler -->
     <!-- Also used by Card Browser, not renaming to save translators effort -->

@@ -17,6 +17,11 @@
   -->
 <resources>
     <!-- Widget -->
+    <plurals name="widget_minimum_cards_due_notification_ticker_text">
+        <item quantity="zero">Pienācis %d Hirameki kartīšu laiks</item>
+        <item quantity="one">Pienācis %d Hirameki kartītes laiks</item>
+        <item quantity="other">Pienācis %d Hirameki kartīšu laiks</item>
+    </plurals>
     <string name="widget_small" comment="Label of the small ankidroid widget. This text can\'t be found directly in AnkiDroid">Hirameki mazs</string>
     <plurals name="widget_cards_due">
         <item quantity="zero">Pienācis %d kartīšu laiks</item>

@@ -31,6 +31,7 @@
     <string name="backup_repair_deck_progress">Adatbázis javítása folyamatban.\nKérlek, várj&#8230;</string>
     <string name="backup_invalid_file_error">A kijelölt biztonsági másolat fájl érvénytelen</string>
     <string name="backup_restore_select_title">Válaszd ki a visszaállítandó biztonsági másolatot</string>
+    <string name="backup_restore_no_backups">Az Hirameki nem találja a pakli biztonsági másolatát. Ha van biztonsági mentés a számítógépeden, kérlek másold be az Hirameki mappádba kézzel.</string>
     <string name="open_collection_failed_title">A gyűjtemény nincs megnyitva</string>
     <string name="corrupt_db_message">A gyűjteményed sérült.\n\nTouch Kattints a \"Beállítások\" lehetőségre, hogy egy biztonsági másolatból visszaállítható legyen. Ha ez nem sikerült, akkor további információt találsz az adatbázis javításáról itt:\n%1$s</string>
     <string name="access_collection_failed_message">Hiba történt a gyűjteményed elérésekor. Ez ártalmatlan hiba is lehet, vagy probléma van a gyűjteményeddel. \n\n Próbáld meg az \"Adatbázis ellenőrzés\" -t, vagy állítsd vissza úgy, hogy megérinted a biztonsági másolatban az \"Opciók\" gombot. Ha továbbra is látod ezt az üzenetet, kérjük, küldj el egy hibajelentést ide:\n%1$s</string>

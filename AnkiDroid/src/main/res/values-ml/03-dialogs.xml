@@ -61,7 +61,6 @@
     <string name="dialog_updated_custom_certificate">സർട്ടിഫിക്കറ്റ് അപ്ഡേറ്റ് ചെയ്തു</string>
     <!-- Media checking -->
     <string name="check_media_message">മീഡിയ പരിശോധിക്കുന്നു&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">മീഡിയ ഇല്ലാതാക്കുന്നു&#8230;</string>
     <string name="delete_media_result_title">ഇല്ലാതാക്കൽ ഫലം</string>
     <plurals name="delete_media_result_message">

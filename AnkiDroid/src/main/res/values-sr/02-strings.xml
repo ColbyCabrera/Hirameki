@@ -69,7 +69,6 @@
     <string name="info_rate">Оцени Hirameki</string>
     <string name="import_message_add" comment="Adding a new deck to the collection (import)">Додај</string>
     <string name="import_message_replace_confirm">Избрисати вашу постојећу колекцију и заменити је подацима из датотеке %s. Да ли сте сигурни?</string>
-    <string name="export_send_no_handlers">No applications available to handle apkg. Saving&#8230;</string>
     <string name="dyn_deck_desc">Ово су специјални шпилови за учење ван нормалног распореда. После прегледа, картице ће аутоматски бити враћене у њихов изворни шпил. Брисање овог шпила из списка шпилова, вратиће све остале карте у њихове изворне шпилове.</string>
     <!-- Time spans -->
     <!-- Currently only used if exporting APKG fails -->

@@ -60,7 +60,6 @@
     <string name="dialog_updated_custom_certificate">प्रमाणपत्र अपडेट केले</string>
     <!-- Media checking -->
     <string name="check_media_message">मीडिया तपासत आहे&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">मीडिया हटवित आहे&#8230;</string>
     <string name="delete_media_result_title">हटविण्याचा निकाल</string>
     <plurals name="delete_media_result_message">
@@ -87,6 +86,7 @@
     <!-- Database Errors-->
     <string name="database_locked_title">डेटाबेस लॉक केले</string>
     <string name="incompatible_database_version_title">विसंगत डेटाबेस आवृत्ती</string>
+    <string name="incompatible_database_version_summary">डेटाबेस ही अँकीड्रॉइडच्या आवृत्तीसह कार्य करू शकते त्यापेक्षा अधिक प्रगत आवृत्ती आहे. Hirameki श्रेणीसुधारित करा किंवा ते उघडण्यासाठी डेटाबेस डाउनग्रेड करा \n\n समर्थित आवृत्ती:%1$d \ n डेटाबेस आवृत्ती:%2$d \n\n खालील पुनर्संचयित पर्याय आपल्या वर्तमान संग्रहास अधिलिखित करतील, शक्यतो सुसंगत डेटाबेस आवृत्तीसह:</string>
     <!-- Deck Picker Background-->
     <!-- Global Intent handler -->
     <!-- Also used by Card Browser, not renaming to save translators effort -->

@@ -260,6 +260,16 @@
     <!-- #######################################################################################
          #################################### Backup options ###################################
          ####################################################################################### -->
+    <string name="pref__backups_help__summary"><![CDATA[
+        O Hirameki faz cópias de segurança regularmente.
+        Para libertar espaço, algumas das cópias de segurança são
+        eliminadas passados dois dias da sua criação.
+        <br><br>
+        Ficheiros de multimédia não são guardados.
+        Por cautela, sincronize a sua colecção periodicamente, ou guarde cópias de segurança dela externamente.
+        <br><br>
+        Pode restaurar a sua colecção partir duma cópia de segurança ou exportá-la a partir do menu do ecrã com a lista de baralhos.
+    ]]></string>
     <string name="pref__minutes_between_automatic_backups__title" maxLength="41">Minutos entre cópias de segurança automáticas</string>
     <string name="pref__daily_backups_to_keep__title" maxLength="41">Cópias de segurança diárias para manter</string>
     <string name="pref__weekly_backups_to_keep__title" maxLength="41">Cópias de segurança semanais para manter</string>
@@ -302,7 +312,6 @@
     <!-- #######################################################################################
          ##### Generic preference summaries & snackbars that are shown on preference click #####
          ####################################################################################### -->
-    <string name="pref__etc__summary__fetching" comment="Generic preference summary to be shown when the value is being fetched">&#8230;</string>
     <string name="pref__etc__summary__no_collection" comment="Generic preference summary to be shown when a preference is not usable         because the collection does not exist">Nenhuma coleção</string>
     <string name="pref__etc__summary__error" comment="Generic preference summary to be shown when there was an error fetching the value.         For example, this is shown when the permission to access collection is lacking">Erro</string>
     <string name="pref__etc__snackbar__fetching" comment="Generic snackbar message to be shown when user taps on a preference,         the value of which is being fetched">A recuperar&#8230;</string>

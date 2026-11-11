@@ -60,8 +60,6 @@
     <string name="dialog_invalid_custom_certificate_title">ਸਰਟੀਫਿਕੇਟ ਪਾਰਸ ਕਰਨ ਵਿੱਚ ਤਰੁੱਟੀ</string>
     <string name="dialog_updated_custom_certificate">ਸਰਟੀਫਿਕੇਟ ਅੱਪਡੇਟ ਕੀਤਾ ਗਿਆ</string>
     <!-- Media checking -->
-    <string name="check_media_message">Checking media&#8230;</string>
-    <string name="check_media_adding_missing_tag">Adding tags&#8230;</string>
     <string name="delete_media_message">ਮੀਡੀਆ ਨੂੰ ਮਿਟਾਇਆ ਜਾ ਰਿਹਾ ਹੈ&#8230;</string>
     <string name="delete_media_result_title">ਮਿਟਾਉਣ ਦਾ ਨਤੀਜਾ</string>
     <plurals name="delete_media_result_message">

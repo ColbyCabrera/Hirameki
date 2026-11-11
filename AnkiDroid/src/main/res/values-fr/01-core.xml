@@ -132,6 +132,7 @@
     <string name="install_non_play_store_ankidroid">Restaurer l\'accès au dossier (avancé)</string>
     <string name="restore_data_from_backup">Restaurer à partir de la sauvegarde .colpkg (avancé)</string>
     <string name="create_new_collection">Créer une nouvelle collection</string>
+    <string name="new_unsafe_collection">La nouvelle collection sera supprimée de votre appareil en cas de désinstallation de l\'appli</string>
     <!-- Permissions screen -->
     <string name="permissions_screen_headline">Hirameki a besoin de certaines autorisations pour fonctionner</string>
     <string name="permissions_screen_optional_headline" comment="Explains that there are optional permissions that can be granted to AnkiDroid.">Hirameki fonctionne mieux avec ces autorisations</string>

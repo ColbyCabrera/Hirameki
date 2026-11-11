@@ -93,6 +93,7 @@
     <!-- Database Errors-->
     <string name="database_locked_title">データベースがロックされています</string>
     <string name="incompatible_database_version_title">互換性のないバージョンのデータベース</string>
+    <string name="incompatible_database_version_summary">このデータベースは、このHiramekiでは使用できません。 これを使用するには、Hiramekiをアップグレードするか、データベースをダウングレードしてください。\n\nこのHiramekiで開ける最大バージョン: %1$d\nこのデータベースのバージョン: %2$d\n\n次の復元オプションは、現在のコレクションを、このHiramekiで使用できる可能性が高いデータベースで上書きします。</string>
     <!-- Deck Picker Background-->
     <!-- Global Intent handler -->
     <!-- Also used by Card Browser, not renaming to save translators effort -->

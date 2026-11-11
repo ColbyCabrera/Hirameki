@@ -75,12 +75,10 @@
     <string name="rebuild_filtered_deck">filtrlənmiş dəstənin yenidən qurulması&#8230;</string>
     <string name="empty_cram_label" maxLength="28">Boş</string>
     <string name="create_subdeck">Alt dəstə yarat</string>
-    <string name="empty_filtered_deck">Emptying filtered deck&#8230;</string>
     <string name="empty_deck">Bu dəstə boşdur</string>
     <string name="invalid_deck_name">Etibarsız kart adı</string>
     <string name="sd_card_not_mounted">Cihaz yaddaşı bağlı deyil</string>
     <string name="button_sync" comment="Text of the sync button" maxLength="28">Sinxronlaşdır</string>
-    <string name="sync_cancel_message" tools:ignore="UnusedResources">Cancelling&#8230;\nThis may take some time.</string>
     <!-- Card template editor -->
     <string name="title_activity_template_editor">Kart növləri</string>
     <string name="card_template_editor_cant_delete">Ən az bir kart növü lazımdır</string>
@@ -103,6 +101,7 @@
     <string name="card_template_editor_front">Şablon üzü</string>
     <string name="card_template_editor_styling" maxLength="28">Stil</string>
     <string name="decks" maxLength="28" comment="Open the Deck Picker">Dəstələr</string>
+    <string name="empty_filtered_deck">filtrlənmiş dəstənin boşaldılması</string>
     <string name="menu_bury" maxLength="28">Gizlət</string>
     <string name="menu_bury_card" maxLength="28">Kartı gizlət</string>
     <string name="menu_bury_note" maxLength="28">Qeydi gizlə</string>

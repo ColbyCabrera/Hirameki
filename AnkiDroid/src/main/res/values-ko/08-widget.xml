@@ -17,6 +17,9 @@
   -->
 <resources>
     <!-- Widget -->
+    <plurals name="widget_minimum_cards_due_notification_ticker_text">
+        <item quantity="other">%d Hirameki 카드 예정</item>
+    </plurals>
     <string name="widget_small" comment="Label of the small ankidroid widget. This text can\'t be found directly in AnkiDroid">작은 화면 Hirameki</string>
     <plurals name="widget_cards_due">
         <item quantity="other">복습 카드 %d개</item>
