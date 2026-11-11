@@ -567,6 +567,38 @@ class NoteEditorTest : RobolectricTest() {
         )
     }
 
+    @Test
+    fun `image occlusion shows only its text fields`() {
+        val ioNotetype = col.notetypes.all().find { it.isImageOcclusion }
+        org.junit.Assume.assumeTrue("Image Occlusion note type required", ioNotetype != null)
+
+        val editor = getNoteEditorAddingNote(FromScreen.DECK_LIST)
+        idleMainLooper()
+        editor.viewModel.selectNoteType(ioNotetype!!.name)
+        idleMainLooper()
+
+        val state = editor.viewModel.noteEditorState.value
+        assertThat(
+            state.fields.filter { it.isVisible }.map { it.name },
+            contains("Header", "Back Extra", "Comments"),
+        )
+        assertThat("every field is kept for saving", state.fields.size, equalTo(ioNotetype.fields.length()))
+        assertThat(
+            "the first shown field is focused",
+            state.fields.single { it.index == state.focusedFieldIndex }.name,
+            equalTo("Header"),
+        )
+
+        editor.viewModel.selectNoteType("Basic")
+        idleMainLooper()
+
+        assertThat(
+            editor.viewModel.noteEditorState.value.fields
+                .all { it.isVisible },
+            equalTo(true),
+        )
+    }
+
     private fun assertActivityFinishedOrDestroyed(scenario: ActivityScenario<NoteEditorActivity>) {
         var isFinished = false
         for (i in 1..30) {

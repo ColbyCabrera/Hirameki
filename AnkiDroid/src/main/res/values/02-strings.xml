@@ -203,7 +203,6 @@
     <string name="web_page_error">Error loading page: %s</string>
     <!-- The name of the deck which corrupt cards will be moved to -->
     <string name="paste_image_from_clipboard">Paste Image from Clipboard</string>
-    <string name="choose_an_image" maxLength="41">Select image</string>
     <!-- Card Template Browser Appearance -->
     <string name="restore_default" maxLength="28">Restore Default</string>
 

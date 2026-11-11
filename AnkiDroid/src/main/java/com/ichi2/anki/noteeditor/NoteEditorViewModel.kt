@@ -153,6 +153,13 @@ class NoteEditorViewModel(
         private const val KEY_TAGS = "note_editor_tags"
         private const val KEY_SELECTED_DECK_NAME = "note_editor_selected_deck_name"
         private const val KEY_FOCUSED_FIELD_INDEX = "note_editor_focused_field_index"
+
+        /**
+         * The occlusion masks ("0") and the image ("1"), which only the occlusion page edits.
+         * @see anki.notetypes.ImageOcclusionField
+         */
+        private val IMAGE_OCCLUSION_DATA_FIELD_TAGS = setOf("0", "1")
+
         private val HTML_LINE_BREAK_REGEX = Regex("<br\\s*/?>", RegexOption.IGNORE_CASE)
 
         // Keys for caller/result state (migrated from Fragment)
@@ -1228,6 +1235,7 @@ class NoteEditorViewModel(
                 isSticky = field.sticky,
                 hint = "",
                 index = index,
+                isVisible = !(notetype.isImageOcclusion && field.imageOcclusionTag in IMAGE_OCCLUSION_DATA_FIELD_TAGS),
             )
         }
 
@@ -1311,8 +1319,8 @@ class NoteEditorViewModel(
         _noteEditorState.update { currentState ->
             val newFocus =
                 currentState.focusedFieldIndex?.takeIf { focus ->
-                    fields.any { it.index == focus }
-                } ?: fields.firstOrNull()?.index
+                    fields.any { it.index == focus && it.isVisible }
+                } ?: fields.firstOrNull { it.isVisible }?.index
 
             Timber.d(
                 "updateStateFromNote: Old state note type='%s', New state note type='%s'",
@@ -1382,8 +1390,8 @@ class NoteEditorViewModel(
         _noteEditorState.update { currentState ->
             val newFocus =
                 currentState.focusedFieldIndex?.takeIf { focus ->
-                    fields.any { it.index == focus }
-                } ?: fields.firstOrNull()?.index
+                    fields.any { it.index == focus && it.isVisible }
+                } ?: fields.firstOrNull { it.isVisible }?.index
 
             Timber.d(
                 "updateStateFromNoteWithNotetype: Old state note type='%s', New state note type='%s'",
@@ -1463,10 +1471,10 @@ class NoteEditorViewModel(
     private fun determineFocusIndex(): Int? {
         val state = _noteEditorState.value
         val focus = state.focusedFieldIndex
-        if (focus != null && state.fields.any { it.index == focus }) {
+        if (focus != null && state.fields.any { it.index == focus && it.isVisible }) {
             return focus
         }
-        return state.fields.firstOrNull()?.index
+        return state.fields.firstOrNull { it.isVisible }?.index
     }
 
     private fun updateFieldValueInternal(

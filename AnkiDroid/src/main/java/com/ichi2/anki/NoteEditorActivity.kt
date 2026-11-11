@@ -49,6 +49,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.core.content.IntentCompat
 import androidx.core.content.edit
 import androidx.core.os.BundleCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,6 +79,7 @@ import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT_
 import com.ichi2.anki.multimedia.MultimediaActivityExtra
 import com.ichi2.anki.multimedia.MultimediaBottomSheet
 import com.ichi2.anki.multimedia.MultimediaImageFragment
+import com.ichi2.anki.multimedia.MultimediaUtils.createImageFile
 import com.ichi2.anki.multimedia.MultimediaViewModel
 import com.ichi2.anki.multimediacard.IMultimediaEditableNote
 import com.ichi2.anki.multimediacard.fields.AudioRecordingField
@@ -108,6 +111,8 @@ import com.ichi2.anki.snackbar.SnackbarBuilder
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.compat.CompatHelper.Companion.getSerializableCompat
+import com.ichi2.imagecropper.ImageCropper
+import com.ichi2.imagecropper.ImageCropperLauncher
 import com.ichi2.utils.ClipboardUtil
 import com.ichi2.utils.HashUtil
 import com.ichi2.utils.ImportUtils
@@ -117,6 +122,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.io.File
 import java.util.function.Consumer
 
 class NoteEditorActivity :
@@ -246,6 +252,32 @@ class NoteEditorActivity :
             }
         }
 
+    private var imageOcclusionPhotoPath: String? = null
+
+    private val imageOcclusionCameraLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { isPictureTaken ->
+            val photoPath = imageOcclusionPhotoPath
+            if (!isPictureTaken || photoPath == null) {
+                Timber.d("Camera aborted or some interruption")
+                return@registerForActivityResult
+            }
+            val photoUri = FileProvider.getUriForFile(this, "$packageName.apkgfileprovider", File(photoPath))
+            imageOcclusionCropLauncher.launch(ImageCropperLauncher.ImageUri(photoUri).getIntent(this))
+        }
+
+    private val imageOcclusionCropLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode != RESULT_OK) {
+                Timber.v("Unable to crop the image")
+                return@registerForActivityResult
+            }
+            val croppedImagePath =
+                result.data
+                    ?.let { IntentCompat.getParcelableExtra(it, ImageCropper.CROP_IMAGE_RESULT, ImageCropper.CropResultData::class.java) }
+                    ?.uriPath ?: return@registerForActivityResult
+            setupImageOcclusionEditor(croppedImagePath)
+        }
+
     private val requestIOEditorCloser =
         registerForActivityResult(
             ActivityResultContracts.StartActivityForResult(),
@@ -338,6 +370,7 @@ class NoteEditorActivity :
         if (savedInstanceState != null) {
             addNote = savedInstanceState.getBoolean("addNote")
             deckId = savedInstanceState.getLong("did")
+            imageOcclusionPhotoPath = savedInstanceState.getString(STATE_IMAGE_OCCLUSION_PHOTO_PATH)
         } else {
             caller = fromValue(arguments.getInt(EXTRA_CALLER, NoteEditorCaller.NO_CALLER.value))
             if (caller == NoteEditorCaller.NO_CALLER) {
@@ -790,6 +823,7 @@ class NoteEditorActivity :
                             noteEditorViewModel.showSnackbar(getString(R.string.activity_start_failed))
                         }
                     },
+                    onImageOcclusionTakePhoto = { takePhotoForImageOcclusion() },
                     onImageOcclusionPasteImage = {
                         if (ClipboardUtil.hasImage(clipboard)) {
                             val uri = ClipboardUtil.getUri(clipboard)
@@ -888,6 +922,7 @@ class NoteEditorActivity :
         Timber.i("Saving instance")
         savedInstanceState.putBoolean("addNote", addNote)
         savedInstanceState.putLong("did", deckId)
+        savedInstanceState.putString(STATE_IMAGE_OCCLUSION_PHOTO_PATH, imageOcclusionPhotoPath)
     }
 
     private fun applyFormatter(
@@ -1646,6 +1681,24 @@ class NoteEditorActivity :
         noteEditorViewModel.updateCardsInfo(cardsInfoText)
     }
 
+    private fun takePhotoForImageOcclusion() {
+        val photoFile =
+            try {
+                createImageFile()
+            } catch (e: Exception) {
+                Timber.w(e, "Error creating the file")
+                return
+            }
+        imageOcclusionPhotoPath = photoFile.absolutePath
+        val photoUri = FileProvider.getUriForFile(this, "$packageName.apkgfileprovider", photoFile)
+        try {
+            imageOcclusionCameraLauncher.launch(photoUri)
+        } catch (_: ActivityNotFoundException) {
+            Timber.w("No app found to handle image capture")
+            noteEditorViewModel.showSnackbar(getString(R.string.activity_start_failed))
+        }
+    }
+
     private fun setupImageOcclusionEditor(imagePath: String = "") {
         val kind: String
         val id: Long
@@ -1670,6 +1723,7 @@ class NoteEditorActivity :
     }
 
     companion object {
+        private const val STATE_IMAGE_OCCLUSION_PHOTO_PATH = "imageOcclusionPhotoPath"
         const val FRAGMENT_ARGS_EXTRA = "fragmentArgs"
         const val FRAGMENT_NAME_EXTRA = "fragmentName"
         const val SOURCE_TEXT = "SOURCE_TEXT"

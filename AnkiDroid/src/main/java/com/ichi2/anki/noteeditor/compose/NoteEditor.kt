@@ -38,9 +38,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -97,6 +98,8 @@ data class NoteFieldState(
     val isSticky: Boolean = false,
     val hint: String = "",
     val index: Int,
+    /** False for fields the editor keeps but never shows, such as Image Occlusion's own data fields */
+    val isVisible: Boolean = true,
 )
 
 /**
@@ -147,6 +150,7 @@ fun NoteEditorScreen(
     customToolbarButtons: List<ToolbarButtonModel>,
     isToolbarVisible: Boolean,
     onImageOcclusionSelectImage: () -> Unit = {},
+    onImageOcclusionTakePhoto: () -> Unit = {},
     onImageOcclusionPasteImage: () -> Unit = {},
     onImageOcclusionEdit: () -> Unit = {},
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
@@ -321,7 +325,7 @@ fun NoteEditorScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    state.fields.forEach { field ->
+                    state.fields.filter { it.isVisible }.forEach { field ->
                         NoteFieldEditor(
                             field = field,
                             onValueChange = { newValue ->
@@ -343,6 +347,7 @@ fun NoteEditorScreen(
                 if (state.isAddingNote) {
                     ImageOcclusionButtons(
                         onSelectImage = onImageOcclusionSelectImage,
+                        onTakePhoto = onImageOcclusionTakePhoto,
                         onPasteImage = onImageOcclusionPasteImage,
                     )
                 } else {
@@ -705,6 +710,7 @@ fun NoteFieldEditor(
 @Composable
 fun ImageOcclusionButtons(
     onSelectImage: () -> Unit,
+    onTakePhoto: () -> Unit,
     onPasteImage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -717,11 +723,22 @@ fun ImageOcclusionButtons(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(
-                imageVector = Icons.Default.AddAPhoto,
+                imageVector = Icons.Default.Image,
                 contentDescription = null,
                 modifier = Modifier.padding(end = 8.dp),
             )
-            Text(stringResource(R.string.choose_an_image))
+            Text(stringResource(R.string.multimedia_editor_image_field_editing_galery))
+        }
+        Button(
+            onClick = onTakePhoto,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                imageVector = Icons.Default.PhotoCamera,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+            Text(stringResource(R.string.multimedia_editor_image_field_editing_photo))
         }
         Button(
             onClick = onPasteImage,
