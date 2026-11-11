@@ -152,10 +152,10 @@
     <string name="whiteboard_color_white">سفید</string>
     <string name="whiteboard_color_yellow">زرد</string>
     <string name="whiteboard_width">ضخامت</string>
-    <string name="widget_add_note_button">افزودن یادداشت جدید Hirameki</string>
+    <string name="widget_add_note_button">افزودن یادداشت جدید</string>
     <plurals name="widget_minimum_cards_due_notification_ticker_text">
-            <item quantity="one">موعد مرور %d کارت Hirameki</item>
-            <item quantity="other">موعد مرور %d کارت Hirameki</item>
+            <item quantity="one">موعد مرور %d کارت</item>
+            <item quantity="other">موعد مرور %d کارت</item>
         </plurals>
     <string name="widget_small" comment="Label of the small ankidroid widget. This text can't be found directly in AnkiDroid">Hirameki کوچک</string>
 </resources>
