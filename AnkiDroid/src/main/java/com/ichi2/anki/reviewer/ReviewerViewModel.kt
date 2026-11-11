@@ -20,6 +20,7 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.core.net.toUri
+import androidx.core.text.HtmlCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -30,7 +31,6 @@ import anki.scheduler.CardAnswer
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.R
-import com.ichi2.anki.backend.stripHTML
 import com.ichi2.anki.cardviewer.CardMediaPlayer
 import com.ichi2.anki.cardviewer.MediaErrorBehavior
 import com.ichi2.anki.cardviewer.MediaErrorListener
@@ -246,8 +246,11 @@ sealed class ReviewerEffect {
 
 private val UNSIGNED_NUMBER = Regex("""\d+([.,]\d*)?""")
 
-// Compose has no signed number keyboard, so a negative answer keeps the text keyboard, which has a minus key
-internal fun isUnsignedNumber(answer: String?): Boolean = answer != null && UNSIGNED_NUMBER.matches(stripHTML(answer).trim())
+// Compose has no signed number keyboard, so a negative answer keeps the text keyboard, which has a minus key.
+// fromHtml keeps line breaks and block boundaries as whitespace, so "1<br>2" is not read as "12".
+internal fun isUnsignedNumber(answer: String?): Boolean =
+    answer != null &&
+        UNSIGNED_NUMBER.matches(HtmlCompat.fromHtml(answer, HtmlCompat.FROM_HTML_MODE_LEGACY).toString().trim())
 
 /**
  * Whether the backend refused an answer because the reviewer's queue state is out of date, rather

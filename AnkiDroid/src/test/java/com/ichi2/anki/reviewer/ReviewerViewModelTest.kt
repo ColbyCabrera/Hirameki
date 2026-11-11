@@ -247,7 +247,7 @@ class ReviewerViewModelTest : RobolectricTest() {
         for (number in listOf("0", "42", "3.14", "3,14", "7.", " 8 ", "<b>9</b>")) {
             assertThat(number, isUnsignedNumber(number), equalTo(true))
         }
-        for (other in listOf(null, "", "-1", "1a", "1.2.3", ".5", "one")) {
+        for (other in listOf(null, "", "-1", "1a", "1.2.3", ".5", "one", "1<br>2", "<div>1</div><div>2</div>")) {
             assertThat(other.toString(), isUnsignedNumber(other), equalTo(false))
         }
     }
