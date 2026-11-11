@@ -67,7 +67,7 @@ value class CrowdinLanguageTag(
     companion object {
         private val customMappings =
             mapOf(
-                // ** from tools/localization/src/update.ts **
+                // ** from upstream AnkiDroid's tools/localization/src/update.ts **
                 "yue" to "yu",
                 "heb" to "he",
                 "iw" to "he",

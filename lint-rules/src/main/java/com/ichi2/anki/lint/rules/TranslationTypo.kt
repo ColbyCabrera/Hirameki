@@ -61,7 +61,7 @@ class TranslationTypo :
                 implementation,
             )
 
-        // copied from tools/localization/src/constants.ts
+        // copied from upstream AnkiDroid's tools/localization/src/constants.ts
         // excludes marketdescription as it is .txt
         private val I18N_FILES =
             listOf(
