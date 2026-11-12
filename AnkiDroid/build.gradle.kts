@@ -271,7 +271,9 @@ extensions.configure<ApplicationExtension> {
         }
 
         getByName("release") {
-            isMinifyEnabled = System.getenv("MINIFY_ENABLED")?.let { it != "false" } ?: true
+            val minify = System.getenv("MINIFY_ENABLED")?.let { it != "false" } ?: true
+            isMinifyEnabled = minify
+            isShrinkResources = minify
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
