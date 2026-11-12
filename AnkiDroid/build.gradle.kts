@@ -38,8 +38,8 @@ idea {
 }
 
 val homePath: String? = System.getProperty("user.home")
-val baseVersionCode = 22300123
-val baseVersionName = "1.1.9"
+val baseVersionCode = 22300124
+val baseVersionName = "1.1.10"
 val testReleaseBuild =
     rootProject.extra.has("testReleaseBuild") && (rootProject.extra.get("testReleaseBuild") as? Boolean) == true
 
