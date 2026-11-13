@@ -242,12 +242,6 @@ class Decks(
         scope: SetDeckCollapsedRequest.Scope,
     ): OpChanges = col.backend.setDeckCollapsed(deckId, collapsed, scope)
 
-    fun collapse(did: DeckId) {
-        val deck = this.getLegacy(did) ?: return
-        deck.collapsed = !deck.collapsed
-        this.save(deck)
-    }
-
     @RustCleanup("implement and make public")
     @LibAnkiAlias("collapse_browser")
     @Suppress("unused", "unused_parameter")

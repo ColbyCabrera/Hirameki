@@ -16,6 +16,7 @@
 package com.ichi2.anki
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import anki.decks.SetDeckCollapsedRequest
 import com.ichi2.anki.deckpicker.addVisibleToList
 import com.ichi2.anki.libanki.filterAndFlatten
 import com.ichi2.anki.libanki.sched.DeckNode
@@ -63,7 +64,7 @@ class DeckAdapterFilterTest : RobolectricTest() {
             )
         names.forEach {
             val did = col.decks.id(it)
-            col.decks.collapse(did)
+            col.decks.setCollapsed(did, collapsed = false, SetDeckCollapsedRequest.Scope.REVIEWER)
         }
         col.sched.deckDueTree()
     }
