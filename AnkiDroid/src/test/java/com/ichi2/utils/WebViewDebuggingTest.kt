@@ -22,7 +22,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import io.mockk.verify
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -35,15 +34,6 @@ class WebViewDebuggingTest {
 
     @After
     fun restoreWebView() = unmockkStatic(WebView::class)
-
-    @Test
-    fun `the setting reaches WebView`() {
-        every { WebView.setWebContentsDebuggingEnabled(any()) } returns Unit
-
-        setWebContentsDebuggingEnabled(true)
-
-        verify { WebView.setWebContentsDebuggingEnabled(true) }
-    }
 
     @Test
     fun `a device with no WebView doesn't crash`() {

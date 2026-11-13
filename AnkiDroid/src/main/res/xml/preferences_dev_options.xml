@@ -30,7 +30,7 @@
     <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="@string/html_javascript_debugging_key"
-        android:summary="Enable remote WebView connections, and save card HTML to AnkiDroid directory"
+        android:summary="Enable remote WebView connections"
         android:title="HTML / JavaScript debugging"/>
     <Preference
         android:title="Trigger test crash"
