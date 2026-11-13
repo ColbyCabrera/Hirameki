@@ -36,6 +36,7 @@ import com.ichi2.anki.libanki.undoLabel
 import com.ichi2.testutils.ensureOpsExecuted
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.CoreMatchers.instanceOf
@@ -47,6 +48,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.shadows.ShadowEnvironment
 import timber.log.Timber
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 /** Test of [DeckPickerViewModel] */
 @RunWith(AndroidJUnit4::class)
@@ -1070,11 +1076,56 @@ class DeckPickerViewModelTest : RobolectricTest() {
             addBasicNote()
             viewModel.updateDeckList()
             advanceUntilIdle()
+            val parentId = col.decks.id("Parent")
+            val collapsedBefore = col.decks.getLegacy(parentId)!!.collapsed
             val undoLabelBefore = col.undoLabel()
 
-            viewModel.toggleDeckExpand(col.decks.id("Parent"))
+            viewModel.toggleDeckExpand(parentId)
             advanceUntilIdle()
 
+            assertThat("deck toggled", col.decks.getLegacy(parentId)!!.collapsed, equalTo(!collapsedBefore))
             assertThat(col.undoLabel(), equalTo(undoLabelBefore))
         }
+
+    @Test
+    fun `toggleDeckExpand - a refresh that was already waiting does not show the deck as it was`() {
+        // created after the test dispatcher is installed, so its coroutines run on the calling thread
+        val viewModel = DeckPickerViewModel()
+        val parentId = col.decks.id("Parent")
+        col.decks.id("Parent::Child")
+        viewModel.reloadDeckCounts()
+        val collapsedBefore = assertNotNull(viewModel.dueTree?.find(parentId)).collapsed
+        // a refresh only replaces the tree shown when it reads a different one
+        col.decks.id("Other")
+
+        val collectionIsHeld = CountDownLatch(1)
+        val releaseCollection = CountDownLatch(1)
+        val holder =
+            thread {
+                runBlocking {
+                    withCol {
+                        collectionIsHeld.countDown()
+                        releaseCollection.await(10, TimeUnit.SECONDS)
+                    }
+                }
+            }
+        assertTrue(collectionIsHeld.await(10, TimeUnit.SECONDS))
+        val refresh = thread { viewModel.reloadDeckCounts() }.queuedForCollection()
+        val toggle = thread { viewModel.toggleDeckExpand(parentId) }.queuedForCollection()
+        releaseCollection.countDown()
+        listOf(holder, refresh, toggle).forEach { it.join(10_000) }
+
+        assertThat("saved", col.decks.getLegacy(parentId)!!.collapsed, equalTo(!collapsedBefore))
+        assertThat("shown", viewModel.dueTree?.find(parentId)?.collapsed, equalTo(!collapsedBefore))
+    }
+
+    /** Waits until the thread is queued for the collection, which hands out turns in arrival order */
+    private fun Thread.queuedForCollection(): Thread {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+        while (state != Thread.State.WAITING) {
+            check(System.nanoTime() < deadline) { "thread never waited for the collection" }
+            Thread.sleep(5)
+        }
+        return this
+    }
 }
