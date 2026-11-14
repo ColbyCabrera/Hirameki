@@ -27,6 +27,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -153,9 +154,13 @@ open class SafeWebViewLayout :
         activeWebView?.webChromeClient = webChromeClient
     }
 
+    /** [resultCallback] is not called while the [WebView] is destroyed. */
     @MainThread
-    fun evaluateJavascript(script: String) {
-        activeWebView?.evaluateJavascript(script, null)
+    fun evaluateJavascript(
+        script: String,
+        resultCallback: ValueCallback<String>? = null,
+    ) {
+        activeWebView?.evaluateJavascript(script, resultCallback)
     }
 
     /**

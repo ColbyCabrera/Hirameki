@@ -88,6 +88,23 @@ class GestureProcessorTest : ViewerCommand.CommandProcessor {
         assertTrue(sut.isBound(Gesture.SHAKE), "a gesture bound on the other side is still bound")
     }
 
+    @Test
+    fun `multi-finger taps run their bound commands`() {
+        val prefs = mockk<SharedPreferences>(relaxed = true)
+        every { prefs.getString(ViewerCommand.SHOW_ANSWER.preferenceKey, null) } returns
+            listOf(ReviewerBinding.fromGesture(Gesture.TWO_FINGER_TAP)).toPreferenceString()
+        every { prefs.getString(ViewerCommand.UNDO.preferenceKey, null) } returns
+            listOf(ReviewerBinding.fromGesture(Gesture.THREE_FINGER_TAP)).toPreferenceString()
+        sut.init(prefs)
+
+        sut.onMultiFingerTap(2)
+        sut.onMultiFingerTap(3)
+        assertFalse(sut.onMultiFingerTap(4), "four fingers are not bound")
+        assertFalse(sut.onMultiFingerTap(5), "five fingers is not a gesture")
+
+        assertThat(executedCommands, equalTo(listOf(ViewerCommand.SHOW_ANSWER, ViewerCommand.UNDO)))
+    }
+
     private fun bindShake(vararg commands: Pair<ViewerCommand, CardSide>) {
         val prefs = mockk<SharedPreferences>(relaxed = true)
         every { prefs.getBoolean(GestureProcessor.PREF_KEY, any()) } returns true

@@ -44,9 +44,6 @@ class GestureProcessor(
         /** Taps which are only recognised when 9-point touch is enabled */
         private val NINE_POINT_TAPS =
             setOf(Gesture.TAP_TOP_LEFT, Gesture.TAP_TOP_RIGHT, Gesture.TAP_CENTER, Gesture.TAP_BOTTOM_LEFT, Gesture.TAP_BOTTOM_RIGHT)
-
-        /** Restricted to upstream's new study screen */
-        private val MULTI_FINGER_TAPS = setOf(Gesture.TWO_FINGER_TAP, Gesture.THREE_FINGER_TAP, Gesture.FOUR_FINGER_TAP)
     }
 
     /** The commands bound to each gesture, with the side they apply to, in [ViewerCommand] order */
@@ -65,7 +62,7 @@ class GestureProcessor(
         gestureMapper.init(preferences)
 
         val useCornerTouch = preferences.getBoolean("gestureCornerTouch", false)
-        val unsupported = if (useCornerTouch) MULTI_FINGER_TAPS else MULTI_FINGER_TAPS + NINE_POINT_TAPS
+        val unsupported = if (useCornerTouch) emptySet() else NINE_POINT_TAPS
         bindings =
             ViewerCommand.entries
                 .flatMap { command ->
@@ -102,6 +99,17 @@ class GestureProcessor(
     }
 
     fun onShake(): Boolean = execute(Gesture.SHAKE)
+
+    /** A tap with [fingers] fingers at once, from 2 to 4 */
+    fun onMultiFingerTap(fingers: Int): Boolean =
+        execute(
+            when (fingers) {
+                2 -> Gesture.TWO_FINGER_TAP
+                3 -> Gesture.THREE_FINGER_TAP
+                4 -> Gesture.FOUR_FINGER_TAP
+                else -> null
+            },
+        )
 
     /**
      * Runs the first command bound to [gesture] for the side being shown, trying the next one if
