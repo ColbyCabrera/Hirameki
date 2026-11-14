@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 runKtlint () {
     # Following code was generated automatically by running ./gradlew addKtlintFormatGitPreCommitHook

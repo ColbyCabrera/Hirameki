@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # Small utility to quickly merge changes from others:
 # 1) Pull from given branch

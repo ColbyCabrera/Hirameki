@@ -1,5 +1,6 @@
 #!/usr/bin/gawk -f
-#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Increase version string
 # For instance 12.4alpha9 -> 12.4alpha10
 #

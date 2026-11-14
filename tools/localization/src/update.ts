@@ -1,11 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: Copyright (c) AnkiDroid. All rights reserved.
+
 /**
- * @author
- * AnkiDroid Open Source Team
- *
- * @license
- * Copyright (c) AnkiDroid. All rights reserved.
- * Licensed under the GPL-3.0 license. See LICENSE file in the project root for details.
- *
  * @description
  * updateI18nFiles() to update files in AnkiDroid/src/main/res/values/ with downloaded files from crowdin.
  * The downloaded file needs to extract first with 'yarn start extract'.

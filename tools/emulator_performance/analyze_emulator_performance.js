@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Fetch results to parse like this, with the workflow run id you want:
 // curl https://api.github.com/repos/mikehardy/Anki-Android/actions/runs/2210525974/jobs?per_page=100 > emulator_perf_results.json
 

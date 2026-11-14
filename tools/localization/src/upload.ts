@@ -1,11 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: Copyright (c) AnkiDroid. All rights reserved.
+
 /**
- * @author
- * AnkiDroid Open Source Team
- *
- * @license
- * Copyright (c) AnkiDroid. All rights reserved.
- * Licensed under the GPL-3.0 license. See LICENSE file in the project root for details.
- *
  * @description
  * uploadI18nFiles() to upload current version of English strings from AnkiDroid/src/main/res/values/ dir to crowdin.
  * It's expected to be called through yarn start upload

@@ -1,5 +1,6 @@
 #!/bin/bash
-# 
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # A set of utility functions for shell scripts relating to git.
 
 . bash-util.sh || exit 1

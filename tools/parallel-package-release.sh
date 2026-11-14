@@ -1,5 +1,6 @@
 #!/bin/bash
-#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # This script assumes a few things -
 #
 # 1) you are in the main directory of the Anki source code (e.g. 'Anki-Android' is the current working directory)

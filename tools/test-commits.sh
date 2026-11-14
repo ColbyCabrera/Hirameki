@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Walk backwards from HEAD, testing each commit until the
 # provided first commit (inclusive).
 

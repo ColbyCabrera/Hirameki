@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # List of committers since a particular commit or tag
 # Usage: ./list-of-committers-since-version.sh v0.7
 

@@ -1,5 +1,6 @@
 #!/bin/sh
-#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Shows the completion rate of the translation for each language.
 #
 wget -O tmp-translations-page.html https://crowdin.net/project/ankidroid --no-check-certificate

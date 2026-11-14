@@ -1,11 +1,5 @@
-/**
- * @author
- * AnkiDroid Open Source Team
- *
- * @license
- * Copyright (c) AnkiDroid. All rights reserved.
- * Licensed under the GPL-3.0 license. See LICENSE file in the project root for details.
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: Copyright (c) AnkiDroid. All rights reserved.
 
 import path from "path";
 import { Credentials } from "@crowdin/crowdin-api-client";

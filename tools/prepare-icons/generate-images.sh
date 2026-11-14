@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # The purpose of this script is to take a directory of prepared[1] svg files
 #  and some configuration data (names of themes, color codes, image geometries)

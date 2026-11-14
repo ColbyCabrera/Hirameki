@@ -1,5 +1,6 @@
 #!/bin/bash
-#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # A set of utility function for bash scripts.
 
 
