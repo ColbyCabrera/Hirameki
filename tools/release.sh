@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+
 # Perform a release of AnkiDroid
 # Nicolas Raoul 2011/10/24
 # Timothy Rae 2014/11/10
