@@ -22,7 +22,6 @@ import com.android.tools.lint.client.api.Vendor
 import com.android.tools.lint.detector.api.CURRENT_API
 import com.android.tools.lint.detector.api.Issue
 import com.ichi2.anki.lint.rules.AvoidAlertDialogUsage
-import com.ichi2.anki.lint.rules.CopyrightHeaderExists
 import com.ichi2.anki.lint.rules.DirectCalendarInstanceUsage
 import com.ichi2.anki.lint.rules.DirectDateInstantiation
 import com.ichi2.anki.lint.rules.DirectGregorianInstantiation
@@ -35,6 +34,7 @@ import com.ichi2.anki.lint.rules.FixedPreferencesTitleLength
 import com.ichi2.anki.lint.rules.HardcodedPreferenceKey
 import com.ichi2.anki.lint.rules.InvalidStringFormatDetector
 import com.ichi2.anki.lint.rules.JUnitNullAssertionDetector
+import com.ichi2.anki.lint.rules.LicenseHeaderExists
 import com.ichi2.anki.lint.rules.LocaleRootDetector
 import com.ichi2.anki.lint.rules.NonPositionalFormatSubstitutions
 import com.ichi2.anki.lint.rules.PrintStackTraceUsage
@@ -48,7 +48,6 @@ class IssueRegistry : IssueRegistry() {
         get() {
             // Keep this list lexicographically ordered.
             return listOf(
-                CopyrightHeaderExists.ISSUE,
                 DirectCalendarInstanceUsage.ISSUE,
                 DirectDateInstantiation.ISSUE,
                 DirectGregorianInstantiation.ISSUE,
@@ -59,6 +58,7 @@ class IssueRegistry : IssueRegistry() {
                 DuplicateCrowdInStrings.ISSUE,
                 HardcodedPreferenceKey.ISSUE,
                 JUnitNullAssertionDetector.ISSUE,
+                LicenseHeaderExists.ISSUE,
                 LocaleRootDetector.ISSUE,
                 PrintStackTraceUsage.ISSUE,
                 NonPositionalFormatSubstitutions.ISSUE,
