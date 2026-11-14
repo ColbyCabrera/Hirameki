@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~ SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+  -->
+
 <!-- Vazirmatn for Views in an Arabic-script UI (see com.ichi2.themes.ArabicScriptFont). One variable font file
      pinned to the weights Views ask for, so medium and bold are the font's own instances rather than synthesized.
      Its license is located at assets/fonts/vazirmatn/OFL.txt because res/font only accepts font files. -->

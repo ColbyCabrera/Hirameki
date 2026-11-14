@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~ SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+  -->
+
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/heatmap_widget_description"
     android:initialLayout="@layout/glance_default_loading_layout"
