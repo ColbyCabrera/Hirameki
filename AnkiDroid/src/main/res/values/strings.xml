@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~ SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+  -->
+
 <resources>
     <string name="app_name" comment="Application name. Duplicated in sync_conflict_keep_local_new for sync context">Hirameki</string>
     <string name="navigation_drawer_open">navigation drawer open</string>
