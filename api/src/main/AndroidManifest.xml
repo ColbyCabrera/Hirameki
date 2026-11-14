@@ -1,3 +1,8 @@
+<!--
+  ~ SPDX-License-Identifier: LGPL-3.0-or-later
+  ~ SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+  -->
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="com.hirameki.flashcards.permission.READ_WRITE_DATABASE"/>
     <application android:allowBackup="true" android:label="@string/app_name">
