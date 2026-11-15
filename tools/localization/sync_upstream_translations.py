@@ -360,12 +360,30 @@ def remove_resources(text: str, resources: list[Resource], replacements: dict[in
 
 
 def with_header(text: str) -> str:
-    """Replaces Crowdin's "edit on Crowdin" notice with Hirameki's generated-file notice."""
+    """Replaces Crowdin's "edit on Crowdin" notice with Hirameki's generated-file notice.
+
+    Upstream keeps the file's license and copyright lines inside that notice, and they must be
+    kept: they join the file's own SPDX comment, or form one if it has none.
+    """
     body = re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", text)
     notice = re.match(r"<!--.*?-->\s*", body, re.S)
-    if notice and "AUTOMATICALLY GENERATED" in notice.group():
-        body = body[notice.end():]
-    return HEADER + body
+    if not notice or "AUTOMATICALLY GENERATED" not in notice.group():
+        return HEADER + body
+    body = body[notice.end():]
+    spdx = [line.strip(" ~") for line in notice.group().splitlines() if "SPDX-" in line]
+    own = re.match(r"<!--(?P<lines>[^>]*?SPDX-License-Identifier.*?)-->\s*", body, re.S)
+    if own:
+        kept = [line.strip(" ~") for line in own.group("lines").splitlines() if "SPDX-" in line]
+        body = body[own.end():]
+        holders = {email for line in kept for email in re.findall(r"<[^>]+>", line)}
+        missing = [
+            line for line in spdx
+            if line.startswith("SPDX-FileCopyrightText") and not set(re.findall(r"<[^>]+>", line)) & holders
+        ]
+        spdx = kept[:1] + missing + kept[1:]
+    if not spdx:
+        return HEADER + body
+    return HEADER + "<!--\n" + "".join(f"  ~ {line}\n" for line in spdx) + "  -->\n" + body
 
 
 def sync_locale(
