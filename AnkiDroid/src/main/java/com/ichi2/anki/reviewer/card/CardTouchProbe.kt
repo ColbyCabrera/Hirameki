@@ -9,9 +9,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class CardTouchProbe(
     val hasTextSelection: Boolean = false,
-    /** On an element which handles touches itself, such as a link, a button or an input. */
-    val isOnInteractiveElement: Boolean = false,
+    /** On an element which handles taps itself, such as a link, a button or a click handler. */
+    val isOnTapTarget: Boolean = false,
+    /** On a tap target which also responds to dragging, such as an input or a video. */
+    val isOnDragTarget: Boolean = false,
 ) {
     /** A touch with text selected ends the selection. */
-    val belongsToCard: Boolean get() = hasTextSelection || isOnInteractiveElement
+    val claimsTaps: Boolean get() = hasTextSelection || isOnTapTarget
+
+    /** A swipe never clicks, so only a drag target keeps it from the reviewer. */
+    val claimsSwipes: Boolean get() = hasTextSelection || isOnDragTarget
 }

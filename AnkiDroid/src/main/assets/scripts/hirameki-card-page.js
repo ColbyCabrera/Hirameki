@@ -11,8 +11,9 @@
     const ZOOM_RESET_LIMIT_MS = 300;
     const ZOOM_TOLERANCE = 0.001;
 
-    // Matches isInteractable in upstream's ankidroid-reviewer.js, plus <select> and <textarea>
-    const INTERACTIVE_ELEMENTS = ["A", "BUTTON", "VIDEO", "SUMMARY", "INPUT", "SELECT", "TEXTAREA"];
+    // Together these match isInteractable in upstream's ankidroid-reviewer.js, plus <select> and <textarea>
+    const TAP_TARGETS = ["A", "BUTTON", "SUMMARY"];
+    const DRAG_TARGETS = ["VIDEO", "INPUT", "SELECT", "TEXTAREA"];
 
     let masksDrawn = Promise.resolve();
 
@@ -51,22 +52,26 @@
         });
     }
 
-    function handlesTouches(node) {
+    function handlesTaps(node) {
         return (
-            INTERACTIVE_ELEMENTS.includes(node.nodeName) ||
+            TAP_TARGETS.includes(node.nodeName) ||
             !!node.onclick ||
-            !!node.isContentEditable ||
             !!node.classList?.contains("tappable")
         );
     }
 
-    function isOnInteractiveElement(x, y) {
+    function handlesDrags(node) {
+        return DRAG_TARGETS.includes(node.nodeName) || !!node.isContentEditable;
+    }
+
+    function elementAndAncestorsAt(x, y) {
+        const nodes = [];
         let node = document.elementFromPoint(x, y);
         while (node && node !== document) {
-            if (handlesTouches(node)) return true;
+            nodes.push(node);
             node = node.parentNode;
         }
-        return false;
+        return nodes;
     }
 
     if (globalThis.anki?.imageOcclusion) {
@@ -85,9 +90,12 @@
             const viewport = window.visualViewport;
             const x = viewport.offsetLeft + fractionX * viewport.width;
             const y = viewport.offsetTop + fractionY * viewport.height;
+            const touched = elementAndAncestorsAt(x, y);
+            const isOnDragTarget = touched.some(handlesDrags);
             return {
                 hasTextSelection: !(document.getSelection()?.isCollapsed ?? true),
-                isOnInteractiveElement: isOnInteractiveElement(x, y),
+                isOnTapTarget: isOnDragTarget || touched.some(handlesTaps),
+                isOnDragTarget,
             };
         },
 
