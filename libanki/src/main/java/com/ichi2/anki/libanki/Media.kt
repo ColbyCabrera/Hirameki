@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2011 Kostas Spyropoulos <inigo.aldana@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2014 Houssam Salem <houssam.salem.au@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki.libanki
 
@@ -48,6 +49,15 @@ open class Media(
      ***********************************************************
      */
 
+    /**
+     * Add [oFile] to the media folder, reusing identical files and renaming conflicting files.
+     *
+     * @return possibly-renamed filename
+     *
+     * @throws EmptyMediaException if [oFile] is null or empty
+     * @throws OutOfMemoryError if the file could not be copied to a contiguous block of memory (or is >= 2GB)
+     */
+    @LibAnkiAlias("add_file")
     fun addFile(oFile: File?): String {
         if (oFile == null || oFile.length() == 0L) {
             throw EmptyMediaException()
