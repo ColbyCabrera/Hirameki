@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki.provider
 
+import android.app.Application
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.net.Uri
@@ -12,7 +14,6 @@ import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.FlashCardsContract.AnkiMedia
 import com.ichi2.anki.RobolectricTest
-import com.ichi2.testutils.grantPermissions
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,13 +40,29 @@ class CardContentProviderMediaTest : RobolectricTest() {
     @Before
     fun setUpProvider() {
         CollectionManager.setColForTests(col)
-        grantPermissions("${BuildConfig.APPLICATION_ID}.permission.READ_WRITE_DATABASE")
+        shadowOf(targetContext as Application).grantPermissions("${BuildConfig.APPLICATION_ID}.permission.READ_WRITE_DATABASE")
         provider = Robolectric.buildContentProvider(CardContentProvider::class.java).create(authority).get()
         ShadowBinder.setCallingPid(Process.myPid() + 1)
 
         val sourceProvider = mock<ContentProvider>()
         whenever(sourceProvider.getType(sourceUri)).thenReturn("image/png")
         ShadowContentResolver.registerProviderInternal(sourceUri.authority!!, sourceProvider)
+    }
+
+    @Test
+    fun `repeated media imports reuse the existing file`() {
+        val first = assertNotNull(insertMedia(preferredName = "cover", contents = "cover contents"))
+        val second = assertNotNull(insertMedia(preferredName = "cover", contents = "cover contents"))
+
+        assertEquals(first, second)
+        assertEquals("cover.png", mediaFile(first).name)
+        assertEquals("cover contents", mediaFile(first).readText())
+        assertEquals(
+            1,
+            col.media.dir
+                .listFiles()!!
+                .size,
+        )
     }
 
     @Test
@@ -56,6 +73,31 @@ class CardContentProviderMediaTest : RobolectricTest() {
         assertNotEquals(first, second)
         assertEquals("original cover", mediaFile(first).readText())
         assertEquals("changed cover", mediaFile(second).readText())
+        assertEquals(
+            2,
+            col.media.dir
+                .listFiles()!!
+                .size,
+        )
+    }
+
+    @Test
+    fun `repeated conflicting media imports reuse the renamed file`() {
+        // 4 cover.png imports:
+        // success
+        val original = assertNotNull(insertMedia(preferredName = "cover", contents = "original cover"))
+        // Different contents - another name is selected
+        val conflicting = assertNotNull(insertMedia(preferredName = "cover", contents = "changed cover"))
+        // Duplicate of the second - reuses the renamed file
+        val repeated = assertNotNull(insertMedia(preferredName = "cover", contents = "changed cover"))
+        // Duplicate of the first - reuses the original file
+        val repeatedOriginal = assertNotNull(insertMedia(preferredName = "cover", contents = "original cover"))
+
+        // Both contents are preserved, with only two media files.
+        assertEquals(conflicting, repeated)
+        assertEquals(original, repeatedOriginal)
+        assertEquals("changed cover", mediaFile(repeated).readText())
+        assertEquals("original cover", mediaFile(repeatedOriginal).readText())
         assertEquals(
             2,
             col.media.dir

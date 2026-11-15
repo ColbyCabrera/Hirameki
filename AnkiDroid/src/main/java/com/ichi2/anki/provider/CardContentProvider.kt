@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2015 Frank Oltmanns <frank.oltmanns@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2015 Timothy Rae <timothy.rae@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2016 Mark Carter <mark@marcardar.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki.provider
 
@@ -1024,7 +1025,7 @@ class CardContentProvider : ContentProvider() {
                 return null
             }
             internalizeUri(fileUri, tempFile, cR)
-            val fname = media.addFile(tempFile)
+            val fname = media.addFile(tempFile, desiredName = "$preferredName.$fileExtension")
             Timber.d("insert -> MEDIA: fname = %s", fname)
             val f = File(fname)
             Timber.d("insert -> MEDIA: f = %s", f)

@@ -50,7 +50,7 @@ open class Media(
      */
 
     /**
-     * Add [oFile] to the media folder, reusing identical files and renaming conflicting files.
+     * Add [oFile] to the media folder using [desiredName], reusing identical files and renaming conflicting files.
      *
      * @return possibly-renamed filename
      *
@@ -58,12 +58,15 @@ open class Media(
      * @throws OutOfMemoryError if the file could not be copied to a contiguous block of memory (or is >= 2GB)
      */
     @LibAnkiAlias("add_file")
-    fun addFile(oFile: File?): String {
+    fun addFile(
+        oFile: File?,
+        desiredName: String? = oFile?.name,
+    ): String {
         if (oFile == null || oFile.length() == 0L) {
             throw EmptyMediaException()
         }
         Timber.v("dir now %s", dir)
-        return col.backend.addMediaFile(oFile.name, oFile.readBytes().toByteString())
+        return col.backend.addMediaFile(desiredName ?: oFile.name, oFile.readBytes().toByteString())
     }
 
     /*
