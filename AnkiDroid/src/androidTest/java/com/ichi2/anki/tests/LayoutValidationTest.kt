@@ -16,7 +16,6 @@
 package com.ichi2.anki.tests
 
 import android.content.res.Resources
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -46,9 +45,10 @@ class LayoutValidationTest : InstrumentedTest() {
         // This should be fine to run on a device - but WebViews may be instantiated.
         // TODO: GestureDisplay.kt - why was mSwipeView.drawable null
         val targetContext = testContext
+        // A layout missing only for this API level or screen still has an entry, and must fail.
         assumeTrue(
             "$name is unused, so resource shrinking removed it from this build",
-            targetContext.resources.hasResource(resourceId),
+            targetContext.resources.hasEntry(resourceId),
         )
         setTheme(targetContext)
         val li = LayoutInflater.from(targetContext)
@@ -92,9 +92,9 @@ class LayoutValidationTest : InstrumentedTest() {
                 .filterNot { (id, name) -> name in nonAnkiFieldNames || id in ignoredLayoutIds }
         }
 
-        private fun Resources.hasResource(id: Int): Boolean =
+        private fun Resources.hasEntry(id: Int): Boolean =
             try {
-                getValue(id, TypedValue(), true)
+                getResourceName(id)
                 true
             } catch (_: Resources.NotFoundException) {
                 false
