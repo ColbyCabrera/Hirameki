@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension

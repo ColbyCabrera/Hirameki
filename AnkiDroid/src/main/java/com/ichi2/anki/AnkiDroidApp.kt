@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2009 Edu Zamora <edu.zasu@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2009 Casey Link <unnamedrambler@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2014 Timothy Rae <perceptualchaos2@gmail.com>
-// SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki
 

@@ -4,7 +4,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2009 Andrew <andrewdubya@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2011 Norbert Nagold <norbert.nagold@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2018 Mike Hardy <mike@mikehardy.net>
-// SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.libanki
 

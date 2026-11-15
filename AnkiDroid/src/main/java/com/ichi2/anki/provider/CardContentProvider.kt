@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2015 Frank Oltmanns <frank.oltmanns@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2015 Timothy Rae <timothy.rae@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2016 Mark Carter <mark@marcardar.com>
-// SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.provider
 

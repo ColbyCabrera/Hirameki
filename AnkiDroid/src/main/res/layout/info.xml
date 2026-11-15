@@ -3,7 +3,6 @@
   ~ SPDX-License-Identifier: GPL-3.0-or-later
   ~ SPDX-FileCopyrightText: Copyright (c) 2009 Nicolas Raoul <nicolas.raoul@gmail.com>
   ~ SPDX-FileCopyrightText: Copyright (c) 2011 Norbert Nagold <norbert.nagold@gmail.com>
-  ~ SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
   -->
 
 <androidx.coordinatorlayout.widget.CoordinatorLayout

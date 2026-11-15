@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: Copyright (C) 2014 The Android Open Source Project
-// SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 @file:Suppress("DEPRECATION") // TODO Tracked in https://github.com/ankidroid/Anki-Android/issues/5019
 

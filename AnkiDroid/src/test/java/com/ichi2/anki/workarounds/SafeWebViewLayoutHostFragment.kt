@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+
+// Ported from AnkiDroid (https://github.com/ankidroid/Anki-Android), GPLv3.
 
 package com.ichi2.anki.workarounds
 

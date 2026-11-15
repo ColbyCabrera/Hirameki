@@ -4,7 +4,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2013 Nicolas Raoul <nicolas.raoul@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2013 Flavio Lerda <flerda@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2020 Mike Hardy <github@mikehardy.net>
-// SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.web
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
