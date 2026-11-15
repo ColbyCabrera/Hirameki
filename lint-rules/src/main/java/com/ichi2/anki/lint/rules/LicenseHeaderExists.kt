@@ -74,7 +74,7 @@ class LicenseHeaderExists :
                 "`Settings - Editor - Copyright - Copyright Profiles - Add Profile - AnkiDroid`" +
                 "or search in Settings for 'Copyright'. \n" +
                 "You may optionally add your copyright to the file. " +
-                "See https://github.com/ankidroid/Anki-Android/blob/main/docs/contributing/copyright-headers.md.\n" +
+                "See https://github.com/ColbyCabrera/Hirameki/blob/main/docs/contributing/copyright-headers.md.\n" +
                 "A long-form header may also be used: " +
                 "https://github.com/ankidroid/Anki-Android/issues/8211#issuecomment-825269673\n\n" +
                 "If the file is under a GPL-Compatible License " +
