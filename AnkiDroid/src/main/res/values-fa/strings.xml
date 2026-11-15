@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Persian (fa) translations of Hirameki-only strings. See tools/localization/README.md.
+  -->
+<resources>
+    <string name="about_fork_of">%s یک انشعاب از AnkiDroid است</string>
+    <string name="about_version">نسخه</string>
+    <string comment="Generic add action. Duplicated in import_message_add for import context" name="add">افزودن</string>
+    <string comment="Add card button. Duplicated in menu_add as case-insensitive match" name="add_card">افزودن کارت</string>
+    <string name="ankiweb_is_not_affiliated_with_this_app">AnkiWeb وابسته به این برنامه نیست</string>
+    <string comment="Application name. Duplicated in sync_conflict_keep_local_new for sync context" name="app_name">Hirameki</string>
+    <string comment="Generic back text. Duplicated in previewer_back and back_field_name for specific contexts" name="back">بازگشت</string>
+    <string name="browser">مرورگر</string>
+    <string name="brush_content_description">قلم‌مو، ضخامت %1$d</string>
+    <string name="brush_content_description_selected">قلم‌مو، ضخامت %1$d، انتخاب‌شده</string>
+    <string name="brush_options">گزینه‌های قلم‌مو</string>
+    <string name="buried_cards_are_not_included_in_counts_above">کارت‌های مخفی‌شده در شمارش بالا لحاظ نشده‌اند.</string>
+    <string name="card_browser_deselect_all">لغو انتخاب همه</string>
+    <string name="card_browser_filter_tags_by_deck_off_description">نمایش همه برچسب‌ها</string>
+    <string name="card_browser_filter_tags_by_deck_on_description">نمایش فقط برچسب‌های دسته</string>
+    <string name="card_browser_load_tags_failed">بارگیری برچسب‌ها انجام نشد. لطفاً دوباره تلاش کنید.</string>
+    <string name="card_browser_no_tags_found">هیچ برچسبی یافت نشد.</string>
+    <string name="changes_will_not_be_saved">تغییرات ذخیره نخواهند شد.</string>
+    <string name="contribute_donate_creator_subtitle">اگر برنامه را دوست دارید، یک قهوه مهمانم کنید &lt;3</string>
+    <string name="contribute_donate_creator_title">حمایت از من</string>
+    <string name="contribute_hero_subtitle">از توسعه‌دهندگان این برنامه حمایت کنید.</string>
+    <string name="contribute_repo_subtitle">با کدنویسی یا ترجمه به بهبود برنامه کمک کنید</string>
+    <string name="contribute_repo_title">مشارکت در کدنویسی</string>
+    <string name="contribute_screen_title">مشارکت</string>
+    <string name="daily_limit_reached">کارت‌های جدید بیشتری موجود است، اما سقف روزانه پر شده است. می‌توانید این سقف را در گزینه‌ها افزایش دهید، اما به خاطر داشته باشید که هرچه کارت‌های جدید بیشتری وارد کنید، حجم کاری مرور کوتاه‌مدت شما سنگین‌تر خواهد شد.</string>
+    <string name="date_range">بازه تاریخ</string>
+    <string name="deck_name">نام دسته</string>
+    <string name="deck_not_found">دسته یافت نشد</string>
+    <string comment="Generic deck options label. Duplicated in menu__deck_options for menu context" name="deck_options">گزینه‌های دسته</string>
+    <string comment="Generic deselect all. Duplicated in card_browser_deselect_all for browser context" name="deselect_all">لغو انتخاب همه</string>
+    <string comment="Generic donate button. Duplicated in help_item_support_opencollective_donate for help menu context" name="donate">کمک مالی</string>
+    <string name="done_icon">نماد انجام شد</string>
+    <string name="edit">ویرایش</string>
+    <string comment="Generic empty action. Duplicated in empty_cram_label for filtered deck context" name="empty_cards_action">تخلیه</string>
+    <string name="export_card">صدور کارت</string>
+    <string name="fab_menu_collapsed">جمع‌شده</string>
+    <string name="fab_menu_expanded">گسترش‌یافته</string>
+    <string name="fab_menu_toggle">تغییر وضعیت منو</string>
+    <string comment="Generic filter label. Duplicated in deck_conf_cram_filter for cram deck context" name="filter">فیلتر</string>
+    <string comment="Generic filter by tag label. Duplicated in card_browser_search_by_tag for card browser context" name="filter_by_tag">فیلتر بر اساس برچسب</string>
+    <string name="get_shared">دریافت دسته‌های اشتراکی</string>
+    <string name="help_ankiweb_privacy_subtitle">نحوه مدیریت داده‌های شما در AnkiWeb</string>
+    <string name="help_ankiweb_privacy_title">سیاست حریم خصوصی AnkiWeb</string>
+    <string name="help_ankiweb_terms_subtitle">شرایط و ضوابط AnkiWeb</string>
+    <string name="help_ankiweb_terms_title">شرایط و ضوابط</string>
+    <string name="help_donate_subtitle">حمایت از AnkiDroid، که این برنامه بر پایهٔ آن ساخته شده است</string>
+    <string name="help_donate_title">کمک مالی</string>
+    <string name="help_forum_subtitle">طرح سؤال و یافتن پاسخ</string>
+    <string name="help_forum_title">انجمن گفتگو</string>
+    <string name="help_hero_subtitle">در این‌جا چند منبع مفید برای شما آورده شده است.</string>
+    <string name="help_hirameki_privacy_subtitle">نحوه مدیریت داده‌های شما</string>
+    <string name="help_hirameki_privacy_title">سیاست حفظ حریم خصوصی Hirameki</string>
+    <string name="help_issue_tracker_subtitle">ثبت مشکلات در سامانه پیگیری ما</string>
+    <string name="help_issue_tracker_title">گزارش مشکل</string>
+    <string name="help_manual_subtitle">شاید تطابق یک‌به‌یک نداشته باشد، اما احتمالاً همچنان مفید است</string>
+    <string name="help_manual_title">راهنمای آنلاین</string>
+    <string name="help_screen_title">راهنما</string>
+    <string name="hide_password">پنهان‌کردن گذرواژه</string>
+    <string name="image_occlusion_notetype_missing">نوع یادداشت پوشش تصویر یافت نشد</string>
+    <string name="intro_continue">ادامه</string>
+    <string name="intro_fork_disclaimer_1">Hirameki یک نسخهٔ سفارشی‌سازی‌شده و متن‌باز از AnkiDroid است. اگر این برنامه را دوست دارید، لطفاً حمایت از تیم اصلی AnkiDroid و سازندهٔ AnkiWeb را مد نظر داشته باشید، چرا که این برنامه بر پایهٔ تلاش‌های فوق‌العادهٔ آن‌ها ساخته شده است.</string>
+    <string name="intro_fork_disclaimer_2">لطفاً هرگونه گزارش خطا یا بازخورد دربارهٔ این نسخه را به‌جای تیم AnkiDroid، مستقیماً برای ما ارسال کنید. به‌خاطرسپاری لذت‌بخشی داشته باشید!</string>
+    <string name="intro_title_before_continuing">به Hirameki خوش آمدید!</string>
+    <string name="learning">یادگیری</string>
+    <string name="loading">در حال بارگذاری…</string>
+    <string name="loading_preview">در حال بارگذاری پیش‌نمایش…</string>
+    <string name="login_error_authentication_failed">ایمیل یا رمز عبوری که وارد کرده‌اید نادرست است. لطفاً اطلاعات ورود خود را بررسی کرده و دوباره تلاش کنید، یا رمز عبور خود را بازنشانی کنید.</string>
+    <string name="login_error_email_password_required">ایمیل و رمز عبور الزامی است</string>
+    <string name="login_error_network">اتصال برقرار نشد. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.</string>
+    <string name="login_error_title">ورود ناموفق بود</string>
+    <string name="login_error_unknown">خطای غیرمنتظره‌ای رخ داد. لطفاً اتصال اینترنت خود را بررسی کرده و دوباره تلاش کنید.</string>
+    <string comment="Generic more options label. Duplicated in whiteboard_more_options for whiteboard context" name="more_options">گزینه‌های بیشتر</string>
+    <string name="navigation_drawer_open">باز کردن کشوی ناوبری</string>
+    <string name="next_review_in">مرور بعدی در:</string>
+    <string name="note_editor_tags_list">برچسب‌ها: %s</string>
+    <string name="note_type_name">نام</string>
+    <string name="note_type_not_found_for_template_editor">امکان باز کردن ویرایشگر قالب کارت وجود ندارد: نوع یادداشت یافت نشد</string>
+    <string name="note_type_type">نوع</string>
+    <string name="nothing_to_save">چیزی برای ذخیره وجود ندارد</string>
+    <string name="page_web_view_error">صفحه بارگیری نشد. لطفاً بعداً دوباره تلاش کنید.</string>
+    <string comment="Generic preview label. Duplicated in card_editor_preview_card for card editor context" name="preview">پیش‌نمایش</string>
+    <string comment="Generic rebuild action. Duplicated in rebuild_cram_label for filtered deck context" name="rebuild">بازسازی</string>
+    <string comment="Generic reset progress action. Duplicated in card_editor_reset_card for card editor context" name="reset_progress">بازنشانی پیشرفت</string>
+    <string name="resume">ادامه</string>
+    <string name="review">مرور</string>
+    <string name="review_heatmap">نقشه حرارتی مرور</string>
+    <string name="show_password">نمایش گذرواژه</string>
+    <string name="single_day">یک روز</string>
+    <string name="statistics_failed_to_load_decks">بارگیری دسته‌ها ناموفق بود</string>
+    <string name="study_more">اگر مایلید خارج از برنامهٔ زمان‌بندی معمول مطالعه کنید، می‌توانید از قابلیت %1$s استفاده کنید.</string>
+    <string name="sync_now">همگام‌سازی اکنون</string>
+    <string name="sync_starting">در حال شروع همگام‌سازی…</string>
+    <string name="syncing">در حال همگام‌سازی…</string>
+    <string name="tag_indeterminate_state">برچسب در برخی از یادداشت‌های انتخاب‌شده وجود دارد</string>
+    <string name="total_new">مجموع کارت‌های جدید</string>
+    <string name="type_in_the_answer">پاسخ را تایپ کنید</string>
+    <string name="unanswer_card">لغو پاسخ کارت</string>
+    <string name="undo_delete_note">لغو حذف یادداشت</string>
+    <string name="undo_empty">موردی برای بازگردانی وجود ندارد</string>
+    <string name="unknown_rating">امتیاز ناشناخته</string>
+    <string name="welcome_to">خوش‌آمدید به</string>
+    <string name="widget_heatmap_preview_icon_description">آیکون نقشهٔ حرارتی مرور</string>
+</resources>

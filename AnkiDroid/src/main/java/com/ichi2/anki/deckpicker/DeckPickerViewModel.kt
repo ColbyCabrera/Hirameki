@@ -9,6 +9,7 @@ import androidx.annotation.CheckResult
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import anki.card_rendering.EmptyCardsReport
+import anki.decks.SetDeckCollapsedRequest
 import anki.i18n.GeneratedTranslations
 import anki.sync.SyncStatusResponse
 import com.ichi2.anki.CardBrowser
@@ -812,21 +813,19 @@ class DeckPickerViewModel :
         val loadDeckCounts =
             viewModelScope.launch {
                 Timber.d("Refreshing deck list")
-                val (deckDueTree, collectionHasNoCards, buriedDecks) =
-                    withCol {
-                        val buried =
-                            db
-                                .queryLongList(
-                                    "SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})",
-                                ).toSet()
-                        Triple(sched.deckDueTree(), isEmpty, buried)
-                    }
+                // published inside the collection call, so a tree read before a collapse can't be shown after it
+                withCol {
+                    val buriedDecks =
+                        db
+                            .queryLongList(
+                                "SELECT DISTINCT did FROM cards WHERE queue IN (${SiblingBuried.code}, ${ManuallyBuried.code})",
+                            ).toSet()
+                    dueTree = sched.deckDueTree()
+                    flowOfCollectionHasNoCards.value = isEmpty
+                    flowOfBuriedDecks.value = buriedDecks
+                }
 
                 ensureActive()
-
-                dueTree = deckDueTree
-                flowOfCollectionHasNoCards.value = collectionHasNoCards
-                flowOfBuriedDecks.value = buriedDecks
 
                 launch { refreshSyncState() }
 
@@ -913,11 +912,12 @@ class DeckPickerViewModel :
 
     fun toggleDeckExpand(deckId: DeckId) =
         viewModelScope.launch {
-            // update DB
-            withCol { decks.collapse(deckId) }
-            // update stored state
-            dueTree?.find(deckId)?.run {
-                collapsed = !collapsed
+            withCol {
+                dueTree?.find(deckId)?.run {
+                    val collapse = !collapsed
+                    decks.setCollapsed(did, collapse, SetDeckCollapsedRequest.Scope.REVIEWER)
+                    collapsed = collapse
+                }
             }
             flowOfRefreshDeckList.emit(Unit)
         }

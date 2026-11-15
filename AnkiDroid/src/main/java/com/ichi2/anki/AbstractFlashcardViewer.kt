@@ -130,7 +130,6 @@ import com.ichi2.themes.Themes
 import com.ichi2.utils.HandlerUtils.newHandler
 import com.ichi2.utils.HashUtil.hashSetInit
 import com.ichi2.utils.Stopwatch
-import com.ichi2.utils.WebViewDebugging.initializeDebugging
 import com.ichi2.utils.message
 import com.ichi2.utils.negativeButton
 import com.ichi2.utils.positiveButton
@@ -897,7 +896,6 @@ abstract class AbstractFlashcardViewer :
         val frame = cardFrame ?: return
         if (webView == null) {
             webView = createWebView()
-            initializeDebugging(this.sharedPrefs())
             frame.addView(webView)
             gestureDetectorImpl.onWebViewCreated(webView!!)
         }

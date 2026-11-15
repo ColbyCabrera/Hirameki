@@ -209,6 +209,38 @@ class ReviewerViewModelTest : RobolectricTest() {
         }
 
     @Test
+    fun `a typed number answer asks for the number keyboard`() =
+        runTest {
+            addBasicWithTypingNote("Front", "<b>42</b>")
+
+            val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            advanceRobolectricLooper()
+
+            assertThat(viewModel.state.first().typedAnswerIsNumber, equalTo(true))
+        }
+
+    @Test
+    fun `a typed text answer keeps the text keyboard`() =
+        runTest {
+            addBasicWithTypingNote("Front", "forty-two")
+
+            val viewModel = ReviewerViewModel(ApplicationProvider.getApplicationContext())
+            advanceRobolectricLooper()
+
+            assertThat(viewModel.state.first().typedAnswerIsNumber, equalTo(false))
+        }
+
+    @Test
+    fun `isUnsignedNumber matches only unsigned numbers`() {
+        for (number in listOf("0", "42", "3.14", "3,14", "7.", " 8 ", "<b>9</b>")) {
+            assertThat(number, isUnsignedNumber(number), equalTo(true))
+        }
+        for (other in listOf(null, "", "-1", "1a", "1.2.3", ".5", "one", "1<br>2", "<div>1</div><div>2</div>")) {
+            assertThat(other.toString(), isUnsignedNumber(other), equalTo(false))
+        }
+    }
+
+    @Test
     fun `typed answer is updated via event`() =
         runTest {
             addBasicNote()

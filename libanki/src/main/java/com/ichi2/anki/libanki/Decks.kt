@@ -224,22 +224,12 @@ class Decks(
         TODO()
     }
 
-    @RustCleanup("implement and make public")
     @LibAnkiAlias("set_collapsed")
-    @Suppress("unused", "unused_parameter")
-    private fun setCollapsed(
+    fun setCollapsed(
         deckId: DeckId,
         collapsed: Boolean,
         scope: SetDeckCollapsedRequest.Scope,
-    ): OpChanges {
-        TODO()
-    }
-
-    fun collapse(did: DeckId) {
-        val deck = this.getLegacy(did) ?: return
-        deck.collapsed = !deck.collapsed
-        this.save(deck)
-    }
+    ): OpChanges = col.backend.setDeckCollapsed(deckId, collapsed, scope)
 
     @RustCleanup("implement and make public")
     @LibAnkiAlias("collapse_browser")

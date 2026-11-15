@@ -5,6 +5,7 @@ package com.ichi2.anki.dialogs
 
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.edit
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -30,6 +31,7 @@ import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.testutils.AnkiFragmentScenario
 import com.ichi2.testutils.isJsonEqual
+import com.ichi2.utils.positiveButton
 import io.mockk.every
 import io.mockk.mockk
 import org.hamcrest.CoreMatchers.equalTo
@@ -186,6 +188,37 @@ class CustomStudyDialogTest : RobolectricTest() {
             onView(withText(TR.customStudyIncreaseTodaysReviewCardLimit()))
                 .inRoot(isDialog())
                 .check(matches(not(isEnabled())))
+        }
+    }
+
+    @Test
+    fun `a value of zero cannot be submitted`() {
+        addBasicNote()
+
+        withCustomStudyFragment(
+            args = argumentsDisplayingSubscreen(ContextMenuOption.STUDY_PREVIEW),
+        ) { dialogFragment: CustomStudyDialog ->
+            val okButton = assertNotNull(dialogFragment.dialog as? AlertDialog?, "dialog").positiveButton
+
+            onSubscreenEditText().perform(replaceText("0"))
+            assertThat("0 is refused", okButton.isEnabled, equalTo(false))
+
+            onSubscreenEditText().perform(replaceText("5"))
+            assertThat("other values are allowed", okButton.isEnabled, equalTo(true))
+        }
+    }
+
+    @Test
+    fun `an initial value of zero cannot be submitted`() {
+        addBasicNote()
+        getPreferences().edit { putInt("previewDays", 0) }
+
+        withCustomStudyFragment(
+            args = argumentsDisplayingSubscreen(ContextMenuOption.STUDY_PREVIEW),
+        ) { dialogFragment: CustomStudyDialog ->
+            val okButton = assertNotNull(dialogFragment.dialog as? AlertDialog?, "dialog").positiveButton
+
+            assertThat("0 is refused before any typing", okButton.isEnabled, equalTo(false))
         }
     }
 
