@@ -64,9 +64,9 @@ class CardGestureListenerTest : RobolectricTest() {
     }
 
     @Test
-    fun `a tap on an interactive element belongs to the card`() {
+    fun `a tap on a tap target belongs to the card`() {
         tap()
-        answerProbe(ON_INTERACTIVE_ELEMENT)
+        answerProbe(ON_TAP_TARGET)
         awaitTapConfirmation()
 
         assertThat(gestures, empty())
@@ -102,9 +102,9 @@ class CardGestureListenerTest : RobolectricTest() {
     }
 
     @Test
-    fun `a double tap whose first tap was on an interactive element belongs to the card`() {
+    fun `a double tap whose first tap was on a tap target belongs to the card`() {
         doubleTap()
-        answerProbe(ON_INTERACTIVE_ELEMENT)
+        answerProbe(ON_TAP_TARGET)
         answerProbe(PLAIN_CONTENT)
         awaitTapConfirmation()
 
@@ -112,10 +112,10 @@ class CardGestureListenerTest : RobolectricTest() {
     }
 
     @Test
-    fun `a double tap whose second tap was on an interactive element belongs to the card`() {
+    fun `a double tap whose second tap was on a tap target belongs to the card`() {
         doubleTap()
         answerProbe(PLAIN_CONTENT)
-        answerProbe(ON_INTERACTIVE_ELEMENT)
+        answerProbe(ON_TAP_TARGET)
         awaitTapConfirmation()
 
         assertThat(gestures, empty())
@@ -129,23 +129,23 @@ class CardGestureListenerTest : RobolectricTest() {
         awaitTapConfirmation()
 
         unansweredProbes.removeLast()(PLAIN_CONTENT)
-        unansweredProbes.removeFirst()(ON_INTERACTIVE_ELEMENT)
+        unansweredProbes.removeFirst()(ON_TAP_TARGET)
 
         assertThat(gestures, contains<CardTouchGesture>(CardTouchGesture.Tap(800f, 1600f, WIDTH, HEIGHT)))
     }
 
     @Test
-    fun `a swipe over plain content is sent`() {
+    fun `a swipe from a link or a click handler is still a swipe`() {
         swipe()
-        answerProbe(PLAIN_CONTENT)
+        answerProbe(ON_TAP_TARGET)
 
         assertThat(gestures.single(), instanceOf(CardTouchGesture.Fling::class.java))
     }
 
     @Test
-    fun `a swipe from an interactive element belongs to the card`() {
+    fun `a swipe from a control that is dragged belongs to the card`() {
         swipe()
-        answerProbe(ON_INTERACTIVE_ELEMENT)
+        answerProbe(ON_DRAG_TARGET)
 
         assertThat(gestures, empty())
     }
@@ -179,7 +179,7 @@ class CardGestureListenerTest : RobolectricTest() {
     @Test
     fun `a multi-finger tap ignores the element under the first finger`() {
         multiFingerTap(fingers = 2)
-        answerProbe(ON_INTERACTIVE_ELEMENT)
+        answerProbe(ON_DRAG_TARGET)
 
         assertThat(gestures, contains<CardTouchGesture>(CardTouchGesture.MultiFingerTap(2)))
     }
@@ -332,7 +332,8 @@ class CardGestureListenerTest : RobolectricTest() {
         const val MULTI_FINGER_TAP_TIMEOUT_MS = 300L
 
         val PLAIN_CONTENT = CardTouchProbe()
-        val ON_INTERACTIVE_ELEMENT = CardTouchProbe(isOnInteractiveElement = true)
+        val ON_TAP_TARGET = CardTouchProbe(isOnTapTarget = true)
+        val ON_DRAG_TARGET = CardTouchProbe(isOnTapTarget = true, isOnDragTarget = true)
         val TEXT_SELECTED = CardTouchProbe(hasTextSelection = true)
     }
 }

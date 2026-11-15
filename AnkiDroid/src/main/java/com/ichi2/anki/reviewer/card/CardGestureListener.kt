@@ -103,7 +103,7 @@ internal class CardGestureListener(
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
         if (!wasMultiTouch && !isOnLinkOrInput()) {
-            touch.sendUnless(CardTouchGesture.Tap(e.x, e.y, cardLayout.width, cardLayout.height)) { it.belongsToCard }
+            touch.sendUnless(CardTouchGesture.Tap(e.x, e.y, cardLayout.width, cardLayout.height)) { it.claimsTaps }
         }
         return true
     }
@@ -113,8 +113,8 @@ internal class CardGestureListener(
             val firstTap = previousTouch
             val secondTap = touch
             firstTap.whenProbed { first ->
-                if (!first.belongsToCard && firstTap.display == secondTap.display) {
-                    secondTap.sendUnless(CardTouchGesture.DoubleTap) { it.belongsToCard }
+                if (!first.claimsTaps && firstTap.display == secondTap.display) {
+                    secondTap.sendUnless(CardTouchGesture.DoubleTap) { it.claimsTaps }
                 }
             }
         }
@@ -128,7 +128,7 @@ internal class CardGestureListener(
         velocityY: Float,
     ): Boolean {
         // #5741: a swipe from the screen edge is a system gesture
-        if (e1 == null || wasMultiTouch || isTouchingEdge(e1) || isOnLinkOrInput()) return false
+        if (e1 == null || wasMultiTouch || isTouchingEdge(e1)) return false
         val now = SystemClock.uptimeMillis()
         val fling =
             CardTouchGesture.Fling(
@@ -139,16 +139,16 @@ internal class CardGestureListener(
                 isXScrolling = now - lastXScrollTime < SCROLL_TIMEOUT_MS,
                 isYScrolling = now - lastYScrollTime < SCROLL_TIMEOUT_MS,
             )
-        touch.sendUnless(fling) { it.belongsToCard }
+        touch.sendUnless(fling) { it.claimsSwipes }
         return false
     }
 
     /** A tap is only confirmed after the double tap timeout, by which time an answer button may have changed the card. */
     private fun TouchStart.sendUnless(
         gesture: CardTouchGesture,
-        belongsToCard: (CardTouchProbe) -> Boolean,
+        isClaimedByCard: (CardTouchProbe) -> Boolean,
     ) = whenProbed { probe ->
-        if (!belongsToCard(probe) && currentDisplay() == display) onGesture(gesture)
+        if (!isClaimedByCard(probe) && currentDisplay() == display) onGesture(gesture)
     }
 
     private fun isTouchingEdge(e: MotionEvent): Boolean =

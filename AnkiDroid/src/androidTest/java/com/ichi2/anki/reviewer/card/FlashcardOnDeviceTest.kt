@@ -274,10 +274,13 @@ class FlashcardOnDeviceTest {
             show(card(shownText("Plain") + INTERACTIVE_ELEMENTS, index = 2))
             awaitShownText("Plain")
 
-            for (id in INTERACTIVE_ELEMENT_IDS) {
-                assertThat(id, touchProbeAt(id), equalTo("""{"hasTextSelection":false,"isOnInteractiveElement":true}"""))
+            for (id in TAP_TARGET_IDS) {
+                assertThat(id, touchProbeAt(id), equalTo(Probe(isOnTapTarget = true)))
             }
-            assertThat(touchProbeAt("shown"), equalTo("""{"hasTextSelection":false,"isOnInteractiveElement":false}"""))
+            for (id in DRAG_TARGET_IDS) {
+                assertThat(id, touchProbeAt(id), equalTo(Probe(isOnTapTarget = true, isOnDragTarget = true)))
+            }
+            assertThat(touchProbeAt("shown"), equalTo(Probe()))
         }
 
     @Test
@@ -325,14 +328,59 @@ class FlashcardOnDeviceTest {
             awaitGesture { it is CardTouchGesture.Tap }
         }
 
+    @Test
+    fun aCardWideClickHandlerTakesTapsButNotSwipes() =
+        runBlocking {
+            show(card(CARD_WIDE_CLICK_HANDLER, index = 2))
+            awaitShownText("Plain")
+
+            tap("shown")
+            awaitScriptResult("window.clicks", "1")
+            assertNoGesture()
+
+            swipe("shown")
+            awaitGesture { it is CardTouchGesture.Fling }
+        }
+
+    @Test
+    fun aSwipeFromATextFieldIsNotAGesture() =
+        runBlocking {
+            show(card(shownText("Plain") + TEXT_FIELD, index = 2))
+            awaitShownText("Plain")
+
+            swipe("field")
+            assertNoGesture()
+
+            swipe("shown")
+            awaitGesture { it is CardTouchGesture.Fling }
+        }
+
     /** Waits for longer than the double tap timeout, after which a single tap is confirmed. */
     private suspend fun assertNoGesture() {
         delay(TAP_CONFIRMATION_MS)
         assertThat(gestures, empty())
     }
 
-    private suspend fun touchProbeAt(elementId: String) =
-        evaluate("(() => { const [x, y] = ${centreAsViewportFractions(elementId)}; return hirameki.touchProbe(x, y); })()")
+    private suspend fun touchProbeAt(elementId: String): Probe {
+        val fields =
+            evaluate(
+                """
+                (() => {
+                    const [x, y] = ${centreAsViewportFractions(elementId)};
+                    const probe = hirameki.touchProbe(x, y);
+                    return [probe.hasTextSelection, probe.isOnTapTarget, probe.isOnDragTarget].join();
+                })()
+                """.trimIndent(),
+            ).trim('"').split(",").map(String::toBooleanStrict)
+        return Probe(fields[0], fields[1], fields[2])
+    }
+
+    /** The page's answer to `hirameki.touchProbe`, read field by field as WebView may reorder an object's keys. */
+    private data class Probe(
+        val hasTextSelection: Boolean = false,
+        val isOnTapTarget: Boolean = false,
+        val isOnDragTarget: Boolean = false,
+    )
 
     private suspend fun tap(elementId: String) {
         val (x, y) = centreInWebView(elementId)
@@ -342,15 +390,43 @@ class FlashcardOnDeviceTest {
         sendTouch(MotionEvent.ACTION_UP, x, y, downTime)
     }
 
+    /** Sent in one go with spaced timestamps, so a busy main thread cannot turn it into a long press. */
+    private suspend fun swipe(elementId: String) {
+        val (x, y) = centreInWebView(elementId)
+        onMain {
+            val webView = requireWebView()
+            val stepPx = webView.width * SWIPE_STEP_FRACTION
+            val downTime = SystemClock.uptimeMillis()
+            for (step in 0..SWIPE_STEPS + 1) {
+                val action =
+                    when (step) {
+                        0 -> MotionEvent.ACTION_DOWN
+                        SWIPE_STEPS + 1 -> MotionEvent.ACTION_UP
+                        else -> MotionEvent.ACTION_MOVE
+                    }
+                val distance = minOf(step, SWIPE_STEPS) * stepPx
+                webView.dispatchTouch(action, x + distance, y, downTime, eventTime = downTime + step * SWIPE_STEP_MS)
+            }
+        }
+    }
+
     private suspend fun sendTouch(
         action: Int,
         x: Float,
         y: Float,
         downTime: Long,
-    ) = onMain {
-        val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, x, y, 0)
+    ) = onMain { requireWebView().dispatchTouch(action, x, y, downTime, eventTime = SystemClock.uptimeMillis()) }
+
+    private fun WebView.dispatchTouch(
+        action: Int,
+        x: Float,
+        y: Float,
+        downTime: Long,
+        eventTime: Long,
+    ) {
+        val event = MotionEvent.obtain(downTime, eventTime, action, x, y, 0)
         event.source = InputDevice.SOURCE_TOUCHSCREEN
-        requireWebView().dispatchTouchEvent(event)
+        dispatchTouchEvent(event)
         event.recycle()
     }
 
@@ -559,9 +635,15 @@ class FlashcardOnDeviceTest {
         const val CROSSFADE_READY_DELAY_MS = 1500L
         const val TOUCH_HOLD_MS = 40L
         const val TAP_CONFIRMATION_MS = 1000L
+        const val SWIPE_STEPS = 4
+        const val SWIPE_STEP_MS = 10L
+        const val SWIPE_STEP_FRACTION = 0.1f
 
         const val REVEAL_BUTTON = """<button id="reveal" onclick="window.revealed = true; this.remove()">Reveal</button>"""
         const val PRESS_BUTTON = """<button id="press" onclick="window.pressed = true">Press</button>"""
+        const val TEXT_FIELD = """<p><input id="field" value="Some text"></p>"""
+        const val CARD_WIDE_CLICK_HANDLER =
+            """<div onclick="window.clicks = (window.clicks || 0) + 1" style="min-height: 80vh"><p id="shown">Plain</p></div>"""
         const val SELECT_SHOWN_TEXT = """getSelection().selectAllChildren(document.getElementById("shown"))"""
 
         val INTERACTIVE_ELEMENTS =
@@ -577,8 +659,8 @@ class FlashcardOnDeviceTest {
             <p id="editable" contenteditable="true">Editable</p>
             <p class="tappable"><span id="inside-tappable">Tappable</span></p>
             """.trimIndent()
-        val INTERACTIVE_ELEMENT_IDS =
-            listOf("link", "button", "summary", "input", "select", "textarea", "video", "click-handler", "editable", "inside-tappable")
+        val TAP_TARGET_IDS = listOf("link", "button", "summary", "click-handler", "inside-tappable")
+        val DRAG_TARGET_IDS = listOf("input", "select", "textarea", "video", "editable")
 
         val PAINTED_MASK_PIXELS_ARE_PRESENT =
             """

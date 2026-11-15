@@ -106,8 +106,8 @@ class CardPageTest {
     @Test
     fun `the page's answer about a touch is read`() {
         assertThat(
-            CardPage.parseTouchProbe("""{"hasTextSelection":true,"isOnInteractiveElement":true}"""),
-            equalTo(CardTouchProbe(hasTextSelection = true, isOnInteractiveElement = true)),
+            CardPage.parseTouchProbe("""{"hasTextSelection":true,"isOnTapTarget":true,"isOnDragTarget":false}"""),
+            equalTo(CardTouchProbe(hasTextSelection = true, isOnTapTarget = true)),
         )
     }
 
