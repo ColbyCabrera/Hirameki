@@ -1,5 +1,6 @@
 #!/bin/bash
-#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Upload codacy coverage reports.
 #
 # Partial uploads for APIs, with an option to finalize.

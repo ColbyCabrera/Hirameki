@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget

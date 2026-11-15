@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /*
  * AnkiDroid JavaScript API
  * Version: 0.0.3

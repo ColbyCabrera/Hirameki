@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # enable/disable scoped storage: ./set_scoped_storage.sh [limited/full]
 
 

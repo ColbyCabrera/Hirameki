@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # This attempts to stop all your emulators (on Ubuntu 18.10 at least...) nicely
 #

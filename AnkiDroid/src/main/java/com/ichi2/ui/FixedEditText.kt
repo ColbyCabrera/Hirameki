@@ -1,18 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: Copyright (c) 2020 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright 2018-2020 by Marcel Bokhorst (M66B)
+
 /*
- *  Copyright (c) 2020 David Allison <davidallisongithub@gmail.com>
- *
- *  This program is free software; you can redistribute it and/or modify it under
- *  the terms of the GNU General Public License as published by the Free Software
- *  Foundation; either version 3 of the License, or (at your option) any later
- *  version.
- *
- *  This program is distributed in the hope that it will be useful, but WITHOUT ANY
- *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- *  PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along with
- *  this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  *  This file incorporates work covered by the following copyright and
  *  permission notice:
  *
@@ -35,6 +25,7 @@
  *
  * Source: https://github.com/M66B/FairEmail/blob/75fe7d0ec92a9874a98c22b61eeb8e6a8906a9ea/app/src/main/java/eu/faircode/email/FixedEditText.java
 */
+
 package com.ichi2.ui
 
 import android.content.Context

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # These proguard rules are only needed when building
 # for the combination of testing and release mode
 # Certain androidx frameworks that are test-only have

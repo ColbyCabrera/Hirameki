@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Usage:
 # - Go to http://crowdin.net/project/ankidroid/activity_stream
 # - Click on "More" a few times, up to the date of the last release

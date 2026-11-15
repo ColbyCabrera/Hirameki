@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 if [ "$KEYSTOREPATH" == "" ]; then
   read -rsp "Enter keystore path: " KEYSTOREPATH; echo

@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: CC0-1.0
 
 # Originally written by Ralf Kistner <ralf@embarkmobile.com>, but placed in the public domain
 

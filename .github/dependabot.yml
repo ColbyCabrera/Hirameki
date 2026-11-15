@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 version: 2
 # on a fork, version updates stay off until enabled under settings > advanced security > dependabot.
 # no target-branch: upstream sent version updates to its own dependency-updates branch, which this fork does not

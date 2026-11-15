@@ -7,7 +7,14 @@
   ~ To correct or add a translation, put it in overrides.xml in this folder;
   ~ Hirameki-only strings go in strings.xml. See tools/localization/README.md.
   -->
-<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!--
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~ SPDX-FileCopyrightText: Copyright (c) 2009 Andrew <andrewdubya@gmail>
+  ~ SPDX-FileCopyrightText: Copyright (c) 2009 Edu Zamora <edu.zasu@gmail.com>
+  ~ SPDX-FileCopyrightText: Copyright (c) 2009 Daniel Svaerd <daniel.svard@gmail.com>
+  ~ SPDX-FileCopyrightText: Copyright (c) 2009 Nicolas Raoul <nicolas.raoul@gmail.com>
+  ~ SPDX-FileCopyrightText: Copyright (c) 2010 Norbert Nagold <norbert.nagold@gmail.com>
+  -->
 <resources>
     <!--Fields-->
     <string name="back_field_name" maxLength="28" comment="Name of the back field of a card">Bakside</string>

@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  -->
+
 <com.ichi2.anki.ui.compose.components.AnkiToggleView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/switchWidget"

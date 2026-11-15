@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # This script can help you see how you stand vs Codacy review BEFORE you issue a Pull Request
 #

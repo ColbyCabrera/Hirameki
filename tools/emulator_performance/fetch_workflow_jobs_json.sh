@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 echo "Fetching jobs JSON for workflow run $1"
 

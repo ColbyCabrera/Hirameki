@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # This attempts to send an adb shell command to all your emulators (on Ubuntu 18.04.01 LTS at least...) 
 

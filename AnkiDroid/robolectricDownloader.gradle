@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * Downloads all android-all-instrumented dependencies and copies them to the mavenLocal() repository
  *

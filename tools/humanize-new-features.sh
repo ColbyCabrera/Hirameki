@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Shows human-readable (not XML) changelog for English and for languages where it is not identical to English.
 
 echo "English:"

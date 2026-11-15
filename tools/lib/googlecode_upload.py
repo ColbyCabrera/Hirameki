@@ -1,6 +1,7 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2006, 2007 Google Inc. All Rights Reserved.
 #
-# Copyright 2006, 2007 Google Inc. All Rights Reserved.
 # Author: danderson@google.com (David Anderson)
 #
 # Script for uploading files to a Google Code project.
@@ -35,9 +36,6 @@
 # right fields and send it to https://PROJECT.googlecode.com/files .
 # Authenticate the request using HTTP Basic authentication, as is
 # shown below.
-#
-# Licensed under the terms of the Apache Software License 2.0:
-#  http://www.apache.org/licenses/LICENSE-2.0
 #
 # Questions, comments, feature requests and patches are most welcome.
 # Please direct all of these to the Google Code users group:

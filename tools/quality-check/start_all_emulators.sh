@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # This will start a fleet of android emulators that have been created using avdmanager or Android Studio
 #
