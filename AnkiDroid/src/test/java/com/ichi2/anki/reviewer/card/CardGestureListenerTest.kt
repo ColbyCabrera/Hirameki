@@ -158,6 +158,66 @@ class CardGestureListenerTest : RobolectricTest() {
         assertThat(gestures, empty())
     }
 
+    @Test
+    fun `two to four fingers tapping together are a multi-finger tap`() {
+        for (fingers in 2..4) {
+            multiFingerTap(fingers)
+            answerProbe(PLAIN_CONTENT)
+        }
+        awaitTapConfirmation()
+
+        assertThat(
+            gestures,
+            contains<CardTouchGesture>(
+                CardTouchGesture.MultiFingerTap(2),
+                CardTouchGesture.MultiFingerTap(3),
+                CardTouchGesture.MultiFingerTap(4),
+            ),
+        )
+    }
+
+    @Test
+    fun `a multi-finger tap ignores the element under the first finger`() {
+        multiFingerTap(fingers = 2)
+        answerProbe(ON_INTERACTIVE_ELEMENT)
+
+        assertThat(gestures, contains<CardTouchGesture>(CardTouchGesture.MultiFingerTap(2)))
+    }
+
+    @Test
+    fun `a multi-finger tap while text is selected belongs to the card`() {
+        multiFingerTap(fingers = 2)
+        answerProbe(TEXT_SELECTED)
+
+        assertThat(gestures, empty())
+    }
+
+    @Test
+    fun `five fingers are not a multi-finger tap`() {
+        multiFingerTap(fingers = 5)
+        answerProbe(PLAIN_CONTENT)
+
+        assertThat(gestures, empty())
+    }
+
+    @Test
+    fun `fingers that linger are not a multi-finger tap`() {
+        multiFingerTap(fingers = 2, heldForMs = MULTI_FINGER_TAP_TIMEOUT_MS + 1)
+        answerProbe(PLAIN_CONTENT)
+
+        assertThat(gestures, empty())
+    }
+
+    @Test
+    fun `fingers that move are not a multi-finger tap`() {
+        val pastTouchSlop = ViewConfiguration.get(targetContext).scaledTouchSlop + 1f
+
+        multiFingerTap(fingers = 2, secondFingerMovesBy = pastTouchSlop)
+        answerProbe(PLAIN_CONTENT)
+
+        assertThat(gestures, empty())
+    }
+
     private fun tap(
         x: Float = CENTRE_X,
         y: Float = CENTRE_Y,
@@ -185,13 +245,67 @@ class CardGestureListenerTest : RobolectricTest() {
         touch(MotionEvent.ACTION_UP, downTime, CENTRE_X + SWIPE_STEPS * SWIPE_STEP_PX to CENTRE_Y)
     }
 
+    private fun multiFingerTap(
+        fingers: Int,
+        heldForMs: Long = TAP_HOLD_MS,
+        secondFingerMovesBy: Float = 0f,
+    ) {
+        val downTime = SystemClock.uptimeMillis()
+        val points = MutableList(fingers) { finger -> CENTRE_X + finger * FINGER_SPACING_PX to CENTRE_Y }
+        touch(MotionEvent.ACTION_DOWN, downTime, points.first())
+        for (finger in 1 until fingers) {
+            touch(MotionEvent.ACTION_POINTER_DOWN, downTime, *points.take(finger + 1).toTypedArray(), actionIndex = finger)
+        }
+        if (secondFingerMovesBy != 0f) {
+            points[1] = points[1].first to points[1].second + secondFingerMovesBy
+            touch(MotionEvent.ACTION_MOVE, downTime, *points.toTypedArray())
+        }
+        advanceTime(heldForMs)
+        for (finger in fingers - 1 downTo 1) {
+            touch(MotionEvent.ACTION_POINTER_UP, downTime, *points.take(finger + 1).toTypedArray(), actionIndex = finger)
+        }
+        touch(MotionEvent.ACTION_UP, downTime, points.first())
+    }
+
     private fun touch(
         action: Int,
         downTime: Long,
-        point: Pair<Float, Float>,
+        vararg points: Pair<Float, Float>,
+        actionIndex: Int = 0,
     ) {
-        val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, point.first, point.second, 0)
-        event.source = InputDevice.SOURCE_TOUCHSCREEN
+        val properties =
+            Array(points.size) { finger ->
+                MotionEvent.PointerProperties().apply {
+                    id = finger
+                    toolType = MotionEvent.TOOL_TYPE_FINGER
+                }
+            }
+        val coordinates =
+            Array(points.size) { finger ->
+                MotionEvent.PointerCoords().apply {
+                    x = points[finger].first
+                    y = points[finger].second
+                    pressure = 1f
+                    size = 1f
+                }
+            }
+        val event =
+            MotionEvent.obtain(
+                downTime,
+                SystemClock.uptimeMillis(),
+                action or (actionIndex shl MotionEvent.ACTION_POINTER_INDEX_SHIFT),
+                points.size,
+                properties,
+                coordinates,
+                0,
+                0,
+                1f,
+                1f,
+                0,
+                0,
+                InputDevice.SOURCE_TOUCHSCREEN,
+                0,
+            )
         listener.onTouchEvent(event)
         event.recycle()
     }
@@ -214,6 +328,8 @@ class CardGestureListenerTest : RobolectricTest() {
         const val SWIPE_STEPS = 4
         const val SWIPE_STEP_MS = 10L
         const val SWIPE_STEP_PX = 100f
+        const val FINGER_SPACING_PX = 100f
+        const val MULTI_FINGER_TAP_TIMEOUT_MS = 300L
 
         val PLAIN_CONTENT = CardTouchProbe()
         val ON_INTERACTIVE_ELEMENT = CardTouchProbe(isOnInteractiveElement = true)

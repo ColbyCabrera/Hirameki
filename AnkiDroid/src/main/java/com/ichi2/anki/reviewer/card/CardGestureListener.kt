@@ -6,13 +6,15 @@ package com.ichi2.anki.reviewer.card
 import android.os.SystemClock
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.webkit.WebView
 import com.ichi2.anki.reviewer.compose.CardTouchGesture
 import com.ichi2.anki.workarounds.SafeWebViewLayout
 import kotlin.math.abs
 
 /**
- * Detects taps, double taps and swipes on the [cardLayout] for the user's gesture settings (#185).
+ * Detects taps, double taps, multi-finger taps and swipes on the [cardLayout] for the user's
+ * gesture settings (#185).
  */
 internal class CardGestureListener(
     private val cardLayout: SafeWebViewLayout,
@@ -23,6 +25,7 @@ internal class CardGestureListener(
 ) : GestureDetector.SimpleOnGestureListener() {
     private val detector = GestureDetector(cardLayout.context, this)
     private val edgeMarginPx = NO_GESTURE_BORDER_DP * cardLayout.resources.displayMetrics.density
+    private val touchSlop = ViewConfiguration.get(cardLayout.context).scaledTouchSlop
     private var lastXScrollTime = 0L
     private var lastYScrollTime = 0L
 
@@ -32,12 +35,19 @@ internal class CardGestureListener(
     /** A second finger touched during the current gesture, e.g. pinch-to-zoom. */
     private var wasMultiTouch = false
 
+    // Multi-finger taps, which GestureDetector doesn't report. Matches upstream's new study screen.
+    private var maxPointers = 0
+    private var touchDownTime = 0L
+    private var movedPastSlop = false
+    private val pointerStarts = mutableMapOf<Int, Pair<Float, Float>>()
+
     fun onTouchEvent(event: MotionEvent) {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             wasMultiTouch = false
             startTouch(event)
         }
         if (event.pointerCount > 1) wasMultiTouch = true
+        trackMultiFingerTap(event)
         detector.onTouchEvent(event)
     }
 
@@ -47,6 +57,40 @@ internal class CardGestureListener(
         previousTouch = touch
         touch = started
         probeTouch(down.x / cardLayout.width, down.y / cardLayout.height, started::onProbed)
+    }
+
+    private fun trackMultiFingerTap(event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                maxPointers = 1
+                touchDownTime = event.eventTime
+                movedPastSlop = false
+                pointerStarts.clear()
+                pointerStarts[event.getPointerId(0)] = event.x to event.y
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                val index = event.actionIndex
+                pointerStarts[event.getPointerId(index)] = event.getX(index) to event.getY(index)
+                maxPointers = maxOf(maxPointers, event.pointerCount)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (movedPastSlop) return
+                movedPastSlop =
+                    (0 until event.pointerCount).any { index ->
+                        val (startX, startY) = pointerStarts[event.getPointerId(index)] ?: return@any false
+                        abs(event.getX(index) - startX) > touchSlop || abs(event.getY(index) - startY) > touchSlop
+                    }
+            }
+            MotionEvent.ACTION_UP -> {
+                val isMultiFingerTap =
+                    maxPointers in 2..4 &&
+                        event.eventTime - touchDownTime <= MULTI_FINGER_TAP_TIMEOUT_MS &&
+                        !movedPastSlop
+                // Like upstream, the element under the first finger does not matter
+                if (isMultiFingerTap) touch.sendUnless(CardTouchGesture.MultiFingerTap(maxPointers)) { it.hasTextSelection }
+            }
+            MotionEvent.ACTION_CANCEL -> maxPointers = 0
+        }
     }
 
     fun onScrollChanged(
@@ -148,5 +192,8 @@ internal class CardGestureListener(
 
         /** A scroll within this window means a fling scrolled the card instead of swiping. */
         private const val SCROLL_TIMEOUT_MS = 300L
+
+        /** All fingers must be lifted within this time. Upstream's MULTI_TOUCH_TIMEOUT. */
+        private const val MULTI_FINGER_TAP_TIMEOUT_MS = 300L
     }
 }
