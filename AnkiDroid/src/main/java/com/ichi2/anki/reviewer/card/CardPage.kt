@@ -69,5 +69,17 @@ internal object CardPage {
             """.trimIndent()
     }
 
+    /** Evaluates to a [CardTouchProbe] of a point, given as fractions of the visible page's width and height. */
+    fun touchProbeScript(
+        fractionX: Float,
+        fractionY: Float,
+    ): String = "globalThis.hirameki?.touchProbe($fractionX, $fractionY)"
+
+    /** A page which cannot answer, such as one a link has loaded, leaves the touch to the reviewer. */
+    fun parseTouchProbe(result: String?): CardTouchProbe =
+        runCatching { touchProbeJson.decodeFromString<CardTouchProbe>(result!!) }.getOrDefault(CardTouchProbe())
+
+    private val touchProbeJson = Json { ignoreUnknownKeys = true }
+
     private fun jsString(value: String) = Json.encodeToString(value)
 }

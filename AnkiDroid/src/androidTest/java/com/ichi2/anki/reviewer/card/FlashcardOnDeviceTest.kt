@@ -8,8 +8,11 @@ import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Base64
+import android.view.InputDevice
+import android.view.MotionEvent
 import android.view.PixelCopy
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
@@ -30,6 +33,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
+import com.ichi2.anki.reviewer.compose.CardTouchGesture
 import com.ichi2.anki.reviewer.compose.Flashcard
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +55,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.coroutines.resume
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.seconds
@@ -65,6 +70,7 @@ class FlashcardOnDeviceTest {
     private var display by mutableStateOf(card(shownText("Question")))
     private var command by mutableStateOf<ReviewerJavascriptCommand?>(null)
     private val consumed = mutableListOf<Int>()
+    private val gestures = CopyOnWriteArrayList<CardTouchGesture>()
     private var themeSurfaceColor = 0
     private val originalAnimatorScale =
         Settings.Global.getString(
@@ -88,7 +94,7 @@ class FlashcardOnDeviceTest {
                             consumed += id
                             if (command?.id == id) command = null
                         },
-                        onGesture = {},
+                        onGesture = { gestures += it },
                         onLinkClick = {},
                     )
                 }
@@ -261,6 +267,117 @@ class FlashcardOnDeviceTest {
             show(card(shownText("Next"), index = 2))
             awaitShownText("Next")
         }
+
+    @Test
+    fun thePageFindsTheElementsWhichHandleTouchesThemselves() =
+        runBlocking {
+            show(card(shownText("Plain") + INTERACTIVE_ELEMENTS, index = 2))
+            awaitShownText("Plain")
+
+            for (id in INTERACTIVE_ELEMENT_IDS) {
+                assertThat(id, touchProbeAt(id), equalTo("""{"hasTextSelection":false,"isOnInteractiveElement":true}"""))
+            }
+            assertThat(touchProbeAt("shown"), equalTo("""{"hasTextSelection":false,"isOnInteractiveElement":false}"""))
+        }
+
+    @Test
+    fun aTapOnAButtonThatRemovesItselfIsNotAGesture() =
+        runBlocking {
+            show(card(shownText("Plain") + REVEAL_BUTTON, index = 2))
+            awaitShownText("Plain")
+
+            tap("reveal")
+            awaitScriptResult("window.revealed", "true")
+            assertNoGesture()
+
+            tap("shown")
+            awaitGesture { it is CardTouchGesture.Tap }
+        }
+
+    @Test
+    fun aTapOnAButtonIsNotAGestureWhilePinchZoomed() =
+        runBlocking {
+            show(card(shownText("Plain") + PRESS_BUTTON, index = 2))
+            awaitShownText("Plain")
+            awaitCrossfadeReady()
+            onMain { requireWebView().zoomBy(2f) }
+            awaitScriptResult("visualViewport.scale > 1.5", "true")
+
+            tap("press")
+            awaitScriptResult("window.pressed", "true")
+            assertNoGesture()
+
+            tap("shown")
+            awaitGesture { it is CardTouchGesture.Tap }
+        }
+
+    @Test
+    fun aTapWhileTextIsSelectedIsNotAGesture() =
+        runBlocking {
+            awaitShownText("Question")
+            evaluate(SELECT_SHOWN_TEXT)
+
+            tap("shown")
+            assertNoGesture()
+
+            evaluate("getSelection().removeAllRanges()")
+            tap("shown")
+            awaitGesture { it is CardTouchGesture.Tap }
+        }
+
+    /** Waits for longer than the double tap timeout, after which a single tap is confirmed. */
+    private suspend fun assertNoGesture() {
+        delay(TAP_CONFIRMATION_MS)
+        assertThat(gestures, empty())
+    }
+
+    private suspend fun touchProbeAt(elementId: String) =
+        evaluate("(() => { const [x, y] = ${centreAsViewportFractions(elementId)}; return hirameki.touchProbe(x, y); })()")
+
+    private suspend fun tap(elementId: String) {
+        val (x, y) = centreInWebView(elementId)
+        val downTime = SystemClock.uptimeMillis()
+        sendTouch(MotionEvent.ACTION_DOWN, x, y, downTime)
+        delay(TOUCH_HOLD_MS)
+        sendTouch(MotionEvent.ACTION_UP, x, y, downTime)
+    }
+
+    private suspend fun sendTouch(
+        action: Int,
+        x: Float,
+        y: Float,
+        downTime: Long,
+    ) = onMain {
+        val event = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), action, x, y, 0)
+        event.source = InputDevice.SOURCE_TOUCHSCREEN
+        requireWebView().dispatchTouchEvent(event)
+        event.recycle()
+    }
+
+    private suspend fun centreInWebView(elementId: String): Pair<Float, Float> {
+        val (fractionX, fractionY) = evaluate(centreAsViewportFractions(elementId)).trim('[', ']').split(",").map(String::toFloat)
+        check(fractionX in 0f..1f && fractionY in 0f..1f) { "$elementId is off screen at ($fractionX, $fractionY)" }
+        return onMain { requireWebView().let { it.width * fractionX to it.height * fractionY } }
+    }
+
+    /** Scrolls the element into view, as nothing off screen can be touched. */
+    private fun centreAsViewportFractions(elementId: String) =
+        """
+        (() => {
+            const element = document.getElementById("$elementId");
+            element.scrollIntoView({ block: "center", inline: "center" });
+            const box = element.getBoundingClientRect();
+            const viewport = window.visualViewport;
+            const x = (box.left + box.width / 2 - viewport.offsetLeft) / viewport.width;
+            const y = (box.top + box.height / 2 - viewport.offsetTop) / viewport.height;
+            return [x, y];
+        })()
+        """.trimIndent()
+
+    private suspend fun awaitGesture(isExpected: (CardTouchGesture) -> Boolean) {
+        withTimeoutOrNull(5.seconds) { while (gestures.none(isExpected)) delay(16) }
+            ?: throw AssertionError("gestures were $gestures")
+    }
 
     private suspend fun crashRendererAndAwaitReplacement() {
         val crashed = onMain { requireWebView() }
@@ -440,6 +557,28 @@ class FlashcardOnDeviceTest {
         const val SAMPLE_INTERVAL_MS = 8L
         const val MID_FADE_DELAY_MS = 800L
         const val CROSSFADE_READY_DELAY_MS = 1500L
+        const val TOUCH_HOLD_MS = 40L
+        const val TAP_CONFIRMATION_MS = 1000L
+
+        const val REVEAL_BUTTON = """<button id="reveal" onclick="window.revealed = true; this.remove()">Reveal</button>"""
+        const val PRESS_BUTTON = """<button id="press" onclick="window.pressed = true">Press</button>"""
+        const val SELECT_SHOWN_TEXT = """getSelection().selectAllChildren(document.getElementById("shown"))"""
+
+        val INTERACTIVE_ELEMENTS =
+            """
+            <p><a id="link" href="#">Link</a></p>
+            <p><button id="button">Button</button></p>
+            <details><summary id="summary">Summary</summary>Details</details>
+            <p><input id="input"></p>
+            <p><select id="select"><option>Option</option></select></p>
+            <p><textarea id="textarea"></textarea></p>
+            <p><video id="video" controls width="200" height="100"></video></p>
+            <p id="click-handler" onclick="void 0">Click handler</p>
+            <p id="editable" contenteditable="true">Editable</p>
+            <p class="tappable"><span id="inside-tappable">Tappable</span></p>
+            """.trimIndent()
+        val INTERACTIVE_ELEMENT_IDS =
+            listOf("link", "button", "summary", "input", "select", "textarea", "video", "click-handler", "editable", "inside-tappable")
 
         val PAINTED_MASK_PIXELS_ARE_PRESENT =
             """
