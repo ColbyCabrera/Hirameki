@@ -19,6 +19,11 @@ sealed interface CardTouchGesture {
 
     data object DoubleTap : CardTouchGesture
 
+    /** A quick tap with 2 to 4 [fingers] at once, without moving them. */
+    data class MultiFingerTap(
+        val fingers: Int,
+    ) : CardTouchGesture
+
     data class Fling(
         val dx: Float,
         val dy: Float,
@@ -37,6 +42,7 @@ fun GestureProcessor.onCardTouchGesture(gesture: CardTouchGesture) {
     when (gesture) {
         is CardTouchGesture.Tap -> onTap(gesture.height, gesture.width, gesture.x, gesture.y)
         CardTouchGesture.DoubleTap -> onDoubleTap()
+        is CardTouchGesture.MultiFingerTap -> onMultiFingerTap(gesture.fingers)
         is CardTouchGesture.Fling ->
             onFling(
                 dx = gesture.dx,
