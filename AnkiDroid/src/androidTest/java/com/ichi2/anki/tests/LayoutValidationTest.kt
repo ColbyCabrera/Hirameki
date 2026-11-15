@@ -15,12 +15,15 @@
  */
 package com.ichi2.anki.tests
 
+import android.content.res.Resources
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ichi2.anki.R
 import com.ichi2.themes.Themes.setTheme
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -43,6 +46,10 @@ class LayoutValidationTest : InstrumentedTest() {
         // This should be fine to run on a device - but WebViews may be instantiated.
         // TODO: GestureDisplay.kt - why was mSwipeView.drawable null
         val targetContext = testContext
+        assumeTrue(
+            "$name is unused, so resource shrinking removed it from this build",
+            targetContext.resources.hasResource(resourceId),
+        )
         setTheme(targetContext)
         val li = LayoutInflater.from(targetContext)
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
@@ -84,6 +91,14 @@ class LayoutValidationTest : InstrumentedTest() {
                 .map { arrayOf<Any>(it.getInt(layout), it.name) }
                 .filterNot { (id, name) -> name in nonAnkiFieldNames || id in ignoredLayoutIds }
         }
+
+        private fun Resources.hasResource(id: Int): Boolean =
+            try {
+                getValue(id, TypedValue(), true)
+                true
+            } catch (_: Resources.NotFoundException) {
+                false
+            }
 
         private fun <T> getFieldNames(clazz: Class<T>): HashSet<String> {
             val badFields = clazz.fields
