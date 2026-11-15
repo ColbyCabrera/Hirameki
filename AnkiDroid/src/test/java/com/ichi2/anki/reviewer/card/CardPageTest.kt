@@ -99,6 +99,26 @@ class CardPageTest {
     }
 
     @Test
+    fun `a touch is probed through the page's own script`() {
+        assertThat(CardPage.touchProbeScript(0.25f, 0.75f), equalTo("globalThis.hirameki?.touchProbe(0.25, 0.75)"))
+    }
+
+    @Test
+    fun `the page's answer about a touch is read`() {
+        assertThat(
+            CardPage.parseTouchProbe("""{"hasTextSelection":true,"isOnInteractiveElement":true}"""),
+            equalTo(CardTouchProbe(hasTextSelection = true, isOnInteractiveElement = true)),
+        )
+    }
+
+    @Test
+    fun `a page which cannot answer leaves the touch to the reviewer`() {
+        for (noAnswer in listOf(null, "null", "\"an error page\"", "")) {
+            assertThat(CardPage.parseTouchProbe(noAnswer), equalTo(CardTouchProbe()))
+        }
+    }
+
+    @Test
     fun `the same card seen again is a different card`() {
         assertThat(question.isSameCardAs(question.copy(cardDisplayIndex = 2)), equalTo(false))
     }

@@ -16,8 +16,9 @@ import kotlin.math.abs
  */
 internal class CardGestureListener(
     private val cardLayout: SafeWebViewLayout,
-    /** Identifies the card and side being shown, see [displayAtTouchDown]. */
     private val currentDisplay: () -> CardDisplay?,
+    /** Asks the page what is at a point, given as fractions of the card's width and height. */
+    private val probeTouch: (fractionX: Float, fractionY: Float, onProbed: (CardTouchProbe) -> Unit) -> Unit,
     private val onGesture: (CardTouchGesture) -> Unit,
 ) : GestureDetector.SimpleOnGestureListener() {
     private val detector = GestureDetector(cardLayout.context, this)
@@ -25,22 +26,27 @@ internal class CardGestureListener(
     private var lastXScrollTime = 0L
     private var lastYScrollTime = 0L
 
+    private var touch = TouchStart(display = null)
+    private var previousTouch = touch
+
     /** A second finger touched during the current gesture, e.g. pinch-to-zoom. */
     private var wasMultiTouch = false
-
-    /**
-     * The card and side shown when the touch started. A single tap is only confirmed after the
-     * double tap timeout, by which time an answer button may have moved on to the next card.
-     */
-    private var displayAtTouchDown: CardDisplay? = null
 
     fun onTouchEvent(event: MotionEvent) {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             wasMultiTouch = false
-            displayAtTouchDown = currentDisplay()
+            startTouch(event)
         }
         if (event.pointerCount > 1) wasMultiTouch = true
         detector.onTouchEvent(event)
+    }
+
+    /** The page is asked now, as the card's own click handler may have changed it by the time a tap is confirmed. */
+    private fun startTouch(down: MotionEvent) {
+        val started = TouchStart(currentDisplay())
+        previousTouch = touch
+        touch = started
+        probeTouch(down.x / cardLayout.width, down.y / cardLayout.height, started::onProbed)
     }
 
     fun onScrollChanged(
@@ -52,15 +58,21 @@ internal class CardGestureListener(
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-        if (!wasMultiTouch && !isOnInteractiveElement()) {
-            send(CardTouchGesture.Tap(e.x, e.y, cardLayout.width, cardLayout.height))
+        if (!wasMultiTouch && !isOnLinkOrInput()) {
+            touch.sendUnless(CardTouchGesture.Tap(e.x, e.y, cardLayout.width, cardLayout.height)) { it.belongsToCard }
         }
         return true
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        if (!wasMultiTouch && !isOnInteractiveElement()) {
-            send(CardTouchGesture.DoubleTap)
+        if (!wasMultiTouch && !isOnLinkOrInput()) {
+            val firstTap = previousTouch
+            val secondTap = touch
+            firstTap.whenProbed { first ->
+                if (!first.belongsToCard && firstTap.display == secondTap.display) {
+                    secondTap.sendUnless(CardTouchGesture.DoubleTap) { it.belongsToCard }
+                }
+            }
         }
         return true
     }
@@ -72,9 +84,9 @@ internal class CardGestureListener(
         velocityY: Float,
     ): Boolean {
         // #5741: a swipe from the screen edge is a system gesture
-        if (e1 == null || wasMultiTouch || isTouchingEdge(e1)) return false
+        if (e1 == null || wasMultiTouch || isTouchingEdge(e1) || isOnLinkOrInput()) return false
         val now = SystemClock.uptimeMillis()
-        send(
+        val fling =
             CardTouchGesture.Fling(
                 dx = e2.x - e1.x,
                 dy = e2.y - e1.y,
@@ -82,15 +94,17 @@ internal class CardGestureListener(
                 velocityY = velocityY,
                 isXScrolling = now - lastXScrollTime < SCROLL_TIMEOUT_MS,
                 isYScrolling = now - lastYScrollTime < SCROLL_TIMEOUT_MS,
-            ),
-        )
+            )
+        touch.sendUnless(fling) { it.belongsToCard }
         return false
     }
 
-    /** Sends [gesture] unless the card or side changed since the touch started. */
-    private fun send(gesture: CardTouchGesture) {
-        if (currentDisplay() != displayAtTouchDown) return
-        onGesture(gesture)
+    /** A tap is only confirmed after the double tap timeout, by which time an answer button may have changed the card. */
+    private fun TouchStart.sendUnless(
+        gesture: CardTouchGesture,
+        belongsToCard: (CardTouchProbe) -> Boolean,
+    ) = whenProbed { probe ->
+        if (!belongsToCard(probe) && currentDisplay() == display) onGesture(gesture)
     }
 
     private fun isTouchingEdge(e: MotionEvent): Boolean =
@@ -99,8 +113,8 @@ internal class CardGestureListener(
             cardLayout.width - e.x < edgeMarginPx ||
             cardLayout.height - e.y < edgeMarginPx
 
-    /** #6141: a tap on a link, a replay button or an input belongs to the card, not to a gesture. */
-    private fun isOnInteractiveElement(): Boolean =
+    /** #6141: checked natively as well, in case the page cannot answer. */
+    private fun isOnLinkOrInput(): Boolean =
         when (cardLayout.hitTestResult?.type) {
             WebView.HitTestResult.SRC_ANCHOR_TYPE,
             WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,
@@ -108,6 +122,25 @@ internal class CardGestureListener(
             -> true
             else -> false
         }
+
+    /** The card and side shown when the first finger went down, and what the page found under it. */
+    private class TouchStart(
+        val display: CardDisplay?,
+    ) {
+        private var probe: CardTouchProbe? = null
+        private val awaitingProbe = mutableListOf<(CardTouchProbe) -> Unit>()
+
+        fun onProbed(result: CardTouchProbe) {
+            probe = result
+            awaitingProbe.forEach { it(result) }
+            awaitingProbe.clear()
+        }
+
+        fun whenProbed(action: (CardTouchProbe) -> Unit) {
+            val known = probe
+            if (known != null) action(known) else awaitingProbe += action
+        }
+    }
 
     companion object {
         /** Matches the legacy reviewer's NO_GESTURE_BORDER_DIP. */

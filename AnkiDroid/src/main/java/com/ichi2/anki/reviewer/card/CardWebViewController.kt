@@ -66,7 +66,7 @@ class CardWebViewController(
     val hasShownCard: Boolean get() = shownDisplay.value != null
 
     private val gestureListener =
-        CardGestureListener(layout, currentDisplay = { target }, onGesture = onGesture)
+        CardGestureListener(layout, currentDisplay = { target }, probeTouch = ::probeTouch, onGesture = onGesture)
 
     init {
         configureWebView()
@@ -156,6 +156,12 @@ class CardWebViewController(
         layout.evaluateJavascript(CardPage.awaitZoomResetScript(initialScale / context.resources.displayMetrics.density))
         layout.zoomBy(factor.coerceIn(MIN_ZOOM_FACTOR, MAX_ZOOM_FACTOR))
     }
+
+    private fun probeTouch(
+        fractionX: Float,
+        fractionY: Float,
+        onProbed: (CardTouchProbe) -> Unit,
+    ) = layout.evaluateJavascript(CardPage.touchProbeScript(fractionX, fractionY)) { onProbed(CardPage.parseTouchProbe(it)) }
 
     private fun listenForPageReports(baseUrl: String) {
         if (isListeningForReports || isRobolectric) return
