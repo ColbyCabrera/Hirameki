@@ -123,6 +123,16 @@ class FlashcardOnDeviceTest {
         }
 
     @Test
+    fun aTemplateBodyBackgroundFillsTheScreenBelowAShortCard() =
+        runBlocking {
+            show(card("<style>body.card { background: ${hex(BLUE)} !important; }</style>${shownText("Short")}", index = 2))
+            awaitShownText("Short")
+            awaitCrossfadeReady()
+
+            assertThat(hex(screenSample()), equalTo(hex(BLUE)))
+        }
+
+    @Test
     fun aCommandRunsOnceAfterItsCard() =
         runBlocking {
             awaitShownText("Question")
