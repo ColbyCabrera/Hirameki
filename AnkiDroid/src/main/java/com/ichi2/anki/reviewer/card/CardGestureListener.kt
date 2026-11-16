@@ -3,6 +3,7 @@
 
 package com.ichi2.anki.reviewer.card
 
+import android.os.Build
 import android.os.SystemClock
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -89,9 +90,14 @@ internal class CardGestureListener(
                 // Like upstream, the element under the first finger does not matter
                 if (isMultiFingerTap) touch.sendUnless(CardTouchGesture.MultiFingerTap(maxPointers)) { it.hasTextSelection }
             }
+            MotionEvent.ACTION_POINTER_UP -> if (isCanceledFinger(event)) maxPointers = 0
             MotionEvent.ACTION_CANCEL -> maxPointers = 0
         }
     }
+
+    /** The system decided this finger, such as a palm, touched by accident. */
+    private fun isCanceledFinger(event: MotionEvent): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && event.flags and MotionEvent.FLAG_CANCELED != 0
 
     fun onScrollChanged(
         dx: Int,
@@ -108,8 +114,9 @@ internal class CardGestureListener(
         return true
     }
 
-    override fun onDoubleTap(e: MotionEvent): Boolean {
-        if (!wasMultiTouch && !isOnLinkOrInput()) {
+    /** Sent when the second tap lifts, as it may yet become a pinch or a multi-finger tap. */
+    override fun onDoubleTapEvent(e: MotionEvent): Boolean {
+        if (e.actionMasked == MotionEvent.ACTION_UP && !wasMultiTouch && !isOnLinkOrInput()) {
             val firstTap = previousTouch
             val secondTap = touch
             firstTap.whenProbed { first ->

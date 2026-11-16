@@ -122,6 +122,18 @@ class CardGestureListenerTest : RobolectricTest() {
     }
 
     @Test
+    fun `a tap followed by a two-finger tap is not also a double tap`() {
+        tap()
+        advanceTime(BETWEEN_TAPS_MS)
+        multiFingerTap(fingers = 2)
+        answerProbe(PLAIN_CONTENT)
+        answerProbe(PLAIN_CONTENT)
+        awaitTapConfirmation()
+
+        assertThat(gestures, contains<CardTouchGesture>(CardTouchGesture.MultiFingerTap(2)))
+    }
+
+    @Test
     fun `a late answer about an earlier touch does not affect the next one`() {
         tap(x = 200f, y = 400f)
         awaitTapConfirmation()
@@ -218,6 +230,21 @@ class CardGestureListenerTest : RobolectricTest() {
         assertThat(gestures, empty())
     }
 
+    @Test
+    fun `a finger the system cancels is not part of a multi-finger tap`() {
+        val downTime = SystemClock.uptimeMillis()
+        val first = CENTRE_X to CENTRE_Y
+        val palm = CENTRE_X + FINGER_SPACING_PX to CENTRE_Y
+        touch(MotionEvent.ACTION_DOWN, downTime, first)
+        touch(MotionEvent.ACTION_POINTER_DOWN, downTime, first, palm, actionIndex = 1)
+        advanceTime(TAP_HOLD_MS)
+        touch(MotionEvent.ACTION_POINTER_UP, downTime, first, palm, actionIndex = 1, flags = MotionEvent.FLAG_CANCELED)
+        touch(MotionEvent.ACTION_UP, downTime, first)
+        answerProbe(PLAIN_CONTENT)
+
+        assertThat(gestures, empty())
+    }
+
     private fun tap(
         x: Float = CENTRE_X,
         y: Float = CENTRE_Y,
@@ -272,6 +299,7 @@ class CardGestureListenerTest : RobolectricTest() {
         downTime: Long,
         vararg points: Pair<Float, Float>,
         actionIndex: Int = 0,
+        flags: Int = 0,
     ) {
         val properties =
             Array(points.size) { finger ->
@@ -304,7 +332,7 @@ class CardGestureListenerTest : RobolectricTest() {
                 0,
                 0,
                 InputDevice.SOURCE_TOUCHSCREEN,
-                0,
+                flags,
             )
         listener.onTouchEvent(event)
         event.recycle()
