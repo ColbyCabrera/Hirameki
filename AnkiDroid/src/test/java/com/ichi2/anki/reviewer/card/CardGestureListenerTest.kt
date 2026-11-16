@@ -3,12 +3,14 @@
 
 package com.ichi2.anki.reviewer.card
 
+import android.os.Build
 import android.os.Looper
 import android.os.SystemClock
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.reviewer.compose.CardTouchGesture
 import com.ichi2.anki.workarounds.SafeWebViewLayout
@@ -231,6 +233,7 @@ class CardGestureListenerTest : RobolectricTest() {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     fun `a finger the system cancels is not part of a multi-finger tap`() {
         val downTime = SystemClock.uptimeMillis()
         val first = CENTRE_X to CENTRE_Y
