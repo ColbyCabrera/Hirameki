@@ -1,57 +1,73 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2021 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.dialogs
 
-import android.app.Dialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
 import android.os.Parcelable
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AlertDialog
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.analytics.UsageAnalytics
-import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.dialogs.compose.ImportFileSelectionDialog
 import com.ichi2.anki.requireAnkiActivity
 import com.ichi2.anki.snackbar.showSnackbar
+import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.utils.MimeTypeUtils
-import com.ichi2.utils.title
 import kotlinx.parcelize.Parcelize
 import timber.log.Timber
 
-@NeedsTest("Selecting APKG does not allow multiple files")
-@NeedsTest("Selecting COLPKG does not allow multiple files")
-@NeedsTest("Restore backup dialog does not allow multiple files")
 class ImportFileSelectionFragment : DialogFragment() {
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val entries = buildImportEntries()
-        return AlertDialog
-            .Builder(requireActivity())
-            .title(R.string.menu_import)
-            .setItems(
-                entries.map { requireActivity().getString(it.titleRes) }.toTypedArray(),
-            ) { _, position ->
-                val entry = entries[position]
-                UsageAnalytics.sendAnalyticsEvent(
-                    UsageAnalytics.Category.LINK_CLICKED,
-                    entry.analyticsId,
-                )
-                openImportFilePicker(
-                    activity = requireAnkiActivity(),
-                    fileType = entry.type,
-                    multiple = entry.multiple,
-                    mimeType = entry.mimeType,
-                    extraMimes = entry.extraMimes,
-                )
-            }.create()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_FRAME, 0)
     }
 
-    private fun buildImportEntries(): List<ImportEntry> {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
+        val entries = buildImportEntries()
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                AnkiDroidTheme {
+                    ImportFileSelectionDialog(
+                        entries = entries,
+                        onDismissRequest = { dismiss() },
+                        onEntryClick = { entry ->
+                            UsageAnalytics.sendAnalyticsEvent(
+                                UsageAnalytics.Category.LINK_CLICKED,
+                                entry.analyticsId,
+                            )
+                            openImportFilePicker(
+                                activity = requireAnkiActivity(),
+                                fileType = entry.type,
+                                multiple = entry.multiple,
+                                mimeType = entry.mimeType,
+                                extraMimes = entry.extraMimes,
+                            )
+                            dismiss()
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    internal fun buildImportEntries(): List<ImportEntry> {
         return arguments?.let { args ->
             args.classLoader = this@ImportFileSelectionFragment::class.java.classLoader
             val options =
@@ -94,7 +110,7 @@ class ImportFileSelectionFragment : DialogFragment() {
 
     // safe as this data class is used as a container and it's not involved in any comparing
     @Suppress("ArrayInDataClass")
-    private data class ImportEntry(
+    internal data class ImportEntry(
         @StringRes val titleRes: Int,
         val analyticsId: String,
         val type: ImportFileType,
