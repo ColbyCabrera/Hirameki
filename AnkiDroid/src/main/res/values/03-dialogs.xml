@@ -187,6 +187,8 @@
     <string name="import_deck_package">Deck package (.apkg)</string>
     <string name="import_collection_package">Collection package (.colpkg)</string>
     <string name="import_csv">Text file (.txt, .csv)</string>
+    <string name="import_clipboard">Clipboard (.txt, .csv)</string>
+    <string name="import_clipboard_empty">No text found on clipboard</string>
 
     <!-- scoped storage -->
     <string name="backup_your_collection">Backup your collection</string>

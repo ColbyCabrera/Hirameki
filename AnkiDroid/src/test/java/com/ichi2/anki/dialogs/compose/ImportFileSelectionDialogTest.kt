@@ -49,6 +49,11 @@ class ImportFileSelectionDialogTest : RobolectricTest() {
                     analyticsId = UsageAnalytics.Actions.IMPORT_CSV_FILE,
                     type = ImportFileType.CSV,
                 ),
+                ImportEntry(
+                    titleRes = R.string.import_clipboard,
+                    analyticsId = UsageAnalytics.Actions.IMPORT_CLIPBOARD,
+                    type = ImportFileType.CLIPBOARD,
+                ),
             )
         var clickedEntry: ImportEntry? = null
         var dismissed = false
@@ -67,6 +72,7 @@ class ImportFileSelectionDialogTest : RobolectricTest() {
         composeTestRule.onNodeWithText(context.getString(R.string.import_deck_package)).assertIsDisplayed()
         composeTestRule.onNodeWithText(context.getString(R.string.import_collection_package)).assertIsDisplayed()
         composeTestRule.onNodeWithText(context.getString(R.string.import_csv)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(context.getString(R.string.import_clipboard)).assertIsDisplayed()
 
         composeTestRule.onNodeWithText(context.getString(R.string.import_csv)).performClick()
         assertEquals(ImportFileType.CSV, clickedEntry?.type)
@@ -89,7 +95,12 @@ class ImportFileSelectionDialogTest : RobolectricTest() {
         val entries = fragment.buildImportEntries()
 
         assertEquals(
-            listOf(ImportFileType.APKG, ImportFileType.COLPKG, ImportFileType.CSV),
+            listOf(
+                ImportFileType.APKG,
+                ImportFileType.COLPKG,
+                ImportFileType.CSV,
+                ImportFileType.CLIPBOARD,
+            ),
             entries.map { it.type },
         )
         entries.forEach { entry ->
@@ -112,5 +123,22 @@ class ImportFileSelectionDialogTest : RobolectricTest() {
 
         assertEquals(listOf(ImportFileType.COLPKG), entries.map { it.type })
         assertFalse(entries.single().multiple)
+    }
+
+    @Test
+    fun buildImportEntriesOmitsClipboardWhenDisabledExplicitly() {
+        val fragment =
+            ImportFileSelectionFragment.newInstance(
+                ImportOptions(
+                    importColpkg = false,
+                    importApkg = false,
+                    importTextFile = true,
+                    importClipboard = false,
+                ),
+            )
+
+        val entries = fragment.buildImportEntries()
+
+        assertEquals(listOf(ImportFileType.CSV), entries.map { it.type })
     }
 }

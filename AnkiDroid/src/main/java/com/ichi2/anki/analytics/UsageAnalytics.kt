@@ -483,6 +483,9 @@ object UsageAnalytics {
         val IMPORT_CSV_FILE = "Import CSV"
 
         @AnalyticsConstant
+        val IMPORT_CLIPBOARD = "Import Clipboard"
+
+        @AnalyticsConstant
         val TAPPED_SETTING = "Tapped setting"
 
         @AnalyticsConstant
