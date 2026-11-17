@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~ SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+  -->
+
+<resources>
+    <!-- Unreviewed machine translations, see tools/localization/README.md -->
+    <string name="import_clipboard">Kujtesa e fragmenteve (.txt, .csv)</string>
+    <string name="import_clipboard_empty">Nuk u gjet asnjë tekst në kujtesën e fragmenteve</string>
+</resources>
