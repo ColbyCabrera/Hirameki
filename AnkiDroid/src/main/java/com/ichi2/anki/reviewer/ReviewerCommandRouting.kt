@@ -98,7 +98,10 @@ internal const val SHOW_HINT_SCRIPT =
 internal const val SHOW_ALL_HINTS_SCRIPT =
     """document.querySelectorAll("a.hint").forEach(el => el.click());"""
 
-internal fun userActionScript(number: Int) = """(() => { const f = globalThis["userJs$number"]; if (typeof f === "function") f(); })();"""
+internal const val MISSING_USER_ACTION_PREFIX = "missing-user-action:"
+
+internal fun userActionScript(number: Int) =
+    """(() => { const f = globalThis["userJs$number"]; if (typeof f === "function") f(); else window.location.href = "$MISSING_USER_ACTION_PREFIX$number"; })();"""
 
 internal fun scrollPageScript(up: Boolean): String {
     val sign = if (up) "-" else ""

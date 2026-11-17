@@ -3,22 +3,27 @@
 
 package com.ichi2.anki.reviewer.compose
 
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.core.net.toUri
 import androidx.core.view.allViews
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.card.CardDisplay
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
+import io.mockk.every
+import io.mockk.mockk
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.empty
+import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.hasSize
 import org.hamcrest.Matchers.not
 import org.hamcrest.Matchers.nullValue
@@ -36,6 +41,7 @@ class FlashcardSinglePageTest : RobolectricTest() {
     private var display by mutableStateOf(QUESTION)
     private var command by mutableStateOf<ReviewerJavascriptCommand?>(null)
     private val consumed = mutableListOf<Int>()
+    private val clickedLinks = mutableListOf<String>()
 
     @Test
     fun `the first card is shown once the page has loaded`() {
@@ -129,6 +135,22 @@ class FlashcardSinglePageTest : RobolectricTest() {
         assertThat(lastScript(webView), not(containsString("userJs1")))
     }
 
+    @Test
+    fun `missing user action signal is forwarded to onLinkClick without navigating away`() {
+        showFlashcard()
+        val webView = singleWebView()
+        loadPage(webView)
+
+        val request = mockk<WebResourceRequest> { every { url } returns "missing-user-action:4".toUri() }
+        var handled = false
+        composeTestRule.runOnUiThread {
+            handled = webView.webViewClient.shouldOverrideUrlLoading(webView, request)
+        }
+
+        assertThat("custom scheme navigation is intercepted", handled, equalTo(true))
+        assertThat(clickedLinks, contains("missing-user-action:4"))
+    }
+
     private fun showFlashcard() {
         composeTestRule.setContent {
             AnkiDroidTheme {
@@ -141,7 +163,7 @@ class FlashcardSinglePageTest : RobolectricTest() {
                         if (command?.id == id) command = null
                     },
                     onGesture = {},
-                    onLinkClick = {},
+                    onLinkClick = { clickedLinks += it },
                 )
             }
         }

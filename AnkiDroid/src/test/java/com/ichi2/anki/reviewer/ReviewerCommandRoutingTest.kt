@@ -75,9 +75,9 @@ class ReviewerCommandRoutingTest {
     }
 
     @Test
-    fun `user action script calls the user's function`() {
+    fun `user action script calls the user's function or signals that it is missing`() {
         assertEquals(
-            """(() => { const f = globalThis["userJs7"]; if (typeof f === "function") f(); })();""",
+            """(() => { const f = globalThis["userJs7"]; if (typeof f === "function") f(); else window.location.href = "missing-user-action:7"; })();""",
             userActionScript(7),
         )
     }

@@ -219,6 +219,9 @@ open class Reviewer :
                     is ReviewerEffect.ShowDeleteNoteDialog -> {
                         // Handled in Compose via ViewModel-backed delete dialog state
                     }
+                    is ReviewerEffect.ShowMissingUserActionDialog -> {
+                        // Handled in Compose
+                    }
                     is ReviewerEffect.ReplayMedia -> {
                         playMedia(true)
                     }
