@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.nullValue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
@@ -69,6 +70,31 @@ class ReviewerViewModelLinkTest : RobolectricTest() {
             val started = shadowOf(app).nextStartedActivity
             assertThat(started.action, equalTo(Intent.ACTION_VIEW))
             assertThat(started.data, equalTo("https://example.org/".toUri()))
+        }
+
+    @Test
+    fun `a missing user action link shows the missing user action dialog instead of opening an external link`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            shadowOf(app).checkActivities(true)
+            val viewModel = ReviewerViewModel(app)
+            advanceUntilIdle()
+            advanceRobolectricLooper()
+
+            viewModel.effect.test {
+                viewModel.onEvent(ReviewerEvent.LinkClicked("missing-user-action:4"))
+                advanceUntilIdle()
+                advanceRobolectricLooper()
+
+                val events = cancelAndConsumeRemainingEvents()
+                val dialogs =
+                    events
+                        .filterIsInstance<Event.Item<ReviewerEffect>>()
+                        .mapNotNull { it.value as? ReviewerEffect.ShowMissingUserActionDialog }
+                assertThat(dialogs, equalTo(listOf(ReviewerEffect.ShowMissingUserActionDialog("4"))))
+                assertThat(snackbarsIn(events), empty())
+            }
+            assertThat(shadowOf(app).nextStartedActivity, nullValue())
         }
 
     private fun snackbarsIn(events: List<Event<ReviewerEffect>>): List<String> =

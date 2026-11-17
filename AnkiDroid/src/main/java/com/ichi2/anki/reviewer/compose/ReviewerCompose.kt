@@ -182,6 +182,7 @@ fun ReviewerContent(
     var showEraserOptions by remember { mutableStateOf(false) }
     var brushIndexToRemove by remember { mutableStateOf<Int?>(null) }
     var pendingDeleteCardId by rememberSaveable { mutableStateOf<CardId?>(null) }
+    var missingUserActionNumber by rememberSaveable { mutableStateOf<String?>(null) }
     var toolbarHeight by remember { mutableIntStateOf(0) }
     var whiteboardToolbarHeight by remember { mutableIntStateOf(0) }
     val toolbarHeightDp = with(LocalDensity.current) { toolbarHeight.toDp() }
@@ -255,6 +256,10 @@ fun ReviewerContent(
                     pendingDeleteCardId = effect.card.id
                 }
 
+                is ReviewerEffect.ShowMissingUserActionDialog -> {
+                    missingUserActionNumber = effect.actionNumber
+                }
+
                 else -> {
                     // All other effects are handled by the Activity
                 }
@@ -296,6 +301,17 @@ fun ReviewerContent(
             onConfirm = {
                 viewModel.confirmDeleteNote(id)
                 pendingDeleteCardId = null
+            },
+        )
+    }
+
+    missingUserActionNumber?.let { actionNumber ->
+        MissingUserActionDialog(
+            actionNumber = actionNumber,
+            onDismissRequest = { missingUserActionNumber = null },
+            onHelpClick = {
+                missingUserActionNumber = null
+                (currentContext as? AnkiActivity)?.openUrl(R.string.link_user_actions_help)
             },
         )
     }
@@ -734,3 +750,26 @@ private fun CardAnswer.Rating.toResId(): Int =
         CardAnswer.Rating.EASY -> R.string.ease_button_easy
         else -> R.string.unknown_rating
     }
+
+@Composable
+internal fun MissingUserActionDialog(
+    actionNumber: String,
+    onDismissRequest: () -> Unit,
+    onHelpClick: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(text = stringResource(R.string.vague_error)) },
+        text = { Text(text = stringResource(R.string.missing_user_action_dialog_message, actionNumber)) },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(text = stringResource(R.string.dialog_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onHelpClick) {
+                Text(text = stringResource(R.string.help))
+            }
+        },
+    )
+}

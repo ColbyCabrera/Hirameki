@@ -232,6 +232,10 @@ sealed class ReviewerEffect {
     data class ShowTimeboxReachedDialog(
         val timebox: Collection.TimeboxReached,
     ) : ReviewerEffect()
+
+    data class ShowMissingUserActionDialog(
+        val actionNumber: String,
+    ) : ReviewerEffect()
 }
 
 private val UNSIGNED_NUMBER = Regex("""\d+([.,]\d*)?""")
@@ -742,6 +746,14 @@ class ReviewerViewModel(
 
             url.startsWith("videopause:") -> {
                 onVideoPaused()
+                return
+            }
+
+            url.startsWith(MISSING_USER_ACTION_PREFIX) -> {
+                val actionNumber = url.removePrefix(MISSING_USER_ACTION_PREFIX)
+                viewModelScope.launch {
+                    _effect.emit(ReviewerEffect.ShowMissingUserActionDialog(actionNumber))
+                }
                 return
             }
         }
