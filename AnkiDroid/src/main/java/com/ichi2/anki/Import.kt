@@ -4,6 +4,8 @@
 package com.ichi2.anki
 
 import android.app.Activity
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import androidx.core.app.TaskStackBuilder
 import androidx.core.content.edit
@@ -15,11 +17,15 @@ import com.ichi2.anki.dialogs.ImportFileSelectionFragment
 import com.ichi2.anki.dialogs.ImportFileSelectionFragment.ImportOptions
 import com.ichi2.anki.pages.CsvImporter
 import com.ichi2.anki.preferences.sharedPrefs
+import com.ichi2.anki.snackbar.canProperlyShowSnackbars
+import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.utils.ext.dismissAllDialogFragments
 import com.ichi2.anki.utils.ext.showDialogFragment
+import com.ichi2.utils.ClipboardUtil
 import com.ichi2.utils.ImportUtils
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
 
 // see also:
 // ImportFileSelectionFragment - selects 'APKG/COLPKG/CSV' and opens a file picker
@@ -50,8 +56,42 @@ fun AnkiActivity.onSelectedPackageToImport(data: Intent) {
     }
 }
 
+internal const val CLIPBOARD_IMPORT_FILENAME = "clipboard.txt"
+
 fun Activity.onSelectedCsvForImport(data: Intent) {
     val path = ImportUtils.getFileCachedCopy(this, data) ?: return
+    launchCsvImporter(path)
+}
+
+fun Activity.onSelectedClipboardForImport() {
+    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+    val clipboardText = ClipboardUtil.getPlainText(clipboard, this)?.toString()
+    if (clipboardText.isNullOrBlank()) {
+        if (this is AnkiActivity && canProperlyShowSnackbars()) {
+            showSnackbar(R.string.import_clipboard_empty)
+        } else {
+            showThemedToast(this, R.string.import_clipboard_empty, shortLength = false)
+        }
+        return
+    }
+
+    val tempFile = File(cacheDir, CLIPBOARD_IMPORT_FILENAME)
+    try {
+        tempFile.writeText(clipboardText, Charsets.UTF_8)
+    } catch (e: IOException) {
+        Timber.w(e, "Failed to write clipboard contents to %s", tempFile.absolutePath)
+        ImportUtils.showImportUnsuccessfulDialog(
+            this,
+            getString(R.string.import_error_copy_to_cache),
+            exitActivity = false,
+        )
+        return
+    }
+
+    launchCsvImporter(tempFile.absolutePath)
+}
+
+private fun Activity.launchCsvImporter(path: String) {
     val csvImporterIntent = CsvImporter.getIntent(this, path)
 
     val stackBuilder = TaskStackBuilder.create(this)

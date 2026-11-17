@@ -56,6 +56,7 @@ object AnalyticsConstantsTest {
         listOfConstantFields.add("Import APKG")
         listOfConstantFields.add("Import COLPKG")
         listOfConstantFields.add("Import CSV")
+        listOfConstantFields.add("Import Clipboard")
         listOfConstantFields.add("Tapped setting")
         listOfConstantFields.add("Changed setting")
     }

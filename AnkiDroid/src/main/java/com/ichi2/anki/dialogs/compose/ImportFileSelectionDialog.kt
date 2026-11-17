@@ -88,6 +88,11 @@ private fun ImportFileSelectionDialogPreview() {
                         analyticsId = UsageAnalytics.Actions.IMPORT_CSV_FILE,
                         type = ImportFileType.CSV,
                     ),
+                    ImportEntry(
+                        titleRes = R.string.import_clipboard,
+                        analyticsId = UsageAnalytics.Actions.IMPORT_CLIPBOARD,
+                        type = ImportFileType.CLIPBOARD,
+                    ),
                 ),
             onDismissRequest = {},
             onEntryClick = {},

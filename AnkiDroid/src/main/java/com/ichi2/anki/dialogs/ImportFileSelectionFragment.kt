@@ -21,6 +21,7 @@ import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.dialogs.compose.ImportFileSelectionDialog
+import com.ichi2.anki.onSelectedClipboardForImport
 import com.ichi2.anki.requireAnkiActivity
 import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
@@ -52,13 +53,17 @@ class ImportFileSelectionFragment : DialogFragment() {
                                 UsageAnalytics.Category.LINK_CLICKED,
                                 entry.analyticsId,
                             )
-                            openImportFilePicker(
-                                activity = requireAnkiActivity(),
-                                fileType = entry.type,
-                                multiple = entry.multiple,
-                                mimeType = entry.mimeType,
-                                extraMimes = entry.extraMimes,
-                            )
+                            if (entry.type == ImportFileType.CLIPBOARD) {
+                                requireAnkiActivity().onSelectedClipboardForImport()
+                            } else {
+                                openImportFilePicker(
+                                    activity = requireAnkiActivity(),
+                                    fileType = entry.type,
+                                    multiple = entry.multiple,
+                                    mimeType = entry.mimeType,
+                                    extraMimes = entry.extraMimes,
+                                )
+                            }
                             dismiss()
                         },
                     )
@@ -104,6 +109,15 @@ class ImportFileSelectionFragment : DialogFragment() {
                         ),
                     )
                 }
+                if (options.importClipboard) {
+                    add(
+                        ImportEntry(
+                            R.string.import_clipboard,
+                            UsageAnalytics.Actions.IMPORT_CLIPBOARD,
+                            ImportFileType.CLIPBOARD,
+                        ),
+                    )
+                }
             }
         } ?: emptyList()
     }
@@ -124,12 +138,14 @@ class ImportFileSelectionFragment : DialogFragment() {
         val importColpkg: Boolean,
         val importApkg: Boolean,
         val importTextFile: Boolean,
+        val importClipboard: Boolean = importTextFile,
     ) : Parcelable
 
     enum class ImportFileType {
         APKG,
         COLPKG,
         CSV,
+        CLIPBOARD,
     }
 
     interface ApkgImportResultLauncherProvider {
@@ -158,6 +174,10 @@ class ImportFileSelectionFragment : DialogFragment() {
             mimeType: String = "*/*",
             extraMimes: Array<String>? = null,
         ) {
+            if (fileType == ImportFileType.CLIPBOARD) {
+                activity.onSelectedClipboardForImport()
+                return
+            }
             Timber.d("openImportFilePicker() delegating to file picker intent")
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             intent.addCategory(Intent.CATEGORY_OPENABLE)
