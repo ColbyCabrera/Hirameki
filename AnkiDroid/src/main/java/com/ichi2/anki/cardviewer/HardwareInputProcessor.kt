@@ -25,10 +25,16 @@ class HardwareInputProcessor(
     private val keysHandledOnPress = mutableSetOf<Int>()
 
     fun init(preferences: SharedPreferences) {
+        clearHandledKeys()
         bindingMap =
             BindingMap(preferences, ViewerCommand.entries) { command, binding ->
                 binding.side.appliesTo(currentSide()) && processor.executeCommand(command, fromGesture = null)
             }
+    }
+
+    /** Drops any in-flight pressed keys, e.g. when the window loses focus before ACTION_UP arrives. */
+    fun clearHandledKeys() {
+        keysHandledOnPress.clear()
     }
 
     /** A handled press also consumes its repeats and release, so the release can't fall back to Back. */

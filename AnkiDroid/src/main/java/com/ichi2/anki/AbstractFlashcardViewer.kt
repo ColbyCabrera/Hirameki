@@ -553,7 +553,7 @@ abstract class AbstractFlashcardViewer :
         // if the answer is already shown, so the key falls through.
         val isShowAnswerKey =
             keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
-        if (isShowAnswerKey && !isTextEditorFocused) {
+        if (isShowAnswerKey && event.repeatCount == 0 && event.hasNoModifiers() && !isTextEditorFocused) {
             if (executeCommand(ViewerCommand.SHOW_ANSWER)) {
                 return true
             }

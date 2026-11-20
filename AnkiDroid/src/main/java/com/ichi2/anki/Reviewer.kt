@@ -33,7 +33,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import anki.collection.OpChanges
 import anki.frontend.SetSchedulingStatesRequest
 import anki.scheduler.CardAnswer.Rating
@@ -182,7 +184,6 @@ open class Reviewer :
         val coordinatorLayout =
             CoordinatorLayout(this).apply {
                 id = R.id.root_layout
-                isFocusable = true
                 isFocusableInTouchMode = true
                 addView(
                     composeView,
@@ -278,12 +279,14 @@ open class Reviewer :
             }
         }
 
-        // #231: a tapped card WebView keeps focus and takes the D-pad and Space before the key bindings
+        // #231: a tapped card WebView or type-answer field keeps focus and takes the D-pad and Space before the key bindings
         lifecycleScope.launch {
-            viewModel.state
-                .map { it.cardDisplayIndex }
-                .distinctUntilChanged()
-                .collect { focusDefaultLayout() }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state
+                    .map { it.cardDisplayIndex to it.isAnswerShown }
+                    .distinctUntilChanged()
+                    .collect { focusDefaultLayout() }
+            }
         }
 
         // Initialize whiteboard controller directly (collection is already loaded from DeckPicker)
@@ -315,6 +318,13 @@ open class Reviewer :
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean =
         hardwareInputProcessor.onGenericMotionEvent(event) || super.onGenericMotionEvent(event)
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) {
+            hardwareInputProcessor.clearHandledKeys()
+        }
+    }
 
     override fun onResume() {
         super.onResume()

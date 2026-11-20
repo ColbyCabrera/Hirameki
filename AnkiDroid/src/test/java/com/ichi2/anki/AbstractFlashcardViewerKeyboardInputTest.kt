@@ -58,6 +58,28 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
         )
     }
 
+    @Test
+    fun modifiedSpaceDoesNotShowAnswer() {
+        val underTest = KeyboardInputTestCardViewer.create()
+
+        underTest.handleKeyDown(
+            KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SPACE, 0, KeyEvent.META_CTRL_ON),
+        )
+
+        assertThat("Modified space should not display answer", !underTest.didDisplayAnswer())
+    }
+
+    @Test
+    fun repeatedSpaceDoesNotShowAnswer() {
+        val underTest = KeyboardInputTestCardViewer.create()
+
+        underTest.handleKeyDown(
+            KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SPACE, 1),
+        )
+
+        assertThat("Repeated space should not display answer", !underTest.didDisplayAnswer())
+    }
+
     private class KeyboardInputTestCardViewer : AbstractFlashcardViewer() {
         private var displayAnswer = false
         private var focusedView: android.view.View? = null
@@ -74,14 +96,18 @@ class AbstractFlashcardViewerKeyboardInputTest : RobolectricTest() {
 
         fun didDisplayAnswer(): Boolean = displayAnswer
 
-        fun handleKeyPress(keycode: Int) {
-            // COULD_BE_BETTER: Saves 20 seconds on tests to remove AndroidJUnit4,
-            // but may let something slip through the cracks.
+        fun handleKeyDown(event: KeyEvent) {
             try {
-                onKeyDown(keycode, KeyEvent(KeyEvent.ACTION_DOWN, keycode))
+                onKeyDown(event.keyCode, event)
             } catch (e: Exception) {
                 Timber.e(e)
             }
+        }
+
+        fun handleKeyPress(keycode: Int) {
+            // COULD_BE_BETTER: Saves 20 seconds on tests to remove AndroidJUnit4,
+            // but may let something slip through the cracks.
+            handleKeyDown(KeyEvent(KeyEvent.ACTION_DOWN, keycode))
             try {
                 onKeyUp(keycode, KeyEvent(KeyEvent.ACTION_UP, keycode))
             } catch (e: Exception) {
