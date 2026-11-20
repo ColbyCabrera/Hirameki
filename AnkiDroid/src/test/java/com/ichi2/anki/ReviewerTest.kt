@@ -217,7 +217,6 @@ class ReviewerTest : RobolectricTest() {
 
     private fun keyBinding(keyCode: Int) = ReviewerBinding(Binding.keyCode(keyCode, Binding.ModifierKeys.none()), CardSide.BOTH)
 
-    /** @return whether the press and release were both consumed */
     private fun Reviewer.pressKey(keyCode: Int): Boolean {
         val pressConsumed = dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         val releaseConsumed = dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))

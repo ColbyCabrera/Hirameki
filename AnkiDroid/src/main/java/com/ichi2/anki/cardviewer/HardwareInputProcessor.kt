@@ -31,20 +31,23 @@ class HardwareInputProcessor(
             }
     }
 
-    /**
-     * @return whether [event] was consumed: a press which ran a command, or the repeats and
-     * release of such a press, so the release can't fall back to a system action such as Back
-     */
+    /** A handled press also consumes its repeats and release, so the release can't fall back to Back. */
     fun onKeyEvent(event: KeyEvent): Boolean =
         when {
             event.action == KeyEvent.ACTION_UP -> keysHandledOnPress.remove(event.keyCode)
             event.action != KeyEvent.ACTION_DOWN -> false
             event.repeatCount > 0 -> event.keyCode in keysHandledOnPress
-            else -> runBoundCommand(event).also { handled -> if (handled) keysHandledOnPress += event.keyCode }
+            else -> runBoundCommand(event).also { handled -> trackPress(event.keyCode, handled) }
         }
 
     private fun runBoundCommand(press: KeyEvent): Boolean = bindingMap?.onKeyDown(press) == true
 
-    /** @return whether a bound joystick or pedal axis ran a command */
+    private fun trackPress(
+        keyCode: Int,
+        handled: Boolean,
+    ) {
+        if (handled) keysHandledOnPress += keyCode else keysHandledOnPress -= keyCode
+    }
+
     fun onGenericMotionEvent(event: MotionEvent?): Boolean = bindingMap?.onGenericMotionEvent(event) == true
 }
