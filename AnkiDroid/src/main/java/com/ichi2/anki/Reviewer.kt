@@ -304,7 +304,7 @@ open class Reviewer :
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        if (!isTextEditorFocused && hardwareInputProcessor.onKeyEvent(event)) return true
+        if ((event.repeatCount > 0 || !isTextEditorFocused) && hardwareInputProcessor.onKeyEvent(event)) return true
         return super.onKeyDown(keyCode, event)
     }
 

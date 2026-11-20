@@ -81,8 +81,9 @@ class BindingMap<B : MappableBinding, A : MappableAction<B>>(
         var processed = false
         for (detector in axisDetectors) {
             val action = detector.getAction(ev) ?: continue
-            processed = true
-            processor?.processAction(action, detector.mappableBinding)
+            if (processor?.processAction(action, detector.mappableBinding) == true) {
+                processed = true
+            }
         }
         return processed
     }

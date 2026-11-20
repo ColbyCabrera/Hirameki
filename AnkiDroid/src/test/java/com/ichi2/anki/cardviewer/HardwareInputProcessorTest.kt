@@ -4,11 +4,18 @@
 package com.ichi2.anki.cardviewer
 
 import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.ivanshafran.sharedpreferencesmock.SPMockBuilder
+import com.ichi2.anki.reviewer.Axis
+import com.ichi2.anki.reviewer.Binding
 import com.ichi2.anki.reviewer.CardSide
+import com.ichi2.anki.reviewer.ReviewerBinding
+import com.ichi2.anki.utils.ext.addBinding
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -65,6 +72,26 @@ class HardwareInputProcessorTest : ViewerCommand.CommandProcessor {
 
         side = CardSide.ANSWER
         assertTrue(sut.onKeyEvent(press(KeyEvent.KEYCODE_3)))
+        assertEquals(listOf(ViewerCommand.FLIP_OR_ANSWER_EASE3), executedCommands)
+    }
+
+    @Test
+    fun `an answer-side axis binding does not consume events on the question`() {
+        val prefs = SPMockBuilder().createSharedPreferences()
+        ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(
+            prefs,
+            ReviewerBinding(Binding.AxisButtonBinding(Axis.Y, 1f), CardSide.ANSWER),
+        )
+        val processor = HardwareInputProcessor(this) { side }.apply { init(prefs) }
+        val pushed = mock(MotionEvent::class.java).apply { whenever(getAxisValue(MotionEvent.AXIS_Y)).thenReturn(1f) }
+        val neutral = mock(MotionEvent::class.java).apply { whenever(getAxisValue(MotionEvent.AXIS_Y)).thenReturn(0f) }
+
+        assertFalse(processor.onGenericMotionEvent(pushed))
+        assertTrue(executedCommands.isEmpty())
+
+        processor.onGenericMotionEvent(neutral)
+        side = CardSide.ANSWER
+        assertTrue(processor.onGenericMotionEvent(pushed))
         assertEquals(listOf(ViewerCommand.FLIP_OR_ANSWER_EASE3), executedCommands)
     }
 

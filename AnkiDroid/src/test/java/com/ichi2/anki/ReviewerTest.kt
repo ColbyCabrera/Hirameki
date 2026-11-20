@@ -217,6 +217,41 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
+    fun `repeats and release of a handled press stay consumed after an editor takes focus`() =
+        runTest {
+            val note = addBasicNote("Front", "Back")
+            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_F2))
+            ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_F3))
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+
+            assertTrue(reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2)), "initial press")
+            advanceRobolectricLooper()
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown)
+
+            reviewer.focusNewTextField()
+
+            assertTrue(
+                reviewer.dispatchKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2, 1)),
+                "repeat consumed after focus change",
+            )
+            assertTrue(
+                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F2)),
+                "release consumed and cleared",
+            )
+            assertFalse(
+                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F2)),
+                "second release not consumed",
+            )
+            assertFalse(
+                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F3)),
+                "fresh bound press ignored while editor focused",
+            )
+            advanceRobolectricLooper()
+            assertEquals(0, note.firstCard(col).reps)
+        }
+
+    @Test
     fun `a focused button takes its confirm key before the bindings`() =
         runTest {
             // matches upstream: D-pad center is bound to 'Good', but a focused control gets the press first
