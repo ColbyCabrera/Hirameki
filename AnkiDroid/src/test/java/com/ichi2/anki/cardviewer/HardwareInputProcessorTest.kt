@@ -60,6 +60,15 @@ class HardwareInputProcessorTest : ViewerCommand.CommandProcessor {
     }
 
     @Test
+    fun `clearHandledKeys drops in-flight presses`() {
+        sut.onKeyEvent(press(KeyEvent.KEYCODE_BUTTON_B))
+        sut.clearHandledKeys()
+
+        assertFalse(sut.onKeyEvent(press(KeyEvent.KEYCODE_BUTTON_B, repeatCount = 1)), "repeat")
+        assertFalse(sut.onKeyEvent(release(KeyEvent.KEYCODE_BUTTON_B)), "release")
+    }
+
+    @Test
     fun `an unbound key passes through`() {
         assertFalse(sut.onKeyEvent(press(KeyEvent.KEYCODE_DPAD_UP)), "press")
         assertFalse(sut.onKeyEvent(release(KeyEvent.KEYCODE_DPAD_UP)), "release")

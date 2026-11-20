@@ -7,6 +7,7 @@ package com.ichi2.anki
 import android.app.Application
 import android.content.Intent
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
@@ -18,6 +19,7 @@ import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.cardviewer.Gesture
 import com.ichi2.anki.cardviewer.GestureProcessor
 import com.ichi2.anki.cardviewer.ViewerCommand
+import com.ichi2.anki.reviewer.Axis
 import com.ichi2.anki.reviewer.Binding
 import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.ReviewerBinding
@@ -26,6 +28,8 @@ import com.ichi2.anki.utils.ext.addBinding
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import org.robolectric.Shadows
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -191,15 +195,22 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
-    fun `an answer-side key binding does nothing on the question`() =
+    fun `an answer-side key binding runs only on the answer`() =
         runTest {
-            addBasicNote("Front", "Back")
+            val note = addBasicNote("Front", "Back")
             val reviewer = startReviewer(this@ReviewerTest)
             waitForCard(reviewer)
 
             reviewer.pressKey(KeyEvent.KEYCODE_3)
+            assertFalse(reviewer.viewModel.state.value.isAnswerShown, "ignored on question")
+            assertEquals(0, note.firstCard(col).reps)
 
-            assertFalse(reviewer.viewModel.state.value.isAnswerShown)
+            reviewer.executeCommand(ViewerCommand.SHOW_ANSWER)
+            advanceRobolectricLooper()
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown)
+
+            assertTrue(reviewer.pressKey(KeyEvent.KEYCODE_3), "answer-side binding runs on answer")
+            assertEquals(1, note.firstCard(col).reps)
         }
 
     @Test
@@ -281,6 +292,62 @@ class ReviewerTest : RobolectricTest() {
             advanceRobolectricLooper()
 
             assertTrue(reviewer.findViewById<ViewGroup>(R.id.root_layout).isFocused)
+        }
+
+    @Test
+    fun `showing the answer takes focus back for the key bindings`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            reviewer.focusNewButton {}
+
+            reviewer.executeCommand(ViewerCommand.SHOW_ANSWER)
+            advanceRobolectricLooper()
+
+            assertTrue(reviewer.findViewById<ViewGroup>(R.id.root_layout).isFocused)
+        }
+
+    @Test
+    fun `losing window focus clears tracked key presses`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_F2))
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+
+            assertTrue(reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2)))
+            reviewer.onWindowFocusChanged(false)
+
+            assertFalse(
+                reviewer.dispatchKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2, 1)),
+                "repeat not consumed after window focus lost",
+            )
+            assertFalse(
+                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F2)),
+                "release not consumed after window focus lost",
+            )
+        }
+
+    @Test
+    fun `a bound joystick axis reaches the compose reviewer`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            ViewerCommand.SHOW_ANSWER.addBinding(
+                getPreferences(),
+                ReviewerBinding(Binding.AxisButtonBinding(Axis.Y, 1f), CardSide.QUESTION),
+            )
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            val motionEvent =
+                mock(MotionEvent::class.java).apply {
+                    whenever(getAxisValue(MotionEvent.AXIS_Y)).thenReturn(1f)
+                }
+
+            assertTrue(reviewer.onGenericMotionEvent(motionEvent))
+            advanceRobolectricLooper()
+
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown)
         }
 
     private fun keyBinding(keyCode: Int) = ReviewerBinding(Binding.keyCode(keyCode, Binding.ModifierKeys.none()), CardSide.BOTH)
