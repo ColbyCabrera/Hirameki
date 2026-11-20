@@ -25,11 +25,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import anki.scheduler.CardAnswer.Rating
 import com.ibm.icu.impl.Assert
 import com.ichi2.anki.AnkiDroidApp.Companion.sharedPrefs
+import com.ichi2.anki.cardviewer.Gesture
+import com.ichi2.anki.cardviewer.HardwareInputProcessor
 import com.ichi2.anki.cardviewer.ViewerCommand
 import com.ichi2.anki.reviewer.Binding.Companion.keyCode
 import com.ichi2.anki.reviewer.Binding.ModifierKeys
-import com.ichi2.anki.reviewer.BindingMap
-import com.ichi2.anki.reviewer.BindingProcessor
 import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.ReviewerBinding
 import com.ichi2.anki.utils.ext.addBinding
@@ -230,7 +230,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         assertThat(underTest.processedAnswer(), equalTo(rating))
     }
 
-    internal class KeyboardInputTestReviewer : BindingProcessor<ReviewerBinding, ViewerCommand> {
+    internal class KeyboardInputTestReviewer : ViewerCommand.CommandProcessor {
         private var answered: Rating? = null
         var editCardCalled = false
             private set
@@ -253,22 +253,8 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             displayAnswer = false
         }
 
-        var processor: BindingMap<ReviewerBinding, ViewerCommand> =
-            BindingMap(sharedPrefs(), ViewerCommand.entries, this)
-
-        override fun processAction(
-            action: ViewerCommand,
-            binding: ReviewerBinding,
-        ): Boolean {
-            val currentSide = if (displayAnswer) CardSide.ANSWER else CardSide.QUESTION
-            if (binding.side != CardSide.BOTH && binding.side != currentSide) {
-                return false
-            }
-            if (action == ViewerCommand.UNDO && !isUndoAvailable) {
-                return false
-            }
-            return executeCommand(action)
-        }
+        private val processor =
+            HardwareInputProcessor(this) { CardSide.fromAnswer(displayAnswer) }.apply { init(sharedPrefs()) }
 
         private fun displayCardAnswer() {
             cardFlips.add("answer")
@@ -296,7 +282,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         fun handleUnicodeKeyPress(unicodeChar: Char) {
             val downEvent = createUnicodeKeyEvent(unicodeChar)
             try {
-                if (!processor.onKeyDown(downEvent)) {
+                if (!processor.onKeyEvent(downEvent)) {
                     onUnhandledKeyDown(0)
                 }
             } catch (e: Exception) {
@@ -312,7 +298,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             // but may let something slip through the cracks.
             val e = createKeyEvent(keycode, unicodeChar)
             try {
-                if (!processor.onKeyDown(e)) {
+                if (!processor.onKeyEvent(e)) {
                     onUnhandledKeyDown(keycode)
                 }
             } catch (ex: Exception) {
@@ -324,7 +310,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         fun handleAndroidKeyPress(keycode: Int) {
             val downEvent = createKeyEvent(keycode)
             try {
-                if (!processor.onKeyDown(downEvent)) {
+                if (!processor.onKeyEvent(downEvent)) {
                     onUnhandledKeyDown(keycode)
                 }
             } catch (ex: Exception) {
@@ -398,7 +384,10 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             return false
         }
 
-        private fun executeCommand(which: ViewerCommand): Boolean =
+        override fun executeCommand(
+            which: ViewerCommand,
+            fromGesture: Gesture?,
+        ): Boolean =
             when (which) {
                 ViewerCommand.SHOW_ANSWER -> {
                     if (displayAnswer) {
@@ -460,8 +449,8 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
                 }
 
                 ViewerCommand.UNDO -> {
-                    undo()
-                    true
+                    if (isUndoAvailable) undo()
+                    isUndoAvailable
                 }
 
                 else -> false

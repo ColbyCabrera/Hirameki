@@ -553,7 +553,7 @@ abstract class AbstractFlashcardViewer :
         // if the answer is already shown, so the key falls through.
         val isShowAnswerKey =
             keyCode == KeyEvent.KEYCODE_SPACE || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
-        if (isShowAnswerKey && currentFocus?.onCheckIsTextEditor() != true) {
+        if (isShowAnswerKey && !isTextEditorFocused) {
             if (executeCommand(ViewerCommand.SHOW_ANSWER)) {
                 return true
             }
@@ -569,6 +569,10 @@ abstract class AbstractFlashcardViewer :
         keyCode: Int,
         event: KeyEvent,
     ): Boolean = webView.handledGamepadKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+
+    /** A Compose text field, or an input in the card, takes typed keys before any key binding */
+    protected val isTextEditorFocused: Boolean
+        get() = currentFocus?.onCheckIsTextEditor() == true
 
     public override val currentCardId: CardId? get() = currentCard?.id
 

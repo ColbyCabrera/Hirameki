@@ -13,8 +13,10 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Parcelable
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.SubMenu
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
@@ -42,6 +44,7 @@ import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.cardviewer.CardMediaPlayer
 import com.ichi2.anki.cardviewer.Gesture
+import com.ichi2.anki.cardviewer.HardwareInputProcessor
 import com.ichi2.anki.cardviewer.ViewerCommand
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.time.TimeManager
@@ -152,6 +155,7 @@ open class Reviewer :
     private var showRemainingCardCount = false
     private var stopTimerOnAnswer = false
     private val actionButtons = ActionButtons()
+    private val hardwareInputProcessor = HardwareInputProcessor(this) { shownCardSide }
 
     private lateinit var addNoteLauncher: ActivityResultLauncher<Intent>
 
@@ -285,6 +289,15 @@ open class Reviewer :
     /** The Compose reviewer tracks the shown side in its ViewModel, not in `displayAnswer`. */
     override val shownCardSide: CardSide
         get() = CardSide.fromAnswer(viewModel.state.value.isAnswerShown)
+
+    /** #231: bindings run before the focused card WebView, which would scroll on the D-pad or turn B/Escape into Back. */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (!isTextEditorFocused && hardwareInputProcessor.onKeyEvent(event)) return true
+        return super.dispatchKeyEvent(event)
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean =
+        hardwareInputProcessor.onGenericMotionEvent(event) || super.onGenericMotionEvent(event)
 
     override fun onResume() {
         super.onResume()
@@ -928,6 +941,7 @@ open class Reviewer :
         prefShowETA = preferences.getBoolean("showETA", false)
         prefFullscreenReview = isFullScreenReview(preferences)
         actionButtons.setup(preferences)
+        hardwareInputProcessor.init(preferences)
         return preferences
     }
 
