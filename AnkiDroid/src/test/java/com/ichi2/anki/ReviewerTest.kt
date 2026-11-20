@@ -8,6 +8,7 @@ import android.app.Application
 import android.content.Intent
 import android.view.KeyEvent
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import androidx.core.content.edit
 import androidx.core.os.BundleCompat
@@ -205,14 +206,46 @@ class ReviewerTest : RobolectricTest() {
     fun `key bindings are ignored while typing`() =
         runTest {
             addBasicNote("Front", "Back")
-            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_J))
+            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_F2))
             val reviewer = startReviewer(this@ReviewerTest)
             waitForCard(reviewer)
             reviewer.focusNewTextField()
 
-            reviewer.pressKey(KeyEvent.KEYCODE_J)
+            reviewer.pressKey(KeyEvent.KEYCODE_F2)
 
             assertFalse(reviewer.viewModel.state.value.isAnswerShown)
+        }
+
+    @Test
+    fun `a focused button takes its confirm key before the bindings`() =
+        runTest {
+            // matches upstream: D-pad center is bound to 'Good', but a focused control gets the press first
+            addBasicNote("Front", "Back")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            var clicked = false
+            reviewer.focusNewButton { clicked = true }
+
+            reviewer.pressKey(KeyEvent.KEYCODE_DPAD_CENTER)
+
+            assertTrue(clicked, "button clicked")
+            assertFalse(reviewer.viewModel.state.value.isAnswerShown, "binding not run")
+        }
+
+    @Test
+    fun `a new card takes focus back for the key bindings`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            addBasicNote("Front 2", "Back 2")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            reviewer.focusNewButton {}
+
+            reviewer.executeCommand(ViewerCommand.SHOW_ANSWER)
+            reviewer.executeCommand(ViewerCommand.FLIP_OR_ANSWER_EASE3)
+            advanceRobolectricLooper()
+
+            assertTrue(reviewer.findViewById<ViewGroup>(R.id.root_layout).isFocused)
         }
 
     private fun keyBinding(keyCode: Int) = ReviewerBinding(Binding.keyCode(keyCode, Binding.ModifierKeys.none()), CardSide.BOTH)
@@ -227,9 +260,18 @@ class ReviewerTest : RobolectricTest() {
     private fun Reviewer.focusNewTextField() {
         val textField = EditText(this)
         findViewById<ViewGroup>(R.id.root_layout).addView(textField)
+        advanceRobolectricLooper()
         assertTrue(textField.requestFocus(), "text field focused")
         // Robolectric reports its own currentFocus rather than the view that took focus
         Shadows.shadowOf(this).setCurrentFocus(textField)
+    }
+
+    private fun Reviewer.focusNewButton(onClick: () -> Unit) {
+        val button = Button(this).apply { isFocusableInTouchMode = true }
+        button.setOnClickListener { onClick() }
+        findViewById<ViewGroup>(R.id.root_layout).addView(button)
+        advanceRobolectricLooper()
+        assertTrue(button.requestFocus(), "button focused")
     }
 
     private fun waitForCard(reviewer: Reviewer) {

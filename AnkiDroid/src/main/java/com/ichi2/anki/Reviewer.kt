@@ -105,6 +105,8 @@ import com.ichi2.utils.tintOverflowMenuIcons
 import com.ichi2.utils.title
 import com.ichi2.widget.WidgetStatus.updateInBackground
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -276,6 +278,14 @@ open class Reviewer :
             }
         }
 
+        // #231: a tapped card WebView keeps focus and takes the D-pad and Space before the key bindings
+        lifecycleScope.launch {
+            viewModel.state
+                .map { it.cardDisplayIndex }
+                .distinctUntilChanged()
+                .collect { focusDefaultLayout() }
+        }
+
         // Initialize whiteboard controller directly (collection is already loaded from DeckPicker)
         whiteboardController = WhiteboardController(this, whiteboardViewModel, viewModel)
         whiteboardController.initialize()
@@ -290,11 +300,18 @@ open class Reviewer :
     override val shownCardSide: CardSide
         get() = CardSide.fromAnswer(viewModel.state.value.isAnswerShown)
 
-    /** #231: bindings run before the focused card WebView, which would scroll on the D-pad or turn B/Escape into Back. */
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent,
+    ): Boolean {
         if (!isTextEditorFocused && hardwareInputProcessor.onKeyEvent(event)) return true
-        return super.dispatchKeyEvent(event)
+        return super.onKeyDown(keyCode, event)
     }
+
+    override fun onKeyUp(
+        keyCode: Int,
+        event: KeyEvent,
+    ): Boolean = hardwareInputProcessor.onKeyEvent(event) || super.onKeyUp(keyCode, event)
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean =
         hardwareInputProcessor.onGenericMotionEvent(event) || super.onGenericMotionEvent(event)

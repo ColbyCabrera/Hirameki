@@ -399,7 +399,7 @@ abstract class AbstractFlashcardViewer :
         focusDefaultLayout()
     }
 
-    private fun focusDefaultLayout() {
+    protected fun focusDefaultLayout() {
         findViewById<View>(R.id.root_layout)?.requestFocus()
     }
 
