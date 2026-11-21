@@ -282,7 +282,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         fun handleUnicodeKeyPress(unicodeChar: Char) {
             val downEvent = createUnicodeKeyEvent(unicodeChar)
             try {
-                if (!processor.onKeyEvent(downEvent)) {
+                if (!processor.onKeyDown(downEvent)) {
                     onUnhandledKeyDown(0)
                 }
             } catch (e: Exception) {
@@ -298,7 +298,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
             // but may let something slip through the cracks.
             val e = createKeyEvent(keycode, unicodeChar)
             try {
-                if (!processor.onKeyEvent(e)) {
+                if (!processor.onKeyDown(e)) {
                     onUnhandledKeyDown(keycode)
                 }
             } catch (ex: Exception) {
@@ -310,7 +310,7 @@ class ReviewerKeyboardInputTest : RobolectricTest() {
         fun handleAndroidKeyPress(keycode: Int) {
             val downEvent = createKeyEvent(keycode)
             try {
-                if (!processor.onKeyEvent(downEvent)) {
+                if (!processor.onKeyDown(downEvent)) {
                     onUnhandledKeyDown(keycode)
                 }
             } catch (ex: Exception) {

@@ -230,69 +230,6 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
-    fun `repeats and release of a handled press stay consumed after an editor takes focus`() =
-        runTest {
-            val note = addBasicNote("Front", "Back")
-            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_J))
-            ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_K))
-            val reviewer = startReviewer(this@ReviewerTest)
-            waitForCard(reviewer)
-
-            assertTrue(reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_J)), "initial press")
-            advanceRobolectricLooper()
-            assertTrue(reviewer.viewModel.state.value.isAnswerShown)
-
-            var editorSawFreshPress = false
-            var editorSawRepeat = false
-            var editorSawRelease = false
-            val editor =
-                object : EditText(reviewer) {
-                    override fun onKeyDown(
-                        keyCode: Int,
-                        event: KeyEvent,
-                    ): Boolean {
-                        if (event.repeatCount > 0) editorSawRepeat = true else editorSawFreshPress = true
-                        return true
-                    }
-
-                    override fun onKeyUp(
-                        keyCode: Int,
-                        event: KeyEvent,
-                    ): Boolean {
-                        editorSawRelease = true
-                        return true
-                    }
-                }
-            reviewer.focusTextField(editor)
-
-            assertTrue(
-                reviewer.dispatchKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_J, 1)),
-                "repeat consumed before editor",
-            )
-            assertFalse(editorSawRepeat, "editor did not receive repeat of handled press")
-
-            assertTrue(
-                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_J)),
-                "release consumed and cleared before editor",
-            )
-            assertFalse(editorSawRelease, "editor did not receive release of handled press")
-
-            assertTrue(
-                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_J)),
-                "subsequent release reaches editor after key was cleared",
-            )
-            assertTrue(editorSawRelease, "key was cleared so subsequent release reached editor")
-
-            assertTrue(
-                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_K)),
-                "fresh bound press reaches focused editor",
-            )
-            advanceRobolectricLooper()
-            assertTrue(editorSawFreshPress, "editor received fresh press")
-            assertEquals(0, note.firstCard(col).reps)
-        }
-
-    @Test
     fun `a focused button takes its confirm key before the bindings`() =
         runTest {
             // matches upstream: D-pad center is bound to 'Good', but a focused control gets the press first
@@ -368,27 +305,6 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
-    fun `losing window focus clears tracked key presses`() =
-        runTest {
-            addBasicNote("Front", "Back")
-            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_F2))
-            val reviewer = startReviewer(this@ReviewerTest)
-            waitForCard(reviewer)
-
-            assertTrue(reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2)))
-            reviewer.onWindowFocusChanged(false)
-
-            assertFalse(
-                reviewer.dispatchKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2, 1)),
-                "repeat not consumed after window focus lost",
-            )
-            assertFalse(
-                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F2)),
-                "release not consumed after window focus lost",
-            )
-        }
-
-    @Test
     fun `a bound joystick axis reaches the compose reviewer`() =
         runTest {
             addBasicNote("Front", "Back")
@@ -413,9 +329,9 @@ class ReviewerTest : RobolectricTest() {
 
     private fun Reviewer.pressKey(keyCode: Int): Boolean {
         val pressConsumed = dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-        val releaseConsumed = dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
         advanceRobolectricLooper()
-        return pressConsumed && releaseConsumed
+        return pressConsumed
     }
 
     private fun Reviewer.focusNewTextField() = focusTextField(EditText(this))

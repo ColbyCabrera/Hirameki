@@ -33,9 +33,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import anki.collection.OpChanges
 import anki.frontend.SetSchedulingStatesRequest
 import anki.scheduler.CardAnswer.Rating
@@ -279,20 +277,12 @@ open class Reviewer :
             }
         }
 
-        // #231: return focus to root_layout when the card or shown side changes (not on stop/start of the same side)
+        // #231: a focused WebView or control would take the D-pad and Space before the key bindings
         lifecycleScope.launch {
-            var lastFocusedCardSide: Pair<Long, Boolean>? = null
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.state
-                    .map { it.cardDisplayIndex to it.isAnswerShown }
-                    .distinctUntilChanged()
-                    .collect { cardSide ->
-                        if (cardSide != lastFocusedCardSide) {
-                            lastFocusedCardSide = cardSide
-                            focusDefaultLayout()
-                        }
-                    }
-            }
+            viewModel.state
+                .map { it.cardDisplayIndex to it.isAnswerShown }
+                .distinctUntilChanged()
+                .collect { focusDefaultLayout() }
         }
 
         // Initialize whiteboard controller directly (collection is already loaded from DeckPicker)
@@ -309,28 +299,16 @@ open class Reviewer :
     override val shownCardSide: CardSide
         get() = CardSide.fromAnswer(viewModel.state.value.isAnswerShown)
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (hardwareInputProcessor.onHandledKeyFollowUp(event)) return true
-        return super.dispatchKeyEvent(event)
-    }
-
     override fun onKeyDown(
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        if (!isTextEditorFocused && hardwareInputProcessor.onKeyEvent(event)) return true
+        if (!isTextEditorFocused && hardwareInputProcessor.onKeyDown(event)) return true
         return super.onKeyDown(keyCode, event)
     }
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean =
         hardwareInputProcessor.onGenericMotionEvent(event) || super.onGenericMotionEvent(event)
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (!hasFocus) {
-            hardwareInputProcessor.clearHandledKeys()
-        }
-    }
 
     override fun onResume() {
         super.onResume()
