@@ -40,6 +40,7 @@ class FlashcardSinglePageTest : RobolectricTest() {
 
     private var display by mutableStateOf(QUESTION)
     private var command by mutableStateOf<ReviewerJavascriptCommand?>(null)
+    private var isWebViewFocusableInTouchMode by mutableStateOf(false)
     private val consumed = mutableListOf<Int>()
     private val clickedLinks = mutableListOf<String>()
 
@@ -151,6 +152,17 @@ class FlashcardSinglePageTest : RobolectricTest() {
         assertThat(clickedLinks, contains("missing-user-action:4"))
     }
 
+    @Test
+    fun `card WebView is not focusable in touch mode by default and follows the parameter`() {
+        showFlashcard()
+        val webView = singleWebView()
+        assertThat("touch focus disabled by default", webView.isFocusableInTouchMode, equalTo(false))
+
+        isWebViewFocusableInTouchMode = true
+        composeTestRule.waitForIdle()
+        assertThat("touch focus enabled when requested", webView.isFocusableInTouchMode, equalTo(true))
+    }
+
     private fun showFlashcard() {
         composeTestRule.setContent {
             AnkiDroidTheme {
@@ -164,6 +176,7 @@ class FlashcardSinglePageTest : RobolectricTest() {
                     },
                     onGesture = {},
                     onLinkClick = { clickedLinks += it },
+                    isWebViewFocusableInTouchMode = isWebViewFocusableInTouchMode,
                 )
             }
         }
