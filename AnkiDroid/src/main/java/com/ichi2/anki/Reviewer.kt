@@ -13,8 +13,10 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Parcelable
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.SubMenu
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
@@ -31,7 +33,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import anki.collection.OpChanges
 import anki.frontend.SetSchedulingStatesRequest
 import anki.scheduler.CardAnswer.Rating
@@ -42,6 +46,7 @@ import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.cardviewer.CardMediaPlayer
 import com.ichi2.anki.cardviewer.Gesture
+import com.ichi2.anki.cardviewer.HardwareInputProcessor
 import com.ichi2.anki.cardviewer.ViewerCommand
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.common.time.TimeManager
@@ -102,6 +107,8 @@ import com.ichi2.utils.tintOverflowMenuIcons
 import com.ichi2.utils.title
 import com.ichi2.widget.WidgetStatus.updateInBackground
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -152,6 +159,7 @@ open class Reviewer :
     private var showRemainingCardCount = false
     private var stopTimerOnAnswer = false
     private val actionButtons = ActionButtons()
+    private val hardwareInputProcessor = HardwareInputProcessor(this) { shownCardSide }
 
     private lateinit var addNoteLauncher: ActivityResultLauncher<Intent>
 
@@ -176,7 +184,6 @@ open class Reviewer :
         val coordinatorLayout =
             CoordinatorLayout(this).apply {
                 id = R.id.root_layout
-                isFocusable = true
                 isFocusableInTouchMode = true
                 addView(
                     composeView,
@@ -272,6 +279,16 @@ open class Reviewer :
             }
         }
 
+        // #231: a tapped card WebView or type-answer field keeps focus and takes the D-pad and Space before the key bindings
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.state
+                    .map { it.cardDisplayIndex to it.isAnswerShown }
+                    .distinctUntilChanged()
+                    .collect { focusDefaultLayout() }
+            }
+        }
+
         // Initialize whiteboard controller directly (collection is already loaded from DeckPicker)
         whiteboardController = WhiteboardController(this, whiteboardViewModel, viewModel)
         whiteboardController.initialize()
@@ -285,6 +302,29 @@ open class Reviewer :
     /** The Compose reviewer tracks the shown side in its ViewModel, not in `displayAnswer`. */
     override val shownCardSide: CardSide
         get() = CardSide.fromAnswer(viewModel.state.value.isAnswerShown)
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (hardwareInputProcessor.onHandledKeyFollowUp(event)) return true
+        return super.dispatchKeyEvent(event)
+    }
+
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent,
+    ): Boolean {
+        if (!isTextEditorFocused && hardwareInputProcessor.onKeyEvent(event)) return true
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent?): Boolean =
+        hardwareInputProcessor.onGenericMotionEvent(event) || super.onGenericMotionEvent(event)
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) {
+            hardwareInputProcessor.clearHandledKeys()
+        }
+    }
 
     override fun onResume() {
         super.onResume()
@@ -928,6 +968,7 @@ open class Reviewer :
         prefShowETA = preferences.getBoolean("showETA", false)
         prefFullscreenReview = isFullScreenReview(preferences)
         actionButtons.setup(preferences)
+        hardwareInputProcessor.init(preferences)
         return preferences
     }
 

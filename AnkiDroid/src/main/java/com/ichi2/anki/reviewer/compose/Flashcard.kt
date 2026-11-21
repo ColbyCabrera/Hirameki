@@ -63,6 +63,7 @@ import timber.log.Timber
  * @param onLinkClick called with the URL of a tapped link that the page does not handle itself
  * @param modifier applied to the card's root layout
  * @param toolbarHeight the bottom padding of the card in dp, so the toolbar does not cover its end
+ * @param isWebViewFocusableInTouchMode whether tapping the card WebView should grant it touch focus
  */
 @Composable
 fun Flashcard(
@@ -74,6 +75,7 @@ fun Flashcard(
     onLinkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     toolbarHeight: Int = 0,
+    isWebViewFocusableInTouchMode: Boolean = false,
 ) {
     val context = LocalContext.current
     val currentOnLinkClick by rememberUpdatedState(onLinkClick)
@@ -86,7 +88,9 @@ fun Flashcard(
                 onLinkClick = { currentOnLinkClick(it) },
                 onGesture = { currentOnGesture(it) },
                 onCommandRun = { currentOnCommandConsumed(it) },
-            )
+            ).apply {
+                isFocusableInTouchMode = isWebViewFocusableInTouchMode
+            }
         }
     DisposableEffect(controller) { onDispose { controller.destroy() } }
 
@@ -103,6 +107,7 @@ fun Flashcard(
 
     val style = rememberCardPageStyle(toolbarHeight)
     SideEffect {
+        controller.isFocusableInTouchMode = isWebViewFocusableInTouchMode
         if (display.baseUrl.isNotEmpty()) {
             controller.update(display, style, isMediaAutoplayEnabled, javascriptCommand)
             coordinator.setTarget(display)

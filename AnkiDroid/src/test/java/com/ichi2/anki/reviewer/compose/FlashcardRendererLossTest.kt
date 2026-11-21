@@ -54,6 +54,7 @@ class FlashcardRendererLossTest : RobolectricTest() {
         val replacement = singleWebView()
         assertThat("a new WebView replaces the dead one", replacement, not(sameInstance(original)))
         assertThat("it loads the card page", shadowOf(replacement).lastLoadDataWithBaseURL?.baseUrl, equalTo(BASE_URL))
+        assertThat("recreated WebView keeps touch focus disabled", replacement.isFocusableInTouchMode, equalTo(false))
     }
 
     @Test

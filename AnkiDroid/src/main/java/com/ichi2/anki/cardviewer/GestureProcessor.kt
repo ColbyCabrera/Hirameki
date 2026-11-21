@@ -108,7 +108,7 @@ class GestureProcessor(
         val candidates = gesture?.let { bindings[it] } ?: return false
         val side = currentSide()
         for ((command, bindingSide) in candidates) {
-            if (bindingSide != CardSide.BOTH && bindingSide != side) continue
+            if (!bindingSide.appliesTo(side)) continue
             if (processor?.executeCommand(command, gesture) == true) return true
         }
         return false

@@ -101,6 +101,12 @@ open class SafeWebViewLayout :
             activeWebView?.scrollBarStyle = value
         }
 
+    var isWebViewFocusableInTouchMode: Boolean
+        get() = uncheckedWebView.isFocusableInTouchMode
+        set(value) {
+            activeWebView?.isFocusableInTouchMode = value
+        }
+
     override fun setBackgroundColor(color: Int) {
         super.setBackgroundColor(color)
         activeWebView?.setBackgroundColor(color)

@@ -14,6 +14,9 @@ enum class CardSide(
     BOTH(2),
     ;
 
+    /** Whether a binding for this side applies while [shownSide] ([QUESTION] or [ANSWER]) is displayed. */
+    fun appliesTo(shownSide: CardSide): Boolean = this == BOTH || this == shownSide
+
     companion object {
         fun fromAnswer(displayingAnswer: Boolean): CardSide = if (displayingAnswer) ANSWER else QUESTION
     }
