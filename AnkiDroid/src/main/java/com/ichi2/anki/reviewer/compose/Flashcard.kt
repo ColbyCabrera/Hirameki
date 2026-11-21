@@ -88,9 +88,7 @@ fun Flashcard(
                 onLinkClick = { currentOnLinkClick(it) },
                 onGesture = { currentOnGesture(it) },
                 onCommandRun = { currentOnCommandConsumed(it) },
-            ).apply {
-                isFocusableInTouchMode = isWebViewFocusableInTouchMode
-            }
+            )
         }
     DisposableEffect(controller) { onDispose { controller.destroy() } }
 

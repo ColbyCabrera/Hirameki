@@ -22,44 +22,14 @@ class HardwareInputProcessor(
 ) {
     private var bindingMap: BindingMap<ReviewerBinding, ViewerCommand>? = null
 
-    private val keysHandledOnPress = mutableSetOf<Int>()
-
     fun init(preferences: SharedPreferences) {
-        clearHandledKeys()
         bindingMap =
             BindingMap(preferences, ViewerCommand.entries) { command, binding ->
                 binding.side.appliesTo(currentSide()) && processor.executeCommand(command, fromGesture = null)
             }
     }
 
-    /** Drops any in-flight pressed keys, e.g. when the window loses focus before ACTION_UP arrives. */
-    fun clearHandledKeys() {
-        keysHandledOnPress.clear()
-    }
-
-    /** Consumes repeats and the release of a press this processor handled, before focused views see them. */
-    fun onHandledKeyFollowUp(event: KeyEvent): Boolean =
-        when {
-            event.action == KeyEvent.ACTION_UP -> keysHandledOnPress.remove(event.keyCode)
-            event.action == KeyEvent.ACTION_DOWN && event.repeatCount > 0 -> event.keyCode in keysHandledOnPress
-            else -> false
-        }
-
-    /** A handled press also consumes its repeats and release, so the release can't fall back to Back. */
-    fun onKeyEvent(event: KeyEvent): Boolean =
-        when {
-            event.action != KeyEvent.ACTION_DOWN || event.repeatCount > 0 -> onHandledKeyFollowUp(event)
-            else -> runBoundCommand(event).also { handled -> trackPress(event.keyCode, handled) }
-        }
-
-    private fun runBoundCommand(press: KeyEvent): Boolean = bindingMap?.onKeyDown(press) == true
-
-    private fun trackPress(
-        keyCode: Int,
-        handled: Boolean,
-    ) {
-        if (handled) keysHandledOnPress += keyCode else keysHandledOnPress -= keyCode
-    }
+    fun onKeyDown(event: KeyEvent): Boolean = bindingMap?.onKeyDown(event) == true
 
     fun onGenericMotionEvent(event: MotionEvent?): Boolean = bindingMap?.onGenericMotionEvent(event) == true
 }
