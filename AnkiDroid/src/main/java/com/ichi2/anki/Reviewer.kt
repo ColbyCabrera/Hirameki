@@ -303,18 +303,18 @@ open class Reviewer :
     override val shownCardSide: CardSide
         get() = CardSide.fromAnswer(viewModel.state.value.isAnswerShown)
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (hardwareInputProcessor.onHandledKeyFollowUp(event)) return true
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onKeyDown(
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        if ((event.repeatCount > 0 || !isTextEditorFocused) && hardwareInputProcessor.onKeyEvent(event)) return true
+        if (!isTextEditorFocused && hardwareInputProcessor.onKeyEvent(event)) return true
         return super.onKeyDown(keyCode, event)
     }
-
-    override fun onKeyUp(
-        keyCode: Int,
-        event: KeyEvent,
-    ): Boolean = hardwareInputProcessor.onKeyEvent(event) || super.onKeyUp(keyCode, event)
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean =
         hardwareInputProcessor.onGenericMotionEvent(event) || super.onGenericMotionEvent(event)
