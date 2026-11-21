@@ -49,6 +49,14 @@ class CardWebViewController(
     private var display: CardDisplay? = null
     private lateinit var style: CardPageStyle
     private var isMediaAutoplayEnabled = false
+
+    /** Matches upstream AbstractFlashcardViewer: keep touch focus off the WebView unless the card uses an HTML input. */
+    var isFocusableInTouchMode: Boolean = false
+        set(value) {
+            field = value
+            layout.isWebViewFocusableInTouchMode = value
+        }
+
     private var command: ReviewerJavascriptCommand? = null
     private var lastRunCommandId: Int? = null
 
@@ -186,6 +194,7 @@ class CardWebViewController(
         initialScale = if (isRobolectric) 1f else layout.scale
         scale = initialScale
         with(layout) {
+            isWebViewFocusableInTouchMode = this@CardWebViewController.isFocusableInTouchMode
             settings.javaScriptEnabled = true
             settings.allowFileAccess = true
             settings.domStorageEnabled = true

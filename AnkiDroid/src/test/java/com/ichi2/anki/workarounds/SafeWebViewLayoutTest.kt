@@ -321,6 +321,19 @@ class SafeWebViewLayoutTest : RobolectricTest() {
         }
     }
 
+    @Test
+    fun `isWebViewFocusableInTouchMode forwards to the inner WebView`() {
+        withHost { layout, _ ->
+            layout.isWebViewFocusableInTouchMode = false
+            assertThat(layout.requireWebView().isFocusableInTouchMode, equalTo(false))
+            assertThat(layout.isWebViewFocusableInTouchMode, equalTo(false))
+
+            layout.isWebViewFocusableInTouchMode = true
+            assertThat(layout.requireWebView().isFocusableInTouchMode, equalTo(true))
+            assertThat(layout.isWebViewFocusableInTouchMode, equalTo(true))
+        }
+    }
+
     private fun withHost(block: (SafeWebViewLayout, SafeWebViewLayoutHostFragment) -> Unit) {
         launchFragmentInContainer<SafeWebViewLayoutHostFragment>().use { scenario ->
             scenario.onFragment { fragment -> block(fragment.layout, fragment) }

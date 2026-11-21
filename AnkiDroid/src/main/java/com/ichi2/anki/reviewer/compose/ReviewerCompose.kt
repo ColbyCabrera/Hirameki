@@ -383,6 +383,7 @@ fun ReviewerContent(
                             viewModel.onEvent(ReviewerEvent.LinkClicked(it))
                         },
                         toolbarHeight = (toolbarHeightDp + WhiteboardBottomBarOffset).value.toInt(),
+                        isWebViewFocusableInTouchMode = viewModel.typeAnswer.useInputTag,
                     )
 
                     // Whiteboard canvas and toolbar
