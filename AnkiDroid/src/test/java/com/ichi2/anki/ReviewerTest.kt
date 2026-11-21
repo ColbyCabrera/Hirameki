@@ -30,7 +30,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
 import org.robolectric.Shadows
+import org.robolectric.shadows.ShadowMediaPlayer
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
@@ -334,6 +336,35 @@ class ReviewerTest : RobolectricTest() {
             advanceRobolectricLooper()
 
             assertTrue(reviewer.findViewById<ViewGroup>(R.id.root_layout).isFocused)
+        }
+
+    @Test
+    fun `resuming the same card preserves editor focus`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            ShadowMediaPlayer.setMediaInfoProvider { ShadowMediaPlayer.MediaInfo(1, 0) }
+            val controller =
+                Robolectric
+                    .buildActivity(Reviewer::class.java, Intent())
+                    .create()
+                    .start()
+                    .resume()
+                    .visible()
+            val reviewer = controller.get()
+            reviewer.onCollectionLoaded(col)
+            waitForCard(reviewer)
+
+            val editor = EditText(reviewer)
+            reviewer.focusTextField(editor)
+            assertTrue(editor.isFocused, "editor focused before stop")
+
+            controller.pause().stop()
+            advanceRobolectricLooper()
+            controller.restart().start().resume()
+            advanceRobolectricLooper()
+
+            assertTrue(editor.isFocused, "editor keeps focus across stop/start of the same card")
+            assertFalse(reviewer.findViewById<ViewGroup>(R.id.root_layout).isFocused)
         }
 
     @Test

@@ -279,13 +279,19 @@ open class Reviewer :
             }
         }
 
-        // #231: a tapped card WebView or type-answer field keeps focus and takes the D-pad and Space before the key bindings
+        // #231: return focus to root_layout when the card or shown side changes (not on stop/start of the same side)
         lifecycleScope.launch {
+            var lastFocusedCardSide: Pair<Long, Boolean>? = null
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state
                     .map { it.cardDisplayIndex to it.isAnswerShown }
                     .distinctUntilChanged()
-                    .collect { focusDefaultLayout() }
+                    .collect { cardSide ->
+                        if (cardSide != lastFocusedCardSide) {
+                            lastFocusedCardSide = cardSide
+                            focusDefaultLayout()
+                        }
+                    }
             }
         }
 
