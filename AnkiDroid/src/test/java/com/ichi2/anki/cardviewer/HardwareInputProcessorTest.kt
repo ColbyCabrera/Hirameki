@@ -69,6 +69,17 @@ class HardwareInputProcessorTest : ViewerCommand.CommandProcessor {
     }
 
     @Test
+    fun `onHandledKeyFollowUp ignores fresh presses and consumes tracked repeats and release`() {
+        assertFalse(sut.onHandledKeyFollowUp(press(KeyEvent.KEYCODE_BUTTON_B)), "fresh press untouched")
+        assertTrue(executedCommands.isEmpty())
+
+        assertTrue(sut.onKeyEvent(press(KeyEvent.KEYCODE_BUTTON_B)))
+        assertTrue(sut.onHandledKeyFollowUp(press(KeyEvent.KEYCODE_BUTTON_B, repeatCount = 1)), "tracked repeat")
+        assertTrue(sut.onHandledKeyFollowUp(release(KeyEvent.KEYCODE_BUTTON_B)), "tracked release")
+        assertFalse(sut.onHandledKeyFollowUp(release(KeyEvent.KEYCODE_BUTTON_B)), "cleared after release")
+    }
+
+    @Test
     fun `an unbound key passes through`() {
         assertFalse(sut.onKeyEvent(press(KeyEvent.KEYCODE_DPAD_UP)), "press")
         assertFalse(sut.onKeyEvent(release(KeyEvent.KEYCODE_DPAD_UP)), "release")

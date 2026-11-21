@@ -231,34 +231,62 @@ class ReviewerTest : RobolectricTest() {
     fun `repeats and release of a handled press stay consumed after an editor takes focus`() =
         runTest {
             val note = addBasicNote("Front", "Back")
-            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_F2))
-            ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_F3))
+            ViewerCommand.SHOW_ANSWER.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_J))
+            ViewerCommand.FLIP_OR_ANSWER_EASE3.addBinding(getPreferences(), keyBinding(KeyEvent.KEYCODE_K))
             val reviewer = startReviewer(this@ReviewerTest)
             waitForCard(reviewer)
 
-            assertTrue(reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2)), "initial press")
+            assertTrue(reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_J)), "initial press")
             advanceRobolectricLooper()
             assertTrue(reviewer.viewModel.state.value.isAnswerShown)
 
-            reviewer.focusNewTextField()
+            var editorSawFreshPress = false
+            var editorSawRepeat = false
+            var editorSawRelease = false
+            val editor =
+                object : EditText(reviewer) {
+                    override fun onKeyDown(
+                        keyCode: Int,
+                        event: KeyEvent,
+                    ): Boolean {
+                        if (event.repeatCount > 0) editorSawRepeat = true else editorSawFreshPress = true
+                        return true
+                    }
+
+                    override fun onKeyUp(
+                        keyCode: Int,
+                        event: KeyEvent,
+                    ): Boolean {
+                        editorSawRelease = true
+                        return true
+                    }
+                }
+            reviewer.focusTextField(editor)
 
             assertTrue(
-                reviewer.dispatchKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F2, 1)),
-                "repeat consumed after focus change",
+                reviewer.dispatchKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_J, 1)),
+                "repeat consumed before editor",
             )
+            assertFalse(editorSawRepeat, "editor did not receive repeat of handled press")
+
             assertTrue(
-                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F2)),
-                "release consumed and cleared",
+                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_J)),
+                "release consumed and cleared before editor",
             )
-            assertFalse(
-                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_F2)),
-                "second release not consumed",
+            assertFalse(editorSawRelease, "editor did not receive release of handled press")
+
+            assertTrue(
+                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_J)),
+                "subsequent release reaches editor after key was cleared",
             )
-            assertFalse(
-                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F3)),
-                "fresh bound press ignored while editor focused",
+            assertTrue(editorSawRelease, "key was cleared so subsequent release reached editor")
+
+            assertTrue(
+                reviewer.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_K)),
+                "fresh bound press reaches focused editor",
             )
             advanceRobolectricLooper()
+            assertTrue(editorSawFreshPress, "editor received fresh press")
             assertEquals(0, note.firstCard(col).reps)
         }
 
@@ -359,8 +387,9 @@ class ReviewerTest : RobolectricTest() {
         return pressConsumed && releaseConsumed
     }
 
-    private fun Reviewer.focusNewTextField() {
-        val textField = EditText(this)
+    private fun Reviewer.focusNewTextField() = focusTextField(EditText(this))
+
+    private fun Reviewer.focusTextField(textField: EditText) {
         findViewById<ViewGroup>(R.id.root_layout).addView(textField)
         advanceRobolectricLooper()
         assertTrue(textField.requestFocus(), "text field focused")

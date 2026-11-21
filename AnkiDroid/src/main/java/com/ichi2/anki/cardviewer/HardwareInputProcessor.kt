@@ -37,12 +37,18 @@ class HardwareInputProcessor(
         keysHandledOnPress.clear()
     }
 
+    /** Consumes repeats and the release of a press this processor handled, before focused views see them. */
+    fun onHandledKeyFollowUp(event: KeyEvent): Boolean =
+        when {
+            event.action == KeyEvent.ACTION_UP -> keysHandledOnPress.remove(event.keyCode)
+            event.action == KeyEvent.ACTION_DOWN && event.repeatCount > 0 -> event.keyCode in keysHandledOnPress
+            else -> false
+        }
+
     /** A handled press also consumes its repeats and release, so the release can't fall back to Back. */
     fun onKeyEvent(event: KeyEvent): Boolean =
         when {
-            event.action == KeyEvent.ACTION_UP -> keysHandledOnPress.remove(event.keyCode)
-            event.action != KeyEvent.ACTION_DOWN -> false
-            event.repeatCount > 0 -> event.keyCode in keysHandledOnPress
+            event.action != KeyEvent.ACTION_DOWN || event.repeatCount > 0 -> onHandledKeyFollowUp(event)
             else -> runBoundCommand(event).also { handled -> trackPress(event.keyCode, handled) }
         }
 
