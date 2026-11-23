@@ -3,46 +3,53 @@
 
 package com.ichi2.anki.previewer
 
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import androidx.appcompat.R as AppCompatR
-import com.google.android.material.R as MaterialR
 
 class PreviewerHelpersTest {
-    private val colors =
-        mapOf(
-            android.R.attr.colorBackground to 0xFF000001.toInt(),
-            android.R.attr.textColor to 0xFF000002.toInt(),
-            AppCompatR.attr.colorPrimary to 0xFF000003.toInt(),
-            MaterialR.attr.colorOnPrimary to 0xFF000004.toInt(),
-            MaterialR.attr.colorSecondary to 0xFF000005.toInt(),
-            MaterialR.attr.colorOnSecondary to 0xFF000006.toInt(),
-            MaterialR.attr.colorSurface to 0xFF000009.toInt(),
-            MaterialR.attr.colorOnSurface to 0xFF00000A.toInt(),
-            MaterialR.attr.colorOnBackground to 0xFF00000B.toInt(),
-        )
-
-    private fun resolveColor(attr: Int): Int = colors.getValue(attr)
+    private val themeColors = mapOf("--ankidroid-color-primary" to "#000003")
 
     @Test
     fun `day mode targets plain root`() {
-        val css = rootColorsCss(nightMode = false, ::resolveColor)
+        val css = rootColorsCss(nightMode = false, "#000001", "#000002", themeColors)
         assertTrue(css.startsWith(":root {"), css)
     }
 
     @Test
     fun `night mode targets night-mode root`() {
-        val css = rootColorsCss(nightMode = true, ::resolveColor)
+        val css = rootColorsCss(nightMode = true, "#000001", "#000002", themeColors)
         assertTrue(css.startsWith(":root[class*=night-mode] {"), css)
     }
 
     @Test
-    fun `variables are resolved from the matching theme attributes`() {
-        val expected =
+    fun `root declares the canvas, foreground and theme colors`() {
+        val css = rootColorsCss(nightMode = false, "#000001", "#000002", themeColors)
+
+        assertEquals(
+            mapOf("--canvas" to "#000001", "--fg" to "#000002", "--ankidroid-color-primary" to "#000003"),
+            parseVariables(css),
+        )
+    }
+
+    @Test
+    fun `theme color variables come from the matching color scheme roles`() {
+        val colors =
+            lightColorScheme(
+                primary = Color(0xFF000003),
+                onPrimary = Color(0xFF000004),
+                secondary = Color(0xFF000005),
+                onSecondary = Color(0xFF000006),
+                surface = Color(0xFF000009),
+                onSurface = Color(0xFF00000A),
+                background = Color(0xFF000001),
+                onBackground = Color(0xFF00000B),
+            )
+
+        assertEquals(
             mapOf(
-                "--canvas" to "#000001",
-                "--fg" to "#000002",
                 "--ankidroid-color-primary" to "#000003",
                 "--ankidroid-color-on-primary" to "#000004",
                 "--ankidroid-color-secondary" to "#000005",
@@ -51,11 +58,9 @@ class PreviewerHelpersTest {
                 "--ankidroid-color-on-surface" to "#00000A",
                 "--ankidroid-color-background" to "#000001",
                 "--ankidroid-color-on-background" to "#00000B",
-            )
-
-        val css = rootColorsCss(nightMode = false, ::resolveColor)
-
-        assertEquals(expected, parseVariables(css))
+            ),
+            themeColorVariables(colors),
+        )
     }
 
     private fun parseVariables(css: String): Map<String, String> =
