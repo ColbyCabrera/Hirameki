@@ -26,7 +26,7 @@ internal object CardPage {
         style: CardPageStyle,
     ): String {
         val styleElement = """<style id="$STYLE_ELEMENT_ID">${style.css()}</style>"""
-        return stdHtml(context, EXTRA_JS_ASSETS, style.isNightMode)
+        return stdHtml(context, EXTRA_JS_ASSETS, style.isNightMode, style.themeColorVariables)
             .replace("</head>", "$EXTRAS_CSS_LINK\n$styleElement\n</head>")
     }
 
@@ -61,11 +61,16 @@ internal object CardPage {
             NIGHT_MODE_BODY_CLASSES.joinToString(" ") {
                 "document.body.classList.toggle(${jsString(it)}, ${style.isNightMode});"
             }
+        val themeColorUpdates =
+            style.themeColorVariables.entries.joinToString(" ") { (name, value) ->
+                "document.documentElement.style.setProperty(${jsString(name)}, ${jsString(value)});"
+            }
         return """
             document.documentElement.classList.toggle("night-mode", ${style.isNightMode});
             document.documentElement.setAttribute("data-bs-theme", ${jsString(theme)});
             document.getElementById(${jsString(STYLE_ELEMENT_ID)}).textContent = ${jsString(style.css())};
             $bodyClassToggles
+            $themeColorUpdates
             """.trimIndent()
     }
 

@@ -22,6 +22,8 @@ data class CardPageStyle(
     val surfaceContainerColor: String,
     val primaryColor: String,
     val outlineColor: String,
+    /** See [com.ichi2.anki.previewer.themeColorVariables]. */
+    val themeColorVariables: Map<String, String>,
     val question: CardSideStyle,
     val answer: CardSideStyle,
     val toolbarHeightPx: Int,

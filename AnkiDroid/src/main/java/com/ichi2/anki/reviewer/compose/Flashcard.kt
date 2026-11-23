@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.viewinterop.AndroidView
 import com.ichi2.anki.R
 import com.ichi2.anki.preferences.sharedPrefs
+import com.ichi2.anki.previewer.themeColorVariables
 import com.ichi2.anki.reviewer.ReviewerJavascriptCommand
 import com.ichi2.anki.reviewer.card.CardDisplay
 import com.ichi2.anki.reviewer.card.CardPageStyle
@@ -178,6 +179,7 @@ private fun rememberCardPageStyle(toolbarHeight: Int): CardPageStyle {
             surfaceContainerColor = colors.surfaceContainer.toHex(),
             primaryColor = colors.primary.toHex(),
             outlineColor = colors.outline.toHex(),
+            themeColorVariables = themeColorVariables(colors),
             question = typography.displayMedium.copy(fontWeight = FontWeight.W500).toCardSideStyle(paddingTopPx = 36),
             answer = typography.titleLarge.toCardSideStyle(paddingTopPx = 40),
             toolbarHeightPx = toolbarHeight,

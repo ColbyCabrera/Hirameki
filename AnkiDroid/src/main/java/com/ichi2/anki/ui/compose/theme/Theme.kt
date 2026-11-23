@@ -8,6 +8,7 @@ import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
@@ -44,6 +45,11 @@ val AppShapes =
         extraLarge = RoundedCornerShape(32.dp), // Expressive: For prominent elements like FABs or hero containers
     )
 
+fun appColorScheme(
+    context: Context,
+    isNightMode: Boolean,
+): ColorScheme = if (isNightMode) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+
 @Composable
 fun AnkiDroidTheme(
     harmonizeRatings: Boolean = true,
@@ -52,12 +58,7 @@ fun AnkiDroidTheme(
     val context = LocalContext.current
     val currentAnkiTheme = Themes.currentTheme
     val isNightMode = currentAnkiTheme.isNightMode
-    val colorScheme =
-        if (isNightMode) {
-            dynamicDarkColorScheme(context)
-        } else {
-            dynamicLightColorScheme(context)
-        }
+    val colorScheme = appColorScheme(context, isNightMode)
 
     // In preview mode there is no AnkiDroidApp instance for Prefs to read, so keep the default typography.
     val isPreview = LocalInspectionMode.current

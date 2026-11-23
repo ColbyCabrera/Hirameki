@@ -29,6 +29,7 @@ class CardPageTest {
             surfaceContainerColor = "#333333",
             primaryColor = "#444444",
             outlineColor = "#555555",
+            themeColorVariables = mapOf("--ankidroid-color-primary" to "#444444"),
             question = CardSideStyle(45f, 52f, 0f, 500, 36),
             answer = CardSideStyle(22f, 28f, 0f, 400, 40),
             toolbarHeightPx = 80,
@@ -131,5 +132,12 @@ class CardPageTest {
     @Test
     fun `an edited card is a different card`() {
         assertThat(question.isSameCardAs(question.copy(questionHtml = "<p>Edited</p>")), equalTo(false))
+    }
+
+    @Test
+    fun `a theme change updates the template-facing color variables in place`() {
+        val script = CardPage.styleUpdateScript(style.copy(themeColorVariables = mapOf("--ankidroid-color-primary" to "#ABCDEF")))
+
+        assertThat(script, containsString("""documentElement.style.setProperty("--ankidroid-color-primary", "#ABCDEF")"""))
     }
 }
