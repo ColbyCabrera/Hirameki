@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2022 Ankitects Pty Ltd <http://apps.ankiweb.net>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Soumya Ranjan Nanda <srnranjan2005@gmail.com>
 
 package com.ichi2.anki
 
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.lifecycleScope
 import anki.backend.backendError
 import anki.collection.Progress
@@ -130,6 +132,15 @@ fun DeckPicker.handleNewSync(
             // auth failed; log out
             updateLogin("", "")
             throw exc
+        } catch (exc: BackendSyncException) {
+            if (exc.isCollectionTooLargeException()) {
+                deckPicker.showSyncErrorDialog(
+                    SyncErrorDialog.Type.DIALOG_COLLECTION_TOO_LARGE,
+                    exc.localizedMessage,
+                )
+                return@launchCatchingTask
+            }
+            throw exc
         } catch (exc: BackendNetworkException) {
             Timber.w(exc, "Network error during sync")
             deckPicker.viewModel.setShowNetworkErrorDialog(true)
@@ -139,6 +150,13 @@ fun DeckPicker.handleNewSync(
         }
     }
 }
+
+private val collectionTooLargeDetailsRegex =
+    Regex("""\b\d+(?:\.\d{2})?(?: MB)? > \d+(?:\.\d{2})?(?: MB)?\b""")
+
+@VisibleForTesting
+internal fun BackendSyncException.isCollectionTooLargeException(): Boolean =
+    message?.let { collectionTooLargeDetailsRegex.containsMatchIn(it) } == true
 
 fun updateLogin(
     username: String,

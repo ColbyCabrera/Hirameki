@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2015 Timothy Rae <perceptualchaos2@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Soumya Ranjan Nanda <srnranjan2005@gmail.com>
 
 package com.ichi2.anki.dialogs
 
@@ -12,6 +13,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.ConflictResolution
 import com.ichi2.anki.R
+import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_COLLECTION_TOO_LARGE
 import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_CONNECTION_ERROR
 import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_MEDIA_SYNC_ERROR
 import com.ichi2.anki.dialogs.SyncErrorDialog.Type.DIALOG_SYNC_BASIC_CHECK_ERROR
@@ -172,6 +174,15 @@ class SyncErrorDialog : AsyncDialogFragment() {
                     }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }
                     .create()
             }
+
+            DIALOG_COLLECTION_TOO_LARGE -> {
+                dialog
+                    .setPositiveButton(R.string.check_db) { _, _ ->
+                        requireSyncErrorDialogListener().integrityCheck()
+                        activity?.dismissAllDialogFragments()
+                    }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }
+                    .create()
+            }
         }
     }
 
@@ -193,6 +204,7 @@ class SyncErrorDialog : AsyncDialogFragment() {
                 DIALOG_MEDIA_SYNC_ERROR,
                 DIALOG_SYNC_CORRUPT_COLLECTION,
                 DIALOG_SYNC_BASIC_CHECK_ERROR,
+                DIALOG_COLLECTION_TOO_LARGE,
                 -> res().getString(R.string.sync_error)
             }
 
@@ -298,7 +310,8 @@ class SyncErrorDialog : AsyncDialogFragment() {
         DIALOG_SYNC_CORRUPT_COLLECTION(
             9,
         ),
-        DIALOG_SYNC_BASIC_CHECK_ERROR(10), ;
+        DIALOG_SYNC_BASIC_CHECK_ERROR(10),
+        DIALOG_COLLECTION_TOO_LARGE(12), ;
 
         companion object {
             fun fromCode(code: Int) = Type.entries.first { code == it.code }
