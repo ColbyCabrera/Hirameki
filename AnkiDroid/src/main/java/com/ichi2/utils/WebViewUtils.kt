@@ -40,6 +40,17 @@ fun checkWebviewVersion(activity: AnkiActivity) {
 }
 
 /**
+ * Why the WebView can't run the Anki pages
+ *
+ * @param message tells the user to update the WebView
+ * @param learnMoreUrl explains how to update it
+ */
+class OutdatedWebView(
+    val message: String,
+    @StringRes val learnMoreUrl: Int,
+)
+
+/**
  * Shows a dialog if the current WebView version is older than the last supported version,
  * or if it lacks the APIs used by [PostRequestBridge], as non-Google WebViews may.
  */
@@ -47,28 +58,37 @@ fun showDialogIfWebViewOutdated(
     context: Context,
     onOutdated: () -> Unit = {},
 ): Boolean {
-    if (WebViewCompat.getCurrentWebViewPackage(context) == null) return false
+    val outdatedWebView = findOutdatedWebView(context) ?: return false
+    showOutdatedWebViewDialog(context, outdatedWebView, onOutdated)
+    return true
+}
+
+/**
+ * @return why the WebView is older than the last supported version or lacks the APIs used by
+ * [PostRequestBridge], or `null` if it's supported or there's no WebView
+ */
+@MainThread
+fun findOutdatedWebView(context: Context): OutdatedWebView? {
+    if (WebViewCompat.getCurrentWebViewPackage(context) == null) return null
     val outdatedVersion = getChromeLikeWebViewVersionIfOutdated(context)
     val message =
         when {
             outdatedVersion != null ->
                 context.getString(R.string.webview_update_message, outdatedVersion, OLDEST_WORKING_WEBVIEW_VERSION)
             !PostRequestBridge.isSupported() -> context.getString(R.string.webview_unsupported_message)
-            else -> return false
+            else -> return null
         }
 
-    // Provide guidance to the user if the WebView is outdated
     val webviewPackageInfo = getAndroidSystemWebViewPackageInfo(context.packageManager)
     val legacyWebViewPackageInfo = getLegacyWebViewPackageInfo(context.packageManager)
     // TODO modify the alert dialog text to handle the usage of developer builds for system WebView
-    if (legacyWebViewPackageInfo != null) {
+    return if (legacyWebViewPackageInfo != null) {
         Timber.w("WebView is outdated. %s: %s", legacyWebViewPackageInfo.packageName, legacyWebViewPackageInfo.versionName)
-        showOutdatedWebViewDialog(context, message, R.string.link_legacy_webview_update, onOutdated)
+        OutdatedWebView(message, R.string.link_legacy_webview_update)
     } else {
         Timber.w("WebView is outdated. %s: %s", webviewPackageInfo?.packageName, webviewPackageInfo?.versionName)
-        showOutdatedWebViewDialog(context, message, R.string.link_webview_update, onOutdated)
+        OutdatedWebView(message, R.string.link_webview_update)
     }
-    return true
 }
 
 @MainThread
@@ -135,14 +155,13 @@ fun checkWebViewVersionComponents(
 
 private fun showOutdatedWebViewDialog(
     context: Context,
-    message: String,
-    @StringRes learnMoreUrl: Int,
-    onDismiss: () -> Unit = {},
+    outdatedWebView: OutdatedWebView,
+    onDismiss: () -> Unit,
 ) {
     MaterialAlertDialogBuilder(context).show {
-        setMessage(message)
+        setMessage(outdatedWebView.message)
         setPositiveButton(R.string.scoped_storage_learn_more) { _, _ ->
-            context.openUrl(learnMoreUrl)
+            context.openUrl(outdatedWebView.learnMoreUrl)
         }
         setOnDismissListener { onDismiss() }
     }
