@@ -17,11 +17,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,8 +46,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ichi2.anki.R
 import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
+import com.ichi2.anki.utils.openUrl
 import com.ichi2.themes.Themes
-import com.ichi2.utils.showDialogIfWebViewOutdated
+import com.ichi2.utils.OutdatedWebView
+import com.ichi2.utils.findOutdatedWebView
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 
@@ -73,10 +77,7 @@ fun PageWebView(
     topBarActions: @Composable (RowScope.() -> Unit)? = null, // NEW
 ) {
     val context = LocalContext.current
-    val isOutdated =
-        remember(context, onNavigateUp) {
-            showDialogIfWebViewOutdated(context, onOutdated = onNavigateUp)
-        }
+    val outdatedWebView = remember(context) { findOutdatedWebView(context) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -95,17 +96,40 @@ fun PageWebView(
                     .fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            if (!isOutdated) {
+            if (outdatedWebView == null) {
                 PageWebViewInternal(
                     path = path,
                     postRequestHandler = viewModel,
                     jsCommands = jsCommands,
                 )
             } else {
-                Timber.w("PageWebView requires modern WebView version, aborting load")
+                OutdatedWebViewDialog(outdatedWebView, onDismissRequest = onNavigateUp)
             }
         }
     }
+}
+
+/** The pages can't send requests without [PostRequestBridge], which requires a modern WebView */
+@Composable
+private fun OutdatedWebViewDialog(
+    outdatedWebView: OutdatedWebView,
+    onDismissRequest: () -> Unit,
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        text = { Text(outdatedWebView.message) },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    context.openUrl(outdatedWebView.learnMoreUrl)
+                    onDismissRequest()
+                },
+            ) {
+                Text(stringResource(R.string.scoped_storage_learn_more))
+            }
+        },
+    )
 }
 
 @Composable
