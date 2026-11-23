@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2023 Ashish Yadav <mailtoashish693@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2023, 2026 Ashish Yadav <mailtoashish693@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
 
 package com.ichi2.anki.multimedia.audio
@@ -27,6 +27,7 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.ichi2.anki.R
 import com.ichi2.anki.Reviewer
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.time.formatAsString
 import com.ichi2.anki.multimedia.AudioVideoFragment
 import com.ichi2.anki.multimedia.MultimediaViewModel
@@ -49,6 +50,7 @@ import timber.log.Timber
 import java.io.File
 import java.io.IOException
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 
 // TODO : stop audio time view flickering
@@ -740,11 +742,32 @@ class AudioRecordingController(
         private var inEditField: Boolean = true
         const val DEFAULT_TIME = "00:00.00"
         const val JUMP_VALUE = 500
+        const val RECORDINGS_DIRECTORY = "recordings"
+        private const val FILE_PREFIX = "ankidroid_audiorec"
+        private const val FILE_SUFFIX = ".3gp"
+        private val RECORDING_RETENTION = 7.days
+
+        fun recordingsDirectory(context: Context): File = File(context.noBackupFilesDir, RECORDINGS_DIRECTORY)
+
+        fun removeExpiredRecordings(
+            directory: File,
+            now: Long = TimeManager.time.intTimeMS(),
+        ) {
+            val cutoff = now - RECORDING_RETENTION.inWholeMilliseconds
+            directory
+                .listFiles { _, name -> name.startsWith(FILE_PREFIX) && name.endsWith(FILE_SUFFIX) }
+                ?.forEach { file ->
+                    val modified = file.lastModified()
+                    if (file.isFile && modified > 0 && modified < cutoff && !file.delete()) {
+                        Timber.w("Could not delete %s", file)
+                    }
+                }
+        }
 
         fun generateTempAudioFile(context: Context) =
             try {
-                val storingDirectory = context.cacheDir
-                File.createTempFile("ankidroid_audiorec", ".3gp", storingDirectory)
+                val storingDirectory = recordingsDirectory(context).apply { mkdirs() }
+                File.createTempFile(FILE_PREFIX, FILE_SUFFIX, storingDirectory)
             } catch (e: IOException) {
                 Timber.w(e, "Could not create temporary audio file.")
                 null
