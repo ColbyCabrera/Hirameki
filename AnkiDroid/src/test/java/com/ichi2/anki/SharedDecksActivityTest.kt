@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki
 
@@ -22,7 +23,9 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 
 @RunWith(AndroidJUnit4::class)
 class SharedDecksActivityTest : RobolectricTest() {
@@ -111,5 +114,96 @@ class SharedDecksActivityTest : RobolectricTest() {
         val lastUrl = shadowWebView.lastLoadedUrl
         assertNotEquals("Search should have triggered a new load", initialLast, lastUrl)
         assertEquals("https://ankiweb.net/shared/decks?search=kanji", lastUrl)
+    }
+
+    @Test
+    fun `rapid download callbacks start only one download`() {
+        val controller = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent())
+        controller.setup()
+        val activity = controller.get()
+        val webView = requireNotNull(activity.findViewById<SafeWebViewLayout>(R.id.media_check_webview).webView)
+        val downloadListener = shadowOf(webView).downloadListener
+
+        downloadListener.onDownloadStart(
+            "https://ankiweb.net/shared/info/12345678",
+            "AnkiDroid",
+            "attachment; filename=\"first.apkg\"",
+            "application/octet-stream",
+            0L,
+        )
+        downloadListener.onDownloadStart(
+            "https://ankiweb.net/svc/shared/download-deck/5678?t=key",
+            "AnkiDroid",
+            "attachment; filename=\"second.apkg\"",
+            "application/octet-stream",
+            0L,
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+
+        assertEquals(1, activity.supportFragmentManager.fragments.size)
+        assertEquals(1, activity.supportFragmentManager.backStackEntryCount)
+    }
+
+    @Test
+    fun `download callback keeps the existing download screen`() {
+        val controller = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent())
+        controller.setup()
+        val activity = controller.get()
+        val webView = requireNotNull(activity.findViewById<SafeWebViewLayout>(R.id.media_check_webview).webView)
+        val downloadListener = shadowOf(webView).downloadListener
+
+        downloadListener.onDownloadStart(
+            "https://ankiweb.net/shared/info/12345678",
+            "AnkiDroid",
+            "attachment; filename=\"first.apkg\"",
+            "application/octet-stream",
+            0L,
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+        val existing = activity.supportFragmentManager.fragments.single()
+
+        downloadListener.onDownloadStart(
+            "https://ankiweb.net/shared/info/12345678",
+            "AnkiDroid",
+            "attachment; filename=\"first.apkg\"",
+            "application/octet-stream",
+            0L,
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+
+        assertSame(existing, activity.supportFragmentManager.fragments.single())
+        assertEquals(1, activity.supportFragmentManager.backStackEntryCount)
+    }
+
+    @Test
+    fun `download can start while closing the previous download screen is pending`() {
+        val controller = Robolectric.buildActivity(SharedDecksActivity::class.java, Intent())
+        controller.setup()
+        val activity = controller.get()
+        val webView = requireNotNull(activity.findViewById<SafeWebViewLayout>(R.id.media_check_webview).webView)
+        val downloadListener = shadowOf(webView).downloadListener
+
+        downloadListener.onDownloadStart(
+            "https://ankiweb.net/shared/info/12345678",
+            "AnkiDroid",
+            "attachment; filename=\"first.apkg\"",
+            "application/octet-stream",
+            0L,
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+        val first = activity.supportFragmentManager.fragments.single()
+
+        activity.supportFragmentManager.popBackStack()
+        downloadListener.onDownloadStart(
+            "https://ankiweb.net/svc/shared/download-deck/5678?t=key",
+            "AnkiDroid",
+            "attachment; filename=\"second.apkg\"",
+            "application/octet-stream",
+            0L,
+        )
+        activity.supportFragmentManager.executePendingTransactions()
+
+        assertNotSame(first, activity.supportFragmentManager.fragments.single())
+        assertEquals(1, activity.supportFragmentManager.backStackEntryCount)
     }
 }

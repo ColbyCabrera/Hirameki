@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2021 Shridhar Goel <shridhar.goel@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki
 
@@ -387,6 +388,12 @@ class SharedDecksActivity :
             // If the activity/fragment lifecycle has already begun teardown process,
             // avoid handling the download, as FragmentManager.commit will throw
             if (!supportFragmentManager.isStateSaved) {
+                // A previous callback may have queued a fragment addition or removal.
+                supportFragmentManager.executePendingTransactions()
+                if (supportFragmentManager.findFragmentByTag(SHARED_DECKS_DOWNLOAD_FRAGMENT) != null) {
+                    Timber.w("Ignoring duplicate download start while download fragment is active")
+                    return@setDownloadListener
+                }
                 val sharedDecksDownloadFragment = SharedDecksDownloadFragment()
                 sharedDecksDownloadFragment.arguments =
                     Bundle().apply {
