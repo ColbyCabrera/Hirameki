@@ -12,7 +12,6 @@ import android.view.View
 import android.widget.EditText
 import androidx.core.content.withStyledAttributes
 import androidx.preference.EditTextPreference
-import androidx.preference.EditTextPreferenceDialogFragmentCompat
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.R
 import com.ichi2.anki.common.annotations.NeedsTest
@@ -152,7 +151,7 @@ open class NumberRangePreferenceCompat
             }
         }
 
-        open class NumberRangeDialogFragmentCompat : EditTextPreferenceDialogFragmentCompat() {
+        open class NumberRangeDialogFragmentCompat : MaterialEditTextPreferenceDialogFragment() {
             val numberRangePreference: NumberRangePreferenceCompat get() = preference as NumberRangePreferenceCompat
 
             lateinit var editText: EditText
