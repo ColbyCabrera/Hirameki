@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2023 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2023, 2026 David Allison <davidallisongithub@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 GuTS805 <alok020505@gmail.com>
 
 package com.ichi2.anki.browser
 
@@ -22,6 +23,7 @@ import anki.config.ConfigKey
 import anki.scheduler.CardAnswer.Rating
 import anki.search.BrowserColumns
 import anki.search.BrowserRow
+import anki.search.searchNode
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager
 import com.ichi2.anki.CollectionManager.TR
@@ -659,10 +661,16 @@ class CardBrowserViewModel(
             if (deckId == ALL_DECKS_ID) {
                 ""
             } else {
-                val deckName = withCol { decks.name(deckId) }
-                // Escape any quotes in the deck name to prevent search syntax errors
-                val escapedDeckName = deckName.replace("\"", "\\\"")
-                "deck:\"$escapedDeckName\""
+                withCol {
+                    val deckName = decks.name(deckId)
+                    // The backend escapes wildcards in deck names, except for a deck named exactly `_*`,
+                    // which would otherwise act as a wildcard matching every deck.
+                    if (deckName == "_*") {
+                        """deck:\_\*"""
+                    } else {
+                        buildSearchString(searchNode { deck = deckName })
+                    }
+                }
             }
         flowOfDeckId.update { deckId }
     }
@@ -1663,7 +1671,11 @@ class CardBrowserViewModel(
                 if (searchTerms.contains("deck:")) {
                     "($searchTerms)"
                 } else {
-                    if ("" != searchTerms) "$restrictOnDeck($searchTerms)" else restrictOnDeck
+                    if ("" != searchTerms) {
+                        if (restrictOnDeck.isNotEmpty()) "$restrictOnDeck ($searchTerms)" else "($searchTerms)"
+                    } else {
+                        restrictOnDeck
+                    }
                 }
 
             // update the UI while we're searching

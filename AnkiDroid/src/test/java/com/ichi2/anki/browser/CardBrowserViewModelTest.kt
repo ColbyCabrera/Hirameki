@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// SPDX-FileCopyrightText: Copyright (c) 2023 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2023, 2026 David Allison <davidallisongithub@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 GuTS805 <alok020505@gmail.com>
 
 package com.ichi2.anki.browser
 
@@ -1060,13 +1061,43 @@ class CardBrowserViewModelTest : JvmTest() {
         runViewModelTest {
             val deckWithQuotes = addDeck("Test\"Quotes\"In\"Deck")
             val deckName = col.decks.name(deckWithQuotes)
+            val expectedCard = addBasicNote("In quoted deck").apply { moveToDeck(deckName) }.firstCard()
+            addBasicNote("In other deck")
             setSelectedDeck(SelectableDeck.Deck(deckWithQuotes, deckName))
 
             assertThat(
                 "Quotes in deck name should be escaped with backslashes",
                 restrictOnDeck,
-                equalTo("deck:\"Test\\\"Quotes\\\"In\\\"Deck\""),
+                equalTo(col.buildSearchString(anki.search.searchNode { deck = deckName })),
             )
+            assertThat(col.findCards(restrictOnDeck), contains(expectedCard.id))
+        }
+
+    @Test
+    fun `deck filter - wildcards in deck name are escaped`() =
+        runViewModelTest {
+            val chapter1Id = addDeck("Chapter_1")
+            addDeck("Chapter11")
+            val selected = addBasicNote("In Chapter_1").apply { moveToDeck("Chapter_1") }.firstCard()
+            addBasicNote("In Chapter11").apply { moveToDeck("Chapter11") }
+
+            setSelectedDeck(SelectableDeck.Deck(chapter1Id, "Chapter_1"))
+
+            assertThat(restrictOnDeck, equalTo("""deck:Chapter\_1"""))
+            assertThat(col.findCards(restrictOnDeck), contains(selected.id))
+        }
+
+    @Test
+    fun `deck filter - a deck named underscore star is not a wildcard`() =
+        runViewModelTest {
+            val wildcardId = addDeck("_*")
+            val selected = addBasicNote("selected").apply { moveToDeck("_*") }.firstCard()
+            addBasicNote("unrelated")
+
+            setSelectedDeck(SelectableDeck.Deck(wildcardId, "_*"))
+
+            assertThat(restrictOnDeck, equalTo("""deck:\_\*"""))
+            assertThat(col.findCards(restrictOnDeck), contains(selected.id))
         }
 
     @Test
