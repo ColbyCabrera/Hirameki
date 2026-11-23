@@ -4,7 +4,6 @@
 package com.ichi2.anki.previewer
 
 import android.content.Context
-import androidx.appcompat.widget.ThemeUtils
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.toArgb
 import com.ichi2.anki.AnkiDroidApp
@@ -36,9 +35,7 @@ fun stdHtml(
     val baseTheme = if (nightMode) "dark" else "light"
     val docClass = if (nightMode) "night-mode" else ""
 
-    val canvasColor = ThemeUtils.getThemeAttrColor(context, android.R.attr.colorBackground).toRGBHex()
-    val fgColor = ThemeUtils.getThemeAttrColor(context, android.R.attr.textColor).toRGBHex()
-    val colors = rootColorsCss(nightMode, canvasColor, fgColor, themeColors)
+    val colors = rootColorsCss(nightMode, themeColors)
 
     val jsAssets: List<String> =
         listOf(
@@ -77,27 +74,30 @@ fun stdHtml(
 
 internal fun rootColorsCss(
     nightMode: Boolean,
-    canvasColor: String,
-    fgColor: String,
     themeColors: Map<String, String>,
 ): String {
     val rootNightMode = if (nightMode) "[class*=night-mode]" else ""
     val themeColorDeclarations = themeColors.entries.joinToString(" ") { (name, value) -> "$name: $value;" }
-    return ":root$rootNightMode { --canvas: $canvasColor; --fg: $fgColor; $themeColorDeclarations }"
+    return ":root$rootNightMode { $themeColorDeclarations }"
 }
 
-/** Lets card templates use the app's colors, such as `var(--ankidroid-color-primary)`. */
+/**
+ * The app's colors for card pages: Anki's `--canvas` and `--fg`, and
+ * `--ankidroid-color-*` for templates, such as `var(--ankidroid-color-primary)`.
+ */
 fun themeColorVariables(colors: ColorScheme): Map<String, String> =
     listOf(
-        "primary" to colors.primary,
-        "on-primary" to colors.onPrimary,
-        "secondary" to colors.secondary,
-        "on-secondary" to colors.onSecondary,
-        "surface" to colors.surface,
-        "on-surface" to colors.onSurface,
-        "background" to colors.background,
-        "on-background" to colors.onBackground,
-    ).associate { (name, color) -> "--ankidroid-color-$name" to color.toArgb().toRGBHex() }
+        "--canvas" to colors.surface,
+        "--fg" to colors.onSurface,
+        "--ankidroid-color-primary" to colors.primary,
+        "--ankidroid-color-on-primary" to colors.onPrimary,
+        "--ankidroid-color-secondary" to colors.secondary,
+        "--ankidroid-color-on-secondary" to colors.onSecondary,
+        "--ankidroid-color-surface" to colors.surface,
+        "--ankidroid-color-on-surface" to colors.onSurface,
+        "--ankidroid-color-background" to colors.background,
+        "--ankidroid-color-on-background" to colors.onBackground,
+    ).associate { (name, color) -> name to color.toArgb().toRGBHex() }
 
 /** @return body classes used when showing a card */
 fun bodyClassForCardOrd(

@@ -10,26 +10,26 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PreviewerHelpersTest {
-    private val themeColors = mapOf("--ankidroid-color-primary" to "#000003")
+    private val themeColors = mapOf("--canvas" to "#000001", "--ankidroid-color-primary" to "#000003")
 
     @Test
     fun `day mode targets plain root`() {
-        val css = rootColorsCss(nightMode = false, "#000001", "#000002", themeColors)
+        val css = rootColorsCss(nightMode = false, themeColors)
         assertTrue(css.startsWith(":root {"), css)
     }
 
     @Test
     fun `night mode targets night-mode root`() {
-        val css = rootColorsCss(nightMode = true, "#000001", "#000002", themeColors)
+        val css = rootColorsCss(nightMode = true, themeColors)
         assertTrue(css.startsWith(":root[class*=night-mode] {"), css)
     }
 
     @Test
-    fun `root declares the canvas, foreground and theme colors`() {
-        val css = rootColorsCss(nightMode = false, "#000001", "#000002", themeColors)
+    fun `root declares every theme color variable`() {
+        val css = rootColorsCss(nightMode = false, themeColors)
 
         assertEquals(
-            mapOf("--canvas" to "#000001", "--fg" to "#000002", "--ankidroid-color-primary" to "#000003"),
+            themeColors,
             parseVariables(css),
         )
     }
@@ -50,6 +50,8 @@ class PreviewerHelpersTest {
 
         assertEquals(
             mapOf(
+                "--canvas" to "#000009",
+                "--fg" to "#00000A",
                 "--ankidroid-color-primary" to "#000003",
                 "--ankidroid-color-on-primary" to "#000004",
                 "--ankidroid-color-secondary" to "#000005",
