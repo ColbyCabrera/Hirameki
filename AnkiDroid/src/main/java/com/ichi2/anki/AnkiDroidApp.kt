@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2009 Edu Zamora <edu.zasu@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2009 Casey Link <unnamedrambler@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2014 Timothy Rae <perceptualchaos2@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Ashish Yadav <mailtoashish693@gmail.com>
 
 package com.ichi2.anki
 
@@ -35,6 +36,7 @@ import com.ichi2.anki.logging.FragmentLifecycleLogger
 import com.ichi2.anki.logging.LogType
 import com.ichi2.anki.logging.ProductionCrashReportingTree
 import com.ichi2.anki.logging.RobolectricDebugTree
+import com.ichi2.anki.multimedia.audio.AudioRecordingController
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.preferences.SharedPreferencesProvider
 import com.ichi2.anki.preferences.sharedPrefs
@@ -235,6 +237,14 @@ open class AnkiDroidApp :
         TtsVoices.launchBuildLocalesJob()
         // enable {{tts-voices:}} field filter
         TtsVoicesFieldFilter.ensureApplied()
+
+        applicationScope.launch(Dispatchers.IO) {
+            runCatching {
+                AudioRecordingController.removeExpiredRecordings(
+                    AudioRecordingController.recordingsDirectory(this@AnkiDroidApp),
+                )
+            }.onFailure { Timber.w(it, "Unable to clean up expired audio recordings") }
+        }
 
         applicationScope.launch {
             try {
