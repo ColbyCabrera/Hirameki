@@ -11,7 +11,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.widget.addTextChangedListener
 import androidx.preference.EditTextPreference
-import androidx.preference.EditTextPreferenceDialogFragmentCompat
 import kotlin.jvm.Throws
 
 /**
@@ -42,7 +41,7 @@ open class VersatileTextPreference(
     override fun makeDialogFragment() = VersatileTextPreferenceDialogFragment()
 }
 
-open class VersatileTextPreferenceDialogFragment : EditTextPreferenceDialogFragmentCompat() {
+open class VersatileTextPreferenceDialogFragment : MaterialEditTextPreferenceDialogFragment() {
     private val versatileTextPreference get() = preference as VersatileTextPreference
 
     protected lateinit var editText: EditText

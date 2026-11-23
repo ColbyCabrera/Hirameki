@@ -14,6 +14,9 @@ import androidx.annotation.VisibleForTesting
 import androidx.annotation.XmlRes
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
+import androidx.preference.MultiSelectListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
@@ -22,6 +25,9 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.ichi2.anki.R
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.preferences.DialogFragmentProvider
+import com.ichi2.preferences.MaterialEditTextPreferenceDialogFragment
+import com.ichi2.preferences.MaterialListPreferenceDialogFragment
+import com.ichi2.preferences.MaterialMultiSelectListPreferenceDialogFragment
 import timber.log.Timber
 import java.lang.NumberFormatException
 
@@ -115,12 +121,18 @@ abstract class SettingsFragment :
     // While this isn't fixed on upstream, suppress the deprecation warning
     override fun onDisplayPreferenceDialog(preference: Preference) {
         val dialogFragment =
-            (preference as? DialogFragmentProvider)?.makeDialogFragment()
-                ?: return super.onDisplayPreferenceDialog(preference)
+            when (preference) {
+                is DialogFragmentProvider -> preference.makeDialogFragment()
+                is ListPreference -> MaterialListPreferenceDialogFragment()
+                is EditTextPreference -> MaterialEditTextPreferenceDialogFragment()
+                is MultiSelectListPreference -> MaterialMultiSelectListPreferenceDialogFragment()
+                else -> null
+            } ?: return super.onDisplayPreferenceDialog(preference)
+        if (parentFragmentManager.findFragmentByTag(PREFERENCE_DIALOG_TAG) != null) return
         Timber.d("displaying custom preference: ${dialogFragment::class.simpleName}")
         dialogFragment.arguments = Bundle().apply { putString(PREF_DIALOG_KEY, preference.key) }
         dialogFragment.setTargetFragment(this, 0)
-        dialogFragment.show(parentFragmentManager, "androidx.preference.PreferenceFragment.DIALOG")
+        dialogFragment.show(parentFragmentManager, PREFERENCE_DIALOG_TAG)
     }
 
     override fun onStart() {
@@ -139,6 +151,7 @@ abstract class SettingsFragment :
 
     companion object {
         const val PREF_DIALOG_KEY = "key"
+        const val PREFERENCE_DIALOG_TAG = "androidx.preference.PreferenceFragment.DIALOG"
 
         /**
          * Converts a preference value to a numeric number that

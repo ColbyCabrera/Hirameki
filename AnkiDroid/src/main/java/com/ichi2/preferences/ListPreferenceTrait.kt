@@ -26,6 +26,7 @@
  * * Rely on `ListPreferenceTrait` rather than `ListPreference`
  * * Use standard Bundle constructor and direct population in ListPreferenceDialogFragment.newInstance
  * * `if (preference.callChangeListener(value)) {` - depend on `preference` and `listPreference`
+ * * Build the dialog with MaterialAlertDialogBuilder
  */
 
 package com.ichi2.preferences
@@ -100,6 +101,9 @@ class ListPreferenceDialogFragment : PreferenceDialogFragmentCompat() {
     }
 
     private val listPreference get() = preference as ListPreferenceTrait
+
+    override fun onCreateDialog(savedInstanceState: Bundle?) =
+        createMaterialPreferenceDialog(::onCreateDialogView, ::onBindDialogView, ::onPrepareDialogBuilder)
 
     override fun onPrepareDialogBuilder(builder: AlertDialog.Builder) {
         super.onPrepareDialogBuilder(builder)
