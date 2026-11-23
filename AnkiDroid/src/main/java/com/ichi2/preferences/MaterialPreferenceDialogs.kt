@@ -23,7 +23,6 @@ internal fun PreferenceDialogFragmentCompat.createMaterialPreferenceDialog(
     createDialogView: (Context) -> View?,
     bindDialogView: (View) -> Unit,
     prepareDialogBuilder: (AlertDialog.Builder) -> Unit,
-    showSoftInput: Boolean = false,
 ): Dialog {
     val dialogPreference = preference
     val builder =
@@ -43,8 +42,9 @@ internal fun PreferenceDialogFragmentCompat.createMaterialPreferenceDialog(
 
     prepareDialogBuilder(builder)
 
+    val isTextEntry = this is EditTextPreferenceDialogFragmentCompat
     return builder.create().apply {
-        if (showSoftInput) {
+        if (isTextEntry) {
             window?.decorView?.windowInsetsController?.show(WindowInsets.Type.ime())
         }
     }
@@ -62,10 +62,5 @@ class MaterialMultiSelectListPreferenceDialogFragment : MultiSelectListPreferenc
 
 open class MaterialEditTextPreferenceDialogFragment : EditTextPreferenceDialogFragmentCompat() {
     override fun onCreateDialog(savedInstanceState: Bundle?) =
-        createMaterialPreferenceDialog(
-            ::onCreateDialogView,
-            ::onBindDialogView,
-            ::onPrepareDialogBuilder,
-            showSoftInput = true,
-        )
+        createMaterialPreferenceDialog(::onCreateDialogView, ::onBindDialogView, ::onPrepareDialogBuilder)
 }

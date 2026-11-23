@@ -151,7 +151,7 @@ abstract class SettingsFragment :
 
     companion object {
         const val PREF_DIALOG_KEY = "key"
-        const val PREFERENCE_DIALOG_TAG = "androidx.preference.PreferenceFragment.DIALOG"
+        private const val PREFERENCE_DIALOG_TAG = "androidx.preference.PreferenceFragment.DIALOG"
 
         /**
          * Converts a preference value to a numeric number that
