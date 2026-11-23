@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <davidallisongithub@gmail.com>
 
 package com.ichi2.anki
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabaseCorruptException
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.core.content.edit
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.dialogs.BackupPromptDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog
 import com.ichi2.anki.dialogs.DatabaseErrorDialog.CustomExceptionData
@@ -18,16 +22,22 @@ import com.ichi2.anki.dialogs.DialogHandler
 import com.ichi2.anki.dialogs.showDatabaseErrorDialogInDeckPicker
 import com.ichi2.anki.dialogs.utils.performPositiveClick
 import com.ichi2.anki.dialogs.utils.title
+import com.ichi2.anki.libanki.Note
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.utils.ext.DIALOG_FRAGMENT_TAG
 import com.ichi2.testutils.BackupManagerTestUtilities
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
+import io.mockk.verify
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDialog
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -111,6 +121,59 @@ class DatabaseRecoveryInDeckPickerTest : RobolectricTest() {
 
         assertNull(shadowOf(deckPicker).nextStartedActivity, "no activity should be started")
         assertEquals(targetContext.getString(R.string.open_collection_failed_title), deckPicker.awaitDatabaseErrorDialog().title)
+    }
+
+    @Test
+    fun `missing notetype error offers a working database check without a crash report`() {
+        val otherScreen = startRegularActivity<DrawingActivity>()
+        throwOnShowError = false
+        mockkObject(CrashReportService)
+        try {
+            otherScreen.launchCatchingTask { CollectionManager.withCol { Note.fromNotetypeId(this, -1) } }
+            advanceRobolectricLooper()
+
+            val errorDialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val checkDbButton = errorDialog.getButton(DialogInterface.BUTTON_NEUTRAL)
+            assertEquals(targetContext.getString(R.string.check_db), checkDbButton.text.toString())
+            checkDbButton.performClick()
+            advanceRobolectricLooper()
+
+            assertFalse(errorDialog.isShowing)
+            (otherScreen.openedDeckPicker().awaitDatabaseErrorDialog().requireDialog() as AlertDialog).performPositiveClick()
+            assertEquals(
+                TR.databaseCheckRebuilt(),
+                (ShadowDialog.getLatestDialog() as AlertDialog).findViewById<TextView>(android.R.id.message)?.text?.toString(),
+            )
+            verify(exactly = 0) {
+                CrashReportService.sendExceptionReport(any<Throwable>(), any<String>())
+            }
+        } finally {
+            unmockkObject(CrashReportService)
+            throwOnShowError = true
+        }
+    }
+
+    @Test
+    fun `dismissing a missing notetype error does not send a crash report`() {
+        val otherScreen = startRegularActivity<DrawingActivity>()
+        throwOnShowError = false
+        mockkObject(CrashReportService)
+        try {
+            otherScreen.launchCatchingTask { CollectionManager.withCol { Note.fromNotetypeId(this, -1) } }
+            advanceRobolectricLooper()
+
+            val errorDialog = ShadowDialog.getLatestDialog() as AlertDialog
+            errorDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+            advanceRobolectricLooper()
+
+            assertFalse(errorDialog.isShowing)
+            verify(exactly = 0) {
+                CrashReportService.sendExceptionReport(any<Throwable>(), any<String>())
+            }
+        } finally {
+            unmockkObject(CrashReportService)
+            throwOnShowError = true
+        }
     }
 
     private fun AnkiActivity.openedDeckPicker(): DeckPicker {
