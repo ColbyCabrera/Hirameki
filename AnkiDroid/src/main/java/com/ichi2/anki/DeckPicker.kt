@@ -6,6 +6,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2010 Norbert Nagold <norbert.nagold@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2014 Timothy Rae <perceptualchaos2@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Nishant <nishantbhandari0019@gmail.com>
 
 // usage of 'this' in constructors when class is non-final - weak warning
 // should be OK as this is only non-final for tests
@@ -46,6 +47,7 @@ import androidx.core.view.MenuItemCompat
 import androidx.core.view.OnReceiveContentListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -91,6 +93,7 @@ import com.ichi2.anki.dialogs.FatalErrorDialog
 import com.ichi2.anki.dialogs.ImportDialog.ImportDialogListener
 import com.ichi2.anki.dialogs.ImportFileSelectionFragment.ApkgImportResultLauncherProvider
 import com.ichi2.anki.dialogs.ImportFileSelectionFragment.CsvImportResultLauncherProvider
+import com.ichi2.anki.dialogs.MeteredSyncDialog
 import com.ichi2.anki.dialogs.SchedulerUpgradeDialog
 import com.ichi2.anki.dialogs.SyncErrorDialog
 import com.ichi2.anki.dialogs.SyncErrorDialog.Companion.newInstance
@@ -123,6 +126,7 @@ import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.utils.Destination
 import com.ichi2.anki.utils.ext.displayHost
 import com.ichi2.anki.utils.ext.openAppSettingsScreen
+import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.anki.worker.SyncMediaWorker
 import com.ichi2.anki.worker.SyncWorker
@@ -136,7 +140,6 @@ import com.ichi2.utils.NetworkUtils.isActiveNetworkMetered
 import com.ichi2.utils.Permissions
 import com.ichi2.utils.VersionUtils
 import com.ichi2.utils.cancelable
-import com.ichi2.utils.checkBoxPrompt
 import com.ichi2.utils.checkWebviewVersion
 import com.ichi2.utils.customView
 import com.ichi2.utils.message
@@ -460,6 +463,15 @@ open class DeckPicker :
         )
 
         setupFlows()
+
+        setFragmentResultListener(MeteredSyncDialog.REQUEST_METERED_SYNC) { _, bundle ->
+            val syncMedia = bundle.getBoolean(MeteredSyncDialog.RESULT_SYNC_MEDIA)
+            if (!viewModel.isSyncing.compareAndSet(expect = false, update = true)) {
+                Timber.w("Sync already in progress")
+                return@setFragmentResultListener
+            }
+            handleNewSync(conflict = null, syncMedia = syncMedia)
+        }
 
         setContent {
             val isOpen by CollectionManager.isCollectionOpenFlow.collectAsStateWithLifecycle()
@@ -1021,6 +1033,11 @@ open class DeckPicker :
         message?.let { dialogHandler.sendStoredMessage(it) }
     }
 
+    override fun onResumeFragments() {
+        super.onResumeFragments()
+        showDeferredMeteredSyncConfirmation()
+    }
+
     fun refreshState() {
         // Due to the App Introduction, this may be called before permission has been granted.
         if (syncOnResume && hasCollectionStoragePermissions()) {
@@ -1111,6 +1128,11 @@ open class DeckPicker :
         // is missing. The user learns about it at the next foreground sync.
         val isBlockedByMissingLocalNetworkPermission =
             isLocalNetworkSyncBlocked(this, getEndpoint(), Prefs.isCustomSyncEnabled)
+
+        if (hasPendingMeteredSyncConfirmation()) {
+            Timber.d("autoSync: waiting for metered sync confirmation")
+            return false
+        }
 
         when {
             !Prefs.isAutoSyncEnabled -> Timber.d("autoSync: not enabled")
@@ -1649,11 +1671,6 @@ open class DeckPicker :
 
         MyAccount.checkNotificationPermission(this, notificationPermissionLauncher)
 
-        /** Nested function that makes the connection to
-         * the sync server and starts syncing the data */
-        fun doSync() {
-            handleNewSync(conflict, shouldFetchMedia())
-        }
         // Android 17+: custom sync servers on the LAN need ACCESS_LOCAL_NETWORK.
         val endpoint = getEndpoint()
         if (isLocalNetworkSyncBlocked(this, endpoint, Prefs.isCustomSyncEnabled)) {
@@ -1662,20 +1679,36 @@ open class DeckPicker :
             viewModel.showLocalNetworkPermissionRationale(endpoint, conflict)
             return
         }
-        // Warn the user in case the connection is metered
-        if (!Prefs.allowSyncOnMeteredConnections && isActiveNetworkMetered()) {
-            MaterialAlertDialogBuilder(this).show {
-                message(R.string.metered_sync_data_warning)
-                positiveButton(R.string.dialog_continue) { doSync() }
-                negativeButton(R.string.dialog_cancel) { viewModel.isSyncing.value = false }
-                setOnCancelListener { viewModel.isSyncing.value = false }
-                checkBoxPrompt(R.string.button_do_not_show_again) { isCheckboxChecked ->
-                    Prefs.allowSyncOnMeteredConnections = isCheckboxChecked
-                }
-            }
-        } else {
-            doSync()
+        // Preference or network changes must not bypass an unanswered confirmation.
+        if (conflict == null && hasPendingMeteredSyncConfirmation()) {
+            viewModel.isSyncing.value = false
+            refreshState()
+            return
         }
+        val syncMedia = shouldFetchMedia()
+        // Warn the user in case the connection is metered
+        if (conflict == null && !Prefs.allowSyncOnMeteredConnections && isActiveNetworkMetered()) {
+            viewModel.isSyncing.value = false
+            viewModel.deferredMeteredSyncMedia = syncMedia
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                showDeferredMeteredSyncConfirmation()
+            }
+            refreshState()
+        } else {
+            handleNewSync(conflict, syncMedia)
+        }
+    }
+
+    private fun hasPendingMeteredSyncConfirmation(): Boolean =
+        viewModel.deferredMeteredSyncMedia != null || supportFragmentManager.findFragmentByTag(MeteredSyncDialog.TAG) != null
+
+    private fun showDeferredMeteredSyncConfirmation() {
+        val syncMedia = viewModel.deferredMeteredSyncMedia ?: return
+        if (supportFragmentManager.isStateSaved) return
+        if (supportFragmentManager.findFragmentByTag(MeteredSyncDialog.TAG) == null) {
+            MeteredSyncDialog.newInstance(syncMedia).showNow(supportFragmentManager, MeteredSyncDialog.TAG)
+        }
+        viewModel.deferredMeteredSyncMedia = null
     }
 
     override fun loginToSyncServer() {

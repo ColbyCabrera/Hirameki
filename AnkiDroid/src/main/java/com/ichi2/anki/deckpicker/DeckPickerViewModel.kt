@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2024 David Allison <davidallisongithub@gmail.com>
 // SPDX-FileCopyrightText: Copyright (c) 2025-2026 Colby Cabrera <colbycabrera.wd@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 Nishant <nishantbhandari0019@gmail.com>
 
 package com.ichi2.anki.deckpicker
 
@@ -78,6 +79,10 @@ class DeckPickerViewModel :
     ViewModel(),
     OnErrorListener {
     val isSyncing = MutableStateFlow(false)
+
+    /** Media choice for a metered confirmation waiting for a resumed activity to show it. */
+    var deferredMeteredSyncMedia: Boolean? = null
+
     val flowOfStartupResponse = MutableStateFlow<StartupResponse?>(null)
 
     private val flowOfDeckDueTree = MutableStateFlow<DeckNode?>(null)
