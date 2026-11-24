@@ -19,6 +19,9 @@ import com.ichi2.anim.ActivityTransitionAnimation
 import com.ichi2.anki.cardviewer.Gesture
 import com.ichi2.anki.cardviewer.GestureProcessor
 import com.ichi2.anki.cardviewer.ViewerCommand
+import com.ichi2.anki.reviewer.AutomaticAnswer
+import com.ichi2.anki.reviewer.AutomaticAnswerAction
+import com.ichi2.anki.reviewer.AutomaticAnswerSettings
 import com.ichi2.anki.reviewer.Axis
 import com.ichi2.anki.reviewer.Binding
 import com.ichi2.anki.reviewer.CardSide
@@ -305,6 +308,21 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
+    fun `re-enabling auto advance on the answer schedules the next question`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            reviewer.useAutoAdvanceOnlyOnTheAnswer()
+            reviewer.executeCommand(ViewerCommand.SHOW_ANSWER)
+            advanceRobolectricLooper()
+
+            reviewer.executeCommand(ViewerCommand.TOGGLE_AUTO_ADVANCE)
+
+            assertTrue(reviewer.automaticAnswer.timeoutHandler.hasMessages(0), "next question scheduled")
+        }
+
+    @Test
     fun `a bound joystick axis reaches the compose reviewer`() =
         runTest {
             addBasicNote("Front", "Back")
@@ -350,6 +368,16 @@ class ReviewerTest : RobolectricTest() {
         findViewById<ViewGroup>(R.id.root_layout).addView(button)
         advanceRobolectricLooper()
         assertTrue(button.requestFocus(), "button focused")
+    }
+
+    private fun Reviewer.useAutoAdvanceOnlyOnTheAnswer() {
+        lifecycle.removeObserver(automaticAnswer)
+        automaticAnswer =
+            AutomaticAnswer(
+                this,
+                AutomaticAnswerSettings(AutomaticAnswerAction.BURY_CARD, secondsToShowQuestionFor = 0.0, secondsToShowAnswerFor = 5.0),
+            )
+        lifecycle.addObserver(automaticAnswer)
     }
 
     private fun waitForCard(reviewer: Reviewer) {

@@ -1203,7 +1203,7 @@ open class Reviewer :
     private fun toggleAutoAdvance() {
         if (automaticAnswer.isDisabled) {
             Timber.i("Re-enabling auto advance")
-            automaticAnswer.reEnable(isDisplayingAnswer)
+            automaticAnswer.reEnable(shownCardSide == CardSide.ANSWER)
             showSnackbar(TR.actionsAutoAdvanceActivated())
         } else {
             Timber.i("Disabling auto advance")
