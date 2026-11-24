@@ -15,7 +15,6 @@ sealed interface AutoAdvanceSignal {
     ) : AutoAdvanceSignal
 }
 
-/** Starts the [AutomaticAnswer] timer for each side the Compose reviewer shows. */
 class AutoAdvanceSignalHandler(
     private val automaticAnswer: () -> AutomaticAnswer,
 ) {

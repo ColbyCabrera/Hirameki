@@ -930,7 +930,6 @@ abstract class AbstractFlashcardViewer :
         displayCardAnswer()
     }
 
-    /** Whether [displayCardQuestion], [displayCardAnswer] and [onMediaGroupCompleted] drive [automaticAnswer]. */
     protected open val legacyDisplayDrivesAutomaticAnswer = true
 
     private suspend fun automaticAnswerShouldWaitForMedia(): Boolean =

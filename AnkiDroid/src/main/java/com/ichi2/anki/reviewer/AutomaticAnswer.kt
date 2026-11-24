@@ -164,14 +164,12 @@ class AutomaticAnswer(
         }
     }
 
-    /** Cancels both timers and lets the newly shown side schedule its own. */
     fun onSideShown() {
         hasPlayedSounds = false
         stopShowAnswerTask()
         stopShowQuestionTask()
     }
 
-    /** Schedules the action that follows [shownSide]: show the answer, or move on from it. */
     fun scheduleFor(shownSide: CardSide) {
         if (shownSide == CardSide.ANSWER) {
             scheduleAutomaticDisplayQuestion()
