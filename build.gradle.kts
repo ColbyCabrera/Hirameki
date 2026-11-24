@@ -74,6 +74,13 @@ subprojects {
         maxHeapSize = "2g"
         minHeapSize = "1g"
 
+        // Robolectric names each test's temp dir after the test; under %TEMP% the collection path passes MAX_PATH
+        if (ciBuild && System.getProperty("os.name").startsWith("Windows")) {
+            val shortTmpDir = rootDir.toPath().root.resolve("t").toFile()
+            systemProperty("java.io.tmpdir", shortTmpDir.absolutePath)
+            doFirst { shortTmpDir.mkdirs() }
+        }
+
         useJUnitPlatform()
         testLogging {
             events("failed", "skipped")
