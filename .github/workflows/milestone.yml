@@ -8,7 +8,7 @@ on:
 
 jobs:
   milestone:
-    if: ${{ github.event.pull_request.merged == true }}
+    if: ${{ github.repository == 'ankidroid/Anki-Android' && github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
