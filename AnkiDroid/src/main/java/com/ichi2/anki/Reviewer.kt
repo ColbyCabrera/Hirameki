@@ -64,6 +64,7 @@ import com.ichi2.anki.pages.DeckOptions
 import com.ichi2.anki.pages.PostRequestUri
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.reviewer.ActionButtons
+import com.ichi2.anki.reviewer.AutoAdvanceSignalHandler
 import com.ichi2.anki.reviewer.AutomaticAnswerAction
 import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.anki.reviewer.CommandRoute
@@ -276,6 +277,11 @@ open class Reviewer :
             }
         }
 
+        val autoAdvanceSignalHandler = AutoAdvanceSignalHandler { automaticAnswer }
+        lifecycleScope.launch {
+            viewModel.autoAdvanceSignals.collect(autoAdvanceSignalHandler::handle)
+        }
+
         // #231: a focused WebView or control would take the D-pad and Space before the key bindings
         lifecycleScope.launch {
             viewModel.state
@@ -297,6 +303,8 @@ open class Reviewer :
     /** The Compose reviewer tracks the shown side in its ViewModel, not in `displayAnswer`. */
     override val shownCardSide: CardSide
         get() = CardSide.fromAnswer(viewModel.state.value.isAnswerShown)
+
+    override val legacyDisplayDrivesAutomaticAnswer = false
 
     override fun onKeyDown(
         keyCode: Int,
@@ -941,7 +949,13 @@ open class Reviewer :
         launchCatchingTask { updateCardAndRedraw() }
     }
 
+    override fun automaticShowAnswer() {
+        if (shownCardSide == CardSide.ANSWER) return
+        viewModel.onEvent(ReviewerEvent.ShowAnswer)
+    }
+
     override fun automaticShowQuestion(action: AutomaticAnswerAction) {
+        if (shownCardSide == CardSide.QUESTION) return
         // explicitly do not call super
         action.execute(this)
     }

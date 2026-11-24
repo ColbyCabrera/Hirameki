@@ -320,6 +320,12 @@ class ReviewerViewModel(
     val flowOfDeleteResult: SharedFlow<Int> = _flowOfDeleteResult.asSharedFlow()
     private val nextJavascriptCommandId = AtomicInteger(0)
     internal val typeAnswer = TypeAnswer.createInstance(app.sharedPrefs())
+    private val _autoAdvanceSignals = MutableSharedFlow<AutoAdvanceSignal>(extraBufferCapacity = 64)
+    val autoAdvanceSignals: SharedFlow<AutoAdvanceSignal> = _autoAdvanceSignals.asSharedFlow()
+
+    /** The deck option "Wait for audio" for the current card. */
+    private var autoAdvanceWaitsForAudio = true
+
     internal val cardMediaPlayer: CardMediaPlayer =
         CardMediaPlayer(
             { script ->
@@ -356,7 +362,19 @@ class ReviewerViewModel(
                     }
                 }
             },
-        )
+        ).apply {
+            setOnMediaGroupCompletedListener { playedSide ->
+                val side = if (playedSide == CardSide.BOTH) CardSide.ANSWER else playedSide
+                _autoAdvanceSignals.tryEmit(AutoAdvanceSignal.MediaFinished(side))
+            }
+        }
+
+    private suspend fun signalSideShown(
+        side: CardSide,
+        autoplaysMedia: Boolean,
+    ) {
+        _autoAdvanceSignals.emit(AutoAdvanceSignal.SideShown(side, waitsForMedia = autoplaysMedia && autoAdvanceWaitsForAudio))
+    }
 
     /** A job that is running for the current card. This is used to prevent multiple actions from running at the same time. */
     private var cardActionJob: Job? = null
@@ -723,6 +741,7 @@ class ReviewerViewModel(
         _state.value = requireNotNull(updatedState)
         _queueStateFlow.value = queue
         queueState = queue
+        signalSideShown(CardSide.QUESTION, autoplaysMedia = false)
     }
 
     private fun editCard() {
@@ -874,7 +893,9 @@ class ReviewerViewModel(
                     isFinished = false,
                 )
             }
+            autoAdvanceWaitsForAudio = decks.configDictForDeckId(card.did).waitForAudio
         }
+        signalSideShown(CardSide.QUESTION, autoplaysMedia = true)
         cardMediaPlayer.autoplayAllForSide(SingleCardSide.FRONT.toCardSide())
     }
 
@@ -902,6 +923,7 @@ class ReviewerViewModel(
                     )
                 }
             }
+            signalSideShown(CardSide.ANSWER, autoplaysMedia = true)
             cardMediaPlayer.autoplayAllForSide(SingleCardSide.BACK.toCardSide())
         }
     }
@@ -956,6 +978,7 @@ class ReviewerViewModel(
                     chosenAnswer = "",
                 )
             }
+            signalSideShown(CardSide.QUESTION, autoplaysMedia = false)
         }
     }
 

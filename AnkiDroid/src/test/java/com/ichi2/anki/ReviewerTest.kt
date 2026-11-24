@@ -6,6 +6,7 @@ package com.ichi2.anki
 
 import android.app.Application
 import android.content.Intent
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewGroup
@@ -36,6 +37,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.Shadows
 import org.robolectric.shadows.ShadowMediaPlayer
+import java.time.Duration
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
@@ -308,6 +310,48 @@ class ReviewerTest : RobolectricTest() {
         }
 
     @Test
+    fun `auto advance shows the answer, then moves on to the next card`() =
+        runTest {
+            addBasicNote("One", "Back")
+            addBasicNote("Two", "Back")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            reviewer.useAutoAdvance(secondsToShowQuestionFor = 3.0, secondsToShowAnswerFor = 7.0)
+            reviewer.executeCommand(ViewerCommand.TOGGLE_AUTO_ADVANCE)
+            val firstCard = reviewer.viewModel.state.value.cardDisplayIndex
+
+            advanceSeconds(3)
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown, "answer shown")
+
+            advanceSeconds(7)
+            assertNotEquals(firstCard, reviewer.viewModel.state.value.cardDisplayIndex, "moved on to the next card")
+            assertFalse(reviewer.viewModel.state.value.isAnswerShown)
+
+            advanceSeconds(3)
+            assertTrue(reviewer.viewModel.state.value.isAnswerShown, "next card's answer shown")
+        }
+
+    @Test
+    fun `showing the answer restarts the auto advance timer`() =
+        runTest {
+            addBasicNote("One", "Back")
+            addBasicNote("Two", "Back")
+            val reviewer = startReviewer(this@ReviewerTest)
+            waitForCard(reviewer)
+            reviewer.useAutoAdvance(secondsToShowQuestionFor = 3.0, secondsToShowAnswerFor = 7.0)
+            reviewer.executeCommand(ViewerCommand.TOGGLE_AUTO_ADVANCE)
+            val firstCard = reviewer.viewModel.state.value.cardDisplayIndex
+
+            advanceSeconds(2)
+            reviewer.executeCommand(ViewerCommand.SHOW_ANSWER)
+            advanceSeconds(6)
+            assertEquals("answer timer started on the flip", firstCard, reviewer.viewModel.state.value.cardDisplayIndex)
+
+            advanceSeconds(1)
+            assertNotEquals(firstCard, reviewer.viewModel.state.value.cardDisplayIndex)
+        }
+
+    @Test
     fun `re-enabling auto advance on the answer schedules the next question`() =
         runTest {
             addBasicNote("Front", "Back")
@@ -370,14 +414,24 @@ class ReviewerTest : RobolectricTest() {
         assertTrue(button.requestFocus(), "button focused")
     }
 
-    private fun Reviewer.useAutoAdvanceOnlyOnTheAnswer() {
+    private fun Reviewer.useAutoAdvanceOnlyOnTheAnswer() = useAutoAdvance(secondsToShowQuestionFor = 0.0, secondsToShowAnswerFor = 5.0)
+
+    private fun Reviewer.useAutoAdvance(
+        secondsToShowQuestionFor: Double,
+        secondsToShowAnswerFor: Double,
+    ) {
         lifecycle.removeObserver(automaticAnswer)
         automaticAnswer =
             AutomaticAnswer(
                 this,
-                AutomaticAnswerSettings(AutomaticAnswerAction.BURY_CARD, secondsToShowQuestionFor = 0.0, secondsToShowAnswerFor = 5.0),
+                AutomaticAnswerSettings(AutomaticAnswerAction.BURY_CARD, secondsToShowQuestionFor, secondsToShowAnswerFor),
             )
         lifecycle.addObserver(automaticAnswer)
+    }
+
+    private fun advanceSeconds(seconds: Int) {
+        val mainLooper = Shadows.shadowOf(Looper.getMainLooper())
+        repeat(seconds) { mainLooper.idleFor(Duration.ofSeconds(1)) }
     }
 
     private fun waitForCard(reviewer: Reviewer) {

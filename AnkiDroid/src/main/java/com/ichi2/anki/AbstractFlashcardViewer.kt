@@ -930,6 +930,9 @@ abstract class AbstractFlashcardViewer :
         displayCardAnswer()
     }
 
+    /** Whether [displayCardQuestion], [displayCardAnswer] and [onMediaGroupCompleted] drive [automaticAnswer]. */
+    protected open val legacyDisplayDrivesAutomaticAnswer = true
+
     private suspend fun automaticAnswerShouldWaitForMedia(): Boolean =
         withCol {
             decks.configDictForDeckId(currentCard!!.did).waitForAudio
@@ -952,10 +955,12 @@ abstract class AbstractFlashcardViewer :
         if (cardRenderContext != null) {
             val content =
                 cardRenderContext!!.renderCard(getColUnsafe, currentCard!!, SingleCardSide.FRONT)
-            automaticAnswer.onDisplayQuestion()
-            launchCatchingTask {
-                if (!automaticAnswerShouldWaitForMedia()) {
-                    automaticAnswer.scheduleAutomaticDisplayAnswer()
+            if (legacyDisplayDrivesAutomaticAnswer) {
+                automaticAnswer.onDisplayQuestion()
+                launchCatchingTask {
+                    if (!automaticAnswerShouldWaitForMedia()) {
+                        automaticAnswer.scheduleAutomaticDisplayAnswer()
+                    }
                 }
             }
             updateCard(content)
@@ -987,10 +992,12 @@ abstract class AbstractFlashcardViewer :
         isSelecting = false
         val answerContent =
             cardRenderContext!!.renderCard(getColUnsafe, currentCard!!, SingleCardSide.BACK)
-        automaticAnswer.onDisplayAnswer()
-        launchCatchingTask {
-            if (!automaticAnswerShouldWaitForMedia()) {
-                automaticAnswer.scheduleAutomaticDisplayQuestion()
+        if (legacyDisplayDrivesAutomaticAnswer) {
+            automaticAnswer.onDisplayAnswer()
+            launchCatchingTask {
+                if (!automaticAnswerShouldWaitForMedia()) {
+                    automaticAnswer.scheduleAutomaticDisplayQuestion()
+                }
             }
         }
         updateCard(answerContent)
@@ -1122,6 +1129,7 @@ abstract class AbstractFlashcardViewer :
      */
     open fun onMediaGroupCompleted() {
         Timber.v("onMediaGroupCompleted")
+        if (!legacyDisplayDrivesAutomaticAnswer) return
         launchCatchingTask {
             if (automaticAnswerShouldWaitForMedia()) {
                 if (isDisplayingAnswer) {
@@ -2305,7 +2313,7 @@ abstract class AbstractFlashcardViewer :
                 javascriptEvaluator = { viewer.webViewClient?.eval(it) },
                 mediaErrorListener = soundErrorListener,
             ).apply {
-                setOnMediaGroupCompletedListener(viewer::onMediaGroupCompleted)
+                setOnMediaGroupCompletedListener { viewer.onMediaGroupCompleted() }
             }
         }
 
