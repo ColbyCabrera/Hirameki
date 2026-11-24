@@ -323,7 +323,6 @@ class ReviewerViewModel(
     private val _autoAdvanceSignals = MutableSharedFlow<AutoAdvanceSignal>(extraBufferCapacity = 64)
     val autoAdvanceSignals: SharedFlow<AutoAdvanceSignal> = _autoAdvanceSignals.asSharedFlow()
 
-    /** The deck option "Wait for audio" for the current card. */
     private var autoAdvanceWaitsForAudio = true
 
     internal val cardMediaPlayer: CardMediaPlayer =
