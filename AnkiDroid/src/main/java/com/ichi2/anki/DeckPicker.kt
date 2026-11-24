@@ -1042,8 +1042,9 @@ open class DeckPicker :
         // Due to the App Introduction, this may be called before permission has been granted.
         if (syncOnResume && hasCollectionStoragePermissions()) {
             Timber.i("Performing Sync on Resume")
-            sync()
+            // sync() can call refreshState() while waiting for metered confirmation
             syncOnResume = false
+            sync()
         } else {
             updateDeckList()
         }
@@ -1129,10 +1130,7 @@ open class DeckPicker :
         val isBlockedByMissingLocalNetworkPermission =
             isLocalNetworkSyncBlocked(this, getEndpoint(), Prefs.isCustomSyncEnabled)
 
-        if (hasPendingMeteredSyncConfirmation()) {
-            Timber.d("autoSync: waiting for metered sync confirmation")
-            return false
-        }
+        if (isWaitingForMeteredSyncConfirmation()) return false
 
         when {
             !Prefs.isAutoSyncEnabled -> Timber.d("autoSync: not enabled")
@@ -1142,6 +1140,7 @@ open class DeckPicker :
             !runInBackground && !syncIntervalPassed() -> Timber.d("autoSync: interval not passed")
             !isLoggedIn() -> Timber.d("autoSync: not logged in")
             !areThereChangesToSync() -> {
+                if (isWaitingForMeteredSyncConfirmation()) return false
                 Timber.d("autoSync: no collection changes to sync. Syncing media if set")
                 if (shouldFetchMedia()) {
                     val auth = syncAuth() ?: return false
@@ -1152,6 +1151,7 @@ open class DeckPicker :
 
             else -> {
                 if (runInBackground) {
+                    if (isWaitingForMeteredSyncConfirmation()) return false
                     Timber.i("autoSync: starting background")
                     val auth = syncAuth() ?: return false
                     SyncWorker.start(this, auth, shouldFetchMedia())
@@ -1698,6 +1698,12 @@ open class DeckPicker :
             handleNewSync(conflict, syncMedia)
         }
     }
+
+    /** A manual sync may open the confirmation while auto-sync awaits the sync status. */
+    private fun isWaitingForMeteredSyncConfirmation(): Boolean =
+        hasPendingMeteredSyncConfirmation().also { pending ->
+            if (pending) Timber.d("autoSync: waiting for metered sync confirmation")
+        }
 
     private fun hasPendingMeteredSyncConfirmation(): Boolean =
         viewModel.deferredMeteredSyncMedia != null || supportFragmentManager.findFragmentByTag(MeteredSyncDialog.TAG) != null
