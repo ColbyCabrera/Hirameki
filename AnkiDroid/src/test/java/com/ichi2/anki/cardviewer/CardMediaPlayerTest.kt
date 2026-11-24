@@ -14,6 +14,7 @@ import com.ichi2.anki.libanki.AvTag
 import com.ichi2.anki.libanki.SoundOrVideoTag
 import com.ichi2.anki.libanki.TemplateManager
 import com.ichi2.anki.libanki.TtsPlayer
+import com.ichi2.anki.reviewer.CardSide
 import com.ichi2.testutils.JvmTest
 import com.ichi2.testutils.TestException
 import io.mockk.coEvery
@@ -38,9 +39,9 @@ class CardMediaPlayerTest : JvmTest() {
             every { it.stop() } just runs
         }
     internal val ttsPlayer: TtsPlayer = mockk<TtsPlayer>()
-    internal val onMediaGroupCompleted: () -> Unit =
-        mockk<() -> Unit>().also {
-            every { it.invoke() } answers { }
+    internal val onMediaGroupCompleted: (CardSide) -> Unit =
+        mockk<(CardSide) -> Unit>().also {
+            every { it.invoke(any()) } answers { }
         }
 
     @Test
@@ -254,7 +255,7 @@ class CardMediaPlayerTest : JvmTest() {
     }
 
     private fun ensureOnMediaGroupCompletedCalled() {
-        verify(exactly = 1) { onMediaGroupCompleted.invoke() }
+        verify(exactly = 1) { onMediaGroupCompleted.invoke(any()) }
     }
 
     private suspend fun CardMediaPlayer.playAllAndWait(

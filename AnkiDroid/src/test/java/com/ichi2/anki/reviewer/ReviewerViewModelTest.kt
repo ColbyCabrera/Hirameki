@@ -190,6 +190,28 @@ class ReviewerViewModelTest : RobolectricTest() {
         }
 
     @Test
+    fun `auto advance hears each side before its media finishes`() =
+        runTest {
+            addBasicNote("Front", "Back")
+            val viewModel =
+                ReviewerViewModel(ApplicationProvider.getApplicationContext(), StandardTestDispatcher(testScheduler))
+
+            viewModel.autoAdvanceSignals.test {
+                testScheduler.advanceUntilIdle()
+                advanceRobolectricLooper()
+                assertThat(awaitItem(), equalTo(AutoAdvanceSignal.SideShown(CardSide.QUESTION, waitsForMedia = true)))
+                assertThat(awaitItem(), equalTo(AutoAdvanceSignal.MediaFinished(CardSide.QUESTION)))
+
+                viewModel.onEvent(ReviewerEvent.ShowAnswer)
+                testScheduler.advanceUntilIdle()
+                advanceRobolectricLooper()
+                assertThat(awaitItem(), equalTo(AutoAdvanceSignal.SideShown(CardSide.ANSWER, waitsForMedia = true)))
+                assertThat(awaitItem(), equalTo(AutoAdvanceSignal.MediaFinished(CardSide.ANSWER)))
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `undo with nothing to undo shows a message instead of crashing`() =
         runTest {
             assertFalse(col.undoAvailable(), "a new collection has nothing to undo")

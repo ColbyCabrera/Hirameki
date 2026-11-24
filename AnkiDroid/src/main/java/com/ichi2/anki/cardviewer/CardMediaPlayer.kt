@@ -116,9 +116,9 @@ class CardMediaPlayer : Closeable {
     var playAvTagsJob: Job? = null
     val isPlaying get() = playAvTagsJob != null
 
-    private var onMediaGroupCompleted: (() -> Unit)? = null
+    private var onMediaGroupCompleted: ((CardSide) -> Unit)? = null
 
-    fun setOnMediaGroupCompletedListener(listener: (() -> Unit)?) {
+    fun setOnMediaGroupCompletedListener(listener: ((CardSide) -> Unit)?) {
         onMediaGroupCompleted = listener
     }
 
@@ -163,7 +163,7 @@ class CardMediaPlayer : Closeable {
     ) {
         if (!isEnabled) return
         if (isAutomaticPlayback && !config.autoplay) {
-            onMediaGroupCompleted?.invoke()
+            onMediaGroupCompleted?.invoke(cardSide)
             return
         }
         playAvTagsJob =
@@ -261,7 +261,7 @@ class CardMediaPlayer : Closeable {
             }
         } finally {
             // call the completion listener, even if a CancellationException was thrown
-            onMediaGroupCompleted?.invoke()
+            onMediaGroupCompleted?.invoke(cardSide)
         }
     }
 
