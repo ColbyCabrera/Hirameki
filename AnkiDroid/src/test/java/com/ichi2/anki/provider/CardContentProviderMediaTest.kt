@@ -12,6 +12,7 @@ import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.CollectionManager
+import com.ichi2.anki.FlashCardsContract
 import com.ichi2.anki.FlashCardsContract.AnkiMedia
 import com.ichi2.anki.RobolectricTest
 import org.junit.Before
@@ -32,7 +33,7 @@ import kotlin.test.assertNull
 @RunWith(AndroidJUnit4::class)
 class CardContentProviderMediaTest : RobolectricTest() {
     private lateinit var provider: CardContentProvider
-    private val authority = "${BuildConfig.APPLICATION_ID}.flashcards"
+    private val authority = FlashCardsContract.AUTHORITY
     private val sourceUri = "content://media-source/cover.png".toUri()
 
     override fun getCollectionStorageMode() = CollectionStorageMode.ON_DISK
