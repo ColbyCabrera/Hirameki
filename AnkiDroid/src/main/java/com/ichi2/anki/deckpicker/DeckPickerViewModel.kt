@@ -28,6 +28,7 @@ import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.configureRenderingMode
 import com.ichi2.anki.deckpicker.compose.StudyOptionsData
 import com.ichi2.anki.dialogs.compose.DeckDialogType
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.launchCatchingIO
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.libanki.Collection
@@ -50,7 +51,6 @@ import com.ichi2.anki.ui.compose.LocalNetworkPermissionDialogState
 import com.ichi2.anki.undoAndGetSnackbarMessage
 import com.ichi2.anki.utils.Destination
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.ensureActive
@@ -878,7 +878,7 @@ class DeckPickerViewModel :
 
     suspend fun refreshSyncState() {
         _syncState.value =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 withCol { fetchSyncIconState() }
             }
     }
