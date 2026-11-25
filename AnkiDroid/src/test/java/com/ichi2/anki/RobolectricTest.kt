@@ -128,7 +128,10 @@ open class RobolectricTest :
     @Before
     @CallSuper
     open fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        // Share one scheduler so IO work can't resume off the main thread or leak past the test
+        val testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
+        ioDispatcher = testDispatcher
         println("""-- executing test "${testName.methodName}"""")
         TimeManager.resetWith(MockTime(2020, 7, 7, 7, 0, 0, 0, 10))
         throwOnShowError = true
