@@ -8,13 +8,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.ichi2.anki.AnkiDroidApp
-import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.NoteEditorActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.model.CardsOrNotes
 import com.ichi2.anki.pages.PageFragment
+import com.ichi2.testutils.EmptyAnkiActivity
 import com.ichi2.testutils.JvmTest
 import com.ichi2.testutils.createTransientDirectory
 import kotlinx.coroutines.flow.first
@@ -40,7 +40,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicAndReversedNote()
                 val noteCardIds = note.cardIds(col)
 
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 var launchedIntent: Intent? = null
@@ -77,7 +77,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicAndReversedNote()
                 val noteCardIds = note.cardIds(col)
 
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 var launchedIntent: Intent? = null
@@ -119,7 +119,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicNote("Front", "Back")
                 val expectedCardId = note.firstCard().id
 
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 // Select the single row via selectAll (similar to user action in crash report)
@@ -160,7 +160,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
             try {
                 addBasicNote("Front", "Back")
 
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 var launchedIntent: Intent? = null
@@ -194,7 +194,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicAndReversedNote()
                 val noteCardIds = note.cardIds(col)
 
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 // Select the note row
@@ -237,7 +237,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
             try {
                 addBasicNote("Front", "Back")
 
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
                 shadowActivity.clearNextStartedActivities()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
@@ -267,7 +267,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
             val originalDispatcher = ioDispatcher
             ioDispatcher = UnconfinedTestDispatcher(testScheduler)
             try {
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 var launchedIntent: Intent? = null
@@ -304,7 +304,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
             val originalDispatcher = ioDispatcher
             ioDispatcher = UnconfinedTestDispatcher(testScheduler)
             try {
-                val activity = Robolectric.buildActivity(DeckPicker::class.java).setup().get()
+                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
                 val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
                 shadowActivity.clearNextStartedActivities()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
