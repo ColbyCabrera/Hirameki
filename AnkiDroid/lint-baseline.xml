@@ -167,50 +167,6 @@
     </issue>
 
     <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                                object : WebViewClient() {"
-        errorLine2="                                ~~~~~~">
-        <location
-            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
-            line="64"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                                object : WebViewClient() {"
-        errorLine2="                                ~~~~~~">
-        <location
-            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
-            line="64"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                                object : WebViewClient() {"
-        errorLine2="                                         ~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
-            line="64"
-            column="42"/>
-    </issue>
-
-    <issue
-        id="MissingOnRenderProcessGone"
-        message="WebViewClient should implement `onRenderProcessGone` to handle render process crashes or out-of-memory errors. Otherwise, the app will crash when the render process is shut down."
-        errorLine1="                                object : WebViewClient() {"
-        errorLine2="                                         ~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/java/com/ichi2/anki/cardviewer/SessionStorageTest.kt"
-            line="64"
-            column="42"/>
-    </issue>
-
-    <issue
         id="DataExtractionRules"
         message="The attribute `android:allowBackup` is deprecated from Android 12 and the default allows backup"
         errorLine1="        android:allowBackup=&quot;true&quot;"

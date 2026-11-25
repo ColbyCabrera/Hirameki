@@ -172,6 +172,51 @@ class FlashcardOnDeviceTest {
         }
 
     @Test
+    fun nativeSessionStoragePersistsAcrossFlipsAndCards() =
+        runBlocking {
+            val front =
+                """
+                ${shownText("Front")}
+                <script>
+                    window.isNativeStorage = sessionStorage instanceof Storage;
+                    window.startedEmpty = sessionStorage.getItem("cardState") === null;
+                    sessionStorage.setItem("cardState", "from-front");
+                </script>
+                """.trimIndent()
+            val back =
+                """
+                ${shownText("Back")}
+                <script>
+                    window.backSaw = sessionStorage.getItem("cardState");
+                    sessionStorage.setItem("cardState", "from-back");
+                </script>
+                """.trimIndent()
+            val next =
+                """
+                ${shownText("Next")}
+                <script>
+                    window.nextSaw = sessionStorage.getItem("cardState");
+                </script>
+                """.trimIndent()
+
+            show(card(front, answer = back, index = 2))
+            awaitShownText("Front")
+            awaitScriptResult("sessionStorage.getItem('cardState')", "\"from-front\"")
+            assertThat(evaluate("window.isNativeStorage"), equalTo("true"))
+            assertThat(evaluate("window.startedEmpty"), equalTo("true"))
+            assertThat(evaluate("localStorage.getItem('__anki_ss_cardState')"), equalTo("null"))
+            assertThat(evaluate("localStorage.getItem('cardState')"), equalTo("null"))
+
+            show(card(front, answer = back, index = 2, isAnswerShown = true))
+            awaitShownText("Back")
+            awaitScriptResult("window.backSaw", "\"from-front\"")
+
+            show(card(next, index = 3))
+            awaitShownText("Next")
+            awaitScriptResult("window.nextSaw", "\"from-back\"")
+        }
+
+    @Test
     fun imageOcclusionDrawsMasksOnEveryShow() =
         runBlocking {
             awaitShownText("Question")
