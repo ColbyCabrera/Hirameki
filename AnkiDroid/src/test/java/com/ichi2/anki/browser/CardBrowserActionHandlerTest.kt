@@ -22,15 +22,32 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.nullValue
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
+import org.robolectric.android.controller.ActivityController
 import org.robolectric.shadows.ShadowLooper
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class CardBrowserActionHandlerTest : JvmTest() {
+    private val hostControllers = mutableListOf<ActivityController<EmptyAnkiActivity>>()
+
+    private fun launchHostActivity(): EmptyAnkiActivity =
+        Robolectric
+            .buildActivity(EmptyAnkiActivity::class.java)
+            .setup()
+            .also(hostControllers::add)
+            .get()
+
+    @After
+    fun destroyHostActivities() {
+        hostControllers.forEach { it.destroy() }
+        hostControllers.clear()
+    }
+
     @Test
     fun `openNoteEditorForRow launches NoteEditor with CardId in CARDS mode`() =
         runTest(UnconfinedTestDispatcher()) {
@@ -40,7 +57,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicAndReversedNote()
                 val noteCardIds = note.cardIds(col)
 
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 var launchedIntent: Intent? = null
@@ -77,7 +94,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicAndReversedNote()
                 val noteCardIds = note.cardIds(col)
 
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 var launchedIntent: Intent? = null
@@ -119,7 +136,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicNote("Front", "Back")
                 val expectedCardId = note.firstCard().id
 
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 // Select the single row via selectAll (similar to user action in crash report)
@@ -160,7 +177,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
             try {
                 addBasicNote("Front", "Back")
 
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 var launchedIntent: Intent? = null
@@ -194,7 +211,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
                 val note = addBasicAndReversedNote()
                 val noteCardIds = note.cardIds(col)
 
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 // Select the note row
@@ -211,7 +228,6 @@ class CardBrowserActionHandlerTest : JvmTest() {
                     )
 
                 val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
-                shadowActivity.clearNextStartedActivities()
 
                 actionHandler.openCardInfoForSelectedRow()?.join()
                 ShadowLooper.idleMainLooper()
@@ -237,9 +253,8 @@ class CardBrowserActionHandlerTest : JvmTest() {
             try {
                 addBasicNote("Front", "Back")
 
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
-                shadowActivity.clearNextStartedActivities()
                 val viewModel = createTestViewModel(CardsOrNotes.CARDS)
 
                 val actionHandler =
@@ -267,7 +282,7 @@ class CardBrowserActionHandlerTest : JvmTest() {
             val originalDispatcher = ioDispatcher
             ioDispatcher = UnconfinedTestDispatcher(testScheduler)
             try {
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 var launchedIntent: Intent? = null
@@ -304,9 +319,8 @@ class CardBrowserActionHandlerTest : JvmTest() {
             val originalDispatcher = ioDispatcher
             ioDispatcher = UnconfinedTestDispatcher(testScheduler)
             try {
-                val activity = Robolectric.buildActivity(EmptyAnkiActivity::class.java).setup().get()
+                val activity = launchHostActivity()
                 val shadowActivity = org.robolectric.Shadows.shadowOf(activity)
-                shadowActivity.clearNextStartedActivities()
                 val viewModel = createTestViewModel(CardsOrNotes.NOTES)
 
                 // Manually select an invalid NoteId to simulate a corrupted 0-card note
