@@ -108,6 +108,7 @@ import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.libanki.undoAvailable
 import com.ichi2.anki.libanki.undoLabel
 import com.ichi2.anki.mediacheck.MediaCheckFragment
+import com.ichi2.anki.navigation.CardBrowserScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.rememberNavigationState
@@ -477,7 +478,7 @@ open class DeckPicker :
             val navigationState =
                 rememberNavigationState(
                     startRoute = DeckPickerScreen,
-                    topLevelRoutes = setOf(DeckPickerScreen),
+                    topLevelRoutes = setOf(DeckPickerScreen, CardBrowserScreen),
                 )
             val navigator = remember(navigationState) { Navigator(navigationState) }
 

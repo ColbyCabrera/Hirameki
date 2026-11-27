@@ -49,6 +49,7 @@ class NavigationStateTest : RobolectricTest() {
         val singletons =
             listOf(
                 DeckPickerScreen,
+                CardBrowserScreen,
                 HelpScreen,
                 ContributeScreen,
                 StatisticsDestination,
@@ -70,6 +71,7 @@ class NavigationStateTest : RobolectricTest() {
         val keys: List<NavKey> =
             listOf(
                 DeckPickerScreen,
+                CardBrowserScreen,
                 HelpScreen,
                 ContributeScreen,
                 CongratsScreen(deckId = 1234L),

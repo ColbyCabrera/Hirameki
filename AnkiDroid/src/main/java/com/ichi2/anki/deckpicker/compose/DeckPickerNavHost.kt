@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -53,6 +54,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.ichi2.anki.CardBrowser
@@ -74,6 +76,7 @@ import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
 import com.ichi2.anki.dialogs.compose.NoSpaceLeftDialog
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
+import com.ichi2.anki.navigation.CardBrowserScreen
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
@@ -109,7 +112,6 @@ private data class DeckPickerDrawerState(
     val syncState: SyncIconState,
     val isInInitialState: Boolean?,
     val drawerState: DrawerState,
-    val selectedNavigationItem: AppNavigationItem,
 )
 
 /**
@@ -162,6 +164,29 @@ private data class DeckPickerDrawerActions(
     val onDeleteEmptyCards: () -> Unit,
     val onManageNoteTypes: () -> Unit,
 )
+
+private val RAIL_SECONDARY_ROUTES =
+    setOf<NavKey>(
+        StatisticsDestination,
+        HelpScreen,
+        ContributeScreen,
+    )
+
+/**
+ * Maps the active Navigation 3 route and top-level stack to the highlighted [AppNavigationItem]
+ * in the persistent tablet navigation rail.
+ */
+internal fun selectedNavigationItemForRoute(
+    currentRoute: NavKey?,
+    topLevelRoute: NavKey,
+): AppNavigationItem =
+    when (currentRoute) {
+        CardBrowserScreen -> AppNavigationItem.CardBrowser
+        StatisticsDestination -> AppNavigationItem.Statistics
+        HelpScreen -> AppNavigationItem.Help
+        ContributeScreen -> AppNavigationItem.Support
+        else -> if (topLevelRoute == CardBrowserScreen) AppNavigationItem.CardBrowser else AppNavigationItem.Decks
+    }
 
 /**
  * Top-level navigation host for the deck picker Compose experience.
@@ -251,30 +276,83 @@ fun DeckPickerNavHost(
         }
     }
 
+    LaunchedEffect(fragmented, navigator) {
+        if (!fragmented && navigator.state.topLevelRoute == CardBrowserScreen) {
+            navigator.navigate(DeckPickerScreen, resetToRoot = true)
+        }
+    }
+
+    val applicationContext = context.applicationContext
+    val handleNavigationItem: (AppNavigationItem) -> Unit = { item ->
+        when (item) {
+            AppNavigationItem.Decks -> {
+                currentNavigator.navigate(DeckPickerScreen, resetToRoot = true)
+            }
+
+            AppNavigationItem.CardBrowser -> {
+                if (currentFragmented) {
+                    currentNavigator.popIf { it in RAIL_SECONDARY_ROUTES }
+                    currentNavigator.navigate(CardBrowserScreen)
+                } else {
+                    currentOnLaunchIntent(
+                        Intent(
+                            applicationContext,
+                            CardBrowser::class.java,
+                        ),
+                    )
+                }
+            }
+
+            AppNavigationItem.Statistics -> {
+                currentNavigator.navigate(DeckPickerScreen, resetToRoot = true)
+                currentNavigator.navigate(StatisticsDestination)
+            }
+
+            AppNavigationItem.Settings -> {
+                currentOnLaunchIntent(PreferencesActivity.getIntent(applicationContext))
+            }
+
+            AppNavigationItem.Help -> {
+                currentNavigator.navigate(DeckPickerScreen, resetToRoot = true)
+                currentNavigator.navigate(HelpScreen)
+            }
+
+            AppNavigationItem.Support -> {
+                currentNavigator.navigate(DeckPickerScreen, resetToRoot = true)
+                currentNavigator.navigate(ContributeScreen)
+            }
+        }
+    }
+
     val entryProvider =
         entryProvider {
             entry<DeckPickerScreen> {
                 DeckPickerMainContent(
                     viewModel = currentViewModel,
-                    cardBrowserViewModel = currentCardBrowserViewModel,
-                    actionHandler = currentActionHandler,
                     snackbarHostState = snackbarHostState,
                     fragmented = currentFragmented,
-                    onLaunchIntent = currentOnLaunchIntent,
                     onAddNote = currentOnAddNote,
                     onAddSharedDeck = currentOnAddSharedDeck,
                     onAddFilteredDeck = currentOnAddFilteredDeck,
-                    onShowDialogFragment = currentOnShowDialogFragment,
-                    onInvalidateOptionsMenu = currentOnInvalidateOptionsMenu,
                     onLoginToAnkiWeb = currentOnLoginToAnkiWeb,
                     onLocalNetworkPermissionRequest = currentOnLocalNetworkPermissionRequest,
                     onImport = currentOnImport,
                     onExport = currentOnExport,
                     onFinish = currentOnFinish,
-                    onNavigateToStatistics = { currentNavigator.navigate(StatisticsDestination) },
-                    onNavigateToHelp = { currentNavigator.navigate(HelpScreen) },
-                    onNavigateToContribute = { currentNavigator.navigate(ContributeScreen) },
+                    onNavigationItemClick = handleNavigationItem,
                     onNavigateToManageNoteTypes = { currentNavigator.navigate(ManageNoteTypesDestination) },
+                )
+            }
+
+            entry<CardBrowserScreen> {
+                DeckPickerTabletCardBrowser(
+                    cardBrowserViewModel = currentCardBrowserViewModel,
+                    actionHandler = currentActionHandler,
+                    onNavigateToDecks = { currentNavigator.navigate(DeckPickerScreen, resetToRoot = true) },
+                    onAddFilteredDeck = currentOnAddFilteredDeck,
+                    onAddNote = currentOnAddNote,
+                    onShowDialogFragment = currentOnShowDialogFragment,
+                    onInvalidateOptionsMenu = currentOnInvalidateOptionsMenu,
                 )
             }
 
@@ -305,16 +383,31 @@ fun DeckPickerNavHost(
             }
         }
 
-    NavDisplay(
-        entries = navigator.state.toEntries(entryProvider),
-        onBack = { navigator.goBack() },
-        transitionSpec = {
-            fadeIn() togetherWith fadeOut()
-        },
-        popTransitionSpec = {
-            fadeIn() togetherWith fadeOut()
-        },
-    )
+    // Keep NavDisplay in a stable Row slot across fragmented toggles so resizing does not reset
+    // entry decorators or in-flight transitions.
+    Row(modifier = Modifier.fillMaxSize()) {
+        if (fragmented) {
+            AnkiNavigationRail(
+                selectedItem =
+                    selectedNavigationItemForRoute(
+                        currentRoute = navigator.currentRoute,
+                        topLevelRoute = navigator.state.topLevelRoute,
+                    ),
+                onNavigate = handleNavigationItem,
+            )
+        }
+        NavDisplay(
+            entries = navigator.state.toEntries(entryProvider),
+            onBack = { navigator.goBack() },
+            modifier = Modifier.weight(1f),
+            transitionSpec = {
+                fadeIn() togetherWith fadeOut()
+            },
+            popTransitionSpec = {
+                fadeIn() togetherWith fadeOut()
+            },
+        )
+    }
 }
 
 /**
@@ -326,28 +419,20 @@ fun DeckPickerNavHost(
 @Composable
 private fun DeckPickerMainContent(
     viewModel: DeckPickerViewModel,
-    cardBrowserViewModel: CardBrowserViewModel,
-    actionHandler: com.ichi2.anki.browser.CardBrowserActionHandler,
     snackbarHostState: SnackbarHostState,
     fragmented: Boolean,
-    onLaunchIntent: (Intent) -> Unit,
     onAddNote: () -> Unit,
     onAddSharedDeck: () -> Unit,
     onAddFilteredDeck: () -> Unit,
-    onShowDialogFragment: (DialogFragment) -> Unit,
-    onInvalidateOptionsMenu: () -> Unit,
     onLoginToAnkiWeb: () -> Unit,
     onLocalNetworkPermissionRequest: (ConflictResolution?) -> Unit,
     onImport: () -> Unit,
     onExport: () -> Unit,
     onFinish: () -> Unit,
-    onNavigateToStatistics: () -> Unit,
-    onNavigateToHelp: () -> Unit,
-    onNavigateToContribute: () -> Unit,
+    onNavigationItemClick: (AppNavigationItem) -> Unit,
     onNavigateToManageNoteTypes: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val applicationContext = LocalContext.current.applicationContext
 
     // Refresh deck counts when DeckPickerScreen returns to the foreground after in-graph routes
     // (such as ManageNoteTypesRoute or tablet CardBrowser) that do not pause/resume the Activity.
@@ -484,47 +569,7 @@ private fun DeckPickerMainContent(
     var searchQuery by remember { mutableStateOf("") }
     var requestSearchFocus by remember { mutableStateOf(false) }
     val studyOptionsData by viewModel.studyOptionsData.collectAsStateWithLifecycle()
-    var selectedNavigationItem by remember {
-        mutableStateOf(
-            AppNavigationItem.Decks,
-        )
-    } // For NavigationRail
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-
-    val handleNavigation: (AppNavigationItem) -> Unit = { item ->
-        when (item) {
-            AppNavigationItem.Decks -> {
-                coroutineScope.launch { drawerState.close() }
-            }
-
-            AppNavigationItem.CardBrowser -> {
-                if (!fragmented) {
-                    onLaunchIntent(
-                        Intent(
-                            applicationContext,
-                            CardBrowser::class.java,
-                        ),
-                    )
-                }
-            }
-
-            AppNavigationItem.Statistics -> {
-                onNavigateToStatistics()
-            }
-
-            AppNavigationItem.Settings -> {
-                onLaunchIntent(PreferencesActivity.getIntent(applicationContext))
-            }
-
-            AppNavigationItem.Help -> {
-                onNavigateToHelp()
-            }
-
-            AppNavigationItem.Support -> {
-                onNavigateToContribute()
-            }
-        }
-    }
 
     val deckPickerDrawerActions =
         DeckPickerDrawerActions(
@@ -557,11 +602,9 @@ private fun DeckPickerMainContent(
             onUnbury = { viewModel.unburyDeck(it) },
             onSearchFocusRequested = { requestSearchFocus = false },
             onNavigationItemClick = { item ->
-                selectedNavigationItem = item
                 coroutineScope.launch {
                     drawerState.close()
-                    handleNavigation(item)
-                    selectedNavigationItem = AppNavigationItem.Decks
+                    onNavigationItemClick(item)
                 }
             },
             onNavigationIconClick = {
@@ -585,143 +628,127 @@ private fun DeckPickerMainContent(
             syncState = syncState,
             isInInitialState = isInInitialState,
             drawerState = drawerState,
-            selectedNavigationItem = selectedNavigationItem,
         )
 
-    if (fragmented) {
-        Row {
-            AnkiNavigationRail(
-                selectedItem = selectedNavigationItem,
-                onNavigate = { item ->
-                    selectedNavigationItem = item
-                    handleNavigation(item)
-                },
-            )
-            if (selectedNavigationItem == AppNavigationItem.CardBrowser) {
-                DeckPickerTabletCardBrowser(
-                    cardBrowserViewModel = cardBrowserViewModel,
-                    actionHandler = actionHandler,
-                    onNavigateToDecks = {
-                        selectedNavigationItem = AppNavigationItem.Decks
-                    },
-                    onAddFilteredDeck = onAddFilteredDeck,
-                    onAddNote = onAddNote,
-                    onShowDialogFragment = onShowDialogFragment,
-                    onInvalidateOptionsMenu = onInvalidateOptionsMenu,
-                )
-            } else {
-                DeckPickerWithDrawer(
-                    state = deckPickerDrawerState,
-                    actions = deckPickerDrawerActions,
-                )
-            }
-        }
-    } else {
-        DeckPickerWithDrawer(state = deckPickerDrawerState, actions = deckPickerDrawerActions)
-    }
+    DeckPickerWithDrawer(state = deckPickerDrawerState, actions = deckPickerDrawerActions)
 }
 
 /**
- * Wraps [DeckPickerScreen] in a modal navigation drawer and adapts drawer-level actions into the
- * row, FAB, and overflow action models used by the screen.
+ * Wraps [DeckPickerScreen] in a modal navigation drawer on compact screens and adapts drawer-level
+ * actions into the row, FAB, and overflow action models used by the screen.
+ *
+ * In [DeckPickerDrawerState.fragmented] mode, top-level navigation is handled by the persistent
+ * [AnkiNavigationRail] at host scope, so the modal drawer is omitted.
  */
 @Composable
 private fun DeckPickerWithDrawer(
     state: DeckPickerDrawerState,
     actions: DeckPickerDrawerActions,
 ) {
-    ModalNavigationDrawer(
-        drawerState = state.drawerState,
-        gesturesEnabled = !state.fragmented || state.drawerState.targetValue != DrawerValue.Closed,
-        drawerContent = {
-            ModalDrawerSheet(
-                drawerState = state.drawerState,
-                modifier = Modifier.width(310.dp),
-            ) {
-                Column(
-                    Modifier
-                        .verticalScroll(rememberScrollState())
-                        .padding(WindowInsets.statusBars.asPaddingValues())
-                        .padding(NavigationDrawerItemDefaults.ItemPadding),
+    if (state.fragmented) {
+        DeckPickerScreenContent(state = state, actions = actions)
+    } else {
+        ModalNavigationDrawer(
+            drawerState = state.drawerState,
+            gesturesEnabled = true,
+            drawerContent = {
+                ModalDrawerSheet(
+                    drawerState = state.drawerState,
+                    modifier = Modifier.width(310.dp),
                 ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.displayLargeEmphasized,
-                        modifier =
-                            Modifier.padding(
-                                start = 8.dp,
-                                bottom = 24.dp,
-                            ),
-                    )
-                    AppNavigationItem.entries.forEach { item ->
-                        if (item == AppNavigationItem.Settings) {
-                            HorizontalDivider(
-                                modifier =
-                                    Modifier
-                                        .padding(vertical = 12.dp)
-                                        .clip(RoundedCornerShape(12.dp)),
-                                thickness = 3.dp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    Column(
+                        Modifier
+                            .verticalScroll(rememberScrollState())
+                            .padding(WindowInsets.statusBars.asPaddingValues())
+                            .padding(NavigationDrawerItemDefaults.ItemPadding),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.displayLargeEmphasized,
+                            modifier =
+                                Modifier.padding(
+                                    start = 8.dp,
+                                    bottom = 24.dp,
+                                ),
+                        )
+                        AppNavigationItem.entries.forEach { item ->
+                            if (item == AppNavigationItem.Settings) {
+                                HorizontalDivider(
+                                    modifier =
+                                        Modifier
+                                            .padding(vertical = 12.dp)
+                                            .clip(RoundedCornerShape(12.dp)),
+                                    thickness = 3.dp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                )
+                            }
+                            NavigationDrawerItem(
+                                icon = { Icon(painterResource(item.icon), contentDescription = null) },
+                                label = { Text(stringResource(item.labelResId)) },
+                                selected = item == AppNavigationItem.Decks,
+                                onClick = { actions.onNavigationItemClick(item) },
                             )
                         }
-                        NavigationDrawerItem(
-                            icon = { Icon(painterResource(item.icon), contentDescription = null) },
-                            label = { Text(stringResource(item.labelResId)) },
-                            selected = state.selectedNavigationItem == item,
-                            onClick = { actions.onNavigationItemClick(item) },
-                        )
                     }
                 }
-            }
-        },
-    ) {
-        DeckPickerScreen(
-            fragmented = state.fragmented,
-            decks = state.deckList.data,
-            isSyncing = state.isSyncing,
-            onRefresh = actions.onSync,
-            searchQuery = state.searchQuery,
-            onSearchQueryChanged = actions.onSearchQueryChanged,
-            deckRowActions =
-                DeckRowActions(
-                    onDeckClick = actions.onDeckClick,
-                    onExpandClick = actions.onExpandClick,
-                    onDeckOptions = { deck -> actions.onDeckOptions(deck.did) },
-                    onRename = { deck -> actions.onRename(deck.did) },
-                    onCustomStudy = { deck -> actions.onCustomStudy(deck.did) },
-                    onUnbury = { deck -> actions.onUnbury(deck.did) },
-                    onExportDeck = { deck -> actions.onExportDeck(deck.did) },
-                    onDelete = { deck -> actions.onDelete(deck.did) },
-                    onRebuild = { deck -> actions.onRebuild(deck.did) },
-                    onEmpty = { deck -> actions.onEmpty(deck.did) },
-                    onCreateSubdeck = { deck -> actions.onCreateSubdeck(deck.did) },
-                ),
-            fabActions =
-                FabActions(
-                    onAddNote = actions.onAddNote,
-                    onAddDeck = actions.onAddDeck,
-                    onAddSharedDeck = actions.onAddSharedDeck,
-                    onAddFilteredDeck = actions.onAddFilteredDeck,
-                    onImport = actions.onImport,
-                ),
-            moreOptionsMenuActions =
-                MoreOptionsMenuActions(
-                    onDeleteEmptyCards = actions.onDeleteEmptyCards,
-                    onCheckDatabase = actions.onCheckDatabase,
-                    onExport = actions.onExport,
-                    onManageNoteTypes = actions.onManageNoteTypes,
-                ),
-            onNavigationIconClick = actions.onNavigationIconClick,
-            onStartStudy = actions.onStartStudy,
-            onCustomStudy = actions.onCustomStudy,
-            studyOptionsData = state.studyOptionsData,
-            requestSearchFocus = state.requestSearchFocus,
-            onSearchFocusRequested = actions.onSearchFocusRequested,
-            snackbarHostState = state.snackbarHostState,
-            syncState = state.syncState,
-            isInInitialState = state.isInInitialState,
-        )
+            },
+        ) {
+            DeckPickerScreenContent(state = state, actions = actions)
+        }
     }
+}
+
+@Composable
+private fun DeckPickerScreenContent(
+    state: DeckPickerDrawerState,
+    actions: DeckPickerDrawerActions,
+) {
+    DeckPickerScreen(
+        fragmented = state.fragmented,
+        decks = state.deckList.data,
+        isSyncing = state.isSyncing,
+        onRefresh = actions.onSync,
+        searchQuery = state.searchQuery,
+        onSearchQueryChanged = actions.onSearchQueryChanged,
+        deckRowActions =
+            DeckRowActions(
+                onDeckClick = actions.onDeckClick,
+                onExpandClick = actions.onExpandClick,
+                onDeckOptions = { deck -> actions.onDeckOptions(deck.did) },
+                onRename = { deck -> actions.onRename(deck.did) },
+                onCustomStudy = { deck -> actions.onCustomStudy(deck.did) },
+                onUnbury = { deck -> actions.onUnbury(deck.did) },
+                onExportDeck = { deck -> actions.onExportDeck(deck.did) },
+                onDelete = { deck -> actions.onDelete(deck.did) },
+                onRebuild = { deck -> actions.onRebuild(deck.did) },
+                onEmpty = { deck -> actions.onEmpty(deck.did) },
+                onCreateSubdeck = { deck -> actions.onCreateSubdeck(deck.did) },
+            ),
+        fabActions =
+            FabActions(
+                onAddNote = actions.onAddNote,
+                onAddDeck = actions.onAddDeck,
+                onAddSharedDeck = actions.onAddSharedDeck,
+                onAddFilteredDeck = actions.onAddFilteredDeck,
+                onImport = actions.onImport,
+            ),
+        moreOptionsMenuActions =
+            MoreOptionsMenuActions(
+                onDeleteEmptyCards = actions.onDeleteEmptyCards,
+                onCheckDatabase = actions.onCheckDatabase,
+                onExport = actions.onExport,
+                onManageNoteTypes = actions.onManageNoteTypes,
+            ),
+        onNavigationIconClick = actions.onNavigationIconClick,
+        onStartStudy = actions.onStartStudy,
+        onCustomStudy = actions.onCustomStudy,
+        studyOptionsData = state.studyOptionsData,
+        requestSearchFocus = state.requestSearchFocus,
+        onSearchFocusRequested = actions.onSearchFocusRequested,
+        snackbarHostState = state.snackbarHostState,
+        syncState = state.syncState,
+        isInInitialState = state.isInInitialState,
+    )
 }
 
 /**

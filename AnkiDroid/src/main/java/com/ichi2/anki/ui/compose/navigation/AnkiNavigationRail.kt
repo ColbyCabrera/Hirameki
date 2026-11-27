@@ -64,7 +64,7 @@ fun AnkiNavigationRail(
                     icon = {
                         Icon(
                             painter = painterResource(item.icon),
-                            contentDescription = stringResource(item.labelResId),
+                            contentDescription = null,
                         )
                     },
                     label = { Text(stringResource(item.labelResId)) },
