@@ -28,6 +28,7 @@ import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
 import com.ichi2.anki.navigation.HelpScreen
+import com.ichi2.anki.navigation.ManageNoteTypesDestination
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.rememberNavigationState
 import com.ichi2.anki.navigation.toEntries
@@ -271,5 +272,56 @@ class DeckPickerNavHostTest : RobolectricTest() {
         }
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(settingsLabel).assertIsNotDisplayed()
+    }
+
+    @Test
+    fun openManageNoteTypesEffectNavigatesToInGraphRouteAndPopsBack() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val manageNoteTypesTitle = context.getString(R.string.model_browser_label)
+        val backContentDescription = context.getString(R.string.back)
+
+        val viewModel = DeckPickerViewModel()
+        val cardBrowserViewModel = createMockBrowserViewModel()
+        val actionHandler = mockk<CardBrowserActionHandler>(relaxed = true)
+        lateinit var navigator: Navigator
+
+        composeTestRule.setContent {
+            AnkiDroidTheme {
+                val navigationState =
+                    rememberNavigationState(
+                        startRoute = DeckPickerScreen,
+                        topLevelRoutes = setOf(DeckPickerScreen),
+                    )
+                navigator = remember(navigationState) { Navigator(navigationState) }
+
+                DeckPickerNavHost(
+                    navigator = navigator,
+                    viewModel = viewModel,
+                    cardBrowserViewModel = cardBrowserViewModel,
+                    actionHandler = actionHandler,
+                    fragmented = false,
+                    onLaunchIntent = {},
+                    onAddNote = {},
+                    onAddSharedDeck = {},
+                    onAddFilteredDeck = {},
+                    onShowDialogFragment = {},
+                    onInvalidateOptionsMenu = {},
+                    onLoginToAnkiWeb = {},
+                    onLocalNetworkPermissionRequest = {},
+                    onImport = {},
+                    onExport = {},
+                )
+            }
+        }
+
+        composeTestRule.runOnIdle { viewModel.openManageNoteTypes() }
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            navigator.currentRoute == ManageNoteTypesDestination
+        }
+        composeTestRule.onNodeWithText(manageNoteTypesTitle).assertIsDisplayed()
+
+        composeTestRule.onNodeWithContentDescription(backContentDescription).performClick()
+        composeTestRule.waitForIdle()
+        assertEquals(DeckPickerScreen, navigator.currentRoute)
     }
 }

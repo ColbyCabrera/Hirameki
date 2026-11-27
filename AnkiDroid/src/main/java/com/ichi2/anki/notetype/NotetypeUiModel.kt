@@ -8,7 +8,7 @@ import anki.notetypes.NotetypeNameIdUseCount
 import com.ichi2.anki.libanki.NoteTypeId
 
 /**
- * Data holder class which contains the data to display a single note type in [ManageNotetypes]'s
+ * Data holder class which contains the data to display a single note type in Manage Note Types'
  * list of notetypes.
  */
 data class ManageNoteTypeUiModel(

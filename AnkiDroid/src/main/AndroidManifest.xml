@@ -274,12 +274,6 @@
                 <data android:scheme="anki" android:host="x-callback-url" android:path="/browser"/>
             </intent-filter>
         </activity>
-        <activity
-            android:name=".notetype.ManageNotetypes"
-            android:label="@string/model_browser_label"
-            android:exported="false"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            />
 
         <!-- The activity that shows up when the user selects a more-info button in the OS permission settings for AnkiDroid
              The more-info button only shows up in the OS settings at or above API 31

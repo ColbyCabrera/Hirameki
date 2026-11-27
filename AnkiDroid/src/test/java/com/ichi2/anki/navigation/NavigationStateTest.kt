@@ -74,8 +74,6 @@ class NavigationStateTest : RobolectricTest() {
                 ContributeScreen,
                 CongratsScreen(deckId = 1234L),
                 StatisticsDestination,
-                DeckOptionsDestination(deckId = 5678L),
-                CardInfoDestination(cardId = 9012L),
                 ManageNoteTypesDestination,
             )
 

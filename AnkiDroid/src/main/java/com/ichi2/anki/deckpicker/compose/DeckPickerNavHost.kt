@@ -49,18 +49,14 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.CardBrowser
-import com.ichi2.anki.CardTemplateEditor
 import com.ichi2.anki.ConflictResolution
-import com.ichi2.anki.NoteTypeFieldEditor
 import com.ichi2.anki.R
 import com.ichi2.anki.SyncIconState
 import com.ichi2.anki.browser.CardBrowserViewModel
@@ -78,7 +74,6 @@ import com.ichi2.anki.dialogs.compose.LoginToAnkiWebDialog
 import com.ichi2.anki.dialogs.compose.NetworkErrorDialog
 import com.ichi2.anki.dialogs.compose.NoSpaceLeftDialog
 import com.ichi2.anki.dialogs.customstudy.CustomStudyDialog
-import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.navigation.CongratsScreen
 import com.ichi2.anki.navigation.ContributeScreen
 import com.ichi2.anki.navigation.DeckPickerScreen
@@ -87,13 +82,9 @@ import com.ichi2.anki.navigation.ManageNoteTypesDestination
 import com.ichi2.anki.navigation.Navigator
 import com.ichi2.anki.navigation.StatisticsDestination
 import com.ichi2.anki.navigation.toEntries
-import com.ichi2.anki.notetype.ManageNoteTypesUiEvent
-import com.ichi2.anki.notetype.ManageNoteTypesViewModel
-import com.ichi2.anki.notetype.compose.DeleteSelectedNoteTypesDialog
-import com.ichi2.anki.notetype.compose.ManageNoteTypesScreen
+import com.ichi2.anki.notetype.compose.ManageNoteTypesRoute
 import com.ichi2.anki.pages.StatisticsScreen
 import com.ichi2.anki.preferences.PreferencesActivity
-import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.compose.LocalNetworkPermissionDialogState
 import com.ichi2.anki.ui.compose.LocalNetworkPermissionPermanentlyDeniedDialog
 import com.ichi2.anki.ui.compose.LocalNetworkPermissionRationaleDialog
@@ -101,7 +92,6 @@ import com.ichi2.anki.ui.compose.contribute.ContributeScreen
 import com.ichi2.anki.ui.compose.help.HelpScreen
 import com.ichi2.anki.ui.compose.navigation.AnkiNavigationRail
 import com.ichi2.anki.ui.compose.navigation.AppNavigationItem
-import com.ichi2.anki.userAcceptsSchemaChange
 import kotlinx.coroutines.launch
 import com.ichi2.anki.ui.compose.CongratsScreen as CongratsComposable
 
@@ -203,6 +193,7 @@ fun DeckPickerNavHost(
     val context = LocalContext.current
     val fragmentActivity = context as? FragmentActivity
     val lifecycleOwner = LocalLifecycleOwner.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Keep latest host bindings in remembered State holders because Nav3 caches entries by
     // backStack.toList() and does not re-invoke entryProvider on unrelated recompositions.
@@ -222,6 +213,14 @@ fun DeckPickerNavHost(
     val currentOnImport by rememberUpdatedState(onImport)
     val currentOnExport by rememberUpdatedState(onExport)
     val currentOnFinish by rememberUpdatedState(onFinish)
+
+    SetupFlows(
+        viewModel = viewModel,
+        snackbarHostState = snackbarHostState,
+        lifecycle = lifecycleOwner.lifecycle,
+        onNavigateToCongrats = { deckId -> currentNavigator.navigate(CongratsScreen(deckId)) },
+        onNavigateToManageNoteTypes = { currentNavigator.navigate(ManageNoteTypesDestination) },
+    )
 
     DisposableEffect(fragmentActivity, lifecycleOwner) {
         fragmentActivity?.supportFragmentManager?.setFragmentResultListener(
@@ -256,10 +255,10 @@ fun DeckPickerNavHost(
         entryProvider {
             entry<DeckPickerScreen> {
                 DeckPickerMainContent(
-                    navigator = currentNavigator,
                     viewModel = currentViewModel,
                     cardBrowserViewModel = currentCardBrowserViewModel,
                     actionHandler = currentActionHandler,
+                    snackbarHostState = snackbarHostState,
                     fragmented = currentFragmented,
                     onLaunchIntent = currentOnLaunchIntent,
                     onAddNote = currentOnAddNote,
@@ -272,6 +271,10 @@ fun DeckPickerNavHost(
                     onImport = currentOnImport,
                     onExport = currentOnExport,
                     onFinish = currentOnFinish,
+                    onNavigateToStatistics = { currentNavigator.navigate(StatisticsDestination) },
+                    onNavigateToHelp = { currentNavigator.navigate(HelpScreen) },
+                    onNavigateToContribute = { currentNavigator.navigate(ContributeScreen) },
+                    onNavigateToManageNoteTypes = { currentNavigator.navigate(ManageNoteTypesDestination) },
                 )
             }
 
@@ -298,96 +301,7 @@ fun DeckPickerNavHost(
             }
 
             entry<ManageNoteTypesDestination> {
-                val noteTypesViewModel: ManageNoteTypesViewModel = viewModel()
-                val uiState by noteTypesViewModel.uiState.collectAsStateWithLifecycle()
-                val context = LocalContext.current
-                val lifecycleOwner = LocalLifecycleOwner.current
-                val activity = context as AnkiActivity
-                var showBatchDeleteConfirmation by remember { mutableStateOf(false) }
-
-                DisposableEffect(lifecycleOwner) {
-                    val observer =
-                        LifecycleEventObserver { _, event ->
-                            if (event == Lifecycle.Event.ON_RESUME) {
-                                noteTypesViewModel.refresh()
-                            }
-                        }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-                    onDispose {
-                        lifecycleOwner.lifecycle.removeObserver(observer)
-                    }
-                }
-
-                LaunchedEffect(noteTypesViewModel) {
-                    noteTypesViewModel.uiEvents.collect { event ->
-                        when (event) {
-                            is ManageNoteTypesUiEvent.ShowErrorMessage -> {
-                                activity.showSnackbar(event.message)
-                            }
-
-                            is ManageNoteTypesUiEvent.ShowSnackbar -> {
-                                activity.showSnackbar(activity.getString(event.messageId))
-                            }
-
-                            is ManageNoteTypesUiEvent.PromptSchemaChangeWarning -> {
-                                activity.launchCatchingTask {
-                                    if (activity.userAcceptsSchemaChange()) {
-                                        noteTypesViewModel.showDeleteConfirmation(event.noteType)
-                                    }
-                                }
-                            }
-
-                            is ManageNoteTypesUiEvent.PromptDeleteSelectedConfirmation -> {
-                                activity.launchCatchingTask {
-                                    if (activity.userAcceptsSchemaChange()) {
-                                        showBatchDeleteConfirmation = true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                ManageNoteTypesScreen(
-                    uiState = uiState,
-                    onSearch = { noteTypesViewModel.updateSearchQuery(it) },
-                    onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
-                    onShowFields = {
-                        currentOnLaunchIntent(
-                            Intent(context, NoteTypeFieldEditor::class.java).apply {
-                                putExtra("title", it.name)
-                                putExtra("noteTypeID", it.id)
-                            },
-                        )
-                    },
-                    onEditCards = {
-                        currentOnLaunchIntent(
-                            Intent(context, CardTemplateEditor::class.java).apply {
-                                putExtra("noteTypeId", it.id)
-                            },
-                        )
-                    },
-                    onRename = { noteTypesViewModel.renameNoteType(it.id, it.name) },
-                    onDeleteRequest = { noteTypesViewModel.requestDeleteNoteType(it) },
-                    onDeleteConfirm = { noteTypesViewModel.confirmDeleteNoteType(it.id) },
-                    onDeleteDismiss = { noteTypesViewModel.dismissDeleteConfirmation() },
-                    onToggleSelection = { noteTypesViewModel.toggleNoteTypeSelection(it) },
-                    onSelectAll = { noteTypesViewModel.selectAllNoteTypes() },
-                    onDeselectAll = { noteTypesViewModel.deselectAllNoteTypes() },
-                    onDeleteSelected = { noteTypesViewModel.deleteSelectedNoteTypes() },
-                    onNavigateUp = { currentNavigator.goBack() },
-                )
-
-                if (showBatchDeleteConfirmation) {
-                    DeleteSelectedNoteTypesDialog(
-                        count = uiState.selectedNoteTypeIds.size,
-                        onDismissRequest = { showBatchDeleteConfirmation = false },
-                        onConfirm = {
-                            noteTypesViewModel.confirmDeleteSelectedNoteTypes()
-                            showBatchDeleteConfirmation = false
-                        },
-                    )
-                }
+                ManageNoteTypesRoute(onNavigateUp = { currentNavigator.goBack() })
             }
         }
 
@@ -411,10 +325,10 @@ fun DeckPickerNavHost(
  */
 @Composable
 private fun DeckPickerMainContent(
-    navigator: Navigator,
     viewModel: DeckPickerViewModel,
     cardBrowserViewModel: CardBrowserViewModel,
     actionHandler: com.ichi2.anki.browser.CardBrowserActionHandler,
+    snackbarHostState: SnackbarHostState,
     fragmented: Boolean,
     onLaunchIntent: (Intent) -> Unit,
     onAddNote: () -> Unit,
@@ -427,11 +341,20 @@ private fun DeckPickerMainContent(
     onImport: () -> Unit,
     onExport: () -> Unit,
     onFinish: () -> Unit,
+    onNavigateToStatistics: () -> Unit,
+    onNavigateToHelp: () -> Unit,
+    onNavigateToContribute: () -> Unit,
+    onNavigateToManageNoteTypes: () -> Unit,
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val coroutineScope = rememberCoroutineScope()
     val applicationContext = LocalContext.current.applicationContext
+
+    // Refresh deck counts when DeckPickerScreen returns to the foreground after in-graph routes
+    // (such as ManageNoteTypesRoute or tablet CardBrowser) that do not pause/resume the Activity.
+    LifecycleResumeEffect(viewModel) {
+        viewModel.updateDeckList()
+        onPauseOrDispose {}
+    }
     val deckList by viewModel.flowOfDeckList.collectAsStateWithLifecycle(
         initialValue = DeckPickerViewModel.FlattenedDeckList(emptyList(), false),
     )
@@ -586,7 +509,7 @@ private fun DeckPickerMainContent(
             }
 
             AppNavigationItem.Statistics -> {
-                navigator.navigate(StatisticsDestination)
+                onNavigateToStatistics()
             }
 
             AppNavigationItem.Settings -> {
@@ -594,11 +517,11 @@ private fun DeckPickerMainContent(
             }
 
             AppNavigationItem.Help -> {
-                navigator.navigate(HelpScreen)
+                onNavigateToHelp()
             }
 
             AppNavigationItem.Support -> {
-                navigator.navigate(ContributeScreen)
+                onNavigateToContribute()
             }
         }
     }
@@ -647,9 +570,7 @@ private fun DeckPickerMainContent(
             onImport = onImport,
             onExport = onExport,
             onDeleteEmptyCards = { viewModel.showEmptyCardsDialog() },
-            onManageNoteTypes = {
-                navigator.navigate(ManageNoteTypesDestination)
-            },
+            onManageNoteTypes = onNavigateToManageNoteTypes,
         )
 
     val deckPickerDrawerState =
@@ -698,14 +619,6 @@ private fun DeckPickerMainContent(
     } else {
         DeckPickerWithDrawer(state = deckPickerDrawerState, actions = deckPickerDrawerActions)
     }
-
-    SetupFlows(
-        navigator = navigator,
-        viewModel = viewModel,
-        cardBrowserViewModel = cardBrowserViewModel,
-        snackbarHostState = snackbarHostState,
-        lifecycle = lifecycle,
-    )
 }
 
 /**
@@ -815,18 +728,19 @@ private fun DeckPickerWithDrawer(
  * Collects one-shot flows that must be handled from Compose rather than from the view model.
  *
  * Snackbar presentation and navigation side effects live here because they require Compose runtime
- * state such as [SnackbarHostState] and the current [Navigator].
+ * state such as [SnackbarHostState] and host-level navigation callbacks.
  */
 @Composable
 private fun SetupFlows(
-    navigator: Navigator,
     viewModel: DeckPickerViewModel,
-    cardBrowserViewModel: CardBrowserViewModel,
     snackbarHostState: SnackbarHostState,
     lifecycle: Lifecycle,
+    onNavigateToCongrats: (Long) -> Unit,
+    onNavigateToManageNoteTypes: () -> Unit,
 ) {
     val applicationContext = LocalContext.current.applicationContext
-    val currentNavigator by rememberUpdatedState(navigator)
+    val currentOnNavigateToCongrats by rememberUpdatedState(onNavigateToCongrats)
+    val currentOnNavigateToManageNoteTypes by rememberUpdatedState(onNavigateToManageNoteTypes)
 
     LaunchedEffect(viewModel, snackbarHostState, lifecycle) {
         viewModel.composeEffects.flowWithLifecycle(lifecycle).collect { effect ->
@@ -877,26 +791,17 @@ private fun SetupFlows(
                             }
 
                             is DeckSelectionResult.NoCardsToStudy -> {
-                                currentNavigator.navigate(CongratsScreen(result.deckId))
+                                currentOnNavigateToCongrats(result.deckId)
                             }
                         }
+                    }
+
+                    DeckPickerComposeEffect.NavigateToManageNoteTypes -> {
+                        currentOnNavigateToManageNoteTypes()
                     }
                 }
             }
         }
-    }
-
-    LaunchedEffect(cardBrowserViewModel, snackbarHostState, lifecycle) {
-        cardBrowserViewModel.flowOfSnackbarMessage
-            .flowWithLifecycle(lifecycle)
-            .collect { messageRes ->
-                launch {
-                    snackbarHostState.showSnackbar(
-                        applicationContext.getString(messageRes),
-                        duration = SnackbarDuration.Short,
-                    )
-                }
-            }
     }
 }
 
