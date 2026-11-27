@@ -6,12 +6,14 @@ package com.ichi2.anki.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -29,6 +31,10 @@ fun rememberNavigationState(
     startRoute: NavKey,
     topLevelRoutes: Set<NavKey>,
 ): NavigationState {
+    require(startRoute in topLevelRoutes) {
+        "startRoute ($startRoute) must be included in topLevelRoutes ($topLevelRoutes)"
+    }
+
     val topLevelRoute =
         rememberSerializable(
             startRoute,
@@ -38,7 +44,12 @@ fun rememberNavigationState(
             mutableStateOf(startRoute)
         }
 
-    val backStacks = topLevelRoutes.associateWith { key -> rememberNavBackStack(key) }
+    val backStacks =
+        topLevelRoutes.associateWith { route ->
+            key(route) {
+                rememberNavBackStack(route)
+            }
+        }
 
     return remember(startRoute, topLevelRoutes) {
         NavigationState(
@@ -77,16 +88,21 @@ class NavigationState(
 @Composable
 fun NavigationState.toEntries(entryProvider: (NavKey) -> NavEntry<NavKey>): SnapshotStateList<NavEntry<NavKey>> {
     val decoratedEntries =
-        backStacks.mapValues { (_, stack) ->
-            val decorators =
-                listOf(
-                    rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
+        backStacks.mapValues { (topLevelKey, stack) ->
+            key(topLevelKey) {
+                // SaveableStateHolderNavEntryDecorator must precede ViewModelStoreNavEntryDecorator
+                // so entry-scoped ViewModels receive the entry's SavedStateRegistryOwner.
+                val decorators =
+                    listOf(
+                        rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                    )
+                rememberDecoratedNavEntries(
+                    backStack = stack,
+                    entryDecorators = decorators,
+                    entryProvider = entryProvider,
                 )
-            rememberDecoratedNavEntries(
-                backStack = stack,
-                entryDecorators = decorators,
-                entryProvider = entryProvider,
-            )
+            }
         }
 
     return stacksInUse

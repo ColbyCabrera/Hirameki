@@ -42,6 +42,10 @@
 # so a stored name could refer to a different, non-Parcelable class after an update
 -keepnames class com.ichi2.** implements android.os.Parcelable
 
+# Navigation 3's Android NavKeySerializer writes each NavKey's class name and restores it via
+# Class.forName(). Keep NavKey names stable so persisted back stacks remain valid across builds.
+-keepnames class com.ichi2.** implements androidx.navigation3.runtime.NavKey
+
 # Ignore unused packages
 -dontwarn javax.naming.**
 -dontwarn org.ietf.jgss.**

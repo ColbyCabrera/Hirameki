@@ -474,16 +474,20 @@ open class DeckPicker :
         }
 
         setContent {
+            val navigationState =
+                rememberNavigationState(
+                    startRoute = DeckPickerScreen,
+                    topLevelRoutes = setOf(DeckPickerScreen),
+                )
+            val navigator = remember(navigationState) { Navigator(navigationState) }
+
             val isOpen by CollectionManager.isCollectionOpenFlow.collectAsStateWithLifecycle()
+            // Keeping navigationState above this gate preserves the Nav3 back stack across
+            // transient collection closures; entry-scoped ViewModels and saveable state below
+            // still reset while the collection is closed so they reload fresh collection data.
             if (!isOpen) return@setContent
 
             AnkiDroidTheme {
-                val navigationState =
-                    rememberNavigationState(
-                        startRoute = DeckPickerScreen,
-                        topLevelRoutes = setOf(DeckPickerScreen),
-                    )
-                val navigator = remember { Navigator(navigationState) }
                 DeckPickerNavHost(
                     navigator = navigator,
                     viewModel = viewModel,
