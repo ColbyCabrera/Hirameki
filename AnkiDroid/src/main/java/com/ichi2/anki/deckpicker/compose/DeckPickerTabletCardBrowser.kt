@@ -3,7 +3,6 @@
 
 package com.ichi2.anki.deckpicker.compose
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,9 +33,6 @@ fun DeckPickerTabletCardBrowser(
     onShowDialogFragment: (DialogFragment) -> Unit,
     onInvalidateOptionsMenu: () -> Unit,
 ) {
-    BackHandler {
-        onNavigateToDecks()
-    }
     val allTagsState by cardBrowserViewModel.allTags.collectAsStateWithLifecycle()
     val selectedTags by cardBrowserViewModel.selectedTags.collectAsStateWithLifecycle()
     val deckTags by cardBrowserViewModel.deckTags.collectAsStateWithLifecycle()

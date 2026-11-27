@@ -10,6 +10,9 @@ import kotlinx.serialization.Serializable
 data object DeckPickerScreen : NavKey
 
 @Serializable
+data object CardBrowserScreen : NavKey
+
+@Serializable
 data object HelpScreen : NavKey
 
 @Serializable
