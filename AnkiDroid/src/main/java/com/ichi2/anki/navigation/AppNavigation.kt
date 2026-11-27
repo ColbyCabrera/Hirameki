@@ -7,13 +7,13 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-object DeckPickerScreen : NavKey
+data object DeckPickerScreen : NavKey
 
 @Serializable
-object HelpScreen : NavKey
+data object HelpScreen : NavKey
 
 @Serializable
-object ContributeScreen : NavKey
+data object ContributeScreen : NavKey
 
 @Serializable
 data class CongratsScreen(
@@ -21,7 +21,7 @@ data class CongratsScreen(
 ) : NavKey
 
 @Serializable
-object StatisticsDestination : NavKey
+data object StatisticsDestination : NavKey
 
 @Serializable
 data class DeckOptionsDestination(
@@ -34,4 +34,4 @@ data class CardInfoDestination(
 ) : NavKey
 
 @Serializable
-object ManageNoteTypesDestination : NavKey
+data object ManageNoteTypesDestination : NavKey
