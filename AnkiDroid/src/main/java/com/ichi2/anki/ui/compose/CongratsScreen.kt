@@ -3,7 +3,6 @@
 
 package com.ichi2.anki.ui.compose
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -52,7 +51,6 @@ fun CongratsScreen(
     onCustomStudy: () -> Unit,
     timeUntilNextDay: Long,
 ) {
-    BackHandler { onNavigateUp() }
     AnkiDroidTheme {
         Scaffold(topBar = {
             TopAppBar(

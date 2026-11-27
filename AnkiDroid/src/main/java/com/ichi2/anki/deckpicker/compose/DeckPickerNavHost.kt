@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -199,38 +200,48 @@ fun DeckPickerNavHost(
     onExport: () -> Unit,
     onFinish: () -> Unit = {},
 ) {
-    val timeUntilNextDay by viewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-
     val context = LocalContext.current
     val fragmentActivity = context as? FragmentActivity
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    DisposableEffect(fragmentActivity, lifecycleOwner, navigator) {
+    // Keep latest host bindings in remembered State holders because Nav3 caches entries by
+    // backStack.toList() and does not re-invoke entryProvider on unrelated recompositions.
+    val currentNavigator by rememberUpdatedState(navigator)
+    val currentViewModel by rememberUpdatedState(viewModel)
+    val currentCardBrowserViewModel by rememberUpdatedState(cardBrowserViewModel)
+    val currentActionHandler by rememberUpdatedState(actionHandler)
+    val currentFragmented by rememberUpdatedState(fragmented)
+    val currentOnLaunchIntent by rememberUpdatedState(onLaunchIntent)
+    val currentOnAddNote by rememberUpdatedState(onAddNote)
+    val currentOnAddSharedDeck by rememberUpdatedState(onAddSharedDeck)
+    val currentOnAddFilteredDeck by rememberUpdatedState(onAddFilteredDeck)
+    val currentOnShowDialogFragment by rememberUpdatedState(onShowDialogFragment)
+    val currentOnInvalidateOptionsMenu by rememberUpdatedState(onInvalidateOptionsMenu)
+    val currentOnLoginToAnkiWeb by rememberUpdatedState(onLoginToAnkiWeb)
+    val currentOnLocalNetworkPermissionRequest by rememberUpdatedState(onLocalNetworkPermissionRequest)
+    val currentOnImport by rememberUpdatedState(onImport)
+    val currentOnExport by rememberUpdatedState(onExport)
+    val currentOnFinish by rememberUpdatedState(onFinish)
+
+    DisposableEffect(fragmentActivity, lifecycleOwner) {
         fragmentActivity?.supportFragmentManager?.setFragmentResultListener(
             CustomStudyDialog.CustomStudyAction.REQUEST_KEY,
             lifecycleOwner,
         ) { _, bundle ->
             val action = CustomStudyDialog.CustomStudyAction.fromBundle(bundle)
-            val currentStack = navigator.state.backStacks[navigator.state.topLevelRoute]
-            val isOnCongratsScreen = currentStack?.lastOrNull() is CongratsScreen
             when (action) {
                 CustomStudyDialog.CustomStudyAction.CUSTOM_STUDY_SESSION -> {
-                    if (isOnCongratsScreen) {
-                        navigator.goBack()
-                    }
+                    currentNavigator.popIf<CongratsScreen>()
                     // Replicate DeckPicker.kt behavior: update list and open study options
-                    viewModel.updateDeckList()
-                    if (!fragmented) {
-                        viewModel.openStudyOptionsActivity()
+                    currentViewModel.updateDeckList()
+                    if (!currentFragmented) {
+                        currentViewModel.openStudyOptionsActivity()
                     }
                 }
 
                 CustomStudyDialog.CustomStudyAction.EXTEND_STUDY_LIMITS -> {
-                    if (isOnCongratsScreen) {
-                        navigator.goBack()
-                    }
-                    viewModel.updateDeckList()
+                    currentNavigator.popIf<CongratsScreen>()
+                    currentViewModel.updateDeckList()
                 }
             }
         }
@@ -245,45 +256,45 @@ fun DeckPickerNavHost(
         entryProvider {
             entry<DeckPickerScreen> {
                 DeckPickerMainContent(
-                    navigator = navigator,
-                    viewModel = viewModel,
-                    cardBrowserViewModel = cardBrowserViewModel,
-                    actionHandler = actionHandler,
-                    fragmented = fragmented,
-                    onLaunchIntent = onLaunchIntent,
-                    onAddNote = onAddNote,
-                    onAddSharedDeck = onAddSharedDeck,
-                    onAddFilteredDeck = onAddFilteredDeck,
-                    onShowDialogFragment = onShowDialogFragment,
-                    onInvalidateOptionsMenu = onInvalidateOptionsMenu,
-                    onLoginToAnkiWeb = onLoginToAnkiWeb,
-                    onLocalNetworkPermissionRequest = onLocalNetworkPermissionRequest,
-                    onImport = onImport,
-                    onExport = onExport,
-                    lifecycle = lifecycle,
-                    onFinish = onFinish,
+                    navigator = currentNavigator,
+                    viewModel = currentViewModel,
+                    cardBrowserViewModel = currentCardBrowserViewModel,
+                    actionHandler = currentActionHandler,
+                    fragmented = currentFragmented,
+                    onLaunchIntent = currentOnLaunchIntent,
+                    onAddNote = currentOnAddNote,
+                    onAddSharedDeck = currentOnAddSharedDeck,
+                    onAddFilteredDeck = currentOnAddFilteredDeck,
+                    onShowDialogFragment = currentOnShowDialogFragment,
+                    onInvalidateOptionsMenu = currentOnInvalidateOptionsMenu,
+                    onLoginToAnkiWeb = currentOnLoginToAnkiWeb,
+                    onLocalNetworkPermissionRequest = currentOnLocalNetworkPermissionRequest,
+                    onImport = currentOnImport,
+                    onExport = currentOnExport,
+                    onFinish = currentOnFinish,
                 )
             }
 
             entry<HelpScreen> {
-                HelpScreen(onNavigateUp = { navigator.goBack() })
+                HelpScreen(onNavigateUp = { currentNavigator.goBack() })
             }
 
             entry<ContributeScreen> {
-                ContributeScreen(onNavigateUp = { navigator.goBack() })
+                ContributeScreen(onNavigateUp = { currentNavigator.goBack() })
             }
 
             entry<CongratsScreen> { key ->
+                val timeUntilNextDay by currentViewModel.flowOfTimeUntilNextDay.collectAsStateWithLifecycle()
                 CongratsComposable(
-                    onNavigateUp = { navigator.goBack() },
-                    onDeckOptions = { viewModel.openDeckOptions(key.deckId) },
-                    onCustomStudy = { viewModel.showCustomStudyDialog(key.deckId) },
+                    onNavigateUp = { currentNavigator.goBack() },
+                    onDeckOptions = { currentViewModel.openDeckOptions(key.deckId) },
+                    onCustomStudy = { currentViewModel.showCustomStudyDialog(key.deckId) },
                     timeUntilNextDay = timeUntilNextDay,
                 )
             }
 
             entry<StatisticsDestination> {
-                StatisticsScreen(onNavigateUp = { navigator.goBack() })
+                StatisticsScreen(onNavigateUp = { currentNavigator.goBack() })
             }
 
             entry<ManageNoteTypesDestination> {
@@ -342,7 +353,7 @@ fun DeckPickerNavHost(
                     onSearch = { noteTypesViewModel.updateSearchQuery(it) },
                     onAddNoteType = { name, option -> noteTypesViewModel.addNoteType(name, option) },
                     onShowFields = {
-                        onLaunchIntent(
+                        currentOnLaunchIntent(
                             Intent(context, NoteTypeFieldEditor::class.java).apply {
                                 putExtra("title", it.name)
                                 putExtra("noteTypeID", it.id)
@@ -350,7 +361,7 @@ fun DeckPickerNavHost(
                         )
                     },
                     onEditCards = {
-                        onLaunchIntent(
+                        currentOnLaunchIntent(
                             Intent(context, CardTemplateEditor::class.java).apply {
                                 putExtra("noteTypeId", it.id)
                             },
@@ -364,7 +375,7 @@ fun DeckPickerNavHost(
                     onSelectAll = { noteTypesViewModel.selectAllNoteTypes() },
                     onDeselectAll = { noteTypesViewModel.deselectAllNoteTypes() },
                     onDeleteSelected = { noteTypesViewModel.deleteSelectedNoteTypes() },
-                    onNavigateUp = { navigator.goBack() },
+                    onNavigateUp = { currentNavigator.goBack() },
                 )
 
                 if (showBatchDeleteConfirmation) {
@@ -389,7 +400,6 @@ fun DeckPickerNavHost(
         popTransitionSpec = {
             fadeIn() togetherWith fadeOut()
         },
-        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
     )
 }
 
@@ -416,10 +426,10 @@ private fun DeckPickerMainContent(
     onLocalNetworkPermissionRequest: (ConflictResolution?) -> Unit,
     onImport: () -> Unit,
     onExport: () -> Unit,
-    lifecycle: Lifecycle,
     onFinish: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val coroutineScope = rememberCoroutineScope()
     val applicationContext = LocalContext.current.applicationContext
     val deckList by viewModel.flowOfDeckList.collectAsStateWithLifecycle(
@@ -712,6 +722,7 @@ private fun DeckPickerWithDrawer(
         gesturesEnabled = !state.fragmented || state.drawerState.targetValue != DrawerValue.Closed,
         drawerContent = {
             ModalDrawerSheet(
+                drawerState = state.drawerState,
                 modifier = Modifier.width(310.dp),
             ) {
                 Column(
@@ -815,8 +826,9 @@ private fun SetupFlows(
     lifecycle: Lifecycle,
 ) {
     val applicationContext = LocalContext.current.applicationContext
+    val currentNavigator by rememberUpdatedState(navigator)
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel, snackbarHostState, lifecycle) {
         viewModel.composeEffects.flowWithLifecycle(lifecycle).collect { effect ->
             launch {
                 when (effect) {
@@ -865,7 +877,7 @@ private fun SetupFlows(
                             }
 
                             is DeckSelectionResult.NoCardsToStudy -> {
-                                navigator.navigate(CongratsScreen(result.deckId))
+                                currentNavigator.navigate(CongratsScreen(result.deckId))
                             }
                         }
                     }
@@ -874,7 +886,7 @@ private fun SetupFlows(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(cardBrowserViewModel, snackbarHostState, lifecycle) {
         cardBrowserViewModel.flowOfSnackbarMessage
             .flowWithLifecycle(lifecycle)
             .collect { messageRes ->
