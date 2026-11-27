@@ -30,7 +30,6 @@ import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.anki.StudyOptionsComposeActivity
 import com.ichi2.anki.instantnoteeditor.InstantNoteEditorActivity
 import com.ichi2.anki.multimedia.MultimediaActivity
-import com.ichi2.anki.notetype.ManageNotetypes
 import com.ichi2.anki.preferences.PreferencesActivity
 import com.ichi2.anki.previewer.CardViewerActivity
 import com.ichi2.anki.ui.compose.CongratsActivity
@@ -76,7 +75,6 @@ object ActivityList {
             get(SharedDecksActivity::class.java),
             get(LoginActivity::class.java),
             get(IntroductionActivity::class.java),
-            get(ManageNotetypes::class.java),
             get(ManageSpaceActivity::class.java),
             get(PermissionsActivity::class.java),
             get(AllPermissionsExplanationActivity::class.java),

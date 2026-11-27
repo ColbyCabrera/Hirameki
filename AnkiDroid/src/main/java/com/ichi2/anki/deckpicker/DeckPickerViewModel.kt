@@ -41,7 +41,6 @@ import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.libanki.sched.Scheduler
 import com.ichi2.anki.libanki.utils.extend
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
-import com.ichi2.anki.notetype.ManageNoteTypesDestination
 import com.ichi2.anki.observability.undoableOp
 import com.ichi2.anki.pages.DeckOptionsDestination
 import com.ichi2.anki.performBackupInBackground
@@ -767,9 +766,9 @@ class DeckPickerViewModel :
     }
 
     /**
-     * Opens the Manage Note Types screen.
+     * Opens the Manage Note Types screen via the Navigation 3 graph.
      */
-    fun openManageNoteTypes() = launchCatchingIO { flowOfDestination.emit(ManageNoteTypesDestination()) }
+    fun openManageNoteTypes() = launchCatchingIO { _composeEffects.send(DeckPickerComposeEffect.NavigateToManageNoteTypes) }
 
     /**
      * Opens study options for the provided deck
@@ -1069,6 +1068,9 @@ sealed class DeckPickerComposeEffect {
     data class HandleDeckSelection(
         val result: DeckSelectionResult,
     ) : DeckPickerComposeEffect()
+
+    /** Navigate to the in-graph Manage Note Types screen */
+    data object NavigateToManageNoteTypes : DeckPickerComposeEffect()
 }
 
 /**

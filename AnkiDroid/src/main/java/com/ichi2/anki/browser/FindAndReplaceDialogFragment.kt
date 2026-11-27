@@ -32,7 +32,7 @@ import com.ichi2.anki.browser.FindAndReplaceDialogFragment.Companion.ARG_REGEX
 import com.ichi2.anki.browser.FindAndReplaceDialogFragment.Companion.ARG_REPLACEMENT
 import com.ichi2.anki.browser.FindAndReplaceDialogFragment.Companion.ARG_SEARCH
 import com.ichi2.anki.browser.FindAndReplaceDialogFragment.Companion.REQUEST_FIND_AND_REPLACE
-import com.ichi2.anki.notetype.ManageNotetypes
+import com.ichi2.anki.notetype.compose.ManageNoteTypesRoute
 import com.ichi2.anki.ui.internationalization.toSentenceCase
 import com.ichi2.anki.utils.ext.setFragmentResultListener
 import com.ichi2.anki.utils.openUrl
@@ -52,7 +52,7 @@ import timber.log.Timber
  *
  * Desktop also shows the fields of a note in the browser and the user can right-click on one of
  * them to start a find and replace only for that field. We display the fields only in
- * [ManageNotetypes] which doesn't feel like it should have this feature.
+ * [ManageNoteTypesRoute] which doesn't feel like it should have this feature.
  * (see https://github.com/ankitects/anki/blob/64ca90934bc26ddf7125913abc9dd9de8cb30c2b/qt/aqt/browser/sidebar/tree.py#L1074)
  */
 // TODO desktop offers history for inputs

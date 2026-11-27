@@ -24,14 +24,4 @@ data class CongratsScreen(
 data object StatisticsDestination : NavKey
 
 @Serializable
-data class DeckOptionsDestination(
-    val deckId: Long,
-) : NavKey
-
-@Serializable
-data class CardInfoDestination(
-    val cardId: Long,
-) : NavKey
-
-@Serializable
 data object ManageNoteTypesDestination : NavKey
