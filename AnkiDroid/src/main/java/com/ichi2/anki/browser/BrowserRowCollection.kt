@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2024 David Allison <davidallisongithub@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2026 David Allison <62114487+david-allison@users.noreply.github.com>
 
 package com.ichi2.anki.browser
 
@@ -57,13 +58,10 @@ class BrowserRowCollection(
 
     suspend fun queryOneCardIdPerRow(): List<CardId> =
         when (this.cardsOrNotes) {
-            // TODO: This is slower than necessary and not perform SQL queries in a loop
-            CardsOrNotes.NOTES ->
-                requireNoteIdList().map { nid ->
-                    CollectionManager.withCol {
-                        cardIdsOfNote(nid = nid).first()
-                    }
-                }
+            CardsOrNotes.NOTES -> {
+                val noteIds = requireNoteIdList()
+                CollectionManager.withCol { firstCardIdsOfNotes(noteIds) }
+            }
             CardsOrNotes.CARDS -> requireCardIdList()
         }
 
