@@ -28,6 +28,7 @@ import com.ichi2.anki.ProgressContext
 import com.ichi2.anki.R
 import com.ichi2.anki.SingleFragmentActivity
 import com.ichi2.anki.common.annotations.NeedsTest
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.updateDeckConfigsRaw
@@ -36,6 +37,8 @@ import com.ichi2.anki.ui.compose.components.AnkiTopAppBar
 import com.ichi2.anki.ui.compose.theme.AnkiDroidTheme
 import com.ichi2.anki.withProgress
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -44,6 +47,7 @@ import timber.log.Timber
 class DeckOptions : PageFragment(R.layout.page_deck_options) {
     private var webViewIsReady = false
     private lateinit var pageWebViewClient: PageWebViewClient
+    private val saveAndCloseMutex = Mutex()
 
     /**
      * Callback enabled when the manual is opened in the deck options.
@@ -90,6 +94,8 @@ class DeckOptions : PageFragment(R.layout.page_deck_options) {
      * Close the view, discarding change if needed.
      */
     fun actuallyClose() {
+        // A preceding normal save may already have closed the activity.
+        if (activity?.isFinishing == true) return
         onBackFromDeckOptions.isEnabled = false
         Timber.v("webView: navigating back")
         launchCatchingTask {
@@ -183,6 +189,17 @@ class DeckOptions : PageFragment(R.layout.page_deck_options) {
             }
         }
     }
+
+    override suspend fun handlePostRequest(
+        uri: PostRequestUri,
+        bytes: ByteArray,
+    ): ByteArray =
+        when (uri.backendMethodName) {
+            // A save can suspend while waiting for the collection; a later close must not overtake it.
+            // Other requests, including progress polling, must remain able to run during a save.
+            "updateDeckConfigs", "deckOptionsRequireClose" -> saveAndCloseMutex.withLock { super.handlePostRequest(uri, bytes) }
+            else -> super.handlePostRequest(uri, bytes)
+        }
 
     override fun onWebViewCreated(webView: WebView) {
         // addJavascriptInterface needs to happen before loadUrl
@@ -287,7 +304,7 @@ suspend fun FragmentActivity.updateDeckConfigsRaw(input: ByteArray): ByteArray {
                     text = this.toProgressText() ?: getString(R.string.dialog_processing)
                 },
             ) {
-                withContext(Dispatchers.IO) {
+                withContext(ioDispatcher) {
                     withCol { updateDeckConfigsRaw(input) }
                 }
             }
