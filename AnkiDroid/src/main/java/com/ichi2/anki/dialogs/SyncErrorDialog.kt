@@ -169,8 +169,8 @@ class SyncErrorDialog : AsyncDialogFragment() {
             DIALOG_SYNC_BASIC_CHECK_ERROR -> {
                 dialog
                     .setPositiveButton(R.string.check_db) { _, _ ->
-                        requireSyncErrorDialogListener().integrityCheck()
                         activity?.dismissAllDialogFragments()
+                        requireSyncErrorDialogListener().integrityCheck()
                     }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }
                     .create()
             }
@@ -178,8 +178,8 @@ class SyncErrorDialog : AsyncDialogFragment() {
             DIALOG_COLLECTION_TOO_LARGE -> {
                 dialog
                     .setPositiveButton(R.string.check_db) { _, _ ->
-                        requireSyncErrorDialogListener().integrityCheck()
                         activity?.dismissAllDialogFragments()
+                        requireSyncErrorDialogListener().integrityCheck()
                     }.setNegativeButton(R.string.dialog_cancel) { _, _ -> }
                     .create()
             }

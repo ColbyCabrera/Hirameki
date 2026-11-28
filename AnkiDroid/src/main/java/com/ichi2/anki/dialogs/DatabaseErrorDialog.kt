@@ -288,8 +288,8 @@ class DatabaseErrorDialog : AsyncDialogFragment() {
                     title(R.string.check_db_title)
                     message(text = message)
                     positiveButton(R.string.dialog_ok) {
-                        requireDeckPicker().integrityCheck()
                         requireActivity().dismissAllDialogFragments()
+                        requireDeckPicker().integrityCheck()
                     }
                     negativeButton(R.string.dialog_cancel)
                 }
