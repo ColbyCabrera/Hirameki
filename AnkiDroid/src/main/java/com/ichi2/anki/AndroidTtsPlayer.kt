@@ -24,6 +24,7 @@ import kotlin.coroutines.resume
 
 class AndroidTtsPlayer(
     private val voices: List<TtsVoice>,
+    private val createTts: suspend () -> TextToSpeech? = TtsVoices::createTts,
 ) : TtsPlayer() {
     private lateinit var scope: CoroutineScope
 
@@ -41,7 +42,7 @@ class AndroidTtsPlayer(
     suspend fun init(scope: CoroutineScope) {
         this.scope = scope
         this.tts =
-            TtsVoices.createTts()?.apply {
+            createTts()?.apply {
                 setOnUtteranceProgressListener(
                     object : UtteranceProgressListenerCompat() {
                         override fun onStart(utteranceId: String?) {
@@ -78,7 +79,7 @@ class AndroidTtsPlayer(
     override fun getAvailableVoices(): List<TtsVoice> = this.voices
 
     override suspend fun play(tag: TTSTag): TtsCompletionStatus {
-        val match = voiceForTag(tag)
+        val match = voiceForTag(tag.copy(lang = tag.lang.replaceObsoleteLanguageCode()))
         if (match == null) {
             Timber.w("could not find voice for %s", tag)
             return TtsCompletionStatus.failure(AndroidTtsError.MissingVoiceError(tag))
