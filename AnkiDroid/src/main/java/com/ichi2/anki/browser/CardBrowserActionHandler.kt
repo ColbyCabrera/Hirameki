@@ -10,11 +10,15 @@ import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.dialogs.SimpleMessageDialog
 import com.ichi2.anki.export.ExportDialogFragment
+import com.ichi2.anki.ioDispatcher
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.CardId
 import com.ichi2.anki.model.CardsOrNotes
 import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.previewer.PreviewerFragment
+import com.ichi2.anki.withProgress
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
@@ -28,6 +32,8 @@ class CardBrowserActionHandler(
     private val launchAddNote: (Intent) -> Unit,
     private val launchPreview: (Intent) -> Unit,
 ) {
+    private var previewJob: Job? = null
+
     fun openNoteEditorForCard(cardId: CardId) {
         val launcher = NoteEditorLauncher.EditCard(cardId, Direction.DEFAULT, false)
         launchEditCard(launcher.toIntent(activity))
@@ -172,21 +178,28 @@ class CardBrowserActionHandler(
         launchAddNote(launcher.toIntent(activity))
     }
 
-    fun onPreview() {
+    fun onPreview(): Job? {
         if (viewModel.rowCount == 0) {
             viewModel.emitSnackbarMessage(activity.getString(R.string.card_browser_no_cards_to_preview))
-            return
+            return null
         }
-        activity.launchCatchingTask {
-            val intentData = viewModel.queryPreviewIntentData()
-            val intent =
-                PreviewerFragment.getIntent(
-                    activity,
-                    intentData.idsFile,
-                    intentData.currentIndex,
-                )
-            launchPreview(intent)
-        }
+        if (previewJob?.isActive == true) return previewJob
+        val job =
+            activity.launchCatchingTask {
+                val intentData =
+                    activity.withProgress {
+                        withContext(ioDispatcher) { viewModel.queryPreviewIntentData() }
+                    }
+                val intent =
+                    PreviewerFragment.getIntent(
+                        activity,
+                        intentData.idsFile,
+                        intentData.currentIndex,
+                    )
+                launchPreview(intent)
+            }
+        previewJob = job
+        return job
     }
 
     private fun ensureSelection(action: String): Boolean {
