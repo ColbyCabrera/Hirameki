@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: Copyright (c) 2023 David Allison <davidallisongithub@gmail.com>
 // SPDX-FileCopyrightText: Copyright: Ankitects Pty Ltd and contributors
+// SPDX-FileCopyrightText: Copyright (c) 2026 Ashish Yadav <48384865+criticalAY@users.noreply.github.com>
 
 /*
  *  This file incorporates code under the following license
@@ -281,7 +282,8 @@ class AndroidTtsVoice(
          */
         fun toAnkiTwoLetterCode(locale: Locale): String =
             normalize(locale).run {
-                return if (country.isBlank()) language else "${language}_$country"
+                val code = if (country.isBlank()) language else "${language}_$country"
+                return code.replaceObsoleteLanguageCode()
             }
 
         // TODO: Move the following functions into a separate object
@@ -336,4 +338,18 @@ class AndroidTtsVoice(
             twoLetterSystemLocaleMapping = validLocales
         }
     }
+}
+
+// TODO: give Anki language codes their own type instead of passing them around as Strings
+@CheckResult
+fun String.replaceObsoleteLanguageCode(): String {
+    val language = substringBefore('_')
+    val current =
+        when (language) {
+            "iw" -> "he"
+            "in" -> "id"
+            "ji" -> "yi"
+            else -> return this
+        }
+    return current + removePrefix(language)
 }

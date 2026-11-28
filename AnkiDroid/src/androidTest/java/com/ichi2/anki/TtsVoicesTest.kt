@@ -33,4 +33,14 @@ class TtsVoicesTest : InstrumentedTest() {
         // TBC
         assertEqual(Locale.forLanguageTag("ar" + '-' + ""), "ar")
     }
+
+    @Test
+    fun toAnkiTwoLetterCodeUsesCurrentLanguageCodes() {
+        assertThat(AndroidTtsVoice.toAnkiTwoLetterCode(Locale.forLanguageTag("he-IL")), equalTo("he_IL"))
+        assertThat(AndroidTtsVoice.toAnkiTwoLetterCode(Locale.forLanguageTag("id-ID")), equalTo("id_ID"))
+        assertThat(AndroidTtsVoice.toAnkiTwoLetterCode(Locale.forLanguageTag("yi")), equalTo("yi"))
+        assertThat(AndroidTtsVoice.toAnkiTwoLetterCode(Locale.forLanguageTag("iw-IL")), equalTo("he_IL"))
+        assertThat(AndroidTtsVoice.toAnkiTwoLetterCode(Locale.forLanguageTag("in-ID")), equalTo("id_ID"))
+        assertThat(AndroidTtsVoice.toAnkiTwoLetterCode(Locale.forLanguageTag("ji")), equalTo("yi"))
+    }
 }
